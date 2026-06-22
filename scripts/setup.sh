@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# ECOS ERP — one-shot environment bootstrap (Linux / macOS)
+# Usage:  ./scripts/setup.sh
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+echo "==> ECOS ERP environment setup"
+
+if [ ! -f backend/.env ]; then
+    echo "==> Creating backend/.env from .env.example"
+    cp backend/.env.example backend/.env
+fi
+
+echo "==> Building images"
+docker compose build
+
+echo "==> Starting services"
+docker compose up -d
+
+echo "==> Generating application key"
+docker compose exec app php artisan key:generate --force
+
+echo "==> Running migrations"
+docker compose exec app php artisan migrate --force
+
+echo ""
+echo "Done. Application:  http://localhost:8080"
+echo "      Mailpit UI:   http://localhost:8025"
+docker compose ps

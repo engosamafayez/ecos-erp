@@ -1,0 +1,28 @@
+# Keep the Docker build context lean. Dependencies are resolved inside the
+# image (vendor/ and frontend build come from dedicated build stages).
+.git
+.gitignore
+.idea
+.vscode
+
+**/node_modules
+**/.DS_Store
+
+backend/vendor
+backend/node_modules
+backend/public/storage
+backend/public/app
+backend/public/build
+backend/public/hot
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/.env
+
+frontend/node_modules
+frontend/dist
+
+docs
+scripts
+*.md

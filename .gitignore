@@ -1,0 +1,41 @@
+# ===== ECOS ERP — repository ignores =====
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.nova/
+.zed/
+.claude/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.backup
+.env.production
+backend/.env
+
+# PHP / Laravel (backend)
+backend/vendor/
+backend/node_modules/
+backend/public/build/
+backend/public/hot
+backend/public/storage
+backend/public/app/
+backend/storage/*.key
+backend/storage/pail
+backend/.phpunit.result.cache
+backend/.phpunit.cache/
+backend/auth.json
+backend/_ide_helper.php
+
+# Frontend (React / Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/*.local
+
+# Node (root, if any)
+/node_modules/
