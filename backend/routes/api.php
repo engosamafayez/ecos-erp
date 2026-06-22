@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\IAM\Presentation\Http\Controllers\AuthController;
+use Modules\Organization\Branches\Presentation\Http\Controllers\BranchController;
 use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
 
 /*
@@ -27,4 +28,5 @@ Route::prefix('auth')->group(function (): void {
 */
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('companies', CompanyController::class);
+    Route::apiResource('branches', BranchController::class);
 });

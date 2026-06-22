@@ -9,6 +9,7 @@ export { EmptyState } from '@/components/crud/empty-state';
 export { LoadingState } from '@/components/crud/loading-state';
 export { ErrorState } from '@/components/crud/error-state';
 export { ConfirmDialog } from '@/components/crud/confirm-dialog';
+export { Combobox } from '@/components/crud/combobox';
 export { StatusBadge } from '@/components/crud/status-badge';
 export { EntityForm, FormField } from '@/components/crud/entity-form';
 export { EntityDrawer } from '@/components/crud/entity-drawer';

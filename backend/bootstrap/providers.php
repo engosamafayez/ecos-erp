@@ -6,4 +6,5 @@ return [
     App\Providers\AppServiceProvider::class,
     Modules\IAM\Infrastructure\Providers\IamServiceProvider::class,
     Modules\Organization\Companies\Infrastructure\Providers\OrganizationServiceProvider::class,
+    Modules\Organization\Branches\Infrastructure\Providers\BranchServiceProvider::class,
 ];

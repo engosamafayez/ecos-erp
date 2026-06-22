@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { ComingSoonPage } from '@/components/common/coming-soon-page';
 import { AppShell } from '@/components/layout/app-shell';
 import { LoginPage } from '@/features/auth/pages/login-page';
+import { BranchesPage } from '@/features/branches/pages/branches-page';
 import { CompaniesPage } from '@/features/companies/pages/companies-page';
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 import { HomePage } from '@/features/home/pages/home-page';
@@ -14,7 +15,6 @@ import { ROUTES } from '@/router/routes';
 // Every module route renders the same reusable "Coming Soon" placeholder,
 // which derives its title from the active navigation item (no duplicated pages).
 const moduleRoutes = [
-  ROUTES.branches,
   ROUTES.inventory,
   ROUTES.purchasing,
   ROUTES.sales,
@@ -48,6 +48,7 @@ export const router = createBrowserRouter(
           children: [
             { path: ROUTES.dashboard, Component: DashboardPage },
             { path: ROUTES.companies, Component: CompaniesPage },
+            { path: ROUTES.branches, Component: BranchesPage },
             ...moduleRoutes,
           ],
         },

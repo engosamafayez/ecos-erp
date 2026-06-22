@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Modules\Organization\Branches\Infrastructure\Database\Seeders\BranchSeeder;
 use Modules\Organization\Companies\Infrastructure\Database\Seeders\CompanySeeder;
 
 class DatabaseSeeder extends Seeder
@@ -24,7 +25,8 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        // Organization module (ORG-001).
+        // Organization module (ORG-001 companies, ORG-002 branches).
         $this->call(CompanySeeder::class);
+        $this->call(BranchSeeder::class);
     }
 }
