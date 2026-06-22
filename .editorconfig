@@ -1,0 +1,47 @@
+# EditorConfig — ECOS ERP (root, applies to the whole monorepo)
+# https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# PHP — PSR-12 (4 spaces)
+[*.php]
+indent_size = 4
+
+# Web / config — 2 spaces
+[*.{js,jsx,ts,tsx,mjs,cjs,json,css,scss,html,vue}]
+indent_size = 2
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.{xml,svg}]
+indent_size = 4
+
+# Markdown — keep trailing spaces (hard line breaks)
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# Makefiles require tabs
+[Makefile]
+indent_style = tab
+
+# Shell scripts
+[*.sh]
+indent_size = 4
+end_of_line = lf
+
+# Windows scripts
+[*.{ps1,bat,cmd}]
+end_of_line = crlf
+
+# Lockfiles & generated — leave as-is
+[{composer.lock,package-lock.json}]
+insert_final_newline = false

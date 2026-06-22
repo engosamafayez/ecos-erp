@@ -1,0 +1,32 @@
+# PHPStan configuration for the ECOS ERP backend.
+#
+# Run (once a static-analysis package such as phpstan/phpstan or larastan/larastan
+# is added as a dev dependency):
+#
+#   docker compose exec app ./vendor/bin/phpstan analyse
+#
+# Larastan (Laravel-aware rules) can be enabled later by installing
+# `larastan/larastan` and uncommenting the `includes` section below.
+
+# includes:
+#     - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+
+    paths:
+        - app
+        - Modules
+        - database
+        - routes
+
+    # Markdown placeholders and generated/runtime paths are not analysed.
+    excludePaths:
+        - app/**/README.md
+        - Modules/**/README.md
+        - bootstrap/cache
+        - storage
+
+    tmpDir: storage/framework/cache/phpstan
+
+    treatPhpDocTypesAsCertain: false

@@ -186,6 +186,23 @@ runs migrations on first boot.
 
 ---
 
+## Engineering Standards
+
+All contributions follow the project's engineering standards, enforced by Pint,
+PHPStan, ESLint, Prettier, and TypeScript (strict):
+
+- [Coding Standards](docs/engineering/CODING-STANDARDS.md) — PHP, TypeScript,
+  React, formatting, and quality-gate commands
+- [Naming Conventions](docs/engineering/NAMING-CONVENTIONS.md) — class,
+  interface, enum, file, Laravel, and React naming rules
+- [Folder Conventions](docs/engineering/FOLDER-CONVENTIONS.md) — where new code
+  belongs
+
+**Tooling configuration:** `backend/pint.json` · `backend/phpstan.neon.dist` ·
+`/.editorconfig` · `frontend/.prettierrc.json` · `frontend/eslint.config.js`.
+
+---
+
 ## Documentation
 
 - [Architecture](docs/architecture/) · [Engineering](docs/engineering/) ·
