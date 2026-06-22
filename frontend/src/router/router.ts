@@ -1,21 +1,36 @@
 import { createBrowserRouter } from 'react-router-dom';
 
+import { ComingSoonPage } from '@/components/common/coming-soon-page';
+import { AppShell } from '@/components/layout/app-shell';
+import { LoginPage } from '@/features/auth/pages/login-page';
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 import { HomePage } from '@/features/home/pages/home-page';
-import { LoginPage } from '@/features/auth/pages/login-page';
 import { AuthLayout } from '@/layouts/auth-layout';
-import { DashboardLayout } from '@/layouts/dashboard-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
 import { ROUTES } from '@/router/routes';
 
+// Every module route renders the same reusable "Coming Soon" placeholder,
+// which derives its title from the active navigation item (no duplicated pages).
+const moduleRoutes = [
+  ROUTES.companies,
+  ROUTES.branches,
+  ROUTES.inventory,
+  ROUTES.purchasing,
+  ROUTES.sales,
+  ROUTES.accounting,
+  ROUTES.crm,
+  ROUTES.hr,
+  ROUTES.reports,
+  ROUTES.settings,
+].map((path) => ({ path, Component: ComingSoonPage }));
+
 /**
  * Application router.
  *
- * - `/login` is wrapped by {@link GuestRoute} (authenticated users are bounced
- *   to the dashboard).
- * - `/dashboard` is wrapped by {@link ProtectedRoute} (anonymous users are
- *   bounced to /login).
+ * - `/login` is guest-only ({@link GuestRoute}).
+ * - All application routes are protected ({@link ProtectedRoute}) and rendered
+ *   inside the {@link AppShell}.
  */
 export const router = createBrowserRouter(
   [
@@ -26,10 +41,12 @@ export const router = createBrowserRouter(
       children: [{ Component: AuthLayout, children: [{ index: true, Component: LoginPage }] }],
     },
     {
-      path: ROUTES.dashboard,
       Component: ProtectedRoute,
       children: [
-        { Component: DashboardLayout, children: [{ index: true, Component: DashboardPage }] },
+        {
+          Component: AppShell,
+          children: [{ path: ROUTES.dashboard, Component: DashboardPage }, ...moduleRoutes],
+        },
       ],
     },
   ],
