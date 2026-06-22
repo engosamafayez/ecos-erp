@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\IAM\Presentation\Http\Controllers\AuthController;
+use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,4 +18,13 @@ Route::prefix('auth')->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Organization — Companies (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::apiResource('companies', CompanyController::class);
 });
