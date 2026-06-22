@@ -1,149 +1,209 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 
+import {
+  ActionMenu,
+  ConfirmDialog,
+  EntityTable,
+  EntityToolbar,
+  PageHeader,
+  Pagination,
+  StatusBadge,
+} from '@/components/crud';
+import type { ColumnDef } from '@/components/crud/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { CompaniesTable } from '@/features/companies/components/companies-table';
-import { CompanyFormDialog } from '@/features/companies/components/company-form-dialog';
-import { DeleteCompanyDialog } from '@/features/companies/components/delete-company-dialog';
-import { useCompaniesQuery } from '@/features/companies/hooks/use-companies';
+import { Card, CardContent } from '@/components/ui/card';
+import { CompanyFormDrawer } from '@/features/companies/components/company-form-drawer';
+import { useCompaniesQuery, useDeleteCompany } from '@/features/companies/hooks/use-companies';
 import type { Company, CompanySortField } from '@/features/companies/types/company';
+import { ROUTES } from '@/router/routes';
 
 const PER_PAGE = 10;
 
 export function CompaniesPage() {
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [sortBy, setSortBy] = useState<CompanySortField>('created_at');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [sort, setSort] = useState<{ field: CompanySortField; direction: 'asc' | 'desc' }>({
+    field: 'created_at',
+    direction: 'desc',
+  });
 
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editing, setEditing] = useState<Company | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerCompany, setDrawerCompany] = useState<Company | null>(null);
   const [deleting, setDeleting] = useState<Company | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
 
   const params = useMemo(
     () => ({
-      search: debouncedSearch || undefined,
+      search: search || undefined,
       page,
       per_page: PER_PAGE,
-      sort_by: sortBy,
-      sort_dir: sortDir,
+      sort_by: sort.field,
+      sort_dir: sort.direction,
     }),
-    [debouncedSearch, page, sortBy, sortDir],
+    [search, page, sort],
   );
 
-  const { data, isLoading, isError } = useCompaniesQuery(params);
+  const { data, isLoading, isError, isFetching, refetch } = useCompaniesQuery(params);
+  const deleteCompany = useDeleteCompany();
 
   const items = data?.items ?? [];
   const meta = data?.meta;
 
-  const handleSort = (field: CompanySortField) => {
-    if (field === sortBy) {
-      setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('asc');
-    }
+  const handleSearch = (value: string) => {
+    setSearch(value);
     setPage(1);
+  };
+
+  const handleSort = (field: string) => {
+    setSort((current) =>
+      current.field === field
+        ? {
+            field: field as CompanySortField,
+            direction: current.direction === 'asc' ? 'desc' : 'asc',
+          }
+        : { field: field as CompanySortField, direction: 'asc' },
+    );
+    setPage(1);
+  };
+
+  const openCreate = () => {
+    setDrawerCompany(null);
+    setDrawerOpen(true);
+  };
+
+  const openEdit = (company: Company) => {
+    setDrawerCompany(company);
+    setDrawerOpen(true);
+  };
+
+  const columns: ColumnDef<Company>[] = [
+    {
+      key: 'code',
+      header: 'Code',
+      sortable: true,
+      cell: (c) => <span className="font-medium">{c.code}</span>,
+    },
+    { key: 'name', header: 'Name', sortable: true, cell: (c) => c.name },
+    {
+      key: 'phone',
+      header: 'Phone',
+      cell: (c) => <span className="text-muted-foreground">{c.phone ?? '—'}</span>,
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      cell: (c) => <span className="text-muted-foreground">{c.email ?? '—'}</span>,
+    },
+    { key: 'country', header: 'Country', sortable: true, cell: (c) => c.country ?? '—' },
+    {
+      key: 'is_active',
+      header: 'Status',
+      sortable: true,
+      cell: (c) => <StatusBadge status={c.is_active ? 'active' : 'inactive'} />,
+    },
+  ];
+
+  const confirmDelete = () => {
+    if (!deleting) {
+      return;
+    }
+    deleteCompany.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Companies</h1>
-          <p className="text-muted-foreground text-sm">Manage the organizations in your tenant.</p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4" />
-          New Company
-        </Button>
-      </div>
+      <PageHeader
+        title="Companies"
+        subtitle="Manage the organizations in your tenant."
+        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Companies' }]}
+        actions={
+          <Button onClick={openCreate}>
+            <Plus className="size-4" />
+            New Company
+          </Button>
+        }
+      />
 
       <Card>
-        <CardHeader>
-          <div className="relative max-w-sm">
-            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-            <Input
-              type="search"
-              placeholder="Search companies…"
-              aria-label="Search companies"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="pl-8"
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <CompaniesTable
-            items={items}
+        <CardContent className="flex flex-col gap-4 pt-6">
+          <EntityToolbar
+            searchPlaceholder="Search companies…"
+            onSearchChange={handleSearch}
+            onRefresh={() => void refetch()}
+            isRefreshing={isFetching}
+            onExport={() => undefined}
+          />
+
+          <EntityTable<Company>
+            columns={columns}
+            data={items}
+            getRowId={(company) => company.id}
             isLoading={isLoading}
             isError={isError}
-            sortBy={sortBy}
-            sortDir={sortDir}
-            onSort={handleSort}
-            onEdit={(company) => setEditing(company)}
-            onDelete={(company) => setDeleting(company)}
+            sort={sort}
+            onSortChange={handleSort}
+            rowActions={(company) => (
+              <ActionMenu
+                label={`Actions for ${company.name}`}
+                items={[
+                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openEdit(company) },
+                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(company) },
+                  {
+                    key: 'delete',
+                    label: 'Delete',
+                    icon: Trash2,
+                    variant: 'destructive',
+                    onSelect: () => setDeleting(company),
+                  },
+                ]}
+              />
+            )}
           />
 
           {meta ? (
-            <div className="text-muted-foreground flex flex-col items-center justify-between gap-2 text-sm sm:flex-row">
-              <span>
-                {meta.total === 0
-                  ? 'No results'
-                  : `Page ${meta.current_page} of ${meta.last_page} · ${meta.total} total`}
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={meta.current_page <= 1}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={meta.current_page >= meta.last_page}
-                  onClick={() => setPage((current) => current + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
+            <Pagination
+              meta={{
+                page: meta.current_page,
+                perPage: meta.per_page,
+                total: meta.total,
+                lastPage: meta.last_page,
+              }}
+              onPageChange={setPage}
+            />
           ) : null}
         </CardContent>
       </Card>
 
-      <CompanyFormDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <CompanyFormDialog
-        open={editing !== null}
+      <CompanyFormDrawer
+        open={drawerOpen}
         onOpenChange={(open) => {
+          setDrawerOpen(open);
           if (!open) {
-            setEditing(null);
+            setDrawerCompany(null);
           }
         }}
-        company={editing}
+        company={drawerCompany}
       />
-      <DeleteCompanyDialog
+
+      <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => {
           if (!open) {
             setDeleting(null);
           }
         }}
-        company={deleting}
+        title="Delete company"
+        description={
+          <>
+            This will soft-delete{' '}
+            <span className="text-foreground font-medium">{deleting?.name}</span>. It can be
+            restored later.
+          </>
+        }
+        confirmLabel="Delete"
+        variant="destructive"
+        loading={deleteCompany.isPending}
+        onConfirm={confirmDelete}
       />
     </div>
   );
