@@ -27,7 +27,8 @@
     "pending": "قيد الانتظار",
     "processing": "قيد المعالجة",
     "success": "ناجح",
-    "failed": "فاشل"
+    "failed": "فاشل",
+    "skipped": "تم التخطي"
   },
   "filters": {
     "channel": "القناة",

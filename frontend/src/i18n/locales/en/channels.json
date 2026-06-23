@@ -55,6 +55,7 @@
     "syncProducts": "Sync Products",
     "syncPrices": "Sync Prices",
     "syncStock": "Sync Stock",
+    "syncCustomers": "Sync Customers",
     "syncInventory": "Sync Inventory",
     "active": "Active"
   },

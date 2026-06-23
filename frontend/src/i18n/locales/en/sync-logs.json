@@ -27,7 +27,8 @@
     "pending": "Pending",
     "processing": "Processing",
     "success": "Success",
-    "failed": "Failed"
+    "failed": "Failed",
+    "skipped": "Skipped"
   },
   "filters": {
     "channel": "Channel",

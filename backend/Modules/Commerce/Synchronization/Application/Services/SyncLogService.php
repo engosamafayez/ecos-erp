@@ -61,4 +61,29 @@ final class SyncLogService
             'synced_at' => now(),
         ]);
     }
+
+    /**
+     * Create a skipped log entry (e.g. duplicate webhook detection).
+     *
+     * @param array<string, mixed>|null $requestPayload
+     */
+    public function createSkippedLog(
+        ?Channel $channel,
+        SyncEntityType $entityType,
+        SyncDirection $direction,
+        string $action,
+        ?string $entityId = null,
+        ?array $requestPayload = null,
+    ): SyncLog {
+        return SyncLog::create([
+            'channel_id' => $channel?->id,
+            'entity_type' => $entityType->value,
+            'entity_id' => $entityId,
+            'direction' => $direction->value,
+            'action' => $action,
+            'status' => SyncStatus::Skipped->value,
+            'request_payload' => $requestPayload,
+            'synced_at' => now(),
+        ]);
+    }
 }

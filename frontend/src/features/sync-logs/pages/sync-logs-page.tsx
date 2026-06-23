@@ -26,7 +26,7 @@ const PER_PAGE = 15;
 
 const ENTITY_TYPES: (SyncEntityType | 'all')[] = ['all', 'product', 'inventory', 'order', 'customer', 'price'];
 const DIRECTIONS: (SyncDirection | 'all')[] = ['all', 'inbound', 'outbound'];
-const STATUSES: (SyncStatus | 'all')[] = ['all', 'pending', 'processing', 'success', 'failed'];
+const STATUSES: (SyncStatus | 'all')[] = ['all', 'pending', 'processing', 'success', 'failed', 'skipped'];
 
 function StatusBadge({ status }: { status: SyncStatus }) {
   const variantMap: Record<SyncStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -34,6 +34,7 @@ function StatusBadge({ status }: { status: SyncStatus }) {
     failed: 'destructive',
     processing: 'secondary',
     pending: 'outline',
+    skipped: 'outline',
   };
   return <Badge variant={variantMap[status]}>{status}</Badge>;
 }

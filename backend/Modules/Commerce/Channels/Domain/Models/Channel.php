@@ -27,6 +27,9 @@ use Modules\Organization\Companies\Domain\Models\Company;
  * @property bool $sync_products
  * @property bool $sync_prices
  * @property bool $sync_stock
+ * @property bool $sync_customers
+ * @property string|null $external_webhook_order_created_id
+ * @property string|null $external_webhook_order_updated_id
  * @property \Illuminate\Support\Carbon|null $last_sync_at
  * @property ConnectionStatus $connection_status
  */
@@ -51,6 +54,9 @@ class Channel extends Model
         'sync_products',
         'sync_prices',
         'sync_stock',
+        'sync_customers',
+        'external_webhook_order_created_id',
+        'external_webhook_order_updated_id',
         'last_sync_at',
         'connection_status',
     ];
@@ -66,6 +72,7 @@ class Channel extends Model
             'sync_products' => 'boolean',
             'sync_prices' => 'boolean',
             'sync_stock' => 'boolean',
+            'sync_customers' => 'boolean',
             'last_sync_at' => 'datetime',
             'connection_status' => ConnectionStatus::class,
         ];

@@ -85,6 +85,10 @@ export function ChannelFormFields() {
           <input type="checkbox" className="border-input size-4 rounded" {...register('sync_stock')} />
           {t('form.syncStock')}
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="border-input size-4 rounded" {...register('sync_customers')} />
+          {t('form.syncCustomers')}
+        </label>
       </div>
 
       <label className="flex items-center gap-2 text-sm">

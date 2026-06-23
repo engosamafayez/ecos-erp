@@ -1,6 +1,6 @@
 export type SyncEntityType = 'product' | 'inventory' | 'order' | 'customer' | 'price';
 export type SyncDirection = 'inbound' | 'outbound';
-export type SyncStatus = 'pending' | 'processing' | 'success' | 'failed';
+export type SyncStatus = 'pending' | 'processing' | 'success' | 'failed' | 'skipped';
 
 export type SyncLogChannel = {
   id: string;

@@ -33,6 +33,7 @@ final class ChannelResource extends JsonResource
             'sync_products' => (bool) $this->sync_products,
             'sync_prices' => (bool) $this->sync_prices,
             'sync_stock' => (bool) $this->sync_stock,
+            'sync_customers' => (bool) $this->sync_customers,
             'connection_status' => $this->connection_status->value,
             'connection_status_label' => $this->connection_status->label(),
             'last_sync_at' => $this->last_sync_at?->toIso8601String(),

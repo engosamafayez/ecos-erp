@@ -20,6 +20,7 @@ export type Channel = {
   sync_products: boolean;
   sync_prices: boolean;
   sync_stock: boolean;
+  sync_customers: boolean;
   connection_status: ConnectionStatus;
   connection_status_label: string;
   last_sync_at: string | null;
@@ -36,6 +37,7 @@ export type ChannelPayload = {
   sync_products: boolean;
   sync_prices: boolean;
   sync_stock: boolean;
+  sync_customers: boolean;
   consumer_key?: string;
   consumer_secret?: string;
 };

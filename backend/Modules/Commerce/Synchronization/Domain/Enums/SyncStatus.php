@@ -10,4 +10,5 @@ enum SyncStatus: string
     case Processing = 'processing';
     case Success = 'success';
     case Failed = 'failed';
+    case Skipped = 'skipped';
 }

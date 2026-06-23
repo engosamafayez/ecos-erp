@@ -31,6 +31,7 @@ final class StoreChannelRequest extends FormRequest
             'sync_products' => ['boolean'],
             'sync_prices' => ['boolean'],
             'sync_stock' => ['boolean'],
+            'sync_customers' => ['boolean'],
             'consumer_key' => ['nullable', 'string', 'max:500'],
             'consumer_secret' => ['nullable', 'string', 'max:500'],
         ];
