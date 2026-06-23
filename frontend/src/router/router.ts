@@ -22,6 +22,8 @@ import { FulfillmentsPage } from '@/features/fulfillments/pages/fulfillments-pag
 import { CreateFulfillmentPage } from '@/features/fulfillments/pages/create-fulfillment-page';
 import { ViewFulfillmentPage } from '@/features/fulfillments/pages/view-fulfillment-page';
 import { StockSyncLogsPage } from '@/features/stock-sync/pages/stock-sync-logs-page';
+import { BomsPage } from '@/features/boms/pages/boms-page';
+import { BomWorkspacePage } from '@/features/boms/pages/bom-workspace-page';
 import { CustomersPage } from '@/features/customers/pages/customers-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
 import { CreateGoodsReceiptPage } from '@/features/goods-receipts/pages/create-goods-receipt-page';
@@ -95,6 +97,10 @@ export const router = createBrowserRouter(
             { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
             { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
             { path: ROUTES.stockSyncLogs, Component: StockSyncLogsPage },
+            { path: ROUTES.boms, Component: BomsPage },
+            { path: ROUTES.bomsNew, Component: BomWorkspacePage },
+            { path: `${ROUTES.boms}/:id/edit`, Component: BomWorkspacePage },
+            { path: `${ROUTES.boms}/:id`, Component: BomWorkspacePage },
             { path: ROUTES.goodsReceipts, Component: GoodsReceiptsPage },
             { path: ROUTES.goodsReceiptsNew, Component: CreateGoodsReceiptPage },
             { path: `${ROUTES.goodsReceipts}/:id`, Component: ViewGoodsReceiptPage },

@@ -10,6 +10,7 @@ import {
   Layers,
   LayoutDashboard,
   Link2,
+  ListTree,
   Package,
   PackageCheck,
   PackageOpen,
@@ -92,6 +93,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'orders', label: 'Orders', path: ROUTES.orders, icon: ShoppingBag },
       { key: 'fulfillments', label: 'Fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
       { key: 'stock-sync-logs', label: 'Stock Sync Logs', path: ROUTES.stockSyncLogs, icon: RefreshCw },
+    ],
+  },
+  {
+    label: 'Manufacturing',
+    items: [
+      { key: 'boms', label: 'Bills of Materials', path: ROUTES.boms, icon: ListTree },
     ],
   },
   {

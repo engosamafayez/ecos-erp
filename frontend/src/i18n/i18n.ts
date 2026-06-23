@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
+import arBoms from '@/i18n/locales/ar/boms.json';
 import arAuth from '@/i18n/locales/ar/auth.json';
 import arBranches from '@/i18n/locales/ar/branches.json';
 import arCategories from '@/i18n/locales/ar/categories.json';
@@ -21,6 +22,7 @@ import arStockSync from '@/i18n/locales/ar/stock-sync.json';
 import arSuppliers from '@/i18n/locales/ar/suppliers.json';
 import arUnits from '@/i18n/locales/ar/units.json';
 import arWarehouses from '@/i18n/locales/ar/warehouses.json';
+import enBoms from '@/i18n/locales/en/boms.json';
 import enAuth from '@/i18n/locales/en/auth.json';
 import enBranches from '@/i18n/locales/en/branches.json';
 import enCategories from '@/i18n/locales/en/categories.json';
@@ -65,6 +67,7 @@ void i18n
         fulfillments: enFulfillments,
         'stock-ledger': enStockLedger,
         'stock-sync': enStockSync,
+        boms: enBoms,
         settings: enSettings,
       },
       ar: {
@@ -86,6 +89,7 @@ void i18n
         fulfillments: arFulfillments,
         'stock-ledger': arStockLedger,
         'stock-sync': arStockSync,
+        boms: arBoms,
         settings: arSettings,
       },
     },

@@ -23,6 +23,7 @@ use Modules\Commerce\StockSync\Presentation\Http\Controllers\StockSyncController
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers\GoodsReceiptController;
 use Modules\Purchasing\PurchaseOrders\Presentation\Http\Controllers\PurchaseOrderController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
+use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Controllers\BomController;
 
 /*
 |--------------------------------------------------------------------------
@@ -110,4 +111,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel']);
     Route::apiResource('goods-receipts', GoodsReceiptController::class);
     Route::post('goods-receipts/{goodsReceipt}/post', [GoodsReceiptController::class, 'post']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Manufacturing — Bills of Materials (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::apiResource('boms', BomController::class);
 });
