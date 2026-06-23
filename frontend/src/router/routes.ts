@@ -20,6 +20,7 @@ export const ROUTES = {
   stockLedger: '/stock-ledger',
   customers: '/customers',
   channels: '/channels',
+  productMappings: '/product-mappings',
   inventory: '/inventory',
   purchasing: '/purchasing',
   sales: '/sales',

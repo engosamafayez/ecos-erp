@@ -17,4 +17,5 @@ return [
     Modules\Inventory\StockLedger\Infrastructure\Providers\StockLedgerServiceProvider::class,
     Modules\Sales\Customers\Infrastructure\Providers\CustomerServiceProvider::class,
     Modules\Commerce\Channels\Infrastructure\Providers\ChannelServiceProvider::class,
+    Modules\Commerce\ProductMappings\Infrastructure\Providers\ProductMappingServiceProvider::class,
 ];

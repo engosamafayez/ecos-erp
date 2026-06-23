@@ -9,6 +9,7 @@ import {
   Landmark,
   Layers,
   LayoutDashboard,
+  Link2,
   Package,
   PackageOpen,
   Receipt,
@@ -84,6 +85,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Commerce',
     items: [
       { key: 'channels', label: 'Channels', path: ROUTES.channels, icon: Store },
+      { key: 'product-mappings', label: 'Product Mapping', path: ROUTES.productMappings, icon: Link2 },
     ],
   },
   {

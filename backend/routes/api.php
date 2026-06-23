@@ -7,6 +7,7 @@ use Modules\IAM\Presentation\Http\Controllers\AuthController;
 use Modules\Inventory\Products\Presentation\Http\Controllers\ProductController;
 use Modules\Inventory\StockLedger\Presentation\Http\Controllers\StockMovementController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
+use Modules\Commerce\ProductMappings\Presentation\Http\Controllers\ProductMappingController;
 use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerController;
 use Modules\MasterData\Categories\Presentation\Http\Controllers\CategoryController;
 use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
@@ -79,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 */
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('channels', ChannelController::class);
+    Route::apiResource('product-mappings', ProductMappingController::class);
 });
 
 /*
