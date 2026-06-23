@@ -14,7 +14,6 @@ import {
 import type { ColumnDef } from '@/components/crud/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { OrderFormDrawer } from '@/features/orders/components/order-form-drawer';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { useDeleteOrder, useOrdersQuery } from '@/features/orders/hooks/use-orders';
 import type { Order, OrderSortField, OrderStatus } from '@/features/orders/types/order';
@@ -35,8 +34,6 @@ export function OrdersPage() {
     field: 'created_at',
     direction: 'desc',
   });
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerOrder, setDrawerOrder] = useState<Order | null>(null);
   const [deleting, setDeleting] = useState<Order | null>(null);
 
   const params = useMemo(
@@ -64,16 +61,6 @@ export function OrdersPage() {
         : { field: field as OrderSortField, direction: 'asc' },
     );
     setPage(1);
-  };
-
-  const openCreate = () => {
-    setDrawerOrder(null);
-    setDrawerOpen(true);
-  };
-
-  const openEdit = (order: Order) => {
-    setDrawerOrder(order);
-    setDrawerOpen(true);
   };
 
   const columns: ColumnDef<Order>[] = [
@@ -131,7 +118,7 @@ export function OrdersPage() {
         subtitle={t('subtitle')}
         breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
-          <Button onClick={openCreate}>
+          <Button onClick={() => navigate(ROUTES.ordersNew)}>
             <Plus className="size-4" />
             {t('actions.new')}
           </Button>
@@ -187,7 +174,7 @@ export function OrdersPage() {
                     key: 'edit',
                     label: tCommon('common.edit'),
                     icon: Pencil,
-                    onSelect: () => openEdit(order),
+                    onSelect: () => navigate(`${ROUTES.orders}/${order.id}/edit`),
                   },
                   {
                     key: 'delete',
@@ -214,12 +201,6 @@ export function OrdersPage() {
           ) : null}
         </CardContent>
       </Card>
-
-      <OrderFormDrawer
-        open={drawerOpen}
-        onOpenChange={(open) => { setDrawerOpen(open); if (!open) setDrawerOrder(null); }}
-        order={drawerOrder}
-      />
 
       <ConfirmDialog
         open={deleting !== null}

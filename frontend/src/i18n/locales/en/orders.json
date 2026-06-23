@@ -69,6 +69,24 @@
     "notFound": "Not Found",
     "notFoundMessage": "This order does not exist."
   },
+  "workspace": {
+    "newTitle": "New Order",
+    "editTitle": "Edit Order",
+    "summary": "Order Summary",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "create": "Create order",
+    "creating": "Creating…",
+    "cancel": "Cancel",
+    "products": "Products",
+    "addLine": "Add line",
+    "selectProduct": "Select product…",
+    "selectCustomer": "Select customer…",
+    "selectChannel": "Select channel (optional)…",
+    "notesPlaceholder": "Internal notes…",
+    "externalIdPlaceholder": "e.g. WC-1234",
+    "errorTitle": "Unable to save"
+  },
   "delete": {
     "title": "Delete order",
     "confirm": "Delete"

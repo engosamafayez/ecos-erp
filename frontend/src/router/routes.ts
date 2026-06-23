@@ -22,6 +22,7 @@ export const ROUTES = {
   channels: '/channels',
   productMappings: '/product-mappings',
   orders: '/orders',
+  ordersNew: '/orders/new',
   fulfillments: '/fulfillments',
   fulfillmentsNew: '/fulfillments/new',
   stockSyncLogs: '/stock-sync-logs',

@@ -69,6 +69,24 @@
     "notFound": "غير موجود",
     "notFoundMessage": "هذا الطلب غير موجود."
   },
+  "workspace": {
+    "newTitle": "طلب جديد",
+    "editTitle": "تعديل الطلب",
+    "summary": "ملخص الطلب",
+    "save": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "create": "إنشاء طلب",
+    "creating": "جارٍ الإنشاء…",
+    "cancel": "إلغاء",
+    "products": "المنتجات",
+    "addLine": "إضافة بند",
+    "selectProduct": "اختر المنتج…",
+    "selectCustomer": "اختر العميل…",
+    "selectChannel": "اختر القناة (اختياري)…",
+    "notesPlaceholder": "ملاحظات داخلية…",
+    "externalIdPlaceholder": "مثال: WC-1234",
+    "errorTitle": "تعذّر الحفظ"
+  },
   "delete": {
     "title": "حذف الطلب",
     "confirm": "حذف"
