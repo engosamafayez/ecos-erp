@@ -14,6 +14,7 @@ import {
   Receipt,
   Ruler,
   Settings,
+  ShoppingCart,
   Truck,
   Users,
   Warehouse,
@@ -70,6 +71,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'suppliers', label: 'Suppliers', path: ROUTES.suppliers, icon: Truck },
       { key: 'purchase-orders', label: 'Purchase Orders', path: ROUTES.purchaseOrders, icon: ClipboardList },
       { key: 'goods-receipts', label: 'Goods Receipts', path: ROUTES.goodsReceipts, icon: PackageOpen },
+    ],
+  },
+  {
+    label: 'Sales',
+    items: [
+      { key: 'customers', label: 'Customers', path: ROUTES.customers, icon: ShoppingCart },
     ],
   },
   {
