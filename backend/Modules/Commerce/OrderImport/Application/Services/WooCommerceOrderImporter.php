@@ -96,9 +96,11 @@ final class WooCommerceOrderImporter
                         $errors = array_merge($errors, $lineErrors);
 
                         if ($lines !== []) {
-                            $subtotal = array_sum(array_column($lines, 'line_total'));
-                            $order['subtotal'] = $subtotal;
-                            $order['total'] = $subtotal;
+                            $linesSubtotal = array_sum(array_column($lines, 'line_total'));
+                            $order['subtotal'] = $linesSubtotal;
+
+                            $wooTotal = is_numeric($wooOrder['total'] ?? '') ? (float) $wooOrder['total'] : null;
+                            $order['total'] = $wooTotal ?? ($linesSubtotal + $order['shipping_total'] - $order['discount_total']);
 
                             $this->orders->create($order, $lines);
                             $createdOrders++;
@@ -240,7 +242,17 @@ final class WooCommerceOrderImporter
         $dateCreated = (string) ($wooOrder['date_created'] ?? '');
         $orderDate = $dateCreated !== '' ? substr($dateCreated, 0, 10) : now()->toDateString();
 
-        $notes = trim((string) ($wooOrder['customer_note'] ?? ''));
+        $customerNote = trim((string) ($wooOrder['customer_note'] ?? ''));
+
+        /** @var array<string, string> $billing */
+        $billing = is_array($wooOrder['billing'] ?? null) ? $wooOrder['billing'] : [];
+        /** @var array<string, string> $shipping */
+        $shipping = is_array($wooOrder['shipping'] ?? null) ? $wooOrder['shipping'] : [];
+
+        $shippingLines = is_array($wooOrder['shipping_lines'] ?? null) ? $wooOrder['shipping_lines'] : [];
+        $shippingMethod = trim((string) ($shippingLines[0]['method_title'] ?? ''));
+
+        $datePaid = trim((string) ($wooOrder['date_paid'] ?? ''));
 
         $orderAttributes = [
             'channel_id' => (string) $channel->id,
@@ -251,7 +263,26 @@ final class WooCommerceOrderImporter
             'status' => OrderStatus::from($status)->value,
             'subtotal' => 0,
             'total' => 0,
-            'notes' => $notes !== '' ? "WC#{$wooNumber}: {$notes}" : "Imported from WooCommerce order #{$wooNumber}.",
+            'shipping_total' => is_numeric($wooOrder['shipping_total'] ?? '') ? (float) $wooOrder['shipping_total'] : 0,
+            'discount_total' => is_numeric($wooOrder['discount_total'] ?? '') ? (float) $wooOrder['discount_total'] : 0,
+            'notes' => "Imported from WooCommerce order #{$wooNumber}.",
+            'customer_note' => $customerNote !== '' ? $customerNote : null,
+            'billing_first_name' => trim((string) ($billing['first_name'] ?? '')) ?: null,
+            'billing_last_name' => trim((string) ($billing['last_name'] ?? '')) ?: null,
+            'shipping_first_name' => trim((string) ($shipping['first_name'] ?? '')) ?: null,
+            'shipping_last_name' => trim((string) ($shipping['last_name'] ?? '')) ?: null,
+            'shipping_company' => trim((string) ($shipping['company'] ?? '')) ?: null,
+            'shipping_country' => trim((string) ($shipping['country'] ?? '')) ?: null,
+            'shipping_state' => trim((string) ($shipping['state'] ?? '')) ?: null,
+            'shipping_city' => trim((string) ($shipping['city'] ?? '')) ?: null,
+            'shipping_address_1' => trim((string) ($shipping['address_1'] ?? '')) ?: null,
+            'shipping_address_2' => trim((string) ($shipping['address_2'] ?? '')) ?: null,
+            'shipping_postcode' => trim((string) ($shipping['postcode'] ?? '')) ?: null,
+            'payment_method' => trim((string) ($wooOrder['payment_method'] ?? '')) ?: null,
+            'payment_method_title' => trim((string) ($wooOrder['payment_method_title'] ?? '')) ?: null,
+            'transaction_id' => trim((string) ($wooOrder['transaction_id'] ?? '')) ?: null,
+            'date_paid' => $datePaid !== '' ? $datePaid : null,
+            'shipping_method' => $shippingMethod !== '' ? $shippingMethod : null,
         ];
 
         /** @var list<array<string, mixed>> $rawLineItems */

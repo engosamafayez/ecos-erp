@@ -2,7 +2,7 @@ export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
 
 export type OrderChannel = { id: string; name: string };
 export type OrderCustomer = { id: string; code: string; name: string };
-export type OrderProduct = { id: string; sku: string; name: string };
+export type OrderProduct = { id: string; sku: string; name: string; image_url: string | null };
 
 export type OrderLine = {
   id: string;
@@ -25,8 +25,27 @@ export type Order = {
   status: OrderStatus;
   status_label: string;
   subtotal: number;
+  shipping_total: number;
+  discount_total: number;
   total: number;
   notes: string | null;
+  customer_note: string | null;
+  billing_first_name: string | null;
+  billing_last_name: string | null;
+  shipping_first_name: string | null;
+  shipping_last_name: string | null;
+  shipping_company: string | null;
+  shipping_country: string | null;
+  shipping_state: string | null;
+  shipping_city: string | null;
+  shipping_address_1: string | null;
+  shipping_address_2: string | null;
+  shipping_postcode: string | null;
+  payment_method: string | null;
+  payment_method_title: string | null;
+  transaction_id: string | null;
+  date_paid: string | null;
+  shipping_method: string | null;
   lines: OrderLine[];
   created_at: string | null;
   updated_at: string | null;
