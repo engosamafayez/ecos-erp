@@ -39,6 +39,12 @@ final class ProductResource extends JsonResource
             ]),
             'product_type' => $this->product_type,
             'is_active' => (bool) $this->is_active,
+            'image_url' => $this->image_url,
+            'regular_price' => $this->regular_price,
+            'sale_price' => $this->sale_price,
+            'short_description' => $this->short_description,
+            'long_description' => $this->long_description,
+            'stock_status' => $this->stock_status?->value,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

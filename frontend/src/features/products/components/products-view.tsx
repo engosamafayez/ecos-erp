@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategorySelect } from '@/features/products/components/category-select';
 import { ProductFormDrawer } from '@/features/products/components/product-form-drawer';
+import { StockStatusBadge } from '@/features/products/components/stock-status-badge';
 import { UnitSelect } from '@/features/products/components/unit-select';
 import { useProductsQuery, useDeleteProduct } from '@/features/products/hooks/use-products';
 import type {
@@ -111,6 +112,16 @@ export function ProductsView({
 
   const columns: ColumnDef<Product>[] = [
     {
+      key: 'image_url',
+      header: t('columns.image'),
+      cell: (p) =>
+        p.image_url ? (
+          <img src={p.image_url} alt={p.name} className="size-10 rounded object-cover" />
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
       key: 'sku',
       header: t('columns.sku'),
       sortable: true,
@@ -124,6 +135,29 @@ export function ProductsView({
     { key: 'name', header: t('columns.name'), sortable: true, cell: (p) => p.name },
     { key: 'category', header: t('columns.category'), cell: (p) => p.category?.name ?? '—' },
     { key: 'unit', header: t('columns.unit'), cell: (p) => p.unit?.name ?? '—' },
+    {
+      key: 'regular_price',
+      header: t('columns.regularPrice'),
+      cell: (p) => (
+        <span className="tabular-nums">
+          {p.regular_price != null ? p.regular_price.toFixed(2) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'sale_price',
+      header: t('columns.salePrice'),
+      cell: (p) => (
+        <span className="tabular-nums">
+          {p.sale_price != null ? p.sale_price.toFixed(2) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'stock_status',
+      header: t('columns.stockStatus'),
+      cell: (p) => <StockStatusBadge status={p.stock_status} />,
+    },
     {
       key: 'product_type',
       header: t('columns.type'),

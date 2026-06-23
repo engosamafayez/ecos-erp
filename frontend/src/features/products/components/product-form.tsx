@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { FormField } from '@/components/crud';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { CategorySelect } from '@/features/products/components/category-select';
 import { UnitSelect } from '@/features/products/components/unit-select';
 import type { ProductFormValues } from '@/features/products/components/product-form-schema';
@@ -52,10 +53,48 @@ export function ProductFormFields() {
             <option value="raw_material">{t('types.raw_material')}</option>
           </select>
         </FormField>
+        <FormField name="stock_status" label={t('form.stockStatus.label')}>
+          <select
+            className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs"
+            {...register('stock_status')}
+          >
+            <option value="">{t('form.stockStatus.placeholder')}</option>
+            <option value="instock">{t('stockStatus.instock')}</option>
+            <option value="outofstock">{t('stockStatus.outofstock')}</option>
+            <option value="onbackorder">{t('stockStatus.onbackorder')}</option>
+          </select>
+        </FormField>
+        <FormField name="regular_price" label={t('form.regularPrice.label')}>
+          <Input type="number" step="0.01" min="0" {...register('regular_price')} />
+        </FormField>
+        <FormField name="sale_price" label={t('form.salePrice.label')}>
+          <Input type="number" step="0.01" min="0" {...register('sale_price')} />
+        </FormField>
+        <div className="sm:col-span-2">
+          <FormField name="image_url" label={t('form.imageUrl.label')}>
+            <Input placeholder={t('form.imageUrl.placeholder')} {...register('image_url')} />
+          </FormField>
+        </div>
       </div>
 
       <FormField name="description" label={t('form.description.label')}>
-        <Input {...register('description')} />
+        <Input placeholder={t('form.description.placeholder')} {...register('description')} />
+      </FormField>
+
+      <FormField name="short_description" label={t('form.shortDescription.label')}>
+        <Textarea
+          placeholder={t('form.shortDescription.placeholder')}
+          rows={2}
+          {...register('short_description')}
+        />
+      </FormField>
+
+      <FormField name="long_description" label={t('form.longDescription.label')}>
+        <Textarea
+          placeholder={t('form.longDescription.placeholder')}
+          rows={4}
+          {...register('long_description')}
+        />
       </FormField>
 
       <label className="flex items-center gap-2 text-sm">

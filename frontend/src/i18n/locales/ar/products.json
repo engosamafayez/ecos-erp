@@ -29,9 +29,16 @@
     "type": "النوع",
     "category": "الفئة",
     "unit": "الوحدة",
-    "costPrice": "سعر التكلفة",
+    "image": "الصورة",
+    "regularPrice": "السعر الأصلي",
     "salePrice": "سعر البيع",
+    "stockStatus": "حالة المخزون",
     "status": "الحالة"
+  },
+  "stockStatus": {
+    "instock": "متوفر",
+    "outofstock": "غير متوفر",
+    "onbackorder": "طلب مسبق"
   },
   "types": {
     "finished_good": "سلعة جاهزة",
@@ -45,9 +52,13 @@
     "type": { "label": "النوع", "placeholder": "اختر نوعاً…" },
     "category": { "label": "الفئة", "placeholder": "اختر فئة…" },
     "unit": { "label": "الوحدة", "placeholder": "اختر وحدة…" },
-    "costPrice": { "label": "سعر التكلفة" },
+    "stockStatus": { "label": "حالة المخزون", "placeholder": "اختر حالة المخزون…" },
+    "regularPrice": { "label": "السعر الأصلي" },
     "salePrice": { "label": "سعر البيع" },
-    "description": { "label": "الوصف", "placeholder": "وصف اختياري…" },
+    "imageUrl": { "label": "رابط الصورة", "placeholder": "https://example.com/image.jpg" },
+    "description": { "label": "الوصف الداخلي", "placeholder": "وصف داخلي اختياري…" },
+    "shortDescription": { "label": "وصف مختصر", "placeholder": "ملخص مختصر للمنتج…" },
+    "longDescription": { "label": "وصف تفصيلي", "placeholder": "وصف كامل للمنتج…" },
     "active": "نشط"
   },
   "drawer": {

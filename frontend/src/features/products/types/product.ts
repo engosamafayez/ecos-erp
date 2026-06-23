@@ -3,6 +3,8 @@
  */
 export type ProductType = 'finished_good' | 'raw_material';
 
+export type ProductStockStatus = 'instock' | 'outofstock' | 'onbackorder';
+
 export type ProductRef = {
   id: string;
   code: string;
@@ -22,6 +24,12 @@ export type Product = {
   unit?: ProductRef;
   product_type: ProductType;
   is_active: boolean;
+  image_url: string | null;
+  regular_price: number | null;
+  sale_price: number | null;
+  short_description: string | null;
+  long_description: string | null;
+  stock_status: ProductStockStatus | null;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -35,6 +43,12 @@ export type ProductPayload = {
   unit_id: string;
   product_type: ProductType;
   is_active: boolean;
+  image_url?: string | null;
+  regular_price?: number | null;
+  sale_price?: number | null;
+  short_description?: string | null;
+  long_description?: string | null;
+  stock_status?: ProductStockStatus | null;
 };
 
 export type ProductSortField = 'sku' | 'name' | 'product_type' | 'is_active' | 'created_at';

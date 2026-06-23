@@ -20,6 +20,8 @@ final class WooCommerceProductImporter
 
     private const TIMEOUT = 30;
 
+    private const VALID_STOCK_STATUSES = ['instock', 'outofstock', 'onbackorder'];
+
     public function import(Channel $channel): ImportResultDTO
     {
         $credential = $channel->credential;
@@ -114,7 +116,7 @@ final class WooCommerceProductImporter
     }
 
     /**
-     * Find existing product by SKU or create a new one.
+     * Find existing product by SKU (update enrichment fields) or create a new one.
      *
      * @param  array<string, mixed>  $wooProduct
      * @return array{Product, bool}
@@ -122,27 +124,36 @@ final class WooCommerceProductImporter
     private function resolveProduct(
         string $sku,
         array $wooProduct,
-        string $categoryId,
-        string $unitId,
+        string $defaultCategoryId,
+        string $defaultUnitId,
     ): array {
+        $enrichment = $this->extractEnrichment($wooProduct);
+
         $existing = Product::query()->where('sku', $sku)->first();
 
         if ($existing !== null) {
+            $existing->update($enrichment);
+
             return [$existing, false];
         }
 
-        $isActive = (($wooProduct['status'] ?? '') === 'publish');
-        $description = strip_tags((string) ($wooProduct['description'] ?? ''));
+        $categoryId = $this->resolveCategory(
+            $wooProduct['categories'] ?? [],
+            $defaultCategoryId,
+        );
 
-        $product = Product::query()->create([
+        $longDescription = $enrichment['long_description'];
+        $isActive = (($wooProduct['status'] ?? '') === 'publish');
+
+        $product = Product::query()->create(array_merge([
             'sku' => $sku,
             'name' => (string) ($wooProduct['name'] ?? $sku),
-            'description' => $description !== '' ? $description : null,
+            'description' => $longDescription,
             'category_id' => $categoryId,
-            'unit_id' => $unitId,
+            'unit_id' => $defaultUnitId,
             'product_type' => Product::TYPE_FINISHED_GOOD,
             'is_active' => $isActive,
-        ]);
+        ], $enrichment));
 
         return [$product, true];
     }
@@ -184,5 +195,82 @@ final class WooCommerceProductImporter
         ]));
 
         return true;
+    }
+
+    /**
+     * Find or create an ECOS category matching the first WooCommerce category.
+     * Uses WooCommerce slug as the ECOS code; appends a numeric suffix on collision.
+     *
+     * @param  list<array<string, mixed>>  $wooCategories
+     */
+    private function resolveCategory(array $wooCategories, string $defaultCategoryId): string
+    {
+        if (empty($wooCategories)) {
+            return $defaultCategoryId;
+        }
+
+        $slug = trim((string) ($wooCategories[0]['slug'] ?? ''));
+        $name = trim((string) ($wooCategories[0]['name'] ?? ''));
+
+        if ($slug === '' || $name === '') {
+            return $defaultCategoryId;
+        }
+
+        $existing = Category::query()->where('code', $slug)->first();
+        if ($existing !== null) {
+            return $existing->id;
+        }
+
+        $code = $slug;
+        $suffix = 1;
+        while (Category::query()->where('code', $code)->exists()) {
+            $code = $slug . '-' . $suffix;
+            $suffix++;
+        }
+
+        $category = Category::query()->create([
+            'code' => $code,
+            'name' => $name,
+            'level' => 1,
+            'sort_order' => 0,
+            'is_active' => true,
+        ]);
+
+        return $category->id;
+    }
+
+    /**
+     * Extract enrichment fields from a WooCommerce product payload.
+     *
+     * @param  array<string, mixed>  $wooProduct
+     * @return array<string, mixed>
+     */
+    private function extractEnrichment(array $wooProduct): array
+    {
+        $images = $wooProduct['images'] ?? [];
+        $imageUrl = isset($images[0]['src']) ? (string) $images[0]['src'] : null;
+
+        $regularPriceRaw = $wooProduct['regular_price'] ?? '';
+        $regularPrice = is_numeric($regularPriceRaw) ? (float) $regularPriceRaw : null;
+
+        $salePriceRaw = $wooProduct['sale_price'] ?? '';
+        $salePrice = is_numeric($salePriceRaw) && $salePriceRaw !== '' ? (float) $salePriceRaw : null;
+
+        $shortDescription = strip_tags((string) ($wooProduct['short_description'] ?? ''));
+        $longDescription = strip_tags((string) ($wooProduct['description'] ?? ''));
+
+        $wooStockStatus = (string) ($wooProduct['stock_status'] ?? 'instock');
+        $stockStatus = in_array($wooStockStatus, self::VALID_STOCK_STATUSES, true)
+            ? $wooStockStatus
+            : 'instock';
+
+        return [
+            'image_url' => $imageUrl !== '' ? $imageUrl : null,
+            'regular_price' => $regularPrice,
+            'sale_price' => $salePrice,
+            'short_description' => $shortDescription !== '' ? $shortDescription : null,
+            'long_description' => $longDescription !== '' ? $longDescription : null,
+            'stock_status' => $stockStatus,
+        ];
     }
 }

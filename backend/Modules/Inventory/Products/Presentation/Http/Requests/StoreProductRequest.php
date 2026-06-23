@@ -32,6 +32,12 @@ final class StoreProductRequest extends FormRequest
             'unit_id' => ['required', 'uuid', 'exists:units,id'],
             'product_type' => ['required', Rule::in(Product::TYPES)],
             'is_active' => ['boolean'],
+            'image_url' => ['nullable', 'string', 'url', 'max:2048'],
+            'regular_price' => ['nullable', 'numeric', 'min:0'],
+            'sale_price' => ['nullable', 'numeric', 'min:0'],
+            'short_description' => ['nullable', 'string', 'max:500'],
+            'long_description' => ['nullable', 'string'],
+            'stock_status' => ['nullable', Rule::in(['instock', 'outofstock', 'onbackorder'])],
         ];
     }
 }

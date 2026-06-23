@@ -18,11 +18,19 @@ use Modules\MasterData\Units\Domain\Models\Unit;
  *
  * @property string $id
  * @property string $sku
+ * @property string|null $barcode
  * @property string $name
+ * @property string|null $description
  * @property string $category_id
  * @property string $unit_id
  * @property string $product_type
  * @property bool $is_active
+ * @property string|null $image_url
+ * @property float|null $regular_price
+ * @property float|null $sale_price
+ * @property string|null $short_description
+ * @property string|null $long_description
+ * @property \Modules\Inventory\Products\Domain\Enums\ProductStockStatus|null $stock_status
  */
 class Product extends Model
 {
@@ -52,6 +60,12 @@ class Product extends Model
         'unit_id',
         'product_type',
         'is_active',
+        'image_url',
+        'regular_price',
+        'sale_price',
+        'short_description',
+        'long_description',
+        'stock_status',
     ];
 
     /**
@@ -61,6 +75,9 @@ class Product extends Model
     {
         return [
             'is_active' => 'boolean',
+            'regular_price' => 'float',
+            'sale_price' => 'float',
+            'stock_status' => \Modules\Inventory\Products\Domain\Enums\ProductStockStatus::class,
         ];
     }
 

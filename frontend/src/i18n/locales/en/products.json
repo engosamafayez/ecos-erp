@@ -29,9 +29,16 @@
     "type": "Type",
     "category": "Category",
     "unit": "Unit",
-    "costPrice": "Cost Price",
+    "image": "Image",
+    "regularPrice": "Regular Price",
     "salePrice": "Sale Price",
+    "stockStatus": "Stock Status",
     "status": "Status"
+  },
+  "stockStatus": {
+    "instock": "In Stock",
+    "outofstock": "Out of Stock",
+    "onbackorder": "On Backorder"
   },
   "types": {
     "finished_good": "Finished Good",
@@ -45,9 +52,13 @@
     "type": { "label": "Type", "placeholder": "Select type…" },
     "category": { "label": "Category", "placeholder": "Select category…" },
     "unit": { "label": "Unit", "placeholder": "Select unit…" },
-    "costPrice": { "label": "Cost Price" },
+    "stockStatus": { "label": "Stock Status", "placeholder": "Select stock status…" },
+    "regularPrice": { "label": "Regular Price" },
     "salePrice": { "label": "Sale Price" },
-    "description": { "label": "Description", "placeholder": "Optional description…" },
+    "imageUrl": { "label": "Image URL", "placeholder": "https://example.com/image.jpg" },
+    "description": { "label": "Description", "placeholder": "Optional internal description…" },
+    "shortDescription": { "label": "Short Description", "placeholder": "Brief product summary…" },
+    "longDescription": { "label": "Long Description", "placeholder": "Full product description…" },
     "active": "Active"
   },
   "drawer": {
