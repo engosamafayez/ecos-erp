@@ -23,4 +23,5 @@ return [
     Modules\Commerce\Orders\Infrastructure\Providers\OrderServiceProvider::class,
     Modules\Commerce\OrderImport\Infrastructure\Providers\OrderImportServiceProvider::class,
     Modules\Commerce\Fulfillments\Infrastructure\Providers\FulfillmentServiceProvider::class,
+    Modules\Commerce\StockSync\Infrastructure\Providers\StockSyncServiceProvider::class,
 ];

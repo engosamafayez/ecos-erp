@@ -10,7 +10,9 @@
     "importOrders": "Import Orders",
     "importing": "Importing…",
     "testConnection": "Test Connection",
-    "testing": "Testing…"
+    "testing": "Testing…",
+    "syncStock": "Sync Stock",
+    "syncing": "Syncing…"
   },
   "filters": {
     "platform": "Platform",

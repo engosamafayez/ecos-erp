@@ -15,6 +15,8 @@ use Modules\Purchasing\GoodsReceipts\Application\Actions\ListGoodsReceiptsAction
 use Modules\Purchasing\GoodsReceipts\Application\Actions\PostGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\UpdateGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\DTO\GoodsReceiptDTO;
+use Modules\Commerce\Channels\Domain\Models\Channel;
+use Modules\Commerce\StockSync\Application\Actions\SyncStockAction;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Requests\StoreGoodsReceiptRequest;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Requests\UpdateGoodsReceiptRequest;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Resources\GoodsReceiptResource;
@@ -81,9 +83,24 @@ final class GoodsReceiptController extends Controller
         return $this->deleted($result->message() ?? 'Goods receipt deleted successfully.');
     }
 
-    public function post(string $goodsReceipt, PostGoodsReceiptAction $action): JsonResponse
+    public function post(string $goodsReceipt, PostGoodsReceiptAction $postAction, SyncStockAction $syncAction): JsonResponse
     {
-        $result = $action->execute($goodsReceipt);
+        $result = $postAction->execute($goodsReceipt);
+
+        $receipt = $result->data();
+        $productIds = $receipt->lines->pluck('product_id')->all();
+
+        Channel::query()
+            ->where('is_active', true)
+            ->where('sync_stock', true)
+            ->get()
+            ->each(function (Channel $channel) use ($syncAction, $productIds): void {
+                try {
+                    $syncAction->execute($channel->id, $productIds);
+                } catch (\Throwable) {
+                    // Swallow sync errors — stock posting succeeded
+                }
+            });
 
         return $this->updated(new GoodsReceiptResource($result->data()), $result->message());
     }

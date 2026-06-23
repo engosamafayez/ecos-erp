@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Download, Pencil, Plus, Trash2, Wifi } from 'lucide-react';
+import { Download, Pencil, Plus, RefreshCw, Trash2, Wifi } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -26,6 +26,7 @@ import {
   useImportProducts,
   useTestConnection,
 } from '@/features/channels/hooks/use-channels';
+import { useSyncStock } from '@/features/stock-sync/hooks/use-stock-sync';
 import type {
   Channel,
   ChannelPlatform,
@@ -62,6 +63,7 @@ export function ChannelsPage() {
   const [drawerChannel, setDrawerChannel] = useState<Channel | null>(null);
   const [deleting, setDeleting] = useState<Channel | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [importingId, setImportingId] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importChannelName, setImportChannelName] = useState<string | undefined>();
@@ -85,6 +87,7 @@ export function ChannelsPage() {
   const { data, isLoading, isError, isFetching, refetch } = useChannelsQuery(params);
   const deleteChannel = useDeleteChannel();
   const testConnection = useTestConnection();
+  const syncStock = useSyncStock();
   const importProducts = useImportProducts();
   const importOrders = useImportOrders();
 
@@ -114,6 +117,13 @@ export function ChannelsPage() {
     setTestingId(channel.id);
     testConnection.mutate(channel.id, {
       onSettled: () => setTestingId(null),
+    });
+  };
+
+  const handleSyncStock = (channel: Channel) => {
+    setSyncingId(channel.id);
+    syncStock.mutate(channel.id, {
+      onSettled: () => setSyncingId(null),
     });
   };
 
@@ -269,6 +279,12 @@ export function ChannelsPage() {
                     label: importingOrdersId === channel.id ? t('actions.importing') : t('actions.importOrders'),
                     icon: Download,
                     onSelect: () => handleImportOrders(channel),
+                  },
+                  {
+                    key: 'sync-stock',
+                    label: syncingId === channel.id ? t('actions.syncing') : t('actions.syncStock'),
+                    icon: RefreshCw,
+                    onSelect: () => handleSyncStock(channel),
                   },
                   {
                     key: 'test-connection',

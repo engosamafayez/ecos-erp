@@ -10,7 +10,9 @@
     "importOrders": "استيراد الطلبات",
     "importing": "جارٍ الاستيراد…",
     "testConnection": "اختبار الاتصال",
-    "testing": "جارٍ الاختبار…"
+    "testing": "جارٍ الاختبار…",
+    "syncStock": "مزامنة المخزون",
+    "syncing": "جارٍ المزامنة…"
   },
   "filters": {
     "platform": "المنصة",

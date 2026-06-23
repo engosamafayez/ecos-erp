@@ -1,0 +1,26 @@
+{
+  "title": "Stock Sync Logs",
+  "subtitle": "History of WooCommerce stock synchronization events.",
+  "search": "Search by product or channel…",
+  "filters": {
+    "channel": "Channel",
+    "allChannels": "All Channels",
+    "status": "Status",
+    "dateFrom": "Date From",
+    "dateTo": "Date To"
+  },
+  "status": {
+    "pending": "Pending",
+    "success": "Success",
+    "error": "Error",
+    "all": "All Statuses"
+  },
+  "columns": {
+    "date": "Date",
+    "channel": "Channel",
+    "product": "Product",
+    "quantity": "Quantity",
+    "status": "Status",
+    "message": "Message"
+  }
+}

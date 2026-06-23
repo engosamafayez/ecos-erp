@@ -17,6 +17,7 @@ import arProducts from '@/i18n/locales/ar/products.json';
 import arPurchaseOrders from '@/i18n/locales/ar/purchase-orders.json';
 import arSettings from '@/i18n/locales/ar/settings.json';
 import arStockLedger from '@/i18n/locales/ar/stock-ledger.json';
+import arStockSync from '@/i18n/locales/ar/stock-sync.json';
 import arSuppliers from '@/i18n/locales/ar/suppliers.json';
 import arUnits from '@/i18n/locales/ar/units.json';
 import arWarehouses from '@/i18n/locales/ar/warehouses.json';
@@ -35,6 +36,7 @@ import enProducts from '@/i18n/locales/en/products.json';
 import enPurchaseOrders from '@/i18n/locales/en/purchase-orders.json';
 import enSettings from '@/i18n/locales/en/settings.json';
 import enStockLedger from '@/i18n/locales/en/stock-ledger.json';
+import enStockSync from '@/i18n/locales/en/stock-sync.json';
 import enSuppliers from '@/i18n/locales/en/suppliers.json';
 import enUnits from '@/i18n/locales/en/units.json';
 import enWarehouses from '@/i18n/locales/en/warehouses.json';
@@ -62,6 +64,7 @@ void i18n
         orders: enOrders,
         fulfillments: enFulfillments,
         'stock-ledger': enStockLedger,
+        'stock-sync': enStockSync,
         settings: enSettings,
       },
       ar: {
@@ -82,6 +85,7 @@ void i18n
         orders: arOrders,
         fulfillments: arFulfillments,
         'stock-ledger': arStockLedger,
+        'stock-sync': arStockSync,
         settings: arSettings,
       },
     },

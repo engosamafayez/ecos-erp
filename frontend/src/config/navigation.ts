@@ -11,8 +11,10 @@ import {
   LayoutDashboard,
   Link2,
   Package,
+  PackageCheck,
   PackageOpen,
   Receipt,
+  RefreshCw,
   Ruler,
   Settings,
   ShoppingBag,
@@ -21,7 +23,6 @@ import {
   Truck,
   Users,
   Warehouse,
-  PackageCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -90,6 +91,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'product-mappings', label: 'Product Mapping', path: ROUTES.productMappings, icon: Link2 },
       { key: 'orders', label: 'Orders', path: ROUTES.orders, icon: ShoppingBag },
       { key: 'fulfillments', label: 'Fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
+      { key: 'stock-sync-logs', label: 'Stock Sync Logs', path: ROUTES.stockSyncLogs, icon: RefreshCw },
     ],
   },
   {

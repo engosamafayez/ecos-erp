@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Fulfillments\Application\Actions\CancelFulfillmentAction;
+use Modules\Commerce\StockSync\Application\Actions\SyncStockAction;
 use Modules\Commerce\Fulfillments\Application\Actions\CreateFulfillmentAction;
 use Modules\Commerce\Fulfillments\Application\Actions\DeleteFulfillmentAction;
 use Modules\Commerce\Fulfillments\Application\Actions\FulfillFulfillmentAction;
@@ -80,9 +82,24 @@ final class FulfillmentController extends Controller
         return $this->deleted($result->message() ?? 'Fulfillment deleted successfully.');
     }
 
-    public function fulfill(string $fulfillment, FulfillFulfillmentAction $action): JsonResponse
+    public function fulfill(string $fulfillment, FulfillFulfillmentAction $fulfillAction, SyncStockAction $syncAction): JsonResponse
     {
-        $result = $action->execute($fulfillment);
+        $result = $fulfillAction->execute($fulfillment);
+
+        $fulfilled = $result->data();
+        $productIds = $fulfilled->lines->pluck('product_id')->all();
+
+        Channel::query()
+            ->where('is_active', true)
+            ->where('sync_stock', true)
+            ->get()
+            ->each(function (Channel $channel) use ($syncAction, $productIds): void {
+                try {
+                    $syncAction->execute($channel->id, $productIds);
+                } catch (\Throwable) {
+                    // Swallow sync errors — fulfillment succeeded
+                }
+            });
 
         return $this->updated(new FulfillmentResource($result->data()), $result->message());
     }

@@ -21,6 +21,7 @@ import { OrderDetailPage } from '@/features/orders/pages/order-detail-page';
 import { FulfillmentsPage } from '@/features/fulfillments/pages/fulfillments-page';
 import { CreateFulfillmentPage } from '@/features/fulfillments/pages/create-fulfillment-page';
 import { ViewFulfillmentPage } from '@/features/fulfillments/pages/view-fulfillment-page';
+import { StockSyncLogsPage } from '@/features/stock-sync/pages/stock-sync-logs-page';
 import { CustomersPage } from '@/features/customers/pages/customers-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
 import { CreateGoodsReceiptPage } from '@/features/goods-receipts/pages/create-goods-receipt-page';
@@ -91,6 +92,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.fulfillments, Component: FulfillmentsPage },
             { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
             { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
+            { path: ROUTES.stockSyncLogs, Component: StockSyncLogsPage },
             { path: ROUTES.goodsReceipts, Component: GoodsReceiptsPage },
             { path: ROUTES.goodsReceiptsNew, Component: CreateGoodsReceiptPage },
             { path: `${ROUTES.goodsReceipts}/:id`, Component: ViewGoodsReceiptPage },

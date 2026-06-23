@@ -19,6 +19,7 @@ use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseControl
 use Modules\Organization\Branches\Presentation\Http\Controllers\BranchController;
 use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
 use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
+use Modules\Commerce\StockSync\Presentation\Http\Controllers\StockSyncController;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers\GoodsReceiptController;
 use Modules\Purchasing\PurchaseOrders\Presentation\Http\Controllers\PurchaseOrderController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
@@ -93,6 +94,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('fulfillments', FulfillmentController::class);
     Route::post('fulfillments/{fulfillment}/fulfill', [FulfillmentController::class, 'fulfill']);
     Route::post('fulfillments/{fulfillment}/cancel', [FulfillmentController::class, 'cancel']);
+    Route::get('stock-sync-logs', [StockSyncController::class, 'index']);
+    Route::post('channels/{channel}/sync-stock', [StockSyncController::class, 'syncStock']);
 });
 
 /*

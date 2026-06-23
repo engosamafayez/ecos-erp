@@ -1,0 +1,26 @@
+{
+  "title": "سجلات مزامنة المخزون",
+  "subtitle": "سجل أحداث مزامنة المخزون مع WooCommerce.",
+  "search": "بحث بالمنتج أو القناة…",
+  "filters": {
+    "channel": "القناة",
+    "allChannels": "جميع القنوات",
+    "status": "الحالة",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ"
+  },
+  "status": {
+    "pending": "معلّق",
+    "success": "ناجح",
+    "error": "خطأ",
+    "all": "جميع الحالات"
+  },
+  "columns": {
+    "date": "التاريخ",
+    "channel": "القناة",
+    "product": "المنتج",
+    "quantity": "الكمية",
+    "status": "الحالة",
+    "message": "الرسالة"
+  }
+}
