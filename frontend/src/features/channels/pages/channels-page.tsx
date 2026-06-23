@@ -27,6 +27,8 @@ import {
   useTestConnection,
 } from '@/features/channels/hooks/use-channels';
 import { useSyncStock } from '@/features/stock-sync/hooks/use-stock-sync';
+import { SyncStockResultDialog } from '@/features/stock-sync/components/sync-stock-result-dialog';
+import type { SyncStockResult } from '@/features/stock-sync/types/stock-sync';
 import type {
   Channel,
   ChannelPlatform,
@@ -64,6 +66,8 @@ export function ChannelsPage() {
   const [deleting, setDeleting] = useState<Channel | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncResult, setSyncResult] = useState<SyncStockResult | null>(null);
+  const [syncChannelName, setSyncChannelName] = useState<string | undefined>();
   const [importingId, setImportingId] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importChannelName, setImportChannelName] = useState<string | undefined>();
@@ -122,7 +126,9 @@ export function ChannelsPage() {
 
   const handleSyncStock = (channel: Channel) => {
     setSyncingId(channel.id);
+    setSyncChannelName(channel.name);
     syncStock.mutate(channel.id, {
+      onSuccess: (result) => { setSyncResult(result); },
       onSettled: () => setSyncingId(null),
     });
   };
@@ -345,6 +351,13 @@ export function ChannelsPage() {
         onOpenChange={(open) => { if (!open) setOrderImportResult(null); }}
         result={orderImportResult}
         channelName={orderImportChannelName}
+      />
+
+      <SyncStockResultDialog
+        open={syncResult !== null}
+        onOpenChange={(open) => { if (!open) setSyncResult(null); }}
+        result={syncResult}
+        channelName={syncChannelName}
       />
     </div>
   );

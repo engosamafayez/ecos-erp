@@ -9,6 +9,7 @@ import {
 } from '@/components/crud';
 import type { ColumnDef } from '@/components/crud/types';
 import { Card, CardContent } from '@/components/ui/card';
+import { useChannelOptions } from '@/features/channels/hooks/use-channel-options';
 import { StockSyncStatusBadge } from '@/features/stock-sync/components/stock-sync-status-badge';
 import { useStockSyncLogsQuery } from '@/features/stock-sync/hooks/use-stock-sync';
 import type { StockSyncLog, StockSyncStatus } from '@/features/stock-sync/types/stock-sync';
@@ -22,6 +23,7 @@ export function StockSyncLogsPage() {
   const { t } = useTranslation('stock-sync');
   const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
+  const [channelFilter, setChannelFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<StockSyncStatus | 'all'>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -31,9 +33,12 @@ export function StockSyncLogsPage() {
     direction: 'desc',
   });
 
+  const { data: channelOptions = [] } = useChannelOptions();
+
   const params = useMemo(
     () => ({
       search: search || undefined,
+      channel_id: channelFilter || undefined,
       status: statusFilter,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
@@ -42,7 +47,7 @@ export function StockSyncLogsPage() {
       sort_by: sort.field,
       sort_dir: sort.direction,
     }),
-    [search, statusFilter, dateFrom, dateTo, page, sort],
+    [search, channelFilter, statusFilter, dateFrom, dateTo, page, sort],
   );
 
   const { data, isLoading, isError, isFetching, refetch } = useStockSyncLogsQuery(params);
@@ -65,16 +70,12 @@ export function StockSyncLogsPage() {
       header: t('columns.date'),
       sortable: true,
       cell: (log) =>
-        log.synced_at
-          ? new Date(log.synced_at).toLocaleString()
-          : '—',
+        log.synced_at ? new Date(log.synced_at).toLocaleString() : '—',
     },
     {
       key: 'channel',
       header: t('columns.channel'),
-      cell: (log) => (
-        <span className="font-medium">{log.channel?.name ?? '—'}</span>
-      ),
+      cell: (log) => <span className="font-medium">{log.channel?.name ?? '—'}</span>,
     },
     {
       key: 'product',
@@ -131,6 +132,7 @@ export function StockSyncLogsPage() {
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
             onClearFilters={() => {
+              setChannelFilter('');
               setStatusFilter('all');
               setDateFrom('');
               setDateTo('');
@@ -138,6 +140,20 @@ export function StockSyncLogsPage() {
             }}
             filterPanel={
               <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-medium">{t('filters.channel')}</span>
+                  <select
+                    value={channelFilter}
+                    onChange={(e) => { setChannelFilter(e.target.value); setPage(1); }}
+                    className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+                  >
+                    <option value="">{t('filters.allChannels')}</option>
+                    {channelOptions.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="flex flex-col gap-1.5">
                   <span className="text-sm font-medium">{t('filters.status')}</span>
                   <select

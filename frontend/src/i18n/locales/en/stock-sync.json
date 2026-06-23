@@ -15,6 +15,18 @@
     "error": "Error",
     "all": "All Statuses"
   },
+  "dialog": {
+    "title": "Stock Sync Complete",
+    "subtitle": "Results for \"{{name}}\"",
+    "subtitleGeneric": "Stock synchronization results",
+    "total": "Total",
+    "synced": "Synced",
+    "errors": "Errors",
+    "allSuccess": "All products synced successfully.",
+    "someErrors": "Some products failed to sync. Check the sync logs for details.",
+    "noMappings": "No product mappings found for this channel.",
+    "close": "Close"
+  },
   "columns": {
     "date": "Date",
     "channel": "Channel",
