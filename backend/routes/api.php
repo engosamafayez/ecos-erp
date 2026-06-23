@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\IAM\Presentation\Http\Controllers\AuthController;
 use Modules\Inventory\Products\Presentation\Http\Controllers\ProductController;
+use Modules\Inventory\StockLedger\Presentation\Http\Controllers\StockMovementController;
 use Modules\MasterData\Categories\Presentation\Http\Controllers\CategoryController;
 use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
 use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
@@ -51,11 +52,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
 /*
 |--------------------------------------------------------------------------
-| Inventory — Products (protected)
+| Inventory — Products, Stock Ledger (protected)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('products', ProductController::class);
+    Route::get('stock-movements', [StockMovementController::class, 'index']);
+    Route::get('stock-movements/{stockMovement}', [StockMovementController::class, 'show']);
 });
 
 /*

@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BookOpen,
   Building2,
   ClipboardList,
   Contact,
@@ -60,6 +61,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'warehouses', label: 'Warehouses', path: ROUTES.warehouses, icon: Warehouse },
       { key: 'categories', label: 'Categories', path: ROUTES.categories, icon: FolderTree },
       { key: 'units', label: 'Units', path: ROUTES.units, icon: Ruler },
+      { key: 'stock-ledger', label: 'Stock Ledger', path: ROUTES.stockLedger, icon: BookOpen },
     ],
   },
   {

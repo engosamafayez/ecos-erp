@@ -7,6 +7,8 @@ namespace Modules\Purchasing\GoodsReceipts\Application\Actions;
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\DB;
+use Modules\Inventory\StockLedger\Domain\Contracts\StockMovementRepositoryInterface;
+use Modules\Inventory\StockLedger\Domain\Enums\MovementType;
 use Modules\Purchasing\GoodsReceipts\Domain\Contracts\GoodsReceiptRepositoryInterface;
 use Modules\Purchasing\GoodsReceipts\Domain\Enums\GoodsReceiptStatus;
 use Modules\Purchasing\GoodsReceipts\Domain\Exceptions\GoodsReceiptNotFoundException;
@@ -16,7 +18,10 @@ use Modules\Purchasing\GoodsReceipts\Domain\Models\StockBalance;
 
 final class PostGoodsReceiptAction extends BaseAction
 {
-    public function __construct(private readonly GoodsReceiptRepositoryInterface $receipts) {}
+    public function __construct(
+        private readonly GoodsReceiptRepositoryInterface $receipts,
+        private readonly StockMovementRepositoryInterface $movements,
+    ) {}
 
     public function execute(mixed ...$arguments): OperationResult
     {
@@ -34,7 +39,9 @@ final class PostGoodsReceiptAction extends BaseAction
         DB::transaction(function () use ($receipt): void {
             /** @var GoodsReceiptLine $line */
             foreach ($receipt->lines as $line) {
-                if ((float) $line->received_quantity <= 0) {
+                $received = (float) $line->received_quantity;
+
+                if ($received <= 0) {
                     continue;
                 }
 
@@ -44,15 +51,31 @@ final class PostGoodsReceiptAction extends BaseAction
                     ->lockForUpdate()
                     ->first();
 
+                $balanceBefore = $balance instanceof StockBalance ? (float) $balance->quantity : 0.0;
+                $balanceAfter = $balanceBefore + $received;
+
                 if ($balance instanceof StockBalance) {
-                    $balance->increment('quantity', (float) $line->received_quantity);
+                    $balance->update(['quantity' => $balanceAfter]);
                 } else {
                     StockBalance::query()->create([
                         'warehouse_id' => $receipt->warehouse_id,
                         'product_id' => $line->product_id,
-                        'quantity' => (float) $line->received_quantity,
+                        'quantity' => $balanceAfter,
                     ]);
                 }
+
+                $this->movements->record([
+                    'warehouse_id' => $receipt->warehouse_id,
+                    'product_id' => $line->product_id,
+                    'movement_type' => MovementType::PurchaseReceipt->value,
+                    'quantity' => $received,
+                    'balance_before' => $balanceBefore,
+                    'balance_after' => $balanceAfter,
+                    'reference_type' => 'goods_receipt',
+                    'reference_id' => $receipt->id,
+                    'movement_date' => $receipt->receipt_date->toDateString(),
+                    'notes' => null,
+                ]);
             }
 
             $receipt->update(['status' => GoodsReceiptStatus::Posted->value]);

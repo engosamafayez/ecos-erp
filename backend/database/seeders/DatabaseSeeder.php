@@ -12,6 +12,7 @@ use Modules\MasterData\Units\Infrastructure\Database\Seeders\UnitSeeder;
 use Modules\MasterData\Warehouses\Infrastructure\Database\Seeders\WarehouseSeeder;
 use Modules\Organization\Branches\Infrastructure\Database\Seeders\BranchSeeder;
 use Modules\Organization\Companies\Infrastructure\Database\Seeders\CompanySeeder;
+use Modules\Inventory\StockLedger\Infrastructure\Database\Seeders\StockLedgerSeeder;
 use Modules\Purchasing\GoodsReceipts\Infrastructure\Database\Seeders\GoodsReceiptSeeder;
 use Modules\Purchasing\PurchaseOrders\Infrastructure\Database\Seeders\PurchaseOrderSeeder;
 use Modules\Purchasing\Suppliers\Infrastructure\Database\Seeders\SupplierSeeder;
@@ -50,5 +51,8 @@ class DatabaseSeeder extends Seeder
 
         // Purchasing module (PUR-003).
         $this->call(GoodsReceiptSeeder::class);
+
+        // Inventory module (INV-001 stock ledger).
+        $this->call(StockLedgerSeeder::class);
     }
 }
