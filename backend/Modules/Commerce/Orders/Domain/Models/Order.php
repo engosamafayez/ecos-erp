@@ -28,6 +28,15 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property string|null $notes
  * @property string|null $billing_first_name
  * @property string|null $billing_last_name
+ * @property string|null $billing_company
+ * @property string|null $billing_country
+ * @property string|null $billing_state
+ * @property string|null $billing_city
+ * @property string|null $billing_address_1
+ * @property string|null $billing_address_2
+ * @property string|null $billing_postcode
+ * @property string|null $billing_phone
+ * @property string|null $billing_email
  * @property string|null $shipping_first_name
  * @property string|null $shipping_last_name
  * @property string|null $shipping_company
@@ -45,6 +54,7 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property string|null $shipping_method
  * @property float $shipping_total
  * @property float $discount_total
+ * @property float $tax_total
  */
 class Order extends Model
 {
@@ -69,6 +79,15 @@ class Order extends Model
         'notes',
         'billing_first_name',
         'billing_last_name',
+        'billing_company',
+        'billing_country',
+        'billing_state',
+        'billing_city',
+        'billing_address_1',
+        'billing_address_2',
+        'billing_postcode',
+        'billing_phone',
+        'billing_email',
         'shipping_first_name',
         'shipping_last_name',
         'shipping_company',
@@ -86,6 +105,7 @@ class Order extends Model
         'shipping_method',
         'shipping_total',
         'discount_total',
+        'tax_total',
     ];
 
     /**
@@ -99,6 +119,7 @@ class Order extends Model
             'total' => 'float',
             'shipping_total' => 'float',
             'discount_total' => 'float',
+            'tax_total' => 'float',
             'order_date' => 'date:Y-m-d',
             'date_paid' => 'datetime',
         ];
@@ -126,5 +147,21 @@ class Order extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(OrderLine::class);
+    }
+
+    /**
+     * @return HasMany<OrderFee, $this>
+     */
+    public function fees(): HasMany
+    {
+        return $this->hasMany(OrderFee::class);
+    }
+
+    /**
+     * @return HasMany<OrderCoupon, $this>
+     */
+    public function coupons(): HasMany
+    {
+        return $this->hasMany(OrderCoupon::class);
     }
 }

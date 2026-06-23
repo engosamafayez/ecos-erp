@@ -15,6 +15,8 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
 
     private const WITH = ['channel', 'customer', 'lines.product'];
 
+    private const WITH_DETAIL = ['channel', 'customer', 'lines.product', 'fees', 'coupons'];
+
     public function paginate(array $filters): LengthAwarePaginator
     {
         $query = Order::query()->with(self::WITH);
@@ -58,7 +60,7 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
 
     public function findById(string $id): ?Order
     {
-        return Order::query()->with(self::WITH)->find($id);
+        return Order::query()->with(self::WITH_DETAIL)->find($id);
     }
 
     public function create(array $attributes, array $lines): Order

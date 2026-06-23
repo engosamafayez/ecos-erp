@@ -10,6 +10,8 @@ use Modules\Commerce\OrderImport\Application\DTO\OrderImportResultDTO;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
+use Modules\Commerce\Orders\Domain\Models\OrderFee;
+use Modules\Commerce\Orders\Domain\Models\OrderCoupon;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Throwable;
@@ -86,7 +88,7 @@ final class WooCommerceOrderImporter
                             $createdCustomers++;
                         }
 
-                        [$order, $lines, $lineFails, $lineErrors] = $this->buildOrder(
+                        [$order, $lines, $fees, $coupons, $lineFails, $lineErrors] = $this->buildOrder(
                             $wooOrder,
                             $channel,
                             $customer,
@@ -102,7 +104,16 @@ final class WooCommerceOrderImporter
                             $wooTotal = is_numeric($wooOrder['total'] ?? '') ? (float) $wooOrder['total'] : null;
                             $order['total'] = $wooTotal ?? ($linesSubtotal + $order['shipping_total'] - $order['discount_total']);
 
-                            $this->orders->create($order, $lines);
+                            $createdOrder = $this->orders->create($order, $lines);
+
+                            if ($fees !== []) {
+                                $createdOrder->fees()->createMany($fees);
+                            }
+
+                            if ($coupons !== []) {
+                                $createdOrder->coupons()->createMany($coupons);
+                            }
+
                             $createdOrders++;
                             $createdLines += count($lines);
                         } else {
@@ -227,10 +238,10 @@ final class WooCommerceOrderImporter
     }
 
     /**
-     * Build the order attributes array and resolved line items.
+     * Build the order attributes array, line items, fees, and coupons.
      *
      * @param  array<string, mixed>  $wooOrder
-     * @return array{array<string, mixed>, list<array<string, mixed>>, int, list<string>}
+     * @return array{array<string, mixed>, list<array<string, mixed>>, list<array<string, mixed>>, list<array<string, mixed>>, int, list<string>}
      */
     private function buildOrder(array $wooOrder, Channel $channel, Customer $customer): array
     {
@@ -254,6 +265,8 @@ final class WooCommerceOrderImporter
 
         $datePaid = trim((string) ($wooOrder['date_paid'] ?? ''));
 
+        $taxTotal = is_numeric($wooOrder['total_tax'] ?? '') ? (float) $wooOrder['total_tax'] : 0;
+
         $orderAttributes = [
             'channel_id' => (string) $channel->id,
             'customer_id' => (string) $customer->id,
@@ -269,6 +282,15 @@ final class WooCommerceOrderImporter
             'customer_note' => $customerNote !== '' ? $customerNote : null,
             'billing_first_name' => trim((string) ($billing['first_name'] ?? '')) ?: null,
             'billing_last_name' => trim((string) ($billing['last_name'] ?? '')) ?: null,
+            'billing_company' => trim((string) ($billing['company'] ?? '')) ?: null,
+            'billing_country' => trim((string) ($billing['country'] ?? '')) ?: null,
+            'billing_state' => trim((string) ($billing['state'] ?? '')) ?: null,
+            'billing_city' => trim((string) ($billing['city'] ?? '')) ?: null,
+            'billing_address_1' => trim((string) ($billing['address_1'] ?? '')) ?: null,
+            'billing_address_2' => trim((string) ($billing['address_2'] ?? '')) ?: null,
+            'billing_postcode' => trim((string) ($billing['postcode'] ?? '')) ?: null,
+            'billing_phone' => trim((string) ($billing['phone'] ?? '')) ?: null,
+            'billing_email' => trim((string) ($billing['email'] ?? '')) ?: null,
             'shipping_first_name' => trim((string) ($shipping['first_name'] ?? '')) ?: null,
             'shipping_last_name' => trim((string) ($shipping['last_name'] ?? '')) ?: null,
             'shipping_company' => trim((string) ($shipping['company'] ?? '')) ?: null,
@@ -283,6 +305,7 @@ final class WooCommerceOrderImporter
             'transaction_id' => trim((string) ($wooOrder['transaction_id'] ?? '')) ?: null,
             'date_paid' => $datePaid !== '' ? $datePaid : null,
             'shipping_method' => $shippingMethod !== '' ? $shippingMethod : null,
+            'tax_total' => $taxTotal,
         ];
 
         /** @var list<array<string, mixed>> $rawLineItems */
@@ -321,7 +344,31 @@ final class WooCommerceOrderImporter
             ];
         }
 
-        return [$orderAttributes, $lines, $failedLines, $lineErrors];
+        // Fee lines
+        /** @var list<array<string, mixed>> $rawFeeLines */
+        $rawFeeLines = is_array($wooOrder['fee_lines'] ?? null) ? $wooOrder['fee_lines'] : [];
+        $fees = [];
+        foreach ($rawFeeLines as $feeLine) {
+            $feeName = trim((string) ($feeLine['name'] ?? ''));
+            $feeTotal = is_numeric($feeLine['total'] ?? '') ? (float) $feeLine['total'] : 0;
+            if ($feeName !== '') {
+                $fees[] = ['name' => $feeName, 'total' => $feeTotal];
+            }
+        }
+
+        // Coupon lines
+        /** @var list<array<string, mixed>> $rawCouponLines */
+        $rawCouponLines = is_array($wooOrder['coupon_lines'] ?? null) ? $wooOrder['coupon_lines'] : [];
+        $coupons = [];
+        foreach ($rawCouponLines as $couponLine) {
+            $couponCode = trim((string) ($couponLine['code'] ?? ''));
+            $couponDiscount = is_numeric($couponLine['discount'] ?? '') ? (float) $couponLine['discount'] : 0;
+            if ($couponCode !== '') {
+                $coupons[] = ['code' => $couponCode, 'discount' => $couponDiscount];
+            }
+        }
+
+        return [$orderAttributes, $lines, $fees, $coupons, $failedLines, $lineErrors];
     }
 
     private function nextCustomerCode(): string

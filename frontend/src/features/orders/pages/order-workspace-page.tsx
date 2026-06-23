@@ -84,13 +84,17 @@ function extractMessage(error: unknown): string {
 
 function SummaryRows({
   subtotal,
+  feesTotal,
   shippingTotal,
   discountTotal,
+  taxTotal,
   total,
 }: {
   subtotal: number;
+  feesTotal: number;
   shippingTotal: number;
   discountTotal: number;
+  taxTotal: number;
   total: number;
 }) {
   const { t } = useTranslation('orders');
@@ -100,6 +104,12 @@ function SummaryRows({
         <span className="text-muted-foreground">{t('detail.subtotal')}</span>
         <span className="font-medium tabular-nums">{fmt(subtotal)}</span>
       </div>
+      {feesTotal > 0 && (
+        <div className="flex justify-between gap-3">
+          <span className="text-muted-foreground">{t('detail.feesTotal')}</span>
+          <span className="font-medium tabular-nums">{fmt(feesTotal)}</span>
+        </div>
+      )}
       {shippingTotal > 0 && (
         <div className="flex justify-between gap-3">
           <span className="text-muted-foreground">{t('detail.shippingTotal')}</span>
@@ -110,6 +120,12 @@ function SummaryRows({
         <div className="flex justify-between gap-3">
           <span className="text-muted-foreground">{t('detail.discountTotal')}</span>
           <span className="font-medium tabular-nums text-emerald-600">−{fmt(discountTotal)}</span>
+        </div>
+      )}
+      {taxTotal > 0 && (
+        <div className="flex justify-between gap-3">
+          <span className="text-muted-foreground">{t('detail.taxTotal')}</span>
+          <span className="font-medium tabular-nums">{fmt(taxTotal)}</span>
         </div>
       )}
       <div className="border-t pt-2">
@@ -124,6 +140,7 @@ function SummaryRows({
 
 function ViewSummaryCard({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
+  const feesTotal = order.fees.reduce((sum, f) => sum + f.total, 0);
   return (
     <Card className="lg:sticky lg:top-6">
       <CardHeader className="pb-3">
@@ -132,8 +149,10 @@ function ViewSummaryCard({ order }: { order: Order }) {
       <CardContent className="flex flex-col gap-4">
         <SummaryRows
           subtotal={order.subtotal}
+          feesTotal={feesTotal}
           shippingTotal={order.shipping_total}
           discountTotal={order.discount_total}
+          taxTotal={order.tax_total}
           total={order.total}
         />
         <div className="border-t pt-4">
@@ -161,7 +180,14 @@ function FormSummaryCard() {
         <CardTitle className="text-base">{t('workspace.summary')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <SummaryRows subtotal={subtotal} shippingTotal={0} discountTotal={0} total={subtotal} />
+        <SummaryRows
+          subtotal={subtotal}
+          feesTotal={0}
+          shippingTotal={0}
+          discountTotal={0}
+          taxTotal={0}
+          total={subtotal}
+        />
       </CardContent>
     </Card>
   );
@@ -332,6 +358,14 @@ function ViewWorkspace({ order }: { order: Order }) {
   const billingName =
     [order.billing_first_name, order.billing_last_name].filter(Boolean).join(' ') || null;
 
+  const hasBilling =
+    billingName ||
+    order.billing_company ||
+    order.billing_address_1 ||
+    order.billing_city ||
+    order.billing_email ||
+    order.billing_phone;
+
   const hasShipping =
     shippingName ||
     order.shipping_company ||
@@ -392,6 +426,44 @@ function ViewWorkspace({ order }: { order: Order }) {
             </div>
           </WorkspaceCard>
 
+          {/* Billing (WooCommerce data — always read-only) */}
+          {hasBilling && (
+            <WorkspaceCard title={t('detail.billingInformation')}>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {billingName && (
+                  <LabelValue label={t('detail.billingName')} value={billingName} />
+                )}
+                {order.billing_company && (
+                  <LabelValue label={t('detail.billingCompany')} value={order.billing_company} />
+                )}
+                {order.billing_address_1 && (
+                  <LabelValue label={t('detail.billingAddress1')} value={order.billing_address_1} />
+                )}
+                {order.billing_address_2 && (
+                  <LabelValue label={t('detail.billingAddress2')} value={order.billing_address_2} />
+                )}
+                {order.billing_city && (
+                  <LabelValue label={t('detail.billingCity')} value={order.billing_city} />
+                )}
+                {order.billing_state && (
+                  <LabelValue label={t('detail.billingState')} value={order.billing_state} />
+                )}
+                {order.billing_postcode && (
+                  <LabelValue label={t('detail.billingPostcode')} value={order.billing_postcode} />
+                )}
+                {order.billing_country && (
+                  <LabelValue label={t('detail.billingCountry')} value={order.billing_country} />
+                )}
+                {order.billing_phone && (
+                  <LabelValue label={t('detail.billingPhone')} value={order.billing_phone} />
+                )}
+                {order.billing_email && (
+                  <LabelValue label={t('detail.billingEmail')} value={order.billing_email} />
+                )}
+              </div>
+            </WorkspaceCard>
+          )}
+
           {/* Shipping (WooCommerce data — always read-only) */}
           {hasShipping && (
             <WorkspaceCard title={t('detail.shippingInformation')}>
@@ -450,6 +522,56 @@ function ViewWorkspace({ order }: { order: Order }) {
                   />
                 )}
               </div>
+            </WorkspaceCard>
+          )}
+
+          {/* Fees */}
+          {order.fees.length > 0 && (
+            <WorkspaceCard title={t('detail.fees')}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-muted-foreground border-b text-left">
+                    <th className="pb-2 pr-3 font-medium">{t('detail.feeName')}</th>
+                    <th className="w-36 pb-2 text-right font-medium">{t('detail.feeAmount')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {order.fees.map((fee) => (
+                    <tr key={fee.id}>
+                      <td className="py-2 pr-3">{fee.name}</td>
+                      <td className="py-2 text-right tabular-nums font-medium">{fmt(fee.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </WorkspaceCard>
+          )}
+
+          {/* Coupons */}
+          {order.coupons.length > 0 && (
+            <WorkspaceCard title={t('detail.coupons')}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-muted-foreground border-b text-left">
+                    <th className="pb-2 pr-3 font-medium">{t('detail.couponCode')}</th>
+                    <th className="w-36 pb-2 text-right font-medium">{t('detail.couponDiscount')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {order.coupons.map((coupon) => (
+                    <tr key={coupon.id}>
+                      <td className="py-2 pr-3">
+                        <code className="bg-muted rounded px-1.5 py-0.5 text-xs font-mono">
+                          {coupon.code}
+                        </code>
+                      </td>
+                      <td className="py-2 text-right tabular-nums font-medium text-emerald-600">
+                        −{fmt(coupon.discount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </WorkspaceCard>
           )}
 
@@ -594,6 +716,13 @@ function FormWorkspace({ mode, order }: { mode: 'create' | 'edit'; order?: Order
   const shippingName = isEdit && order
     ? [order.shipping_first_name, order.shipping_last_name].filter(Boolean).join(' ') || null
     : null;
+  const billingName = isEdit && order
+    ? [order.billing_first_name, order.billing_last_name].filter(Boolean).join(' ') || null
+    : null;
+  const hasBilling =
+    isEdit &&
+    order &&
+    (billingName || order.billing_company || order.billing_address_1 || order.billing_city || order.billing_email || order.billing_phone);
   const hasShipping =
     isEdit &&
     order &&
@@ -602,6 +731,8 @@ function FormWorkspace({ mode, order }: { mode: 'create' | 'edit'; order?: Order
     isEdit &&
     order &&
     (order.payment_method_title || order.payment_method || order.transaction_id || order.date_paid);
+  const hasFees = isEdit && order && order.fees.length > 0;
+  const hasCoupons = isEdit && order && order.coupons.length > 0;
 
   const breadcrumbs = [
     { label: tCommon('home'), to: ROUTES.dashboard },
@@ -711,6 +842,44 @@ function FormWorkspace({ mode, order }: { mode: 'create' | 'edit'; order?: Order
                 </FormField>
               </WorkspaceCard>
 
+              {/* Billing — read-only, only shown in edit mode when data exists */}
+              {hasBilling && order && (
+                <WorkspaceCard title={t('detail.billingInformation')}>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {billingName && (
+                      <LabelValue label={t('detail.billingName')} value={billingName} />
+                    )}
+                    {order.billing_company && (
+                      <LabelValue label={t('detail.billingCompany')} value={order.billing_company} />
+                    )}
+                    {order.billing_address_1 && (
+                      <LabelValue label={t('detail.billingAddress1')} value={order.billing_address_1} />
+                    )}
+                    {order.billing_address_2 && (
+                      <LabelValue label={t('detail.billingAddress2')} value={order.billing_address_2} />
+                    )}
+                    {order.billing_city && (
+                      <LabelValue label={t('detail.billingCity')} value={order.billing_city} />
+                    )}
+                    {order.billing_state && (
+                      <LabelValue label={t('detail.billingState')} value={order.billing_state} />
+                    )}
+                    {order.billing_postcode && (
+                      <LabelValue label={t('detail.billingPostcode')} value={order.billing_postcode} />
+                    )}
+                    {order.billing_country && (
+                      <LabelValue label={t('detail.billingCountry')} value={order.billing_country} />
+                    )}
+                    {order.billing_phone && (
+                      <LabelValue label={t('detail.billingPhone')} value={order.billing_phone} />
+                    )}
+                    {order.billing_email && (
+                      <LabelValue label={t('detail.billingEmail')} value={order.billing_email} />
+                    )}
+                  </div>
+                </WorkspaceCard>
+              )}
+
               {/* Shipping — read-only, only shown in edit mode when data exists */}
               {hasShipping && order && (
                 <WorkspaceCard title={t('detail.shippingInformation')}>
@@ -784,6 +953,56 @@ function FormWorkspace({ mode, order }: { mode: 'create' | 'edit'; order?: Order
                       />
                     )}
                   </div>
+                </WorkspaceCard>
+              )}
+
+              {/* Fees — read-only, only shown in edit mode */}
+              {hasFees && order && (
+                <WorkspaceCard title={t('detail.fees')}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-muted-foreground border-b text-left">
+                        <th className="pb-2 pr-3 font-medium">{t('detail.feeName')}</th>
+                        <th className="w-36 pb-2 text-right font-medium">{t('detail.feeAmount')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {order.fees.map((fee) => (
+                        <tr key={fee.id}>
+                          <td className="py-2 pr-3">{fee.name}</td>
+                          <td className="py-2 text-right tabular-nums font-medium">{fmt(fee.total)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </WorkspaceCard>
+              )}
+
+              {/* Coupons — read-only, only shown in edit mode */}
+              {hasCoupons && order && (
+                <WorkspaceCard title={t('detail.coupons')}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-muted-foreground border-b text-left">
+                        <th className="pb-2 pr-3 font-medium">{t('detail.couponCode')}</th>
+                        <th className="w-36 pb-2 text-right font-medium">{t('detail.couponDiscount')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {order.coupons.map((coupon) => (
+                        <tr key={coupon.id}>
+                          <td className="py-2 pr-3">
+                            <code className="bg-muted rounded px-1.5 py-0.5 text-xs font-mono">
+                              {coupon.code}
+                            </code>
+                          </td>
+                          <td className="py-2 text-right tabular-nums font-medium text-emerald-600">
+                            −{fmt(coupon.discount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </WorkspaceCard>
               )}
 
