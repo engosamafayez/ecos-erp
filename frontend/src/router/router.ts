@@ -8,6 +8,8 @@ import { CategoriesPage } from '@/features/categories/pages/categories-page';
 import { CompaniesPage } from '@/features/companies/pages/companies-page';
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 import { HomePage } from '@/features/home/pages/home-page';
+import { ProductsPage } from '@/features/products/pages/products-page';
+import { RawMaterialsPage } from '@/features/products/pages/raw-materials-page';
 import { UnitsPage } from '@/features/units/pages/units-page';
 import { WarehousesPage } from '@/features/warehouses/pages/warehouses-page';
 import { AuthLayout } from '@/layouts/auth-layout';
@@ -52,6 +54,8 @@ export const router = createBrowserRouter(
             { path: ROUTES.dashboard, Component: DashboardPage },
             { path: ROUTES.companies, Component: CompaniesPage },
             { path: ROUTES.branches, Component: BranchesPage },
+            { path: ROUTES.products, Component: ProductsPage },
+            { path: ROUTES.rawMaterials, Component: RawMaterialsPage },
             { path: ROUTES.warehouses, Component: WarehousesPage },
             { path: ROUTES.categories, Component: CategoriesPage },
             { path: ROUTES.units, Component: UnitsPage },

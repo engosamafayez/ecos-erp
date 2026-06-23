@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\IAM\Presentation\Http\Controllers\AuthController;
+use Modules\Inventory\Products\Presentation\Http\Controllers\ProductController;
 use Modules\MasterData\Categories\Presentation\Http\Controllers\CategoryController;
 use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
 use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
@@ -43,4 +44,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('warehouses', WarehouseController::class);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('units', UnitController::class);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Inventory — Products (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::apiResource('products', ProductController::class);
 });

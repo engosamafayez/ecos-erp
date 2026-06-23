@@ -5,6 +5,7 @@ import {
   FolderTree,
   GitBranch,
   Landmark,
+  Layers,
   LayoutDashboard,
   Package,
   Receipt,
@@ -50,8 +51,10 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Master Data',
+    label: 'Inventory',
     items: [
+      { key: 'products', label: 'Products', path: ROUTES.products, icon: Package },
+      { key: 'raw-materials', label: 'Raw Materials', path: ROUTES.rawMaterials, icon: Layers },
       { key: 'warehouses', label: 'Warehouses', path: ROUTES.warehouses, icon: Warehouse },
       { key: 'categories', label: 'Categories', path: ROUTES.categories, icon: FolderTree },
       { key: 'units', label: 'Units', path: ROUTES.units, icon: Ruler },
@@ -60,7 +63,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Operations',
     items: [
-      { key: 'inventory', label: 'Inventory', path: ROUTES.inventory, icon: Package },
       { key: 'purchasing', label: 'Purchasing', path: ROUTES.purchasing, icon: ShoppingCart },
       { key: 'sales', label: 'Sales', path: ROUTES.sales, icon: Receipt },
       { key: 'accounting', label: 'Accounting', path: ROUTES.accounting, icon: Landmark },

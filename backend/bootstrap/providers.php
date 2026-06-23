@@ -10,4 +10,5 @@ return [
     Modules\MasterData\Warehouses\Infrastructure\Providers\WarehouseServiceProvider::class,
     Modules\MasterData\Categories\Infrastructure\Providers\CategoryServiceProvider::class,
     Modules\MasterData\Units\Infrastructure\Providers\UnitServiceProvider::class,
+    Modules\Inventory\Products\Infrastructure\Providers\ProductServiceProvider::class,
 ];

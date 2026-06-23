@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Modules\Inventory\Products\Infrastructure\Database\Seeders\ProductSeeder;
 use Modules\MasterData\Categories\Infrastructure\Database\Seeders\CategorySeeder;
 use Modules\MasterData\Units\Infrastructure\Database\Seeders\UnitSeeder;
 use Modules\MasterData\Warehouses\Infrastructure\Database\Seeders\WarehouseSeeder;
@@ -36,5 +37,8 @@ class DatabaseSeeder extends Seeder
         $this->call(UnitSeeder::class);
         $this->call(CategorySeeder::class);
         $this->call(WarehouseSeeder::class);
+
+        // Inventory module (PROD-001).
+        $this->call(ProductSeeder::class);
     }
 }

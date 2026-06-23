@@ -7,6 +7,8 @@ export const ROUTES = {
   dashboard: '/dashboard',
   companies: '/companies',
   branches: '/branches',
+  products: '/products',
+  rawMaterials: '/raw-materials',
   warehouses: '/warehouses',
   categories: '/categories',
   units: '/units',
