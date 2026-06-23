@@ -1,5 +1,7 @@
 import { Bell, Menu, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
+import { LanguageSwitcher } from '@/components/common/language-switcher';
 import { BrandLogo } from '@/components/common/brand-logo';
 import { ThemeToggle } from '@/components/common/theme-toggle';
 import { CompanySwitcher } from '@/components/layout/company-switcher';
@@ -16,6 +18,8 @@ type AppTopbarProps = {
  * toggle and the user menu. Hosts the mobile sidebar trigger.
  */
 export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
+  const { t } = useTranslation('common');
+
   return (
     <header className="bg-background sticky top-0 z-30 flex h-14 items-center gap-3 border-b px-3 sm:px-4">
       <Button
@@ -39,8 +43,8 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
           <Input
             type="search"
-            placeholder="Search…"
-            aria-label="Search"
+            placeholder={t('topbar.search')}
+            aria-label={t('common.search')}
             className="w-40 pl-8 md:w-64"
           />
         </div>
@@ -48,6 +52,7 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
           <Bell className="size-5" />
           <span className="bg-primary absolute top-1.5 right-1.5 size-2 rounded-full" />
         </Button>
+        <LanguageSwitcher />
         <ThemeToggle />
         <UserMenu />
       </div>

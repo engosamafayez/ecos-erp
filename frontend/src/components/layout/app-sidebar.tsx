@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { NAV_GROUPS } from '@/config/navigation';
 import { cn } from '@/lib/utils';
@@ -12,12 +13,14 @@ type AppSidebarProps = {
  * Primary navigation list. Shared by the desktop sidebar and the mobile drawer.
  */
 export function AppSidebar({ onNavigate }: AppSidebarProps) {
+  const { t } = useTranslation('common');
+
   return (
     <nav className="flex flex-col gap-5 p-3">
       {NAV_GROUPS.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
           <p className="text-muted-foreground px-3 py-1 text-xs font-medium tracking-wider uppercase">
-            {group.label}
+            {t(`nav.groups.${group.label.toLowerCase()}`)}
           </p>
           {group.items.map((item) => {
             const Icon = item.icon;

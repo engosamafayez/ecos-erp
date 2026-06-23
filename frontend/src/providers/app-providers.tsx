@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { AuthProvider } from '@/providers/auth-provider';
+import { LanguageProvider } from '@/providers/language-provider';
 import { QueryProvider } from '@/providers/query-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 
@@ -10,9 +11,11 @@ import { ThemeProvider } from '@/providers/theme-provider';
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider defaultTheme="system" storageKey="ecos-theme">
-      <QueryProvider>
-        <AuthProvider>{children}</AuthProvider>
-      </QueryProvider>
+      <LanguageProvider>
+        <QueryProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

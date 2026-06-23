@@ -10,6 +10,10 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'use-sync-external-store/shim'],
   },
   // Served by Nginx under /app (see docker/nginx/default.conf) when built.
   base: '/app/',

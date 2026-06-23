@@ -1,0 +1,31 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search"
+  },
+  "topbar": {
+    "search": "Search…"
+  },
+  "nav": {
+    "groups": {
+      "overview": "Overview",
+      "organization": "Organization",
+      "inventory": "Inventory",
+      "purchasing": "Purchasing",
+      "sales": "Sales",
+      "commerce": "Commerce",
+      "operations": "Operations",
+      "insights": "Insights",
+      "system": "System"
+    }
+  },
+  "language": {
+    "switcher": "Language",
+    "en": "English",
+    "ar": "العربية"
+  }
+}

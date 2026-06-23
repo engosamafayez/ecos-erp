@@ -1,0 +1,31 @@
+{
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "create": "إنشاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "search": "بحث"
+  },
+  "topbar": {
+    "search": "بحث…"
+  },
+  "nav": {
+    "groups": {
+      "overview": "نظرة عامة",
+      "organization": "المنظمة",
+      "inventory": "المخزون",
+      "purchasing": "المشتريات",
+      "sales": "المبيعات",
+      "commerce": "التجارة",
+      "operations": "العمليات",
+      "insights": "التحليلات",
+      "system": "النظام"
+    }
+  },
+  "language": {
+    "switcher": "اللغة",
+    "en": "English",
+    "ar": "العربية"
+  }
+}
