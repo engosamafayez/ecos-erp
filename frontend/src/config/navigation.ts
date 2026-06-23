@@ -11,7 +11,7 @@ import {
   Receipt,
   Ruler,
   Settings,
-  ShoppingCart,
+  Truck,
   Users,
   Warehouse,
 } from 'lucide-react';
@@ -61,9 +61,12 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: 'Purchasing',
+    items: [{ key: 'suppliers', label: 'Suppliers', path: ROUTES.suppliers, icon: Truck }],
+  },
+  {
     label: 'Operations',
     items: [
-      { key: 'purchasing', label: 'Purchasing', path: ROUTES.purchasing, icon: ShoppingCart },
       { key: 'sales', label: 'Sales', path: ROUTES.sales, icon: Receipt },
       { key: 'accounting', label: 'Accounting', path: ROUTES.accounting, icon: Landmark },
       { key: 'crm', label: 'CRM', path: ROUTES.crm, icon: Contact },

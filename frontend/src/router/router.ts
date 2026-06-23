@@ -10,6 +10,7 @@ import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 import { HomePage } from '@/features/home/pages/home-page';
 import { ProductsPage } from '@/features/products/pages/products-page';
 import { RawMaterialsPage } from '@/features/products/pages/raw-materials-page';
+import { SuppliersPage } from '@/features/suppliers/pages/suppliers-page';
 import { UnitsPage } from '@/features/units/pages/units-page';
 import { WarehousesPage } from '@/features/warehouses/pages/warehouses-page';
 import { AuthLayout } from '@/layouts/auth-layout';
@@ -59,6 +60,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.warehouses, Component: WarehousesPage },
             { path: ROUTES.categories, Component: CategoriesPage },
             { path: ROUTES.units, Component: UnitsPage },
+            { path: ROUTES.suppliers, Component: SuppliersPage },
             ...moduleRoutes,
           ],
         },

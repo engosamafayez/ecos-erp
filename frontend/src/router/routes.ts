@@ -12,6 +12,7 @@ export const ROUTES = {
   warehouses: '/warehouses',
   categories: '/categories',
   units: '/units',
+  suppliers: '/suppliers',
   inventory: '/inventory',
   purchasing: '/purchasing',
   sales: '/sales',

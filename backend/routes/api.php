@@ -10,6 +10,7 @@ use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
 use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
 use Modules\Organization\Branches\Presentation\Http\Controllers\BranchController;
 use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
+use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,4 +54,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
 */
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('products', ProductController::class);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Purchasing — Suppliers (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::apiResource('suppliers', SupplierController::class);
 });
