@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\MasterData\Warehouses\Domain\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\MasterData\Warehouses\Infrastructure\Database\Factories\WarehouseFactory;
+use Modules\Organization\Branches\Domain\Models\Branch;
+use Modules\Organization\Companies\Domain\Models\Company;
+
+/**
+ * Warehouse entity (UUID primary key, soft-deletable) belonging to a company
+ * and a branch.
+ *
+ * @property string $id
+ * @property string $company_id
+ * @property string $branch_id
+ * @property string $code
+ * @property string $name
+ * @property bool $is_active
+ */
+class Warehouse extends Model
+{
+    /** @use HasFactory<WarehouseFactory> */
+    use HasFactory, HasUuids, SoftDeletes;
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'company_id',
+        'branch_id',
+        'code',
+        'name',
+        'address',
+        'city',
+        'country',
+        'is_active',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<Company, $this>
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * @return BelongsTo<Branch, $this>
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    protected static function newFactory(): WarehouseFactory
+    {
+        return WarehouseFactory::new();
+    }
+}

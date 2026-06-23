@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\IAM\Presentation\Http\Controllers\AuthController;
+use Modules\MasterData\Categories\Presentation\Http\Controllers\CategoryController;
+use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
+use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
 use Modules\Organization\Branches\Presentation\Http\Controllers\BranchController;
 use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
 
@@ -29,4 +32,15 @@ Route::prefix('auth')->group(function (): void {
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('companies', CompanyController::class);
     Route::apiResource('branches', BranchController::class);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Master Data — Warehouses, Categories, Units (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::apiResource('warehouses', WarehouseController::class);
+    Route::apiResource('categories', CategoryController::class);
+    Route::apiResource('units', UnitController::class);
 });

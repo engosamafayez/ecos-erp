@@ -2,14 +2,17 @@ import {
   BarChart3,
   Building2,
   Contact,
+  FolderTree,
   GitBranch,
   Landmark,
   LayoutDashboard,
   Package,
   Receipt,
+  Ruler,
   Settings,
   ShoppingCart,
   Users,
+  Warehouse,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -44,6 +47,14 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'companies', label: 'Companies', path: ROUTES.companies, icon: Building2 },
       { key: 'branches', label: 'Branches', path: ROUTES.branches, icon: GitBranch },
+    ],
+  },
+  {
+    label: 'Master Data',
+    items: [
+      { key: 'warehouses', label: 'Warehouses', path: ROUTES.warehouses, icon: Warehouse },
+      { key: 'categories', label: 'Categories', path: ROUTES.categories, icon: FolderTree },
+      { key: 'units', label: 'Units', path: ROUTES.units, icon: Ruler },
     ],
   },
   {
