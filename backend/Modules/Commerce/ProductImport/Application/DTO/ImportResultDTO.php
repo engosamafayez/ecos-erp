@@ -14,6 +14,8 @@ final class ImportResultDTO
         public readonly int $created_products,
         public readonly int $created_mappings,
         public readonly int $failed,
+        public readonly int $categories_created,
+        public readonly int $categories_updated,
         public readonly array $errors = [],
     ) {}
 
@@ -27,6 +29,8 @@ final class ImportResultDTO
             'created_products' => $this->created_products,
             'created_mappings' => $this->created_mappings,
             'failed' => $this->failed,
+            'categories_created' => $this->categories_created,
+            'categories_updated' => $this->categories_updated,
             'errors' => $this->errors,
         ];
     }
@@ -34,10 +38,10 @@ final class ImportResultDTO
     public function summary(): string
     {
         return sprintf(
-            'Import completed. %d processed, %d products created, %d mappings created, %d failed.',
+            'Import completed. %d processed, %d products created, %d categories created, %d failed.',
             $this->imported,
             $this->created_products,
-            $this->created_mappings,
+            $this->categories_created,
             $this->failed,
         );
     }

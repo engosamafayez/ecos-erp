@@ -22,37 +22,53 @@ final class WooCommerceProductImporter
 
     private const VALID_STOCK_STATUSES = ['instock', 'outofstock', 'onbackorder'];
 
+    private const MAX_CATEGORY_DEPTH = 3;
+
+    private int $categoriesCreated = 0;
+
+    private int $categoriesUpdated = 0;
+
     public function import(Channel $channel): ImportResultDTO
     {
+        $this->categoriesCreated = 0;
+        $this->categoriesUpdated = 0;
+
         $credential = $channel->credential;
 
         if ($credential === null) {
-            return new ImportResultDTO(0, 0, 0, 0, ['No credentials configured for this channel.']);
+            return new ImportResultDTO(0, 0, 0, 0, 0, 0, ['No credentials configured for this channel.']);
         }
 
         $defaultCategory = Category::query()->first();
         $defaultUnit = Unit::query()->first();
 
         if ($defaultCategory === null || $defaultUnit === null) {
-            return new ImportResultDTO(0, 0, 0, 0, [
+            return new ImportResultDTO(0, 0, 0, 0, 0, 0, [
                 'No default category or unit found. Create at least one category and one unit before importing.',
             ]);
         }
+
+        $baseUrl = rtrim($channel->store_url, '/') . '/wp-json/wc/v3';
+
+        $wooCategoryMap = $this->fetchAllWooCategories(
+            $baseUrl,
+            $credential->consumer_key,
+            $credential->consumer_secret,
+        );
 
         $imported = 0;
         $createdProducts = 0;
         $createdMappings = 0;
         $failed = 0;
         $errors = [];
-
         $page = 1;
-        $baseUrl = rtrim($channel->store_url, '/') . '/wp-json/wc/v3/products';
+        $productsUrl = $baseUrl . '/products';
 
         while (true) {
             try {
                 $response = Http::withBasicAuth($credential->consumer_key, $credential->consumer_secret)
                     ->timeout(self::TIMEOUT)
-                    ->get($baseUrl, ['per_page' => self::PER_PAGE, 'page' => $page, 'status' => 'any']);
+                    ->get($productsUrl, ['per_page' => self::PER_PAGE, 'page' => $page, 'status' => 'any']);
 
                 if (! $response->successful()) {
                     $errors[] = "Failed to fetch page {$page}: HTTP {$response->status()}.";
@@ -81,6 +97,7 @@ final class WooCommerceProductImporter
                         [$product, $wasCreated] = $this->resolveProduct(
                             $sku,
                             $wooProduct,
+                            $wooCategoryMap,
                             $defaultCategory->id,
                             $defaultUnit->id,
                         );
@@ -112,43 +129,107 @@ final class WooCommerceProductImporter
             }
         }
 
-        return new ImportResultDTO($imported, $createdProducts, $createdMappings, $failed, $errors);
+        return new ImportResultDTO(
+            $imported,
+            $createdProducts,
+            $createdMappings,
+            $failed,
+            $this->categoriesCreated,
+            $this->categoriesUpdated,
+            $errors,
+        );
     }
 
     /**
-     * Find existing product by SKU (update enrichment fields) or create a new one.
+     * Fetch all WooCommerce categories in one paginated pass.
+     *
+     * @return array<int, array<string, mixed>>  keyed by WooCommerce category ID
+     */
+    private function fetchAllWooCategories(string $baseUrl, string $key, string $secret): array
+    {
+        $categories = [];
+        $page = 1;
+        $url = $baseUrl . '/products/categories';
+
+        while (true) {
+            try {
+                $response = Http::withBasicAuth($key, $secret)
+                    ->timeout(self::TIMEOUT)
+                    ->get($url, ['per_page' => 100, 'page' => $page]);
+
+                if (! $response->successful()) {
+                    break;
+                }
+
+                /** @var list<array<string, mixed>> $batch */
+                $batch = $response->json() ?? [];
+
+                if (empty($batch)) {
+                    break;
+                }
+
+                foreach ($batch as $cat) {
+                    $id = (int) ($cat['id'] ?? 0);
+                    if ($id > 0) {
+                        $categories[$id] = $cat;
+                    }
+                }
+
+                $totalPages = max(1, (int) ($response->header('X-WP-TotalPages') ?: 1));
+
+                if ($page >= $totalPages || count($batch) < 100) {
+                    break;
+                }
+
+                $page++;
+            } catch (Throwable) {
+                break;
+            }
+        }
+
+        return $categories;
+    }
+
+    /**
+     * Find or update existing product by SKU, or create a new one.
+     * Updates: name, enrichment fields, category_id.
+     * Preserves: unit_id, product_type, barcode, description (internal).
      *
      * @param  array<string, mixed>  $wooProduct
+     * @param  array<int, array<string, mixed>>  $wooCategoryMap
      * @return array{Product, bool}
      */
     private function resolveProduct(
         string $sku,
         array $wooProduct,
+        array $wooCategoryMap,
         string $defaultCategoryId,
         string $defaultUnitId,
     ): array {
         $enrichment = $this->extractEnrichment($wooProduct);
+        $categoryId = $this->resolveDeepestEcosCategory(
+            $wooProduct['categories'] ?? [],
+            $wooCategoryMap,
+            $defaultCategoryId,
+        );
 
         $existing = Product::query()->where('sku', $sku)->first();
 
         if ($existing !== null) {
-            $existing->update($enrichment);
+            $existing->update(array_merge($enrichment, [
+                'name' => (string) ($wooProduct['name'] ?? $existing->name),
+                'category_id' => $categoryId,
+            ]));
 
             return [$existing, false];
         }
 
-        $categoryId = $this->resolveCategory(
-            $wooProduct['categories'] ?? [],
-            $defaultCategoryId,
-        );
-
-        $longDescription = $enrichment['long_description'];
         $isActive = (($wooProduct['status'] ?? '') === 'publish');
 
         $product = Product::query()->create(array_merge([
             'sku' => $sku,
             'name' => (string) ($wooProduct['name'] ?? $sku),
-            'description' => $longDescription,
+            'description' => $enrichment['long_description'],
             'category_id' => $categoryId,
             'unit_id' => $defaultUnitId,
             'product_type' => Product::TYPE_FINISHED_GOOD,
@@ -198,45 +279,215 @@ final class WooCommerceProductImporter
     }
 
     /**
-     * Find or create an ECOS category matching the first WooCommerce category.
-     * Uses WooCommerce slug as the ECOS code; appends a numeric suffix on collision.
+     * Resolve the ECOS category ID for the deepest WooCommerce category,
+     * creating the full ancestor hierarchy as needed.
      *
-     * @param  list<array<string, mixed>>  $wooCategories
+     * @param  list<array<string, mixed>>  $wooProductCategories
+     * @param  array<int, array<string, mixed>>  $wooCategoryMap
      */
-    private function resolveCategory(array $wooCategories, string $defaultCategoryId): string
+    private function resolveDeepestEcosCategory(
+        array $wooProductCategories,
+        array $wooCategoryMap,
+        string $defaultCategoryId,
+    ): string {
+        if (empty($wooProductCategories)) {
+            return $defaultCategoryId;
+        }
+
+        $deepestId = $this->findDeepestCategoryId($wooProductCategories, $wooCategoryMap);
+
+        if ($deepestId === null || ! isset($wooCategoryMap[$deepestId])) {
+            return $defaultCategoryId;
+        }
+
+        $chain = $this->buildAncestryChain($deepestId, $wooCategoryMap);
+
+        if (empty($chain)) {
+            return $defaultCategoryId;
+        }
+
+        return $this->resolveEcosCategoryChain($chain, $wooCategoryMap, $defaultCategoryId);
+    }
+
+    /**
+     * Find the deepest category among a product's WooCommerce categories.
+     * A category is "deepest" if none of the other product categories is its child.
+     *
+     * @param  list<array<string, mixed>>  $wooProductCategories
+     * @param  array<int, array<string, mixed>>  $wooCategoryMap
+     */
+    private function findDeepestCategoryId(array $wooProductCategories, array $wooCategoryMap): ?int
     {
-        if (empty($wooCategories)) {
-            return $defaultCategoryId;
+        $productIds = array_map(
+            fn (array $c): int => (int) ($c['id'] ?? 0),
+            $wooProductCategories,
+        );
+
+        foreach ($wooProductCategories as $cat) {
+            $catId = (int) ($cat['id'] ?? 0);
+            $isParent = false;
+
+            foreach ($productIds as $otherId) {
+                if ($otherId === $catId) {
+                    continue;
+                }
+
+                // Walk up the ancestry of $otherId; if we reach $catId it means $catId is an ancestor
+                $current = $otherId;
+                $visited = [];
+                while ($current > 0 && isset($wooCategoryMap[$current]) && ! in_array($current, $visited, true)) {
+                    $visited[] = $current;
+                    $parentId = (int) ($wooCategoryMap[$current]['parent'] ?? 0);
+                    if ($parentId === $catId) {
+                        $isParent = true;
+                        break 2;
+                    }
+                    $current = $parentId;
+                }
+            }
+
+            if (! $isParent) {
+                return $catId;
+            }
         }
 
-        $slug = trim((string) ($wooCategories[0]['slug'] ?? ''));
-        $name = trim((string) ($wooCategories[0]['name'] ?? ''));
+        // Fallback: pick the category with the greatest depth in the hierarchy
+        $maxDepth = -1;
+        $deepestId = (int) ($wooProductCategories[0]['id'] ?? 0);
 
-        if ($slug === '' || $name === '') {
-            return $defaultCategoryId;
+        foreach ($wooProductCategories as $cat) {
+            $catId = (int) ($cat['id'] ?? 0);
+            $depth = $this->wooCategoryDepth($catId, $wooCategoryMap);
+
+            if ($depth > $maxDepth) {
+                $maxDepth = $depth;
+                $deepestId = $catId;
+            }
         }
 
-        $existing = Category::query()->where('code', $slug)->first();
-        if ($existing !== null) {
-            return $existing->id;
+        return $deepestId > 0 ? $deepestId : null;
+    }
+
+    /**
+     * Calculate the depth of a WooCommerce category (root = 0).
+     *
+     * @param  array<int, array<string, mixed>>  $wooCategoryMap
+     */
+    private function wooCategoryDepth(int $wooCatId, array $wooCategoryMap): int
+    {
+        $depth = 0;
+        $current = $wooCatId;
+        $visited = [];
+
+        while ($current > 0 && isset($wooCategoryMap[$current]) && ! in_array($current, $visited, true)) {
+            $visited[] = $current;
+            $parent = (int) ($wooCategoryMap[$current]['parent'] ?? 0);
+            if ($parent === 0) {
+                break;
+            }
+            $depth++;
+            $current = $parent;
         }
 
-        $code = $slug;
-        $suffix = 1;
-        while (Category::query()->where('code', $code)->exists()) {
-            $code = $slug . '-' . $suffix;
-            $suffix++;
+        return $depth;
+    }
+
+    /**
+     * Build ancestry chain from root to leaf, clamped to MAX_CATEGORY_DEPTH levels.
+     *
+     * @param  array<int, array<string, mixed>>  $wooCategoryMap
+     * @return list<int>  WooCommerce category IDs ordered root → leaf
+     */
+    private function buildAncestryChain(int $wooCatId, array $wooCategoryMap): array
+    {
+        $chain = [];
+        $current = $wooCatId;
+        $visited = [];
+
+        while ($current > 0 && isset($wooCategoryMap[$current]) && ! in_array($current, $visited, true)) {
+            array_unshift($chain, $current);
+            $visited[] = $current;
+            $current = (int) ($wooCategoryMap[$current]['parent'] ?? 0);
         }
 
-        $category = Category::query()->create([
-            'code' => $code,
-            'name' => $name,
-            'level' => 1,
-            'sort_order' => 0,
-            'is_active' => true,
-        ]);
+        if (count($chain) > self::MAX_CATEGORY_DEPTH) {
+            $chain = array_slice($chain, -self::MAX_CATEGORY_DEPTH);
+        }
 
-        return $category->id;
+        return array_values($chain);
+    }
+
+    /**
+     * Ensure the full ancestry chain exists in ECOS and return the deepest ECOS category ID.
+     * Creates missing categories, updates names of existing ones if changed.
+     *
+     * @param  list<int>  $chain  WooCommerce IDs ordered root → leaf
+     * @param  array<int, array<string, mixed>>  $wooCategoryMap
+     */
+    private function resolveEcosCategoryChain(
+        array $chain,
+        array $wooCategoryMap,
+        string $defaultCategoryId,
+    ): string {
+        $parentEcosId = null;
+        $lastId = $defaultCategoryId;
+        $level = 1;
+
+        foreach ($chain as $wooId) {
+            $wooCat = $wooCategoryMap[$wooId] ?? null;
+            if ($wooCat === null) {
+                continue;
+            }
+
+            $slug = trim((string) ($wooCat['slug'] ?? ''));
+            $name = trim((string) ($wooCat['name'] ?? ''));
+
+            if ($slug === '' || $name === '') {
+                continue;
+            }
+
+            // Match by slug under the same parent to preserve hierarchy
+            $existing = Category::query()
+                ->where('code', $slug)
+                ->where('parent_id', $parentEcosId)
+                ->first();
+
+            if ($existing !== null) {
+                if ($existing->name !== $name) {
+                    $existing->update(['name' => $name]);
+                    $this->categoriesUpdated++;
+                }
+
+                $parentEcosId = $existing->id;
+                $lastId = $existing->id;
+                $level++;
+                continue;
+            }
+
+            // Deduplicate code if the same slug exists under a different parent
+            $code = $slug;
+            $suffix = 1;
+            while (Category::query()->where('code', $code)->exists()) {
+                $code = $slug . '-' . $suffix;
+                $suffix++;
+            }
+
+            $category = Category::query()->create([
+                'code' => $code,
+                'name' => $name,
+                'parent_id' => $parentEcosId,
+                'level' => $level,
+                'sort_order' => 0,
+                'is_active' => true,
+            ]);
+
+            $this->categoriesCreated++;
+            $parentEcosId = $category->id;
+            $lastId = $category->id;
+            $level++;
+        }
+
+        return $lastId;
     }
 
     /**

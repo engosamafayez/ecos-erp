@@ -72,6 +72,8 @@ export type ImportResult = {
   created_products: number;
   created_mappings: number;
   failed: number;
+  categories_created: number;
+  categories_updated: number;
   errors: string[];
 };
 

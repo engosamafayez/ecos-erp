@@ -38,6 +38,8 @@ export function ImportResultDialog({ open, onOpenChange, result, channelName }: 
             <Stat label="Products Processed" value={result.imported} />
             <Stat label="Products Created" value={result.created_products} />
             <Stat label="Mappings Created" value={result.created_mappings} />
+            <Stat label="Categories Created" value={result.categories_created} />
+            <Stat label="Categories Updated" value={result.categories_updated} />
             <Stat label="Failed" value={result.failed} highlight={result.failed > 0} />
           </div>
 
