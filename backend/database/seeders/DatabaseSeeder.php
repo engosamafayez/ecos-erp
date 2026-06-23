@@ -15,6 +15,7 @@ use Modules\Organization\Companies\Infrastructure\Database\Seeders\CompanySeeder
 use Modules\Inventory\StockLedger\Infrastructure\Database\Seeders\StockLedgerSeeder;
 use Modules\Commerce\Channels\Infrastructure\Database\Seeders\ChannelSeeder;
 use Modules\Commerce\ProductMappings\Infrastructure\Database\Seeders\ProductMappingSeeder;
+use Modules\Commerce\Fulfillments\Infrastructure\Database\Seeders\FulfillmentSeeder;
 use Modules\Commerce\Orders\Infrastructure\Database\Seeders\OrderSeeder;
 use Modules\Sales\Customers\Infrastructure\Database\Seeders\CustomerSeeder;
 use Modules\Purchasing\GoodsReceipts\Infrastructure\Database\Seeders\GoodsReceiptSeeder;
@@ -70,5 +71,8 @@ class DatabaseSeeder extends Seeder
 
         // Commerce module (COM-005 orders).
         $this->call(OrderSeeder::class);
+
+        // Commerce module (COM-007 fulfillments).
+        $this->call(FulfillmentSeeder::class);
     }
 }

@@ -18,6 +18,7 @@ use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
 use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
 use Modules\Organization\Branches\Presentation\Http\Controllers\BranchController;
 use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
+use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers\GoodsReceiptController;
 use Modules\Purchasing\PurchaseOrders\Presentation\Http\Controllers\PurchaseOrderController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
@@ -89,6 +90,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('channels/{channel}/import-orders', [OrderImportController::class, 'importOrders']);
     Route::apiResource('product-mappings', ProductMappingController::class);
     Route::apiResource('orders', OrderController::class);
+    Route::apiResource('fulfillments', FulfillmentController::class);
+    Route::post('fulfillments/{fulfillment}/fulfill', [FulfillmentController::class, 'fulfill']);
+    Route::post('fulfillments/{fulfillment}/cancel', [FulfillmentController::class, 'cancel']);
 });
 
 /*

@@ -18,6 +18,9 @@ import { ChannelsPage } from '@/features/channels/pages/channels-page';
 import { ProductMappingsPage } from '@/features/product-mappings/pages/product-mappings-page';
 import { OrdersPage } from '@/features/orders/pages/orders-page';
 import { OrderDetailPage } from '@/features/orders/pages/order-detail-page';
+import { FulfillmentsPage } from '@/features/fulfillments/pages/fulfillments-page';
+import { CreateFulfillmentPage } from '@/features/fulfillments/pages/create-fulfillment-page';
+import { ViewFulfillmentPage } from '@/features/fulfillments/pages/view-fulfillment-page';
 import { CustomersPage } from '@/features/customers/pages/customers-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
 import { CreateGoodsReceiptPage } from '@/features/goods-receipts/pages/create-goods-receipt-page';
@@ -85,6 +88,9 @@ export const router = createBrowserRouter(
             { path: ROUTES.productMappings, Component: ProductMappingsPage },
             { path: ROUTES.orders, Component: OrdersPage },
             { path: `${ROUTES.orders}/:id`, Component: OrderDetailPage },
+            { path: ROUTES.fulfillments, Component: FulfillmentsPage },
+            { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
+            { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
             { path: ROUTES.goodsReceipts, Component: GoodsReceiptsPage },
             { path: ROUTES.goodsReceiptsNew, Component: CreateGoodsReceiptPage },
             { path: `${ROUTES.goodsReceipts}/:id`, Component: ViewGoodsReceiptPage },

@@ -21,6 +21,7 @@ import {
   Truck,
   Users,
   Warehouse,
+  PackageCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -88,6 +89,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'channels', label: 'Channels', path: ROUTES.channels, icon: Store },
       { key: 'product-mappings', label: 'Product Mapping', path: ROUTES.productMappings, icon: Link2 },
       { key: 'orders', label: 'Orders', path: ROUTES.orders, icon: ShoppingBag },
+      { key: 'fulfillments', label: 'Fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
     ],
   },
   {
