@@ -30,9 +30,6 @@ export function SupplierFormFields() {
         <FormField name="mobile" label={t('form.mobile')}>
           <Input {...register('mobile')} />
         </FormField>
-        <FormField name="website" label={t('form.website.label')}>
-          <Input placeholder={t('form.website.placeholder')} {...register('website')} />
-        </FormField>
         <FormField name="country" label={t('form.country')}>
           <Input {...register('country')} />
         </FormField>

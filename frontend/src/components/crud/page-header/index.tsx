@@ -6,7 +6,7 @@ import type { BreadcrumbItem } from '@/components/crud/types';
 
 type PageHeaderProps = {
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   breadcrumbs?: BreadcrumbItem[];
   /** Primary action(s) shown on the right (e.g. a "New" button). */
   actions?: ReactNode;
@@ -43,7 +43,7 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions }: PageHeader
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {subtitle ? <p className="text-muted-foreground text-sm">{subtitle}</p> : null}
+          {subtitle ? <div className="text-muted-foreground mt-1 text-sm">{subtitle}</div> : null}
         </div>
         {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
       </div>

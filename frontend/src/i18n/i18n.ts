@@ -103,7 +103,7 @@ void i18n
     detection: {
       order: ['localStorage'],
       lookupLocalStorage: 'language',
-      cacheUserLanguage: true,
+      caches: ['localStorage'],
     },
     interpolation: { escapeValue: false },
   });

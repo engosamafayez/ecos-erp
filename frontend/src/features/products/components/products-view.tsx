@@ -47,7 +47,6 @@ export function ProductsView({
   breadcrumbLabel,
   searchPlaceholder,
   createLabel,
-  entityNoun,
 }: ProductsViewProps) {
   const { t } = useTranslation('products');
   const { t: tCommon } = useTranslation('common');

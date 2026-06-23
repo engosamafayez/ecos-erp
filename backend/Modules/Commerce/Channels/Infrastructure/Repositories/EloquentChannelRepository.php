@@ -67,7 +67,7 @@ final class EloquentChannelRepository implements ChannelRepositoryInterface
             $channel->credential()->create($credentials);
         }
 
-        return $channel->load('company');
+        return $channel->refresh()->load('company');
     }
 
     public function update(Channel $channel, array $attributes, ?array $credentials): Channel

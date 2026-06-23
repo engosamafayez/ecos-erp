@@ -1,5 +1,5 @@
 import { api } from '@/lib/axios';
-import type { SyncLog, SyncLogsListData, SyncLogsListParams } from '@/features/sync-logs/types/sync-log';
+import type { SyncLogsListData, SyncLogsListParams } from '@/features/sync-logs/types/sync-log';
 
 export const syncLogsService = {
   async list(params: SyncLogsListParams): Promise<SyncLogsListData> {

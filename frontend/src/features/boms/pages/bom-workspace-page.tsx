@@ -392,7 +392,7 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                                   type="number"
                                   min="0.0001"
                                   step="0.0001"
-                                  {...form.register(`lines.${index}.quantity`)}
+                                  {...form.register(`lines.${index}.quantity`, { valueAsNumber: true })}
                                 />
                                 {errs?.quantity?.message ? (
                                   <p className="text-destructive mt-1 text-xs">
@@ -406,7 +406,7 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                                   min="0"
                                   max="100"
                                   step="0.01"
-                                  {...form.register(`lines.${index}.waste_percentage`)}
+                                  {...form.register(`lines.${index}.waste_percentage`, { valueAsNumber: true })}
                                 />
                                 {errs?.waste_percentage?.message ? (
                                   <p className="text-destructive mt-1 text-xs">

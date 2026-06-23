@@ -14,7 +14,7 @@ const PLATFORMS: [ChannelPlatform, ...ChannelPlatform[]] = [
 export const channelSchema = z.object({
   company_id: z.string().min(1, 'Company is required.'),
   name: z.string().min(1, 'Name is required.').max(255),
-  platform: z.enum(PLATFORMS, { required_error: 'Platform is required.' }),
+  platform: z.enum(PLATFORMS, 'Platform is required.'),
   store_url: z.string().min(1, 'Store URL is required.').url('Enter a valid URL.').max(500),
   is_active: z.boolean(),
   sync_products: z.boolean(),

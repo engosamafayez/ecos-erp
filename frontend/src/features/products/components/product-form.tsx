@@ -65,10 +65,10 @@ export function ProductFormFields() {
           </select>
         </FormField>
         <FormField name="regular_price" label={t('form.regularPrice.label')}>
-          <Input type="number" step="0.01" min="0" {...register('regular_price')} />
+          <Input type="number" step="0.01" min="0" {...register('regular_price', { setValueAs: (v: string) => v === '' || v == null ? null : Number(v) })} />
         </FormField>
         <FormField name="sale_price" label={t('form.salePrice.label')}>
-          <Input type="number" step="0.01" min="0" {...register('sale_price')} />
+          <Input type="number" step="0.01" min="0" {...register('sale_price', { setValueAs: (v: string) => v === '' || v == null ? null : Number(v) })} />
         </FormField>
         <div className="sm:col-span-2">
           <FormField name="image_url" label={t('form.imageUrl.label')}>
