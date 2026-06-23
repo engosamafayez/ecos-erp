@@ -14,6 +14,10 @@ import { CreatePurchaseOrderPage } from '@/features/purchase-orders/pages/create
 import { EditPurchaseOrderPage } from '@/features/purchase-orders/pages/edit-purchase-order-page';
 import { PurchaseOrdersPage } from '@/features/purchase-orders/pages/purchase-orders-page';
 import { ViewPurchaseOrderPage } from '@/features/purchase-orders/pages/view-purchase-order-page';
+import { CreateGoodsReceiptPage } from '@/features/goods-receipts/pages/create-goods-receipt-page';
+import { EditGoodsReceiptPage } from '@/features/goods-receipts/pages/edit-goods-receipt-page';
+import { GoodsReceiptsPage } from '@/features/goods-receipts/pages/goods-receipts-page';
+import { ViewGoodsReceiptPage } from '@/features/goods-receipts/pages/view-goods-receipt-page';
 import { SuppliersPage } from '@/features/suppliers/pages/suppliers-page';
 import { UnitsPage } from '@/features/units/pages/units-page';
 import { WarehousesPage } from '@/features/warehouses/pages/warehouses-page';
@@ -69,6 +73,10 @@ export const router = createBrowserRouter(
             { path: ROUTES.purchaseOrdersNew, Component: CreatePurchaseOrderPage },
             { path: `${ROUTES.purchaseOrders}/:id`, Component: ViewPurchaseOrderPage },
             { path: `${ROUTES.purchaseOrders}/:id/edit`, Component: EditPurchaseOrderPage },
+            { path: ROUTES.goodsReceipts, Component: GoodsReceiptsPage },
+            { path: ROUTES.goodsReceiptsNew, Component: CreateGoodsReceiptPage },
+            { path: `${ROUTES.goodsReceipts}/:id`, Component: ViewGoodsReceiptPage },
+            { path: `${ROUTES.goodsReceipts}/:id/edit`, Component: EditGoodsReceiptPage },
             ...moduleRoutes,
           ],
         },

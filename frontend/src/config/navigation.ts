@@ -9,6 +9,7 @@ import {
   Layers,
   LayoutDashboard,
   Package,
+  PackageOpen,
   Receipt,
   Ruler,
   Settings,
@@ -66,6 +67,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'suppliers', label: 'Suppliers', path: ROUTES.suppliers, icon: Truck },
       { key: 'purchase-orders', label: 'Purchase Orders', path: ROUTES.purchaseOrders, icon: ClipboardList },
+      { key: 'goods-receipts', label: 'Goods Receipts', path: ROUTES.goodsReceipts, icon: PackageOpen },
     ],
   },
   {

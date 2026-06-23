@@ -15,6 +15,8 @@ export const ROUTES = {
   suppliers: '/suppliers',
   purchaseOrders: '/purchase-orders',
   purchaseOrdersNew: '/purchase-orders/new',
+  goodsReceipts: '/goods-receipts',
+  goodsReceiptsNew: '/goods-receipts/new',
   inventory: '/inventory',
   purchasing: '/purchasing',
   sales: '/sales',
