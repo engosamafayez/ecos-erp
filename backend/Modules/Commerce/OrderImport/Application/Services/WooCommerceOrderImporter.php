@@ -34,6 +34,44 @@ final class WooCommerceOrderImporter
 
     public function __construct(private readonly OrderRepositoryInterface $orders) {}
 
+    /**
+     * Import (or skip if already exists) a single WooCommerce order payload.
+     *
+     * @param  array<string, mixed>  $wooOrder
+     */
+    public function importSingle(Channel $channel, array $wooOrder): bool
+    {
+        $externalId = (string) ($wooOrder['id'] ?? '');
+
+        if ($externalId !== '' && $this->orderExists($externalId, (string) $channel->id)) {
+            return false;
+        }
+
+        [$customer] = $this->resolveCustomer($wooOrder);
+        [$order, $lines, $fees, $coupons] = $this->buildOrder($wooOrder, $channel, $customer);
+
+        if ($lines === []) {
+            return false;
+        }
+
+        $linesSubtotal = array_sum(array_column($lines, 'line_total'));
+        $order['subtotal'] = $linesSubtotal;
+        $wooTotal = is_numeric($wooOrder['total'] ?? '') ? (float) $wooOrder['total'] : null;
+        $order['total'] = $wooTotal ?? ($linesSubtotal + $order['shipping_total'] - $order['discount_total']);
+
+        $createdOrder = $this->orders->create($order, $lines);
+
+        if ($fees !== []) {
+            $createdOrder->fees()->createMany($fees);
+        }
+
+        if ($coupons !== []) {
+            $createdOrder->coupons()->createMany($coupons);
+        }
+
+        return true;
+    }
+
     public function import(Channel $channel): OrderImportResultDTO
     {
         $credential = $channel->credential;

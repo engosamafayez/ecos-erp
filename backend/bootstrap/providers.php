@@ -25,4 +25,5 @@ return [
     Modules\Commerce\Fulfillments\Infrastructure\Providers\FulfillmentServiceProvider::class,
     Modules\Commerce\StockSync\Infrastructure\Providers\StockSyncServiceProvider::class,
     Modules\Manufacturing\BillsOfMaterials\Infrastructure\Providers\BomServiceProvider::class,
+    Modules\Commerce\Synchronization\Infrastructure\Providers\SynchronizationServiceProvider::class,
 ];

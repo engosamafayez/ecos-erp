@@ -26,6 +26,7 @@ export const ROUTES = {
   fulfillments: '/fulfillments',
   fulfillmentsNew: '/fulfillments/new',
   stockSyncLogs: '/stock-sync-logs',
+  syncLogs: '/sync-logs',
   boms: '/boms',
   bomsNew: '/boms/new',
   inventory: '/inventory',

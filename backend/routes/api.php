@@ -24,6 +24,8 @@ use Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers\GoodsReceiptC
 use Modules\Purchasing\PurchaseOrders\Presentation\Http\Controllers\PurchaseOrderController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
 use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Controllers\BomController;
+use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
+use Modules\Commerce\Synchronization\Presentation\Http\Controllers\WooCommerceWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -121,3 +123,20 @@ Route::middleware('auth:sanctum')->group(function (): void {
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('boms', BomController::class);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Commerce — Synchronization Logs (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('sync-logs', [SynchronizationController::class, 'index']);
+    Route::post('sync-logs/{syncLog}/retry', [SynchronizationController::class, 'retry']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Webhooks — WooCommerce (public, no auth)
+|--------------------------------------------------------------------------
+*/
+Route::post('webhooks/woocommerce/{channel}/orders', [WooCommerceWebhookController::class, 'handleOrder']);

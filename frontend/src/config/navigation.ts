@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   BarChart3,
   BookOpen,
   Building2,
@@ -93,6 +94,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'orders', label: 'Orders', path: ROUTES.orders, icon: ShoppingBag },
       { key: 'fulfillments', label: 'Fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
       { key: 'stock-sync-logs', label: 'Stock Sync Logs', path: ROUTES.stockSyncLogs, icon: RefreshCw },
+      { key: 'sync-logs', label: 'Sync Logs', path: ROUTES.syncLogs, icon: ArrowLeftRight },
     ],
   },
   {
