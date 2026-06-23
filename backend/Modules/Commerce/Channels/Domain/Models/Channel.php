@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
+use Modules\Commerce\Channels\Domain\Enums\ConnectionStatus;
 use Modules\Commerce\Channels\Infrastructure\Database\Factories\ChannelFactory;
 use Modules\Organization\Companies\Domain\Models\Company;
 
@@ -27,6 +28,7 @@ use Modules\Organization\Companies\Domain\Models\Company;
  * @property bool $sync_prices
  * @property bool $sync_stock
  * @property \Illuminate\Support\Carbon|null $last_sync_at
+ * @property ConnectionStatus $connection_status
  */
 class Channel extends Model
 {
@@ -50,6 +52,7 @@ class Channel extends Model
         'sync_prices',
         'sync_stock',
         'last_sync_at',
+        'connection_status',
     ];
 
     /**
@@ -64,6 +67,7 @@ class Channel extends Model
             'sync_prices' => 'boolean',
             'sync_stock' => 'boolean',
             'last_sync_at' => 'datetime',
+            'connection_status' => ConnectionStatus::class,
         ];
     }
 

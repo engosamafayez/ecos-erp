@@ -1,3 +1,5 @@
+export type ConnectionStatus = 'disconnected' | 'connected' | 'error';
+
 export type ChannelPlatform =
   | 'woocommerce'
   | 'shopify'
@@ -18,6 +20,8 @@ export type Channel = {
   sync_products: boolean;
   sync_prices: boolean;
   sync_stock: boolean;
+  connection_status: ConnectionStatus;
+  connection_status_label: string;
   last_sync_at: string | null;
   created_at: string | null;
   updated_at: string | null;

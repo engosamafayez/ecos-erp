@@ -31,4 +31,9 @@ export const channelsService = {
   async remove(id: string): Promise<void> {
     await api.delete(`/channels/${id}`);
   },
+
+  async testConnection(id: string): Promise<Channel> {
+    const { data } = await api.post<ApiResponse<Channel>>(`/channels/${id}/test-connection`);
+    return data.data;
+  },
 };

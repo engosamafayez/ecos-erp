@@ -37,3 +37,11 @@ export function useDeleteChannel() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [CHANNELS_KEY] }),
   });
 }
+
+export function useTestConnection() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => channelsService.testConnection(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [CHANNELS_KEY] }),
+  });
+}

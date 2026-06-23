@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2, Wifi } from 'lucide-react';
 
 import {
   ActionMenu,
@@ -14,8 +14,13 @@ import type { ColumnDef } from '@/components/crud/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChannelFormDrawer } from '@/features/channels/components/channel-form-drawer';
+import { ConnectionStatusBadge } from '@/features/channels/components/connection-status-badge';
 import { PlatformBadge } from '@/features/channels/components/platform-badge';
-import { useChannelsQuery, useDeleteChannel } from '@/features/channels/hooks/use-channels';
+import {
+  useChannelsQuery,
+  useDeleteChannel,
+  useTestConnection,
+} from '@/features/channels/hooks/use-channels';
 import type {
   Channel,
   ChannelPlatform,
@@ -47,6 +52,7 @@ export function ChannelsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerChannel, setDrawerChannel] = useState<Channel | null>(null);
   const [deleting, setDeleting] = useState<Channel | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
 
   const params = useMemo(
     () => ({
@@ -63,6 +69,7 @@ export function ChannelsPage() {
 
   const { data, isLoading, isError, isFetching, refetch } = useChannelsQuery(params);
   const deleteChannel = useDeleteChannel();
+  const testConnection = useTestConnection();
 
   const items = data?.items ?? [];
   const meta = data?.meta;
@@ -84,6 +91,13 @@ export function ChannelsPage() {
   const openEdit = (channel: Channel) => {
     setDrawerChannel(channel);
     setDrawerOpen(true);
+  };
+
+  const handleTestConnection = (channel: Channel) => {
+    setTestingId(channel.id);
+    testConnection.mutate(channel.id, {
+      onSettled: () => setTestingId(null),
+    });
   };
 
   const columns: ColumnDef<Channel>[] = [
@@ -119,19 +133,9 @@ export function ChannelsPage() {
       ),
     },
     {
-      key: 'sync_products',
-      header: 'Sync Products',
-      cell: (c) => <span className="text-muted-foreground">{c.sync_products ? 'Yes' : 'No'}</span>,
-    },
-    {
-      key: 'sync_prices',
-      header: 'Sync Prices',
-      cell: (c) => <span className="text-muted-foreground">{c.sync_prices ? 'Yes' : 'No'}</span>,
-    },
-    {
-      key: 'sync_stock',
-      header: 'Sync Stock',
-      cell: (c) => <span className="text-muted-foreground">{c.sync_stock ? 'Yes' : 'No'}</span>,
+      key: 'connection_status',
+      header: 'Connection',
+      cell: (c) => <ConnectionStatusBadge status={c.connection_status} />,
     },
     {
       key: 'is_active',
@@ -219,6 +223,12 @@ export function ChannelsPage() {
               <ActionMenu
                 label={`Actions for ${channel.name}`}
                 items={[
+                  {
+                    key: 'test-connection',
+                    label: testingId === channel.id ? 'Testing…' : 'Test Connection',
+                    icon: Wifi,
+                    onSelect: () => handleTestConnection(channel),
+                  },
                   { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(channel) },
                   {
                     key: 'delete',
