@@ -20,4 +20,5 @@ return [
     Modules\Commerce\ProductMappings\Infrastructure\Providers\ProductMappingServiceProvider::class,
     Modules\Commerce\Connectors\Infrastructure\Providers\ConnectorServiceProvider::class,
     Modules\Commerce\ProductImport\Infrastructure\Providers\ProductImportServiceProvider::class,
+    Modules\Commerce\Orders\Infrastructure\Providers\OrderServiceProvider::class,
 ];

@@ -16,6 +16,8 @@ import { PurchaseOrdersPage } from '@/features/purchase-orders/pages/purchase-or
 import { ViewPurchaseOrderPage } from '@/features/purchase-orders/pages/view-purchase-order-page';
 import { ChannelsPage } from '@/features/channels/pages/channels-page';
 import { ProductMappingsPage } from '@/features/product-mappings/pages/product-mappings-page';
+import { OrdersPage } from '@/features/orders/pages/orders-page';
+import { OrderDetailPage } from '@/features/orders/pages/order-detail-page';
 import { CustomersPage } from '@/features/customers/pages/customers-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
 import { CreateGoodsReceiptPage } from '@/features/goods-receipts/pages/create-goods-receipt-page';
@@ -81,6 +83,8 @@ export const router = createBrowserRouter(
             { path: ROUTES.customers, Component: CustomersPage },
             { path: ROUTES.channels, Component: ChannelsPage },
             { path: ROUTES.productMappings, Component: ProductMappingsPage },
+            { path: ROUTES.orders, Component: OrdersPage },
+            { path: `${ROUTES.orders}/:id`, Component: OrderDetailPage },
             { path: ROUTES.goodsReceipts, Component: GoodsReceiptsPage },
             { path: ROUTES.goodsReceiptsNew, Component: CreateGoodsReceiptPage },
             { path: `${ROUTES.goodsReceipts}/:id`, Component: ViewGoodsReceiptPage },

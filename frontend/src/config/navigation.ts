@@ -15,6 +15,7 @@ import {
   Receipt,
   Ruler,
   Settings,
+  ShoppingBag,
   ShoppingCart,
   Store,
   Truck,
@@ -86,6 +87,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'channels', label: 'Channels', path: ROUTES.channels, icon: Store },
       { key: 'product-mappings', label: 'Product Mapping', path: ROUTES.productMappings, icon: Link2 },
+      { key: 'orders', label: 'Orders', path: ROUTES.orders, icon: ShoppingBag },
     ],
   },
   {

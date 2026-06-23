@@ -21,6 +21,7 @@ export const ROUTES = {
   customers: '/customers',
   channels: '/channels',
   productMappings: '/product-mappings',
+  orders: '/orders',
   inventory: '/inventory',
   purchasing: '/purchasing',
   sales: '/sales',
