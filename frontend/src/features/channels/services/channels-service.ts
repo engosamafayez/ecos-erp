@@ -4,6 +4,7 @@ import type {
   ChannelPayload,
   ChannelsQuery,
   ChannelsResult,
+  ImportResult,
 } from '@/features/channels/types/channel';
 import type { ApiResponse } from '@/types';
 
@@ -34,6 +35,11 @@ export const channelsService = {
 
   async testConnection(id: string): Promise<Channel> {
     const { data } = await api.post<ApiResponse<Channel>>(`/channels/${id}/test-connection`);
+    return data.data;
+  },
+
+  async importProducts(id: string): Promise<ImportResult> {
+    const { data } = await api.post<ApiResponse<ImportResult>>(`/channels/${id}/import-products`);
     return data.data;
   },
 };

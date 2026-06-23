@@ -66,3 +66,11 @@ export type ChannelsResult = {
   items: Channel[];
   meta: PaginationMeta;
 };
+
+export type ImportResult = {
+  imported: number;
+  created_products: number;
+  created_mappings: number;
+  failed: number;
+  errors: string[];
+};

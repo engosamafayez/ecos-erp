@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { channelsService } from '@/features/channels/services/channels-service';
-import type { ChannelPayload, ChannelsQuery } from '@/features/channels/types/channel';
+import type { ChannelPayload, ChannelsQuery, ImportResult } from '@/features/channels/types/channel';
 
 export const CHANNELS_KEY = 'channels';
 
@@ -43,5 +43,17 @@ export function useTestConnection() {
   return useMutation({
     mutationFn: (id: string) => channelsService.testConnection(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [CHANNELS_KEY] }),
+  });
+}
+
+export function useImportProducts() {
+  const queryClient = useQueryClient();
+  return useMutation<ImportResult, Error, string>({
+    mutationFn: (id: string) => channelsService.importProducts(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CHANNELS_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['product-mappings'] });
+      queryClient.invalidateQueries({ queryKey: ['products-all'] });
+    },
   });
 }

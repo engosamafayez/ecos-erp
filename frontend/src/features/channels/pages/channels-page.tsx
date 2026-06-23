@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Plus, Trash2, Wifi } from 'lucide-react';
+import { Download, Pencil, Plus, Trash2, Wifi } from 'lucide-react';
 
 import {
   ActionMenu,
@@ -15,10 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChannelFormDrawer } from '@/features/channels/components/channel-form-drawer';
 import { ConnectionStatusBadge } from '@/features/channels/components/connection-status-badge';
+import { ImportResultDialog } from '@/features/channels/components/import-result-dialog';
 import { PlatformBadge } from '@/features/channels/components/platform-badge';
 import {
   useChannelsQuery,
   useDeleteChannel,
+  useImportProducts,
   useTestConnection,
 } from '@/features/channels/hooks/use-channels';
 import type {
@@ -26,6 +28,7 @@ import type {
   ChannelPlatform,
   ChannelSortField,
   ChannelStatusFilter,
+  ImportResult,
 } from '@/features/channels/types/channel';
 import { ROUTES } from '@/router/routes';
 
@@ -53,6 +56,9 @@ export function ChannelsPage() {
   const [drawerChannel, setDrawerChannel] = useState<Channel | null>(null);
   const [deleting, setDeleting] = useState<Channel | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [importingId, setImportingId] = useState<string | null>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importChannelName, setImportChannelName] = useState<string | undefined>();
 
   const params = useMemo(
     () => ({
@@ -70,6 +76,7 @@ export function ChannelsPage() {
   const { data, isLoading, isError, isFetching, refetch } = useChannelsQuery(params);
   const deleteChannel = useDeleteChannel();
   const testConnection = useTestConnection();
+  const importProducts = useImportProducts();
 
   const items = data?.items ?? [];
   const meta = data?.meta;
@@ -97,6 +104,15 @@ export function ChannelsPage() {
     setTestingId(channel.id);
     testConnection.mutate(channel.id, {
       onSettled: () => setTestingId(null),
+    });
+  };
+
+  const handleImportProducts = (channel: Channel) => {
+    setImportingId(channel.id);
+    setImportChannelName(channel.name);
+    importProducts.mutate(channel.id, {
+      onSuccess: (result) => { setImportResult(result); },
+      onSettled: () => setImportingId(null),
     });
   };
 
@@ -224,6 +240,12 @@ export function ChannelsPage() {
                 label={`Actions for ${channel.name}`}
                 items={[
                   {
+                    key: 'import-products',
+                    label: importingId === channel.id ? 'Importing…' : 'Import Products',
+                    icon: Download,
+                    onSelect: () => handleImportProducts(channel),
+                  },
+                  {
                     key: 'test-connection',
                     label: testingId === channel.id ? 'Testing…' : 'Test Connection',
                     icon: Wifi,
@@ -274,6 +296,13 @@ export function ChannelsPage() {
         onConfirm={() => {
           if (deleting) deleteChannel.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
         }}
+      />
+
+      <ImportResultDialog
+        open={importResult !== null}
+        onOpenChange={(open) => { if (!open) setImportResult(null); }}
+        result={importResult}
+        channelName={importChannelName}
       />
     </div>
   );
