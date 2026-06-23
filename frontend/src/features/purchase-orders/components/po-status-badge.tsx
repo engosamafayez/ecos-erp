@@ -1,13 +1,15 @@
+import { useTranslation } from 'react-i18next';
+
 import { StatusBadge } from '@/components/crud';
 import type { PurchaseOrderStatus } from '@/features/purchase-orders/types/purchase-order';
 
-const STATUS_MAP: Record<PurchaseOrderStatus, { variant: 'pending' | 'active' | 'archived'; label: string }> = {
-  draft: { variant: 'pending', label: 'Draft' },
-  approved: { variant: 'active', label: 'Approved' },
-  cancelled: { variant: 'archived', label: 'Cancelled' },
+const STATUS_VARIANTS: Record<PurchaseOrderStatus, 'pending' | 'active' | 'archived'> = {
+  draft: 'pending',
+  approved: 'active',
+  cancelled: 'archived',
 };
 
 export function PoStatusBadge({ status }: { status: PurchaseOrderStatus }) {
-  const { variant, label } = STATUS_MAP[status];
-  return <StatusBadge status={variant} label={label} />;
+  const { t } = useTranslation('purchase-orders');
+  return <StatusBadge status={STATUS_VARIANTS[status]} label={t(`status.${status}`)} />;
 }

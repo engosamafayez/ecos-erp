@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -24,6 +25,8 @@ const PER_PAGE = 10;
 type StatusFilter = OrderStatus | 'all';
 
 export function OrdersPage() {
+  const { t } = useTranslation('orders');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -76,39 +79,39 @@ export function OrdersPage() {
   const columns: ColumnDef<Order>[] = [
     {
       key: 'order_number',
-      header: 'Order Number',
+      header: t('columns.number'),
       sortable: true,
       cell: (o) => <span className="font-medium">{o.order_number}</span>,
     },
     {
       key: 'channel',
-      header: 'Channel',
+      header: t('columns.channel'),
       cell: (o) => (
         <span className="text-muted-foreground">{o.channel?.name ?? '—'}</span>
       ),
     },
     {
       key: 'customer',
-      header: 'Customer',
+      header: t('columns.customer'),
       cell: (o) => (
         <span className="text-muted-foreground">{o.customer?.name ?? '—'}</span>
       ),
     },
     {
       key: 'order_date',
-      header: 'Date',
+      header: t('columns.orderDate'),
       sortable: true,
       cell: (o) => <span className="text-muted-foreground">{o.order_date}</span>,
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (o) => <OrderStatusBadge status={o.status} />,
     },
     {
       key: 'total',
-      header: 'Total',
+      header: t('columns.total'),
       sortable: true,
       cell: (o) => (
         <span className="font-medium">
@@ -124,13 +127,13 @@ export function OrdersPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Orders"
-        subtitle="Manage commerce orders from all channels."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Orders' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Order
+            {t('actions.new')}
           </Button>
         }
       />
@@ -138,7 +141,7 @@ export function OrdersPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search by order number or customer…"
+            searchPlaceholder={t('search')}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -146,17 +149,17 @@ export function OrdersPage() {
             onClearFilters={() => { setStatusFilter('all'); setPage(1); }}
             filterPanel={
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">Status</span>
+                <span className="text-sm font-medium">{tCommon('filters.status')}</span>
                 <select
                   value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value as StatusFilter); setPage(1); }}
                   className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                 >
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="processing">Processing</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="all">{tCommon('status.all')}</option>
+                  <option value="pending">{t('status.pending')}</option>
+                  <option value="processing">{t('status.processing')}</option>
+                  <option value="completed">{t('status.completed')}</option>
+                  <option value="cancelled">{t('status.cancelled')}</option>
                 </select>
               </div>
             }
@@ -176,19 +179,19 @@ export function OrdersPage() {
                 items={[
                   {
                     key: 'view',
-                    label: 'View',
+                    label: tCommon('actions.view'),
                     icon: Eye,
                     onSelect: () => navigate(`${ROUTES.orders}/${order.id}`),
                   },
                   {
                     key: 'edit',
-                    label: 'Edit',
+                    label: tCommon('common.edit'),
                     icon: Pencil,
                     onSelect: () => openEdit(order),
                   },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive' as const,
                     onSelect: () => setDeleting(order),
@@ -221,15 +224,9 @@ export function OrdersPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete order"
-        description={
-          <>
-            This will soft-delete{' '}
-            <span className="text-foreground font-medium">{deleting?.order_number}</span>. It can
-            be restored later.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('delete.title')}
+        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.order_number ?? '' })}
+        confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteOrder.isPending}
         onConfirm={() => {

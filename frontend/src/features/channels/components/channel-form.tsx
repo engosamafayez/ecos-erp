@@ -1,5 +1,6 @@
 import { useFormContext } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { Combobox } from '@/components/crud/combobox';
 import { FormField } from '@/components/crud';
@@ -17,6 +18,7 @@ const PLATFORM_OPTIONS = [
 ] as const;
 
 export function ChannelFormFields() {
+  const { t } = useTranslation('channels');
   const { register, setValue, control } = useFormContext<ChannelFormValues>();
   const { data: companyOptions = [], isLoading: companiesLoading } = useCompanyOptions();
 
@@ -26,22 +28,22 @@ export function ChannelFormFields() {
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <FormField name="company_id" label="Company" required>
+          <FormField name="company_id" label={t('form.company.label')} required>
             <Combobox
               options={companyOptions}
               value={companyId || null}
               onChange={(val) => setValue('company_id', val, { shouldValidate: true })}
-              placeholder="Select company…"
+              placeholder={t('form.company.placeholder')}
               loading={companiesLoading}
             />
           </FormField>
         </div>
 
-        <FormField name="name" label="Name" required>
-          <Input placeholder="ECOS Main Store" {...register('name')} />
+        <FormField name="name" label={t('form.name.label')} required>
+          <Input placeholder={t('form.name.placeholder')} {...register('name')} />
         </FormField>
 
-        <FormField name="platform" label="Platform" required>
+        <FormField name="platform" label={t('form.platform.label')} required>
           <select
             {...register('platform')}
             className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs"
@@ -55,39 +57,39 @@ export function ChannelFormFields() {
         </FormField>
 
         <div className="sm:col-span-2">
-          <FormField name="store_url" label="Store URL" required>
-            <Input type="url" placeholder="https://store.example.com" {...register('store_url')} />
+          <FormField name="store_url" label={t('form.storeUrl.label')} required>
+            <Input type="url" placeholder={t('form.storeUrl.placeholder')} {...register('store_url')} />
           </FormField>
         </div>
 
-        <FormField name="consumer_key" label="Consumer Key">
-          <Input placeholder="ck_…" {...register('consumer_key')} />
+        <FormField name="consumer_key" label={t('form.consumerKey.label')}>
+          <Input placeholder={t('form.consumerKey.placeholder')} {...register('consumer_key')} />
         </FormField>
 
-        <FormField name="consumer_secret" label="Consumer Secret">
-          <Input type="password" placeholder="cs_…" {...register('consumer_secret')} />
+        <FormField name="consumer_secret" label={t('form.consumerSecret.label')}>
+          <Input type="password" placeholder={t('form.consumerSecret.placeholder')} {...register('consumer_secret')} />
         </FormField>
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">Sync Settings</span>
+        <span className="text-sm font-medium">{t('form.syncSettings')}</span>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="border-input size-4 rounded" {...register('sync_products')} />
-          Sync Products
+          {t('form.syncProducts')}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="border-input size-4 rounded" {...register('sync_prices')} />
-          Sync Prices
+          {t('form.syncPrices')}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="border-input size-4 rounded" {...register('sync_stock')} />
-          Sync Stock
+          {t('form.syncStock')}
         </label>
       </div>
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" className="border-input size-4 rounded" {...register('is_active')} />
-        Active
+        {t('form.active')}
       </label>
     </div>
   );

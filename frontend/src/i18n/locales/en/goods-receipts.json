@@ -1,0 +1,96 @@
+{
+  "title": "Goods Receipts",
+  "subtitle": "Receive products from approved purchase orders into warehouses.",
+  "search": "Search by receipt # or PO number…",
+  "actions": {
+    "new": "New Receipt",
+    "create": "Create goods receipt",
+    "post": "Post",
+    "postReceipt": "Post Receipt",
+    "cancel": "Cancel"
+  },
+  "filters": {
+    "status": "Status",
+    "allStatuses": "All statuses"
+  },
+  "status": {
+    "draft": "Draft",
+    "posted": "Posted"
+  },
+  "columns": {
+    "number": "Receipt #",
+    "purchaseOrder": "Purchase Order",
+    "warehouse": "Warehouse",
+    "receiptDate": "Receipt Date",
+    "total": "Total",
+    "status": "Status"
+  },
+  "form": {
+    "purchaseOrder": { "label": "Purchase Order", "placeholder": "Select purchase order…" },
+    "warehouse": { "label": "Warehouse", "placeholder": "Select warehouse…" },
+    "receiptDate": "Receipt Date",
+    "notes": { "label": "Notes", "placeholder": "Optional notes…" }
+  },
+  "lines": {
+    "title": "Receipt Lines",
+    "addLine": "Add line",
+    "columns": {
+      "product": "Product",
+      "quantity": "Quantity",
+      "unitPrice": "Unit Price",
+      "total": "Total"
+    },
+    "selectProduct": "Select product…",
+    "noLines": "No lines added yet."
+  },
+  "totals": {
+    "subtotal": "Subtotal",
+    "total": "Total"
+  },
+  "detail": {
+    "title": "Goods Receipt",
+    "receiptInfo": "Receipt Information",
+    "receiptDetails": "Receipt Details",
+    "lineItems": "Lines",
+    "purchaseOrder": "Purchase Order",
+    "warehouse": "Warehouse",
+    "receiptDate": "Receipt Date",
+    "notes": "Notes",
+    "loading": "Loading…",
+    "notFound": "Receipt not found.",
+    "notFoundMessage": "This goods receipt does not exist."
+  },
+  "create": {
+    "title": "New Goods Receipt",
+    "new": "New",
+    "subtitle": "Select an approved purchase order and enter received quantities.",
+    "receiptDetails": "Receipt Details",
+    "submitCreate": "Create Receipt",
+    "creating": "Creating…",
+    "errorTitle": "Unable to create goods receipt"
+  },
+  "edit": {
+    "title": "Edit",
+    "subtitle": "Update receipt details and received quantities.",
+    "editLabel": "Edit",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "dialogs": {
+    "post": {
+      "title": "Post goods receipt",
+      "description": "Post {{number}}? Stock will be updated and the receipt will become read-only.",
+      "confirm": "Post Receipt"
+    },
+    "delete": {
+      "title": "Delete goods receipt",
+      "description": "Delete {{number}}? Only draft receipts can be deleted.",
+      "confirm": "Delete"
+    }
+  },
+  "delete": {
+    "title": "Delete goods receipt",
+    "confirm": "Delete"
+  }
+}

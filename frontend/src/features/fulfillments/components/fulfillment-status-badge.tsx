@@ -1,20 +1,21 @@
+import { useTranslation } from 'react-i18next';
+
 import type { FulfillmentStatus } from '@/features/fulfillments/types/fulfillment';
 
-type Config = { label: string; className: string };
-
-const STATUS_CONFIG: Record<FulfillmentStatus, Config> = {
-  pending: { label: 'Pending', className: 'bg-yellow-100 text-yellow-800' },
-  fulfilled: { label: 'Fulfilled', className: 'bg-emerald-100 text-emerald-800' },
-  cancelled: { label: 'Cancelled', className: 'bg-rose-100 text-rose-800' },
+const STATUS_CLASS: Record<FulfillmentStatus, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  fulfilled: 'bg-emerald-100 text-emerald-800',
+  cancelled: 'bg-rose-100 text-rose-800',
 };
 
 export function FulfillmentStatusBadge({ status }: { status: FulfillmentStatus }) {
-  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
+  const { t } = useTranslation('fulfillments');
+  const className = STATUS_CLASS[status] ?? STATUS_CLASS.pending;
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.className}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${className}`}
     >
-      {config.label}
+      {t(`status.${status}`)}
     </span>
   );
 }

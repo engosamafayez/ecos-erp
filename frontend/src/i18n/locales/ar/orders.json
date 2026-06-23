@@ -1,0 +1,56 @@
+{
+  "title": "الطلبات",
+  "subtitle": "إدارة طلبات التجارة من جميع القنوات.",
+  "search": "بحث برقم الطلب أو اسم العميل…",
+  "actions": {
+    "new": "طلب جديد"
+  },
+  "filters": {
+    "status": "الحالة",
+    "allStatuses": "جميع الحالات",
+    "channel": "القناة",
+    "allChannels": "جميع القنوات"
+  },
+  "status": {
+    "pending": "قيد الانتظار",
+    "processing": "قيد المعالجة",
+    "completed": "مكتمل",
+    "cancelled": "ملغى"
+  },
+  "columns": {
+    "number": "رقم الطلب",
+    "customer": "العميل",
+    "channel": "القناة",
+    "orderDate": "التاريخ",
+    "total": "الإجمالي",
+    "status": "الحالة"
+  },
+  "detail": {
+    "title": "الطلب",
+    "orderInfo": "معلومات الطلب",
+    "orderDetails": "تفاصيل الطلب",
+    "orderNumber": "رقم الطلب",
+    "customer": "العميل",
+    "channel": "القناة",
+    "orderDate": "تاريخ الطلب",
+    "status": "الحالة",
+    "externalOrderId": "رقم الطلب الخارجي",
+    "notes": "ملاحظات",
+    "lines": "بنود الطلب",
+    "lineItems": "بنود الطلب",
+    "product": "المنتج",
+    "qty": "الكمية",
+    "unitPrice": "سعر الوحدة",
+    "lineTotal": "إجمالي البند",
+    "subtotal": "المجموع الفرعي",
+    "total": "الإجمالي",
+    "back": "رجوع",
+    "loading": "جارٍ التحميل…",
+    "notFound": "غير موجود",
+    "notFoundMessage": "هذا الطلب غير موجود."
+  },
+  "delete": {
+    "title": "حذف الطلب",
+    "confirm": "حذف"
+  }
+}

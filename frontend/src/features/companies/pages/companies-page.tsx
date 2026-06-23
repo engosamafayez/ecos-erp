@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -21,6 +22,8 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 10;
 
 export function CompaniesPage() {
+  const { t } = useTranslation('companies');
+  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ field: CompanySortField; direction: 'asc' | 'desc' }>({
@@ -79,47 +82,45 @@ export function CompaniesPage() {
   const columns: ColumnDef<Company>[] = [
     {
       key: 'code',
-      header: 'Code',
+      header: t('columns.code'),
       sortable: true,
       cell: (c) => <span className="font-medium">{c.code}</span>,
     },
-    { key: 'name', header: 'Name', sortable: true, cell: (c) => c.name },
+    { key: 'name', header: t('columns.name'), sortable: true, cell: (c) => c.name },
     {
       key: 'phone',
-      header: 'Phone',
+      header: t('columns.phone'),
       cell: (c) => <span className="text-muted-foreground">{c.phone ?? '—'}</span>,
     },
     {
       key: 'email',
-      header: 'Email',
+      header: t('columns.email'),
       cell: (c) => <span className="text-muted-foreground">{c.email ?? '—'}</span>,
     },
-    { key: 'country', header: 'Country', sortable: true, cell: (c) => c.country ?? '—' },
+    { key: 'country', header: t('columns.country'), sortable: true, cell: (c) => c.country ?? '—' },
     {
       key: 'is_active',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (c) => <StatusBadge status={c.is_active ? 'active' : 'inactive'} />,
     },
   ];
 
   const confirmDelete = () => {
-    if (!deleting) {
-      return;
-    }
+    if (!deleting) return;
     deleteCompany.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
   };
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Companies"
-        subtitle="Manage the organizations in your tenant."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Companies' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Company
+            {t('actions.new')}
           </Button>
         }
       />
@@ -127,7 +128,7 @@ export function CompaniesPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search companies…"
+            searchPlaceholder={t('search')}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -146,11 +147,11 @@ export function CompaniesPage() {
               <ActionMenu
                 label={`Actions for ${company.name}`}
                 items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openEdit(company) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(company) },
+                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(company) },
+                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(company) },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(company),
@@ -178,9 +179,7 @@ export function CompaniesPage() {
         open={drawerOpen}
         onOpenChange={(open) => {
           setDrawerOpen(open);
-          if (!open) {
-            setDrawerCompany(null);
-          }
+          if (!open) setDrawerCompany(null);
         }}
         company={drawerCompany}
       />
@@ -188,19 +187,11 @@ export function CompaniesPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setDeleting(null);
-          }
+          if (!open) setDeleting(null);
         }}
-        title="Delete company"
-        description={
-          <>
-            This will soft-delete{' '}
-            <span className="text-foreground font-medium">{deleting?.name}</span>. It can be
-            restored later.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('delete.title')}
+        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
+        confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteCompany.isPending}
         onConfirm={confirmDelete}

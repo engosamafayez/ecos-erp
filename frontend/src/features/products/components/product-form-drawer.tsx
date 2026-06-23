@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { EntityDrawer, EntityForm } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -22,7 +23,6 @@ type ProductFormDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product?: Product | null;
-  /** Default product type used when creating from a typed page. */
   defaultType?: ProductType;
 };
 
@@ -32,15 +32,14 @@ function extractMessage(error: unknown): string {
     : 'Something went wrong. Please try again.';
 }
 
-/**
- * Create / edit product slide-over, built on the shared EntityDrawer + EntityForm.
- */
 export function ProductFormDrawer({
   open,
   onOpenChange,
   product,
   defaultType = 'finished_good',
 }: ProductFormDrawerProps) {
+  const { t } = useTranslation('products');
+  const { t: tCommon } = useTranslation('common');
   const isEdit = Boolean(product);
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -60,9 +59,7 @@ export function ProductFormDrawer({
   const isPending = createProduct.isPending || updateProduct.isPending;
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      setServerError(null);
-    }
+    if (!next) setServerError(null);
     onOpenChange(next);
   };
 
@@ -85,24 +82,26 @@ export function ProductFormDrawer({
     <EntityDrawer
       open={open}
       onOpenChange={handleOpenChange}
-      title={isEdit ? 'Edit Product' : 'Create Product'}
-      description={
-        isEdit ? 'Update the product details below.' : 'Add a new product to the catalog.'
-      }
+      title={isEdit ? t('drawer.editTitle') : t('drawer.createTitle')}
+      description={isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle')}
       footer={
         <>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {tCommon('common.cancel')}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
-            {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create product'}
+            {isPending
+              ? t('drawer.saving')
+              : isEdit
+                ? t('drawer.submitEdit')
+                : t('drawer.submitCreate')}
           </Button>
         </>
       }
     >
       {serverError ? (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Unable to save</AlertTitle>
+          <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}

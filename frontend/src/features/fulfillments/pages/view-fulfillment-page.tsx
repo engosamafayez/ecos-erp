@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { ConfirmDialog, PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,8 @@ function LabelValue({ label, value }: { label: string; value: React.ReactNode })
 }
 
 export function ViewFulfillmentPage() {
+  const { t } = useTranslation('fulfillments');
+  const { t: tCommon } = useTranslation('common');
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [confirmFulfill, setConfirmFulfill] = useState(false);
@@ -35,7 +38,7 @@ export function ViewFulfillmentPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <span className="text-muted-foreground text-sm">Loading…</span>
+        <span className="text-muted-foreground text-sm">{t('detail.loading')}</span>
       </div>
     );
   }
@@ -43,7 +46,7 @@ export function ViewFulfillmentPage() {
   if (isError || !fulfillment) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <span className="text-destructive text-sm">Fulfillment not found.</span>
+        <span className="text-destructive text-sm">{t('detail.notFound')}</span>
       </div>
     );
   }
@@ -56,24 +59,24 @@ export function ViewFulfillmentPage() {
         title={fulfillment.fulfillment_number}
         subtitle={<FulfillmentStatusBadge status={fulfillment.status} />}
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Fulfillments', to: ROUTES.fulfillments },
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: t('title'), to: ROUTES.fulfillments },
           { label: fulfillment.fulfillment_number },
         ]}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate(ROUTES.fulfillments)}>
-              Back
+              {t('detail.back')}
             </Button>
             {isPending && (
               <>
                 <Button onClick={() => setConfirmFulfill(true)}>
                   <CheckCircle className="size-4" />
-                  Fulfill
+                  {t('actions.fulfill')}
                 </Button>
                 <Button variant="destructive" onClick={() => setConfirmCancel(true)}>
                   <XCircle className="size-4" />
-                  Cancel
+                  {t('actions.cancel')}
                 </Button>
               </>
             )}
@@ -83,23 +86,23 @@ export function ViewFulfillmentPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Fulfillment Details</CardTitle>
+          <CardTitle>{t('detail.fulfillmentDetails')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <LabelValue label="Fulfillment #" value={fulfillment.fulfillment_number} />
-            <LabelValue label="Order" value={fulfillment.order?.order_number} />
-            <LabelValue label="Customer" value={fulfillment.order?.customer?.name} />
-            <LabelValue label="Warehouse" value={fulfillment.warehouse?.name} />
-            <LabelValue label="Date" value={fulfillment.fulfillment_date} />
+            <LabelValue label={t('detail.fulfillmentNumber')} value={fulfillment.fulfillment_number} />
+            <LabelValue label={t('detail.order')} value={fulfillment.order?.order_number} />
+            <LabelValue label={t('detail.customer')} value={fulfillment.order?.customer?.name} />
+            <LabelValue label={t('detail.warehouse')} value={fulfillment.warehouse?.name} />
+            <LabelValue label={t('detail.date')} value={fulfillment.fulfillment_date} />
             <LabelValue
-              label="Status"
+              label={t('detail.status')}
               value={<FulfillmentStatusBadge status={fulfillment.status} />}
             />
           </div>
           {fulfillment.notes && (
             <div className="mt-4">
-              <span className="text-muted-foreground text-xs">Notes</span>
+              <span className="text-muted-foreground text-xs">{t('detail.notes')}</span>
               <p className="mt-0.5 text-sm">{fulfillment.notes}</p>
             </div>
           )}
@@ -108,15 +111,15 @@ export function ViewFulfillmentPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Line Items</CardTitle>
+          <CardTitle>{t('detail.lineItems')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground border-b text-left">
-                  <th className="pb-2 pr-3 font-medium">Product</th>
-                  <th className="w-32 pb-2 font-medium">Quantity</th>
+                  <th className="pb-2 pr-3 font-medium">{t('detail.product')}</th>
+                  <th className="w-32 pb-2 font-medium">{t('detail.quantity')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -142,18 +145,9 @@ export function ViewFulfillmentPage() {
       <ConfirmDialog
         open={confirmFulfill}
         onOpenChange={setConfirmFulfill}
-        title="Fulfill shipment"
-        description={
-          <>
-            Fulfill{' '}
-            <span className="text-foreground font-medium">
-              {fulfillment.fulfillment_number}
-            </span>
-            ? Stock will be deducted from the warehouse and this fulfillment will become
-            read-only.
-          </>
-        }
-        confirmLabel="Fulfill"
+        title={t('dialogs.fulfill.title')}
+        description={t('dialogs.fulfill.description', { number: fulfillment.fulfillment_number })}
+        confirmLabel={t('dialogs.fulfill.confirm')}
         loading={fulfill.isPending}
         onConfirm={() => {
           fulfill.mutate(fulfillment.id, { onSuccess: () => setConfirmFulfill(false) });
@@ -163,17 +157,9 @@ export function ViewFulfillmentPage() {
       <ConfirmDialog
         open={confirmCancel}
         onOpenChange={setConfirmCancel}
-        title="Cancel fulfillment"
-        description={
-          <>
-            Cancel{' '}
-            <span className="text-foreground font-medium">
-              {fulfillment.fulfillment_number}
-            </span>
-            ? This action cannot be undone.
-          </>
-        }
-        confirmLabel="Cancel Fulfillment"
+        title={t('dialogs.cancel.title')}
+        description={t('dialogs.cancel.description', { number: fulfillment.fulfillment_number })}
+        confirmLabel={t('dialogs.cancel.confirm')}
         variant="destructive"
         loading={cancel.isPending}
         onConfirm={() => {

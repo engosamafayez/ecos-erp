@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,8 @@ import { useCreateGoodsReceipt } from '@/features/goods-receipts/hooks/use-goods
 import { ROUTES } from '@/router/routes';
 
 export function CreateGoodsReceiptPage() {
+  const { t } = useTranslation('goods-receipts');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const createGR = useCreateGoodsReceipt();
   const [poLineInfos, setPoLineInfos] = useState<PoLineInfo[]>([]);
@@ -41,20 +44,20 @@ export function CreateGoodsReceiptPage() {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col gap-6">
           <PageHeader
-            title="New Goods Receipt"
-            subtitle="Select an approved purchase order and enter received quantities."
+            title={t('create.title')}
+            subtitle={t('create.subtitle')}
             breadcrumbs={[
-              { label: 'Home', to: ROUTES.dashboard },
-              { label: 'Goods Receipts', to: ROUTES.goodsReceipts },
-              { label: 'New' },
+              { label: tCommon('home'), to: ROUTES.dashboard },
+              { label: t('title'), to: ROUTES.goodsReceipts },
+              { label: t('create.new') },
             ]}
             actions={
               <div className="flex items-center gap-2">
                 <Button type="button" variant="outline" onClick={() => navigate(ROUTES.goodsReceipts)}>
-                  Cancel
+                  {tCommon('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={createGR.isPending}>
-                  {createGR.isPending ? 'Creating…' : 'Create Receipt'}
+                  {createGR.isPending ? t('create.creating') : t('create.submitCreate')}
                 </Button>
               </div>
             }
@@ -62,7 +65,7 @@ export function CreateGoodsReceiptPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Receipt Details</CardTitle>
+              <CardTitle>{t('create.receiptDetails')}</CardTitle>
             </CardHeader>
             <CardContent>
               <GoodsReceiptHeaderFields onPoLinesLoaded={setPoLineInfos} />
@@ -71,7 +74,7 @@ export function CreateGoodsReceiptPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Lines</CardTitle>
+              <CardTitle>{t('lines.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <GoodsReceiptLinesEditor poLineInfos={poLineInfos} />

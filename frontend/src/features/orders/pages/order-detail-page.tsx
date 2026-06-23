@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ function LabelValue({ label, value }: { label: string; value: React.ReactNode })
 }
 
 export function OrderDetailPage() {
+  const { t } = useTranslation('orders');
+  const { t: tCommon } = useTranslation('common');
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: order, isLoading } = useOrderQuery(id);
@@ -33,10 +36,10 @@ export function OrderDetailPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          title="Loading…"
+          title={t('detail.loading')}
           breadcrumbs={[
-            { label: 'Home', to: ROUTES.dashboard },
-            { label: 'Orders', to: ROUTES.orders },
+            { label: tCommon('home'), to: ROUTES.dashboard },
+            { label: t('title'), to: ROUTES.orders },
             { label: '…' },
           ]}
         />
@@ -48,13 +51,13 @@ export function OrderDetailPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          title="Not Found"
+          title={t('detail.notFound')}
           breadcrumbs={[
-            { label: 'Home', to: ROUTES.dashboard },
-            { label: 'Orders', to: ROUTES.orders },
+            { label: tCommon('home'), to: ROUTES.dashboard },
+            { label: t('title'), to: ROUTES.orders },
           ]}
         />
-        <p className="text-muted-foreground text-sm">This order does not exist.</p>
+        <p className="text-muted-foreground text-sm">{t('detail.notFoundMessage')}</p>
       </div>
     );
   }
@@ -65,19 +68,19 @@ export function OrderDetailPage() {
         title={order.order_number}
         subtitle={order.customer?.name ?? ''}
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Orders', to: ROUTES.orders },
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: t('title'), to: ROUTES.orders },
           { label: order.order_number },
         ]}
         actions={
           <div className="flex items-center gap-2">
             <OrderStatusBadge status={order.status} />
             <Button variant="outline" onClick={() => navigate(ROUTES.orders)}>
-              Back
+              {t('detail.back')}
             </Button>
             <Button onClick={() => setEditOpen(true)}>
               <Pencil className="size-4" />
-              Edit
+              {tCommon('common.edit')}
             </Button>
           </div>
         }
@@ -85,20 +88,20 @@ export function OrderDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Order Details</CardTitle>
+          <CardTitle>{t('detail.orderDetails')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <LabelValue label="Order Number" value={order.order_number} />
-            <LabelValue label="Customer" value={order.customer?.name} />
-            <LabelValue label="Channel" value={order.channel?.name} />
-            <LabelValue label="Order Date" value={order.order_date} />
-            <LabelValue label="Status" value={<OrderStatusBadge status={order.status} />} />
-            <LabelValue label="External Order ID" value={order.external_order_id} />
+            <LabelValue label={t('detail.orderNumber')} value={order.order_number} />
+            <LabelValue label={t('detail.customer')} value={order.customer?.name} />
+            <LabelValue label={t('detail.channel')} value={order.channel?.name} />
+            <LabelValue label={t('detail.orderDate')} value={order.order_date} />
+            <LabelValue label={t('detail.status')} value={<OrderStatusBadge status={order.status} />} />
+            <LabelValue label={t('detail.externalOrderId')} value={order.external_order_id} />
           </div>
           {order.notes && (
             <div className="mt-4">
-              <span className="text-muted-foreground text-xs">Notes</span>
+              <span className="text-muted-foreground text-xs">{t('detail.notes')}</span>
               <p className="mt-0.5 text-sm">{order.notes}</p>
             </div>
           )}
@@ -107,17 +110,17 @@ export function OrderDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Line Items</CardTitle>
+          <CardTitle>{t('detail.lineItems')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground border-b text-left">
-                  <th className="pb-2 pr-3 font-medium">Product</th>
-                  <th className="w-28 pb-2 pr-3 font-medium">Qty</th>
-                  <th className="w-32 pb-2 pr-3 font-medium">Unit Price</th>
-                  <th className="w-32 pb-2 font-medium text-right">Line Total</th>
+                  <th className="pb-2 pr-3 font-medium">{t('detail.product')}</th>
+                  <th className="w-28 pb-2 pr-3 font-medium">{t('detail.qty')}</th>
+                  <th className="w-32 pb-2 pr-3 font-medium">{t('detail.unitPrice')}</th>
+                  <th className="w-32 pb-2 font-medium text-right">{t('detail.lineTotal')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -142,11 +145,11 @@ export function OrderDetailPage() {
 
           <div className="flex flex-col items-end gap-1 border-t pt-3 text-sm">
             <div className="flex gap-8">
-              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-muted-foreground">{t('detail.subtotal')}</span>
               <span className="w-28 text-right font-medium">{fmt(order.subtotal)}</span>
             </div>
             <div className="flex gap-8 text-base font-semibold">
-              <span>Total</span>
+              <span>{t('detail.total')}</span>
               <span className="w-28 text-right">{fmt(order.total)}</span>
             </div>
           </div>

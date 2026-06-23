@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Download, Pencil, Plus, Trash2, Wifi } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -47,6 +48,8 @@ const PLATFORM_OPTIONS: { value: ChannelPlatform; label: string }[] = [
 ];
 
 export function ChannelsPage() {
+  const { t } = useTranslation('channels');
+  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ChannelStatusFilter>('all');
   const [platformFilter, setPlatformFilter] = useState('');
@@ -135,24 +138,24 @@ export function ChannelsPage() {
   const columns: ColumnDef<Channel>[] = [
     {
       key: 'name',
-      header: 'Name',
+      header: t('columns.name'),
       sortable: true,
       cell: (c) => <span className="font-medium">{c.name}</span>,
     },
     {
       key: 'company',
-      header: 'Company',
+      header: t('columns.company'),
       cell: (c) => <span className="text-muted-foreground">{c.company?.name ?? '—'}</span>,
     },
     {
       key: 'platform',
-      header: 'Platform',
+      header: t('columns.platform'),
       sortable: true,
       cell: (c) => <PlatformBadge platform={c.platform} />,
     },
     {
       key: 'store_url',
-      header: 'Store URL',
+      header: t('columns.storeUrl'),
       cell: (c) => (
         <a
           href={c.store_url}
@@ -166,18 +169,18 @@ export function ChannelsPage() {
     },
     {
       key: 'connection_status',
-      header: 'Connection',
+      header: t('columns.connection'),
       cell: (c) => <ConnectionStatusBadge status={c.connection_status} />,
     },
     {
       key: 'is_active',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (c) => <StatusBadge status={c.is_active ? 'active' : 'inactive'} />,
     },
     {
       key: 'last_sync_at',
-      header: 'Last Sync',
+      header: t('columns.lastSync'),
       sortable: true,
       cell: (c) => (
         <span className="text-muted-foreground">
@@ -190,13 +193,13 @@ export function ChannelsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Channels"
-        subtitle="Manage your commerce channels and integrations."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Channels' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Channel
+            {t('actions.new')}
           </Button>
         }
       />
@@ -204,7 +207,7 @@ export function ChannelsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search channels…"
+            searchPlaceholder={t('search')}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -213,25 +216,25 @@ export function ChannelsPage() {
             filterPanel={
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Status</span>
+                  <span className="text-sm font-medium">{tCommon('filters.status')}</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => { setStatusFilter(e.target.value as ChannelStatusFilter); setPage(1); }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="all">{tCommon('status.all')}</option>
+                    <option value="active">{tCommon('status.active')}</option>
+                    <option value="inactive">{tCommon('status.inactive')}</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Platform</span>
+                  <span className="text-sm font-medium">{t('filters.platform')}</span>
                   <select
                     value={platformFilter}
                     onChange={(e) => { setPlatformFilter(e.target.value); setPage(1); }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">All Platforms</option>
+                    <option value="">{t('filters.allPlatforms')}</option>
                     {PLATFORM_OPTIONS.map((p) => (
                       <option key={p.value} value={p.value}>
                         {p.label}
@@ -257,26 +260,26 @@ export function ChannelsPage() {
                 items={[
                   {
                     key: 'import-products',
-                    label: importingId === channel.id ? 'Importing…' : 'Import Products',
+                    label: importingId === channel.id ? t('actions.importing') : t('actions.importProducts'),
                     icon: Download,
                     onSelect: () => handleImportProducts(channel),
                   },
                   {
                     key: 'import-orders',
-                    label: importingOrdersId === channel.id ? 'Importing…' : 'Import Orders',
+                    label: importingOrdersId === channel.id ? t('actions.importing') : t('actions.importOrders'),
                     icon: Download,
                     onSelect: () => handleImportOrders(channel),
                   },
                   {
                     key: 'test-connection',
-                    label: testingId === channel.id ? 'Testing…' : 'Test Connection',
+                    label: testingId === channel.id ? t('actions.testing') : t('actions.testConnection'),
                     icon: Wifi,
                     onSelect: () => handleTestConnection(channel),
                   },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(channel) },
+                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(channel) },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive' as const,
                     onSelect: () => setDeleting(channel),
@@ -304,15 +307,9 @@ export function ChannelsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete channel"
-        description={
-          <>
-            This will soft-delete{' '}
-            <span className="text-foreground font-medium">{deleting?.name}</span>. It can be
-            restored later.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('delete.title')}
+        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
+        confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteChannel.isPending}
         onConfirm={() => {

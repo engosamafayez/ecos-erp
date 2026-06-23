@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Pencil, Plus, Send, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -29,6 +30,8 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 10;
 
 export function GoodsReceiptsPage() {
+  const { t } = useTranslation('goods-receipts');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<GoodsReceiptStatus | 'all'>('all');
@@ -71,29 +74,29 @@ export function GoodsReceiptsPage() {
   const columns: ColumnDef<GoodsReceipt>[] = [
     {
       key: 'receipt_number',
-      header: 'Receipt #',
+      header: t('columns.number'),
       sortable: true,
       cell: (gr) => <span className="font-medium">{gr.receipt_number}</span>,
     },
     {
       key: 'purchase_order',
-      header: 'Purchase Order',
+      header: t('columns.purchaseOrder'),
       cell: (gr) => gr.purchase_order?.po_number ?? '—',
     },
     {
       key: 'warehouse',
-      header: 'Warehouse',
+      header: t('columns.warehouse'),
       cell: (gr) => gr.warehouse?.name ?? '—',
     },
     {
       key: 'receipt_date',
-      header: 'Receipt Date',
+      header: t('columns.receiptDate'),
       sortable: true,
       cell: (gr) => gr.receipt_date,
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (gr) => <GrStatusBadge status={gr.status} />,
     },
@@ -102,13 +105,13 @@ export function GoodsReceiptsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Goods Receipts"
-        subtitle="Receive products from approved purchase orders into warehouses."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Goods Receipts' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
           <Button onClick={() => navigate(ROUTES.goodsReceiptsNew)}>
             <Plus className="size-4" />
-            New Receipt
+            {t('actions.new')}
           </Button>
         }
       />
@@ -116,7 +119,7 @@ export function GoodsReceiptsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search by receipt # or PO number…"
+            searchPlaceholder={t('search')}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -124,15 +127,15 @@ export function GoodsReceiptsPage() {
             onClearFilters={() => { setStatusFilter('all'); setPage(1); }}
             filterPanel={
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">Status</span>
+                <span className="text-sm font-medium">{tCommon('filters.status')}</span>
                 <select
                   value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value as GoodsReceiptStatus | 'all'); setPage(1); }}
                   className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                 >
-                  <option value="all">All</option>
-                  <option value="draft">Draft</option>
-                  <option value="posted">Posted</option>
+                  <option value="all">{tCommon('status.all')}</option>
+                  <option value="draft">{t('status.draft')}</option>
+                  <option value="posted">{t('status.posted')}</option>
                 </select>
               </div>
             }
@@ -152,7 +155,7 @@ export function GoodsReceiptsPage() {
                 items={[
                   {
                     key: 'view',
-                    label: 'View',
+                    label: tCommon('actions.view'),
                     icon: Eye,
                     onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}`),
                   },
@@ -160,19 +163,19 @@ export function GoodsReceiptsPage() {
                     ? [
                         {
                           key: 'edit',
-                          label: 'Edit',
+                          label: tCommon('common.edit'),
                           icon: Pencil,
                           onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}/edit`),
                         },
                         {
                           key: 'post',
-                          label: 'Post',
+                          label: t('actions.post'),
                           icon: Send,
                           onSelect: () => setPosting(gr),
                         },
                         {
                           key: 'delete',
-                          label: 'Delete',
+                          label: tCommon('common.delete'),
                           icon: Trash2,
                           variant: 'destructive' as const,
                           onSelect: () => setDeleting(gr),
@@ -196,14 +199,9 @@ export function GoodsReceiptsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete goods receipt"
-        description={
-          <>
-            Delete <span className="text-foreground font-medium">{deleting?.receipt_number}</span>?
-            Only draft receipts can be deleted.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('dialogs.delete.title')}
+        description={t('dialogs.delete.description', { number: deleting?.receipt_number ?? '' })}
+        confirmLabel={t('dialogs.delete.confirm')}
         variant="destructive"
         loading={deleteGR.isPending}
         onConfirm={() => {
@@ -214,14 +212,9 @@ export function GoodsReceiptsPage() {
       <ConfirmDialog
         open={posting !== null}
         onOpenChange={(open) => { if (!open) setPosting(null); }}
-        title="Post goods receipt"
-        description={
-          <>
-            Post <span className="text-foreground font-medium">{posting?.receipt_number}</span>? Stock
-            will be updated and the receipt will become read-only.
-          </>
-        }
-        confirmLabel="Post Receipt"
+        title={t('dialogs.post.title')}
+        description={t('dialogs.post.description', { number: posting?.receipt_number ?? '' })}
+        confirmLabel={t('dialogs.post.confirm')}
         loading={postGR.isPending}
         onConfirm={() => {
           if (posting) postGR.mutate(posting.id, { onSuccess: () => setPosting(null) });

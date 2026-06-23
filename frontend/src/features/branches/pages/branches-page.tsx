@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -23,6 +24,8 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 10;
 
 export function BranchesPage() {
+  const { t } = useTranslation('branches');
+  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<BranchStatusFilter>('all');
@@ -63,10 +66,7 @@ export function BranchesPage() {
   const handleSort = (field: string) => {
     setSort((current) =>
       current.field === field
-        ? {
-            field: field as BranchSortField,
-            direction: current.direction === 'asc' ? 'desc' : 'asc',
-          }
+        ? { field: field as BranchSortField, direction: current.direction === 'asc' ? 'desc' : 'asc' }
         : { field: field as BranchSortField, direction: 'asc' },
     );
     setPage(1);
@@ -83,61 +83,54 @@ export function BranchesPage() {
   };
 
   const columns: ColumnDef<Branch>[] = [
-    { key: 'company', header: 'Company', cell: (b) => b.company?.name ?? '—' },
+    { key: 'company', header: t('columns.company'), cell: (b) => b.company?.name ?? '—' },
     {
       key: 'code',
-      header: 'Code',
+      header: t('columns.code'),
       sortable: true,
       cell: (b) => <span className="font-medium">{b.code}</span>,
     },
-    { key: 'name', header: 'Branch Name', sortable: true, cell: (b) => b.name },
-    {
-      key: 'manager_name',
-      header: 'Manager',
-      cell: (b) => <span className="text-muted-foreground">{b.manager_name ?? '—'}</span>,
-    },
+    { key: 'name', header: t('columns.name'), sortable: true, cell: (b) => b.name },
     {
       key: 'phone',
-      header: 'Phone',
+      header: t('columns.phone'),
       cell: (b) => <span className="text-muted-foreground">{b.phone ?? '—'}</span>,
     },
-    { key: 'city', header: 'City', sortable: true, cell: (b) => b.city ?? '—' },
+    { key: 'city', header: t('columns.city'), sortable: true, cell: (b) => b.city ?? '—' },
     {
       key: 'is_head_office',
-      header: 'Head Office',
+      header: t('columns.headOffice'),
       sortable: true,
       cell: (b) =>
         b.is_head_office ? (
-          <Badge>Head Office</Badge>
+          <Badge>{t('columns.headOffice')}</Badge>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
     },
     {
       key: 'is_active',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (b) => <StatusBadge status={b.is_active ? 'active' : 'inactive'} />,
     },
   ];
 
   const confirmDelete = () => {
-    if (!deleting) {
-      return;
-    }
+    if (!deleting) return;
     deleteBranch.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
   };
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Branches"
-        subtitle="Manage company branches and head offices."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Branches' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Branch
+            {t('actions.new')}
           </Button>
         }
       />
@@ -145,7 +138,7 @@ export function BranchesPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search branches…"
+            searchPlaceholder={t('search')}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -158,18 +151,18 @@ export function BranchesPage() {
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Company</span>
+                  <span className="text-sm font-medium">{tCommon('filters.company')}</span>
                   <CompanySelect
                     value={companyFilter}
                     onChange={(value) => {
                       setCompanyFilter(value);
                       setPage(1);
                     }}
-                    placeholder="All companies"
+                    placeholder={tCommon('filters.allCompanies')}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Status</span>
+                  <span className="text-sm font-medium">{tCommon('filters.status')}</span>
                   <select
                     value={statusFilter}
                     onChange={(event) => {
@@ -178,9 +171,9 @@ export function BranchesPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="all">{tCommon('status.all')}</option>
+                    <option value="active">{tCommon('status.active')}</option>
+                    <option value="inactive">{tCommon('status.inactive')}</option>
                   </select>
                 </div>
               </>
@@ -199,11 +192,11 @@ export function BranchesPage() {
               <ActionMenu
                 label={`Actions for ${branch.name}`}
                 items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openEdit(branch) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(branch) },
+                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(branch) },
+                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(branch) },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(branch),
@@ -231,9 +224,7 @@ export function BranchesPage() {
         open={drawerOpen}
         onOpenChange={(open) => {
           setDrawerOpen(open);
-          if (!open) {
-            setDrawerBranch(null);
-          }
+          if (!open) setDrawerBranch(null);
         }}
         branch={drawerBranch}
       />
@@ -241,19 +232,11 @@ export function BranchesPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setDeleting(null);
-          }
+          if (!open) setDeleting(null);
         }}
-        title="Delete branch"
-        description={
-          <>
-            This will soft-delete{' '}
-            <span className="text-foreground font-medium">{deleting?.name}</span>. It can be
-            restored later.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('delete.title')}
+        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
+        confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteBranch.isPending}
         onConfirm={confirmDelete}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { EntityForm, PageHeader } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -32,6 +33,8 @@ function extractMessage(error: unknown): string {
 const FORM_ID = 'edit-po-form';
 
 export function EditPurchaseOrderPage() {
+  const { t } = useTranslation('purchase-orders');
+  const { t: tCommon } = useTranslation('common');
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: order, isLoading } = usePurchaseOrderQuery(id);
@@ -68,20 +71,20 @@ export function EditPurchaseOrderPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={isLoading ? 'Loading…' : `Edit ${order?.po_number ?? ''}`}
-        subtitle="Modify this draft purchase order."
+        title={isLoading ? t('detail.loading') : `${t('edit.title')} ${order?.po_number ?? ''}`}
+        subtitle={t('edit.subtitle')}
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Purchase Orders', to: ROUTES.purchaseOrders },
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: t('title'), to: ROUTES.purchaseOrders },
           { label: order?.po_number ?? '…' },
         ]}
         actions={
           <>
             <Button variant="outline" onClick={() => navigate(`${ROUTES.purchaseOrders}/${id}`)}>
-              Cancel
+              {tCommon('common.cancel')}
             </Button>
             <Button type="submit" form={FORM_ID} disabled={updatePO.isPending || isLoading}>
-              {updatePO.isPending ? 'Saving…' : 'Save Changes'}
+              {updatePO.isPending ? t('edit.saving') : t('edit.submitEdit')}
             </Button>
           </>
         }
@@ -89,7 +92,7 @@ export function EditPurchaseOrderPage() {
 
       {serverError ? (
         <Alert variant="destructive">
-          <AlertTitle>Unable to save</AlertTitle>
+          <AlertTitle>{t('edit.errorTitle')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}
@@ -97,7 +100,7 @@ export function EditPurchaseOrderPage() {
       <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Order Details</CardTitle>
+            <CardTitle>{t('create.orderDetails')}</CardTitle>
           </CardHeader>
           <CardContent>
             <PurchaseOrderHeaderFields />
@@ -106,7 +109,7 @@ export function EditPurchaseOrderPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Line Items</CardTitle>
+            <CardTitle>{t('lines.title')}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <PurchaseOrderLinesEditor />

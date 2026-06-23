@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { EntityDrawer, EntityForm } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -30,10 +31,9 @@ function extractMessage(error: unknown): string {
     : 'Something went wrong. Please try again.';
 }
 
-/**
- * Create / edit unit slide-over, built on the shared EntityDrawer + EntityForm.
- */
 export function UnitFormDrawer({ open, onOpenChange, unit }: UnitFormDrawerProps) {
+  const { t } = useTranslation('units');
+  const { t: tCommon } = useTranslation('common');
   const isEdit = Boolean(unit);
   const createUnit = useCreateUnit();
   const updateUnit = useUpdateUnit();
@@ -53,9 +53,7 @@ export function UnitFormDrawer({ open, onOpenChange, unit }: UnitFormDrawerProps
   const isPending = createUnit.isPending || updateUnit.isPending;
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      setServerError(null);
-    }
+    if (!next) setServerError(null);
     onOpenChange(next);
   };
 
@@ -78,22 +76,26 @@ export function UnitFormDrawer({ open, onOpenChange, unit }: UnitFormDrawerProps
     <EntityDrawer
       open={open}
       onOpenChange={handleOpenChange}
-      title={isEdit ? 'Edit Unit' : 'Create Unit'}
-      description={isEdit ? 'Update the unit details below.' : 'Add a new unit of measure.'}
+      title={isEdit ? t('drawer.editTitle') : t('drawer.createTitle')}
+      description={isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle')}
       footer={
         <>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {tCommon('common.cancel')}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
-            {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create unit'}
+            {isPending
+              ? t('drawer.saving')
+              : isEdit
+                ? t('drawer.submitEdit')
+                : t('drawer.submitCreate')}
           </Button>
         </>
       }
     >
       {serverError ? (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Unable to save</AlertTitle>
+          <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}

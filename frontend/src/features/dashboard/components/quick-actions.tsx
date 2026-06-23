@@ -1,32 +1,33 @@
 import { Building2, FileBarChart, Package, UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const ACTIONS = [
-  { label: 'Add Company', icon: Building2 },
-  { label: 'New Product', icon: Package },
-  { label: 'Invite User', icon: UserPlus },
-  { label: 'View Reports', icon: FileBarChart },
-];
-
-/**
- * Quick action shortcuts (placeholder — buttons are not yet wired).
- */
 export function QuickActions() {
+  const { t } = useTranslation('dashboard');
+
+  const actions = [
+    { labelKey: 'quickActions.addCompany', icon: Building2 },
+    { labelKey: 'quickActions.newProduct', icon: Package },
+    { labelKey: 'quickActions.inviteUser', icon: UserPlus },
+    { labelKey: 'quickActions.viewReports', icon: FileBarChart },
+  ];
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Quick Actions</CardTitle>
-        <CardDescription>Common shortcuts (placeholder).</CardDescription>
+        <CardTitle>{t('quickActions.title')}</CardTitle>
+        <CardDescription>{t('quickActions.subtitle')}</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-3">
-        {ACTIONS.map((action) => {
+        {actions.map((action) => {
           const Icon = action.icon;
+          const label = t(action.labelKey);
           return (
-            <Button key={action.label} variant="outline" className="h-auto flex-col gap-2 py-4">
+            <Button key={action.labelKey} variant="outline" className="h-auto flex-col gap-2 py-4">
               <Icon className="size-5" />
-              <span className="text-xs">{action.label}</span>
+              <span className="text-xs">{label}</span>
             </Button>
           );
         })}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -28,13 +29,7 @@ import { ROUTES } from '@/router/routes';
 
 const PER_PAGE = 10;
 
-const TYPE_LABELS: Record<ProductType, string> = {
-  finished_good: 'Finished Good',
-  raw_material: 'Raw Material',
-};
-
 type ProductsViewProps = {
-  /** Restricts the list and defaults new records to this product type. */
   productType: ProductType;
   title: string;
   subtitle: string;
@@ -44,10 +39,6 @@ type ProductsViewProps = {
   entityNoun: string;
 };
 
-/**
- * Reusable products list view. Both the Products and Raw Materials pages render
- * this with a different `productType` — a single source of CRUD logic.
- */
 export function ProductsView({
   productType,
   title,
@@ -57,6 +48,8 @@ export function ProductsView({
   createLabel,
   entityNoun,
 }: ProductsViewProps) {
+  const { t } = useTranslation('products');
+  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [unitFilter, setUnitFilter] = useState<string | null>(null);
@@ -100,10 +93,7 @@ export function ProductsView({
   const handleSort = (field: string) => {
     setSort((current) =>
       current.field === field
-        ? {
-            field: field as ProductSortField,
-            direction: current.direction === 'asc' ? 'desc' : 'asc',
-          }
+        ? { field: field as ProductSortField, direction: current.direction === 'asc' ? 'desc' : 'asc' }
         : { field: field as ProductSortField, direction: 'asc' },
     );
     setPage(1);
@@ -122,36 +112,38 @@ export function ProductsView({
   const columns: ColumnDef<Product>[] = [
     {
       key: 'sku',
-      header: 'SKU',
+      header: t('columns.sku'),
       sortable: true,
       cell: (p) => <span className="font-medium">{p.sku}</span>,
     },
     {
       key: 'barcode',
-      header: 'Barcode',
+      header: t('columns.barcode'),
       cell: (p) => <span className="text-muted-foreground">{p.barcode ?? '—'}</span>,
     },
-    { key: 'name', header: 'Name', sortable: true, cell: (p) => p.name },
-    { key: 'category', header: 'Category', cell: (p) => p.category?.name ?? '—' },
-    { key: 'unit', header: 'Unit', cell: (p) => p.unit?.name ?? '—' },
+    { key: 'name', header: t('columns.name'), sortable: true, cell: (p) => p.name },
+    { key: 'category', header: t('columns.category'), cell: (p) => p.category?.name ?? '—' },
+    { key: 'unit', header: t('columns.unit'), cell: (p) => p.unit?.name ?? '—' },
     {
       key: 'product_type',
-      header: 'Type',
+      header: t('columns.type'),
       sortable: true,
-      cell: (p) => <Badge variant="outline">{TYPE_LABELS[p.product_type]}</Badge>,
+      cell: (p) => (
+        <Badge variant="outline">
+          {t(`types.${p.product_type}`)}
+        </Badge>
+      ),
     },
     {
       key: 'is_active',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (p) => <StatusBadge status={p.is_active ? 'active' : 'inactive'} />,
     },
   ];
 
   const confirmDelete = () => {
-    if (!deleting) {
-      return;
-    }
+    if (!deleting) return;
     deleteProduct.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
   };
 
@@ -160,7 +152,7 @@ export function ProductsView({
       <PageHeader
         title={title}
         subtitle={subtitle}
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: breadcrumbLabel }]}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: breadcrumbLabel }]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
@@ -186,29 +178,29 @@ export function ProductsView({
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Category</span>
+                  <span className="text-sm font-medium">{t('filters.category')}</span>
                   <CategorySelect
                     value={categoryFilter}
                     onChange={(value) => {
                       setCategoryFilter(value);
                       setPage(1);
                     }}
-                    placeholder="All categories"
+                    placeholder={t('filters.allCategories')}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Unit</span>
+                  <span className="text-sm font-medium">{t('filters.unit')}</span>
                   <UnitSelect
                     value={unitFilter}
                     onChange={(value) => {
                       setUnitFilter(value);
                       setPage(1);
                     }}
-                    placeholder="All units"
+                    placeholder={t('filters.allUnits')}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Status</span>
+                  <span className="text-sm font-medium">{tCommon('filters.status')}</span>
                   <select
                     value={statusFilter}
                     onChange={(event) => {
@@ -217,9 +209,9 @@ export function ProductsView({
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="all">{tCommon('status.all')}</option>
+                    <option value="active">{tCommon('status.active')}</option>
+                    <option value="inactive">{tCommon('status.inactive')}</option>
                   </select>
                 </div>
               </>
@@ -238,11 +230,11 @@ export function ProductsView({
               <ActionMenu
                 label={`Actions for ${product.name}`}
                 items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openEdit(product) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(product) },
+                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(product) },
+                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(product) },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(product),
@@ -270,9 +262,7 @@ export function ProductsView({
         open={drawerOpen}
         onOpenChange={(open) => {
           setDrawerOpen(open);
-          if (!open) {
-            setDrawerProduct(null);
-          }
+          if (!open) setDrawerProduct(null);
         }}
         product={drawerProduct}
         defaultType={productType}
@@ -281,19 +271,11 @@ export function ProductsView({
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setDeleting(null);
-          }
+          if (!open) setDeleting(null);
         }}
-        title={`Delete ${entityNoun}`}
-        description={
-          <>
-            This will soft-delete{' '}
-            <span className="text-foreground font-medium">{deleting?.name}</span>. It can be
-            restored later.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('delete.title')}
+        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
+        confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteProduct.isPending}
         onConfirm={confirmDelete}

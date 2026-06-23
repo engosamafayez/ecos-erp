@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle, Pencil, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { ConfirmDialog, PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ function LabelValue({ label, value }: { label: string; value: React.ReactNode })
 }
 
 export function ViewPurchaseOrderPage() {
+  const { t } = useTranslation('purchase-orders');
+  const { t: tCommon } = useTranslation('common');
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: order, isLoading } = usePurchaseOrderQuery(id);
@@ -37,8 +40,8 @@ export function ViewPurchaseOrderPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          title="Loading…"
-          breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Purchase Orders', to: ROUTES.purchaseOrders }, { label: '…' }]}
+          title={t('detail.loading')}
+          breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title'), to: ROUTES.purchaseOrders }, { label: '…' }]}
         />
       </div>
     );
@@ -48,10 +51,10 @@ export function ViewPurchaseOrderPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          title="Not Found"
-          breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Purchase Orders', to: ROUTES.purchaseOrders }]}
+          title={t('detail.notFound')}
+          breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title'), to: ROUTES.purchaseOrders }]}
         />
-        <p className="text-muted-foreground text-sm">This purchase order does not exist.</p>
+        <p className="text-muted-foreground text-sm">{t('detail.notFoundMessage')}</p>
       </div>
     );
   }
@@ -62,8 +65,8 @@ export function ViewPurchaseOrderPage() {
         title={order.po_number}
         subtitle={order.supplier?.name ?? ''}
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Purchase Orders', to: ROUTES.purchaseOrders },
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: t('title'), to: ROUTES.purchaseOrders },
           { label: order.po_number },
         ]}
         actions={
@@ -76,18 +79,18 @@ export function ViewPurchaseOrderPage() {
                   onClick={() => navigate(`${ROUTES.purchaseOrders}/${order.id}/edit`)}
                 >
                   <Pencil className="size-4" />
-                  Edit
+                  {tCommon('common.edit')}
                 </Button>
                 <Button onClick={() => setApproving(true)}>
                   <CheckCircle className="size-4" />
-                  Approve
+                  {tCommon('actions.approve')}
                 </Button>
               </>
             )}
             {order.status !== 'cancelled' && (
               <Button variant="destructive" onClick={() => setCancelling(true)}>
                 <XCircle className="size-4" />
-                Cancel
+                {tCommon('common.cancel')}
               </Button>
             )}
           </div>
@@ -96,18 +99,18 @@ export function ViewPurchaseOrderPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Order Details</CardTitle>
+          <CardTitle>{t('detail.orderDetails')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <LabelValue label="Supplier" value={order.supplier?.name ?? '—'} />
-            <LabelValue label="Order Date" value={order.order_date} />
-            <LabelValue label="Expected Date" value={order.expected_date ?? '—'} />
-            <LabelValue label="Status" value={<PoStatusBadge status={order.status} />} />
+            <LabelValue label={t('detail.supplier')} value={order.supplier?.name ?? '—'} />
+            <LabelValue label={t('detail.orderDate')} value={order.order_date} />
+            <LabelValue label={t('detail.expectedDate')} value={order.expected_date ?? '—'} />
+            <LabelValue label={t('detail.status')} value={<PoStatusBadge status={order.status} />} />
           </div>
           {order.notes && (
             <div className="mt-4">
-              <span className="text-muted-foreground text-xs">Notes</span>
+              <span className="text-muted-foreground text-xs">{t('detail.notes')}</span>
               <p className="mt-0.5 text-sm">{order.notes}</p>
             </div>
           )}
@@ -116,17 +119,17 @@ export function ViewPurchaseOrderPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Line Items</CardTitle>
+          <CardTitle>{t('detail.lineItems')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground border-b text-left">
-                  <th className="pb-2 pr-3 font-medium">Product</th>
-                  <th className="w-28 pb-2 pr-3 font-medium">Qty</th>
-                  <th className="w-32 pb-2 pr-3 font-medium">Unit Price</th>
-                  <th className="w-32 pb-2 font-medium text-right">Line Total</th>
+                  <th className="pb-2 pr-3 font-medium">{t('detail.product')}</th>
+                  <th className="w-28 pb-2 pr-3 font-medium">{t('detail.qty')}</th>
+                  <th className="w-32 pb-2 pr-3 font-medium">{t('detail.unitPrice')}</th>
+                  <th className="w-32 pb-2 font-medium text-right">{t('detail.lineTotal')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -157,14 +160,9 @@ export function ViewPurchaseOrderPage() {
       <ConfirmDialog
         open={approving}
         onOpenChange={setApproving}
-        title="Approve purchase order"
-        description={
-          <>
-            Approve <span className="text-foreground font-medium">{order.po_number}</span>? The order will become
-            read-only after approval.
-          </>
-        }
-        confirmLabel="Approve"
+        title={t('dialogs.approve.title')}
+        description={t('dialogs.approve.description', { number: order.po_number })}
+        confirmLabel={t('dialogs.approve.confirm')}
         loading={approvePO.isPending}
         onConfirm={() => {
           approvePO.mutate(order.id, { onSuccess: () => setApproving(false) });
@@ -174,14 +172,9 @@ export function ViewPurchaseOrderPage() {
       <ConfirmDialog
         open={cancelling}
         onOpenChange={setCancelling}
-        title="Cancel purchase order"
-        description={
-          <>
-            Cancel <span className="text-foreground font-medium">{order.po_number}</span>? This
-            cannot be undone.
-          </>
-        }
-        confirmLabel="Cancel Order"
+        title={t('dialogs.cancel.title')}
+        description={t('dialogs.cancel.description', { number: order.po_number })}
+        confirmLabel={t('dialogs.cancel.confirm')}
         variant="destructive"
         loading={cancelPO.isPending}
         onConfirm={() => {

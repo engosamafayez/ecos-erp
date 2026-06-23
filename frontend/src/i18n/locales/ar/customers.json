@@ -1,0 +1,47 @@
+{
+  "title": "العملاء",
+  "subtitle": "إدارة حسابات عملائك.",
+  "search": "بحث في العملاء…",
+  "actions": {
+    "new": "عميل جديد",
+    "create": "إنشاء عميل",
+    "edit": "تعديل العميل"
+  },
+  "columns": {
+    "code": "الرمز",
+    "name": "الاسم",
+    "contactPerson": "جهة الاتصال",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "country": "الدولة",
+    "city": "المدينة",
+    "status": "الحالة"
+  },
+  "form": {
+    "code": { "label": "الرمز", "placeholder": "CUST-001" },
+    "name": { "label": "الاسم", "placeholder": "اسم العميل" },
+    "contactPerson": "جهة الاتصال",
+    "email": { "label": "البريد الإلكتروني", "placeholder": "customer@example.com" },
+    "phone": "الهاتف",
+    "mobile": "المحمول",
+    "country": "الدولة",
+    "city": "المدينة",
+    "address": "العنوان",
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" },
+    "active": "نشط"
+  },
+  "drawer": {
+    "createTitle": "إنشاء عميل",
+    "editTitle": "تعديل العميل",
+    "createSubtitle": "إضافة عميل جديد إلى سجلاتك.",
+    "editSubtitle": "تحديث تفاصيل العميل أدناه.",
+    "submitCreate": "إنشاء عميل",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "delete": {
+    "title": "حذف العميل",
+    "confirm": "حذف"
+  }
+}

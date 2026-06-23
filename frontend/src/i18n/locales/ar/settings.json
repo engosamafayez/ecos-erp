@@ -1,0 +1,11 @@
+{
+  "title": "الإعدادات",
+  "subtitle": "تكوين مساحة عمل ECOS الخاصة بك.",
+  "sections": {
+    "general": "عام",
+    "appearance": "المظهر",
+    "language": "اللغة والمنطقة",
+    "notifications": "الإشعارات",
+    "security": "الأمان"
+  }
+}

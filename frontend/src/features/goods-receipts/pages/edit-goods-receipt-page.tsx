@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
@@ -22,11 +23,12 @@ import {
 import { ROUTES } from '@/router/routes';
 
 export function EditGoodsReceiptPage() {
+  const { t } = useTranslation('goods-receipts');
+  const { t: tCommon } = useTranslation('common');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const updateGR = useUpdateGoodsReceipt();
 
-  // null = use receipt-derived infos; set when user changes the PO
   const [overridePoLineInfos, setOverridePoLineInfos] = useState<PoLineInfo[] | null>(null);
 
   const { data: receipt, isLoading, isError } = useGoodsReceiptQuery(id ?? '');
@@ -45,7 +47,6 @@ export function EditGoodsReceiptPage() {
     form.reset(toFormValues(receipt));
   }, [receipt, form, navigate]);
 
-  // Derive poLineInfos from receipt lines; override when user switches PO
   const poLineInfos = useMemo<PoLineInfo[]>(() => {
     if (overridePoLineInfos !== null) return overridePoLineInfos;
     return (receipt?.lines ?? []).map((l) => ({
@@ -58,7 +59,7 @@ export function EditGoodsReceiptPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <span className="text-muted-foreground text-sm">Loading…</span>
+        <span className="text-muted-foreground text-sm">{t('detail.loading')}</span>
       </div>
     );
   }
@@ -66,7 +67,7 @@ export function EditGoodsReceiptPage() {
   if (isError || !receipt) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <span className="text-destructive text-sm">Receipt not found.</span>
+        <span className="text-destructive text-sm">{t('detail.notFound')}</span>
       </div>
     );
   }
@@ -84,13 +85,13 @@ export function EditGoodsReceiptPage() {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col gap-6">
           <PageHeader
-            title={`Edit ${receipt.receipt_number}`}
-            subtitle="Update receipt details and received quantities."
+            title={`${t('edit.title')} ${receipt.receipt_number}`}
+            subtitle={t('edit.subtitle')}
             breadcrumbs={[
-              { label: 'Home', to: ROUTES.dashboard },
-              { label: 'Goods Receipts', to: ROUTES.goodsReceipts },
+              { label: tCommon('home'), to: ROUTES.dashboard },
+              { label: t('title'), to: ROUTES.goodsReceipts },
               { label: receipt.receipt_number, to: `${ROUTES.goodsReceipts}/${id}` },
-              { label: 'Edit' },
+              { label: t('edit.editLabel') },
             ]}
             actions={
               <div className="flex items-center gap-2">
@@ -99,10 +100,10 @@ export function EditGoodsReceiptPage() {
                   variant="outline"
                   onClick={() => navigate(`${ROUTES.goodsReceipts}/${id}`)}
                 >
-                  Cancel
+                  {tCommon('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={updateGR.isPending}>
-                  {updateGR.isPending ? 'Saving…' : 'Save Changes'}
+                  {updateGR.isPending ? t('edit.saving') : t('edit.submitEdit')}
                 </Button>
               </div>
             }
@@ -110,7 +111,7 @@ export function EditGoodsReceiptPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Receipt Details</CardTitle>
+              <CardTitle>{t('detail.receiptDetails')}</CardTitle>
             </CardHeader>
             <CardContent>
               <GoodsReceiptHeaderFields onPoLinesLoaded={setOverridePoLineInfos} />
@@ -119,7 +120,7 @@ export function EditGoodsReceiptPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Lines</CardTitle>
+              <CardTitle>{t('lines.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <GoodsReceiptLinesEditor poLineInfos={poLineInfos} />

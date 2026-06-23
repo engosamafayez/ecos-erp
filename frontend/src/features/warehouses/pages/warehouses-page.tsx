@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -26,6 +27,8 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 10;
 
 export function WarehousesPage() {
+  const { t } = useTranslation('warehouses');
+  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<WarehouseStatusFilter>('all');
@@ -66,10 +69,7 @@ export function WarehousesPage() {
   const handleSort = (field: string) => {
     setSort((current) =>
       current.field === field
-        ? {
-            field: field as WarehouseSortField,
-            direction: current.direction === 'asc' ? 'desc' : 'asc',
-          }
+        ? { field: field as WarehouseSortField, direction: current.direction === 'asc' ? 'desc' : 'asc' }
         : { field: field as WarehouseSortField, direction: 'asc' },
     );
     setPage(1);
@@ -86,41 +86,39 @@ export function WarehousesPage() {
   };
 
   const columns: ColumnDef<Warehouse>[] = [
-    { key: 'company', header: 'Company', cell: (w) => w.company?.name ?? '—' },
-    { key: 'branch', header: 'Branch', cell: (w) => w.branch?.name ?? '—' },
+    { key: 'company', header: t('columns.company'), cell: (w) => w.company?.name ?? '—' },
+    { key: 'branch', header: t('columns.branch'), cell: (w) => w.branch?.name ?? '—' },
     {
       key: 'code',
-      header: 'Code',
+      header: t('columns.code'),
       sortable: true,
       cell: (w) => <span className="font-medium">{w.code}</span>,
     },
-    { key: 'name', header: 'Name', sortable: true, cell: (w) => w.name },
-    { key: 'city', header: 'City', sortable: true, cell: (w) => w.city ?? '—' },
+    { key: 'name', header: t('columns.name'), sortable: true, cell: (w) => w.name },
+    { key: 'city', header: t('columns.city'), sortable: true, cell: (w) => w.city ?? '—' },
     {
       key: 'is_active',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (w) => <StatusBadge status={w.is_active ? 'active' : 'inactive'} />,
     },
   ];
 
   const confirmDelete = () => {
-    if (!deleting) {
-      return;
-    }
+    if (!deleting) return;
     deleteWarehouse.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
   };
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Warehouses"
-        subtitle="Manage storage locations across companies and branches."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Warehouses' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Warehouse
+            {t('actions.new')}
           </Button>
         }
       />
@@ -128,7 +126,7 @@ export function WarehousesPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search warehouses…"
+            searchPlaceholder={t('search')}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -141,18 +139,18 @@ export function WarehousesPage() {
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Company</span>
+                  <span className="text-sm font-medium">{tCommon('filters.company')}</span>
                   <CompanySelect
                     value={companyFilter}
                     onChange={(value) => {
                       setCompanyFilter(value);
                       setPage(1);
                     }}
-                    placeholder="All companies"
+                    placeholder={tCommon('filters.allCompanies')}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Status</span>
+                  <span className="text-sm font-medium">{tCommon('filters.status')}</span>
                   <select
                     value={statusFilter}
                     onChange={(event) => {
@@ -161,9 +159,9 @@ export function WarehousesPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="all">{tCommon('status.all')}</option>
+                    <option value="active">{tCommon('status.active')}</option>
+                    <option value="inactive">{tCommon('status.inactive')}</option>
                   </select>
                 </div>
               </>
@@ -182,11 +180,11 @@ export function WarehousesPage() {
               <ActionMenu
                 label={`Actions for ${warehouse.name}`}
                 items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openEdit(warehouse) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(warehouse) },
+                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(warehouse) },
+                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(warehouse) },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(warehouse),
@@ -214,9 +212,7 @@ export function WarehousesPage() {
         open={drawerOpen}
         onOpenChange={(open) => {
           setDrawerOpen(open);
-          if (!open) {
-            setDrawerWarehouse(null);
-          }
+          if (!open) setDrawerWarehouse(null);
         }}
         warehouse={drawerWarehouse}
       />
@@ -224,19 +220,11 @@ export function WarehousesPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setDeleting(null);
-          }
+          if (!open) setDeleting(null);
         }}
-        title="Delete warehouse"
-        description={
-          <>
-            This will soft-delete{' '}
-            <span className="text-foreground font-medium">{deleting?.name}</span>. It can be
-            restored later.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('delete.title')}
+        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
+        confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteWarehouse.isPending}
         onConfirm={confirmDelete}

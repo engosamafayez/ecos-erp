@@ -1,0 +1,48 @@
+{
+  "title": "Suppliers",
+  "subtitle": "Manage your supplier relationships.",
+  "search": "Search suppliers…",
+  "actions": {
+    "new": "New Supplier",
+    "create": "Create supplier",
+    "edit": "Edit Supplier"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "contactPerson": "Contact Person",
+    "email": "Email",
+    "phone": "Phone",
+    "country": "Country",
+    "city": "City",
+    "status": "Status"
+  },
+  "form": {
+    "code": { "label": "Code", "placeholder": "SUP-001" },
+    "name": { "label": "Name", "placeholder": "Delta Trading" },
+    "contactPerson": "Contact person",
+    "email": { "label": "Email", "placeholder": "supplier@example.com" },
+    "phone": "Phone",
+    "mobile": "Mobile",
+    "website": { "label": "Website", "placeholder": "https://supplier.com" },
+    "country": "Country",
+    "city": "City",
+    "address": "Address",
+    "notes": { "label": "Notes", "placeholder": "Optional notes…" },
+    "active": "Active"
+  },
+  "drawer": {
+    "createTitle": "Create Supplier",
+    "editTitle": "Edit Supplier",
+    "createSubtitle": "Add a new supplier to your records.",
+    "editSubtitle": "Update the supplier details below.",
+    "submitCreate": "Create supplier",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "delete": {
+    "title": "Delete supplier",
+    "confirm": "Delete"
+  }
+}

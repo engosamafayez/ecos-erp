@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { EntityForm, PageHeader } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -29,6 +30,8 @@ function extractMessage(error: unknown): string {
 const FORM_ID = 'create-po-form';
 
 export function CreatePurchaseOrderPage() {
+  const { t } = useTranslation('purchase-orders');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const createPO = useCreatePurchaseOrder();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -49,20 +52,20 @@ export function CreatePurchaseOrderPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="New Purchase Order"
-        subtitle="Create a draft purchase order."
+        title={t('create.title')}
+        subtitle={t('create.subtitle')}
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Purchase Orders', to: ROUTES.purchaseOrders },
-          { label: 'New' },
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: t('title'), to: ROUTES.purchaseOrders },
+          { label: t('create.new') },
         ]}
         actions={
           <>
             <Button variant="outline" onClick={() => navigate(ROUTES.purchaseOrders)}>
-              Cancel
+              {tCommon('common.cancel')}
             </Button>
             <Button type="submit" form={FORM_ID} disabled={createPO.isPending}>
-              {createPO.isPending ? 'Creating…' : 'Create Order'}
+              {createPO.isPending ? t('create.creating') : t('create.submitCreate')}
             </Button>
           </>
         }
@@ -70,7 +73,7 @@ export function CreatePurchaseOrderPage() {
 
       {serverError ? (
         <Alert variant="destructive">
-          <AlertTitle>Unable to create order</AlertTitle>
+          <AlertTitle>{t('create.errorTitle')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}
@@ -78,7 +81,7 @@ export function CreatePurchaseOrderPage() {
       <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Order Details</CardTitle>
+            <CardTitle>{t('create.orderDetails')}</CardTitle>
           </CardHeader>
           <CardContent>
             <PurchaseOrderHeaderFields />
@@ -87,7 +90,7 @@ export function CreatePurchaseOrderPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Line Items</CardTitle>
+            <CardTitle>{t('lines.title')}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <PurchaseOrderLinesEditor />

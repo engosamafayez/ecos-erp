@@ -1,0 +1,47 @@
+{
+  "title": "Customers",
+  "subtitle": "Manage your customer accounts.",
+  "search": "Search customers…",
+  "actions": {
+    "new": "New Customer",
+    "create": "Create customer",
+    "edit": "Edit Customer"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "contactPerson": "Contact Person",
+    "email": "Email",
+    "phone": "Phone",
+    "country": "Country",
+    "city": "City",
+    "status": "Status"
+  },
+  "form": {
+    "code": { "label": "Code", "placeholder": "CUST-001" },
+    "name": { "label": "Name", "placeholder": "Cairo Retail" },
+    "contactPerson": "Contact Person",
+    "email": { "label": "Email", "placeholder": "customer@example.com" },
+    "phone": "Phone",
+    "mobile": "Mobile",
+    "country": "Country",
+    "city": "City",
+    "address": "Address",
+    "notes": { "label": "Notes", "placeholder": "Optional notes…" },
+    "active": "Active"
+  },
+  "drawer": {
+    "createTitle": "Create Customer",
+    "editTitle": "Edit Customer",
+    "createSubtitle": "Add a new customer to your records.",
+    "editSubtitle": "Update the customer details below.",
+    "submitCreate": "Create customer",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "delete": {
+    "title": "Delete customer",
+    "confirm": "Delete"
+  }
+}

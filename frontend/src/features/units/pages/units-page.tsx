@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -21,6 +22,8 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 10;
 
 export function UnitsPage() {
+  const { t } = useTranslation('units');
+  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ field: UnitSortField; direction: 'asc' | 'desc' }>({
@@ -76,47 +79,45 @@ export function UnitsPage() {
   const columns: ColumnDef<Unit>[] = [
     {
       key: 'code',
-      header: 'Code',
+      header: t('columns.code'),
       sortable: true,
       cell: (u) => <span className="font-medium">{u.code}</span>,
     },
-    { key: 'name', header: 'Name', sortable: true, cell: (u) => u.name },
+    { key: 'name', header: t('columns.name'), sortable: true, cell: (u) => u.name },
     {
       key: 'symbol',
-      header: 'Symbol',
+      header: t('columns.symbol'),
       sortable: true,
       cell: (u) => <span className="text-muted-foreground">{u.symbol ?? '—'}</span>,
     },
     {
       key: 'description',
-      header: 'Description',
+      header: t('columns.description'),
       cell: (u) => <span className="text-muted-foreground">{u.description ?? '—'}</span>,
     },
     {
       key: 'is_active',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (u) => <StatusBadge status={u.is_active ? 'active' : 'inactive'} />,
     },
   ];
 
   const confirmDelete = () => {
-    if (!deleting) {
-      return;
-    }
+    if (!deleting) return;
     deleteUnit.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
   };
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Units of Measure"
-        subtitle="Manage the units used across the catalog."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Units' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Unit
+            {t('actions.new')}
           </Button>
         }
       />
@@ -124,7 +125,7 @@ export function UnitsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search units…"
+            searchPlaceholder={t('search')}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -143,11 +144,11 @@ export function UnitsPage() {
               <ActionMenu
                 label={`Actions for ${unit.name}`}
                 items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openEdit(unit) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(unit) },
+                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(unit) },
+                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(unit) },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(unit),
@@ -175,9 +176,7 @@ export function UnitsPage() {
         open={drawerOpen}
         onOpenChange={(open) => {
           setDrawerOpen(open);
-          if (!open) {
-            setDrawerUnit(null);
-          }
+          if (!open) setDrawerUnit(null);
         }}
         unit={drawerUnit}
       />
@@ -185,19 +184,11 @@ export function UnitsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setDeleting(null);
-          }
+          if (!open) setDeleting(null);
         }}
-        title="Delete unit"
-        description={
-          <>
-            This will soft-delete{' '}
-            <span className="text-foreground font-medium">{deleting?.name}</span>. It can be
-            restored later.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('delete.title')}
+        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
+        confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteUnit.isPending}
         onConfirm={confirmDelete}

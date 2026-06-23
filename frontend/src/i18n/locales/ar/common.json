@@ -27,5 +27,54 @@
     "switcher": "اللغة",
     "en": "English",
     "ar": "العربية"
+  },
+  "actions": {
+    "saveChanges": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "creating": "جارٍ الإنشاء…",
+    "view": "عرض",
+    "back": "رجوع",
+    "approve": "موافقة",
+    "post": "ترحيل"
+  },
+  "status": {
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "all": "الكل"
+  },
+  "fields": {
+    "code": "الرمز",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "mobile": "المحمول",
+    "country": "الدولة",
+    "city": "المدينة",
+    "address": "العنوان",
+    "description": "الوصف",
+    "notes": "ملاحظات",
+    "status": "الحالة",
+    "active": "نشط",
+    "website": "الموقع الإلكتروني",
+    "company": "الشركة",
+    "branch": "الفرع",
+    "warehouse": "المستودع"
+  },
+  "filters": {
+    "status": "الحالة",
+    "company": "الشركة",
+    "allCompanies": "جميع الشركات",
+    "allPlatforms": "جميع المنصات"
+  },
+  "errors": {
+    "unableToSave": "تعذر الحفظ",
+    "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+  },
+  "table": {
+    "empty": "—"
+  },
+  "home": "الرئيسية",
+  "dialogs": {
+    "softDeleteMessage": "سيتم حذف {{name}} بشكل مؤقت. يمكن استعادته لاحقاً."
   }
 }

@@ -1,0 +1,67 @@
+{
+  "finishedGoods": {
+    "title": "المنتجات",
+    "subtitle": "إدارة كتالوج السلع الجاهزة."
+  },
+  "rawMaterials": {
+    "title": "المواد الخام",
+    "subtitle": "إدارة مخزون المواد الخام."
+  },
+  "search": "بحث في المنتجات…",
+  "actions": {
+    "new": "منتج جديد",
+    "create": "إنشاء منتج",
+    "edit": "تعديل المنتج"
+  },
+  "filters": {
+    "category": "الفئة",
+    "allCategories": "جميع الفئات",
+    "unit": "الوحدة",
+    "allUnits": "جميع الوحدات",
+    "type": "النوع",
+    "allTypes": "جميع الأنواع"
+  },
+  "columns": {
+    "sku": "رمز المنتج",
+    "barcode": "الباركود",
+    "code": "الرمز",
+    "name": "الاسم",
+    "type": "النوع",
+    "category": "الفئة",
+    "unit": "الوحدة",
+    "costPrice": "سعر التكلفة",
+    "salePrice": "سعر البيع",
+    "status": "الحالة"
+  },
+  "types": {
+    "finished_good": "سلعة جاهزة",
+    "raw_material": "مادة خام"
+  },
+  "form": {
+    "sku": { "label": "رمز المنتج", "placeholder": "FG-LAPTOP-XPS" },
+    "barcode": "الباركود",
+    "code": { "label": "الرمز", "placeholder": "PROD-001" },
+    "name": { "label": "الاسم", "placeholder": "اسم المنتج" },
+    "type": { "label": "النوع", "placeholder": "اختر نوعاً…" },
+    "category": { "label": "الفئة", "placeholder": "اختر فئة…" },
+    "unit": { "label": "الوحدة", "placeholder": "اختر وحدة…" },
+    "costPrice": { "label": "سعر التكلفة" },
+    "salePrice": { "label": "سعر البيع" },
+    "description": { "label": "الوصف", "placeholder": "وصف اختياري…" },
+    "active": "نشط"
+  },
+  "drawer": {
+    "createTitle": "إنشاء منتج",
+    "editTitle": "تعديل المنتج",
+    "createSubtitle": "إضافة منتج جديد إلى كتالوجك.",
+    "editSubtitle": "تحديث تفاصيل المنتج أدناه.",
+    "submitCreate": "إنشاء منتج",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "delete": {
+    "title": "حذف المنتج",
+    "confirm": "حذف"
+  }
+}

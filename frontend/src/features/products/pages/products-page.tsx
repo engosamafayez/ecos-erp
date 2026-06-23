@@ -1,17 +1,18 @@
+import { useTranslation } from 'react-i18next';
+
 import { ProductsView } from '@/features/products/components/products-view';
 
-/**
- * Finished goods catalog. Reuses {@link ProductsView} with the finished_good type.
- */
 export function ProductsPage() {
+  const { t } = useTranslation('products');
+
   return (
     <ProductsView
       productType="finished_good"
-      title="Products"
-      subtitle="Manage finished goods in the catalog."
-      breadcrumbLabel="Products"
-      searchPlaceholder="Search products…"
-      createLabel="New Product"
+      title={t('finishedGoods.title')}
+      subtitle={t('finishedGoods.subtitle')}
+      breadcrumbLabel={t('finishedGoods.title')}
+      searchPlaceholder={t('search')}
+      createLabel={t('actions.new')}
       entityNoun="product"
     />
   );

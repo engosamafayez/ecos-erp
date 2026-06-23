@@ -1,20 +1,18 @@
 import { Controller, useFormContext } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { FormField } from '@/components/crud';
 import { Input } from '@/components/ui/input';
 import { CompanySelect } from '@/features/branches/components/company-select';
 import type { BranchFormValues } from '@/features/branches/components/branch-form-schema';
 
-/**
- * Branch-specific form fields. Rendered inside an {@link EntityForm}. The
- * Company field uses a searchable select backed by the Companies API.
- */
 export function BranchFormFields() {
+  const { t } = useTranslation('branches');
   const { register, control } = useFormContext<BranchFormValues>();
 
   return (
     <div className="flex flex-col gap-4">
-      <FormField name="company_id" label="Company" required>
+      <FormField name="company_id" label={t('form.company.label')} required>
         <Controller
           control={control}
           name="company_id"
@@ -25,29 +23,26 @@ export function BranchFormFields() {
       </FormField>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField name="code" label="Code" required>
-          <Input placeholder="CAI-HQ" {...register('code')} />
+        <FormField name="code" label={t('form.code.label')} required>
+          <Input placeholder={t('form.code.placeholder')} {...register('code')} />
         </FormField>
-        <FormField name="name" label="Branch name" required>
-          <Input placeholder="Cairo HQ" {...register('name')} />
+        <FormField name="name" label={t('form.name.label')} required>
+          <Input placeholder={t('form.name.placeholder')} {...register('name')} />
         </FormField>
-        <FormField name="manager_name" label="Manager">
-          <Input {...register('manager_name')} />
-        </FormField>
-        <FormField name="phone" label="Phone">
+        <FormField name="phone" label={t('form.phone')}>
           <Input {...register('phone')} />
         </FormField>
-        <FormField name="email" label="Email">
-          <Input type="email" placeholder="branch@example.com" {...register('email')} />
+        <FormField name="email" label={t('form.email.label')}>
+          <Input type="email" placeholder={t('form.email.placeholder')} {...register('email')} />
         </FormField>
-        <FormField name="city" label="City">
+        <FormField name="city" label={t('form.city')}>
           <Input {...register('city')} />
         </FormField>
-        <FormField name="country" label="Country">
-          <Input placeholder="Egypt" {...register('country')} />
+        <FormField name="country" label={t('form.country')}>
+          <Input {...register('country')} />
         </FormField>
         <div className="sm:col-span-2">
-          <FormField name="address" label="Address">
+          <FormField name="address" label={t('form.address')}>
             <Input {...register('address')} />
           </FormField>
         </div>
@@ -60,7 +55,7 @@ export function BranchFormFields() {
             className="border-input size-4 rounded"
             {...register('is_head_office')}
           />
-          Head office
+          {t('form.headOffice')}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -68,7 +63,7 @@ export function BranchFormFields() {
             className="border-input size-4 rounded"
             {...register('is_active')}
           />
-          Active
+          {t('form.active')}
         </label>
       </div>
     </div>

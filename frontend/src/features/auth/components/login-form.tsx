@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
@@ -12,21 +13,23 @@ import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 import { ROUTES } from '@/router/routes';
 
-const loginSchema = z.object({
-  email: z.email('Enter a valid email address.'),
-  password: z.string().min(1, 'Password is required.'),
-  remember: z.boolean(),
-});
+type LoginFormValues = {
+  email: string;
+  password: string;
+  remember: boolean;
+};
 
-type LoginFormValues = z.infer<typeof loginSchema>;
-
-/**
- * Login card: email + password + remember me, with loading and error states.
- */
 export function LoginForm() {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const loginSchema = z.object({
+    email: z.email(t('login.email.validation')),
+    password: z.string().min(1, t('login.password.validation')),
+    remember: z.boolean(),
+  });
 
   const {
     register,
@@ -46,7 +49,7 @@ export function LoginForm() {
       const message =
         axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
           ? error.response.data.message
-          : 'Unable to sign in. Please try again.';
+          : t('login.error.message');
       setFormError(message);
     }
   };
@@ -54,13 +57,13 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>Access your ECOS ERP account.</CardDescription>
+        <CardTitle>{t('login.title')}</CardTitle>
+        <CardDescription>{t('login.subtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
         {formError ? (
           <Alert variant="destructive" className="mb-4">
-            <AlertTitle>Sign in failed</AlertTitle>
+            <AlertTitle>{t('login.error.title')}</AlertTitle>
             <AlertDescription>{formError}</AlertDescription>
           </Alert>
         ) : null}
@@ -68,13 +71,13 @@ export function LoginForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="email" className="text-sm font-medium">
-              Email
+              {t('login.email.label')}
             </label>
             <Input
               id="email"
               type="email"
               autoComplete="email"
-              placeholder="you@example.com"
+              placeholder={t('login.email.placeholder')}
               {...register('email')}
             />
             {errors.email ? (
@@ -84,13 +87,13 @@ export function LoginForm() {
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="password" className="text-sm font-medium">
-              Password
+              {t('login.password.label')}
             </label>
             <Input
               id="password"
               type="password"
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder={t('login.password.placeholder')}
               {...register('password')}
             />
             {errors.password ? (
@@ -104,11 +107,11 @@ export function LoginForm() {
               className="border-input size-4 rounded"
               {...register('remember')}
             />
-            Remember me
+            {t('login.rememberMe')}
           </label>
 
           <Button type="submit" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
+            {isSubmitting ? t('login.submitting') : t('login.submit')}
           </Button>
         </form>
       </CardContent>

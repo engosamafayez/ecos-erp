@@ -1,0 +1,41 @@
+{
+  "title": "الفئات",
+  "subtitle": "تنظيم منتجاتك في فئات.",
+  "search": "بحث في الفئات…",
+  "actions": {
+    "new": "فئة جديدة",
+    "create": "إنشاء فئة",
+    "edit": "تعديل الفئة"
+  },
+  "columns": {
+    "code": "الرمز",
+    "name": "الاسم",
+    "parent": "الأصل",
+    "level": "المستوى",
+    "sort": "الترتيب",
+    "description": "الوصف",
+    "status": "الحالة"
+  },
+  "form": {
+    "code": { "label": "الرمز", "placeholder": "ELEC" },
+    "name": { "label": "الاسم", "placeholder": "إلكترونيات" },
+    "parentCategory": "الفئة الأصل",
+    "sortOrder": "ترتيب الفرز",
+    "description": { "label": "الوصف", "placeholder": "وصف اختياري…" },
+    "active": "نشط"
+  },
+  "drawer": {
+    "createTitle": "إنشاء فئة",
+    "editTitle": "تعديل الفئة",
+    "createSubtitle": "إضافة فئة منتج جديدة.",
+    "editSubtitle": "تحديث تفاصيل الفئة أدناه.",
+    "submitCreate": "إنشاء فئة",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "delete": {
+    "title": "حذف الفئة",
+    "confirm": "حذف"
+  }
+}

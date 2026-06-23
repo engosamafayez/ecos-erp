@@ -1,0 +1,35 @@
+{
+  "title": "Stock Ledger",
+  "subtitle": "Complete audit history of all inventory movements.",
+  "search": "Search by product name, SKU, or warehouse…",
+  "filters": {
+    "type": "Movement Type",
+    "allTypes": "All Types",
+    "dateFrom": "Date From",
+    "dateTo": "Date To",
+    "warehouse": "Warehouse",
+    "allWarehouses": "All warehouses",
+    "product": "Product",
+    "allProducts": "All products"
+  },
+  "movementTypes": {
+    "all": "All Types",
+    "purchase_receipt": "Purchase Receipt",
+    "sales_issue": "Sales Issue",
+    "adjustment_in": "Adjustment In",
+    "adjustment_out": "Adjustment Out",
+    "transfer_in": "Transfer In",
+    "transfer_out": "Transfer Out"
+  },
+  "columns": {
+    "date": "Date",
+    "product": "Product",
+    "warehouse": "Warehouse",
+    "type": "Type",
+    "quantity": "Quantity",
+    "before": "Before",
+    "after": "After",
+    "refType": "Ref. Type",
+    "reference": "Reference"
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "finishedGoods": {
+    "title": "Products",
+    "subtitle": "Manage your finished goods catalog."
+  },
+  "rawMaterials": {
+    "title": "Raw Materials",
+    "subtitle": "Manage your raw material inventory."
+  },
+  "search": "Search products…",
+  "actions": {
+    "new": "New Product",
+    "create": "Create product",
+    "edit": "Edit Product"
+  },
+  "filters": {
+    "category": "Category",
+    "allCategories": "All categories",
+    "unit": "Unit",
+    "allUnits": "All units",
+    "type": "Type",
+    "allTypes": "All types"
+  },
+  "columns": {
+    "sku": "SKU",
+    "barcode": "Barcode",
+    "code": "Code",
+    "name": "Name",
+    "type": "Type",
+    "category": "Category",
+    "unit": "Unit",
+    "costPrice": "Cost Price",
+    "salePrice": "Sale Price",
+    "status": "Status"
+  },
+  "types": {
+    "finished_good": "Finished Good",
+    "raw_material": "Raw Material"
+  },
+  "form": {
+    "sku": { "label": "SKU", "placeholder": "FG-LAPTOP-XPS" },
+    "barcode": "Barcode",
+    "code": { "label": "Code", "placeholder": "PROD-001" },
+    "name": { "label": "Name", "placeholder": "Product Name" },
+    "type": { "label": "Type", "placeholder": "Select type…" },
+    "category": { "label": "Category", "placeholder": "Select category…" },
+    "unit": { "label": "Unit", "placeholder": "Select unit…" },
+    "costPrice": { "label": "Cost Price" },
+    "salePrice": { "label": "Sale Price" },
+    "description": { "label": "Description", "placeholder": "Optional description…" },
+    "active": "Active"
+  },
+  "drawer": {
+    "createTitle": "Create Product",
+    "editTitle": "Edit Product",
+    "createSubtitle": "Add a new product to your catalog.",
+    "editSubtitle": "Update the product details below.",
+    "submitCreate": "Create product",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "delete": {
+    "title": "Delete product",
+    "confirm": "Delete"
+  }
+}

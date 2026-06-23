@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { EntityDrawer, EntityForm } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -31,6 +32,8 @@ function extractMessage(error: unknown): string {
 }
 
 export function CustomerFormDrawer({ open, onOpenChange, customer }: Props) {
+  const { t } = useTranslation('customers');
+  const { t: tCommon } = useTranslation('common');
   const isEdit = Boolean(customer);
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
@@ -42,9 +45,7 @@ export function CustomerFormDrawer({ open, onOpenChange, customer }: Props) {
   });
 
   useEffect(() => {
-    if (open) {
-      form.reset(toFormValues(customer));
-    }
+    if (open) form.reset(toFormValues(customer));
   }, [open, customer, form]);
 
   const isPending = createCustomer.isPending || updateCustomer.isPending;
@@ -73,24 +74,26 @@ export function CustomerFormDrawer({ open, onOpenChange, customer }: Props) {
     <EntityDrawer
       open={open}
       onOpenChange={handleOpenChange}
-      title={isEdit ? 'Edit Customer' : 'Create Customer'}
-      description={
-        isEdit ? 'Update the customer details below.' : 'Add a new customer to your system.'
-      }
+      title={isEdit ? t('drawer.editTitle') : t('drawer.createTitle')}
+      description={isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle')}
       footer={
         <>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {tCommon('common.cancel')}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
-            {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create customer'}
+            {isPending
+              ? t('drawer.saving')
+              : isEdit
+                ? t('drawer.submitEdit')
+                : t('drawer.submitCreate')}
           </Button>
         </>
       }
     >
       {serverError ? (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Unable to save</AlertTitle>
+          <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}

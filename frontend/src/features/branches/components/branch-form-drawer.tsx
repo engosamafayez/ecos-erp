@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { EntityDrawer, EntityForm } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -21,7 +22,6 @@ const FORM_ID = 'branch-form';
 type BranchFormDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** When provided the drawer edits; otherwise it creates. */
   branch?: Branch | null;
 };
 
@@ -31,10 +31,9 @@ function extractMessage(error: unknown): string {
     : 'Something went wrong. Please try again.';
 }
 
-/**
- * Create / edit branch slide-over, built on the shared EntityDrawer + EntityForm.
- */
 export function BranchFormDrawer({ open, onOpenChange, branch }: BranchFormDrawerProps) {
+  const { t } = useTranslation('branches');
+  const { t: tCommon } = useTranslation('common');
   const isEdit = Boolean(branch);
   const createBranch = useCreateBranch();
   const updateBranch = useUpdateBranch();
@@ -54,9 +53,7 @@ export function BranchFormDrawer({ open, onOpenChange, branch }: BranchFormDrawe
   const isPending = createBranch.isPending || updateBranch.isPending;
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      setServerError(null);
-    }
+    if (!next) setServerError(null);
     onOpenChange(next);
   };
 
@@ -79,22 +76,26 @@ export function BranchFormDrawer({ open, onOpenChange, branch }: BranchFormDrawe
     <EntityDrawer
       open={open}
       onOpenChange={handleOpenChange}
-      title={isEdit ? 'Edit Branch' : 'Create Branch'}
-      description={isEdit ? 'Update the branch details below.' : 'Add a new branch to a company.'}
+      title={isEdit ? t('drawer.editTitle') : t('drawer.createTitle')}
+      description={isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle')}
       footer={
         <>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {tCommon('common.cancel')}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
-            {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create branch'}
+            {isPending
+              ? t('drawer.saving')
+              : isEdit
+                ? t('drawer.submitEdit')
+                : t('drawer.submitCreate')}
           </Button>
         </>
       }
     >
       {serverError ? (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Unable to save</AlertTitle>
+          <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}

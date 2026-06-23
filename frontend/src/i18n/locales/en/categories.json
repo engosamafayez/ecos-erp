@@ -1,0 +1,41 @@
+{
+  "title": "Categories",
+  "subtitle": "Organize your products into categories.",
+  "search": "Search categories…",
+  "actions": {
+    "new": "New Category",
+    "create": "Create category",
+    "edit": "Edit Category"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "parent": "Parent",
+    "level": "Level",
+    "sort": "Sort",
+    "description": "Description",
+    "status": "Status"
+  },
+  "form": {
+    "code": { "label": "Code", "placeholder": "ELEC" },
+    "name": { "label": "Name", "placeholder": "Electronics" },
+    "parentCategory": "Parent category",
+    "sortOrder": "Sort order",
+    "description": { "label": "Description", "placeholder": "Optional description…" },
+    "active": "Active"
+  },
+  "drawer": {
+    "createTitle": "Create Category",
+    "editTitle": "Edit Category",
+    "createSubtitle": "Add a new product category.",
+    "editSubtitle": "Update the category details below.",
+    "submitCreate": "Create category",
+    "submitEdit": "Save changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "delete": {
+    "title": "Delete category",
+    "confirm": "Delete"
+  }
+}

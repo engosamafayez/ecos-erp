@@ -27,5 +27,54 @@
     "switcher": "Language",
     "en": "English",
     "ar": "العربية"
+  },
+  "actions": {
+    "saveChanges": "Save Changes",
+    "saving": "Saving…",
+    "creating": "Creating…",
+    "view": "View",
+    "back": "Back",
+    "approve": "Approve",
+    "post": "Post"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "all": "All"
+  },
+  "fields": {
+    "code": "Code",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "mobile": "Mobile",
+    "country": "Country",
+    "city": "City",
+    "address": "Address",
+    "description": "Description",
+    "notes": "Notes",
+    "status": "Status",
+    "active": "Active",
+    "website": "Website",
+    "company": "Company",
+    "branch": "Branch",
+    "warehouse": "Warehouse"
+  },
+  "filters": {
+    "status": "Status",
+    "company": "Company",
+    "allCompanies": "All companies",
+    "allPlatforms": "All Platforms"
+  },
+  "errors": {
+    "unableToSave": "Unable to save",
+    "generic": "Something went wrong. Please try again."
+  },
+  "table": {
+    "empty": "—"
+  },
+  "home": "Home",
+  "dialogs": {
+    "softDeleteMessage": "This will soft-delete {{name}}. It can be restored later."
   }
 }

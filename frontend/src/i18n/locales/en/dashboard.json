@@ -1,0 +1,38 @@
+{
+  "welcome": "Welcome back, {{firstName}} 👋",
+  "subtitle": "Here is an overview of your ECOS workspace.",
+  "kpi": {
+    "revenue": "Total Revenue",
+    "orders": "Orders",
+    "products": "Products",
+    "activeUsers": "Active Users",
+    "noData": "No data yet",
+    "thisWeek": "+1 this week"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "subtitle": "Common shortcuts (placeholder).",
+    "addCompany": "Add Company",
+    "newProduct": "New Product",
+    "inviteUser": "Invite User",
+    "viewReports": "View Reports"
+  },
+  "recentActivity": {
+    "title": "Recent Activity",
+    "subtitle": "Placeholder feed — not connected to the backend.",
+    "onboarding": "Company onboarding flow drafted",
+    "inventory": "Inventory module scaffolding planned",
+    "sales": "Sales pipeline schema proposed",
+    "hr": "HR onboarding checklist outlined",
+    "justNow": "Just now"
+  },
+  "systemStatus": {
+    "title": "System Status",
+    "subtitle": "Placeholder — not connected to the backend.",
+    "api": "API",
+    "database": "Database",
+    "queue": "Queue",
+    "mail": "Mail",
+    "operational": "Operational"
+  }
+}

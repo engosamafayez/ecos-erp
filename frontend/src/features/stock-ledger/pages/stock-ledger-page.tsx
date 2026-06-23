@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   EntityTable,
@@ -19,14 +20,14 @@ import { ROUTES } from '@/router/routes';
 
 const PER_PAGE = 15;
 
-const MOVEMENT_TYPES: { value: MovementType | 'all'; label: string }[] = [
-  { value: 'all', label: 'All Types' },
-  { value: 'purchase_receipt', label: 'Purchase Receipt' },
-  { value: 'sales_issue', label: 'Sales Issue' },
-  { value: 'adjustment_in', label: 'Adjustment In' },
-  { value: 'adjustment_out', label: 'Adjustment Out' },
-  { value: 'transfer_in', label: 'Transfer In' },
-  { value: 'transfer_out', label: 'Transfer Out' },
+const MOVEMENT_TYPE_VALUES: (MovementType | 'all')[] = [
+  'all',
+  'purchase_receipt',
+  'sales_issue',
+  'adjustment_in',
+  'adjustment_out',
+  'transfer_in',
+  'transfer_out',
 ];
 
 function fmt(n: number) {
@@ -34,6 +35,8 @@ function fmt(n: number) {
 }
 
 export function StockLedgerPage() {
+  const { t } = useTranslation('stock-ledger');
+  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [movementTypeFilter, setMovementTypeFilter] = useState<MovementType | 'all'>('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -75,13 +78,13 @@ export function StockLedgerPage() {
   const columns: ColumnDef<StockMovement>[] = [
     {
       key: 'movement_date',
-      header: 'Date',
+      header: t('columns.date'),
       sortable: true,
       cell: (m) => m.movement_date,
     },
     {
       key: 'product',
-      header: 'Product',
+      header: t('columns.product'),
       cell: (m) => (
         <div>
           <span className="font-medium">{m.product?.name ?? '—'}</span>
@@ -93,18 +96,18 @@ export function StockLedgerPage() {
     },
     {
       key: 'warehouse',
-      header: 'Warehouse',
+      header: t('columns.warehouse'),
       cell: (m) => m.warehouse?.name ?? '—',
     },
     {
       key: 'movement_type',
-      header: 'Type',
+      header: t('columns.type'),
       sortable: true,
       cell: (m) => <MovementTypeBadge type={m.movement_type} />,
     },
     {
       key: 'quantity',
-      header: 'Quantity',
+      header: t('columns.quantity'),
       sortable: true,
       cell: (m) => (
         <span className="font-mono tabular-nums">{fmt(m.quantity)}</span>
@@ -112,21 +115,21 @@ export function StockLedgerPage() {
     },
     {
       key: 'balance_before',
-      header: 'Before',
+      header: t('columns.before'),
       cell: (m) => (
         <span className="text-muted-foreground font-mono tabular-nums">{fmt(m.balance_before)}</span>
       ),
     },
     {
       key: 'balance_after',
-      header: 'After',
+      header: t('columns.after'),
       cell: (m) => (
         <span className="font-mono tabular-nums">{fmt(m.balance_after)}</span>
       ),
     },
     {
       key: 'reference_type',
-      header: 'Ref. Type',
+      header: t('columns.refType'),
       cell: (m) =>
         m.reference_type
           ? m.reference_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -134,7 +137,7 @@ export function StockLedgerPage() {
     },
     {
       key: 'reference_id',
-      header: 'Reference',
+      header: t('columns.reference'),
       cell: (m) =>
         m.reference_id ? (
           <span className="font-mono text-xs">{m.reference_id.slice(0, 8)}…</span>
@@ -147,15 +150,15 @@ export function StockLedgerPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Stock Ledger"
-        subtitle="Complete audit history of all inventory movements."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Stock Ledger' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
       />
 
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search by product name, SKU, or warehouse…"
+            searchPlaceholder={t('search')}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -168,7 +171,7 @@ export function StockLedgerPage() {
             filterPanel={
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Movement Type</span>
+                  <span className="text-sm font-medium">{t('filters.type')}</span>
                   <select
                     value={movementTypeFilter}
                     onChange={(e) => {
@@ -177,16 +180,16 @@ export function StockLedgerPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    {MOVEMENT_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
+                    {MOVEMENT_TYPE_VALUES.map((val) => (
+                      <option key={val} value={val}>
+                        {t(`movementTypes.${val}`)}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Date From</span>
+                  <span className="text-sm font-medium">{t('filters.dateFrom')}</span>
                   <input
                     type="date"
                     value={dateFrom}
@@ -196,7 +199,7 @@ export function StockLedgerPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Date To</span>
+                  <span className="text-sm font-medium">{t('filters.dateTo')}</span>
                   <input
                     type="date"
                     value={dateTo}

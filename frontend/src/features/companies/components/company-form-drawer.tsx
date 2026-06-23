@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { EntityDrawer, EntityForm } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -21,7 +22,6 @@ const FORM_ID = 'company-form';
 type CompanyFormDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** When provided the drawer edits; otherwise it creates. */
   company?: Company | null;
 };
 
@@ -31,11 +31,9 @@ function extractMessage(error: unknown): string {
     : 'Something went wrong. Please try again.';
 }
 
-/**
- * Create / edit company slide-over. A single reusable component serves both
- * modes, built on the shared EntityDrawer + EntityForm.
- */
 export function CompanyFormDrawer({ open, onOpenChange, company }: CompanyFormDrawerProps) {
+  const { t } = useTranslation('companies');
+  const { t: tCommon } = useTranslation('common');
   const isEdit = Boolean(company);
   const createCompany = useCreateCompany();
   const updateCompany = useUpdateCompany();
@@ -46,8 +44,6 @@ export function CompanyFormDrawer({ open, onOpenChange, company }: CompanyFormDr
     defaultValues: toFormValues(company),
   });
 
-  // Sync the form to the target company whenever the drawer opens (RHF reset is
-  // an external-system update, not React state).
   useEffect(() => {
     if (open) {
       form.reset(toFormValues(company));
@@ -57,9 +53,7 @@ export function CompanyFormDrawer({ open, onOpenChange, company }: CompanyFormDr
   const isPending = createCompany.isPending || updateCompany.isPending;
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      setServerError(null);
-    }
+    if (!next) setServerError(null);
     onOpenChange(next);
   };
 
@@ -82,24 +76,26 @@ export function CompanyFormDrawer({ open, onOpenChange, company }: CompanyFormDr
     <EntityDrawer
       open={open}
       onOpenChange={handleOpenChange}
-      title={isEdit ? 'Edit Company' : 'Create Company'}
-      description={
-        isEdit ? 'Update the company details below.' : 'Add a new company to your organization.'
-      }
+      title={isEdit ? t('drawer.editTitle') : t('drawer.createTitle')}
+      description={isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle')}
       footer={
         <>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {tCommon('common.cancel')}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
-            {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create company'}
+            {isPending
+              ? t('drawer.saving')
+              : isEdit
+                ? t('drawer.submitEdit')
+                : t('drawer.submitCreate')}
           </Button>
         </>
       }
     >
       {serverError ? (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Unable to save</AlertTitle>
+          <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}

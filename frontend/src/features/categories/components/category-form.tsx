@@ -1,4 +1,5 @@
 import { Controller, useFormContext } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { FormField } from '@/components/crud';
 import { Input } from '@/components/ui/input';
@@ -6,20 +7,16 @@ import { ParentCategorySelect } from '@/features/categories/components/parent-ca
 import type { CategoryFormValues } from '@/features/categories/components/category-form-schema';
 
 type CategoryFormFieldsProps = {
-  /** Current category id (edit mode) — excluded from the parent options. */
   currentId?: string;
 };
 
-/**
- * Category-specific form fields. Rendered inside an {@link EntityForm}. The
- * Parent field uses a searchable select backed by the Categories API.
- */
 export function CategoryFormFields({ currentId }: CategoryFormFieldsProps) {
+  const { t } = useTranslation('categories');
   const { register, control } = useFormContext<CategoryFormValues>();
 
   return (
     <div className="flex flex-col gap-4">
-      <FormField name="parent_id" label="Parent category">
+      <FormField name="parent_id" label={t('form.parentCategory')}>
         <Controller
           control={control}
           name="parent_id"
@@ -34,24 +31,24 @@ export function CategoryFormFields({ currentId }: CategoryFormFieldsProps) {
       </FormField>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField name="code" label="Code" required>
-          <Input placeholder="ELEC" {...register('code')} />
+        <FormField name="code" label={t('form.code.label')} required>
+          <Input placeholder={t('form.code.placeholder')} {...register('code')} />
         </FormField>
-        <FormField name="name" label="Name" required>
-          <Input placeholder="Electronics" {...register('name')} />
+        <FormField name="name" label={t('form.name.label')} required>
+          <Input placeholder={t('form.name.placeholder')} {...register('name')} />
         </FormField>
-        <FormField name="sort_order" label="Sort order">
+        <FormField name="sort_order" label={t('form.sortOrder')}>
           <Input type="number" min={0} {...register('sort_order')} />
         </FormField>
       </div>
 
-      <FormField name="description" label="Description">
-        <Input {...register('description')} />
+      <FormField name="description" label={t('form.description.label')}>
+        <Input placeholder={t('form.description.placeholder')} {...register('description')} />
       </FormField>
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" className="border-input size-4 rounded" {...register('is_active')} />
-        Active
+        {t('form.active')}
       </label>
     </div>
   );

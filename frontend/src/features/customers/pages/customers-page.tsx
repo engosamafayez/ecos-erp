@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -25,6 +26,8 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 10;
 
 export function CustomersPage() {
+  const { t } = useTranslation('customers');
+  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<CustomerStatusFilter>('all');
   const [page, setPage] = useState(1);
@@ -76,30 +79,30 @@ export function CustomersPage() {
   const columns: ColumnDef<Customer>[] = [
     {
       key: 'code',
-      header: 'Code',
+      header: t('columns.code'),
       sortable: true,
       cell: (c) => <span className="font-medium">{c.code}</span>,
     },
-    { key: 'name', header: 'Name', sortable: true, cell: (c) => c.name },
+    { key: 'name', header: t('columns.name'), sortable: true, cell: (c) => c.name },
     {
       key: 'contact_person',
-      header: 'Contact Person',
+      header: t('columns.contactPerson'),
       cell: (c) => <span className="text-muted-foreground">{c.contact_person ?? '—'}</span>,
     },
     {
       key: 'phone',
-      header: 'Phone',
+      header: t('columns.phone'),
       cell: (c) => <span className="text-muted-foreground">{c.phone ?? '—'}</span>,
     },
     {
       key: 'email',
-      header: 'Email',
+      header: t('columns.email'),
       cell: (c) => <span className="text-muted-foreground">{c.email ?? '—'}</span>,
     },
-    { key: 'country', header: 'Country', sortable: true, cell: (c) => c.country ?? '—' },
+    { key: 'country', header: t('columns.country'), sortable: true, cell: (c) => c.country ?? '—' },
     {
       key: 'is_active',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (c) => <StatusBadge status={c.is_active ? 'active' : 'inactive'} />,
     },
@@ -108,13 +111,13 @@ export function CustomersPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Customers"
-        subtitle="Manage the customers you sell to."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Customers' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Customer
+            {t('actions.new')}
           </Button>
         }
       />
@@ -122,7 +125,7 @@ export function CustomersPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search customers…"
+            searchPlaceholder={t('search')}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -130,15 +133,15 @@ export function CustomersPage() {
             onClearFilters={() => { setStatusFilter('all'); setPage(1); }}
             filterPanel={
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">Status</span>
+                <span className="text-sm font-medium">{tCommon('filters.status')}</span>
                 <select
                   value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value as CustomerStatusFilter); setPage(1); }}
                   className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                 >
-                  <option value="all">All</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="all">{tCommon('status.all')}</option>
+                  <option value="active">{tCommon('status.active')}</option>
+                  <option value="inactive">{tCommon('status.inactive')}</option>
                 </select>
               </div>
             }
@@ -156,10 +159,10 @@ export function CustomersPage() {
               <ActionMenu
                 label={`Actions for ${customer.name}`}
                 items={[
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(customer) },
+                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(customer) },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive' as const,
                     onSelect: () => setDeleting(customer),
@@ -187,15 +190,9 @@ export function CustomersPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete customer"
-        description={
-          <>
-            This will soft-delete{' '}
-            <span className="text-foreground font-medium">{deleting?.name}</span>. It can be
-            restored later.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('delete.title')}
+        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
+        confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteCustomer.isPending}
         onConfirm={() => {

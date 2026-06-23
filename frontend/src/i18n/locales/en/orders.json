@@ -1,0 +1,56 @@
+{
+  "title": "Orders",
+  "subtitle": "Manage commerce orders from all channels.",
+  "search": "Search by order number or customer…",
+  "actions": {
+    "new": "New Order"
+  },
+  "filters": {
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "channel": "Channel",
+    "allChannels": "All channels"
+  },
+  "status": {
+    "pending": "Pending",
+    "processing": "Processing",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "columns": {
+    "number": "Order Number",
+    "customer": "Customer",
+    "channel": "Channel",
+    "orderDate": "Date",
+    "total": "Total",
+    "status": "Status"
+  },
+  "detail": {
+    "title": "Order",
+    "orderInfo": "Order Information",
+    "orderDetails": "Order Details",
+    "orderNumber": "Order Number",
+    "customer": "Customer",
+    "channel": "Channel",
+    "orderDate": "Order Date",
+    "status": "Status",
+    "externalOrderId": "External Order ID",
+    "notes": "Notes",
+    "lines": "Order Lines",
+    "lineItems": "Line Items",
+    "product": "Product",
+    "qty": "Qty",
+    "unitPrice": "Unit Price",
+    "lineTotal": "Line Total",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "back": "Back",
+    "loading": "Loading…",
+    "notFound": "Not Found",
+    "notFoundMessage": "This order does not exist."
+  },
+  "delete": {
+    "title": "Delete order",
+    "confirm": "Delete"
+  }
+}

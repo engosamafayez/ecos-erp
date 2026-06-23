@@ -3,6 +3,7 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
 import { EntityForm, PageHeader } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -29,6 +30,8 @@ function extractMessage(error: unknown): string {
 }
 
 export function CreateFulfillmentPage() {
+  const { t } = useTranslation('fulfillments');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const createFulfillment = useCreateFulfillment();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -69,20 +72,20 @@ export function CreateFulfillmentPage() {
     <FormProvider {...form}>
       <div className="flex flex-col gap-6">
         <PageHeader
-          title="New Fulfillment"
-          subtitle="Create a fulfillment to ship order items from a warehouse."
+          title={t('create.title')}
+          subtitle={t('create.subtitle')}
           breadcrumbs={[
-            { label: 'Home', to: ROUTES.dashboard },
-            { label: 'Fulfillments', to: ROUTES.fulfillments },
-            { label: 'New' },
+            { label: tCommon('home'), to: ROUTES.dashboard },
+            { label: t('title'), to: ROUTES.fulfillments },
+            { label: t('create.new') },
           ]}
           actions={
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => navigate(ROUTES.fulfillments)}>
-                Cancel
+                {tCommon('common.cancel')}
               </Button>
               <Button type="submit" form={FORM_ID} disabled={createFulfillment.isPending}>
-                {createFulfillment.isPending ? 'Creating…' : 'Create Fulfillment'}
+                {createFulfillment.isPending ? t('create.creating') : t('create.submitCreate')}
               </Button>
             </div>
           }
@@ -90,7 +93,7 @@ export function CreateFulfillmentPage() {
 
         {serverError ? (
           <Alert variant="destructive">
-            <AlertTitle>Unable to create</AlertTitle>
+            <AlertTitle>{t('create.errorTitle')}</AlertTitle>
             <AlertDescription>{serverError}</AlertDescription>
           </Alert>
         ) : null}
@@ -98,7 +101,7 @@ export function CreateFulfillmentPage() {
         <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Fulfillment Details</CardTitle>
+              <CardTitle className="text-base">{t('create.fulfillmentDetails')}</CardTitle>
             </CardHeader>
             <CardContent>
               <FulfillmentHeaderFields />
@@ -107,7 +110,7 @@ export function CreateFulfillmentPage() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Line Items</CardTitle>
+              <CardTitle className="text-base">{t('create.lineItems')}</CardTitle>
             </CardHeader>
             <CardContent>
               <FulfillmentLinesEditor />

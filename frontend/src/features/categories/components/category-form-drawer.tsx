@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { EntityDrawer, EntityForm } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -30,10 +31,9 @@ function extractMessage(error: unknown): string {
     : 'Something went wrong. Please try again.';
 }
 
-/**
- * Create / edit category slide-over, built on the shared EntityDrawer + EntityForm.
- */
 export function CategoryFormDrawer({ open, onOpenChange, category }: CategoryFormDrawerProps) {
+  const { t } = useTranslation('categories');
+  const { t: tCommon } = useTranslation('common');
   const isEdit = Boolean(category);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -53,9 +53,7 @@ export function CategoryFormDrawer({ open, onOpenChange, category }: CategoryFor
   const isPending = createCategory.isPending || updateCategory.isPending;
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      setServerError(null);
-    }
+    if (!next) setServerError(null);
     onOpenChange(next);
   };
 
@@ -78,24 +76,26 @@ export function CategoryFormDrawer({ open, onOpenChange, category }: CategoryFor
     <EntityDrawer
       open={open}
       onOpenChange={handleOpenChange}
-      title={isEdit ? 'Edit Category' : 'Create Category'}
-      description={
-        isEdit ? 'Update the category details below.' : 'Add a new category (max 3 levels deep).'
-      }
+      title={isEdit ? t('drawer.editTitle') : t('drawer.createTitle')}
+      description={isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle')}
       footer={
         <>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {tCommon('common.cancel')}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
-            {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create category'}
+            {isPending
+              ? t('drawer.saving')
+              : isEdit
+                ? t('drawer.submitEdit')
+                : t('drawer.submitCreate')}
           </Button>
         </>
       }
     >
       {serverError ? (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Unable to save</AlertTitle>
+          <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}

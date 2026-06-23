@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Eye, Plus, Trash2, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -30,6 +31,8 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 10;
 
 export function FulfillmentsPage() {
+  const { t } = useTranslation('fulfillments');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FulfillmentStatus | 'all'>('all');
@@ -74,40 +77,40 @@ export function FulfillmentsPage() {
   const columns: ColumnDef<Fulfillment>[] = [
     {
       key: 'fulfillment_number',
-      header: 'Fulfillment #',
+      header: t('columns.number'),
       sortable: true,
       cell: (f) => <span className="font-medium">{f.fulfillment_number}</span>,
     },
     {
       key: 'order',
-      header: 'Order',
+      header: t('columns.order'),
       cell: (f) => (
         <span className="text-muted-foreground">{f.order?.order_number ?? '—'}</span>
       ),
     },
     {
       key: 'customer',
-      header: 'Customer',
+      header: t('columns.customer'),
       cell: (f) => (
         <span className="text-muted-foreground">{f.order?.customer?.name ?? '—'}</span>
       ),
     },
     {
       key: 'warehouse',
-      header: 'Warehouse',
+      header: t('columns.warehouse'),
       cell: (f) => (
         <span className="text-muted-foreground">{f.warehouse?.name ?? '—'}</span>
       ),
     },
     {
       key: 'fulfillment_date',
-      header: 'Date',
+      header: t('columns.fulfillmentDate'),
       sortable: true,
       cell: (f) => <span className="text-muted-foreground">{f.fulfillment_date}</span>,
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('columns.status'),
       sortable: true,
       cell: (f) => <FulfillmentStatusBadge status={f.status} />,
     },
@@ -116,13 +119,13 @@ export function FulfillmentsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Fulfillments"
-        subtitle="Fulfill orders and track stock-out movements."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Fulfillments' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
         actions={
           <Button onClick={() => navigate(ROUTES.fulfillmentsNew)}>
             <Plus className="size-4" />
-            New Fulfillment
+            {t('actions.new')}
           </Button>
         }
       />
@@ -130,7 +133,7 @@ export function FulfillmentsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search by fulfillment # or order number…"
+            searchPlaceholder={t('search')}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -138,16 +141,16 @@ export function FulfillmentsPage() {
             onClearFilters={() => { setStatusFilter('all'); setPage(1); }}
             filterPanel={
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">Status</span>
+                <span className="text-sm font-medium">{tCommon('filters.status')}</span>
                 <select
                   value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value as FulfillmentStatus | 'all'); setPage(1); }}
                   className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                 >
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="fulfilled">Fulfilled</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="all">{tCommon('status.all')}</option>
+                  <option value="pending">{t('status.pending')}</option>
+                  <option value="fulfilled">{t('status.fulfilled')}</option>
+                  <option value="cancelled">{t('status.cancelled')}</option>
                 </select>
               </div>
             }
@@ -167,7 +170,7 @@ export function FulfillmentsPage() {
                 items={[
                   {
                     key: 'view',
-                    label: 'View',
+                    label: tCommon('actions.view'),
                     icon: Eye,
                     onSelect: () => navigate(`${ROUTES.fulfillments}/${f.id}`),
                   },
@@ -175,19 +178,19 @@ export function FulfillmentsPage() {
                     ? [
                         {
                           key: 'fulfill',
-                          label: 'Fulfill',
+                          label: t('actions.fulfill'),
                           icon: CheckCircle,
                           onSelect: () => setFulfilling(f),
                         },
                         {
                           key: 'cancel',
-                          label: 'Cancel',
+                          label: t('actions.cancel'),
                           icon: XCircle,
                           onSelect: () => setCancelling(f),
                         },
                         {
                           key: 'delete',
-                          label: 'Delete',
+                          label: tCommon('common.delete'),
                           icon: Trash2,
                           variant: 'destructive' as const,
                           onSelect: () => setDeleting(f),
@@ -211,15 +214,9 @@ export function FulfillmentsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete fulfillment"
-        description={
-          <>
-            Delete{' '}
-            <span className="text-foreground font-medium">{deleting?.fulfillment_number}</span>?
-            Only pending fulfillments can be deleted.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('dialogs.delete.title')}
+        description={t('dialogs.delete.description', { number: deleting?.fulfillment_number ?? '' })}
+        confirmLabel={t('dialogs.delete.confirm')}
         variant="destructive"
         loading={deleteFulfillment.isPending}
         onConfirm={() => {
@@ -230,15 +227,9 @@ export function FulfillmentsPage() {
       <ConfirmDialog
         open={fulfilling !== null}
         onOpenChange={(open) => { if (!open) setFulfilling(null); }}
-        title="Fulfill shipment"
-        description={
-          <>
-            Fulfill{' '}
-            <span className="text-foreground font-medium">{fulfilling?.fulfillment_number}</span>?
-            Stock will be deducted from the warehouse.
-          </>
-        }
-        confirmLabel="Fulfill"
+        title={t('dialogs.fulfill.title')}
+        description={t('dialogs.fulfill.description', { number: fulfilling?.fulfillment_number ?? '' })}
+        confirmLabel={t('dialogs.fulfill.confirm')}
         loading={fulfillMutation.isPending}
         onConfirm={() => {
           if (fulfilling) fulfillMutation.mutate(fulfilling.id, { onSuccess: () => setFulfilling(null) });
@@ -248,14 +239,9 @@ export function FulfillmentsPage() {
       <ConfirmDialog
         open={cancelling !== null}
         onOpenChange={(open) => { if (!open) setCancelling(null); }}
-        title="Cancel fulfillment"
-        description={
-          <>
-            Cancel{' '}
-            <span className="text-foreground font-medium">{cancelling?.fulfillment_number}</span>?
-          </>
-        }
-        confirmLabel="Cancel Fulfillment"
+        title={t('dialogs.cancel.title')}
+        description={t('dialogs.cancel.description', { number: cancelling?.fulfillment_number ?? '' })}
+        confirmLabel={t('dialogs.cancel.confirm')}
         variant="destructive"
         loading={cancelMutation.isPending}
         onConfirm={() => {

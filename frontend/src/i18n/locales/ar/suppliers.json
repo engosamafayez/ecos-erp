@@ -1,0 +1,48 @@
+{
+  "title": "الموردون",
+  "subtitle": "إدارة علاقاتك مع الموردين.",
+  "search": "بحث في الموردين…",
+  "actions": {
+    "new": "مورد جديد",
+    "create": "إنشاء مورد",
+    "edit": "تعديل المورد"
+  },
+  "columns": {
+    "code": "الرمز",
+    "name": "الاسم",
+    "contactPerson": "جهة الاتصال",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "country": "الدولة",
+    "city": "المدينة",
+    "status": "الحالة"
+  },
+  "form": {
+    "code": { "label": "الرمز", "placeholder": "SUP-001" },
+    "name": { "label": "الاسم", "placeholder": "اسم المورد" },
+    "contactPerson": "جهة الاتصال",
+    "email": { "label": "البريد الإلكتروني", "placeholder": "supplier@example.com" },
+    "phone": "الهاتف",
+    "mobile": "المحمول",
+    "website": { "label": "الموقع الإلكتروني", "placeholder": "https://supplier.com" },
+    "country": "الدولة",
+    "city": "المدينة",
+    "address": "العنوان",
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" },
+    "active": "نشط"
+  },
+  "drawer": {
+    "createTitle": "إنشاء مورد",
+    "editTitle": "تعديل المورد",
+    "createSubtitle": "إضافة مورد جديد إلى سجلاتك.",
+    "editSubtitle": "تحديث تفاصيل المورد أدناه.",
+    "submitCreate": "إنشاء مورد",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "delete": {
+    "title": "حذف المورد",
+    "confirm": "حذف"
+  }
+}

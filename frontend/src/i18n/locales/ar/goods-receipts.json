@@ -1,0 +1,96 @@
+{
+  "title": "إيصالات البضائع",
+  "subtitle": "استلام المنتجات من أوامر الشراء المعتمدة إلى المستودعات.",
+  "search": "بحث برقم الإيصال أو رقم أمر الشراء…",
+  "actions": {
+    "new": "إيصال جديد",
+    "create": "إنشاء إيصال بضائع",
+    "post": "ترحيل",
+    "postReceipt": "ترحيل الإيصال",
+    "cancel": "إلغاء"
+  },
+  "filters": {
+    "status": "الحالة",
+    "allStatuses": "جميع الحالات"
+  },
+  "status": {
+    "draft": "مسودة",
+    "posted": "مرحّل"
+  },
+  "columns": {
+    "number": "رقم الإيصال",
+    "purchaseOrder": "أمر الشراء",
+    "warehouse": "المستودع",
+    "receiptDate": "تاريخ الاستلام",
+    "total": "الإجمالي",
+    "status": "الحالة"
+  },
+  "form": {
+    "purchaseOrder": { "label": "أمر الشراء", "placeholder": "اختر أمر شراء…" },
+    "warehouse": { "label": "المستودع", "placeholder": "اختر مستودعاً…" },
+    "receiptDate": "تاريخ الاستلام",
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" }
+  },
+  "lines": {
+    "title": "بنود الإيصال",
+    "addLine": "إضافة بند",
+    "columns": {
+      "product": "المنتج",
+      "quantity": "الكمية",
+      "unitPrice": "سعر الوحدة",
+      "total": "الإجمالي"
+    },
+    "selectProduct": "اختر منتجاً…",
+    "noLines": "لم تُضف بنود بعد."
+  },
+  "totals": {
+    "subtotal": "المجموع الفرعي",
+    "total": "الإجمالي"
+  },
+  "detail": {
+    "title": "إيصال البضائع",
+    "receiptInfo": "معلومات الإيصال",
+    "receiptDetails": "تفاصيل الإيصال",
+    "lineItems": "البنود",
+    "purchaseOrder": "أمر الشراء",
+    "warehouse": "المستودع",
+    "receiptDate": "تاريخ الاستلام",
+    "notes": "ملاحظات",
+    "loading": "جارٍ التحميل…",
+    "notFound": "غير موجود.",
+    "notFoundMessage": "إيصال البضائع هذا غير موجود."
+  },
+  "create": {
+    "title": "إيصال بضائع جديد",
+    "new": "جديد",
+    "subtitle": "اختر أمر شراء معتمداً وأدخل الكميات المستلمة.",
+    "receiptDetails": "تفاصيل الإيصال",
+    "submitCreate": "إنشاء الإيصال",
+    "creating": "جارٍ الإنشاء…",
+    "errorTitle": "تعذر إنشاء إيصال البضائع"
+  },
+  "edit": {
+    "title": "تعديل",
+    "subtitle": "تحديث تفاصيل الإيصال والكميات المستلمة.",
+    "editLabel": "تعديل",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "dialogs": {
+    "post": {
+      "title": "ترحيل إيصال البضائع",
+      "description": "ترحيل {{number}}؟ سيتم تحديث المخزون وسيصبح الإيصال للقراءة فقط.",
+      "confirm": "ترحيل الإيصال"
+    },
+    "delete": {
+      "title": "حذف إيصال البضائع",
+      "description": "حذف {{number}}؟ يمكن حذف المسودات فقط.",
+      "confirm": "حذف"
+    }
+  },
+  "delete": {
+    "title": "حذف إيصال البضائع",
+    "confirm": "حذف"
+  }
+}

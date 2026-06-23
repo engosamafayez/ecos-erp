@@ -1,0 +1,11 @@
+{
+  "title": "Settings",
+  "subtitle": "Configure your ECOS workspace.",
+  "sections": {
+    "general": "General",
+    "appearance": "Appearance",
+    "language": "Language & Region",
+    "notifications": "Notifications",
+    "security": "Security"
+  }
+}
