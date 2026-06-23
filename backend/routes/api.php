@@ -7,6 +7,7 @@ use Modules\IAM\Presentation\Http\Controllers\AuthController;
 use Modules\Inventory\Products\Presentation\Http\Controllers\ProductController;
 use Modules\Inventory\StockLedger\Presentation\Http\Controllers\StockMovementController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
+use Modules\Commerce\OrderImport\Presentation\Http\Controllers\OrderImportController;
 use Modules\Commerce\Orders\Presentation\Http\Controllers\OrderController;
 use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
 use Modules\Commerce\ProductImport\Presentation\Http\Controllers\ProductImportController;
@@ -85,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('channels', ChannelController::class);
     Route::post('channels/{channel}/test-connection', [ConnectorController::class, 'testConnection']);
     Route::post('channels/{channel}/import-products', [ProductImportController::class, 'importProducts']);
+    Route::post('channels/{channel}/import-orders', [OrderImportController::class, 'importOrders']);
     Route::apiResource('product-mappings', ProductMappingController::class);
     Route::apiResource('orders', OrderController::class);
 });

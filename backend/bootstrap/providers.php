@@ -21,4 +21,5 @@ return [
     Modules\Commerce\Connectors\Infrastructure\Providers\ConnectorServiceProvider::class,
     Modules\Commerce\ProductImport\Infrastructure\Providers\ProductImportServiceProvider::class,
     Modules\Commerce\Orders\Infrastructure\Providers\OrderServiceProvider::class,
+    Modules\Commerce\OrderImport\Infrastructure\Providers\OrderImportServiceProvider::class,
 ];

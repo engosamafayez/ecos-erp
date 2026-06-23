@@ -5,6 +5,7 @@ import type {
   ChannelsQuery,
   ChannelsResult,
   ImportResult,
+  OrderImportResult,
 } from '@/features/channels/types/channel';
 import type { ApiResponse } from '@/types';
 
@@ -40,6 +41,11 @@ export const channelsService = {
 
   async importProducts(id: string): Promise<ImportResult> {
     const { data } = await api.post<ApiResponse<ImportResult>>(`/channels/${id}/import-products`);
+    return data.data;
+  },
+
+  async importOrders(id: string): Promise<OrderImportResult> {
+    const { data } = await api.post<ApiResponse<OrderImportResult>>(`/channels/${id}/import-orders`);
     return data.data;
   },
 };

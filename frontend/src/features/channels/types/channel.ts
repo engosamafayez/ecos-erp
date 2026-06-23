@@ -74,3 +74,13 @@ export type ImportResult = {
   failed: number;
   errors: string[];
 };
+
+export type OrderImportResult = {
+  imported_orders: number;
+  created_customers: number;
+  created_orders: number;
+  created_lines: number;
+  skipped_orders: number;
+  failed_lines: number;
+  errors: string[];
+};

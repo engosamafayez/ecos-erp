@@ -15,11 +15,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChannelFormDrawer } from '@/features/channels/components/channel-form-drawer';
 import { ConnectionStatusBadge } from '@/features/channels/components/connection-status-badge';
+import { ImportOrdersResultDialog } from '@/features/channels/components/import-orders-result-dialog';
 import { ImportResultDialog } from '@/features/channels/components/import-result-dialog';
 import { PlatformBadge } from '@/features/channels/components/platform-badge';
 import {
   useChannelsQuery,
   useDeleteChannel,
+  useImportOrders,
   useImportProducts,
   useTestConnection,
 } from '@/features/channels/hooks/use-channels';
@@ -29,6 +31,7 @@ import type {
   ChannelSortField,
   ChannelStatusFilter,
   ImportResult,
+  OrderImportResult,
 } from '@/features/channels/types/channel';
 import { ROUTES } from '@/router/routes';
 
@@ -59,6 +62,9 @@ export function ChannelsPage() {
   const [importingId, setImportingId] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importChannelName, setImportChannelName] = useState<string | undefined>();
+  const [importingOrdersId, setImportingOrdersId] = useState<string | null>(null);
+  const [orderImportResult, setOrderImportResult] = useState<OrderImportResult | null>(null);
+  const [orderImportChannelName, setOrderImportChannelName] = useState<string | undefined>();
 
   const params = useMemo(
     () => ({
@@ -77,6 +83,7 @@ export function ChannelsPage() {
   const deleteChannel = useDeleteChannel();
   const testConnection = useTestConnection();
   const importProducts = useImportProducts();
+  const importOrders = useImportOrders();
 
   const items = data?.items ?? [];
   const meta = data?.meta;
@@ -113,6 +120,15 @@ export function ChannelsPage() {
     importProducts.mutate(channel.id, {
       onSuccess: (result) => { setImportResult(result); },
       onSettled: () => setImportingId(null),
+    });
+  };
+
+  const handleImportOrders = (channel: Channel) => {
+    setImportingOrdersId(channel.id);
+    setOrderImportChannelName(channel.name);
+    importOrders.mutate(channel.id, {
+      onSuccess: (result) => { setOrderImportResult(result); },
+      onSettled: () => setImportingOrdersId(null),
     });
   };
 
@@ -246,6 +262,12 @@ export function ChannelsPage() {
                     onSelect: () => handleImportProducts(channel),
                   },
                   {
+                    key: 'import-orders',
+                    label: importingOrdersId === channel.id ? 'Importing…' : 'Import Orders',
+                    icon: Download,
+                    onSelect: () => handleImportOrders(channel),
+                  },
+                  {
                     key: 'test-connection',
                     label: testingId === channel.id ? 'Testing…' : 'Test Connection',
                     icon: Wifi,
@@ -303,6 +325,13 @@ export function ChannelsPage() {
         onOpenChange={(open) => { if (!open) setImportResult(null); }}
         result={importResult}
         channelName={importChannelName}
+      />
+
+      <ImportOrdersResultDialog
+        open={orderImportResult !== null}
+        onOpenChange={(open) => { if (!open) setOrderImportResult(null); }}
+        result={orderImportResult}
+        channelName={orderImportChannelName}
       />
     </div>
   );
