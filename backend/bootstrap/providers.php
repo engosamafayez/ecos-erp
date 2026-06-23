@@ -12,4 +12,5 @@ return [
     Modules\MasterData\Units\Infrastructure\Providers\UnitServiceProvider::class,
     Modules\Inventory\Products\Infrastructure\Providers\ProductServiceProvider::class,
     Modules\Purchasing\Suppliers\Infrastructure\Providers\SupplierServiceProvider::class,
+    Modules\Purchasing\PurchaseOrders\Infrastructure\Providers\PurchaseOrderServiceProvider::class,
 ];

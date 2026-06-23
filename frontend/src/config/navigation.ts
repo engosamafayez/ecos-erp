@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Building2,
+  ClipboardList,
   Contact,
   FolderTree,
   GitBranch,
@@ -62,7 +63,10 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Purchasing',
-    items: [{ key: 'suppliers', label: 'Suppliers', path: ROUTES.suppliers, icon: Truck }],
+    items: [
+      { key: 'suppliers', label: 'Suppliers', path: ROUTES.suppliers, icon: Truck },
+      { key: 'purchase-orders', label: 'Purchase Orders', path: ROUTES.purchaseOrders, icon: ClipboardList },
+    ],
   },
   {
     label: 'Operations',

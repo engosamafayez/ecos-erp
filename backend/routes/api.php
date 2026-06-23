@@ -10,6 +10,7 @@ use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
 use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
 use Modules\Organization\Branches\Presentation\Http\Controllers\BranchController;
 use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
+use Modules\Purchasing\PurchaseOrders\Presentation\Http\Controllers\PurchaseOrderController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
 
 /*
@@ -63,4 +64,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 */
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('suppliers', SupplierController::class);
+    Route::apiResource('purchase-orders', PurchaseOrderController::class);
+    Route::post('purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve']);
+    Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel']);
 });

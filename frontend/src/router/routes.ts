@@ -13,6 +13,8 @@ export const ROUTES = {
   categories: '/categories',
   units: '/units',
   suppliers: '/suppliers',
+  purchaseOrders: '/purchase-orders',
+  purchaseOrdersNew: '/purchase-orders/new',
   inventory: '/inventory',
   purchasing: '/purchasing',
   sales: '/sales',

@@ -10,6 +10,10 @@ import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 import { HomePage } from '@/features/home/pages/home-page';
 import { ProductsPage } from '@/features/products/pages/products-page';
 import { RawMaterialsPage } from '@/features/products/pages/raw-materials-page';
+import { CreatePurchaseOrderPage } from '@/features/purchase-orders/pages/create-purchase-order-page';
+import { EditPurchaseOrderPage } from '@/features/purchase-orders/pages/edit-purchase-order-page';
+import { PurchaseOrdersPage } from '@/features/purchase-orders/pages/purchase-orders-page';
+import { ViewPurchaseOrderPage } from '@/features/purchase-orders/pages/view-purchase-order-page';
 import { SuppliersPage } from '@/features/suppliers/pages/suppliers-page';
 import { UnitsPage } from '@/features/units/pages/units-page';
 import { WarehousesPage } from '@/features/warehouses/pages/warehouses-page';
@@ -61,6 +65,10 @@ export const router = createBrowserRouter(
             { path: ROUTES.categories, Component: CategoriesPage },
             { path: ROUTES.units, Component: UnitsPage },
             { path: ROUTES.suppliers, Component: SuppliersPage },
+            { path: ROUTES.purchaseOrders, Component: PurchaseOrdersPage },
+            { path: ROUTES.purchaseOrdersNew, Component: CreatePurchaseOrderPage },
+            { path: `${ROUTES.purchaseOrders}/:id`, Component: ViewPurchaseOrderPage },
+            { path: `${ROUTES.purchaseOrders}/:id/edit`, Component: EditPurchaseOrderPage },
             ...moduleRoutes,
           ],
         },
