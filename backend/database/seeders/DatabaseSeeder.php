@@ -13,6 +13,7 @@ use Modules\MasterData\Warehouses\Infrastructure\Database\Seeders\WarehouseSeede
 use Modules\Organization\Branches\Infrastructure\Database\Seeders\BranchSeeder;
 use Modules\Organization\Companies\Infrastructure\Database\Seeders\CompanySeeder;
 use Modules\Inventory\StockLedger\Infrastructure\Database\Seeders\StockLedgerSeeder;
+use Modules\Commerce\Channels\Infrastructure\Database\Seeders\ChannelSeeder;
 use Modules\Sales\Customers\Infrastructure\Database\Seeders\CustomerSeeder;
 use Modules\Purchasing\GoodsReceipts\Infrastructure\Database\Seeders\GoodsReceiptSeeder;
 use Modules\Purchasing\PurchaseOrders\Infrastructure\Database\Seeders\PurchaseOrderSeeder;
@@ -58,5 +59,8 @@ class DatabaseSeeder extends Seeder
 
         // Sales module (SAL-001 customers).
         $this->call(CustomerSeeder::class);
+
+        // Commerce module (COM-001 channels).
+        $this->call(ChannelSeeder::class);
     }
 }

@@ -1,0 +1,34 @@
+import { api } from '@/lib/axios';
+import type {
+  Channel,
+  ChannelPayload,
+  ChannelsQuery,
+  ChannelsResult,
+} from '@/features/channels/types/channel';
+import type { ApiResponse } from '@/types';
+
+export const channelsService = {
+  async list(params: ChannelsQuery): Promise<ChannelsResult> {
+    const { data } = await api.get<ApiResponse<ChannelsResult>>('/channels', { params });
+    return data.data;
+  },
+
+  async get(id: string): Promise<Channel> {
+    const { data } = await api.get<ApiResponse<Channel>>(`/channels/${id}`);
+    return data.data;
+  },
+
+  async create(payload: ChannelPayload): Promise<Channel> {
+    const { data } = await api.post<ApiResponse<Channel>>('/channels', payload);
+    return data.data;
+  },
+
+  async update(id: string, payload: ChannelPayload): Promise<Channel> {
+    const { data } = await api.put<ApiResponse<Channel>>(`/channels/${id}`, payload);
+    return data.data;
+  },
+
+  async remove(id: string): Promise<void> {
+    await api.delete(`/channels/${id}`);
+  },
+};

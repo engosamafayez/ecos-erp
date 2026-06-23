@@ -19,6 +19,7 @@ export const ROUTES = {
   goodsReceiptsNew: '/goods-receipts/new',
   stockLedger: '/stock-ledger',
   customers: '/customers',
+  channels: '/channels',
   inventory: '/inventory',
   purchasing: '/purchasing',
   sales: '/sales',

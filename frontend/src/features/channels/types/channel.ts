@@ -1,0 +1,64 @@
+export type ChannelPlatform =
+  | 'woocommerce'
+  | 'shopify'
+  | 'amazon'
+  | 'noon'
+  | 'salla'
+  | 'zid';
+
+export type Channel = {
+  id: string;
+  company_id: string;
+  company: { id: string; name: string } | null;
+  name: string;
+  platform: ChannelPlatform;
+  platform_label: string;
+  store_url: string;
+  is_active: boolean;
+  sync_products: boolean;
+  sync_prices: boolean;
+  sync_stock: boolean;
+  last_sync_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type ChannelPayload = {
+  company_id: string;
+  name: string;
+  platform: ChannelPlatform;
+  store_url: string;
+  is_active: boolean;
+  sync_products: boolean;
+  sync_prices: boolean;
+  sync_stock: boolean;
+  consumer_key?: string;
+  consumer_secret?: string;
+};
+
+export type ChannelStatusFilter = 'all' | 'active' | 'inactive';
+export type ChannelSortField = 'name' | 'platform' | 'is_active' | 'last_sync_at' | 'created_at';
+export type SortDirection = 'asc' | 'desc';
+
+export type ChannelsQuery = {
+  search?: string;
+  status?: ChannelStatusFilter;
+  platform?: string;
+  company_id?: string;
+  page?: number;
+  per_page?: number;
+  sort_by?: ChannelSortField;
+  sort_dir?: SortDirection;
+};
+
+export type PaginationMeta = {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+};
+
+export type ChannelsResult = {
+  items: Channel[];
+  meta: PaginationMeta;
+};

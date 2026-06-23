@@ -15,6 +15,7 @@ import {
   Ruler,
   Settings,
   ShoppingCart,
+  Store,
   Truck,
   Users,
   Warehouse,
@@ -77,6 +78,12 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Sales',
     items: [
       { key: 'customers', label: 'Customers', path: ROUTES.customers, icon: ShoppingCart },
+    ],
+  },
+  {
+    label: 'Commerce',
+    items: [
+      { key: 'channels', label: 'Channels', path: ROUTES.channels, icon: Store },
     ],
   },
   {

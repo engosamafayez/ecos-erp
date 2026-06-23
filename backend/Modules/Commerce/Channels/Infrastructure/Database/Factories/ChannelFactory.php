@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Commerce\Channels\Infrastructure\Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
+use Modules\Commerce\Channels\Domain\Models\Channel;
+use Modules\Organization\Companies\Domain\Models\Company;
+
+/**
+ * @extends Factory<Channel>
+ */
+final class ChannelFactory extends Factory
+{
+    /**
+     * @var class-string<Channel>
+     */
+    protected $model = Channel::class;
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'company_id' => Company::factory(),
+            'name' => $this->faker->company().' Store',
+            'platform' => $this->faker->randomElement(ChannelPlatform::cases())->value,
+            'store_url' => $this->faker->url(),
+            'is_active' => $this->faker->boolean(80),
+            'sync_products' => $this->faker->boolean(90),
+            'sync_prices' => $this->faker->boolean(90),
+            'sync_stock' => $this->faker->boolean(90),
+            'last_sync_at' => null,
+        ];
+    }
+}
