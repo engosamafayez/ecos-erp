@@ -27,6 +27,8 @@ final class PurchaseOrderLineResource extends JsonResource
                 'name' => $this->product->name,
             ]),
             'quantity' => (float) $this->quantity,
+            'received_qty' => (float) $this->received_qty,
+            'remaining_qty' => $this->remainingQty(),
             'unit_price' => (float) $this->unit_price,
             'line_total' => (float) $this->line_total,
         ];

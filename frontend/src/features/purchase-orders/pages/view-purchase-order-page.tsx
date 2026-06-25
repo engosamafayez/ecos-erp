@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { CheckCircle, Pencil, XCircle } from 'lucide-react';
+import { CheckCircle, Pencil, SendHorizonal, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { ConfirmDialog, PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PoStatusBadge } from '@/features/purchase-orders/components/po-status-badge';
-import { PurchaseOrderTotals } from '@/features/purchase-orders/components/purchase-order-totals';
 import {
   useApprovePurchaseOrder,
   useCancelPurchaseOrder,
   usePurchaseOrderQuery,
+  useSubmitPurchaseOrder,
 } from '@/features/purchase-orders/hooks/use-purchase-orders';
 import { ROUTES } from '@/router/routes';
 
@@ -24,15 +24,21 @@ function LabelValue({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
+function fmt(n: number) {
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export function ViewPurchaseOrderPage() {
   const { t } = useTranslation('purchase-orders');
   const { t: tCommon } = useTranslation('common');
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: order, isLoading } = usePurchaseOrderQuery(id);
+  const submitPO = useSubmitPurchaseOrder();
   const approvePO = useApprovePurchaseOrder();
   const cancelPO = useCancelPurchaseOrder();
 
+  const [submitting, setSubmitting] = useState(false);
   const [approving, setApproving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -59,6 +65,10 @@ export function ViewPurchaseOrderPage() {
     );
   }
 
+  const isDraft = order.status === 'draft';
+  const isSubmitted = order.status === 'submitted';
+  const isCancellable = !['cancelled', 'received'].includes(order.status);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -72,22 +82,25 @@ export function ViewPurchaseOrderPage() {
         actions={
           <div className="flex items-center gap-2">
             <PoStatusBadge status={order.status} />
-            {order.status === 'draft' && (
+            {isDraft && (
               <>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate(`${ROUTES.purchaseOrders}/${order.id}/edit`)}
-                >
+                <Button variant="outline" onClick={() => navigate(`${ROUTES.purchaseOrders}/${order.id}/edit`)}>
                   <Pencil className="size-4" />
                   {tCommon('common.edit')}
                 </Button>
-                <Button onClick={() => setApproving(true)}>
-                  <CheckCircle className="size-4" />
-                  {tCommon('actions.approve')}
+                <Button onClick={() => setSubmitting(true)}>
+                  <SendHorizonal className="size-4" />
+                  {t('actions.submit')}
                 </Button>
               </>
             )}
-            {order.status !== 'cancelled' && (
+            {isSubmitted && (
+              <Button onClick={() => setApproving(true)}>
+                <CheckCircle className="size-4" />
+                {t('actions.approve')}
+              </Button>
+            )}
+            {isCancellable && (
               <Button variant="destructive" onClick={() => setCancelling(true)}>
                 <XCircle className="size-4" />
                 {tCommon('common.cancel')}
@@ -104,6 +117,7 @@ export function ViewPurchaseOrderPage() {
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <LabelValue label={t('detail.supplier')} value={order.supplier?.name ?? '—'} />
+            <LabelValue label={t('detail.warehouse')} value={order.warehouse?.name ?? '—'} />
             <LabelValue label={t('detail.orderDate')} value={order.order_date} />
             <LabelValue label={t('detail.expectedDate')} value={order.expected_date ?? '—'} />
             <LabelValue label={t('detail.status')} value={<PoStatusBadge status={order.status} />} />
@@ -127,35 +141,91 @@ export function ViewPurchaseOrderPage() {
               <thead>
                 <tr className="text-muted-foreground border-b text-left">
                   <th className="pb-2 pr-3 font-medium">{t('detail.product')}</th>
-                  <th className="w-28 pb-2 pr-3 font-medium">{t('detail.qty')}</th>
+                  <th className="w-24 pb-2 pr-3 font-medium">{t('detail.qty')}</th>
+                  <th className="w-24 pb-2 pr-3 font-medium">{t('detail.receivedQty')}</th>
+                  <th className="w-24 pb-2 pr-3 font-medium">{t('detail.remainingQty')}</th>
                   <th className="w-32 pb-2 pr-3 font-medium">{t('detail.unitPrice')}</th>
                   <th className="w-32 pb-2 font-medium text-right">{t('detail.lineTotal')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {order.lines.map((line) => (
-                  <tr key={line.id}>
-                    <td className="py-2 pr-3">
-                      <span className="font-medium">{line.product?.name ?? '—'}</span>
-                      {line.product?.sku && (
-                        <span className="text-muted-foreground ml-1.5 text-xs">{line.product.sku}</span>
-                      )}
-                    </td>
-                    <td className="py-2 pr-3">{line.quantity}</td>
-                    <td className="py-2 pr-3">
-                      {line.unit_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-2 text-right font-medium">
-                      {line.line_total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                ))}
+                {order.lines.map((line) => {
+                  const pct = line.quantity > 0 ? Math.min(100, (line.received_qty / line.quantity) * 100) : 0;
+                  return (
+                    <tr key={line.id}>
+                      <td className="py-2 pr-3">
+                        <span className="font-medium">{line.product?.name ?? '—'}</span>
+                        {line.product?.sku && (
+                          <span className="text-muted-foreground ml-1.5 text-xs">{line.product.sku}</span>
+                        )}
+                        {line.quantity > 0 && (
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <div className="h-1 w-24 rounded-full bg-muted overflow-hidden">
+                              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-muted-foreground text-xs">{Math.round(pct)}%</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3">{line.quantity}</td>
+                      <td className="py-2 pr-3">{line.received_qty}</td>
+                      <td className="py-2 pr-3">{line.remaining_qty}</td>
+                      <td className="py-2 pr-3">
+                        {fmt(line.unit_price)}
+                      </td>
+                      <td className="py-2 text-right font-medium">
+                        {fmt(line.line_total)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-          <PurchaseOrderTotals subtotal={order.subtotal} total={order.total} />
+
+          {/* Financial summary */}
+          <div className="flex flex-col items-end gap-1 border-t pt-3 text-sm">
+            <div className="flex gap-8">
+              <span className="text-muted-foreground">{t('detail.subtotal')}</span>
+              <span className="w-32 text-right font-medium">{fmt(order.subtotal)}</span>
+            </div>
+            {order.discount_amount > 0 && (
+              <div className="flex gap-8">
+                <span className="text-muted-foreground">{t('detail.discount')}</span>
+                <span className="w-32 text-right font-medium">- {fmt(order.discount_amount)}</span>
+              </div>
+            )}
+            {order.shipping_amount > 0 && (
+              <div className="flex gap-8">
+                <span className="text-muted-foreground">{t('detail.shipping')}</span>
+                <span className="w-32 text-right font-medium">{fmt(order.shipping_amount)}</span>
+              </div>
+            )}
+            {order.additional_costs > 0 && (
+              <div className="flex gap-8">
+                <span className="text-muted-foreground">{t('detail.additionalCosts')}</span>
+                <span className="w-32 text-right font-medium">{fmt(order.additional_costs)}</span>
+              </div>
+            )}
+            <div className="flex gap-8 text-base font-semibold">
+              <span>{t('detail.grandTotal')}</span>
+              <span className="w-32 text-right">{fmt(order.grand_total)}</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={submitting}
+        onOpenChange={setSubmitting}
+        title={t('dialogs.submit.title')}
+        description={t('dialogs.submit.description', { number: order.po_number })}
+        confirmLabel={t('dialogs.submit.confirm')}
+        loading={submitPO.isPending}
+        onConfirm={() => {
+          submitPO.mutate(order.id, { onSuccess: () => setSubmitting(false) });
+        }}
+      />
 
       <ConfirmDialog
         open={approving}

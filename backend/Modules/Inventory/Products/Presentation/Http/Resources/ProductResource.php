@@ -44,7 +44,12 @@ final class ProductResource extends JsonResource
             'sale_price' => $this->sale_price,
             'short_description' => $this->short_description,
             'long_description' => $this->long_description,
-            'stock_status' => $this->stock_status?->value,
+            'stock_status'       => $this->stock_status?->value,
+            'last_purchase_cost' => $this->last_purchase_cost,
+            'average_cost'       => $this->average_cost,
+            'current_fifo_cost'  => $this->current_fifo_cost,
+            'last_purchase_date' => $this->last_purchase_date?->toDateString(),
+            'last_supplier_id'   => $this->last_supplier_id,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

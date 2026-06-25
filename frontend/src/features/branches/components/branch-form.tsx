@@ -6,21 +6,27 @@ import { Input } from '@/components/ui/input';
 import { CompanySelect } from '@/features/branches/components/company-select';
 import type { BranchFormValues } from '@/features/branches/components/branch-form-schema';
 
-export function BranchFormFields() {
+type BranchFormFieldsProps = {
+  showCompanyField?: boolean;
+};
+
+export function BranchFormFields({ showCompanyField = true }: BranchFormFieldsProps) {
   const { t } = useTranslation('branches');
   const { register, control } = useFormContext<BranchFormValues>();
 
   return (
     <div className="flex flex-col gap-4">
-      <FormField name="company_id" label={t('form.company.label')} required>
-        <Controller
-          control={control}
-          name="company_id"
-          render={({ field }) => (
-            <CompanySelect value={field.value || null} onChange={field.onChange} />
-          )}
-        />
-      </FormField>
+      {showCompanyField && (
+        <FormField name="company_id" label={t('form.company.label')} required>
+          <Controller
+            control={control}
+            name="company_id"
+            render={({ field }) => (
+              <CompanySelect value={field.value || null} onChange={field.onChange} />
+            )}
+          />
+        </FormField>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField name="code" label={t('form.code.label')} required>

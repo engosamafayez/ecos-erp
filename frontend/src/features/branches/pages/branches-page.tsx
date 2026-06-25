@@ -126,7 +126,11 @@ export function BranchesPage() {
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
+        breadcrumbs={[
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: 'Organization', to: ROUTES.organization },
+          { label: t('title') },
+        ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />

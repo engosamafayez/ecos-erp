@@ -67,12 +67,12 @@ final class CustomerSyncJob implements ShouldQueue
             }
 
             if ($response->successful()) {
-                $logService->markSuccess($log, ['wc_customer_id' => $response->json('id')]);
+                $logService->markSuccess($log, ['wc_customer_id' => $response->json('id')], $this->channel);
             } else {
-                $logService->markFailed($log, "HTTP {$response->status()}: " . substr($response->body(), 0, 500));
+                $logService->markFailed($log, "HTTP {$response->status()}: " . substr($response->body(), 0, 500), null, $this->channel);
             }
         } catch (Throwable $e) {
-            $logService->markFailed($log, $e->getMessage());
+            $logService->markFailed($log, $e->getMessage(), null, $this->channel);
             throw $e;
         }
     }

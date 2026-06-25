@@ -24,7 +24,7 @@ export function useGoodsReceiptQuery(id: string) {
 export function useCreateGoodsReceipt() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: GoodsReceiptPayload) => goodsReceiptsService.create(payload),
+    mutationFn: (payload: FormData | GoodsReceiptPayload) => goodsReceiptsService.create(payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [GR_KEY] }),
   });
 }
@@ -32,7 +32,7 @@ export function useCreateGoodsReceipt() {
 export function useUpdateGoodsReceipt() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: GoodsReceiptPayload }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: FormData | GoodsReceiptPayload }) =>
       goodsReceiptsService.update(id, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [GR_KEY] }),
   });

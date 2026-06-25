@@ -11,12 +11,23 @@ use Modules\Inventory\Products\Domain\Models\Product;
 
 final class ProductObserver
 {
+    private const PRODUCT_SYNC_FIELDS = ['name', 'sku', 'description', 'short_description'];
+
+    private const PRICE_SYNC_FIELDS = ['regular_price', 'sale_price'];
+
     public function updated(Product $product): void
     {
+        $productFieldChanged = $product->wasChanged(self::PRODUCT_SYNC_FIELDS);
+        $priceFieldChanged   = $product->wasChanged(self::PRICE_SYNC_FIELDS);
+
+        // Skip sync entirely when no sync-relevant field changed (e.g. stock_status update).
+        if (! $productFieldChanged && ! $priceFieldChanged) {
+            return;
+        }
+
         $mappings = ProductMapping::query()
             ->with('channel.credential')
             ->where('product_id', $product->id)
-            ->whereNull('deleted_at')
             ->get();
 
         foreach ($mappings as $mapping) {
@@ -27,11 +38,11 @@ final class ProductObserver
                 continue;
             }
 
-            if ($channel->sync_products) {
+            if ($channel->sync_products && $productFieldChanged) {
                 ProductSyncJob::dispatch($channel, $product);
             }
 
-            if ($channel->sync_prices) {
+            if ($channel->sync_prices && $priceFieldChanged) {
                 PriceSyncJob::dispatch($channel, $product);
             }
         }

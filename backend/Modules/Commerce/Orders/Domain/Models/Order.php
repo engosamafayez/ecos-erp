@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
+use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Sales\Customers\Domain\Models\Customer;
 
 /**
@@ -18,6 +19,7 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  *
  * @property string $id
  * @property string|null $channel_id
+ * @property string|null $assigned_warehouse_id
  * @property string $customer_id
  * @property string|null $external_order_id
  * @property string $order_number
@@ -55,6 +57,12 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property float $shipping_total
  * @property float $discount_total
  * @property float $tax_total
+ * @property \Illuminate\Support\Carbon|null $inventory_reserved_at
+ * @property \Illuminate\Support\Carbon|null $inventory_shipped_at
+ * @property \Illuminate\Support\Carbon|null $inventory_released_at
+ * @property float|null $actual_cogs_amount
+ * @property float|null $actual_margin_amount
+ * @property float|null $actual_margin_percent
  */
 class Order extends Model
 {
@@ -69,6 +77,7 @@ class Order extends Model
      */
     protected $fillable = [
         'channel_id',
+        'assigned_warehouse_id',
         'customer_id',
         'external_order_id',
         'order_number',
@@ -106,6 +115,12 @@ class Order extends Model
         'shipping_total',
         'discount_total',
         'tax_total',
+        'inventory_reserved_at',
+        'inventory_shipped_at',
+        'inventory_released_at',
+        'actual_cogs_amount',
+        'actual_margin_amount',
+        'actual_margin_percent',
     ];
 
     /**
@@ -122,6 +137,12 @@ class Order extends Model
             'tax_total' => 'float',
             'order_date' => 'date:Y-m-d',
             'date_paid' => 'datetime',
+            'inventory_reserved_at'  => 'datetime',
+            'inventory_shipped_at'   => 'datetime',
+            'inventory_released_at'  => 'datetime',
+            'actual_cogs_amount'     => 'float',
+            'actual_margin_amount'   => 'float',
+            'actual_margin_percent'  => 'float',
         ];
     }
 
@@ -131,6 +152,14 @@ class Order extends Model
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::class);
+    }
+
+    /**
+     * @return BelongsTo<Warehouse, $this>
+     */
+    public function assignedWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class, 'assigned_warehouse_id');
     }
 
     /**

@@ -13,7 +13,7 @@ import { GoodsReceiptLinesEditor } from '@/features/goods-receipts/components/go
 import {
   goodsReceiptSchema,
   toFormValues,
-  toPayload,
+  toFormData,
   type GoodsReceiptFormValues,
 } from '@/features/goods-receipts/components/goods-receipt-form-schema';
 import {
@@ -53,6 +53,8 @@ export function EditGoodsReceiptPage() {
       id: l.purchase_order_line_id,
       productName: l.product?.name ?? '—',
       productSku: l.product?.sku ?? '',
+      unitPrice: l.unit_price,
+      orderedQty: l.ordered_quantity,
     }));
   }, [overridePoLineInfos, receipt]);
 
@@ -75,7 +77,7 @@ export function EditGoodsReceiptPage() {
   const onSubmit = (values: GoodsReceiptFormValues) => {
     if (!id) return;
     updateGR.mutate(
-      { id, payload: toPayload(values) },
+      { id, payload: toFormData(values) },
       { onSuccess: () => navigate(`${ROUTES.goodsReceipts}/${id}`) },
     );
   };

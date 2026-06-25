@@ -23,6 +23,7 @@ type BranchFormDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   branch?: Branch | null;
+  defaultCompanyId?: string;
 };
 
 function extractMessage(error: unknown): string {
@@ -31,7 +32,7 @@ function extractMessage(error: unknown): string {
     : 'Something went wrong. Please try again.';
 }
 
-export function BranchFormDrawer({ open, onOpenChange, branch }: BranchFormDrawerProps) {
+export function BranchFormDrawer({ open, onOpenChange, branch, defaultCompanyId }: BranchFormDrawerProps) {
   const { t } = useTranslation('branches');
   const { t: tCommon } = useTranslation('common');
   const isEdit = Boolean(branch);
@@ -41,14 +42,14 @@ export function BranchFormDrawer({ open, onOpenChange, branch }: BranchFormDrawe
 
   const form = useForm<BranchFormValues>({
     resolver: zodResolver(branchSchema),
-    defaultValues: toFormValues(branch),
+    defaultValues: toFormValues(branch, defaultCompanyId),
   });
 
   useEffect(() => {
     if (open) {
-      form.reset(toFormValues(branch));
+      form.reset(toFormValues(branch, defaultCompanyId));
     }
-  }, [open, branch, form]);
+  }, [open, branch, defaultCompanyId, form]);
 
   const isPending = createBranch.isPending || updateBranch.isPending;
 
@@ -101,7 +102,7 @@ export function BranchFormDrawer({ open, onOpenChange, branch }: BranchFormDrawe
       ) : null}
 
       <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit}>
-        <BranchFormFields />
+        <BranchFormFields showCompanyField={!defaultCompanyId} />
       </EntityForm>
     </EntityDrawer>
   );

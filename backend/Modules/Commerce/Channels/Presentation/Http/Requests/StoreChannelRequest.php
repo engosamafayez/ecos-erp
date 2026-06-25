@@ -24,6 +24,7 @@ final class StoreChannelRequest extends FormRequest
 
         return [
             'company_id' => ['required', 'uuid', 'exists:companies,id'],
+            'default_warehouse_id' => ['nullable', 'uuid', 'exists:warehouses,id'],
             'name' => ['required', 'string', 'max:255'],
             'platform' => ['required', 'string', Rule::in($platforms)],
             'store_url' => ['required', 'string', 'url', 'max:500'],

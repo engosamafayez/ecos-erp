@@ -12,6 +12,7 @@ export type Channel = {
   id: string;
   company_id: string;
   company: { id: string; name: string } | null;
+  default_warehouse_id: string | null;
   name: string;
   platform: ChannelPlatform;
   platform_label: string;
@@ -30,6 +31,7 @@ export type Channel = {
 
 export type ChannelPayload = {
   company_id: string;
+  default_warehouse_id?: string | null;
   name: string;
   platform: ChannelPlatform;
   store_url: string;

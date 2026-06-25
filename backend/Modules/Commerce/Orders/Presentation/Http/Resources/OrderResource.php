@@ -91,6 +91,9 @@ final class OrderResource extends JsonResource
                 'unit_price' => (float) $line->unit_price,
                 'line_total' => (float) $line->line_total,
             ])),
+            'inventory_reserved_at' => $this->inventory_reserved_at?->toIso8601String(),
+            'inventory_shipped_at'  => $this->inventory_shipped_at?->toIso8601String(),
+            'inventory_released_at' => $this->inventory_released_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\ApprovePurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\CancelPurchaseOrderAction;
+use Modules\Purchasing\PurchaseOrders\Application\Actions\SubmitPurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\CreatePurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\DeletePurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\GetPurchaseOrderAction;
@@ -79,6 +80,13 @@ final class PurchaseOrderController extends Controller
         $result = $action->execute($purchaseOrder);
 
         return $this->deleted($result->message() ?? 'Purchase order deleted successfully.');
+    }
+
+    public function submit(string $purchaseOrder, SubmitPurchaseOrderAction $action): JsonResponse
+    {
+        $result = $action->execute($purchaseOrder);
+
+        return $this->updated(new PurchaseOrderResource($result->data()), $result->message());
     }
 
     public function approve(string $purchaseOrder, ApprovePurchaseOrderAction $action): JsonResponse

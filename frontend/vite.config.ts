@@ -23,7 +23,11 @@ export default defineConfig({
     strictPort: true,
   },
   build: {
-    outDir: 'dist',
+    // Output directly into backend/public/app so Nginx (docker-compose volume) can serve
+    // the built SPA without running Vite. The Dockerfile Stage 2 mirrors this path
+    // by creating /backend/public/app before the build runs.
+    outDir: '../backend/public/app',
+    emptyOutDir: true,
     sourcemap: true,
   },
 });

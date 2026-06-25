@@ -7,6 +7,7 @@ namespace Modules\Commerce\OrderImport\Application\Services;
 use Illuminate\Support\Facades\Http;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\OrderImport\Application\DTO\OrderImportResultDTO;
+use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
@@ -32,7 +33,13 @@ final class WooCommerceOrderImporter
         'failed' => 'cancelled',
     ];
 
-    public function __construct(private readonly OrderRepositoryInterface $orders) {}
+    /** WooCommerce statuses that require inventory reservation on import. */
+    private const RESERVE_ON_IMPORT = ['processing', 'on-hold'];
+
+    public function __construct(
+        private readonly OrderRepositoryInterface $orders,
+        private readonly ReserveOrderInventoryAction $reserveInventory,
+    ) {}
 
     /**
      * Import (or skip if already exists) a single WooCommerce order payload.
@@ -67,6 +74,16 @@ final class WooCommerceOrderImporter
 
         if ($coupons !== []) {
             $createdOrder->coupons()->createMany($coupons);
+        }
+
+        $wooStatus = (string) ($wooOrder['status'] ?? 'pending');
+
+        if (in_array($wooStatus, self::RESERVE_ON_IMPORT, true)) {
+            try {
+                $this->reserveInventory->execute($createdOrder);
+            } catch (Throwable) {
+                // Non-fatal: order is saved; inventory failure is surfaced via logs.
+            }
         }
 
         return true;
@@ -150,6 +167,14 @@ final class WooCommerceOrderImporter
 
                             if ($coupons !== []) {
                                 $createdOrder->coupons()->createMany($coupons);
+                            }
+
+                            if (in_array($wooOrder['status'] ?? 'pending', self::RESERVE_ON_IMPORT, true)) {
+                                try {
+                                    $this->reserveInventory->execute($createdOrder);
+                                } catch (Throwable $ie) {
+                                    $errors[] = "Order #{$externalId} inventory reserve failed: {$ie->getMessage()}";
+                                }
                             }
 
                             $createdOrders++;
@@ -261,16 +286,20 @@ final class WooCommerceOrderImporter
             $name = $email !== '' ? $email : 'WooCommerce Customer';
         }
 
-        $customer = Customer::query()->create([
-            'code' => $this->nextCustomerCode(),
-            'name' => $name,
-            'email' => $email !== '' ? $email : null,
-            'phone' => $normalizedPhone !== '' ? $normalizedPhone : null,
-            'city' => trim((string) ($billing['city'] ?? '')) ?: null,
-            'country' => trim((string) ($billing['country'] ?? '')) ?: null,
-            'address' => trim((string) ($billing['address_1'] ?? '')) ?: null,
-            'is_active' => true,
-        ]);
+        // Suppress Eloquent events so CustomerObserver does not dispatch an outbound
+        // CustomerSyncJob for a customer that originates FROM WooCommerce (circular sync).
+        $customer = Customer::withoutEvents(function () use ($name, $email, $normalizedPhone, $billing): Customer {
+            return Customer::query()->create([
+                'code' => $this->nextCustomerCode(),
+                'name' => $name,
+                'email' => $email !== '' ? $email : null,
+                'phone' => $normalizedPhone !== '' ? $normalizedPhone : null,
+                'city' => trim((string) ($billing['city'] ?? '')) ?: null,
+                'country' => trim((string) ($billing['country'] ?? '')) ?: null,
+                'address' => trim((string) ($billing['address_1'] ?? '')) ?: null,
+                'is_active' => true,
+            ]);
+        });
 
         return [$customer, true];
     }
@@ -307,6 +336,7 @@ final class WooCommerceOrderImporter
 
         $orderAttributes = [
             'channel_id' => (string) $channel->id,
+            'assigned_warehouse_id' => $channel->default_warehouse_id,
             'customer_id' => (string) $customer->id,
             'external_order_id' => $externalId,
             'order_number' => $this->orders->nextOrderNumber(),

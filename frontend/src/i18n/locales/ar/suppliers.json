@@ -44,5 +44,28 @@
   "delete": {
     "title": "حذف المورد",
     "confirm": "حذف"
+  },
+  "detail": {
+    "loading": "جارٍ تحميل المورد…",
+    "notFound": "المورد غير موجود.",
+    "overview": "نظرة عامة",
+    "purchasing": "ملخص المشتريات",
+    "inventory": "المخزون الحالي",
+    "inventoryBreakdown": "تفاصيل المخزون",
+    "totalPurchases": "إجمالي الإيصالات",
+    "totalInvoiced": "إجمالي الفواتير",
+    "totalPaid": "إجمالي المدفوعات",
+    "outstandingBalance": "الرصيد المستحق",
+    "lastPurchaseDate": "آخر شراء",
+    "currentQty": "وحدات المخزون",
+    "costValue": "قيمة التكلفة",
+    "saleValue": "قيمة البيع",
+    "grossProfit": "الربح الإجمالي",
+    "product": "المنتج",
+    "qty": "الكمية",
+    "avgCost": "متوسط التكلفة",
+    "salePrice": "سعر البيع",
+    "receipts": "الإيصالات",
+    "noInventory": "لا يوجد مخزون حالي من هذا المورد."
   }
 }

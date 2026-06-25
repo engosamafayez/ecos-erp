@@ -15,7 +15,7 @@ final class EloquentPurchaseOrderRepository implements PurchaseOrderRepositoryIn
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = PurchaseOrder::query()->with(['supplier', 'lines.product']);
+        $query = PurchaseOrder::query()->with(['supplier', 'warehouse', 'lines.product']);
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
@@ -63,7 +63,7 @@ final class EloquentPurchaseOrderRepository implements PurchaseOrderRepositoryIn
 
     public function findById(string $id): ?PurchaseOrder
     {
-        return PurchaseOrder::query()->with(['supplier', 'lines.product'])->find($id);
+        return PurchaseOrder::query()->with(['supplier', 'warehouse', 'lines.product'])->find($id);
     }
 
     public function create(array $attributes, array $lines): PurchaseOrder

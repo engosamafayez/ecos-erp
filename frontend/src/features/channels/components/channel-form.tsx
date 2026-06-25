@@ -7,6 +7,7 @@ import { FormField } from '@/components/crud';
 import { Input } from '@/components/ui/input';
 import type { ChannelFormValues } from '@/features/channels/components/channel-form-schema';
 import { useCompanyOptions } from '@/features/channels/hooks/use-company-options';
+import { useWarehouseOptions } from '@/features/goods-receipts/hooks/use-warehouse-options';
 
 const PLATFORM_OPTIONS = [
   { value: 'woocommerce', label: 'WooCommerce' },
@@ -21,8 +22,10 @@ export function ChannelFormFields() {
   const { t } = useTranslation('channels');
   const { register, setValue, control } = useFormContext<ChannelFormValues>();
   const { data: companyOptions = [], isLoading: companiesLoading } = useCompanyOptions();
+  const { data: warehouseOptions = [], isLoading: warehousesLoading } = useWarehouseOptions();
 
   const companyId = useWatch({ control, name: 'company_id' });
+  const defaultWarehouseId = useWatch({ control, name: 'default_warehouse_id' });
 
   return (
     <div className="flex flex-col gap-4">
@@ -42,6 +45,18 @@ export function ChannelFormFields() {
         <FormField name="name" label={t('form.name.label')} required>
           <Input placeholder={t('form.name.placeholder')} {...register('name')} />
         </FormField>
+
+        <div className="sm:col-span-2">
+          <FormField name="default_warehouse_id" label={t('form.warehouse.label')}>
+            <Combobox
+              options={warehouseOptions}
+              value={defaultWarehouseId ?? null}
+              onChange={(val) => setValue('default_warehouse_id', val || null, { shouldValidate: true })}
+              placeholder={t('form.warehouse.placeholder')}
+              loading={warehousesLoading}
+            />
+          </FormField>
+        </div>
 
         <FormField name="platform" label={t('form.platform.label')} required>
           <select

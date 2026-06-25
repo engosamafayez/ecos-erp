@@ -14,6 +14,7 @@ import {
 import type { ColumnDef } from '@/components/crud/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { GrPaymentStatusBadge } from '@/features/goods-receipts/components/gr-payment-status-badge';
 import { GrStatusBadge } from '@/features/goods-receipts/components/gr-status-badge';
 import {
   useDeleteGoodsReceipt,
@@ -24,7 +25,9 @@ import type {
   GoodsReceipt,
   GoodsReceiptSortField,
   GoodsReceiptStatus,
+  PaymentStatus,
 } from '@/features/goods-receipts/types/goods-receipt';
+import { useSupplierOptions } from '@/features/purchase-orders/hooks/use-supplier-options';
 import { ROUTES } from '@/router/routes';
 
 const PER_PAGE = 10;
@@ -35,6 +38,8 @@ export function GoodsReceiptsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<GoodsReceiptStatus | 'all'>('all');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<PaymentStatus | 'all'>('all');
+  const [supplierFilter, setSupplierFilter] = useState('');
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ field: GoodsReceiptSortField; direction: 'asc' | 'desc' }>({
     field: 'created_at',
@@ -43,16 +48,20 @@ export function GoodsReceiptsPage() {
   const [deleting, setDeleting] = useState<GoodsReceipt | null>(null);
   const [posting, setPosting] = useState<GoodsReceipt | null>(null);
 
+  const { data: supplierOptions } = useSupplierOptions();
+
   const params = useMemo(
     () => ({
       search: search || undefined,
       status: statusFilter,
+      payment_status: paymentStatusFilter === 'all' ? undefined : paymentStatusFilter,
+      supplier_id: supplierFilter || undefined,
       page,
       per_page: PER_PAGE,
       sort_by: sort.field,
       sort_dir: sort.direction,
     }),
-    [search, statusFilter, page, sort],
+    [search, statusFilter, paymentStatusFilter, supplierFilter, page, sort],
   );
 
   const { data, isLoading, isError, isFetching, refetch } = useGoodsReceiptsQuery(params);
@@ -71,6 +80,13 @@ export function GoodsReceiptsPage() {
     setPage(1);
   };
 
+  const handleClearFilters = () => {
+    setStatusFilter('all');
+    setPaymentStatusFilter('all');
+    setSupplierFilter('');
+    setPage(1);
+  };
+
   const columns: ColumnDef<GoodsReceipt>[] = [
     {
       key: 'receipt_number',
@@ -79,20 +95,42 @@ export function GoodsReceiptsPage() {
       cell: (gr) => <span className="font-medium">{gr.receipt_number}</span>,
     },
     {
+      key: 'supplier',
+      header: t('columns.supplier'),
+      cell: (gr) => gr.purchase_order?.supplier?.name ?? '—',
+    },
+    {
       key: 'purchase_order',
       header: t('columns.purchaseOrder'),
       cell: (gr) => gr.purchase_order?.po_number ?? '—',
-    },
-    {
-      key: 'warehouse',
-      header: t('columns.warehouse'),
-      cell: (gr) => gr.warehouse?.name ?? '—',
     },
     {
       key: 'receipt_date',
       header: t('columns.receiptDate'),
       sortable: true,
       cell: (gr) => gr.receipt_date,
+    },
+    {
+      key: 'supplier_invoice_number',
+      header: t('columns.invoiceNumber'),
+      cell: (gr) => gr.supplier_invoice_number ?? '—',
+    },
+    {
+      key: 'supplier_invoice_date',
+      header: t('columns.invoiceDate'),
+      cell: (gr) => gr.supplier_invoice_date ?? '—',
+    },
+    {
+      key: 'invoice_total_amount',
+      header: t('columns.invoiceTotal'),
+      cell: (gr) => gr.invoice_total_amount > 0
+        ? gr.invoice_total_amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '—',
+    },
+    {
+      key: 'payment_status',
+      header: t('columns.paymentStatus'),
+      cell: (gr) => <GrPaymentStatusBadge status={gr.payment_status} />,
     },
     {
       key: 'status',
@@ -124,19 +162,49 @@ export function GoodsReceiptsPage() {
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
             onExport={() => undefined}
-            onClearFilters={() => { setStatusFilter('all'); setPage(1); }}
+            onClearFilters={handleClearFilters}
             filterPanel={
-              <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{tCommon('filters.status')}</span>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value as GoodsReceiptStatus | 'all'); setPage(1); }}
-                  className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
-                >
-                  <option value="all">{tCommon('status.all')}</option>
-                  <option value="draft">{t('status.draft')}</option>
-                  <option value="posted">{t('status.posted')}</option>
-                </select>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-medium">{tCommon('filters.status')}</span>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value as GoodsReceiptStatus | 'all'); setPage(1); }}
+                    className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+                  >
+                    <option value="all">{tCommon('status.all')}</option>
+                    <option value="draft">{t('status.draft')}</option>
+                    <option value="posted">{t('status.posted')}</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-medium">{t('filters.paymentStatus')}</span>
+                  <select
+                    value={paymentStatusFilter}
+                    onChange={(e) => { setPaymentStatusFilter(e.target.value as PaymentStatus | 'all'); setPage(1); }}
+                    className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+                  >
+                    <option value="all">{t('filters.allPaymentStatuses')}</option>
+                    <option value="unpaid">{t('paymentStatus.unpaid')}</option>
+                    <option value="partially_paid">{t('paymentStatus.partiallyPaid')}</option>
+                    <option value="paid">{t('paymentStatus.paid')}</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-medium">{t('filters.supplier')}</span>
+                  <select
+                    value={supplierFilter}
+                    onChange={(e) => { setSupplierFilter(e.target.value); setPage(1); }}
+                    className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+                  >
+                    <option value="">{tCommon('status.all')}</option>
+                    {(supplierOptions ?? []).map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             }
           />

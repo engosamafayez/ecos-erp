@@ -64,3 +64,11 @@ export function useCancelPurchaseOrder() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [PO_KEY] }),
   });
 }
+
+export function useSubmitPurchaseOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => purchaseOrdersService.submit(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [PO_KEY] }),
+  });
+}

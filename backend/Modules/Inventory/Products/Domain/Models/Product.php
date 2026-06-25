@@ -28,6 +28,11 @@ use Modules\MasterData\Units\Domain\Models\Unit;
  * @property string|null $image_url
  * @property float|null $regular_price
  * @property float|null $sale_price
+ * @property float|null $last_purchase_cost  Updated on every posted GR
+ * @property float|null $average_cost        Weighted average cost across all receipts
+ * @property float|null $current_fifo_cost   Cost of the oldest available receipt layer
+ * @property string|null $last_purchase_date ISO date of most recent GR post
+ * @property string|null $last_supplier_id   UUID of last supplier (historical, no FK)
  * @property string|null $short_description
  * @property string|null $long_description
  * @property \Modules\Inventory\Products\Domain\Enums\ProductStockStatus|null $stock_status
@@ -63,6 +68,11 @@ class Product extends Model
         'image_url',
         'regular_price',
         'sale_price',
+        'last_purchase_cost',
+        'average_cost',
+        'current_fifo_cost',
+        'last_purchase_date',
+        'last_supplier_id',
         'short_description',
         'long_description',
         'stock_status',
@@ -74,10 +84,14 @@ class Product extends Model
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
-            'regular_price' => 'float',
-            'sale_price' => 'float',
-            'stock_status' => \Modules\Inventory\Products\Domain\Enums\ProductStockStatus::class,
+            'is_active'           => 'boolean',
+            'regular_price'       => 'float',
+            'sale_price'          => 'float',
+            'last_purchase_cost'  => 'float',
+            'average_cost'        => 'float',
+            'current_fifo_cost'   => 'float',
+            'last_purchase_date'  => 'date:Y-m-d',
+            'stock_status'        => \Modules\Inventory\Products\Domain\Enums\ProductStockStatus::class,
         ];
     }
 

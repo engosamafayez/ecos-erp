@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\CreateGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\DeleteGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\GetGoodsReceiptAction;
@@ -28,26 +29,26 @@ final class GoodsReceiptController extends Controller
     public function index(Request $request, ListGoodsReceiptsAction $action): JsonResponse
     {
         $filters = [
-            'search' => $request->query('search'),
+            'search'            => $request->query('search'),
             'purchase_order_id' => $request->query('purchase_order_id'),
-            'warehouse_id' => $request->query('warehouse_id'),
-            'status' => $request->query('status', 'all'),
-            'date_from' => $request->query('date_from'),
-            'date_to' => $request->query('date_to'),
-            'sort_by' => $request->query('sort_by', 'created_at'),
-            'sort_dir' => $request->query('sort_dir', 'desc'),
-            'per_page' => $request->query('per_page', 10),
+            'warehouse_id'      => $request->query('warehouse_id'),
+            'status'            => $request->query('status', 'all'),
+            'date_from'         => $request->query('date_from'),
+            'date_to'           => $request->query('date_to'),
+            'sort_by'           => $request->query('sort_by', 'created_at'),
+            'sort_dir'          => $request->query('sort_dir', 'desc'),
+            'per_page'          => $request->query('per_page', 10),
         ];
 
         $paginator = $action->execute($filters)->data();
 
         return $this->success([
             'items' => GoodsReceiptResource::collection($paginator->items()),
-            'meta' => [
+            'meta'  => [
                 'current_page' => $paginator->currentPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'last_page' => $paginator->lastPage(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+                'last_page'    => $paginator->lastPage(),
             ],
         ]);
     }
@@ -61,7 +62,10 @@ final class GoodsReceiptController extends Controller
 
     public function store(StoreGoodsReceiptRequest $request, CreateGoodsReceiptAction $action): JsonResponse
     {
-        $result = $action->execute(GoodsReceiptDTO::fromArray($request->validated()));
+        $data = $request->validated();
+        $data = $this->resolveFileUploads($request, $data);
+
+        $result = $action->execute(GoodsReceiptDTO::fromArray($data));
 
         return $this->created(new GoodsReceiptResource($result->data()), $result->message());
     }
@@ -71,7 +75,10 @@ final class GoodsReceiptController extends Controller
         string $goodsReceipt,
         UpdateGoodsReceiptAction $action,
     ): JsonResponse {
-        $result = $action->execute($goodsReceipt, GoodsReceiptDTO::fromArray($request->validated()));
+        $data = $request->validated();
+        $data = $this->resolveFileUploads($request, $data);
+
+        $result = $action->execute($goodsReceipt, GoodsReceiptDTO::fromArray($data));
 
         return $this->updated(new GoodsReceiptResource($result->data()), $result->message());
     }
@@ -85,9 +92,9 @@ final class GoodsReceiptController extends Controller
 
     public function post(string $goodsReceipt, PostGoodsReceiptAction $postAction, SyncStockAction $syncAction): JsonResponse
     {
-        $result = $postAction->execute($goodsReceipt);
-
+        $result  = $postAction->execute($goodsReceipt);
         $receipt = $result->data();
+
         $productIds = $receipt->lines->pluck('product_id')->all();
 
         Channel::query()
@@ -103,5 +110,33 @@ final class GoodsReceiptController extends Controller
             });
 
         return $this->updated(new GoodsReceiptResource($result->data()), $result->message());
+    }
+
+    /**
+     * Process file uploads and inject resolved paths into the data array.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function resolveFileUploads(Request $request, array $data): array
+    {
+        // Invoice attachment (header level)
+        if ($request->hasFile('invoice_attachment')) {
+            $data['invoice_attachment_path'] = $request->file('invoice_attachment')
+                ->store('goods-receipts/invoices', 'public');
+        }
+
+        // Weight photos (per line)
+        if (isset($data['lines']) && is_array($data['lines'])) {
+            foreach ($data['lines'] as $index => $line) {
+                if ($request->hasFile("lines.{$index}.weight_photo")) {
+                    $data['lines'][$index]['weight_photo_path'] = $request
+                        ->file("lines.{$index}.weight_photo")
+                        ->store('goods-receipts/weight-photos', 'public');
+                }
+            }
+        }
+
+        return $data;
     }
 }

@@ -44,5 +44,28 @@
   "delete": {
     "title": "Delete supplier",
     "confirm": "Delete"
+  },
+  "detail": {
+    "loading": "Loading supplier…",
+    "notFound": "Supplier not found.",
+    "overview": "Overview",
+    "purchasing": "Purchasing Summary",
+    "inventory": "Current Inventory",
+    "inventoryBreakdown": "Inventory Breakdown",
+    "totalPurchases": "Total Receipts",
+    "totalInvoiced": "Total Invoiced",
+    "totalPaid": "Total Paid",
+    "outstandingBalance": "Outstanding Balance",
+    "lastPurchaseDate": "Last Purchase",
+    "currentQty": "Inventory Units",
+    "costValue": "Cost Value",
+    "saleValue": "Sale Value",
+    "grossProfit": "Gross Profit",
+    "product": "Product",
+    "qty": "Qty",
+    "avgCost": "Avg Cost",
+    "salePrice": "Sale Price",
+    "receipts": "Receipts",
+    "noInventory": "No current inventory from this supplier."
   }
 }

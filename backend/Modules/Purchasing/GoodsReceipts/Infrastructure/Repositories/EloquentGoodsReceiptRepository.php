@@ -15,7 +15,7 @@ final class EloquentGoodsReceiptRepository implements GoodsReceiptRepositoryInte
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = GoodsReceipt::query()->with(['purchaseOrder', 'warehouse', 'lines.product']);
+        $query = GoodsReceipt::query()->with(['purchaseOrder.supplier', 'warehouse', 'lines.product']);
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
@@ -36,6 +36,18 @@ final class EloquentGoodsReceiptRepository implements GoodsReceiptRepositoryInte
         $warehouseId = trim((string) ($filters['warehouse_id'] ?? ''));
         if ($warehouseId !== '') {
             $query->where('warehouse_id', $warehouseId);
+        }
+
+        $supplierId = trim((string) ($filters['supplier_id'] ?? ''));
+        if ($supplierId !== '') {
+            $query->whereHas('purchaseOrder', function (Builder $q) use ($supplierId): void {
+                $q->where('supplier_id', $supplierId);
+            });
+        }
+
+        $paymentStatus = trim((string) ($filters['payment_status'] ?? ''));
+        if ($paymentStatus !== '' && $paymentStatus !== 'all') {
+            $query->where('payment_status', $paymentStatus);
         }
 
         $status = trim((string) ($filters['status'] ?? ''));

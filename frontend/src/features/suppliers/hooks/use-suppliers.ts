@@ -5,6 +5,14 @@ import type { SuppliersQuery, SupplierPayload } from '@/features/suppliers/types
 
 const SUPPLIERS_KEY = 'suppliers';
 
+export function useSupplierQuery(id: string) {
+  return useQuery({
+    queryKey: [SUPPLIERS_KEY, id],
+    queryFn: () => suppliersService.get(id),
+    enabled: Boolean(id),
+  });
+}
+
 /** Paginated, filtered, sorted suppliers list. */
 export function useSuppliersQuery(params: SuppliersQuery) {
   return useQuery({

@@ -11,7 +11,13 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\OrderImport\Application\Services\WooCommerceOrderImporter;
+use Modules\Commerce\Orders\Application\Actions\ReleaseOrderInventoryAction;
+use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
+use Modules\Commerce\Orders\Application\Actions\ShipOrderInventoryAction;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
+use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReleasedException;
+use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReservedException;
+use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyShippedException;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Synchronization\Application\Services\SyncLogService;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncDirection;
@@ -34,8 +40,13 @@ final class ProcessOrderWebhookJob implements ShouldQueue
         private readonly string $webhookAction,
     ) {}
 
-    public function handle(SyncLogService $logService, WooCommerceOrderImporter $importer): void
-    {
+    public function handle(
+        SyncLogService $logService,
+        WooCommerceOrderImporter $importer,
+        ReserveOrderInventoryAction $reserveInventory,
+        ReleaseOrderInventoryAction $releaseInventory,
+        ShipOrderInventoryAction $shipInventory,
+    ): void {
         $externalId = (string) ($this->payload['id'] ?? '');
 
         $log = $logService->createLog(
@@ -59,27 +70,52 @@ final class ProcessOrderWebhookJob implements ShouldQueue
             if ($existingOrder !== null) {
                 $wooStatus = (string) ($this->payload['status'] ?? '');
                 $statusMap = [
-                    'pending' => 'pending',
+                    'pending'    => 'pending',
                     'processing' => 'processing',
-                    'completed' => 'completed',
-                    'cancelled' => 'cancelled',
-                    'on-hold' => 'pending',
-                    'refunded' => 'cancelled',
-                    'failed' => 'cancelled',
+                    'completed'  => 'completed',
+                    'cancelled'  => 'cancelled',
+                    'on-hold'    => 'pending',
+                    'refunded'   => 'cancelled',
+                    'failed'     => 'cancelled',
                 ];
                 $newStatus = $statusMap[$wooStatus] ?? null;
 
                 if ($newStatus !== null) {
-                    $existingOrder->update(['status' => OrderStatus::from($newStatus)->value]);
+                    // Use withoutEvents to prevent OrderObserver from dispatching an outbound
+                    // OrderStatusSyncJob back to WooCommerce for a status that came FROM WooCommerce.
+                    Order::withoutEvents(function () use ($existingOrder, $newStatus): void {
+                        $existingOrder->update(['status' => OrderStatus::from($newStatus)->value]);
+                    });
                 }
 
-                $logService->markSuccess($log, ['message' => 'Order status updated.', 'order_id' => $existingOrder->id]);
+                // Trigger inventory lifecycle based on the incoming WooCommerce status.
+                $existingOrder->refresh();
+
+                try {
+                    match ($wooStatus) {
+                        'processing', 'on-hold'            => $reserveInventory->execute($existingOrder),
+                        'completed'                        => $shipInventory->execute($existingOrder),
+                        'cancelled', 'refunded', 'failed'  => $releaseInventory->execute($existingOrder),
+                        default                            => null,
+                    };
+                } catch (OrderAlreadyReservedException|OrderAlreadyShippedException|OrderAlreadyReleasedException) {
+                    // Idempotent — order is already in the target inventory state.
+                } catch (Throwable $inventoryError) {
+                    // Non-fatal: log but do not fail the webhook job.
+                    report($inventoryError);
+                }
+
+                $logService->markSuccess($log, ['message' => 'Order status updated.', 'order_id' => $existingOrder->id], $this->channel);
             } else {
                 $created = $importer->importSingle($this->channel, $this->payload);
-                $logService->markSuccess($log, ['message' => $created ? 'Order created.' : 'Order skipped (no valid lines).']);
+                $logService->markSuccess(
+                    $log,
+                    ['message' => $created ? 'Order created.' : 'Order skipped (no valid lines).'],
+                    $created ? $this->channel : null,
+                );
             }
         } catch (Throwable $e) {
-            $logService->markFailed($log, $e->getMessage());
+            $logService->markFailed($log, $e->getMessage(), null, $this->channel);
             throw $e;
         }
     }

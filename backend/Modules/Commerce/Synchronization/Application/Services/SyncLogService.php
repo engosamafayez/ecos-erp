@@ -39,7 +39,7 @@ final class SyncLogService
     /**
      * @param array<string, mixed>|null $responsePayload
      */
-    public function markSuccess(SyncLog $log, ?array $responsePayload = null): void
+    public function markSuccess(SyncLog $log, ?array $responsePayload = null, ?Channel $channel = null): void
     {
         $log->update([
             'status' => SyncStatus::Success->value,
@@ -47,18 +47,28 @@ final class SyncLogService
             'error_message' => null,
             'synced_at' => now(),
         ]);
+
+        $channel?->update([
+            'last_sync_at' => now(),
+            'last_successful_sync_at' => now(),
+        ]);
     }
 
     /**
      * @param array<string, mixed>|null $responsePayload
      */
-    public function markFailed(SyncLog $log, string $errorMessage, ?array $responsePayload = null): void
+    public function markFailed(SyncLog $log, string $errorMessage, ?array $responsePayload = null, ?Channel $channel = null): void
     {
         $log->update([
             'status' => SyncStatus::Failed->value,
             'error_message' => $errorMessage,
             'response_payload' => $responsePayload,
             'synced_at' => now(),
+        ]);
+
+        $channel?->update([
+            'last_error_at' => now(),
+            'last_error_message' => mb_substr($errorMessage, 0, 1000),
         ]);
     }
 

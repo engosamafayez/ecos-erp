@@ -18,13 +18,21 @@ export const goodsReceiptsService = {
     return data.data;
   },
 
-  async create(payload: GoodsReceiptPayload): Promise<GoodsReceipt> {
-    const { data } = await api.post<ApiResponse<GoodsReceipt>>('/goods-receipts', payload);
+  async create(payload: FormData | GoodsReceiptPayload): Promise<GoodsReceipt> {
+    const { data } = await api.post<ApiResponse<GoodsReceipt>>('/goods-receipts', payload, {
+      headers: payload instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    });
     return data.data;
   },
 
-  async update(id: string, payload: GoodsReceiptPayload): Promise<GoodsReceipt> {
-    const { data } = await api.put<ApiResponse<GoodsReceipt>>(`/goods-receipts/${id}`, payload);
+  async update(id: string, payload: FormData | GoodsReceiptPayload): Promise<GoodsReceipt> {
+    const { data } = await api.post<ApiResponse<GoodsReceipt>>(
+      `/goods-receipts/${id}?_method=PUT`,
+      payload,
+      {
+        headers: payload instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+      },
+    );
     return data.data;
   },
 

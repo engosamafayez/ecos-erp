@@ -15,6 +15,7 @@ return [
     Modules\Purchasing\PurchaseOrders\Infrastructure\Providers\PurchaseOrderServiceProvider::class,
     Modules\Purchasing\GoodsReceipts\Infrastructure\Providers\GoodsReceiptServiceProvider::class,
     Modules\Inventory\StockLedger\Infrastructure\Providers\StockLedgerServiceProvider::class,
+    Modules\Inventory\InventoryItems\Infrastructure\Providers\InventoryItemServiceProvider::class,
     Modules\Sales\Customers\Infrastructure\Providers\CustomerServiceProvider::class,
     Modules\Commerce\Channels\Infrastructure\Providers\ChannelServiceProvider::class,
     Modules\Commerce\ProductMappings\Infrastructure\Providers\ProductMappingServiceProvider::class,
@@ -26,4 +27,7 @@ return [
     Modules\Commerce\StockSync\Infrastructure\Providers\StockSyncServiceProvider::class,
     Modules\Manufacturing\BillsOfMaterials\Infrastructure\Providers\BomServiceProvider::class,
     Modules\Commerce\Synchronization\Infrastructure\Providers\SynchronizationServiceProvider::class,
+    Modules\Inventory\ReceiptLayers\Infrastructure\Providers\ReceiptLayersServiceProvider::class,
+    Modules\Inventory\CountSessions\Infrastructure\Providers\CountSessionsServiceProvider::class,
+    Modules\Inventory\InventoryControl\Infrastructure\Providers\InventoryControlServiceProvider::class,
 ];

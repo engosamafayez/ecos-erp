@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Pencil, Plus, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Eye, Pencil, Plus, SendHorizonal, Trash2, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -20,6 +20,7 @@ import {
   useCancelPurchaseOrder,
   useDeletePurchaseOrder,
   usePurchaseOrdersQuery,
+  useSubmitPurchaseOrder,
 } from '@/features/purchase-orders/hooks/use-purchase-orders';
 import type {
   PurchaseOrder,
@@ -45,6 +46,7 @@ export function PurchaseOrdersPage() {
   });
 
   const [deleting, setDeleting] = useState<PurchaseOrder | null>(null);
+  const [submitting, setSubmitting] = useState<PurchaseOrder | null>(null);
   const [approving, setApproving] = useState<PurchaseOrder | null>(null);
   const [cancelling, setCancelling] = useState<PurchaseOrder | null>(null);
 
@@ -62,6 +64,7 @@ export function PurchaseOrdersPage() {
 
   const { data, isLoading, isError, isFetching, refetch } = usePurchaseOrdersQuery(params);
   const deletePO = useDeletePurchaseOrder();
+  const submitPO = useSubmitPurchaseOrder();
   const approvePO = useApprovePurchaseOrder();
   const cancelPO = useCancelPurchaseOrder();
 
@@ -90,17 +93,34 @@ export function PurchaseOrdersPage() {
       cell: (po) => <span className="font-medium">{po.po_number}</span>,
     },
     { key: 'supplier', header: t('columns.supplier'), cell: (po) => po.supplier?.name ?? '—' },
+    { key: 'warehouse', header: t('columns.warehouse'), cell: (po) => po.warehouse?.name ?? '—' },
     { key: 'order_date', header: t('columns.orderDate'), sortable: true, cell: (po) => po.order_date },
     { key: 'expected_date', header: t('columns.expectedDate'), sortable: true, cell: (po) => po.expected_date ?? '—' },
     {
-      key: 'total',
+      key: 'grand_total',
       header: t('columns.total'),
       sortable: true,
       cell: (po) => (
         <span className="font-medium">
-          {po.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {(po.grand_total ?? po.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
       ),
+    },
+    {
+      key: 'received_percentage',
+      header: t('columns.receivedPct'),
+      cell: (po) => {
+        if (po.received_percentage === null || po.received_percentage === undefined) return '—';
+        const pct = Math.min(100, Math.max(0, po.received_percentage));
+        return (
+          <div className="flex items-center gap-2 min-w-[80px]">
+            <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-xs tabular-nums">{Math.round(pct)}%</span>
+          </div>
+        );
+      },
     },
     { key: 'status', header: t('columns.status'), sortable: true, cell: (po) => <PoStatusBadge status={po.status} /> },
   ];
@@ -138,7 +158,10 @@ export function PurchaseOrdersPage() {
                 >
                   <option value="all">{tCommon('status.all')}</option>
                   <option value="draft">{t('status.draft')}</option>
+                  <option value="submitted">{t('status.submitted')}</option>
                   <option value="approved">{t('status.approved')}</option>
+                  <option value="partially_received">{t('status.partially_received')}</option>
+                  <option value="received">{t('status.received')}</option>
                   <option value="cancelled">{t('status.cancelled')}</option>
                 </select>
               </div>
@@ -161,10 +184,13 @@ export function PurchaseOrdersPage() {
                   ...(po.status === 'draft'
                     ? [
                         { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => navigate(`${ROUTES.purchaseOrders}/${po.id}/edit`) },
-                        { key: 'approve', label: tCommon('actions.approve'), icon: CheckCircle, onSelect: () => setApproving(po) },
+                        { key: 'submit', label: t('actions.submit'), icon: SendHorizonal, onSelect: () => setSubmitting(po) },
                       ]
                     : []),
-                  ...(po.status !== 'cancelled'
+                  ...(po.status === 'submitted'
+                    ? [{ key: 'approve', label: t('actions.approve'), icon: CheckCircle, onSelect: () => setApproving(po) }]
+                    : []),
+                  ...(!['cancelled', 'received'].includes(po.status)
                     ? [{ key: 'cancel', label: tCommon('common.cancel'), icon: XCircle, variant: 'destructive' as const, onSelect: () => setCancelling(po) }]
                     : []),
                   ...(po.status === 'draft'
@@ -193,6 +219,16 @@ export function PurchaseOrdersPage() {
         variant="destructive"
         loading={deletePO.isPending}
         onConfirm={() => { if (deleting) deletePO.mutate(deleting.id, { onSuccess: () => setDeleting(null) }); }}
+      />
+
+      <ConfirmDialog
+        open={submitting !== null}
+        onOpenChange={(open) => { if (!open) setSubmitting(null); }}
+        title={t('dialogs.submit.title')}
+        description={t('dialogs.submit.description', { number: submitting?.po_number ?? '' })}
+        confirmLabel={t('dialogs.submit.confirm')}
+        loading={submitPO.isPending}
+        onConfirm={() => { if (submitting) submitPO.mutate(submitting.id, { onSuccess: () => setSubmitting(null) }); }}
       />
 
       <ConfirmDialog

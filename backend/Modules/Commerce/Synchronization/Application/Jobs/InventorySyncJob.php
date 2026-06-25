@@ -27,6 +27,10 @@ final class InventorySyncJob implements ShouldQueue
 
     public int $backoff = 60;
 
+    // Ensure this job only runs after the DB transaction that recorded the stock movement
+    // has committed. Without this, the queue worker could read stale or rolled-back data.
+    public bool $afterCommit = true;
+
     public function __construct(
         private readonly Channel $channel,
         private readonly Product $product,
@@ -72,12 +76,12 @@ final class InventorySyncJob implements ShouldQueue
             );
 
             if ($success) {
-                $logService->markSuccess($log, ['stock_quantity' => $this->stockQuantity]);
+                $logService->markSuccess($log, ['stock_quantity' => $this->stockQuantity], $this->channel);
             } else {
-                $logService->markFailed($log, 'WooCommerce stock update request failed.');
+                $logService->markFailed($log, 'WooCommerce stock update request failed.', null, $this->channel);
             }
         } catch (Throwable $e) {
-            $logService->markFailed($log, $e->getMessage());
+            $logService->markFailed($log, $e->getMessage(), null, $this->channel);
             throw $e;
         }
     }

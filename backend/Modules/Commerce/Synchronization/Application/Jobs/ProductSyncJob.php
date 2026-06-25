@@ -75,12 +75,12 @@ final class ProductSyncJob implements ShouldQueue
                 );
 
             if ($response->successful()) {
-                $logService->markSuccess($log, ['status' => $response->status()]);
+                $logService->markSuccess($log, ['status' => $response->status()], $this->channel);
             } else {
-                $logService->markFailed($log, "HTTP {$response->status()}: " . substr($response->body(), 0, 500));
+                $logService->markFailed($log, "HTTP {$response->status()}: " . substr($response->body(), 0, 500), null, $this->channel);
             }
         } catch (Throwable $e) {
-            $logService->markFailed($log, $e->getMessage());
+            $logService->markFailed($log, $e->getMessage(), null, $this->channel);
             throw $e;
         }
     }

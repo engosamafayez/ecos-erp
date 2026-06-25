@@ -2,7 +2,13 @@
  * Purchase Orders feature types.
  */
 
-export type PurchaseOrderStatus = 'draft' | 'approved' | 'cancelled';
+export type PurchaseOrderStatus =
+  | 'draft'
+  | 'submitted'
+  | 'approved'
+  | 'partially_received'
+  | 'received'
+  | 'cancelled';
 
 export type PurchaseOrderLineProduct = {
   id: string;
@@ -15,6 +21,8 @@ export type PurchaseOrderLine = {
   product_id: string;
   product: PurchaseOrderLineProduct | null;
   quantity: number;
+  received_qty: number;
+  remaining_qty: number;
   unit_price: number;
   line_total: number;
 };
@@ -25,17 +33,34 @@ export type PurchaseOrderSupplier = {
   name: string;
 };
 
+export type PurchaseOrderWarehouse = {
+  id: string;
+  code: string;
+  name: string;
+};
+
 export type PurchaseOrder = {
   id: string;
   po_number: string;
   supplier_id: string;
   supplier: PurchaseOrderSupplier | null;
+  warehouse_id: string | null;
+  warehouse: PurchaseOrderWarehouse | null;
+  company_id: string | null;
+  supplier_reference: string | null;
   order_date: string;
   expected_date: string | null;
   status: PurchaseOrderStatus;
+  status_label: string;
   notes: string | null;
   subtotal: number;
+  discount_amount: number;
+  shipping_amount: number;
+  additional_costs: number;
+  grand_total: number;
   total: number;
+  received_percentage: number | null;
+  created_by: string | null;
   lines: PurchaseOrderLine[];
   created_at: string | null;
   updated_at: string | null;

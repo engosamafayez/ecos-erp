@@ -5,7 +5,8 @@
   "actions": {
     "new": "New Branch",
     "create": "Create branch",
-    "edit": "Edit Branch"
+    "edit": "Edit Branch",
+    "deactivate": "Deactivate"
   },
   "columns": {
     "code": "Code",
@@ -14,7 +15,8 @@
     "phone": "Phone",
     "city": "City",
     "headOffice": "Head Office",
-    "status": "Status"
+    "status": "Status",
+    "createdAt": "Created At"
   },
   "form": {
     "code": { "label": "Code", "placeholder": "HQ" },
@@ -42,5 +44,10 @@
   "delete": {
     "title": "Delete branch",
     "confirm": "Delete"
+  },
+  "deactivate": {
+    "title": "Deactivate Branch",
+    "description": "This will mark \"{{name}}\" as inactive. You can re-activate it later by editing the branch.",
+    "confirm": "Deactivate"
   }
 }

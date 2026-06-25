@@ -5,7 +5,8 @@
   "actions": {
     "new": "فرع جديد",
     "create": "إنشاء فرع",
-    "edit": "تعديل الفرع"
+    "edit": "تعديل الفرع",
+    "deactivate": "تعطيل"
   },
   "columns": {
     "code": "الرمز",
@@ -14,7 +15,8 @@
     "phone": "الهاتف",
     "city": "المدينة",
     "headOffice": "المقر الرئيسي",
-    "status": "الحالة"
+    "status": "الحالة",
+    "createdAt": "تاريخ الإنشاء"
   },
   "form": {
     "code": { "label": "الرمز", "placeholder": "HQ" },
@@ -42,5 +44,10 @@
   "delete": {
     "title": "حذف الفرع",
     "confirm": "حذف"
+  },
+  "deactivate": {
+    "title": "تعطيل الفرع",
+    "description": "سيتم تعيين \"{{name}}\" كغير نشط. يمكنك إعادة تفعيله لاحقاً عبر تعديل الفرع.",
+    "confirm": "تعطيل"
   }
 }

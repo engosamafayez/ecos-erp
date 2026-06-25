@@ -25,6 +25,7 @@ final class ChannelResource extends JsonResource
                 'id' => $this->company->id,
                 'name' => $this->company->name,
             ]),
+            'default_warehouse_id' => $this->default_warehouse_id,
             'name' => $this->name,
             'platform' => $this->platform->value,
             'platform_label' => $this->platform->label(),

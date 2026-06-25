@@ -1,27 +1,24 @@
 import {
+  Activity,
   ArrowLeftRight,
   BarChart3,
   BookOpen,
   Building2,
+  CalendarClock,
   ClipboardList,
   Contact,
-  FolderTree,
-  GitBranch,
   Landmark,
-  Layers,
   LayoutDashboard,
+  LineChart,
   Link2,
   ListTree,
   Package,
   PackageCheck,
   PackageOpen,
-  Receipt,
-  RefreshCw,
-  Ruler,
   Settings,
   ShoppingBag,
   ShoppingCart,
-  Store,
+  Tag,
   Truck,
   Users,
   Warehouse,
@@ -42,11 +39,6 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-/**
- * Single source of truth for the application's primary navigation.
- * Consumed by the sidebar, the router, and the breadcrumbs so there is no
- * duplicated route/label/icon definition.
- */
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
@@ -57,19 +49,19 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Organization',
     items: [
-      { key: 'companies', label: 'Companies', path: ROUTES.companies, icon: Building2 },
-      { key: 'branches', label: 'Branches', path: ROUTES.branches, icon: GitBranch },
+      { key: 'organization', label: 'Organization', path: ROUTES.organization, icon: Building2 },
     ],
   },
   {
     label: 'Inventory',
     items: [
-      { key: 'products', label: 'Products', path: ROUTES.products, icon: Package },
-      { key: 'raw-materials', label: 'Raw Materials', path: ROUTES.rawMaterials, icon: Layers },
-      { key: 'warehouses', label: 'Warehouses', path: ROUTES.warehouses, icon: Warehouse },
-      { key: 'categories', label: 'Categories', path: ROUTES.categories, icon: FolderTree },
-      { key: 'units', label: 'Units', path: ROUTES.units, icon: Ruler },
+      { key: 'products', label: 'Products', path: ROUTES.inventoryProducts, icon: Package },
       { key: 'stock-ledger', label: 'Stock Ledger', path: ROUTES.stockLedger, icon: BookOpen },
+      { key: 'inventory-dashboard', label: 'Inv. Dashboard', path: ROUTES.inventoryDashboard, icon: Activity },
+      { key: 'abc-classifications', label: 'ABC Classification', path: ROUTES.inventoryAbcClassifications, icon: Tag },
+      { key: 'cycle-count-planner', label: 'Cycle Planner', path: ROUTES.inventoryCycleCountPlanner, icon: CalendarClock },
+      { key: 'variance-analytics', label: 'Variance Analytics', path: ROUTES.inventoryVarianceAnalytics, icon: LineChart },
+      { key: 'warehouse-performance', label: 'WH Performance', path: ROUTES.inventoryWarehousePerformance, icon: Warehouse },
     ],
   },
   {
@@ -83,17 +75,15 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Sales',
     items: [
+      { key: 'orders', label: 'Orders', path: ROUTES.orders, icon: ShoppingBag },
+      { key: 'fulfillments', label: 'Fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
       { key: 'customers', label: 'Customers', path: ROUTES.customers, icon: ShoppingCart },
     ],
   },
   {
     label: 'Commerce',
     items: [
-      { key: 'channels', label: 'Channels', path: ROUTES.channels, icon: Store },
       { key: 'product-mappings', label: 'Product Mapping', path: ROUTES.productMappings, icon: Link2 },
-      { key: 'orders', label: 'Orders', path: ROUTES.orders, icon: ShoppingBag },
-      { key: 'fulfillments', label: 'Fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
-      { key: 'stock-sync-logs', label: 'Stock Sync Logs', path: ROUTES.stockSyncLogs, icon: RefreshCw },
       { key: 'sync-logs', label: 'Sync Logs', path: ROUTES.syncLogs, icon: ArrowLeftRight },
     ],
   },
@@ -106,7 +96,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Operations',
     items: [
-      { key: 'sales', label: 'Sales', path: ROUTES.sales, icon: Receipt },
       { key: 'accounting', label: 'Accounting', path: ROUTES.accounting, icon: Landmark },
       { key: 'crm', label: 'CRM', path: ROUTES.crm, icon: Contact },
       { key: 'hr', label: 'HR', path: ROUTES.hr, icon: Users },

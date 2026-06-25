@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Process -Name \"node\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force)",
+      "PowerShell(Start-Process -FilePath \"node\" -ArgumentList \"app.js\" -WorkingDirectory \"C:\\\\Users\\\\jana osama\\\\Desktop\\\\erp\\\\shipping-system\" -NoNewWindow -PassThru)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:3000/auth/login\" -UseBasicParsing)"
+    ]
+  }
+}

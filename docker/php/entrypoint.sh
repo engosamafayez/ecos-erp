@@ -46,6 +46,10 @@ chown -R www-data:www-data "$APP_DIR/storage" "$APP_DIR/bootstrap/cache" || true
 log "Running database migrations..."
 php artisan migrate --force || log "Migrations skipped/failed (continuing)."
 
+# --- Admin user (idempotent: firstOrCreate, never resets password) ----------
+log "Ensuring admin user exists..."
+php artisan db:seed --class=AdminUserSeeder --force 2>/dev/null || log "Admin seed skipped."
+
 # --- Clear stale caches (development friendliness) --------------------------
 php artisan config:clear  >/dev/null 2>&1 || true
 php artisan route:clear   >/dev/null 2>&1 || true

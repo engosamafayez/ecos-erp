@@ -13,7 +13,7 @@ import { GoodsReceiptLinesEditor } from '@/features/goods-receipts/components/go
 import {
   goodsReceiptSchema,
   toFormValues,
-  toPayload,
+  toFormData,
   type GoodsReceiptFormValues,
 } from '@/features/goods-receipts/components/goods-receipt-form-schema';
 import { useCreateGoodsReceipt } from '@/features/goods-receipts/hooks/use-goods-receipts';
@@ -32,7 +32,7 @@ export function CreateGoodsReceiptPage() {
   });
 
   const onSubmit = (values: GoodsReceiptFormValues) => {
-    createGR.mutate(toPayload(values), {
+    createGR.mutate(toFormData(values), {
       onSuccess: (created) => {
         navigate(`${ROUTES.goodsReceipts}/${created.id}`);
       },

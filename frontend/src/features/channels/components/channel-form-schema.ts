@@ -13,6 +13,7 @@ const PLATFORMS: [ChannelPlatform, ...ChannelPlatform[]] = [
 
 export const channelSchema = z.object({
   company_id: z.string().min(1, 'Company is required.'),
+  default_warehouse_id: z.string().nullable().optional(),
   name: z.string().min(1, 'Name is required.').max(255),
   platform: z.enum(PLATFORMS, 'Platform is required.'),
   store_url: z.string().min(1, 'Store URL is required.').url('Enter a valid URL.').max(500),
@@ -30,6 +31,7 @@ export type ChannelFormValues = z.infer<typeof channelSchema>;
 export function toFormValues(channel?: Channel | null): ChannelFormValues {
   return {
     company_id: channel?.company_id ?? '',
+    default_warehouse_id: channel?.default_warehouse_id ?? null,
     name: channel?.name ?? '',
     platform: channel?.platform ?? 'woocommerce',
     store_url: channel?.store_url ?? '',
@@ -46,6 +48,7 @@ export function toFormValues(channel?: Channel | null): ChannelFormValues {
 export function toPayload(values: ChannelFormValues): ChannelPayload {
   return {
     company_id: values.company_id,
+    default_warehouse_id: values.default_warehouse_id || null,
     name: values.name,
     platform: values.platform,
     store_url: values.store_url,

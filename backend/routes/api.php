@@ -23,9 +23,17 @@ use Modules\Commerce\StockSync\Presentation\Http\Controllers\StockSyncController
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers\GoodsReceiptController;
 use Modules\Purchasing\PurchaseOrders\Presentation\Http\Controllers\PurchaseOrderController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
+use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierAnalyticsController;
 use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Controllers\BomController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\WooCommerceWebhookController;
+use Modules\Inventory\ReceiptLayers\Presentation\Http\Controllers\InventoryLayerController;
+use Modules\Inventory\CountSessions\Presentation\Http\Controllers\InventoryCountController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\InventoryDashboardController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\AbcClassificationController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\VarianceAnalyticsController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\WarehousePerformanceController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\CycleCountPlanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,8 +77,23 @@ Route::middleware('auth:sanctum')->group(function (): void {
 */
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('products', ProductController::class);
+    Route::get('products/{product}/cost-history', [InventoryLayerController::class, 'costHistory']);
     Route::get('stock-movements', [StockMovementController::class, 'index']);
     Route::get('stock-movements/{stockMovement}', [StockMovementController::class, 'show']);
+    Route::get('inventory/layers', [InventoryLayerController::class, 'index']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Inventory — Count Sessions (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::apiResource('inventory-counts', InventoryCountController::class);
+    Route::post('inventory-counts/{inventoryCount}/start',    [InventoryCountController::class, 'start']);
+    Route::post('inventory-counts/{inventoryCount}/complete', [InventoryCountController::class, 'complete']);
+    Route::post('inventory-counts/{inventoryCount}/approve',  [InventoryCountController::class, 'approve']);
+    Route::post('inventory-counts/{inventoryCount}/cancel',   [InventoryCountController::class, 'cancel']);
 });
 
 /*
@@ -108,7 +131,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
 */
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('suppliers', SupplierController::class);
+    Route::get('suppliers/{supplier}/analytics', [SupplierAnalyticsController::class, 'analytics']);
+    Route::get('suppliers/{supplier}/inventory-breakdown', [SupplierAnalyticsController::class, 'inventoryBreakdown']);
     Route::apiResource('purchase-orders', PurchaseOrderController::class);
+    Route::post('purchase-orders/{purchaseOrder}/submit', [PurchaseOrderController::class, 'submit']);
     Route::post('purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve']);
     Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel']);
     Route::apiResource('goods-receipts', GoodsReceiptController::class);
@@ -136,7 +162,23 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
 /*
 |--------------------------------------------------------------------------
+| Inventory Control — Dashboard, ABC, Variance, Warehouse Performance (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('inventory/dashboard',             [InventoryDashboardController::class, 'index']);
+    Route::get('inventory/abc-classifications',   [AbcClassificationController::class, 'index']);
+    Route::post('inventory/abc-classifications/recalculate', [AbcClassificationController::class, 'recalculate']);
+    Route::get('inventory/variance-analytics',    [VarianceAnalyticsController::class, 'index']);
+    Route::get('inventory/warehouse-performance', [WarehousePerformanceController::class, 'index']);
+    Route::get('inventory/cycle-count-plans',     [CycleCountPlanController::class, 'index']);
+});
+
+/*
+|--------------------------------------------------------------------------
 | Webhooks — WooCommerce (public, no auth)
 |--------------------------------------------------------------------------
 */
-Route::post('webhooks/woocommerce/{channel}/orders', [WooCommerceWebhookController::class, 'handleOrder']);
+Route::post('webhooks/woocommerce/{channel}/orders',    [WooCommerceWebhookController::class, 'handleOrder']);
+Route::post('webhooks/woocommerce/{channel}/products',  [WooCommerceWebhookController::class, 'handleProduct']);
+Route::post('webhooks/woocommerce/{channel}/customers', [WooCommerceWebhookController::class, 'handleCustomer']);

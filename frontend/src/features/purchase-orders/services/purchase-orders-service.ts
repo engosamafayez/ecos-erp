@@ -41,4 +41,9 @@ export const purchaseOrdersService = {
     const { data } = await api.post<ApiResponse<PurchaseOrder>>(`/purchase-orders/${id}/cancel`);
     return data.data;
   },
+
+  async submit(id: string): Promise<PurchaseOrder> {
+    const { data } = await api.post<ApiResponse<PurchaseOrder>>(`/purchase-orders/${id}/submit`);
+    return data.data;
+  },
 };

@@ -10,14 +10,14 @@ use Modules\Commerce\Channels\Domain\Contracts\ChannelRepositoryInterface;
 use Modules\Commerce\Channels\Domain\Enums\ConnectionStatus;
 use Modules\Commerce\Channels\Domain\Exceptions\ChannelNotFoundException;
 use Modules\Commerce\Connectors\Application\Services\WooCommerceConnector;
-use Modules\Commerce\Synchronization\Application\Services\WooCommerceWebhookRegistrar;
+use Modules\Commerce\Synchronization\Application\Services\WebhookManagerService;
 
 final class TestConnectionAction extends BaseAction
 {
     public function __construct(
         private readonly ChannelRepositoryInterface $channels,
         private readonly WooCommerceConnector $connector,
-        private readonly WooCommerceWebhookRegistrar $webhookRegistrar,
+        private readonly WebhookManagerService $webhookManager,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -50,7 +50,7 @@ final class TestConnectionAction extends BaseAction
         $channel->update(['connection_status' => $status->value]);
 
         if ($connected) {
-            $this->webhookRegistrar->registerOrderWebhooks($channel->refresh());
+            $this->webhookManager->registerAll($channel->refresh());
         }
 
         $message = $connected

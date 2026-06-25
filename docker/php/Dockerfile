@@ -47,7 +47,9 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
 COPY frontend/ ./
-RUN npm run build
+# outDir in vite.config.ts is '../backend/public/app' (relative to /app),
+# which resolves to /backend/public/app inside this stage.
+RUN mkdir -p /backend/public/app && npm run build
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +122,7 @@ WORKDIR /var/www/html
 # Source first, then overlay the resolved vendor/ and built frontend assets.
 COPY backend/ /var/www/html/
 COPY --from=vendor /app/vendor /var/www/html/vendor
-COPY --from=frontend /app/dist /var/www/html/public/app
+COPY --from=frontend /backend/public/app /var/www/html/public/app
 
 # Storage + cache must be writable by php-fpm (www-data).
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \

@@ -10,9 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Commerce\Channels\Domain\Enums\ChannelHealthStatus;
 use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
 use Modules\Commerce\Channels\Domain\Enums\ConnectionStatus;
 use Modules\Commerce\Channels\Infrastructure\Database\Factories\ChannelFactory;
+use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Companies\Domain\Models\Company;
 
 /**
@@ -20,6 +22,7 @@ use Modules\Organization\Companies\Domain\Models\Company;
  *
  * @property string $id
  * @property string $company_id
+ * @property string|null $default_warehouse_id
  * @property string $name
  * @property ChannelPlatform $platform
  * @property string $store_url
@@ -30,7 +33,16 @@ use Modules\Organization\Companies\Domain\Models\Company;
  * @property bool $sync_customers
  * @property string|null $external_webhook_order_created_id
  * @property string|null $external_webhook_order_updated_id
+ * @property string|null $external_webhook_product_created_id
+ * @property string|null $external_webhook_product_updated_id
+ * @property string|null $external_webhook_product_deleted_id
+ * @property string|null $external_webhook_customer_created_id
+ * @property string|null $external_webhook_customer_updated_id
  * @property \Illuminate\Support\Carbon|null $last_sync_at
+ * @property \Illuminate\Support\Carbon|null $last_webhook_received_at
+ * @property \Illuminate\Support\Carbon|null $last_successful_sync_at
+ * @property \Illuminate\Support\Carbon|null $last_error_at
+ * @property string|null $last_error_message
  * @property ConnectionStatus $connection_status
  */
 class Channel extends Model
@@ -47,6 +59,7 @@ class Channel extends Model
      */
     protected $fillable = [
         'company_id',
+        'default_warehouse_id',
         'name',
         'platform',
         'store_url',
@@ -57,7 +70,16 @@ class Channel extends Model
         'sync_customers',
         'external_webhook_order_created_id',
         'external_webhook_order_updated_id',
+        'external_webhook_product_created_id',
+        'external_webhook_product_updated_id',
+        'external_webhook_product_deleted_id',
+        'external_webhook_customer_created_id',
+        'external_webhook_customer_updated_id',
         'last_sync_at',
+        'last_webhook_received_at',
+        'last_successful_sync_at',
+        'last_error_at',
+        'last_error_message',
         'connection_status',
     ];
 
@@ -74,6 +96,9 @@ class Channel extends Model
             'sync_stock' => 'boolean',
             'sync_customers' => 'boolean',
             'last_sync_at' => 'datetime',
+            'last_webhook_received_at' => 'datetime',
+            'last_successful_sync_at' => 'datetime',
+            'last_error_at' => 'datetime',
             'connection_status' => ConnectionStatus::class,
         ];
     }
@@ -87,11 +112,42 @@ class Channel extends Model
     }
 
     /**
+     * @return BelongsTo<Warehouse, $this>
+     */
+    public function defaultWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class, 'default_warehouse_id');
+    }
+
+    /**
      * @return HasOne<ChannelCredential, $this>
      */
     public function credential(): HasOne
     {
         return $this->hasOne(ChannelCredential::class);
+    }
+
+    public function healthStatus(): ChannelHealthStatus
+    {
+        $lastSuccess = $this->last_successful_sync_at ?? $this->last_sync_at;
+
+        if ($this->last_error_at !== null) {
+            $erroredAfterSuccess = $lastSuccess === null || $this->last_error_at->gt($lastSuccess);
+
+            if ($erroredAfterSuccess) {
+                return ChannelHealthStatus::Error;
+            }
+        }
+
+        if ($lastSuccess !== null && $lastSuccess->diffInHours(now()) > 24) {
+            return ChannelHealthStatus::Warning;
+        }
+
+        if ($this->connection_status !== ConnectionStatus::Connected) {
+            return ChannelHealthStatus::Warning;
+        }
+
+        return ChannelHealthStatus::Healthy;
     }
 
     protected static function newFactory(): ChannelFactory

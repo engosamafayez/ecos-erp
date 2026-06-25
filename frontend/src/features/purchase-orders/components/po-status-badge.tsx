@@ -5,7 +5,10 @@ import type { PurchaseOrderStatus } from '@/features/purchase-orders/types/purch
 
 const STATUS_VARIANTS: Record<PurchaseOrderStatus, 'pending' | 'active' | 'archived'> = {
   draft: 'pending',
+  submitted: 'pending',
   approved: 'active',
+  partially_received: 'active',
+  received: 'active',
   cancelled: 'archived',
 };
 

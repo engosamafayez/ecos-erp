@@ -37,7 +37,8 @@ type ProductsViewProps = {
   breadcrumbLabel: string;
   searchPlaceholder: string;
   createLabel: string;
-  entityNoun: string;
+  /** When true, omits PageHeader and Card wrapper — renders bare content for embedding in a tab. */
+  headless?: boolean;
 };
 
 export function ProductsView({
@@ -47,6 +48,7 @@ export function ProductsView({
   breadcrumbLabel,
   searchPlaceholder,
   createLabel,
+  headless = false,
 }: ProductsViewProps) {
   const { t } = useTranslation('products');
   const { t: tCommon } = useTranslation('common');
@@ -179,6 +181,114 @@ export function ProductsView({
     if (!deleting) return;
     deleteProduct.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
   };
+
+  if (headless) {
+    return (
+      <>
+        <EntityToolbar
+          searchPlaceholder={searchPlaceholder}
+          onSearchChange={handleSearch}
+          onRefresh={() => void refetch()}
+          isRefreshing={isFetching}
+          onExport={() => undefined}
+          onClearFilters={() => {
+            setCategoryFilter(null);
+            setUnitFilter(null);
+            setStatusFilter('all');
+            setPage(1);
+          }}
+          filterPanel={
+            <>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{t('filters.category')}</span>
+                <CategorySelect
+                  value={categoryFilter}
+                  onChange={(value) => { setCategoryFilter(value); setPage(1); }}
+                  placeholder={t('filters.allCategories')}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{t('filters.unit')}</span>
+                <UnitSelect
+                  value={unitFilter}
+                  onChange={(value) => { setUnitFilter(value); setPage(1); }}
+                  placeholder={t('filters.allUnits')}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{tCommon('filters.status')}</span>
+                <select
+                  value={statusFilter}
+                  onChange={(event) => { setStatusFilter(event.target.value as ProductStatusFilter); setPage(1); }}
+                  className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+                >
+                  <option value="all">{tCommon('status.all')}</option>
+                  <option value="active">{tCommon('status.active')}</option>
+                  <option value="inactive">{tCommon('status.inactive')}</option>
+                </select>
+              </div>
+            </>
+          }
+        >
+          <Button onClick={openCreate}>
+            <Plus className="size-4" />
+            {createLabel}
+          </Button>
+        </EntityToolbar>
+
+        <EntityTable<Product>
+          columns={columns}
+          data={items}
+          getRowId={(product) => product.id}
+          isLoading={isLoading}
+          isError={isError}
+          sort={sort}
+          onSortChange={handleSort}
+          rowActions={(product) => (
+            <ActionMenu
+              label={`Actions for ${product.name}`}
+              items={[
+                { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(product) },
+                { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(product) },
+                {
+                  key: 'delete',
+                  label: tCommon('common.delete'),
+                  icon: Trash2,
+                  variant: 'destructive',
+                  onSelect: () => setDeleting(product),
+                },
+              ]}
+            />
+          )}
+        />
+
+        {meta ? (
+          <Pagination
+            meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
+            onPageChange={setPage}
+          />
+        ) : null}
+
+        <ProductFormDrawer
+          open={drawerOpen}
+          onOpenChange={(open) => { setDrawerOpen(open); if (!open) setDrawerProduct(null); }}
+          product={drawerProduct}
+          defaultType={productType}
+        />
+
+        <ConfirmDialog
+          open={deleting !== null}
+          onOpenChange={(open) => { if (!open) setDeleting(null); }}
+          title={t('delete.title')}
+          description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
+          confirmLabel={t('delete.confirm')}
+          variant="destructive"
+          loading={deleteProduct.isPending}
+          onConfirm={confirmDelete}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">

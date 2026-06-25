@@ -5,6 +5,14 @@ import type { CompaniesQuery, CompanyPayload } from '@/features/companies/types/
 
 const COMPANIES_KEY = 'companies';
 
+export function useCompanyQuery(id: string) {
+  return useQuery({
+    queryKey: [COMPANIES_KEY, id],
+    queryFn: () => companiesService.get(id),
+    enabled: Boolean(id),
+  });
+}
+
 /** Paginated, filtered, sorted companies list. */
 export function useCompaniesQuery(params: CompaniesQuery) {
   return useQuery({

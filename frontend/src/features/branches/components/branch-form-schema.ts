@@ -19,9 +19,9 @@ export const branchSchema = z.object({
 export type BranchFormValues = z.infer<typeof branchSchema>;
 
 /** Build form values from an existing branch (or empty defaults for create). */
-export function toFormValues(branch?: Branch | null): BranchFormValues {
+export function toFormValues(branch?: Branch | null, defaultCompanyId?: string): BranchFormValues {
   return {
-    company_id: branch?.company_id ?? '',
+    company_id: branch?.company_id ?? defaultCompanyId ?? '',
     code: branch?.code ?? '',
     name: branch?.name ?? '',
     phone: branch?.phone ?? '',

@@ -5,24 +5,34 @@
   "actions": {
     "new": "New Purchase Order",
     "create": "Create purchase order",
+    "submit": "Submit for Approval",
     "approve": "Approve",
     "cancel": "Cancel"
   },
   "filters": {
     "status": "Status",
-    "allStatuses": "All statuses"
+    "allStatuses": "All statuses",
+    "warehouse": "Warehouse",
+    "supplier": "Supplier",
+    "dateFrom": "From Date",
+    "dateTo": "To Date"
   },
   "status": {
     "draft": "Draft",
+    "submitted": "Submitted",
     "approved": "Approved",
+    "partially_received": "Partially Received",
+    "received": "Received",
     "cancelled": "Cancelled"
   },
   "columns": {
     "number": "Number",
     "supplier": "Supplier",
+    "warehouse": "Warehouse",
     "orderDate": "Order Date",
     "expectedDate": "Expected Date",
     "total": "Total",
+    "receivedPct": "Received",
     "status": "Status"
   },
   "form": {
@@ -53,14 +63,23 @@
     "orderDetails": "Order Details",
     "lineItems": "Line Items",
     "supplier": "Supplier",
+    "warehouse": "Warehouse",
     "orderDate": "Order Date",
     "expectedDate": "Expected Date",
     "status": "Status",
     "notes": "Notes",
     "product": "Product",
     "qty": "Qty",
+    "receivedQty": "Received",
+    "remainingQty": "Remaining",
     "unitPrice": "Unit Price",
     "lineTotal": "Line Total",
+    "financials": "Financial Summary",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "shipping": "Shipping",
+    "additionalCosts": "Additional Costs",
+    "grandTotal": "Grand Total",
     "loading": "Loading…",
     "notFound": "Not Found",
     "notFoundMessage": "This purchase order does not exist."
@@ -82,6 +101,11 @@
     "errorTitle": "Unable to save"
   },
   "dialogs": {
+    "submit": {
+      "title": "Submit purchase order",
+      "description": "Submit {{number}} for approval?",
+      "confirm": "Submit"
+    },
     "approve": {
       "title": "Approve purchase order",
       "description": "Approve {{number}}? The order will become read-only after approval.",

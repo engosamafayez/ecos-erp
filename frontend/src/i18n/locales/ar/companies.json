@@ -46,5 +46,33 @@
   "delete": {
     "title": "حذف الشركة",
     "confirm": "حذف"
+  },
+  "workspace": {
+    "tabs": {
+      "general": "المعلومات العامة",
+      "branches": "الفروع",
+      "activity": "النشاط"
+    },
+    "backToList": "العودة إلى الشركات",
+    "fields": {
+      "code": "الرمز",
+      "legalName": "الاسم القانوني",
+      "taxNumber": "الرقم الضريبي",
+      "commercialRegistration": "السجل التجاري",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "mobile": "المحمول",
+      "website": "الموقع الإلكتروني",
+      "currency": "العملة",
+      "timezone": "المنطقة الزمنية",
+      "country": "الدولة",
+      "city": "المدينة",
+      "postalCode": "الرمز البريدي",
+      "address": "العنوان",
+      "status": "الحالة"
+    },
+    "activity": {
+      "placeholder": "سجل النشاط قادم قريباً."
+    }
   }
 }

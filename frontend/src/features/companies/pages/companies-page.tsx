@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -24,16 +24,16 @@ const PER_PAGE = 10;
 export function CompaniesPage() {
   const { t } = useTranslation('companies');
   const { t: tCommon } = useTranslation('common');
+
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ field: CompanySortField; direction: 'asc' | 'desc' }>({
     field: 'created_at',
     direction: 'desc',
   });
-
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerCompany, setDrawerCompany] = useState<Company | null>(null);
-  const [deleting, setDeleting] = useState<Company | null>(null);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
 
   const params = useMemo(
     () => ({
@@ -52,31 +52,13 @@ export function CompaniesPage() {
   const items = data?.items ?? [];
   const meta = data?.meta;
 
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    setPage(1);
-  };
-
   const handleSort = (field: string) => {
-    setSort((current) =>
-      current.field === field
-        ? {
-            field: field as CompanySortField,
-            direction: current.direction === 'asc' ? 'desc' : 'asc',
-          }
+    setSort((curr) =>
+      curr.field === field
+        ? { field: field as CompanySortField, direction: curr.direction === 'asc' ? 'desc' : 'asc' }
         : { field: field as CompanySortField, direction: 'asc' },
     );
     setPage(1);
-  };
-
-  const openCreate = () => {
-    setDrawerCompany(null);
-    setDrawerOpen(true);
-  };
-
-  const openEdit = (company: Company) => {
-    setDrawerCompany(company);
-    setDrawerOpen(true);
   };
 
   const columns: ColumnDef<Company>[] = [
@@ -106,19 +88,18 @@ export function CompaniesPage() {
     },
   ];
 
-  const confirmDelete = () => {
-    if (!deleting) return;
-    deleteCompany.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
-  };
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
+        breadcrumbs={[
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: 'Organization', to: ROUTES.organization },
+          { label: t('title') },
+        ]}
         actions={
-          <Button onClick={openCreate}>
+          <Button onClick={() => { setEditingCompany(null); setDrawerOpen(true); }}>
             <Plus className="size-4" />
             {t('actions.new')}
           </Button>
@@ -129,7 +110,7 @@ export function CompaniesPage() {
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
             searchPlaceholder={t('search')}
-            onSearchChange={handleSearch}
+            onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
             onExport={() => undefined}
@@ -138,7 +119,7 @@ export function CompaniesPage() {
           <EntityTable<Company>
             columns={columns}
             data={items}
-            getRowId={(company) => company.id}
+            getRowId={(c) => c.id}
             isLoading={isLoading}
             isError={isError}
             sort={sort}
@@ -147,14 +128,18 @@ export function CompaniesPage() {
               <ActionMenu
                 label={`Actions for ${company.name}`}
                 items={[
-                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(company) },
-                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(company) },
+                  {
+                    key: 'edit',
+                    label: tCommon('common.edit'),
+                    icon: Pencil,
+                    onSelect: () => { setEditingCompany(company); setDrawerOpen(true); },
+                  },
                   {
                     key: 'delete',
                     label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive',
-                    onSelect: () => setDeleting(company),
+                    onSelect: () => setDeletingCompany(company),
                   },
                 ]}
               />
@@ -177,24 +162,22 @@ export function CompaniesPage() {
 
       <CompanyFormDrawer
         open={drawerOpen}
-        onOpenChange={(open) => {
-          setDrawerOpen(open);
-          if (!open) setDrawerCompany(null);
-        }}
-        company={drawerCompany}
+        onOpenChange={(open) => { setDrawerOpen(open); if (!open) setEditingCompany(null); }}
+        company={editingCompany}
       />
 
       <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleting(null);
-        }}
+        open={deletingCompany !== null}
+        onOpenChange={(open) => { if (!open) setDeletingCompany(null); }}
         title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
+        description={tCommon('dialogs.softDeleteMessage', { name: deletingCompany?.name ?? '' })}
         confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteCompany.isPending}
-        onConfirm={confirmDelete}
+        onConfirm={() => {
+          if (!deletingCompany) return;
+          deleteCompany.mutate(deletingCompany.id, { onSuccess: () => setDeletingCompany(null) });
+        }}
       />
     </div>
   );

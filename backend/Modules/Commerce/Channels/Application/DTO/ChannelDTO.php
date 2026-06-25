@@ -21,6 +21,7 @@ final class ChannelDTO extends BaseDTO
         public readonly bool $sync_customers = true,
         public readonly ?string $consumer_key = null,
         public readonly ?string $consumer_secret = null,
+        public readonly ?string $default_warehouse_id = null,
     ) {}
 
     /**
@@ -40,6 +41,7 @@ final class ChannelDTO extends BaseDTO
             sync_customers: (bool) ($data['sync_customers'] ?? true),
             consumer_key: self::nullableString($data, 'consumer_key'),
             consumer_secret: self::nullableString($data, 'consumer_secret'),
+            default_warehouse_id: self::nullableString($data, 'default_warehouse_id'),
         );
     }
 
@@ -50,6 +52,7 @@ final class ChannelDTO extends BaseDTO
     {
         return [
             'company_id' => $this->company_id,
+            'default_warehouse_id' => $this->default_warehouse_id,
             'name' => $this->name,
             'platform' => $this->platform->value,
             'store_url' => $this->store_url,
