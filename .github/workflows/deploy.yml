@@ -1,0 +1,126 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: staging
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+# Serialize deployments per branch — never cancel an in-flight deploy.
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Resolve the GitHub Environment from the branch name or manual input.
+  # Using a separate job so `environment:` in the deploy job can reference an
+  # output, which enables environment-scoped secrets and protection rules.
+  # ---------------------------------------------------------------------------
+  resolve:
+    name: Resolve target environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+    steps:
+      - id: env
+        name: Determine environment
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV="${{ inputs.environment }}"
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            ENV="production"
+          else
+            ENV="staging"
+          fi
+          echo "environment=$ENV" >> "$GITHUB_OUTPUT"
+          echo "Resolved: $ENV"
+
+  # ---------------------------------------------------------------------------
+  # Deploy.
+  # All secrets below (SSH_PRIVATE_KEY, DEPLOY_HOST, DEPLOY_USER,
+  # DEPLOY_PATH, DEPLOY_PORT) must be configured per GitHub Environment.
+  # See docs/deployment/README.md → "GitHub Secrets" for the full list.
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Deploy → ${{ needs.resolve.outputs.environment }}
+    needs: resolve
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve.outputs.environment }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── SSH setup ─────────────────────────────────────────────────────────
+      - name: Write SSH private key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Add server to known_hosts
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          PORT="${DEPLOY_PORT:-22}"
+          ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          echo "Host deploy-target" >> ~/.ssh/config
+          echo "  HostName $DEPLOY_HOST"      >> ~/.ssh/config
+          echo "  Port $PORT"                 >> ~/.ssh/config
+          echo "  User ${{ secrets.DEPLOY_USER }}" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/deploy_key"  >> ~/.ssh/config
+          echo "  StrictHostKeyChecking accept-new" >> ~/.ssh/config
+          echo "  ServerAliveInterval 30"     >> ~/.ssh/config
+
+      # ── Sync scripts ──────────────────────────────────────────────────────
+      # Push the latest scripts/ to the server before running them so the
+      # remote always executes the version that matches this commit.
+      - name: Sync deployment scripts
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh deploy-target "mkdir -p '$DEPLOY_PATH/scripts'"
+          rsync -az --delete \
+            -e "ssh -F ~/.ssh/config" \
+            scripts/ \
+            "deploy-target:$DEPLOY_PATH/scripts/"
+
+      # ── Deploy ────────────────────────────────────────────────────────────
+      - name: Run deploy.sh on server
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          GIT_SHA:    ${{ github.sha }}
+          GIT_BRANCH: ${{ github.ref_name }}
+          GIT_ACTOR:  ${{ github.actor }}
+        run: |
+          ssh deploy-target \
+            "cd '$DEPLOY_PATH' && bash scripts/deploy.sh '$GIT_SHA' '$GIT_BRANCH' '$GIT_ACTOR'"
+
+      # ── On failure ────────────────────────────────────────────────────────
+      - name: Report failure and rollback hint
+        if: failure()
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          echo "::error::Deployment of ${{ github.sha }} to ${{ needs.resolve.outputs.environment }} FAILED."
+          echo ""
+          echo "To roll back manually:"
+          echo "  ssh $DEPLOY_USER@$DEPLOY_HOST 'cd $DEPLOY_PATH && bash scripts/rollback.sh'"

@@ -77,7 +77,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       TZ: Africa/Cairo
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"   # localhost only — not publicly exposed
     volumes:
       - mysql-data:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/ecos.cnf:ro
@@ -99,7 +99,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"   # localhost only — not publicly exposed
     volumes:
       - redis-data:/data
     networks:
@@ -123,8 +123,8 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
+      - "127.0.0.1:1025:1025"   # SMTP  — localhost only (access via SSH tunnel in dev)
+      - "127.0.0.1:8025:8025"   # Web UI — localhost only (access via SSH tunnel in dev)
     networks:
       - ecos-network
     healthcheck:
