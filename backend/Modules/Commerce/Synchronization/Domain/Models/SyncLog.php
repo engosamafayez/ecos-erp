@@ -19,6 +19,11 @@ use Modules\Commerce\Synchronization\Domain\Enums\SyncStatus;
  * @property string|null $entity_id
  * @property SyncDirection $direction
  * @property string|null $action
+ * @property string|null $correlation_id
+ * @property string|null $event_name
+ * @property int|null $event_version
+ * @property string|null $warehouse_id
+ * @property int|null $duration_ms
  * @property SyncStatus $status
  * @property array<string, mixed>|null $request_payload
  * @property array<string, mixed>|null $response_payload
@@ -42,6 +47,11 @@ class SyncLog extends Model
         'entity_id',
         'direction',
         'action',
+        'correlation_id',
+        'event_name',
+        'event_version',
+        'warehouse_id',
+        'duration_ms',
         'status',
         'request_payload',
         'response_payload',

@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
 use Modules\Commerce\StockSync\Application\Services\WooCommerceStockSyncer;
@@ -27,26 +28,40 @@ final class InventorySyncJob implements ShouldQueue
 
     public int $backoff = 60;
 
-    // Ensure this job only runs after the DB transaction that recorded the stock movement
-    // has committed. Without this, the queue worker could read stale or rolled-back data.
-    public bool $afterCommit = true;
-
     public function __construct(
         private readonly Channel $channel,
         private readonly Product $product,
         private readonly float $stockQuantity,
-    ) {}
+        // ── Phase B: correlation and event metadata ───────────────────────────
+        private readonly ?string $correlationId = null,
+        private readonly ?string $eventName     = null,
+        private readonly ?int    $eventVersion  = null,
+        private readonly ?string $warehouseId   = null,
+    ) {
+        // Ensure this job only runs after the DB transaction that recorded the stock
+        // movement has committed. Without this, the queue worker could read stale data.
+        $this->afterCommit = true;
+    }
 
     public function handle(SyncLogService $logService, WooCommerceStockSyncer $syncer): void
     {
+        $startedAt = hrtime(true);
+
         $log = $logService->createLog(
-            $this->channel,
-            SyncEntityType::Inventory,
-            SyncDirection::Outbound,
-            'inventory.sync',
-            $this->product->id,
-            SyncStatus::Processing,
-            ['product_id' => $this->product->id, 'stock_quantity' => $this->stockQuantity],
+            channel:       $this->channel,
+            entityType:    SyncEntityType::Inventory,
+            direction:     SyncDirection::Outbound,
+            action:        'inventory.sync',
+            entityId:      $this->product->id,
+            status:        SyncStatus::Processing,
+            requestPayload: [
+                'product_id'     => $this->product->id,
+                'stock_quantity' => $this->stockQuantity,
+            ],
+            correlationId: $this->correlationId,
+            eventName:     $this->eventName,
+            eventVersion:  $this->eventVersion,
+            warehouseId:   $this->warehouseId,
         );
 
         $mapping = ProductMapping::query()
@@ -56,6 +71,7 @@ final class InventorySyncJob implements ShouldQueue
 
         if ($mapping === null) {
             $logService->markFailed($log, 'No product mapping found for this channel.');
+            $this->logStructured('failed', 'no_mapping', null, $startedAt);
             return;
         }
 
@@ -63,6 +79,7 @@ final class InventorySyncJob implements ShouldQueue
 
         if ($credential === null) {
             $logService->markFailed($log, 'No credentials configured for this channel.');
+            $this->logStructured('failed', 'no_credentials', null, $startedAt);
             return;
         }
 
@@ -75,14 +92,43 @@ final class InventorySyncJob implements ShouldQueue
                 $this->stockQuantity,
             );
 
+            $durationMs = $this->elapsedMs($startedAt);
+
             if ($success) {
-                $logService->markSuccess($log, ['stock_quantity' => $this->stockQuantity], $this->channel);
+                $logService->markSuccess($log, ['stock_quantity' => $this->stockQuantity], $this->channel, $durationMs);
+                $this->logStructured('success', null, $durationMs, $startedAt);
             } else {
-                $logService->markFailed($log, 'WooCommerce stock update request failed.', null, $this->channel);
+                $logService->markFailed($log, 'WooCommerce stock update request failed.', null, $this->channel, $durationMs);
+                $this->logStructured('failed', 'api_rejected', $durationMs, $startedAt);
             }
         } catch (Throwable $e) {
-            $logService->markFailed($log, $e->getMessage(), null, $this->channel);
+            $durationMs = $this->elapsedMs($startedAt);
+            $logService->markFailed($log, $e->getMessage(), null, $this->channel, $durationMs);
+            $this->logStructured('failed', $e->getMessage(), $durationMs, $startedAt);
             throw $e;
         }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private function logStructured(string $result, ?string $error, ?int $durationMs, int $startedAt): void
+    {
+        Log::channel('daily')->info('[InventorySyncJob] Completed', [
+            'correlation_id' => $this->correlationId,
+            'event_name'     => $this->eventName,
+            'event_version'  => $this->eventVersion,
+            'channel'        => $this->channel->name,
+            'product'        => $this->product->id,
+            'warehouse'      => $this->warehouseId,
+            'direction'      => SyncDirection::Outbound->value,
+            'result'         => $result,
+            'error'          => $error,
+            'duration_ms'    => $durationMs ?? $this->elapsedMs($startedAt),
+        ]);
+    }
+
+    private function elapsedMs(int $startedAt): int
+    {
+        return (int) round((hrtime(true) - $startedAt) / 1_000_000);
     }
 }

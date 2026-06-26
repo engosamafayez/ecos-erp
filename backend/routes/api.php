@@ -34,6 +34,7 @@ use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\AbcClassifi
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\VarianceAnalyticsController;
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\WarehousePerformanceController;
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\CycleCountPlanController;
+use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -172,6 +173,26 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('inventory/variance-analytics',    [VarianceAnalyticsController::class, 'index']);
     Route::get('inventory/warehouse-performance', [WarehousePerformanceController::class, 'index']);
     Route::get('inventory/cycle-count-plans',     [CycleCountPlanController::class, 'index']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Core — User Preferences (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('me')->group(function (): void {
+    // Full category replacement and retrieval
+    Route::get('preferences', [UserPreferenceController::class, 'index']);
+    Route::delete('preferences', [UserPreferenceController::class, 'resetAll']);
+
+    Route::get('preferences/{category}', [UserPreferenceController::class, 'show'])
+        ->where('category', '[a-z][a-z0-9._-]{0,149}');
+
+    Route::put('preferences/{category}', [UserPreferenceController::class, 'upsert'])
+        ->where('category', '[a-z][a-z0-9._-]{0,149}');
+
+    Route::delete('preferences/{category}', [UserPreferenceController::class, 'resetCategory'])
+        ->where('category', '[a-z][a-z0-9._-]{0,149}');
 });
 
 /*
