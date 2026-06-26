@@ -7,11 +7,23 @@
     "title": "Raw Materials",
     "subtitle": "Manage your raw material inventory."
   },
-  "search": "Search products…",
+  "search": "Search by name, SKU, barcode…",
   "actions": {
     "new": "New Product",
     "create": "Create product",
-    "edit": "Edit Product"
+    "edit": "Edit Product",
+    "import": "Import",
+    "export": "Export",
+    "duplicate": "Duplicate",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "archive": "Archive",
+    "bulkActivate": "Activate",
+    "bulkDeactivate": "Deactivate",
+    "bulkPublish": "Publish to channels",
+    "bulkAssignCategory": "Assign category",
+    "bulkExport": "Export selected",
+    "bulkArchive": "Archive selected"
   },
   "filters": {
     "category": "Category",
@@ -26,14 +38,26 @@
     "barcode": "Barcode",
     "code": "Code",
     "name": "Name",
+    "productName": "Product Name",
     "type": "Type",
     "category": "Category",
     "unit": "Unit",
     "image": "Image",
     "regularPrice": "Regular Price",
     "salePrice": "Sale Price",
+    "discountPrice": "Discount Price",
     "stockStatus": "Stock Status",
-    "status": "Status"
+    "status": "Status",
+    "channels": "Channels",
+    "sync": "Sync",
+    "lastUpdated": "Last Updated"
+  },
+  "stats": {
+    "total": "Total Products",
+    "published": "Published",
+    "lowStock": "Low Stock",
+    "notSynced": "Not Synced",
+    "inactive": "Inactive"
   },
   "stockStatus": {
     "instock": "In Stock",
@@ -69,10 +93,24 @@
     "submitCreate": "Create product",
     "submitEdit": "Save changes",
     "saving": "Saving…",
-    "errorTitle": "Unable to save"
+    "errorTitle": "Unable to save",
+    "tabs": {
+      "general": "General",
+      "pricing": "Pricing",
+      "inventory": "Inventory",
+      "recipe": "Recipe",
+      "images": "Images",
+      "woocommerce": "WooCommerce",
+      "attributes": "Attributes",
+      "history": "History"
+    }
   },
   "delete": {
     "title": "Delete product",
     "confirm": "Delete"
+  },
+  "bulk": {
+    "selected_one": "{{count}} product selected",
+    "selected_other": "{{count}} products selected"
   }
 }

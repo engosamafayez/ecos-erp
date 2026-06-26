@@ -7,11 +7,23 @@
     "title": "المواد الخام",
     "subtitle": "إدارة مخزون المواد الخام."
   },
-  "search": "بحث في المنتجات…",
+  "search": "البحث بالاسم أو رمز المنتج أو الباركود…",
   "actions": {
     "new": "منتج جديد",
     "create": "إنشاء منتج",
-    "edit": "تعديل المنتج"
+    "edit": "تعديل المنتج",
+    "import": "استيراد",
+    "export": "تصدير",
+    "duplicate": "تكرار",
+    "publish": "نشر",
+    "unpublish": "إلغاء النشر",
+    "archive": "أرشفة",
+    "bulkActivate": "تفعيل",
+    "bulkDeactivate": "تعطيل",
+    "bulkPublish": "نشر على القنوات",
+    "bulkAssignCategory": "تعيين فئة",
+    "bulkExport": "تصدير المحدد",
+    "bulkArchive": "أرشفة المحدد"
   },
   "filters": {
     "category": "الفئة",
@@ -26,14 +38,26 @@
     "barcode": "الباركود",
     "code": "الرمز",
     "name": "الاسم",
+    "productName": "اسم المنتج",
     "type": "النوع",
     "category": "الفئة",
     "unit": "الوحدة",
     "image": "الصورة",
     "regularPrice": "السعر الأصلي",
     "salePrice": "سعر البيع",
+    "discountPrice": "سعر الخصم",
     "stockStatus": "حالة المخزون",
-    "status": "الحالة"
+    "status": "الحالة",
+    "channels": "القنوات",
+    "sync": "المزامنة",
+    "lastUpdated": "آخر تحديث"
+  },
+  "stats": {
+    "total": "إجمالي المنتجات",
+    "published": "منشور",
+    "lowStock": "مخزون منخفض",
+    "notSynced": "غير متزامن",
+    "inactive": "غير نشط"
   },
   "stockStatus": {
     "instock": "متوفر",
@@ -69,10 +93,24 @@
     "submitCreate": "إنشاء منتج",
     "submitEdit": "حفظ التغييرات",
     "saving": "جارٍ الحفظ…",
-    "errorTitle": "تعذر الحفظ"
+    "errorTitle": "تعذر الحفظ",
+    "tabs": {
+      "general": "عام",
+      "pricing": "التسعير",
+      "inventory": "المخزون",
+      "recipe": "الوصفة",
+      "images": "الصور",
+      "woocommerce": "ووكوميرس",
+      "attributes": "الخصائص",
+      "history": "السجل"
+    }
   },
   "delete": {
     "title": "حذف المنتج",
     "confirm": "حذف"
+  },
+  "bulk": {
+    "selected_one": "{{count}} منتج محدد",
+    "selected_other": "{{count}} منتجات محددة"
   }
 }
