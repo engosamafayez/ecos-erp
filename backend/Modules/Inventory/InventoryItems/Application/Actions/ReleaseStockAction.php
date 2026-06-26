@@ -8,6 +8,8 @@ use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
+use Modules\Inventory\DomainEvents\Events\InventoryStockReleased;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
@@ -18,11 +20,14 @@ use Modules\Inventory\InventoryItems\Domain\Exceptions\NegativeInventoryExceptio
  * Releases a prior reservation (e.g. order cancelled before fulfilment).
  *
  * Decreases reserved_qty. Does not touch on_hand_qty.
+ *
+ * Publishes InventoryStockReleased AFTER the transaction commits successfully.
  */
 final class ReleaseStockAction extends BaseAction
 {
     public function __construct(
         private readonly InventoryItemRepositoryInterface $inventory,
+        private readonly DomainEventBus $eventBus,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -37,7 +42,11 @@ final class ReleaseStockAction extends BaseAction
             throw new InvalidInventoryMovementException('Quantity must be greater than zero');
         }
 
-        $result = DB::transaction(function () use ($dto) {
+        $onHandBefore   = null;
+        $reservedBefore = null;
+        $reservedAfter  = null;
+
+        $result = DB::transaction(function () use ($dto, &$onHandBefore, &$reservedBefore, &$reservedAfter) {
             $item = $this->inventory->findByWarehouseAndProduct(
                 $dto->warehouse_id,
                 $dto->product_id,
@@ -84,6 +93,20 @@ final class ReleaseStockAction extends BaseAction
 
             return $locked;
         });
+
+        // ── Publish after commit ─────────────────────────────────────────────
+        $this->eventBus->publish(new InventoryStockReleased(
+            inventoryItemId:  $result->id,
+            warehouseId:      $dto->warehouse_id,
+            productId:        $dto->product_id,
+            companyId:        $dto->company_id,
+            quantityReleased: $dto->quantity,
+            reservedBefore:   $reservedBefore ?? 0.0,
+            reservedAfter:    $reservedAfter  ?? 0.0,
+            onHandQty:        $onHandBefore   ?? 0.0,
+            referenceType:    $dto->reference_type,
+            referenceId:      $dto->reference_id,
+        ));
 
         return OperationResult::success($result, 'Stock reservation released.');
     }

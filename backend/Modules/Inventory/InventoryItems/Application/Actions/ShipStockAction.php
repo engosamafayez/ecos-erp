@@ -8,6 +8,8 @@ use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
+use Modules\Inventory\DomainEvents\Events\InventoryStockShipped;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
@@ -19,11 +21,14 @@ use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementE
  *
  * Decreases on_hand_qty. Also decreases reserved_qty by the same amount
  * (clamped to 0 if the shipment was not pre-reserved).
+ *
+ * Publishes InventoryStockShipped AFTER the transaction commits successfully.
  */
 final class ShipStockAction extends BaseAction
 {
     public function __construct(
         private readonly InventoryItemRepositoryInterface $inventory,
+        private readonly DomainEventBus $eventBus,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -38,7 +43,12 @@ final class ShipStockAction extends BaseAction
             throw new InvalidInventoryMovementException('Quantity must be greater than zero');
         }
 
-        $result = DB::transaction(function () use ($dto) {
+        $onHandBefore   = null;
+        $onHandAfter    = null;
+        $reservedBefore = null;
+        $reservedAfter  = null;
+
+        $result = DB::transaction(function () use ($dto, &$onHandBefore, &$onHandAfter, &$reservedBefore, &$reservedAfter) {
             $item = $this->inventory->findByWarehouseAndProduct(
                 $dto->warehouse_id,
                 $dto->product_id,
@@ -99,6 +109,21 @@ final class ShipStockAction extends BaseAction
 
             return $locked;
         });
+
+        // ── Publish after commit ─────────────────────────────────────────────
+        $this->eventBus->publish(new InventoryStockShipped(
+            inventoryItemId: $result->id,
+            warehouseId:     $dto->warehouse_id,
+            productId:       $dto->product_id,
+            companyId:       $dto->company_id,
+            quantityShipped: $dto->quantity,
+            onHandBefore:    $onHandBefore    ?? 0.0,
+            onHandAfter:     $onHandAfter     ?? 0.0,
+            reservedBefore:  $reservedBefore  ?? 0.0,
+            reservedAfter:   $reservedAfter   ?? 0.0,
+            referenceType:   $dto->reference_type,
+            referenceId:     $dto->reference_id,
+        ));
 
         return OperationResult::success($result, 'Stock shipped successfully.');
     }

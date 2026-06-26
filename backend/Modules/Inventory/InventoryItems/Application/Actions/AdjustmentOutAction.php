@@ -8,6 +8,8 @@ use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
+use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
@@ -19,11 +21,16 @@ use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementE
  *
  * Decreases on_hand_qty. Records AdjustmentOut movement type.
  * Throws InsufficientStockException if on_hand_qty < quantity.
+ *
+ * Publishes InventoryStockAdjusted (type=out) AFTER the transaction commits.
+ *
+ * IMPORTANT — nested transaction caveat (Phase A): see AdjustmentInAction.
  */
 final class AdjustmentOutAction extends BaseAction
 {
     public function __construct(
         private readonly InventoryItemRepositoryInterface $inventory,
+        private readonly DomainEventBus $eventBus,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -38,7 +45,10 @@ final class AdjustmentOutAction extends BaseAction
             throw new InvalidInventoryMovementException('Quantity must be greater than zero');
         }
 
-        $result = DB::transaction(function () use ($dto) {
+        $onHandBefore = null;
+        $onHandAfter  = null;
+
+        $result = DB::transaction(function () use ($dto, &$onHandBefore, &$onHandAfter) {
             $item = $this->inventory->findByWarehouseAndProduct(
                 $dto->warehouse_id,
                 $dto->product_id,
@@ -91,6 +101,20 @@ final class AdjustmentOutAction extends BaseAction
 
             return $locked;
         });
+
+        // ── Publish after commit (or savepoint release in nested context) ────
+        $this->eventBus->publish(new InventoryStockAdjusted(
+            inventoryItemId: $result->id,
+            warehouseId:     $dto->warehouse_id,
+            productId:       $dto->product_id,
+            companyId:       $dto->company_id,
+            adjustmentType:  InventoryStockAdjusted::TYPE_OUT,
+            quantity:        $dto->quantity,
+            onHandBefore:    $onHandBefore ?? 0.0,
+            onHandAfter:     $onHandAfter  ?? 0.0,
+            referenceType:   $dto->reference_type,
+            referenceId:     $dto->reference_id,
+        ));
 
         return OperationResult::success($result, 'Adjustment out applied successfully.');
     }

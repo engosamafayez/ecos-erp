@@ -16,6 +16,7 @@ return [
     Modules\Purchasing\GoodsReceipts\Infrastructure\Providers\GoodsReceiptServiceProvider::class,
     Modules\Inventory\StockLedger\Infrastructure\Providers\StockLedgerServiceProvider::class,
     Modules\Inventory\InventoryItems\Infrastructure\Providers\InventoryItemServiceProvider::class,
+    Modules\Inventory\DomainEvents\Infrastructure\Providers\DomainEventServiceProvider::class,
     Modules\Sales\Customers\Infrastructure\Providers\CustomerServiceProvider::class,
     Modules\Commerce\Channels\Infrastructure\Providers\ChannelServiceProvider::class,
     Modules\Commerce\ProductMappings\Infrastructure\Providers\ProductMappingServiceProvider::class,
@@ -30,4 +31,5 @@ return [
     Modules\Inventory\ReceiptLayers\Infrastructure\Providers\ReceiptLayersServiceProvider::class,
     Modules\Inventory\CountSessions\Infrastructure\Providers\CountSessionsServiceProvider::class,
     Modules\Inventory\InventoryControl\Infrastructure\Providers\InventoryControlServiceProvider::class,
+    Modules\Core\UserPreferences\Infrastructure\Providers\UserPreferenceServiceProvider::class,
 ];

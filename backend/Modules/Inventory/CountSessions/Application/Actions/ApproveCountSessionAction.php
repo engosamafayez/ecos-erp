@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Modules\Inventory\CountSessions\Domain\Enums\CountSessionStatus;
 use Modules\Inventory\CountSessions\Domain\Models\InventoryCountLine;
 use Modules\Inventory\CountSessions\Domain\Models\InventoryCountSession;
+use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
+use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
 use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentInAction;
 use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentOutAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
@@ -20,10 +22,17 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 /**
  * Posts inventory adjustments for a completed count session.
  *
- * Positive variance: ReceiveStockAction (AdjustmentIn movement type)
- * Negative variance: DirectIssueStockAction + FIFO layer consumption
+ * Positive variance: AdjustmentInAction
+ * Negative variance: AdjustmentOutAction + FIFO layer consumption
  *
  * Requires approval; must be in 'completed' status.
+ *
+ * Publishes InventoryCountApproved AFTER the outermost DB transaction commits.
+ * This is the authoritative event for a count session approval.
+ *
+ * Note: AdjustmentIn/Out actions called internally also publish
+ * InventoryStockAdjusted events (at savepoint-release time, not at outermost
+ * commit). Phase B will unify this with a PendingDomainEvents collector.
  */
 final class ApproveCountSessionAction
 {
@@ -32,6 +41,7 @@ final class ApproveCountSessionAction
         private readonly AdjustmentOutAction $adjustmentOut,
         private readonly InventoryLayerConsumptionService $layerConsumption,
         private readonly InventoryItemRepositoryInterface $inventory,
+        private readonly DomainEventBus $eventBus,
     ) {}
 
     public function execute(InventoryCountSession $session, ?string $approvedBy = null): InventoryCountSession
@@ -42,7 +52,9 @@ final class ApproveCountSessionAction
             );
         }
 
-        return DB::transaction(function () use ($session, $approvedBy): InventoryCountSession {
+        $linesAdjusted = 0;
+
+        $result = DB::transaction(function () use ($session, $approvedBy, &$linesAdjusted): InventoryCountSession {
             $session->loadMissing('lines.product', 'warehouse');
 
             $companyId   = $session->warehouse->company_id;
@@ -106,6 +118,8 @@ final class ApproveCountSessionAction
 
                 // Update current FIFO cost after each adjustment
                 $this->refreshFifoCost($line->product_id);
+
+                $linesAdjusted++;
             }
 
             $session->update([
@@ -115,6 +129,19 @@ final class ApproveCountSessionAction
 
             return $session->refresh();
         });
+
+        // ── Publish after outermost commit ───────────────────────────────────
+        // DB::transaction() commits before returning; if it threw, we never reach here.
+        $this->eventBus->publish(new InventoryCountApproved(
+            countSessionId: $result->id,
+            countNumber:    $result->count_number,
+            warehouseId:    $result->warehouse_id,
+            companyId:      $result->warehouse->company_id,
+            linesAdjusted:  $linesAdjusted,
+            approvedBy:     $approvedBy,
+        ));
+
+        return $result;
     }
 
     private function refreshFifoCost(string $productId): void

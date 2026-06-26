@@ -8,6 +8,8 @@ use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
+use Modules\Inventory\DomainEvents\Events\InventoryStockReserved;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
@@ -19,11 +21,14 @@ use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementE
  *
  * Increases reserved_qty after verifying available_qty is sufficient.
  * Throws InsufficientStockException if the request cannot be satisfied.
+ *
+ * Publishes InventoryStockReserved AFTER the transaction commits successfully.
  */
 final class ReserveStockAction extends BaseAction
 {
     public function __construct(
         private readonly InventoryItemRepositoryInterface $inventory,
+        private readonly DomainEventBus $eventBus,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -38,7 +43,11 @@ final class ReserveStockAction extends BaseAction
             throw new InvalidInventoryMovementException('Quantity must be greater than zero');
         }
 
-        $result = DB::transaction(function () use ($dto) {
+        $onHandBefore   = null;
+        $reservedBefore = null;
+        $reservedAfter  = null;
+
+        $result = DB::transaction(function () use ($dto, &$onHandBefore, &$reservedBefore, &$reservedAfter) {
             $item = $this->inventory->findOrCreate(
                 $dto->warehouse_id,
                 $dto->product_id,
@@ -89,6 +98,20 @@ final class ReserveStockAction extends BaseAction
 
             return $locked;
         });
+
+        // ── Publish after commit ─────────────────────────────────────────────
+        $this->eventBus->publish(new InventoryStockReserved(
+            inventoryItemId:  $result->id,
+            warehouseId:      $dto->warehouse_id,
+            productId:        $dto->product_id,
+            companyId:        $dto->company_id,
+            quantityReserved: $dto->quantity,
+            reservedBefore:   $reservedBefore ?? 0.0,
+            reservedAfter:    $reservedAfter  ?? $dto->quantity,
+            onHandQty:        $onHandBefore   ?? 0.0,
+            referenceType:    $dto->reference_type,
+            referenceId:      $dto->reference_id,
+        ));
 
         return OperationResult::success($result, 'Stock reserved successfully.');
     }

@@ -8,6 +8,8 @@ use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
+use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
@@ -17,11 +19,21 @@ use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementE
  * Positive inventory adjustment — used when physical count exceeds system quantity.
  *
  * Increases on_hand_qty. Records AdjustmentIn movement type.
+ *
+ * Publishes InventoryStockAdjusted (type=in) AFTER the transaction commits.
+ *
+ * IMPORTANT — nested transaction caveat (Phase A):
+ * When this action is called by ApproveCountSessionAction, it runs inside
+ * a savepoint (nested transaction). The event is published after the savepoint
+ * releases, while the outer transaction is still open. Phase B will introduce
+ * a PendingDomainEvents collector to guarantee post-outermost-commit semantics.
+ * For Phase A (Shadow Mode, log only), this is acceptable.
  */
 final class AdjustmentInAction extends BaseAction
 {
     public function __construct(
         private readonly InventoryItemRepositoryInterface $inventory,
+        private readonly DomainEventBus $eventBus,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -36,7 +48,9 @@ final class AdjustmentInAction extends BaseAction
             throw new InvalidInventoryMovementException('Quantity must be greater than zero');
         }
 
-        $result = DB::transaction(function () use ($dto) {
+        $onHandBefore = null;
+
+        $result = DB::transaction(function () use ($dto, &$onHandBefore) {
             $item = $this->inventory->findOrCreate(
                 $dto->warehouse_id,
                 $dto->product_id,
@@ -76,6 +90,20 @@ final class AdjustmentInAction extends BaseAction
 
             return $locked;
         });
+
+        // ── Publish after commit (or savepoint release in nested context) ────
+        $this->eventBus->publish(new InventoryStockAdjusted(
+            inventoryItemId: $result->id,
+            warehouseId:     $dto->warehouse_id,
+            productId:       $dto->product_id,
+            companyId:       $dto->company_id,
+            adjustmentType:  InventoryStockAdjusted::TYPE_IN,
+            quantity:        $dto->quantity,
+            onHandBefore:    $onHandBefore ?? 0.0,
+            onHandAfter:     (float) $result->on_hand_qty,
+            referenceType:   $dto->reference_type,
+            referenceId:     $dto->reference_id,
+        ));
 
         return OperationResult::success($result, 'Adjustment in applied successfully.');
     }
