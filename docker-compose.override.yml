@@ -1,0 +1,37 @@
+###############################################################################
+# ECOS ERP — Development overrides
+#
+# Docker Compose automatically merges this file with docker-compose.yml when
+# you run `docker compose up` locally.
+#
+# Purpose: restore source bind-mounts for live code reloading during development
+# so you do not need to rebuild the image after every PHP or config change.
+#
+# DO NOT commit secrets or production credentials here.
+# This file MUST NOT be present on production servers.
+# deploy.sh uses `docker compose -f docker-compose.yml` to explicitly exclude it.
+###############################################################################
+
+services:
+  # ---------------------------------------------------------------------------
+  # app — mount source for live PHP/config reload
+  # ---------------------------------------------------------------------------
+  app:
+    volumes:
+      # Source bind-mount shadows the image contents.
+      # vendor/ and public/app are also covered by this mount.
+      - ./backend:/var/www/html
+
+  # ---------------------------------------------------------------------------
+  # nginx — serve backend/public directly (no custom image build required)
+  # ---------------------------------------------------------------------------
+  nginx:
+    # Use the plain nginx image in dev so you don't need `docker compose build`
+    # every time you change frontend assets (Vite dev server handles that).
+    image: nginx:1.27-alpine
+    # Cancel the custom build from docker-compose.yml so pulling the upstream
+    # image is enough for local dev.
+    build: !reset null
+    volumes:
+      - ./backend/public:/var/www/html/public:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro

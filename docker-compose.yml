@@ -1,9 +1,17 @@
 name: ecos-erp
 
 ###############################################################################
-# ECOS ERP — Development environment
+# ECOS ERP — Production environment
+#
+# This file is the canonical production configuration.
+# It is image-based and immutable: every service runs from a built image;
+# no application source code is bind-mounted.
 #
 # Services: app (PHP-FPM 8.4 + Supervisor) · nginx · mysql · redis · mailpit
+#
+# Development overrides (source bind-mounts) live in docker-compose.override.yml
+# and are auto-applied by Docker Compose when running locally.
+# deploy.sh explicitly targets this file alone via -f docker-compose.yml.
 ###############################################################################
 
 services:
@@ -21,7 +29,10 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      - ./backend:/var/www/html
+      # Persistent runtime data only.  Application source is baked into the image.
+      # Mounting source here would shadow the image contents and is FORBIDDEN in production.
+      - app-storage:/var/www/html/storage
+      - app-cache:/var/www/html/bootstrap/cache
     depends_on:
       mysql:
         condition: service_healthy
@@ -39,16 +50,25 @@ services:
       start_period: 60s
 
   # ---------------------------------------------------------------------------
-  # Web server — Nginx (serves public/ and proxies PHP to app:9000)
+  # Web server — Custom nginx image with the React SPA baked in
+  #
+  # Built from Stage 4 of docker/php/Dockerfile (target: nginx).
+  # Contains: nginx:1.27-alpine + public/app (Vite build) + default vhost.
+  # No bind-mount of backend/public is needed or allowed in production.
   # ---------------------------------------------------------------------------
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: nginx
+    image: ecos-erp/nginx:latest
     container_name: ecos-nginx
     restart: unless-stopped
     ports:
       - "80:80"
     volumes:
-      - ./backend/public:/var/www/html/public:ro
+      # Config mount only — allows vhost tuning without a full image rebuild.
+      # The SPA files inside the image are NOT affected by this mount.
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       app:
@@ -112,7 +132,8 @@ services:
       start_period: 5s
 
   # ---------------------------------------------------------------------------
-  # Mail — Mailpit (SMTP sink + web UI)
+  # Mail — Mailpit (SMTP sink + web UI for development / staging)
+  # Remove this service or replace with a real MTA in production.
   # ---------------------------------------------------------------------------
   mailpit:
     image: axllent/mailpit:latest
@@ -123,8 +144,8 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
     ports:
-      - "127.0.0.1:1025:1025"   # SMTP  — localhost only (access via SSH tunnel in dev)
-      - "127.0.0.1:8025:8025"   # Web UI — localhost only (access via SSH tunnel in dev)
+      - "127.0.0.1:1025:1025"   # SMTP  — localhost only
+      - "127.0.0.1:8025:8025"   # Web UI — localhost only (SSH tunnel for remote access)
     networks:
       - ecos-network
     healthcheck:
@@ -135,9 +156,20 @@ services:
       start_period: 10s
 
 # -----------------------------------------------------------------------------
-# Named volumes (persist data across container restarts)
+# Named volumes
+#
+# app-storage  : Laravel storage/ (uploads, framework cache, logs, sessions)
+# app-cache    : Laravel bootstrap/cache/ (config, route, view caches)
+# mysql-data   : MySQL data directory
+# redis-data   : Redis AOF persistence
+#
+# NEVER replace app-storage or app-cache with source bind-mounts in production.
 # -----------------------------------------------------------------------------
 volumes:
+  app-storage:
+    driver: local
+  app-cache:
+    driver: local
   mysql-data:
     driver: local
   redis-data:

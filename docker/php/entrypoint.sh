@@ -12,7 +12,7 @@ cd "$APP_DIR"
 
 log() { printf '\033[0;36m[entrypoint]\033[0m %s\n' "$*"; }
 
-# --- Dependencies (relevant when source is bind-mounted in development) -----
+# --- Dependencies (dev safety net: vendor/ missing when source is bind-mounted) -----
 if [ ! -d "$APP_DIR/vendor" ]; then
     log "vendor/ missing — installing Composer dependencies..."
     composer install --no-interaction --prefer-dist --no-progress
@@ -38,9 +38,45 @@ until mysqladmin ping -h"${DB_HOST:-mysql}" -P"${DB_PORT:-3306}" \
 done
 log "MySQL is ready."
 
-# --- Storage symlink & permissions -----------------------------------------
-php artisan storage:link 2>/dev/null || true
-chown -R www-data:www-data "$APP_DIR/storage" "$APP_DIR/bootstrap/cache" || true
+# --- Storage directory structure --------------------------------------------
+# The app-storage named volume starts empty on first run.
+# Laravel will crash on first request if these directories are absent.
+# mkdir -p is idempotent — safe to run on every startup.
+log "Ensuring required storage directories exist..."
+for dir in \
+    storage/app/public \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/testing \
+    storage/logs
+do
+    if [ ! -d "$APP_DIR/$dir" ]; then
+        log "  creating $dir"
+        mkdir -p "$APP_DIR/$dir"
+    fi
+done
+
+# --- Ownership and permissions ----------------------------------------------
+# Must run after directory creation so all newly created dirs are covered.
+chown -R www-data:www-data \
+    "$APP_DIR/storage" \
+    "$APP_DIR/bootstrap/cache" \
+    || true
+chmod -R ug+rwX \
+    "$APP_DIR/storage" \
+    "$APP_DIR/bootstrap/cache" \
+    || true
+
+# --- Storage symlink --------------------------------------------------------
+# Only create if it does not already exist.
+# Avoids the "already exists" error on container restarts and volume upgrades.
+if [ ! -L "$APP_DIR/public/storage" ]; then
+    log "Creating storage symlink (public/storage → storage/app/public)..."
+    php artisan storage:link
+else
+    log "Storage symlink already exists — skipping."
+fi
 
 # --- Migrations -------------------------------------------------------------
 log "Running database migrations..."
