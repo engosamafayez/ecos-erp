@@ -151,22 +151,22 @@ export function CustomersPage() {
       {/* ── Quick Stats ─────────────────────────────────────────────────── */}
       <div className="grid gap-3 sm:grid-cols-3">
         <QuickStatCard
-          label={t('quickStats.total')}
+          title={t('quickStats.total')}
           value={counts.total ?? '—'}
           icon={Users}
           onClick={() => { setSearch(''); }}
         />
         <QuickStatCard
-          label={t('quickStats.active')}
+          title={t('quickStats.active')}
           value={counts.active ?? '—'}
           icon={Users}
-          variant="success"
+          colorClassName="text-emerald-600 bg-emerald-100"
         />
         <QuickStatCard
-          label={t('quickStats.inactive')}
+          title={t('quickStats.inactive')}
           value={counts.inactive ?? '—'}
           icon={Users}
-          variant="warning"
+          colorClassName="text-amber-600 bg-amber-100"
         />
       </div>
 
@@ -245,7 +245,7 @@ export function CustomersPage() {
                 <tr>
                   <td colSpan={5} className="py-12">
                     <ErrorState
-                      message={t('table.error')}
+                      description={t('table.error')}
                       onRetry={() => void refetch()}
                     />
                   </td>
@@ -253,7 +253,7 @@ export function CustomersPage() {
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12">
-                    <EmptyState message={t('table.empty')} />
+                    <EmptyState title={t('table.empty')} />
                   </td>
                 </tr>
               ) : (

@@ -6,7 +6,6 @@ import {
   MessageCircle,
   Phone,
   Plus,
-  ShoppingBag,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

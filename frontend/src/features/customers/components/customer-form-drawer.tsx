@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { EntityDrawer, EntityForm, FormField } from '@/components/crud';
+import { EntityDrawer, EntityForm } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
