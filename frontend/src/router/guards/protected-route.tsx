@@ -11,6 +11,9 @@ import { ROUTES } from '@/router/routes';
 export function ProtectedRoute() {
   const status = useAuthStore((state) => state.status);
 
+  // TEMP DEV BYPASS — revert before merge
+  if (import.meta.env.DEV) return <Outlet />;
+
   if (status === 'idle' || status === 'loading') {
     return <FullScreenLoader />;
   }

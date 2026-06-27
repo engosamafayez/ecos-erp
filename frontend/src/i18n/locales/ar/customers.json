@@ -1,29 +1,93 @@
 {
   "title": "العملاء",
-  "subtitle": "إدارة حسابات عملائك.",
-  "search": "بحث في العملاء…",
+  "subtitle": "البحث بالهاتف، الاسم، رقم الطلب أو العنوان.",
+  "search": "البحث بالهاتف، الاسم، العنوان أو رقم الطلب…",
   "actions": {
     "new": "عميل جديد",
     "create": "إنشاء عميل",
-    "edit": "تعديل العميل"
+    "edit": "تعديل العميل",
+    "export": "تصدير",
+    "merge": "دمج",
+    "import": "استيراد"
+  },
+  "quickStats": {
+    "total": "إجمالي العملاء",
+    "active": "نشط",
+    "inactive": "غير نشط (90 يوم)",
+    "vip": "مميز"
+  },
+  "quickCard": {
+    "openCustomer": "فتح ملف العميل",
+    "openActiveOrder": "فتح الطلب النشط",
+    "createOrder": "طلب جديد",
+    "call": "اتصال",
+    "whatsapp": "واتساب",
+    "copyPhone": "نسخ الرقم",
+    "copyAddress": "نسخ العنوان",
+    "openMap": "فتح الخريطة",
+    "addNote": "إضافة ملاحظة",
+    "editAddress": "تعديل العنوان",
+    "noActiveOrder": "لا توجد طلبات نشطة",
+    "lastOrder": "آخر طلب",
+    "totalOrders": "إجمالي الطلبات",
+    "customerMemory": "ذاكرة العميل",
+    "noMemory": "لا توجد ملاحظات مثبتة.",
+    "viewAllNotes": "عرض جميع الملاحظات"
+  },
+  "noResults": {
+    "title": "العميل غير موجود",
+    "description": "لا يوجد عميل يطابق هذا الرقم أو الاسم.",
+    "createWithPhone": "إنشاء عميل بهذا الرقم"
+  },
+  "smartOps": {
+    "newCustomer": "عميل جديد",
+    "export": "تصدير",
+    "merge": "دمج",
+    "print": "طباعة",
+    "more": "المزيد"
   },
   "columns": {
-    "code": "الرمز",
+    "customer": "العميل",
+    "phones": "الهواتف",
+    "address": "العنوان",
+    "lastOrder": "آخر طلب",
+    "status": "الحالة",
+    "actions": "الإجراءات",
+    "code": "الكود",
     "name": "الاسم",
     "contactPerson": "جهة الاتصال",
     "email": "البريد الإلكتروني",
     "phone": "الهاتف",
     "country": "الدولة",
-    "city": "المدينة",
-    "status": "الحالة"
+    "city": "المدينة"
+  },
+  "table": {
+    "empty": "لا يوجد عملاء.",
+    "error": "فشل تحميل العملاء. يرجى المحاولة مجدداً.",
+    "selectAll": "تحديد الكل"
+  },
+  "phone": {
+    "call": "اتصال",
+    "whatsapp": "واتساب",
+    "copy": "نسخ الرقم",
+    "copied": "تم النسخ!",
+    "primary": "رئيسي",
+    "secondary": "ثانوي",
+    "more": "+{{count}} أكثر"
+  },
+  "tags": {
+    "vip": "مميز",
+    "wholesale": "جملة",
+    "inactive": "غير نشط"
   },
   "form": {
-    "code": { "label": "الرمز", "placeholder": "CUST-001" },
-    "name": { "label": "الاسم", "placeholder": "اسم العميل" },
+    "code": { "label": "الكود", "placeholder": "CUST-001" },
+    "name": { "label": "اسم العميل", "placeholder": "مثال: أحمد محمد" },
+    "phone": "الهاتف الرئيسي",
+    "phonePlaceholder": "أدخل رقم الهاتف…",
+    "mobile": "هاتف ثانوي",
     "contactPerson": "جهة الاتصال",
     "email": { "label": "البريد الإلكتروني", "placeholder": "customer@example.com" },
-    "phone": "الهاتف",
-    "mobile": "المحمول",
     "country": "الدولة",
     "city": "المدينة",
     "address": "العنوان",
@@ -31,14 +95,37 @@
     "active": "نشط"
   },
   "drawer": {
-    "createTitle": "إنشاء عميل",
+    "createTitle": "عميل جديد",
     "editTitle": "تعديل العميل",
-    "createSubtitle": "إضافة عميل جديد إلى سجلاتك.",
-    "editSubtitle": "تحديث تفاصيل العميل أدناه.",
-    "submitCreate": "إنشاء عميل",
+    "createSubtitle": "إضافة عميل جديد. الاسم والهاتف مطلوبان فقط.",
+    "editSubtitle": "قم بتحديث بيانات العميل أدناه.",
+    "submitCreate": "إنشاء العميل",
     "submitEdit": "حفظ التغييرات",
     "saving": "جارٍ الحفظ…",
-    "errorTitle": "تعذر الحفظ"
+    "errorTitle": "تعذّر الحفظ",
+    "phoneStep": {
+      "title": "أدخل الهاتف الرئيسي",
+      "description": "سنتحقق من وجود العميل في النظام.",
+      "label": "رقم الهاتف الرئيسي",
+      "placeholder": "01012345678",
+      "continue": "متابعة",
+      "checking": "جارٍ التحقق…"
+    },
+    "foundCustomer": {
+      "title": "العميل موجود بالفعل",
+      "description": "تم العثور على عميل بهذا الرقم.",
+      "open": "فتح العميل الموجود",
+      "cancel": "إلغاء"
+    },
+    "tabs": {
+      "summary": "ملخص",
+      "phones": "الهواتف",
+      "addresses": "العناوين",
+      "orders": "الطلبات",
+      "activity": "النشاط",
+      "memory": "الذاكرة",
+      "audit": "السجل"
+    }
   },
   "delete": {
     "title": "حذف العميل",

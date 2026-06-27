@@ -1,29 +1,93 @@
 {
   "title": "Customers",
-  "subtitle": "Manage your customer accounts.",
-  "search": "Search customers…",
+  "subtitle": "Search by phone, name, order number or address.",
+  "search": "Search by phone, name, address or order number…",
   "actions": {
     "new": "New Customer",
     "create": "Create customer",
-    "edit": "Edit Customer"
+    "edit": "Edit Customer",
+    "export": "Export",
+    "merge": "Merge",
+    "import": "Import"
+  },
+  "quickStats": {
+    "total": "Total Customers",
+    "active": "Active",
+    "inactive": "Inactive (90d)",
+    "vip": "VIP"
+  },
+  "quickCard": {
+    "openCustomer": "Open Customer",
+    "openActiveOrder": "Open Active Order",
+    "createOrder": "New Order",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "copyPhone": "Copy Phone",
+    "copyAddress": "Copy Address",
+    "openMap": "Open Map",
+    "addNote": "Add Note",
+    "editAddress": "Edit Address",
+    "noActiveOrder": "No active orders",
+    "lastOrder": "Last Order",
+    "totalOrders": "Total Orders",
+    "customerMemory": "Customer Memory",
+    "noMemory": "No pinned notes yet.",
+    "viewAllNotes": "View All Notes"
+  },
+  "noResults": {
+    "title": "Customer not found",
+    "description": "No customer matches this phone number or name.",
+    "createWithPhone": "Create customer with this number"
+  },
+  "smartOps": {
+    "newCustomer": "New Customer",
+    "export": "Export",
+    "merge": "Merge",
+    "print": "Print",
+    "more": "More"
   },
   "columns": {
+    "customer": "Customer",
+    "phones": "Phones",
+    "address": "Address",
+    "lastOrder": "Last Order",
+    "status": "Status",
+    "actions": "Actions",
     "code": "Code",
     "name": "Name",
     "contactPerson": "Contact Person",
     "email": "Email",
     "phone": "Phone",
     "country": "Country",
-    "city": "City",
-    "status": "Status"
+    "city": "City"
+  },
+  "table": {
+    "empty": "No customers found.",
+    "error": "Failed to load customers. Please try again.",
+    "selectAll": "Select all"
+  },
+  "phone": {
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "copy": "Copy number",
+    "copied": "Copied!",
+    "primary": "Primary",
+    "secondary": "Secondary",
+    "more": "+{{count}} more"
+  },
+  "tags": {
+    "vip": "VIP",
+    "wholesale": "Wholesale",
+    "inactive": "Inactive"
   },
   "form": {
     "code": { "label": "Code", "placeholder": "CUST-001" },
-    "name": { "label": "Name", "placeholder": "Cairo Retail" },
+    "name": { "label": "Customer Name", "placeholder": "e.g. Ahmed Mohamed" },
+    "phone": "Primary Phone",
+    "phonePlaceholder": "Enter phone number…",
+    "mobile": "Secondary Phone",
     "contactPerson": "Contact Person",
     "email": { "label": "Email", "placeholder": "customer@example.com" },
-    "phone": "Phone",
-    "mobile": "Mobile",
     "country": "Country",
     "city": "City",
     "address": "Address",
@@ -31,14 +95,37 @@
     "active": "Active"
   },
   "drawer": {
-    "createTitle": "Create Customer",
+    "createTitle": "New Customer",
     "editTitle": "Edit Customer",
-    "createSubtitle": "Add a new customer to your records.",
+    "createSubtitle": "Add a new customer. Only name and phone are required.",
     "editSubtitle": "Update the customer details below.",
     "submitCreate": "Create customer",
     "submitEdit": "Save changes",
     "saving": "Saving…",
-    "errorTitle": "Unable to save"
+    "errorTitle": "Unable to save",
+    "phoneStep": {
+      "title": "Enter Primary Phone",
+      "description": "We'll check if this customer already exists.",
+      "label": "Primary Phone Number",
+      "placeholder": "01012345678",
+      "continue": "Continue",
+      "checking": "Checking…"
+    },
+    "foundCustomer": {
+      "title": "Customer already exists",
+      "description": "A customer with this phone number was found.",
+      "open": "Open Existing Customer",
+      "cancel": "Cancel"
+    },
+    "tabs": {
+      "summary": "Summary",
+      "phones": "Phones",
+      "addresses": "Addresses",
+      "orders": "Orders",
+      "activity": "Activity",
+      "memory": "Memory",
+      "audit": "Audit"
+    }
   },
   "delete": {
     "title": "Delete customer",
