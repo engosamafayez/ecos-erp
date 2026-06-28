@@ -14,11 +14,14 @@ name: ecos-erp
 #   redis    Redis 7 (queue backend, cache)
 #   mailpit  SMTP sink (replace with real MTA before go-live)
 #
-# Allowed volumes (named only, never source bind-mounts):
+# Named volumes (runtime-mutable data only):
 #   app-storage   Laravel storage/     (uploads, sessions, logs)
-#   app-cache     bootstrap/cache/     (artisan optimize output)
 #   mysql-data    MySQL data directory
 #   redis-data    Redis AOF persistence
+#
+# bootstrap/cache is NOT a named volume — it is baked into the app image
+# during docker build (package:discover + route:cache + event:cache).
+# A volume here would shadow the baked-in files. See TASK-INFRA-002 Rule 5.
 #
 # Development overrides live in docker-compose.override.yml and are
 # auto-merged by Docker Compose locally. deploy.sh targets this file
@@ -30,6 +33,12 @@ services:
   # ---------------------------------------------------------------------------
   # app — PHP-FPM 8.4 + Supervisor
   # Runs: php-fpm, artisan queue:work, artisan schedule:work
+  #
+  # IMMUTABLE: the image already contains:
+  #   • vendor/ (composer --no-dev, optimised autoloader)
+  #   • public/app/ (Vite SPA)
+  #   • bootstrap/cache/ (package:discover + route:cache + event:cache)
+  # The entrypoint only performs: wait mysql → storage → link → key → exec
   # ---------------------------------------------------------------------------
   app:
     build:
@@ -42,11 +51,9 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      # Runtime-mutable paths ONLY.
-      # Source code is baked into the image — mounting it here would shadow
-      # vendor/, public/app, and all build artefacts. FORBIDDEN in production.
+      # storage/ only — uploads, sessions, logs, compiled views.
+      # bootstrap/cache/ is intentionally absent: it is baked into the image.
       - app-storage:/var/www/html/storage
-      - app-cache:/var/www/html/bootstrap/cache
     depends_on:
       mysql:
         condition: service_healthy
@@ -57,6 +64,8 @@ services:
     healthcheck:
       # Pings the PHP-FPM process via its FastCGI management interface.
       # Requires libfcgi-bin in the image (installed in Dockerfile Stage 3).
+      # A healthy FPM means the process manager accepted the ping — it does
+      # not require DB or Redis, but those are already healthy via depends_on.
       test:
         - "CMD-SHELL"
         - >
@@ -67,10 +76,14 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 90s   # entrypoint runs migrations + optimize; allow time
+      start_period: 60s   # entrypoint: wait mysql + storage setup; no optimize
 
   # ---------------------------------------------------------------------------
   # nginx — Custom image with React SPA + build-info baked in (Stage 4)
+  #
+  # Healthcheck uses the real Laravel /api/health endpoint (Rule 7):
+  #   nginx → PHP-FPM → HealthController → DB::getPdo() + Redis::ping()
+  # This is only "healthy" when the entire application stack is operational.
   # ---------------------------------------------------------------------------
   nginx:
     build:
@@ -92,11 +105,18 @@ services:
     networks:
       - ecos-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/healthz || exit 1"]
+      # Full-stack health check through the real Laravel endpoint.
+      # Tests: nginx alive + PHP-FPM responding + DB connected + Redis connected.
+      # Returns 200 only when all three dependencies are healthy.
+      test:
+        - "CMD-SHELL"
+        - >
+          wget -q -O- http://127.0.0.1/api/health 2>/dev/null
+          | grep -q '"status":"ok"' || exit 1
       interval: 15s
-      timeout: 5s
+      timeout: 10s
       retries: 5
-      start_period: 10s
+      start_period: 15s
 
   # ---------------------------------------------------------------------------
   # mysql — MySQL 8.4
@@ -169,12 +189,11 @@ services:
 # =============================================================================
 # Named volumes
 #
-# NEVER replace app-storage or app-cache with source bind-mounts in production.
+# app-cache is intentionally absent (TASK-INFRA-002 Rule 5).
+# bootstrap/cache is baked into the ecos-erp/app image — no volume needed.
 # =============================================================================
 volumes:
   app-storage:
-    driver: local
-  app-cache:
     driver: local
   mysql-data:
     driver: local

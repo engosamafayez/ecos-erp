@@ -4,11 +4,17 @@
 #
 # Stage 1  composer   Resolve PHP dependencies (no scripts, no artisan)
 # Stage 2  frontend   Build React/Vite SPA      (Node 22, build-only)
-# Stage 3  app        PHP 8.4-FPM runtime        (no Node, no dev packages)
+# Stage 3  app        PHP 8.4-FPM runtime        (no Node, no Composer, no dev)
 # Stage 4  nginx      Static + proxy server      (no PHP, no Composer)
 #
-# Build context: repository root
-# Secrets: never baked in — injected at runtime via env_file
+# IMMUTABILITY GUARANTEE (TASK-INFRA-002):
+#   bootstrap/cache is fully generated here during docker build.
+#   The runtime container never runs:
+#     composer install / dump-autoload
+#     artisan package:discover
+#     artisan optimize / config:cache / route:cache / event:cache / view:cache
+#   config:cache is intentionally excluded — it bakes env values into the image.
+#   view:cache is intentionally excluded — storage/ is a runtime named volume.
 # =============================================================================
 
 
@@ -69,23 +75,20 @@ RUN mkdir -p /backend/public/app && npm run build
 
 
 # -----------------------------------------------------------------------------
-# Stage 3 — App: PHP 8.4-FPM runtime
+# Stage 3 — App: PHP 8.4-FPM runtime (IMMUTABLE)
 #
-# What this stage contains:
-#   • PHP 8.4-FPM + extensions required by Laravel
-#   • Supervisor (manages PHP-FPM, queue worker, scheduler)
-#   • Composer binary (for runtime dump-autoload only — no install)
-#   • Application source (backend/)
-#   • Vendor from Stage 1
-#   • Compiled SPA from Stage 2
-#   • Build metadata files
+# This stage:
+#   • Installs PHP 8.4-FPM + Supervisor (no Node, no Composer binary)
+#   • Copies vendor from Stage 1 (no dev packages)
+#   • Copies application source + compiled SPA
+#   • Runs package:discover, route:cache, event:cache during BUILD
+#     → bootstrap/cache is baked into the image
+#   • Deletes the build-time .env so no secrets survive
+#   • Verifies packages.php contains no dev packages
 #
-# What this stage must NOT contain:
-#   • Node.js or npm
-#   • Dev PHP packages (laravel/pail, phpunit, etc.)
-#   • Bootstrap cache (packages.php, services.php, config.php …)
-#   • .env secrets
-#   • Any generated or compiled artefact that changes at runtime
+# At runtime the entrypoint only performs:
+#   wait mysql → storage dirs → permissions → storage:link → APP_KEY
+#   → [optional migrate] → [optional seed] → exec supervisord
 # -----------------------------------------------------------------------------
 FROM php:8.4-fpm-bookworm AS app
 
@@ -102,13 +105,12 @@ LABEL org.opencontainers.image.title="ECOS ERP" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.revision="${GIT_SHA}"
 
-ENV TZ=Africa/Cairo \
-    COMPOSER_ALLOW_SUPERUSER=1 \
-    COMPOSER_MEMORY_LIMIT=-1
+ENV TZ=Africa/Cairo
 
 # ---------------------------------------------------------------------------
 # System packages
-# Note: gnupg removed (was only needed for NodeSource GPG — Node is gone)
+# Note: gnupg removed (not needed — NodeSource is gone)
+#       composer removed from runtime (all composer work is done in build stages)
 # ---------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
@@ -147,17 +149,12 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && rm -rf /tmp/pear
 
 # ---------------------------------------------------------------------------
-# Composer binary (phar only — no dev tooling)
-# ---------------------------------------------------------------------------
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# ---------------------------------------------------------------------------
 # Runtime configuration
 # ---------------------------------------------------------------------------
-COPY docker/php/php.ini         /usr/local/etc/php/conf.d/zz-ecos.ini
-COPY docker/php/www.conf        /usr/local/etc/php-fpm.d/zz-ecos.conf
+COPY docker/php/php.ini          /usr/local/etc/php/conf.d/zz-ecos.ini
+COPY docker/php/www.conf         /usr/local/etc/php-fpm.d/zz-ecos.conf
 COPY docker/php/supervisord.conf /etc/supervisor/conf.d/ecos.conf
-COPY docker/php/entrypoint.sh   /usr/local/bin/entrypoint
+COPY docker/php/entrypoint.sh    /usr/local/bin/entrypoint
 RUN sed -i 's/\r$//' /usr/local/bin/entrypoint \
     && chmod +x /usr/local/bin/entrypoint
 
@@ -167,7 +164,7 @@ WORKDIR /var/www/html
 # Application source
 # .dockerignore guarantees these are excluded from the context:
 #   backend/vendor/                  (comes from Stage 1)
-#   backend/bootstrap/cache/*.php    (generated at runtime into app-cache volume)
+#   backend/bootstrap/cache/*.php    (regenerated during THIS build — see below)
 #   backend/public/app/              (comes from Stage 2)
 #   backend/.env                     (injected at runtime via env_file)
 # ---------------------------------------------------------------------------
@@ -180,10 +177,72 @@ COPY --from=composer /app/vendor /var/www/html/vendor
 COPY --from=frontend /backend/public/app /var/www/html/public/app
 
 # ---------------------------------------------------------------------------
+# Build-time Laravel cache generation (TASK-INFRA-002 Rules 1-3, 8-9)
+#
+# All cache files are generated NOW and baked into this image layer.
+# The runtime container never regenerates them.
+#
+# Commands run:
+#   package:discover  → bootstrap/cache/packages.php   (service providers + facades)
+#   route:cache       → bootstrap/cache/routes-v7.php  (serialised route collection)
+#   event:cache       → bootstrap/cache/events.scoped.php
+#
+# config:cache is deliberately excluded:
+#   It would bake the placeholder .env values into the image. At runtime, when
+#   the real .env is loaded, Laravel would still read the stale baked-in config.
+#   Config must be resolved from the live env_file at boot time.
+#
+# view:cache is deliberately excluded:
+#   Compiled views go into storage/framework/views/, which is a named volume at
+#   runtime. Baking them here would create files that the volume mount shadows.
+#   Blade templates compile lazily on first request and persist in the volume.
+#
+# The build-time .env is created for the sole purpose of booting the artisan
+# CLI (APP_KEY is required) and is deleted before the layer is committed.
+# No real credentials appear in this file — all external drivers are set to
+# non-connecting modes (CACHE_STORE=array, SESSION_DRIVER=array, etc.).
+# ---------------------------------------------------------------------------
+RUN set -e \
+    && rm -f bootstrap/cache/*.php \
+    && APP_KEY="base64:$(openssl rand -base64 32)" \
+    && { \
+        echo "APP_NAME=ECOS-ERP"; \
+        echo "APP_ENV=production"; \
+        echo "APP_KEY=${APP_KEY}"; \
+        echo "APP_DEBUG=false"; \
+        echo "APP_URL=http://localhost"; \
+        echo "DB_CONNECTION=mysql"; \
+        echo "DB_HOST=127.0.0.1"; \
+        echo "DB_PORT=3306"; \
+        echo "DB_DATABASE=ecos_erp"; \
+        echo "DB_USERNAME=ecos"; \
+        echo "DB_PASSWORD=build-placeholder"; \
+        echo "CACHE_STORE=array"; \
+        echo "SESSION_DRIVER=array"; \
+        echo "QUEUE_CONNECTION=sync"; \
+        echo "REDIS_HOST=127.0.0.1"; \
+        echo "MAIL_MAILER=log"; \
+    } > .env \
+    # Rule 8: if package:discover fails, the build fails immediately.
+    && php artisan package:discover --ansi \
+    && php artisan route:cache \
+    && php artisan event:cache \
+    # Remove the build-time placeholder .env — real env comes from env_file at runtime.
+    && rm .env \
+    # Rule 9: verify no dev-only packages baked into packages.php.
+    && if grep -qi 'pail\|sail\|collision\|phpunit' bootstrap/cache/packages.php 2>/dev/null; then \
+        printf '\n\033[0;31mERROR: dev package found in bootstrap/cache/packages.php:\033[0m\n' >&2; \
+        grep -i 'pail\|sail\|collision\|phpunit' bootstrap/cache/packages.php >&2; \
+        exit 1; \
+    fi \
+    && printf '\n\033[0;32m[build] Bootstrap cache generated:\033[0m\n' \
+    && ls -la bootstrap/cache/
+
+# ---------------------------------------------------------------------------
 # Permissions
-# storage/ and bootstrap/cache/ are the only directories php-fpm writes to.
-# Both are mounted as named volumes at runtime; set base permissions on the
-# image layer so the volumes inherit correct ownership on first run.
+# Only storage/ requires runtime write access.
+# bootstrap/cache/ is baked in — owned by www-data for defensive writeability
+# but no volume is mounted over it (see docker-compose.yml).
 # ---------------------------------------------------------------------------
 RUN chown -R www-data:www-data \
         /var/www/html/storage \
@@ -197,6 +256,7 @@ RUN chown -R www-data:www-data \
 #
 #   .build-info          human-readable text (operator: docker exec … cat)
 #   public/build-info    JSON served by nginx at GET /build-info
+#                        Also consumed by HealthController for /api/health
 # ---------------------------------------------------------------------------
 RUN BUILD_TS="${BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}" \
     && printf 'Version:     %s\nCommit:      %s\nBuilt:       %s\nEnvironment: production\n' \

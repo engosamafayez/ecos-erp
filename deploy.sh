@@ -14,16 +14,23 @@
 #   2.  Tag current images as :rollback
 #   3.  git pull origin main
 #   4.  docker compose build
-#   5.  docker compose up -d
-#   6.  Wait for app to become healthy
-#   7.  [--migrate] php artisan migrate --force
-#   8.  Verify all endpoints
-#   9.  Rollback automatically on any failure
-#   10. docker image prune
+#   5.  Image self-test (Rule 10: artisan works without composer)
+#   6.  docker compose up -d
+#   7.  Wait for app to become healthy
+#   8.  [--migrate] php artisan migrate --force
+#   9.  Verify all endpoints
+#   10. Rollback automatically on any failure
+#   11. docker image prune
 #
 # Safety
 #   set -euo pipefail: any unhandled error aborts the script.
 #   ERR trap triggers rollback if containers were updated before the failure.
+#
+# Immutability notes (TASK-INFRA-002):
+#   The runtime container never runs composer or artisan cache commands.
+#   Bootstrap cache (package:discover, route:cache, event:cache) is baked
+#   into the image during docker build. MIGRATE_ON_START defaults to false
+#   in the entrypoint; migrations only run when --migrate is passed here.
 # =============================================================================
 set -euo pipefail
 
@@ -154,9 +161,17 @@ log "Commit message    : ${GIT_MSG}"
 # 4. Build images
 #    --pull         refresh base images (php:8.4-fpm-bookworm, nginx:alpine, etc.)
 #    --build-arg    bake traceability metadata into both images
+#
+#    During build, Stage 3 runs:
+#      php artisan package:discover
+#      php artisan route:cache
+#      php artisan event:cache
+#    and verifies no dev packages in packages.php.
+#    If any of these fail, the build fails here (Rule 8).
 # =============================================================================
 section "Image build"
 log "Building ecos-erp/app (Stage 3) and ecos-erp/nginx (Stage 4)..."
+log "Bootstrap cache (package:discover + route:cache + event:cache) baked in during build."
 $COMPOSE build --pull \
     --build-arg "GIT_SHA=${GIT_SHA}" \
     --build-arg "APP_VERSION=${APP_VERSION}" \
@@ -164,7 +179,53 @@ $COMPOSE build --pull \
 ok "Images built."
 
 # =============================================================================
-# 5. Recreate containers (rolling update)
+# 5. Image self-test (TASK-INFRA-002 Rule 10)
+#    Verify the image is self-contained: artisan works without composer install.
+#    Runs in an ephemeral throwaway container — does not start any services.
+# =============================================================================
+section "Image self-test"
+log "Verifying ecos-erp/app:latest is self-contained (no composer needed)..."
+
+SELF_TEST_KEY="base64:$(openssl rand -base64 32)"
+
+docker run --rm \
+    -e APP_NAME="ECOS-ERP" \
+    -e APP_ENV=production \
+    -e APP_KEY="${SELF_TEST_KEY}" \
+    -e APP_DEBUG=false \
+    -e APP_URL=http://localhost \
+    -e DB_CONNECTION=mysql \
+    -e DB_HOST=127.0.0.1 \
+    -e DB_DATABASE=ecos_erp \
+    -e DB_USERNAME=ecos \
+    -e DB_PASSWORD=self-test \
+    -e CACHE_STORE=array \
+    -e SESSION_DRIVER=array \
+    -e QUEUE_CONNECTION=sync \
+    -e REDIS_HOST=127.0.0.1 \
+    -e MAIL_MAILER=log \
+    --entrypoint="" \
+    ecos-erp/app:latest \
+    php /var/www/html/artisan --version \
+    || fail "Image self-test FAILED: 'php artisan --version' could not run. Image may be broken."
+ok "artisan --version: OK."
+
+log "Verifying bootstrap/cache has no dev packages..."
+if docker run --rm ecos-erp/app:latest \
+        grep -qi 'pail\|sail\|collision\|phpunit' \
+        /var/www/html/bootstrap/cache/packages.php 2>/dev/null; then
+    fail "Image self-test FAILED: dev packages found in bootstrap/cache/packages.php."
+fi
+ok "Bootstrap cache is clean (no dev packages)."
+
+log "Verifying baked-in cache files..."
+docker run --rm ecos-erp/app:latest \
+    ls /var/www/html/bootstrap/cache/ \
+    | { read -r CACHE_LIST || true; log "Cache files: ${CACHE_LIST}"; }
+ok "Image self-test passed."
+
+# =============================================================================
+# 6. Recreate containers (rolling update)
 # =============================================================================
 section "Container rollout"
 $COMPOSE up -d --remove-orphans
@@ -172,13 +233,13 @@ CONTAINERS_UPDATED=true
 ok "Containers started."
 
 # =============================================================================
-# 6. Container status (immediate snapshot — some may still be starting)
+# 7. Container status (immediate snapshot — some may still be starting)
 # =============================================================================
 section "Container status"
 $COMPOSE ps
 
 # =============================================================================
-# 7. Wait for app container to pass its PHP-FPM healthcheck
+# 8. Wait for app container to pass its PHP-FPM healthcheck
 #    Timeout: 40 × 5 s = 200 s
 # =============================================================================
 section "Health wait"
@@ -199,10 +260,12 @@ printf '\n'
 ok "ecos-app is healthy (after $((ATTEMPTS * 5)) s)."
 
 # =============================================================================
-# 8. Database migrations [--migrate flag only]
+# 9. Database migrations [--migrate flag only]
 #
 # Schema changes are an explicit operator decision.
-# Never run automatically — always require the --migrate flag.
+# The entrypoint does NOT auto-migrate (MIGRATE_ON_START defaults to false).
+# Migrations are always run via this script to ensure they happen after the
+# app is confirmed healthy and before endpoint verification.
 # =============================================================================
 section "Database migrations"
 if [ "${RUN_MIGRATIONS}" = "true" ]; then
@@ -216,7 +279,7 @@ else
 fi
 
 # =============================================================================
-# 9. Endpoint verification
+# 10. Endpoint verification
 #    All checks must pass or the script aborts (triggering rollback via trap).
 # =============================================================================
 section "Endpoint verification"
@@ -237,16 +300,23 @@ NGINX_ATTEMPTS=0
 until [ "$(docker inspect --format='{{.State.Health.Status}}' ecos-nginx 2>/dev/null)" = "healthy" ]; do
     NGINX_ATTEMPTS=$((NGINX_ATTEMPTS + 1))
     if [ "${NGINX_ATTEMPTS}" -ge 20 ]; then
-        fail "ecos-nginx did not become healthy within 100 s."
+        fail "ecos-nginx did not become healthy within 100 s.
+  Note: nginx healthcheck now uses /api/health (real Laravel endpoint).
+  If this fails, check that PHP-FPM can respond to /api/health requests:
+    docker logs ecos-app
+    docker logs ecos-nginx"
     fi
     sleep 5
 done
-ok "ecos-nginx is healthy."
+ok "ecos-nginx is healthy (full stack: nginx → FPM → DB + Redis confirmed)."
 
 check_http "healthz"    "http://localhost/healthz"    "200"
 check_http "build-info" "http://localhost/build-info" "200"
 check_http "SPA /app/"  "http://localhost/app/"       "200"
-check_http "api/health" "http://localhost/api/health" "200"
+
+# /api/health now returns 200 only when DB + Redis + queue are all healthy.
+# A 503 here means the application is degraded — treat as deploy failure.
+check_http "api/health (Laravel)" "http://localhost/api/health" "200"
 
 # Verify SPA and build-info files are present inside both containers
 log "Verifying public/app/index.html in ecos-app..."
@@ -265,7 +335,7 @@ docker exec ecos-nginx test -f /var/www/html/public/build-info \
 ok "public/build-info confirmed in ecos-nginx."
 
 # =============================================================================
-# 10. Image cleanup
+# 11. Image cleanup
 # =============================================================================
 section "Cleanup"
 log "Pruning dangling images..."
@@ -281,11 +351,15 @@ $COMPOSE ps
 log "Reading .build-info from ecos-app:"
 $COMPOSE exec -T app cat /var/www/html/.build-info 2>/dev/null || log "(not available)"
 
+log "Reading /api/health response:"
+curl -s http://localhost/api/health 2>/dev/null | python3 -m json.tool 2>/dev/null \
+    || curl -s http://localhost/api/health 2>/dev/null || true
+
 ok "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 ok "Deployment finished successfully."
 ok "Version  : ${APP_VERSION}"
 ok "Commit   : ${GIT_SHA}"
 ok "Built at : ${BUILD_TIME}"
 ok "Message  : ${GIT_MSG}"
-ok "Verify   : curl http://localhost/build-info"
+ok "Verify   : curl http://localhost/api/health"
 ok "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Infrastructure\HealthController;
 use Illuminate\Support\Facades\Route;
 use Modules\IAM\Presentation\Http\Controllers\AuthController;
 use Modules\Inventory\Products\Presentation\Http\Controllers\ProductController;
@@ -35,6 +36,16 @@ use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\VarianceAna
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\WarehousePerformanceController;
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\CycleCountPlanController;
 use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
+
+/*
+|--------------------------------------------------------------------------
+| Infrastructure — Health check (public, no auth)
+|
+| Returns real DB + Redis + queue connectivity status plus build metadata.
+| Used by docker-compose healthcheck and monitoring systems.
+|--------------------------------------------------------------------------
+*/
+Route::get('/health', HealthController::class);
 
 /*
 |--------------------------------------------------------------------------
