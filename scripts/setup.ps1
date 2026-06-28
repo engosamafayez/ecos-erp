@@ -13,6 +13,11 @@ if (-not (Test-Path "backend/.env")) {
     Copy-Item "backend/.env.example" "backend/.env"
 }
 
+if (-not (Test-Path "docker-compose.override.yml")) {
+    Write-Host "==> Creating docker-compose.override.yml from docker-compose.override.yml.example"
+    Copy-Item "docker-compose.override.yml.example" "docker-compose.override.yml"
+}
+
 Write-Host "==> Building images"
 docker compose build
 

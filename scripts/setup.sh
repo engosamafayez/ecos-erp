@@ -12,6 +12,11 @@ if [ ! -f backend/.env ]; then
     cp backend/.env.example backend/.env
 fi
 
+if [ ! -f docker-compose.override.yml ]; then
+    echo "==> Creating docker-compose.override.yml from docker-compose.override.yml.example"
+    cp docker-compose.override.yml.example docker-compose.override.yml
+fi
+
 echo "==> Building images"
 docker compose build
 

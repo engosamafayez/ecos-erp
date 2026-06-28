@@ -18,6 +18,10 @@ Thumbs.db
 .env.production
 backend/.env
 
+# Docker Compose developer override — never committed; copy from .example to use.
+# Production servers must never have this file (deploy.sh aborts if it exists).
+docker-compose.override.yml
+
 # PHP / Laravel (backend)
 backend/vendor/
 backend/node_modules/
