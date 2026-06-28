@@ -7,7 +7,7 @@
 # Stage 3  app        PHP 8.4-FPM runtime        (no Node, no Composer, no dev)
 # Stage 4  nginx      Static + proxy server      (no PHP, no Composer)
 #
-# IMMUTABILITY GUARANTEE (TASK-INFRA-002):
+# IMMUTABILITY GUARANTEE (TASK-INFRA-002 + TASK-INFRA-003):
 #   bootstrap/cache is fully generated here during docker build.
 #   The runtime container never runs:
 #     composer install / dump-autoload
@@ -15,6 +15,12 @@
 #     artisan optimize / config:cache / route:cache / event:cache / view:cache
 #   config:cache is intentionally excluded — it bakes env values into the image.
 #   view:cache is intentionally excluded — storage/ is a runtime named volume.
+#
+# BUILD VERIFICATION (TASK-INFRA-003):
+#   After cache generation a dedicated RUN block verifies:
+#   • Route cache portability: env variable names must not appear in routes cache
+#   • All cache files exist: packages.php + routes*.php + events*.php
+#   • No dev packages in any cache file (pail, sail, collision, phpunit)
 # =============================================================================
 
 
@@ -229,14 +235,69 @@ RUN set -e \
     && php artisan event:cache \
     # Remove the build-time placeholder .env — real env comes from env_file at runtime.
     && rm .env \
-    # Rule 9: verify no dev-only packages baked into packages.php.
-    && if grep -qi 'pail\|sail\|collision\|phpunit' bootstrap/cache/packages.php 2>/dev/null; then \
-        printf '\n\033[0;31mERROR: dev package found in bootstrap/cache/packages.php:\033[0m\n' >&2; \
-        grep -i 'pail\|sail\|collision\|phpunit' bootstrap/cache/packages.php >&2; \
-        exit 1; \
-    fi \
-    && printf '\n\033[0;32m[build] Bootstrap cache generated:\033[0m\n' \
+    && printf '\n[build] Cache files generated:\n' \
     && ls -la bootstrap/cache/
+
+# ---------------------------------------------------------------------------
+# Cache integrity verification (TASK-INFRA-003 Rules 1 + 4)
+#
+# Runs in a separate RUN so failures produce clear, isolated error output.
+#
+# Rule 1 — Route cache portability:
+#   The route cache must never contain env variable names (APP_URL, DB_HOST …).
+#   If they appear, a route definition has accidentally evaluated an env/config
+#   value and baked it in, which breaks portability across deployments.
+#
+# Rule 4 — All cache files exist + no dev-only packages anywhere:
+#   packages.php, routes*.php, and events*.php must all be present.
+#   None may reference packages from require-dev (Pail, Sail, Collision, PHPUnit).
+# ---------------------------------------------------------------------------
+RUN <<'VERIFY'
+set -e
+
+# ── Rule 4a: verify all three cache files were generated ──────────────────
+printf '[verify] Checking cache files exist...\n'
+[ -f bootstrap/cache/packages.php ] \
+  || { printf 'ERROR: bootstrap/cache/packages.php was not generated\n' >&2; exit 1; }
+ls bootstrap/cache/routes*.php   >/dev/null 2>&1 \
+  || { printf 'ERROR: bootstrap/cache/routes*.php was not generated\n' >&2; exit 1; }
+ls bootstrap/cache/events*.php   >/dev/null 2>&1 \
+  || { printf 'ERROR: bootstrap/cache/events*.php was not generated\n' >&2; exit 1; }
+printf '[verify] All cache files present:\n'
+ls -la bootstrap/cache/
+
+# ── Rule 1: route cache must not contain env variable names ───────────────
+# Routes are URI patterns + middleware + controller names.
+# An env variable name (APP_URL, DB_HOST …) inside this file indicates a
+# route definition embedded an env lookup — this breaks portability.
+printf '[verify] Checking route cache for env variable names...\n'
+ENV_VARS='APP_URL|APP_ENV|APP_NAME|DB_HOST|DB_DATABASE|DB_USERNAME|DB_PASSWORD|REDIS_HOST|REDIS_PASSWORD|MAIL_HOST|MAIL_USERNAME'
+for CACHE_FILE in bootstrap/cache/routes*.php; do
+  if grep -qE "$ENV_VARS" "$CACHE_FILE" 2>/dev/null; then
+    printf 'ERROR: environment variable name found in route cache %s:\n' "$CACHE_FILE" >&2
+    grep -E "$ENV_VARS" "$CACHE_FILE" >&2 || true
+    exit 1
+  fi
+done
+printf '[verify] Route cache portability check passed.\n'
+
+# ── Rule 4b: no dev-only packages in any cache file ──────────────────────
+# packages.php lists discovered service providers.
+# events.scoped.php lists event listeners.
+# Neither must reference packages that are only in require-dev.
+printf '[verify] Checking bootstrap cache for dev-only packages...\n'
+DEV_PKGS='pail|sail|collision|phpunit'
+for CACHE_FILE in bootstrap/cache/packages.php bootstrap/cache/events*.php; do
+  [ -f "$CACHE_FILE" ] || continue
+  if grep -qiE "$DEV_PKGS" "$CACHE_FILE" 2>/dev/null; then
+    printf 'ERROR: dev-only package found in %s:\n' "$CACHE_FILE" >&2
+    grep -iE "$DEV_PKGS" "$CACHE_FILE" >&2 || true
+    exit 1
+  fi
+done
+printf '[verify] No dev packages found in bootstrap cache.\n'
+printf '[verify] All cache integrity checks passed.\n'
+VERIFY
 
 # ---------------------------------------------------------------------------
 # Permissions

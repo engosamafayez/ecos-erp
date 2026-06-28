@@ -343,23 +343,40 @@ docker image prune -f
 ok "Image prune complete."
 
 # =============================================================================
-# Final status + build metadata
+# Final status + full deployment traceability (TASK-INFRA-003 Rule 5)
 # =============================================================================
-section "Complete"
+section "Deployment summary"
 $COMPOSE ps
 
-log "Reading .build-info from ecos-app:"
+# Collect image digest SHAs for traceability
+APP_IMAGE_SHA=$(docker inspect --format '{{.Id}}' ecos-erp/app:latest   2>/dev/null | cut -c1-19 || echo "unknown")
+NGX_IMAGE_SHA=$(docker inspect --format '{{.Id}}' ecos-erp/nginx:latest 2>/dev/null | cut -c1-19 || echo "unknown")
+
+# Print build-info from the running app container
+log "━━━ Build info (from image) ━━━"
 $COMPOSE exec -T app cat /var/www/html/.build-info 2>/dev/null || log "(not available)"
 
-log "Reading /api/health response:"
-curl -s http://localhost/api/health 2>/dev/null | python3 -m json.tool 2>/dev/null \
-    || curl -s http://localhost/api/health 2>/dev/null || true
+# Print /api/health (real DB + Redis + queue check)
+log "━━━ /api/health (live) ━━━"
+HEALTH_RESPONSE=$(curl -s --max-time 10 http://localhost/api/health 2>/dev/null || echo '{"error":"unreachable"}')
+printf '%s\n' "${HEALTH_RESPONSE}" | python3 -m json.tool 2>/dev/null || printf '%s\n' "${HEALTH_RESPONSE}"
 
-ok "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+# Print /build-info (static JSON baked into nginx image)
+log "━━━ /build-info (static) ━━━"
+BUILD_INFO_RESPONSE=$(curl -s --max-time 10 http://localhost/build-info 2>/dev/null || echo '{"error":"unreachable"}')
+printf '%s\n' "${BUILD_INFO_RESPONSE}" | python3 -m json.tool 2>/dev/null || printf '%s\n' "${BUILD_INFO_RESPONSE}"
+
+ok "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 ok "Deployment finished successfully."
-ok "Version  : ${APP_VERSION}"
-ok "Commit   : ${GIT_SHA}"
-ok "Built at : ${BUILD_TIME}"
-ok "Message  : ${GIT_MSG}"
-ok "Verify   : curl http://localhost/api/health"
-ok "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+ok ""
+ok "  Version        : ${APP_VERSION}"
+ok "  Git SHA        : ${GIT_SHA}"
+ok "  Built at       : ${BUILD_TIME}"
+ok "  Commit message : ${GIT_MSG}"
+ok ""
+ok "  Image (app)    : ${APP_IMAGE_SHA}…"
+ok "  Image (nginx)  : ${NGX_IMAGE_SHA}…"
+ok ""
+ok "  Live health    : curl http://localhost/api/health"
+ok "  Build info     : curl http://localhost/build-info"
+ok "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
