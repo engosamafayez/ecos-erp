@@ -25,8 +25,6 @@ concurrency:
 jobs:
   # ---------------------------------------------------------------------------
   # Resolve the GitHub Environment from the branch name or manual input.
-  # Using a separate job so `environment:` in the deploy job can reference an
-  # output, which enables environment-scoped secrets and protection rules.
   # ---------------------------------------------------------------------------
   resolve:
     name: Resolve target environment
@@ -49,9 +47,19 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Deploy.
-  # All secrets below (DEPLOY_PRIVATE_KEY, DEPLOY_HOST, DEPLOY_USER,
-  # DEPLOY_PATH, DEPLOY_PORT) must be configured per GitHub Environment.
-  # See docs/deployment/README.md → "GitHub Secrets" for the full list.
+  #
+  # Secrets required in the GitHub Environment:
+  #   DEPLOY_PRIVATE_KEY   ED25519 private key (PEM, real newlines)
+  #   DEPLOY_HOST          server hostname or IP
+  #   DEPLOY_USER          SSH login user
+  #   DEPLOY_PATH          absolute path to the project root on the server
+  #   DEPLOY_PORT          SSH port (optional — defaults to 22 if empty)
+  #
+  # SSH authentication uses webfactory/ssh-agent.
+  # No ~/.ssh/config is created. Host, port, and user are passed as explicit
+  # command-line arguments to every ssh and rsync invocation.
+  # SSH_OPTS is exported via $GITHUB_ENV once in "Configure SSH" so every
+  # later step gets the same flags without repetition.
   # ---------------------------------------------------------------------------
   deploy:
     name: Deploy → ${{ needs.resolve.outputs.environment }}
@@ -60,107 +68,93 @@ jobs:
     environment: ${{ needs.resolve.outputs.environment }}
     timeout-minutes: 30
 
+    # All four secrets available to every step as plain env vars.
+    # No per-step env: block needed.
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── SSH setup ─────────────────────────────────────────────────────────
-      # webfactory/ssh-agent is the canonical GitHub Actions solution for SSH auth.
-      # It receives the secret value through the Actions expression engine (not a
-      # shell variable), normalises line endings in Node.js, and loads the key into
-      # ssh-agent. No key file is ever written to disk. SSH_AUTH_SOCK is exported
-      # automatically so every ssh/rsync call in this job uses the agent.
-      #
-      # If DEPLOY_PRIVATE_KEY is malformed (literal \n instead of real newlines,
-      # wrong header, truncated body) the action fails here with a clear parse
-      # error — before any connection attempt is made.
+      # ── SSH authentication ─────────────────────────────────────────────────
+      # webfactory/ssh-agent receives the raw secret through the Actions
+      # expression engine, normalises line endings in Node.js, and loads the
+      # key into ssh-agent. No key file is written to disk.
+      # SSH_AUTH_SOCK is set automatically for all subsequent steps.
       - name: Load SSH key into agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
 
-      # Explicit post-load check: confirm at least one key is in the agent.
-      # ssh-add -l prints the fingerprint (public metadata only — never the key).
-      # Fails fast with a diagnostic if the agent is empty for any reason.
+      # ssh-add -l prints the fingerprint only — never the private key.
       - name: Verify SSH key loaded
         run: |
-          KEY_COUNT=$(ssh-add -l 2>/dev/null | grep -c 'SHA256' || true)
-          if [ "$KEY_COUNT" -eq 0 ]; then
-            echo "::error::SSH agent has no keys. DEPLOY_PRIVATE_KEY may be malformed." \
-                 "Re-store it as: cat ~/.ssh/deploy_key | gh secret set DEPLOY_PRIVATE_KEY"
+          COUNT=$(ssh-add -l 2>/dev/null | grep -c 'SHA256' || true)
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::SSH agent has no keys. Re-store DEPLOY_PRIVATE_KEY with:" \
+                 "cat ~/.ssh/id_ed25519 | gh secret set DEPLOY_PRIVATE_KEY --env <env>"
             exit 1
           fi
-          echo "Agent loaded $KEY_COUNT key(s):"
+          echo "Agent has $COUNT key(s) loaded:"
           ssh-add -l
 
-      - name: Add server to known_hosts
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      # ── SSH connection ─────────────────────────────────────────────────────
+      # • DEPLOY_PORT defaults to 22 if the secret is empty.
+      # • ssh-keyscan pins the server host key before any connection attempt.
+      #   StrictHostKeyChecking=yes then verifies against that pinned key on
+      #   every connection — not just the first (accept-new is TOFU, not strict).
+      # • SSH_PORT and SSH_OPTS are written to $GITHUB_ENV so that all later
+      #   steps reference a single source of truth for connection flags.
+      # • BatchMode=yes: fails immediately if the key is rejected — no prompt.
+      # • ConnectTimeout=10: fast failure if the server is unreachable.
+      - name: Configure SSH and verify connection
         run: |
           PORT="${DEPLOY_PORT:-22}"
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-
-          # Collect the server's public host key and pin it to known_hosts.
-          # StrictHostKeyChecking yes (below) then enforces verification on every
-          # connection — not just the first one (accept-new is TOFU, not strict).
           ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           chmod 644 ~/.ssh/known_hosts
 
-          # No IdentityFile: the SSH agent (SSH_AUTH_SOCK) provides the key.
-          # StrictHostKeyChecking yes: the host key is already pinned above;
-          # any mismatch on a subsequent connection aborts rather than prompting.
-          cat > ~/.ssh/config <<EOF
-          Host deploy-target
-            HostName $DEPLOY_HOST
-            Port $PORT
-            User $DEPLOY_USER
-            StrictHostKeyChecking yes
-            ServerAliveInterval 30
-            ServerAliveCountMax 3
-          EOF
-          chmod 600 ~/.ssh/config
+          echo "SSH_PORT=$PORT" >> "$GITHUB_ENV"
+          echo "SSH_OPTS=-p $PORT -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=10" >> "$GITHUB_ENV"
 
-          echo "OpenSSH client version:"
+          echo "OpenSSH client:"
           ssh -V
-          echo "Attempting test connection to deploy-target..."
-          ssh deploy-target "echo SSH_OK"
+          echo "Connecting to $DEPLOY_HOST:$PORT..."
+          ssh -p "$PORT" \
+              -o StrictHostKeyChecking=yes \
+              -o BatchMode=yes \
+              -o ConnectTimeout=10 \
+              "$DEPLOY_USER@$DEPLOY_HOST" \
+              "echo SSH_OK"
 
-      # ── Sync scripts ──────────────────────────────────────────────────────
-      # Push the latest scripts/ to the server before running them so the
-      # remote always executes the version that matches this commit.
+      # ── Deployment ────────────────────────────────────────────────────────
+      # $SSH_OPTS is unquoted so the shell word-splits the flags into individual
+      # arguments for ssh. rsync receives "ssh $SSH_OPTS" as a string and its
+      # own subprocess shell splits it when spawning the SSH process.
       - name: Sync deployment scripts
-        env:
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh deploy-target "mkdir -p '$DEPLOY_PATH/scripts'"
+          ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" \
+            "mkdir -p '$DEPLOY_PATH/scripts'"
           rsync -az --delete \
-            -e "ssh -F ~/.ssh/config" \
+            -e "ssh $SSH_OPTS" \
             scripts/ \
-            "deploy-target:$DEPLOY_PATH/scripts/"
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
 
-      # ── Deploy ────────────────────────────────────────────────────────────
       - name: Run deploy.sh on server
-        env:
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          GIT_SHA:    ${{ github.sha }}
-          GIT_BRANCH: ${{ github.ref_name }}
-          GIT_ACTOR:  ${{ github.actor }}
         run: |
-          ssh deploy-target \
-            "cd '$DEPLOY_PATH' && bash scripts/deploy.sh '$GIT_SHA' '$GIT_BRANCH' '$GIT_ACTOR'"
+          ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' && bash scripts/deploy.sh '${{ github.sha }}' '${{ github.ref_name }}' '${{ github.actor }}'"
 
       # ── On failure ────────────────────────────────────────────────────────
       - name: Report failure and rollback hint
         if: failure()
-        env:
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           echo "::error::Deployment of ${{ github.sha }} to ${{ needs.resolve.outputs.environment }} FAILED."
           echo ""
-          echo "To roll back manually:"
-          echo "  ssh $DEPLOY_USER@$DEPLOY_HOST 'cd $DEPLOY_PATH && bash scripts/rollback.sh'"
+          echo "Manual rollback:"
+          echo "  ssh $SSH_OPTS $DEPLOY_USER@$DEPLOY_HOST 'cd $DEPLOY_PATH && bash scripts/rollback.sh'"
