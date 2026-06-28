@@ -65,24 +65,39 @@ jobs:
         uses: actions/checkout@v4
 
       # ── SSH setup ─────────────────────────────────────────────────────────
-    - name: Write SSH private key
-  shell: bash
-  env:
-    SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
-  run: |
-    mkdir -p ~/.ssh
+      - name: Write SSH private key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "===== DEBUG ====="
+          file ~/.ssh/deploy_key
+          wc -l ~/.ssh/deploy_key
+          head -1 ~/.ssh/deploy_key
+          tail -1 ~/.ssh/deploy_key
+          ssh-keygen -l -f ~/.ssh/deploy_key
 
-    printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-
-    chmod 600 ~/.ssh/deploy_key
-
-    echo "===== DEBUG ====="
-    file ~/.ssh/deploy_key
-    wc -l ~/.ssh/deploy_key
-    head -1 ~/.ssh/deploy_key
-    tail -1 ~/.ssh/deploy_key
-
-    ssh-keygen -l -f ~/.ssh/deploy_key
+      - name: Add server to known_hosts
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          PORT="${DEPLOY_PORT:-22}"
+          ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName $DEPLOY_HOST
+            Port $PORT
+            User $DEPLOY_USER
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 30
+          EOF
+          ssh -V
+          ssh -F ~/.ssh/config deploy-target "echo SSH_OK"
 
       # ── Sync scripts ──────────────────────────────────────────────────────
       # Push the latest scripts/ to the server before running them so the
