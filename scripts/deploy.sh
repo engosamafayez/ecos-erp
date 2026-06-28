@@ -2,16 +2,19 @@
 ###############################################################################
 # ECOS ERP — Server-side deployment script
 #
-# Called by GitHub Actions via SSH after scripts/ has been synced.
-# Safe to run manually from any directory.
+# Called by GitHub Actions via SSH after the repository has been updated to the
+# target commit. Never performs git pull — the caller (GitHub Actions) is
+# responsible for the source update. This prevents the script from overwriting
+# itself while it is executing.
 #
-# Usage:
+# For manual runs the caller must update the repository before invoking:
+#   git fetch --all && git checkout <branch> && git reset --hard <sha>
 #   bash scripts/deploy.sh [GIT_SHA [GIT_BRANCH [GIT_ACTOR]]] [--migrate]
 #
 # Deployment flow:
 #   1.  Validate environment
 #   2.  Save rollback point (git SHA + image tags)
-#   3.  git pull origin <branch>
+#   3.  Verify source (confirm HEAD matches the requested commit)
 #   4.  docker compose build   ← frontend + backend compiled inside Dockerfile:
 #                                  Stage 1 (composer:2):    composer install --no-dev
 #                                  Stage 2 (node:22):       cd frontend && npm ci && npm run build
@@ -127,22 +130,29 @@ if docker image inspect ecos-erp/nginx:latest >/dev/null 2>&1; then
     ok "ecos-erp/nginx:latest → ecos-erp/nginx:rollback"
 fi
 
-# ── 3. Pull latest code ────────────────────────────────────────────────────────
-section "3/9  Source update"
-
-git fetch --all --tags --prune
-git checkout "$GIT_BRANCH"
-git pull origin "$GIT_BRANCH" --ff-only \
-    || fail "git pull failed — local branch may have diverged from origin/$GIT_BRANCH"
+# ── 3. Verify source ──────────────────────────────────────────────────────────
+# Git update is the caller's responsibility. GitHub Actions runs:
+#   git fetch --all --tags --prune
+#   git checkout $GIT_BRANCH && git reset --hard $GIT_SHA
+# before invoking this script, so the codebase is already at the target commit
+# and this script itself is the version from that commit.
+section "3/9  Source verification"
 
 CURRENT_SHA="$(git rev-parse HEAD)"
+
+if [ "$GIT_SHA" != "HEAD" ] && [ "$GIT_SHA" != "$CURRENT_SHA" ]; then
+    fail "Repository is at $CURRENT_SHA but deployment targets $GIT_SHA.
+  Update the repository before invoking deploy.sh, or use the GitHub Actions
+  workflow which performs the update automatically."
+fi
+
 GIT_MSG="$(git log -1 --pretty=format:"%s" 2>/dev/null || echo 'unknown')"
 APP_VERSION="$(git describe --tags --exact-match 2>/dev/null \
                || git describe --tags 2>/dev/null \
                || echo "$CURRENT_SHA")"
 BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-ok "HEAD is now: $CURRENT_SHA"
+ok "HEAD: $CURRENT_SHA"
 log "    Message : $GIT_MSG"
 log "    Version : $APP_VERSION"
 log "    Built   : $BUILD_TIME"

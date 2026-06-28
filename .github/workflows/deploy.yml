@@ -57,7 +57,7 @@ jobs:
   #
   # SSH authentication uses webfactory/ssh-agent.
   # No ~/.ssh/config is created. Host, port, and user are passed as explicit
-  # command-line arguments to every ssh and rsync invocation.
+  # command-line arguments to every ssh invocation.
   # SSH_OPTS is exported via $GITHUB_ENV once in "Configure SSH" so every
   # later step gets the same flags without repetition.
   # ---------------------------------------------------------------------------
@@ -142,17 +142,17 @@ jobs:
           set -e
 
       # ── Deployment ────────────────────────────────────────────────────────
-      # $SSH_OPTS is unquoted so the shell word-splits the flags into individual
-      # arguments for ssh. rsync receives "ssh $SSH_OPTS" as a string and its
-      # own subprocess shell splits it when spawning the SSH process.
-      - name: Sync deployment scripts
+      # The repository is updated to the exact target SHA before deploy.sh runs.
+      # This guarantees deploy.sh always executes from the post-update codebase,
+      # eliminating the self-update race (a running script cannot git pull itself).
+      # git reset --hard is safe here: the server never has uncommitted changes.
+      - name: Update repository on server
         run: |
           ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" \
-            "mkdir -p '$DEPLOY_PATH/scripts'"
-          rsync -az --delete \
-            -e "ssh $SSH_OPTS" \
-            scripts/ \
-            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
+            "cd '$DEPLOY_PATH' \
+             && git fetch --all --tags --prune \
+             && git checkout '${{ github.ref_name }}' \
+             && git reset --hard '${{ github.sha }}'"
 
       - name: Run deploy.sh on server
         run: |
