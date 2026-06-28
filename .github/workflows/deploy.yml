@@ -49,7 +49,7 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Deploy.
-  # All secrets below (SSH_PRIVATE_KEY, DEPLOY_HOST, DEPLOY_USER,
+  # All secrets below (DEPLOY_PRIVATE_KEY, DEPLOY_HOST, DEPLOY_USER,
   # DEPLOY_PATH, DEPLOY_PORT) must be configured per GitHub Environment.
   # See docs/deployment/README.md → "GitHub Secrets" for the full list.
   # ---------------------------------------------------------------------------
@@ -65,19 +65,33 @@ jobs:
         uses: actions/checkout@v4
 
       # ── SSH setup ─────────────────────────────────────────────────────────
-      - name: Write SSH private key
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+      # webfactory/ssh-agent is the canonical GitHub Actions solution for SSH auth.
+      # It receives the secret value through the Actions expression engine (not a
+      # shell variable), normalises line endings in Node.js, and loads the key into
+      # ssh-agent. No key file is ever written to disk. SSH_AUTH_SOCK is exported
+      # automatically so every ssh/rsync call in this job uses the agent.
+      #
+      # If DEPLOY_PRIVATE_KEY is malformed (literal \n instead of real newlines,
+      # wrong header, truncated body) the action fails here with a clear parse
+      # error — before any connection attempt is made.
+      - name: Load SSH key into agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+
+      # Explicit post-load check: confirm at least one key is in the agent.
+      # ssh-add -l prints the fingerprint (public metadata only — never the key).
+      # Fails fast with a diagnostic if the agent is empty for any reason.
+      - name: Verify SSH key loaded
         run: |
-          mkdir -p ~/.ssh
-          printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          echo "===== DEBUG ====="
-          file ~/.ssh/deploy_key
-          wc -l ~/.ssh/deploy_key
-          head -1 ~/.ssh/deploy_key
-          tail -1 ~/.ssh/deploy_key
-          ssh-keygen -l -f ~/.ssh/deploy_key
+          KEY_COUNT=$(ssh-add -l 2>/dev/null | grep -c 'SHA256' || true)
+          if [ "$KEY_COUNT" -eq 0 ]; then
+            echo "::error::SSH agent has no keys. DEPLOY_PRIVATE_KEY may be malformed." \
+                 "Re-store it as: cat ~/.ssh/deploy_key | gh secret set DEPLOY_PRIVATE_KEY"
+            exit 1
+          fi
+          echo "Agent loaded $KEY_COUNT key(s):"
+          ssh-add -l
 
       - name: Add server to known_hosts
         env:
@@ -86,18 +100,33 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           PORT="${DEPLOY_PORT:-22}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          # Collect the server's public host key and pin it to known_hosts.
+          # StrictHostKeyChecking yes (below) then enforces verification on every
+          # connection — not just the first one (accept-new is TOFU, not strict).
           ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 644 ~/.ssh/known_hosts
+
+          # No IdentityFile: the SSH agent (SSH_AUTH_SOCK) provides the key.
+          # StrictHostKeyChecking yes: the host key is already pinned above;
+          # any mismatch on a subsequent connection aborts rather than prompting.
           cat > ~/.ssh/config <<EOF
           Host deploy-target
             HostName $DEPLOY_HOST
             Port $PORT
             User $DEPLOY_USER
-            IdentityFile ~/.ssh/deploy_key
-            StrictHostKeyChecking accept-new
+            StrictHostKeyChecking yes
             ServerAliveInterval 30
+            ServerAliveCountMax 3
           EOF
+          chmod 600 ~/.ssh/config
+
+          echo "OpenSSH client version:"
           ssh -V
-          ssh -F ~/.ssh/config deploy-target "echo SSH_OK"
+          echo "Attempting test connection to deploy-target..."
+          ssh deploy-target "echo SSH_OK"
 
       # ── Sync scripts ──────────────────────────────────────────────────────
       # Push the latest scripts/ to the server before running them so the
