@@ -51,6 +51,12 @@ services:
     env_file:
       - ./backend/.env
     volumes:
+      # .env — bind-mounted from the server so the file exists at the path
+      # Laravel, artisan, and the entrypoint all expect: /var/www/html/.env.
+      # env_file above injects the same values as shell env vars for the
+      # bash entrypoint (mysqladmin ping, MIGRATE_ON_START, etc.).
+      # The file is writable so key:generate can persist APP_KEY on first run.
+      - ./backend/.env:/var/www/html/.env
       # storage/ only — uploads, sessions, logs, compiled views.
       # bootstrap/cache/ is intentionally absent: it is baked into the image.
       - app-storage:/var/www/html/storage
