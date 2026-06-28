@@ -18,13 +18,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Replace the framework Authenticate with our subclass that returns null
+        // from redirectTo() for api/* requests. Without this, the framework calls
+        // route('login') as a constructor argument to AuthenticationException —
+        // if the route doesn't exist it throws InvalidArgumentException before
+        // AuthenticationException is created, bypassing every exception renderer.
+        $middleware->alias([
+            'auth' => \App\Http\Middleware\Authenticate::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Unauthenticated API requests must return 401 JSON, never a redirect.
-        // Without this, Authenticate middleware calls route('login') which does
-        // not exist — this project has no web login route. Returning null for
-        // non-API requests preserves redirect behaviour for future web routes.
+        // Secondary guard: when AuthenticationException reaches the handler with
+        // null redirectTo (set by our Authenticate middleware), return 401 JSON
+        // rather than relying on the framework's default unauthenticated() path.
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);
