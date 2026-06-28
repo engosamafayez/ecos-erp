@@ -1,37 +1,45 @@
-###############################################################################
+# =============================================================================
 # ECOS ERP — Development overrides
 #
 # Docker Compose automatically merges this file with docker-compose.yml when
-# you run `docker compose up` locally.
+# you run `docker compose up` (without -f) on a developer machine.
 #
-# Purpose: restore source bind-mounts for live code reloading during development
-# so you do not need to rebuild the image after every PHP or config change.
+# Purpose: restore source bind-mounts so code changes are reflected
+# immediately without rebuilding the image after every edit.
 #
-# DO NOT commit secrets or production credentials here.
-# This file MUST NOT be present on production servers.
-# deploy.sh uses `docker compose -f docker-compose.yml` to explicitly exclude it.
-###############################################################################
+# Rules:
+#   This file MUST NOT be present on production servers.
+#   deploy.sh uses `docker compose -f docker-compose.yml` to explicitly
+#   exclude this file. The deploy script will abort if it detects this file.
+# =============================================================================
 
 services:
+
   # ---------------------------------------------------------------------------
-  # app — mount source for live PHP/config reload
+  # app — bind-mount backend source for live PHP reload
+  #
+  # The entire backend/ directory replaces the image's /var/www/html.
+  # This means vendor/, public/app, and bootstrap/cache/ are all sourced
+  # from the host filesystem instead of the image layer.
+  #
+  # Requirements:
+  #   • backend/vendor/ must exist locally (run `composer install` locally or
+  #     copy from image: docker cp ecos-app:/var/www/html/vendor backend/)
+  #   • backend/public/app/ must exist locally (run `npm run build` in frontend/)
   # ---------------------------------------------------------------------------
   app:
     volumes:
-      # Source bind-mount shadows the image contents.
-      # vendor/ and public/app are also covered by this mount.
       - ./backend:/var/www/html
 
   # ---------------------------------------------------------------------------
-  # nginx — serve backend/public directly (no custom image build required)
+  # nginx — use stock image + public/ bind-mount for dev
+  #
+  # In development the Vite dev server (port 5173) handles HMR for the SPA.
+  # The stock nginx image serves backend/public/ directly without a custom build.
   # ---------------------------------------------------------------------------
   nginx:
-    # Use the plain nginx image in dev so you don't need `docker compose build`
-    # every time you change frontend assets (Vite dev server handles that).
     image: nginx:1.27-alpine
-    # Cancel the custom build from docker-compose.yml so pulling the upstream
-    # image is enough for local dev.
-    build: !reset null
+    build: !reset null    # cancel the Stage 4 build — stock image is enough in dev
     volumes:
       - ./backend/public:/var/www/html/public:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
