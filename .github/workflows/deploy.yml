@@ -126,12 +126,20 @@ jobs:
           echo "OpenSSH client:"
           ssh -V
           echo "Connecting to $DEPLOY_HOST:$PORT..."
-          ssh -p "$PORT" \
+          set +e
+          SSH_OUTPUT=$(ssh -p "$PORT" \
               -o StrictHostKeyChecking=yes \
               -o BatchMode=yes \
               -o ConnectTimeout=10 \
               "$DEPLOY_USER@$DEPLOY_HOST" \
-              "echo SSH_OK"
+              "echo SSH_OK" 2>&1)
+          SSH_STATUS=$?
+          echo "$SSH_OUTPUT"
+          if [ $SSH_STATUS -ne 0 ]; then
+            echo "SSH failed with exit code $SSH_STATUS"
+            exit $SSH_STATUS
+          fi
+          set -e
 
       # ── Deployment ────────────────────────────────────────────────────────
       # $SSH_OPTS is unquoted so the shell word-splits the flags into individual
