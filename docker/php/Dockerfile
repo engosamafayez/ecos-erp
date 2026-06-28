@@ -41,6 +41,12 @@ FROM composer:2 AS composer
 
 WORKDIR /app
 
+# Without GitHub authentication, api.github.com/*/zipball/* redirects to the
+# deprecated codeload.github.com/*/legacy.zip/* endpoint which returns HTTP 400.
+# Production builds must pass the real token via --build-arg (set by deploy.sh).
+# Default '{}' (no auth) keeps local builds working on non-rate-limited IPs.
+ARG COMPOSER_AUTH='{}'
+
 # Layer 1: dependency resolution (invalidated only when lock file changes)
 COPY backend/composer.json backend/composer.lock ./
 RUN composer install \

@@ -40,6 +40,15 @@ fail() { log ""; log "✗ FAILED: $*" >&2; exit 1; }
 # Explicit -f prevents auto-merging docker-compose.override.yml on the server.
 COMPOSE="docker compose -f $PROJECT_ROOT/docker-compose.yml"
 
+# Rebuilding images requires Composer auth (same HTTP 400 failure path as deploy).
+if [ -z "${COMPOSER_GITHUB_TOKEN:-}" ]; then
+    fail "COMPOSER_GITHUB_TOKEN is not set — required for docker compose build.
+  Set it in the deployment user's environment:
+    echo 'export COMPOSER_GITHUB_TOKEN=<personal-access-token>' >> ~/.profile
+    source ~/.profile"
+fi
+COMPOSER_AUTH_JSON="{\"github-oauth\":{\"github.com\":\"$COMPOSER_GITHUB_TOKEN\"}}"
+
 # ── Resolve target SHA ─────────────────────────────────────────────────────────
 if [ -z "$TARGET_SHA" ]; then
     if [ -f "$ROLLBACK_FILE" ]; then
@@ -99,6 +108,7 @@ ok "HEAD is now: $(git rev-parse HEAD)"
 log ""
 log "==> [2/5] Rebuilding images from source at $TARGET_SHA"
 $COMPOSE build \
+    --build-arg "COMPOSER_AUTH=$COMPOSER_AUTH_JSON" \
     || fail "docker compose build failed during rollback"
 ok "Images rebuilt."
 

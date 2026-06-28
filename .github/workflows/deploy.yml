@@ -75,6 +75,7 @@ jobs:
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      COMPOSER_GITHUB_TOKEN: ${{ secrets.COMPOSER_GITHUB_TOKEN }}
 
     steps:
       - name: Checkout
@@ -148,7 +149,7 @@ jobs:
       - name: Run deploy.sh on server
         run: |
           ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" \
-            "cd '$DEPLOY_PATH' && bash scripts/deploy.sh '${{ github.sha }}' '${{ github.ref_name }}' '${{ github.actor }}'"
+            "export COMPOSER_GITHUB_TOKEN='$COMPOSER_GITHUB_TOKEN'; cd '$DEPLOY_PATH' && bash scripts/deploy.sh '${{ github.sha }}' '${{ github.ref_name }}' '${{ github.actor }}'"
 
       # ── On failure ────────────────────────────────────────────────────────
       - name: Report failure and rollback hint

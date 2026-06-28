@@ -91,6 +91,22 @@ if grep -qE '^APP_DEBUG[[:space:]]*=[[:space:]]*true' "$PROJECT_ROOT/backend/.en
     sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' $PROJECT_ROOT/backend/.env"
 fi
 
+# api.github.com/*/zipball/* returns HTTP 400 for unauthenticated requests —
+# GitHub redirects them to codeload.github.com/*/legacy.zip/* (deprecated).
+# Authenticated requests get a working modern archive URL instead.
+if [ -z "${COMPOSER_GITHUB_TOKEN:-}" ]; then
+    fail "COMPOSER_GITHUB_TOKEN is not set.
+  Composer downloads packages from api.github.com, which returns HTTP 400 for
+  unauthenticated CI/Docker requests (deprecated codeload redirect).
+
+  Set it in the deployment user's environment:
+    echo 'export COMPOSER_GITHUB_TOKEN=<personal-access-token>' >> ~/.profile
+    source ~/.profile
+
+  The token requires no scopes — public repo read access is sufficient."
+fi
+COMPOSER_AUTH_JSON="{\"github-oauth\":{\"github.com\":\"$COMPOSER_GITHUB_TOKEN\"}}"
+
 ok "Environment valid."
 
 # ── 2. Rollback snapshot ───────────────────────────────────────────────────────
@@ -157,6 +173,7 @@ section "4/9  Image build"
 
 log "Building ecos-erp/app (Stage 3) and ecos-erp/nginx (Stage 4)..."
 $COMPOSE build --pull \
+    --build-arg "COMPOSER_AUTH=$COMPOSER_AUTH_JSON" \
     --build-arg "GIT_SHA=$CURRENT_SHA" \
     --build-arg "APP_VERSION=$APP_VERSION" \
     --build-arg "BUILD_TIME=$BUILD_TIME" \
