@@ -14,10 +14,15 @@
 #   2. Ensure storage directory tree
 #   3. Fix storage permissions
 #   4. Create storage symlink (if missing)
-#   5. Generate APP_KEY (if blank)
+#   5. Verify APP_KEY is present in the process environment
 #   6. [Optional] Run migrations        — controlled by MIGRATE_ON_START=true
 #   7. [Optional] Seed AdminUserSeeder  — controlled by SEED_ADMIN_ON_START=true
 #   8. exec supervisord (PHP-FPM + queue:work + schedule:work)
+#
+# Configuration source:
+#   All values come from env_file (docker-compose.yml) → process environment.
+#   There is no .env file inside the container. This script never reads,
+#   writes, or depends on a physical .env file.
 # =============================================================================
 set -euo pipefail
 
@@ -93,18 +98,32 @@ else
 fi
 
 # =============================================================================
-# 5. Generate APP_KEY
-#    Required for encryption. Only generate if the current value is blank or
-#    the literal placeholder. Never overwrite an already-set key (would
-#    invalidate all existing sessions and encrypted data).
+# 5. Verify APP_KEY
+#    APP_KEY must be present in the process environment (injected by env_file
+#    in docker-compose.yml). There is no .env file in the container to read
+#    from or write to.
+#
+#    Auto-generation is intentionally absent:
+#      • The container image is immutable — there is nowhere to persist a
+#        generated key between restarts.
+#      • Generating a new key on every cold start invalidates all sessions,
+#        cookies, and encrypted database values from previous runs.
+#      • In a multi-container deployment each instance would hold a different
+#        key, making encrypted values from one instance unreadable by another.
+#
+#    Generate APP_KEY once on the server, then set it in backend/.env:
+#      php artisan key:generate --show
+#    The value is printed to stdout — copy it into backend/.env as:
+#      APP_KEY=base64:<value>
+#    Restart the container. The key is then stable across all restarts.
 # =============================================================================
-if ! grep -qE '^APP_KEY[[:space:]]*=[[:space:]]*base64:' "${APP_DIR}/.env" 2>/dev/null; then
-    log "APP_KEY not set — generating..."
-    php artisan key:generate --ansi --force
-    ok "APP_KEY generated."
-else
-    ok "APP_KEY already set."
+if [ -z "${APP_KEY:-}" ]; then
+    die "APP_KEY is not set in the container environment.
+  Generate a key on the server and add it to backend/.env:
+    php artisan key:generate --show
+  Then restart the container."
 fi
+ok "APP_KEY is set."
 
 # =============================================================================
 # 6. Database migrations [opt-in]
