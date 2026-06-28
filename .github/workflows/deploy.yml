@@ -65,28 +65,24 @@ jobs:
         uses: actions/checkout@v4
 
       # ── SSH setup ─────────────────────────────────────────────────────────
-      - name: Write SSH private key
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+    - name: Write SSH private key
+  shell: bash
+  env:
+    SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+  run: |
+    mkdir -p ~/.ssh
 
-      - name: Add server to known_hosts
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-        run: |
-          PORT="${DEPLOY_PORT:-22}"
-          ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          echo "Host deploy-target" >> ~/.ssh/config
-          echo "  HostName $DEPLOY_HOST"      >> ~/.ssh/config
-          echo "  Port $PORT"                 >> ~/.ssh/config
-          echo "  User ${{ secrets.DEPLOY_USER }}" >> ~/.ssh/config
-          echo "  IdentityFile ~/.ssh/deploy_key"  >> ~/.ssh/config
-          echo "  StrictHostKeyChecking accept-new" >> ~/.ssh/config
-          echo "  ServerAliveInterval 30"     >> ~/.ssh/config
+    printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+
+    chmod 600 ~/.ssh/deploy_key
+
+    echo "===== DEBUG ====="
+    file ~/.ssh/deploy_key
+    wc -l ~/.ssh/deploy_key
+    head -1 ~/.ssh/deploy_key
+    tail -1 ~/.ssh/deploy_key
+
+    ssh-keygen -l -f ~/.ssh/deploy_key
 
       # ── Sync scripts ──────────────────────────────────────────────────────
       # Push the latest scripts/ to the server before running them so the
