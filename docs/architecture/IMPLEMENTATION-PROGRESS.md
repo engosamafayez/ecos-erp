@@ -1314,6 +1314,138 @@ Caller
 
 ---
 
+## PKG-05B — Manufacturing Executor
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Commit:** (this batch)
+**Tests:** 25 feature tests
+
+### Purpose
+
+PKG-05B is the **first and only component** allowed to mutate the inventory database during manufacturing. It receives a fully-validated `ManufacturingExecutionContext` from PKG-05A and executes it in a single atomic transaction:
+
+```
+ManufacturingExecutionContext (from PKG-05A Pipeline)
+  ↓
+ManufacturingExecutor.execute(context, companyId)
+  ├── Guard: context.isValid()
+  ├── Idempotency check: findByPlanId()
+  └── DB::transaction()
+       ├── InventoryMutationInterface.consumeComponent() × N
+       │     ├── InventoryItem: on_hand_qty -= qty        (SELECT FOR UPDATE)
+       │     ├── StockLedgerEntry: ProductionConsumption  (immutable)
+       │     └── InventoryLayerConsumption × M            (FIFO audit)
+       ├── InventoryMutationInterface.produceFinishedGoods()
+       │     ├── InventoryItem: on_hand_qty += qty        (SELECT FOR UPDATE)
+       │     └── StockLedgerEntry: ProductionOutput       (immutable)
+       └── ManufacturingTransaction INSERT               (source of truth)
+↓
+ManufacturingExecutionResult
+```
+
+### Architectural Refinements (CTO Review)
+
+#### 1. InventoryMutationInterface
+The executor never calls inventory repositories directly. A thin application contract:
+- `consumeComponent()` → `ComponentConsumptionRecord`
+- `produceFinishedGoods()` → `string` (ledger entry ID)
+
+`InventoryMutationAdapter` implements the interface and internally reuses `InventoryItemRepositoryInterface` + `InventoryLayerConsumptionService`. Future modules (Disassembly, Transfers, Adjustments) implement the same interface.
+
+#### 2. ManufacturingTransaction as Source of Truth
+The transaction record now carries all execution identifiers:
+- `execution_id` (= `context.execution_uuid`)
+- `decision_key` (SHA-256 content-addressed, cross-plan idempotency)
+- `correlation_id` (distributed trace ID across all services)
+- `recipe_snapshot_hash` (integrity anchor)
+
+Future AI, auditing, and replay systems read only this table.
+
+#### 3. Lifecycle Hooks
+`ManufacturingExecutorHooksInterface` defines five extension points:
+- `onBeforeExecution` — before any DB writes
+- `onAfterInventoryConsumption` — inside transaction, all components consumed
+- `onAfterFinishedGoodsCreated` — inside transaction, FG produced
+- `onAfterCommit` — after successful commit (safe for events/jobs)
+- `onAfterRollback` — after any failure (logging, cleanup)
+
+No hooks registered by default. Future integrations (Cost Engine, Procurement Queue, AI Analytics) inject implementations via the service provider.
+
+### New Files
+
+| File | Description |
+|------|-------------|
+| `Domain/Contracts/InventoryMutationInterface.php` | `consumeComponent()` + `produceFinishedGoods()` contract |
+| `Domain/Contracts/ManufacturingExecutorHooksInterface.php` | 5 lifecycle extension points |
+| `Infrastructure/Adapters/InventoryMutationAdapter.php` | Reuses `InventoryItemRepository` + `InventoryLayerConsumptionService` |
+| `Infrastructure/Database/Migrations/2026_06_29_000004_add_execution_identifiers_to_manufacturing_transactions.php` | Adds `decision_key` + `correlation_id` columns |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `Application/Services/ManufacturingExecutor.php` | Refactored to accept `ManufacturingExecutionContext`; injects `InventoryMutationInterface`; adds hook calls |
+| `Domain/Exceptions/ExecutionException.php` | Added `INVALID_CONTEXT` reason + `invalidContext()` factory |
+| `Domain/Models/ManufacturingTransaction.php` | Added `decision_key`, `correlation_id` to `$fillable` |
+| `Infrastructure/Providers/ManufacturingExecutionServiceProvider.php` | Binds `InventoryMutationInterface → InventoryMutationAdapter`; explicit executor singleton |
+| `tests/Feature/Manufacturing/ManufacturingExecutorTest.php` | Rewritten with 25 tests using `ManufacturingExecutionContext` as input |
+
+### Transaction Boundary
+
+| Stage | Inside Transaction | Locks Held |
+|-------|-------------------|------------|
+| Context guard, idempotency check | ✗ | None |
+| `consumeComponent()` × N | ✓ | InventoryItem (FOR UPDATE) + InventoryReceiptLayer (FOR UPDATE) |
+| `produceFinishedGoods()` | ✓ | InventoryItem (FOR UPDATE) |
+| `ManufacturingTransaction` INSERT | ✓ | UNIQUE(plan_id) constraint |
+| onAfterCommit hook | ✗ | None |
+
+Any exception inside the transaction triggers automatic rollback of all inventory, ledger, FIFO layer, and transaction changes.
+
+### Idempotency Strategy
+
+Three independent guards:
+
+| Guard | Mechanism |
+|-------|-----------|
+| Context-level | `context.isValid()` — pipeline's `AlreadyExecuted` failure prevents execution |
+| Application-level | `findByPlanId()` before `DB::transaction()` → returns idempotent result |
+| Database-level | `UNIQUE(plan_id)` on `manufacturing_transactions` — catches concurrent races |
+
+### FIFO Reuse Strategy
+
+`InventoryLayerConsumptionService::consume()` is called inside the same transaction:
+- Loads receipt layers with `lockForUpdate()` ordered by `created_at ASC`
+- Decrements `InventoryReceiptLayer.remaining_qty` for each consumed slice
+- Creates immutable `InventoryLayerConsumption` audit records per layer
+
+**Negative-stock RC-2 handling:** When `allow_negative_stock = true` and on-hand is insufficient:
+- `InventoryItem.on_hand_qty` decrements below zero (standard behavior)
+- FIFO layers are consumed up to `min(qty_to_consume, available_in_layers)` (partial)
+- `ComponentConsumptionRecord.went_negative = true` flags the event
+
+### Test Coverage (25 tests)
+
+| Group | Tests |
+|-------|-------|
+| Successful execution | Stock decrement, FG increment, ledger entries, transaction record, result structure, FG item creation, multi-component |
+| Context identifier propagation | `execution_uuid → execution_id`, `decision_key` in TX, `correlation_id` in TX, `bom_version_number` (RC-10) |
+| FIFO layer consumption | Audit records created, `remaining_qty` decremented, FIFO order (multi-layer) |
+| Negative stock (RC-2) | Goes below zero, partial FIFO consume, no-layers silent skip |
+| Idempotency | Duplicate returns idempotent result, no double-consume, idempotent UUID from context |
+| Rollback | Inventory restored, FIFO layers restored |
+| Invalid context guard | Throws `ExecutionException::INVALID_CONTEXT`, no DB writes |
+| Lifecycle hooks | Correct order on success, rollback hook called + exception propagates, null hooks ok |
+
+### Performance Notes
+
+- All `InventoryItem` locks acquired in component array order → deterministic, deadlock-free
+- FIFO sum query (`lockForUpdate`) runs once per component before `consume()` — one extra read per component is acceptable vs exception-control-flow
+- `ManufacturingTransaction` INSERT is the last write inside the transaction, minimizing lock hold time on the unique constraint
+
+---
+
 ## PKG-06 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.

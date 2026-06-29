@@ -7,249 +7,177 @@ namespace Modules\Manufacturing\ManufacturingExecution\Application\Services;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
-use JsonException;
-use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
-use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
+use Modules\Manufacturing\ManufacturingExecution\Domain\Contracts\InventoryMutationInterface;
+use Modules\Manufacturing\ManufacturingExecution\Domain\Contracts\ManufacturingExecutorHooksInterface;
 use Modules\Manufacturing\ManufacturingExecution\Domain\Contracts\ManufacturingTransactionRepositoryInterface;
 use Modules\Manufacturing\ManufacturingExecution\Domain\Enums\TransactionStatus;
 use Modules\Manufacturing\ManufacturingExecution\Domain\Exceptions\ExecutionException;
 use Modules\Manufacturing\ManufacturingExecution\Domain\Models\ManufacturingTransaction;
-use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ComponentConsumptionRecord;
+use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ManufacturingExecutionContext;
 use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ManufacturingExecutionResult;
-use Modules\Manufacturing\ManufacturingPlanner\Domain\ValueObjects\ComponentConsumptionPlan;
-use Modules\Manufacturing\ManufacturingPlanner\Domain\ValueObjects\ManufacturingPlan;
 
 /**
- * The only component that executes a ManufacturingPlan.
+ * PKG-05B — The only component that executes a validated ManufacturingExecutionContext.
  *
  * EXECUTE ONLY: Does not resolve recipes, check availability, build plans,
- * evaluate rules, make decisions, or select recipe versions.
- * All decisions have already been made by the time this service is called.
+ * evaluate rules, make decisions, or validate the plan. All of that has
+ * already been done by the Workflow (PKG-04C) and the Pipeline (PKG-05A).
  *
  * Execution guarantees:
- *   - Idempotent: plan_id UNIQUE on manufacturing_transactions prevents double execution
- *   - Transactional: all inventory changes + ledger entries + transaction record commit together
- *   - Rollback: any failure inside DB::transaction() reverts all inventory changes
- *   - Snapshot integrity: recipe_snapshot is re-hashed and compared before any DB write
+ *   - Trust:          context.isValid() is checked; all other validation is deferred to Pipeline
+ *   - Idempotent:     plan_id UNIQUE on manufacturing_transactions prevents double execution
+ *   - Transactional:  all inventory + ledger + FIFO layer + transaction record commit together
+ *   - Rollback:       any failure inside DB::transaction() reverts every DB change
+ *   - Extensible:     lifecycle hooks fire at each stage; no internals modified for integrations
  *
- * @param string $companyId  The company context for InventoryItem creation.
- *                           Must match the company of the warehouse in the plan.
+ * Architecture:
+ *   ManufacturingExecutionContext → ManufacturingExecutor → ManufacturingExecutionResult
+ *
+ * @param string $companyId  Company context for InventoryItem lazy-creation.
+ *                           Must match the company owning the warehouse in the context.
  */
 final class ManufacturingExecutor
 {
     public function __construct(
-        private readonly InventoryItemRepositoryInterface $inventoryItems,
+        private readonly InventoryMutationInterface $inventory,
         private readonly ManufacturingTransactionRepositoryInterface $transactions,
+        private readonly ?ManufacturingExecutorHooksInterface $hooks = null,
     ) {}
 
     /**
-     * Execute a ManufacturingPlan.
+     * Execute a validated ManufacturingExecutionContext.
      *
-     * @throws ExecutionException  On pre-execution guard failures (no DB writes occur).
+     * @throws ExecutionException  When context is invalid (no DB writes occur).
      * @throws \Throwable          On in-transaction failures (all DB changes rolled back).
      */
-    public function execute(ManufacturingPlan $plan, string $companyId): ManufacturingExecutionResult
+    public function execute(ManufacturingExecutionContext $context, string $companyId): ManufacturingExecutionResult
     {
-        // ── Pre-execution guards (no DB writes below this line) ────────────────
-
-        if (!$plan->should_manufacture) {
-            throw ExecutionException::planNotApproved($plan->plan_id, $plan->eligibility->value);
+        // ── Guard: context must be fully valid ────────────────────────────────
+        if (! $context->isValid()) {
+            throw ExecutionException::invalidContext(
+                $context->plan->plan_id,
+                count($context->validation_result->failures),
+            );
         }
 
-        if ($plan->recipe_snapshot_hash === null) {
-            throw ExecutionException::snapshotMissing($plan->plan_id);
-        }
+        // ── Lifecycle: before any DB writes ──────────────────────────────────
+        $this->hooks?->onBeforeExecution($context);
 
-        if ($plan->recipe_snapshot !== null) {
-            $this->verifySnapshotIntegrity($plan);
-        }
-
-        // ── Idempotency check ──────────────────────────────────────────────────
-
-        $existing = $this->transactions->findByPlanId($plan->plan_id);
+        // ── Idempotency check (read-only) ─────────────────────────────────────
+        $existing = $this->transactions->findByPlanId($context->plan->plan_id);
         if ($existing !== null) {
-            return $this->buildIdempotentResult($existing);
+            return $this->buildIdempotentResult($existing, $context->execution_uuid);
         }
 
         // ── Execute inside a single database transaction ───────────────────────
+        $startMs = (int) (microtime(true) * 1000);
 
-        $executionId = $this->generateUuid();
-        $startMs     = (int) (microtime(true) * 1000);
+        try {
+            /** @var ManufacturingExecutionResult $result */
+            $result = DB::transaction(function () use ($context, $companyId, $startMs): ManufacturingExecutionResult {
+                $ledgerIds = [];
 
-        /** @var ManufacturingExecutionResult $result */
-        $result = DB::transaction(function () use ($plan, $companyId, $executionId, $startMs): ManufacturingExecutionResult {
-            $ledgerIds   = [];
+                // Step 1 — Consume all raw material components
+                $consumptionRecords = [];
+                foreach ($context->plan->components as $component) {
+                    $record = $this->inventory->consumeComponent(
+                        component:     $component,
+                        warehouseId:   $context->plan->warehouse_id,
+                        planId:        $context->plan->plan_id,
+                        companyId:     $companyId,
+                        executionUuid: $context->execution_uuid,
+                    );
+                    $consumptionRecords[] = $record;
+                    $ledgerIds[]          = $record->ledger_entry_id;
+                }
 
-            // 1. Consume raw materials
-            $consumptionRecords = [];
-            foreach ($plan->components as $component) {
-                [$record, $entryId] = $this->consumeComponent($component, $plan, $companyId, $executionId);
-                $consumptionRecords[] = $record;
-                $ledgerIds[]          = $entryId;
-            }
+                // Lifecycle hook: after all components consumed (still inside transaction)
+                $this->hooks?->onAfterInventoryConsumption($context, $consumptionRecords, $ledgerIds);
 
-            // 2. Produce finished goods
-            $fgEntryId   = $this->produceFinishedGoods($plan, $companyId, $executionId);
-            $ledgerIds[] = $fgEntryId;
+                // Step 2 — Produce finished goods
+                $fgLedgerEntryId = $this->inventory->produceFinishedGoods(
+                    productId:    $context->plan->product_id,
+                    qty:          $context->plan->qty_to_manufacture,
+                    warehouseId:  $context->plan->warehouse_id,
+                    planId:       $context->plan->plan_id,
+                    companyId:    $companyId,
+                    executionUuid: $context->execution_uuid,
+                );
+                $ledgerIds[] = $fgLedgerEntryId;
 
-            // 3. Record the manufacturing transaction
-            $executedAt  = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-            $durationMs  = (int) (microtime(true) * 1000) - $startMs;
+                // Lifecycle hook: after finished goods created (still inside transaction)
+                $this->hooks?->onAfterFinishedGoodsCreated($context, $fgLedgerEntryId);
 
-            $transaction = new ManufacturingTransaction();
-            $transaction->fill([
-                'execution_id'         => $executionId,
-                'plan_id'              => $plan->plan_id,
-                'product_id'           => $plan->product_id,
-                'warehouse_id'         => $plan->warehouse_id,
-                'bom_id'               => $plan->recipe_id,
-                'bom_version_number'   => $plan->bom_version_number,
-                'recipe_snapshot_hash' => $plan->recipe_snapshot_hash,
-                'qty_produced'         => $plan->qty_to_manufacture,
-                'status'               => TransactionStatus::Completed->value,
-                'executed_at'          => $executedAt,
-                'duration_ms'          => $durationMs,
-                'order_line_id'        => null, // RC-10: populated when Order integration is added
-                'metadata'             => array_merge($plan->metadata, ['plan_id' => $plan->plan_id]),
-            ]);
+                // Step 3 — Record the manufacturing transaction (source of truth)
+                $executedAt = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+                $durationMs = (int) (microtime(true) * 1000) - $startMs;
 
-            $this->transactions->save($transaction);
+                $transaction = new ManufacturingTransaction();
+                $transaction->fill([
+                    'execution_id'         => $context->execution_uuid,
+                    'decision_key'         => $context->decision_key,
+                    'correlation_id'       => $context->correlation_id,
+                    'plan_id'              => $context->plan->plan_id,
+                    'product_id'           => $context->plan->product_id,
+                    'warehouse_id'         => $context->plan->warehouse_id,
+                    'bom_id'               => $context->plan->recipe_id,
+                    'bom_version_number'   => $context->plan->bom_version_number,
+                    'recipe_snapshot_hash' => $context->snapshot_hash,
+                    'qty_produced'         => $context->plan->qty_to_manufacture,
+                    'status'               => TransactionStatus::Completed->value,
+                    'executed_at'          => $executedAt,
+                    'duration_ms'          => $durationMs,
+                    'order_line_id'        => null, // RC-10: populated when Order integration is added
+                    'metadata'             => array_merge($context->transaction_metadata, [
+                        'plan_id'        => $context->plan->plan_id,
+                        'correlation_id' => $context->correlation_id,
+                    ]),
+                ]);
 
-            return new ManufacturingExecutionResult(
-                execution_id:        $executionId,
-                transaction_id:      $transaction->id,
-                success:             true,
-                was_idempotent:      false,
-                qty_produced:        $plan->qty_to_manufacture,
-                consumed_components: $consumptionRecords,
-                ledger_entry_ids:    $ledgerIds,
-                duration_ms:         $durationMs,
-                executed_at:         $executedAt,
-                metadata:            $plan->metadata,
-            );
-        });
+                $this->transactions->save($transaction);
 
-        return $result;
+                return new ManufacturingExecutionResult(
+                    execution_id:        $context->execution_uuid,
+                    transaction_id:      $transaction->id,
+                    success:             true,
+                    was_idempotent:      false,
+                    qty_produced:        $context->plan->qty_to_manufacture,
+                    consumed_components: $consumptionRecords,
+                    ledger_entry_ids:    $ledgerIds,
+                    duration_ms:         $durationMs,
+                    executed_at:         $executedAt,
+                    metadata:            $context->transaction_metadata,
+                );
+            });
+
+            // Lifecycle hook: after successful commit (outside transaction)
+            $this->hooks?->onAfterCommit($result);
+
+            return $result;
+
+        } catch (\Throwable $e) {
+            // Lifecycle hook: after rollback — DO NOT re-throw here
+            $this->hooks?->onAfterRollback($context, $e);
+            throw $e;
+        }
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────
 
     /**
-     * @throws ExecutionException  When the snapshot hash in the plan doesn't match the snapshot content.
+     * Build an idempotent result from an existing transaction record.
+     *
+     * Returns empty consumed_components and ledger_entry_ids — the original
+     * execution data lives in the ledger and the transaction record.
+     * A fresh execution_uuid is generated per call to allow log correlation
+     * of the replay request itself.
      */
-    private function verifySnapshotIntegrity(ManufacturingPlan $plan): void
-    {
-        try {
-            $computed = hash('sha256', json_encode($plan->recipe_snapshot->toArray(), JSON_THROW_ON_ERROR));
-        } catch (JsonException) {
-            $computed = '';
-        }
-
-        if ($computed !== $plan->recipe_snapshot_hash) {
-            throw ExecutionException::snapshotMismatch($plan->plan_id, $plan->recipe_snapshot_hash, $computed);
-        }
-    }
-
-    /**
-     * Consumes one raw material component from inventory.
-     *
-     * - Finds (or creates) the InventoryItem for the component at the warehouse.
-     * - Acquires a pessimistic write lock.
-     * - Decrements on_hand_qty by qty_to_consume.
-     * - Creates a StockLedgerEntry (ProductionConsumption).
-     *
-     * @return array{ComponentConsumptionRecord, string}  [record, ledger_entry_id]
-     */
-    private function consumeComponent(
-        ComponentConsumptionPlan $component,
-        ManufacturingPlan $plan,
-        string $companyId,
-        string $executionId,
-    ): array {
-        $item       = $this->inventoryItems->findOrCreate($plan->warehouse_id, $component->component_id, $companyId);
-        $lockedItem = $this->inventoryItems->lockForUpdate($item->id);
-
-        $onHandBefore = (float) $lockedItem->on_hand_qty;
-        $onHandAfter  = $onHandBefore - $component->qty_to_consume;
-
-        $lockedItem->on_hand_qty = $onHandAfter;
-        $this->inventoryItems->save($lockedItem);
-
-        $entry = $this->inventoryItems->recordEntry([
-            'inventory_item_id' => $lockedItem->id,
-            'warehouse_id'      => $plan->warehouse_id,
-            'product_id'        => $component->component_id,
-            'company_id'        => $companyId,
-            'movement_type'     => LedgerMovementType::ProductionConsumption->value,
-            'quantity'          => $component->qty_to_consume,
-            'on_hand_before'    => $onHandBefore,
-            'on_hand_after'     => $onHandAfter,
-            'reserved_before'   => (float) $lockedItem->reserved_qty,
-            'reserved_after'    => (float) $lockedItem->reserved_qty,
-            'reference_type'    => 'manufacturing_plan',
-            'reference_id'      => $plan->plan_id,
-            'notes'             => "Consumed for manufacturing execution {$executionId}",
-        ]);
-
-        $record = new ComponentConsumptionRecord(
-            component_id:   $component->component_id,
-            sku:            $component->sku,
-            name:           $component->name,
-            unit_symbol:    $component->unit_symbol,
-            qty_consumed:   $component->qty_to_consume,
-            on_hand_before: $onHandBefore,
-            on_hand_after:  $onHandAfter,
-            went_negative:  $onHandAfter < 0.0,
-            ledger_entry_id: $entry->id,
-        );
-
-        return [$record, $entry->id];
-    }
-
-    /**
-     * Produces finished goods into inventory.
-     *
-     * - Finds (or creates) the InventoryItem for the finished goods product.
-     * - Acquires a pessimistic write lock.
-     * - Increments on_hand_qty by qty_to_manufacture.
-     * - Creates a StockLedgerEntry (ProductionOutput).
-     *
-     * @return string  The ledger entry ID.
-     */
-    private function produceFinishedGoods(ManufacturingPlan $plan, string $companyId, string $executionId): string
-    {
-        $item       = $this->inventoryItems->findOrCreate($plan->warehouse_id, $plan->product_id, $companyId);
-        $lockedItem = $this->inventoryItems->lockForUpdate($item->id);
-
-        $onHandBefore = (float) $lockedItem->on_hand_qty;
-        $onHandAfter  = $onHandBefore + $plan->qty_to_manufacture;
-
-        $lockedItem->on_hand_qty = $onHandAfter;
-        $this->inventoryItems->save($lockedItem);
-
-        $entry = $this->inventoryItems->recordEntry([
-            'inventory_item_id' => $lockedItem->id,
-            'warehouse_id'      => $plan->warehouse_id,
-            'product_id'        => $plan->product_id,
-            'company_id'        => $companyId,
-            'movement_type'     => LedgerMovementType::ProductionOutput->value,
-            'quantity'          => $plan->qty_to_manufacture,
-            'on_hand_before'    => $onHandBefore,
-            'on_hand_after'     => $onHandAfter,
-            'reserved_before'   => (float) $lockedItem->reserved_qty,
-            'reserved_after'    => (float) $lockedItem->reserved_qty,
-            'reference_type'    => 'manufacturing_plan',
-            'reference_id'      => $plan->plan_id,
-            'notes'             => "Finished goods produced by execution {$executionId}",
-        ]);
-
-        return $entry->id;
-    }
-
-    private function buildIdempotentResult(ManufacturingTransaction $transaction): ManufacturingExecutionResult
-    {
+    private function buildIdempotentResult(
+        ManufacturingTransaction $transaction,
+        string $replayExecutionUuid,
+    ): ManufacturingExecutionResult {
         return new ManufacturingExecutionResult(
-            execution_id:        $this->generateUuid(),
+            execution_id:        $replayExecutionUuid,
             transaction_id:      $transaction->id,
             success:             $transaction->status === TransactionStatus::Completed,
             was_idempotent:      true,
@@ -260,14 +188,5 @@ final class ManufacturingExecutor
             executed_at:         (string) $transaction->executed_at,
             metadata:            $transaction->metadata ?? [],
         );
-    }
-
-    private function generateUuid(): string
-    {
-        $data    = random_bytes(16);
-        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
-        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
-
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 }

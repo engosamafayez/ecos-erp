@@ -19,6 +19,8 @@ use Modules\Manufacturing\ManufacturingExecution\Domain\Enums\TransactionStatus;
  *
  * @property string                         $id
  * @property string                         $execution_id
+ * @property string|null                    $decision_key
+ * @property string|null                    $correlation_id
  * @property string                         $plan_id
  * @property string                         $product_id
  * @property string                         $warehouse_id
@@ -45,6 +47,8 @@ class ManufacturingTransaction extends Model
     /** @var list<string> */
     protected $fillable = [
         'execution_id',
+        'decision_key',
+        'correlation_id',
         'plan_id',
         'product_id',
         'warehouse_id',
