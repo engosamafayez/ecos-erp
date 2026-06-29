@@ -720,6 +720,133 @@ AvailabilityResult  ← immutable; no inventory written
 
 ---
 
-## PKG-04B through PKG-11 — Pending
+## PKG-04B — Manufacturing Planner
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-004B
+
+---
+
+### Architecture
+
+```
+Caller
+    ↓
+ManufacturingPlanner.plan(AvailabilityResult, DecisionResult, metadata)
+    ├── assertInvariant()  — guard: CanManufacture|Partial must have recipe_snapshot
+    ├── buildComponents()  — RawMaterialAvailability → ComponentConsumptionPlan[]
+    ├── buildNegativeStockDecisions()  — filter will_go_negative → NegativeStockDecision[]
+    ├── hashSnapshot()     — SHA-256 of RecipeSnapshot.toArray() JSON
+    ├── can_proceed  = eligibility.allowsManufacturing() && decision.isPositive()
+    └── should_manufacture = can_proceed && availability.needs_manufacturing
+    ↓
+ManufacturingPlan  ← immutable; no inventory written; no jobs dispatched
+```
+
+**PLAN ONLY GUARANTEE:** The planner never consumes inventory, reserves stock,
+calculates costs, dispatches jobs, or writes any records.
+The Manufacturing Engine (PKG-05) receives and executes the plan.
+
+---
+
+### Design Decisions
+
+| Concern | Design Decision |
+|---------|----------------|
+| can_proceed vs should_manufacture | `can_proceed` = eligibility + decision positive. `should_manufacture` = can_proceed + needs_manufacturing. Sufficient: can_proceed=true, should_manufacture=false. |
+| Negative stock (RC-2) | `will_go_negative` per component; `NegativeStockDecision` records projected balance for operator audit trail |
+| Snapshot hash | SHA-256 of `RecipeSnapshot.toArray()` JSON — Manufacturing Engine verifies before executing |
+| Invariant protection | `PlannerException` only for programming errors (CanManufacture/Partial + null snapshot); all valid states return a plan |
+| Pure domain — no UUID package | UUID v4 generated via `random_bytes(16)` + bit manipulation; no framework dependency |
+| Component data source | Built from `AvailabilityResult.raw_materials` — quantities already RC-1 scaled by the engine |
+
+---
+
+### Decision Outcome → Plan Flags Matrix
+
+| Eligibility | Decision | can_proceed | should_manufacture |
+|-------------|----------|-------------|---------------------|
+| Sufficient | Approve | true | false |
+| CanManufacture | Approve | true | true |
+| Partial | Partial | true | true |
+| CannotManufacture | Reject | false | false |
+| NoRecipe | Reject | false | false |
+| CanManufacture | Defer | false | false |
+| CanManufacture | Escalate | false | false |
+
+---
+
+### Files Created (7)
+
+#### Domain/Exceptions
+| File | Purpose |
+|------|---------|
+| `ManufacturingPlanner/Domain/Exceptions/PlannerException.php` | Single reason code: `RECIPE_SNAPSHOT_MISSING` — invariant violation only |
+
+#### Domain/ValueObjects
+| File | Purpose |
+|------|---------|
+| `ManufacturingPlanner/Domain/ValueObjects/ComponentConsumptionPlan.php` | Per-component: `qty_to_consume`, `available_qty`, `missing_qty`, `will_go_negative`, `is_blocked` |
+| `ManufacturingPlanner/Domain/ValueObjects/NegativeStockDecision.php` | RC-2 record: `projected_balance` (always negative) for operator audit |
+| `ManufacturingPlanner/Domain/ValueObjects/ManufacturingPlan.php` | Full immutable plan: all fields + `hasNegativeStockRisk()`, `blockedComponents()`, `toArray()` |
+
+#### Domain/Services
+| File | Purpose |
+|------|---------|
+| `ManufacturingPlanner/Domain/Services/ManufacturingPlanner.php` | Core service: `plan()` + 4 private helpers; pure PHP UUID v4; no framework deps |
+
+#### Infrastructure/Providers
+| File | Purpose |
+|------|---------|
+| `ManufacturingPlanner/Infrastructure/Providers/ManufacturingPlannerServiceProvider.php` | Registers `ManufacturingPlanner` as singleton (no constructor deps) |
+
+#### Tests
+| File | Purpose |
+|------|---------|
+| `tests/Unit/Manufacturing/ManufacturingPlannerTest.php` | 22 pure unit tests; no DB, no Laravel boot; all fixtures constructed inline |
+
+---
+
+### Files Modified (1)
+
+| File | Change |
+|------|--------|
+| `bootstrap/providers.php` | Registered `ManufacturingPlannerServiceProvider` |
+
+---
+
+### Test Coverage (22 tests)
+
+| Group | Tests |
+|-------|-------|
+| Full manufacture (Approve) | 2 |
+| RC-1 partial manufacture | 1 |
+| Sufficient stock (no manufacture) | 1 |
+| Deferred + Escalated decisions | 2 |
+| No recipe plan | 1 |
+| Blocked by availability + helpers | 2 |
+| Negative stock (RC-2) decisions | 3 |
+| Snapshot hash (SHA-256, stability, divergence, null for no recipe) | 5 |
+| Plan identity (UUID v4, uniqueness, ISO 8601 planned_at) | 3 |
+| Metadata integrity (decision, trigger, caller, warehouse) | 4 |
+| toArray() structure | 1 |
+| Invariant violations (PlannerException) | 3 |
+
+---
+
+### Architecture Alignment
+
+| Architecture Decision | Implementation |
+|----------------------|----------------|
+| RC-1 Partial Manufacturing | `qty_to_manufacture` from AvailabilityResult; `should_manufacture = can_proceed && needs_manufacturing` |
+| RC-2 Negative Stock | `will_go_negative` per component; `NegativeStockDecision.projected_balance` for audit |
+| Recipe snapshot integrity | `recipe_snapshot_hash` = SHA-256 of snapshot JSON; verified by PKG-05 before execution |
+| Separation of concerns | Planner plans; Engine executes; Planner never writes |
+| Zero infrastructure imports | No Eloquent, no Laravel Facades, no Queue, no Events |
+
+---
+
+## PKG-05 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
