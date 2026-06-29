@@ -6,8 +6,6 @@ import {
   Building2,
   CalendarClock,
   ClipboardList,
-  Contact,
-  Landmark,
   LayoutDashboard,
   LineChart,
   Link2,
@@ -19,8 +17,8 @@ import {
   ShoppingBag,
   ShoppingCart,
   Tag,
+  TrendingDown,
   Truck,
-  Users,
   Warehouse,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -96,9 +94,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Operations',
     items: [
-      { key: 'accounting', label: 'Accounting', path: ROUTES.accounting, icon: Landmark },
-      { key: 'crm', label: 'CRM', path: ROUTES.crm, icon: Contact },
-      { key: 'hr', label: 'HR', path: ROUTES.hr, icon: Users },
+      { key: 'demand-analysis', label: 'Demand Analysis', path: ROUTES.operationsDemandAnalysis, icon: TrendingDown },
     ],
   },
   {

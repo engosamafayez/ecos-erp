@@ -41,6 +41,7 @@ import { GoodsReceiptsPage } from '@/features/goods-receipts/pages/goods-receipt
 import { ViewGoodsReceiptPage } from '@/features/goods-receipts/pages/view-goods-receipt-page';
 import { SuppliersPage } from '@/features/suppliers/pages/suppliers-page';
 import { ViewSupplierPage } from '@/features/suppliers/pages/view-supplier-page';
+import { DemandAnalysisPage } from '@/features/operations/pages/demand-analysis-page';
 import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
@@ -118,6 +119,8 @@ export const router = createBrowserRouter(
             { path: ROUTES.bomsNew, Component: BomWorkspacePage },
             { path: `${ROUTES.boms}/:id/edit`, Component: BomWorkspacePage },
             { path: `${ROUTES.boms}/:id`, Component: BomWorkspacePage },
+            // Operations
+            { path: ROUTES.operationsDemandAnalysis, Component: DemandAnalysisPage },
             ...moduleRoutes,
           ],
         },

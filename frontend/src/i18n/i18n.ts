@@ -3,6 +3,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
 import arInventoryControl from '@/i18n/locales/ar/inventory-control.json';
+import arOperations from '@/i18n/locales/ar/operations.json';
 import arBoms from '@/i18n/locales/ar/boms.json';
 import arSyncLogs from '@/i18n/locales/ar/sync-logs.json';
 import arAuth from '@/i18n/locales/ar/auth.json';
@@ -25,6 +26,7 @@ import arSuppliers from '@/i18n/locales/ar/suppliers.json';
 import arUnits from '@/i18n/locales/ar/units.json';
 import arWarehouses from '@/i18n/locales/ar/warehouses.json';
 import enInventoryControl from '@/i18n/locales/en/inventory-control.json';
+import enOperations from '@/i18n/locales/en/operations.json';
 import enBoms from '@/i18n/locales/en/boms.json';
 import enSyncLogs from '@/i18n/locales/en/sync-logs.json';
 import enAuth from '@/i18n/locales/en/auth.json';
@@ -74,6 +76,7 @@ void i18n
         boms: enBoms,
         'sync-logs': enSyncLogs,
         'inventory-control': enInventoryControl,
+        operations: enOperations,
         settings: enSettings,
       },
       ar: {
@@ -98,6 +101,7 @@ void i18n
         boms: arBoms,
         'sync-logs': arSyncLogs,
         'inventory-control': arInventoryControl,
+        operations: arOperations,
         settings: arSettings,
       },
     },

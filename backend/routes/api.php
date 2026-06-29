@@ -36,6 +36,7 @@ use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\VarianceAna
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\WarehousePerformanceController;
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\CycleCountPlanController;
 use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
+use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController;
 
 /*
 |--------------------------------------------------------------------------
@@ -184,6 +185,15 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('inventory/variance-analytics',    [VarianceAnalyticsController::class, 'index']);
     Route::get('inventory/warehouse-performance', [WarehousePerformanceController::class, 'index']);
     Route::get('inventory/cycle-count-plans',     [CycleCountPlanController::class, 'index']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Operations — Demand Analysis (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('operations/demand-analysis', [DemandAnalysisController::class, 'index']);
 });
 
 /*

@@ -1,0 +1,42 @@
+{
+  "demandAnalysis": {
+    "title": "Demand Analysis",
+    "subtitle": "Daily Demand Matrix — Operational Day",
+    "generatedAt": "Generated at",
+    "exportCsv": "Export CSV",
+    "refresh": "Refresh",
+    "search": "Search product or SKU…",
+    "filterAll": "All",
+    "filterReady": "Ready",
+    "filterShortage": "Shortage",
+    "filterOutOfStock": "Out of Stock",
+    "filterUnknown": "Unknown",
+    "summary": {
+      "totalOrders": "Total Orders",
+      "totalProducts": "Products",
+      "ready": "Ready",
+      "shortage": "Shortage",
+      "outOfStock": "Out of Stock"
+    },
+    "table": {
+      "product": "Product",
+      "sku": "SKU",
+      "ordered": "Ordered",
+      "reserved": "Reserved",
+      "available": "Available",
+      "required": "Required",
+      "shortage": "Shortage",
+      "status": "Status",
+      "orders": "Orders",
+      "warehouses": "WH",
+      "empty": "No products match the current demand criteria.",
+      "noInventory": "—"
+    },
+    "status": {
+      "READY": "Ready",
+      "SHORTAGE": "Shortage",
+      "OUT_OF_STOCK": "Out of Stock",
+      "UNKNOWN": "Unknown"
+    }
+  }
+}

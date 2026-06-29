@@ -1,0 +1,42 @@
+{
+  "demandAnalysis": {
+    "title": "تحليل الطلب",
+    "subtitle": "مصفوفة الطلب اليومي — اليوم التشغيلي",
+    "generatedAt": "تم الإنشاء في",
+    "exportCsv": "تصدير CSV",
+    "refresh": "تحديث",
+    "search": "بحث عن منتج أو رمز…",
+    "filterAll": "الكل",
+    "filterReady": "جاهز",
+    "filterShortage": "نقص",
+    "filterOutOfStock": "نفد المخزون",
+    "filterUnknown": "غير معروف",
+    "summary": {
+      "totalOrders": "إجمالي الطلبات",
+      "totalProducts": "المنتجات",
+      "ready": "جاهز",
+      "shortage": "نقص",
+      "outOfStock": "نفد المخزون"
+    },
+    "table": {
+      "product": "المنتج",
+      "sku": "الرمز",
+      "ordered": "المطلوب",
+      "reserved": "المحجوز",
+      "available": "المتاح",
+      "required": "المطلوب تخطيطه",
+      "shortage": "النقص",
+      "status": "الحالة",
+      "orders": "الطلبات",
+      "warehouses": "المستودعات",
+      "empty": "لا توجد منتجات تطابق معايير الطلب الحالية.",
+      "noInventory": "—"
+    },
+    "status": {
+      "READY": "جاهز",
+      "SHORTAGE": "نقص",
+      "OUT_OF_STOCK": "نفد المخزون",
+      "UNKNOWN": "غير معروف"
+    }
+  }
+}
