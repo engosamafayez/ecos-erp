@@ -6,6 +6,7 @@ namespace Modules\IAM\Domain\Traits;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Modules\IAM\Domain\Models\Role;
+use Modules\IAM\Domain\Models\UserRole;
 
 /**
  * Adds role-awareness to any Eloquent model (intended for User).
@@ -19,9 +20,9 @@ trait HasRoles
     {
         return $this->belongsToMany(
             Role::class,
-            'user_role',
+            'user_roles',
             'user_id',
             'role_id',
-        );
+        )->using(UserRole::class)->withTimestamps();
     }
 }

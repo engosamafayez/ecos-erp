@@ -16,9 +16,37 @@ interface PermissionServiceInterface
     public function userHasPermission(User $user, string $permission): bool;
 
     /**
+     * Scoped permission check — architecture stub for future Company / Branch /
+     * Warehouse scoped authorization.
+     *
+     * Current behavior: delegates to userHasPermission(), scope params ignored.
+     * Future behavior: checks user_roles.company_id / branch_id / warehouse_id
+     * against the provided scope before resolving permissions.
+     *
+     * @param string|null $companyId   UUID of the target company (nullable = global)
+     * @param string|null $branchId    UUID of the target branch  (nullable = any branch)
+     * @param string|null $warehouseId UUID of the target warehouse (nullable = any)
+     */
+    public function userHasPermissionInScope(
+        User $user,
+        string $permission,
+        ?string $companyId = null,
+        ?string $branchId = null,
+        ?string $warehouseId = null,
+    ): bool;
+
+    /**
      * Return true when the user holds the given role (matched by slug).
      */
     public function userHasRole(User $user, string $roleSlug): bool;
+
+    /**
+     * Return true when the user holds at least one role with is_system = true.
+     *
+     * Use this for authorization bypasses instead of hardcoding role slugs.
+     * Any future system role (Owner, Support, etc.) automatically qualifies.
+     */
+    public function userHasSystemRole(User $user): bool;
 
     /**
      * Return true when the role directly has the given permission.

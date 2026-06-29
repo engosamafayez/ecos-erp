@@ -11,31 +11,54 @@ use Modules\IAM\Domain\Models\Role;
 /**
  * Seeds roles and permissions from config/permissions.php.
  *
- * Safe to re-run: uses firstOrCreate for every record.
- * After seeding it invalidates the RBAC permission cache.
+ * Safe to re-run: cleans up old two-segment permission names then uses
+ * firstOrCreate for every new record.
+ *
+ * Permission format: domain.resource.action  (e.g. inventory.products.view)
+ * Role is_system:    driven by config — never hardcoded in application logic.
  */
 final class RbacSeeder extends Seeder
 {
     public function run(): void
     {
-        // ── 1. Create every permission ─────────────────────────────────────────
+        // ── 0. Remove stale two-segment permissions (old module.action format) ──
+        //
+        // Old format has exactly one dot; new format has exactly two.
+        // This keeps re-seeding idempotent when migrating from 001 → 001A.
+        //
+        $removed = Permission::all()
+            ->filter(fn (Permission $p) => substr_count($p->name, '.') === 1)
+            ->each->delete()
+            ->count();
+
+        if ($removed > 0) {
+            $this->command->warn(sprintf(
+                '  RBAC: removed %d old-format permissions (module.action → domain.resource.action).',
+                $removed,
+            ));
+        }
+
+        // ── 1. Create every permission (domain.resource.action) ───────────────
         $allPermissions = [];
 
-        foreach (config('permissions.modules', []) as $module => $actions) {
-            foreach ($actions as $action) {
-                $name = "{$module}.{$action}";
+        foreach (config('permissions.modules', []) as $domain => $resources) {
+            foreach ($resources as $resource => $actions) {
+                foreach ($actions as $action) {
+                    $name = "{$domain}.{$resource}.{$action}";
 
-                /** @var Permission $permission */
-                $permission = Permission::firstOrCreate(
-                    ['name' => $name],
-                    [
-                        'module'      => $module,
-                        'action'      => $action,
-                        'description' => ucfirst($action).' '.str_replace('_', ' ', $module),
-                    ],
-                );
+                    /** @var Permission $permission */
+                    $permission = Permission::firstOrCreate(
+                        ['name' => $name],
+                        [
+                            'module'      => $domain,
+                            'resource'    => $resource,
+                            'action'      => $action,
+                            'description' => ucfirst($action).' '.str_replace('_', ' ', $resource),
+                        ],
+                    );
 
-                $allPermissions[$name] = $permission;
+                    $allPermissions[$name] = $permission;
+                }
             }
         }
 
@@ -47,12 +70,12 @@ final class RbacSeeder extends Seeder
         // ── 2. Create every role ───────────────────────────────────────────────
         $roles = [];
 
-        foreach (config('permissions.roles', []) as $slug => $name) {
+        foreach (config('permissions.roles', []) as $slug => $def) {
             $roles[$slug] = Role::firstOrCreate(
                 ['slug' => $slug],
                 [
-                    'name'      => $name,
-                    'is_system' => true,
+                    'name'      => $def['name'],
+                    'is_system' => $def['is_system'],
                 ],
             );
         }
@@ -64,23 +87,23 @@ final class RbacSeeder extends Seeder
 
         // ── 3. Assign permissions to roles ─────────────────────────────────────
         //
-        // Super Admin is intentionally excluded from this mapping.
-        // It gains access through Gate::before() instead of per-permission rows,
-        // so new permissions automatically apply without re-seeding.
+        // Super Admin is intentionally excluded from role_permissions.
+        // System roles gain access through Gate::before() — no per-permission
+        // rows required. New permissions automatically apply without re-seeding.
         //
         $rolePermissionMap = config('permissions.role_permissions', []);
 
-        foreach ($rolePermissionMap as $slug => $moduleGrants) {
+        foreach ($rolePermissionMap as $slug => $domainResourceGrants) {
             if (! isset($roles[$slug])) {
                 continue;
             }
 
-            $role = $roles[$slug];
+            $role          = $roles[$slug];
             $permissionIds = [];
 
-            foreach ($moduleGrants as $module => $actions) {
+            foreach ($domainResourceGrants as $domainResource => $actions) {
                 foreach ($actions as $action) {
-                    $name = "{$module}.{$action}";
+                    $name = "{$domainResource}.{$action}"; // e.g. inventory.products.view
                     if (isset($allPermissions[$name])) {
                         $permissionIds[] = $allPermissions[$name]->id;
                     }
@@ -99,7 +122,6 @@ final class RbacSeeder extends Seeder
         }
 
         // ── 4. Flush RBAC cache after seeding ─────────────────────────────────
-        // This ensures no stale cached permission lists survive the seed run.
         try {
             cache()->flush();
         } catch (\Throwable) {

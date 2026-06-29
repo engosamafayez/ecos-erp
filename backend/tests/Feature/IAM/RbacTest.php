@@ -15,13 +15,16 @@ use Modules\IAM\Domain\Models\Role;
 use Tests\TestCase;
 
 /**
- * TASK-SECURITY-001 — RBAC Foundation
+ * TASK-SECURITY-001A — Enterprise RBAC Upgrade
+ *
+ * All permissions use the three-segment convention: domain.resource.action
+ * All pivot table assertions use the new entity table names: user_roles, role_permissions
  *
  * Verifies:
  *  1.  Role can be created and retrieved by slug
- *  2.  Permission can be created with module.action name
- *  3.  Permission can be assigned to a role
- *  4.  Role can be assigned to a user
+ *  2.  Permission can be created with domain.resource.action name
+ *  3.  Permission can be assigned to a role (role_permissions table)
+ *  4.  Role can be assigned to a user (user_roles table)
  *  5.  userHasPermission returns true for granted permission
  *  6.  userHasPermission returns false for missing permission
  *  7.  userHasRole returns true for assigned role
@@ -34,10 +37,13 @@ use Tests\TestCase;
  *  14. User permissions are cached on first lookup
  *  15. invalidateUserCache removes cached permissions
  *  16. invalidateRoleCache clears cache for all role members
- *  17. Super Admin passes middleware without explicit permission
- *  18. Super Admin bypasses Gate::allows()
+ *  17. System role passes middleware without explicit permission
+ *  18. System role bypasses Gate::allows()
  *  19. PermissionService resolves from the container
  *  20. getUserPermissions merges permissions across multiple roles
+ *  21. Non-system role does NOT get middleware bypass
+ *  22. userHasSystemRole returns false when user has no system role
+ *  23. userHasPermissionInScope delegates to flat check (stub)
  */
 class RbacTest extends TestCase
 {
@@ -53,19 +59,21 @@ class RbacTest extends TestCase
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private function role(string $slug, string $name = 'Test Role'): Role
+    private function role(string $slug, string $name = 'Test Role', bool $isSystem = false): Role
     {
-        return Role::create(['name' => $name, 'slug' => $slug]);
+        return Role::create(['name' => $name, 'slug' => $slug, 'is_system' => $isSystem]);
     }
 
+    /** Three-segment permission: domain.resource.action */
     private function perm(string $name): Permission
     {
-        [$module, $action] = explode('.', $name, 2);
+        [$domain, $resource, $action] = explode('.', $name);
 
         return Permission::create([
-            'name'   => $name,
-            'module' => $module,
-            'action' => $action,
+            'name'     => $name,
+            'module'   => $domain,
+            'resource' => $resource,
+            'action'   => $action,
         ]);
     }
 
@@ -90,14 +98,15 @@ class RbacTest extends TestCase
         $this->assertSame($role->id, $found->id);
     }
 
-    public function test_permission_can_be_created_with_module_action_name(): void
+    public function test_permission_can_be_created_with_hierarchical_name(): void
     {
-        $perm = $this->perm('products.view');
+        $perm = $this->perm('inventory.products.view');
 
         $this->assertDatabaseHas('permissions', [
-            'name'   => 'products.view',
-            'module' => 'products',
-            'action' => 'view',
+            'name'     => 'inventory.products.view',
+            'module'   => 'inventory',
+            'resource' => 'products',
+            'action'   => 'view',
         ]);
         $this->assertNotEmpty($perm->id);
     }
@@ -107,11 +116,11 @@ class RbacTest extends TestCase
     public function test_permission_can_be_assigned_to_role(): void
     {
         $role = $this->role('sales');
-        $perm = $this->perm('orders.view');
+        $perm = $this->perm('sales.orders.view');
 
         $role->permissions()->attach($perm->id);
 
-        $this->assertDatabaseHas('role_permission', [
+        $this->assertDatabaseHas('role_permissions', [
             'role_id'       => $role->id,
             'permission_id' => $perm->id,
         ]);
@@ -123,7 +132,7 @@ class RbacTest extends TestCase
 
         $this->user->roles()->attach($role->id);
 
-        $this->assertDatabaseHas('user_role', [
+        $this->assertDatabaseHas('user_roles', [
             'user_id' => $this->user->id,
             'role_id' => $role->id,
         ]);
@@ -134,22 +143,21 @@ class RbacTest extends TestCase
     public function test_user_has_permission_returns_true_for_granted_permission(): void
     {
         $role = $this->role('editor');
-        $perm = $this->perm('products.create');
+        $perm = $this->perm('inventory.products.create');
         $role->permissions()->attach($perm->id);
         $this->user->roles()->attach($role->id);
 
-        $this->assertTrue($this->service()->userHasPermission($this->user, 'products.create'));
+        $this->assertTrue($this->service()->userHasPermission($this->user, 'inventory.products.create'));
     }
 
     public function test_user_has_permission_returns_false_for_missing_permission(): void
     {
         $role = $this->role('reader');
-        $perm = $this->perm('products.view');
+        $perm = $this->perm('inventory.products.view');
         $role->permissions()->attach($perm->id);
         $this->user->roles()->attach($role->id);
 
-        // User has products.view but not products.delete
-        $this->assertFalse($this->service()->userHasPermission($this->user, 'products.delete'));
+        $this->assertFalse($this->service()->userHasPermission($this->user, 'inventory.products.delete'));
     }
 
     // ── 7–8: userHasRole ─────────────────────────────────────────────────────
@@ -164,7 +172,7 @@ class RbacTest extends TestCase
 
     public function test_user_has_role_returns_false_for_unassigned_role(): void
     {
-        $this->role('purchasing'); // role exists but not assigned
+        $this->role('purchasing');
 
         $this->assertFalse($this->service()->userHasRole($this->user, 'purchasing'));
     }
@@ -174,18 +182,18 @@ class RbacTest extends TestCase
     public function test_role_has_permission_returns_true_for_direct_grant(): void
     {
         $role = $this->role('ops');
-        $perm = $this->perm('orders.fulfill');
+        $perm = $this->perm('sales.orders.fulfill');
         $role->permissions()->attach($perm->id);
 
-        $this->assertTrue($this->service()->roleHasPermission($role, 'orders.fulfill'));
+        $this->assertTrue($this->service()->roleHasPermission($role, 'sales.orders.fulfill'));
     }
 
     public function test_role_has_permission_returns_false_when_not_granted(): void
     {
         $role = $this->role('ops');
-        $this->perm('orders.fulfill'); // permission exists but not attached
+        $this->perm('sales.orders.fulfill');
 
-        $this->assertFalse($this->service()->roleHasPermission($role, 'orders.fulfill'));
+        $this->assertFalse($this->service()->roleHasPermission($role, 'sales.orders.fulfill'));
     }
 
     // ── 11–13: permission: middleware ─────────────────────────────────────────
@@ -193,12 +201,11 @@ class RbacTest extends TestCase
     public function test_middleware_allows_request_when_user_has_permission(): void
     {
         $role = $this->role('staff');
-        $perm = $this->perm('categories.view');
+        $perm = $this->perm('inventory.categories.view');
         $role->permissions()->attach($perm->id);
         $this->user->roles()->attach($role->id);
 
-        // Register a temporary test route that uses the permission middleware.
-        \Illuminate\Support\Facades\Route::middleware('permission:categories.view')
+        \Illuminate\Support\Facades\Route::middleware('permission:inventory.categories.view')
             ->get('/test-rbac/categories', fn () => response()->json(['ok' => true]));
 
         $this->actingAs($this->user)
@@ -209,9 +216,9 @@ class RbacTest extends TestCase
 
     public function test_middleware_returns_403_when_permission_missing(): void
     {
-        $this->role('viewer'); // user has no role at all
+        $this->role('viewer');
 
-        \Illuminate\Support\Facades\Route::middleware('permission:products.delete')
+        \Illuminate\Support\Facades\Route::middleware('permission:inventory.products.delete')
             ->get('/test-rbac/products-delete', fn () => response()->json(['ok' => true]));
 
         $this->actingAs($this->user)
@@ -221,7 +228,7 @@ class RbacTest extends TestCase
 
     public function test_middleware_returns_401_when_unauthenticated(): void
     {
-        \Illuminate\Support\Facades\Route::middleware('permission:orders.view')
+        \Illuminate\Support\Facades\Route::middleware('permission:sales.orders.view')
             ->get('/test-rbac/orders', fn () => response()->json(['ok' => true]));
 
         $this->getJson('/test-rbac/orders')
@@ -233,7 +240,7 @@ class RbacTest extends TestCase
     public function test_user_permissions_are_cached_on_first_lookup(): void
     {
         $role = $this->role('cacher');
-        $perm = $this->perm('channels.sync');
+        $perm = $this->perm('sales.channels.sync');
         $role->permissions()->attach($perm->id);
         $this->user->roles()->attach($role->id);
 
@@ -245,17 +252,17 @@ class RbacTest extends TestCase
         $this->service()->getUserPermissions($this->user);
 
         $this->assertNotNull(Cache::get($cacheKey));
-        $this->assertContains('channels.sync', Cache::get($cacheKey));
+        $this->assertContains('sales.channels.sync', Cache::get($cacheKey));
     }
 
     public function test_invalidate_user_cache_removes_cached_permissions(): void
     {
         $role = $this->role('cache-test-role');
-        $perm = $this->perm('warehouses.view');
+        $perm = $this->perm('inventory.warehouses.view');
         $role->permissions()->attach($perm->id);
         $this->user->roles()->attach($role->id);
 
-        $this->service()->getUserPermissions($this->user); // prime cache
+        $this->service()->getUserPermissions($this->user);
         $cacheKey = "rbac.user.{$this->user->id}.perms";
         $this->assertNotNull(Cache::get($cacheKey));
 
@@ -267,14 +274,13 @@ class RbacTest extends TestCase
     public function test_invalidate_role_cache_clears_cache_for_all_role_members(): void
     {
         $role  = $this->role('shared-role');
-        $perm  = $this->perm('suppliers.view');
+        $perm  = $this->perm('purchasing.suppliers.view');
         $role->permissions()->attach($perm->id);
 
         $user2 = User::factory()->create();
         $this->user->roles()->attach($role->id);
         $user2->roles()->attach($role->id);
 
-        // Prime caches for both users.
         $this->service()->getUserPermissions($this->user);
         $this->service()->getUserPermissions($user2);
 
@@ -284,18 +290,14 @@ class RbacTest extends TestCase
         $this->assertNull(Cache::get("rbac.user.{$user2->id}.perms"));
     }
 
-    // ── 17–18: Super Admin ────────────────────────────────────────────────────
+    // ── 17–18: System role bypass (is_system = true) ─────────────────────────
 
-    public function test_super_admin_passes_permission_middleware_without_explicit_permission(): void
+    public function test_system_role_passes_permission_middleware_without_explicit_permission(): void
     {
-        $superAdmin = Role::create([
-            'name'      => 'Super Admin',
-            'slug'      => 'super-admin',
-            'is_system' => true,
-        ]);
-        $this->user->roles()->attach($superAdmin->id);
+        $systemRole = $this->role('super-admin', 'Super Admin', isSystem: true);
+        $this->user->roles()->attach($systemRole->id);
 
-        \Illuminate\Support\Facades\Route::middleware('permission:roles.delete')
+        \Illuminate\Support\Facades\Route::middleware('permission:iam.roles.delete')
             ->get('/test-rbac/super', fn () => response()->json(['ok' => true]));
 
         $this->actingAs($this->user)
@@ -303,16 +305,11 @@ class RbacTest extends TestCase
             ->assertOk();
     }
 
-    public function test_super_admin_bypasses_gate_allows(): void
+    public function test_system_role_bypasses_gate_allows(): void
     {
-        $superAdmin = Role::create([
-            'name'      => 'Super Admin',
-            'slug'      => 'super-admin',
-            'is_system' => true,
-        ]);
-        $this->user->roles()->attach($superAdmin->id);
+        $systemRole = $this->role('super-admin', 'Super Admin', isSystem: true);
+        $this->user->roles()->attach($systemRole->id);
 
-        // Gate::allows() should return true for any ability (Gate::before bypass).
         $this->actingAs($this->user);
         $this->assertTrue(Gate::allows('any.ability.that.does.not.exist'));
     }
@@ -333,14 +330,69 @@ class RbacTest extends TestCase
         $roleA = $this->role('role-a');
         $roleB = $this->role('role-b');
 
-        $roleA->permissions()->attach($this->perm('units.view')->id);
-        $roleB->permissions()->attach($this->perm('units.create')->id);
+        $roleA->permissions()->attach($this->perm('inventory.units.view')->id);
+        $roleB->permissions()->attach($this->perm('inventory.units.create')->id);
 
         $this->user->roles()->attach([$roleA->id, $roleB->id]);
 
         $perms = $this->service()->getUserPermissions($this->user);
 
-        $this->assertContains('units.view', $perms);
-        $this->assertContains('units.create', $perms);
+        $this->assertContains('inventory.units.view', $perms);
+        $this->assertContains('inventory.units.create', $perms);
+    }
+
+    // ── 21: Non-system role does not bypass ───────────────────────────────────
+
+    public function test_non_system_role_does_not_bypass_permission_middleware(): void
+    {
+        $regularRole = $this->role('company-admin', 'Company Admin', isSystem: false);
+        $this->user->roles()->attach($regularRole->id);
+
+        \Illuminate\Support\Facades\Route::middleware('permission:iam.roles.delete')
+            ->get('/test-rbac/non-system', fn () => response()->json(['ok' => true]));
+
+        $this->actingAs($this->user)
+            ->getJson('/test-rbac/non-system')
+            ->assertForbidden();
+    }
+
+    // ── 22: userHasSystemRole ─────────────────────────────────────────────────
+
+    public function test_user_has_system_role_returns_false_when_no_system_role(): void
+    {
+        $regularRole = $this->role('viewer', 'Viewer', isSystem: false);
+        $this->user->roles()->attach($regularRole->id);
+
+        $this->assertFalse($this->service()->userHasSystemRole($this->user));
+    }
+
+    public function test_user_has_system_role_returns_true_for_any_system_role(): void
+    {
+        // A hypothetical future system role — bypass must work regardless of slug
+        $futureSystemRole = $this->role('owner', 'Owner', isSystem: true);
+        $this->user->roles()->attach($futureSystemRole->id);
+
+        $this->assertTrue($this->service()->userHasSystemRole($this->user));
+    }
+
+    // ── 23: userHasPermissionInScope (stub) ───────────────────────────────────
+
+    public function test_user_has_permission_in_scope_delegates_to_flat_check(): void
+    {
+        $role = $this->role('scoped-role');
+        $perm = $this->perm('inventory.stock.adjust');
+        $role->permissions()->attach($perm->id);
+        $this->user->roles()->attach($role->id);
+
+        // Scope params are ignored in the current stub — flat check applies.
+        $this->assertTrue(
+            $this->service()->userHasPermissionInScope(
+                $this->user,
+                'inventory.stock.adjust',
+                companyId: 'some-company-uuid',
+                branchId: null,
+                warehouseId: null,
+            ),
+        );
     }
 }

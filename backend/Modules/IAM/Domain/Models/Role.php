@@ -15,7 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string      $name
  * @property string      $slug
  * @property string|null $description
- * @property bool        $is_system
+ * @property bool        $is_system   When true, the role bypasses all permission checks.
+ *                                    Never hardcode role slugs for the bypass — check is_system.
  */
 class Role extends Model
 {
@@ -46,10 +47,10 @@ class Role extends Model
     {
         return $this->belongsToMany(
             Permission::class,
-            'role_permission',
+            'role_permissions',
             'role_id',
             'permission_id',
-        );
+        )->using(RolePermission::class)->withPivot('effect', 'conditions', 'expires_at');
     }
 
     /** @return BelongsToMany<\App\Models\User, $this> */
@@ -57,9 +58,9 @@ class Role extends Model
     {
         return $this->belongsToMany(
             \App\Models\User::class,
-            'user_role',
+            'user_roles',
             'role_id',
             'user_id',
-        );
+        )->using(UserRole::class)->withTimestamps();
     }
 }

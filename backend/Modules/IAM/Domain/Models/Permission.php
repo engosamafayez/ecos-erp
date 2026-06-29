@@ -11,13 +11,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 /**
  * RBAC Permission entity.
  *
- * Permissions follow the convention: {module}.{action}
- * e.g. "products.view", "orders.fulfill", "roles.assign"
+ * Permissions follow the three-segment hierarchical convention:
+ *   {domain}.{resource}.{action}
+ *
+ * Examples:
+ *   inventory.products.view
+ *   sales.orders.fulfill
+ *   crm.customers.update
+ *   iam.roles.assign
  *
  * @property string      $id
- * @property string      $name
- * @property string      $module
- * @property string      $action
+ * @property string      $name       Full permission name (domain.resource.action)
+ * @property string      $module     Top-level domain  (e.g. "inventory", "sales", "crm")
+ * @property string      $resource   Resource within domain (e.g. "products", "orders")
+ * @property string      $action     Action  (e.g. "view", "create", "fulfill")
  * @property string|null $description
  */
 class Permission extends Model
@@ -32,6 +39,7 @@ class Permission extends Model
     protected $fillable = [
         'name',
         'module',
+        'resource',
         'action',
         'description',
     ];
@@ -41,9 +49,9 @@ class Permission extends Model
     {
         return $this->belongsToMany(
             Role::class,
-            'role_permission',
+            'role_permissions',
             'permission_id',
             'role_id',
-        );
+        )->using(RolePermission::class);
     }
 }

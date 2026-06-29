@@ -20,7 +20,8 @@ use Modules\IAM\Infrastructure\Services\SanctumAuthService;
  *  1. Bind auth + permission service ports to their implementations.
  *  2. Load RBAC migrations.
  *  3. Register the `permission:` route middleware alias.
- *  4. Wire Gate::before() so Super Admin bypasses all ability checks.
+ *  4. Wire Gate::before() so system roles bypass all ability checks.
+ *     The bypass is keyed on is_system = true — never on a hardcoded slug.
  */
 final class IamServiceProvider extends ServiceProvider
 {
@@ -33,24 +34,22 @@ final class IamServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Load RBAC migrations from the IAM module directory.
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
 
-        // Register the `permission:` middleware alias so routes can use
-        // ->middleware('permission:products.view') without touching bootstrap/app.php.
         $this->app['router']->aliasMiddleware('permission', RequirePermissionMiddleware::class);
 
-        // Super Admin gate bypass: returning `true` from Gate::before() skips
-        // all subsequent policy / ability checks for this request.
+        // System role gate bypass: any role with is_system = true skips all
+        // subsequent policy / ability checks. This covers Super Admin today and
+        // any future system roles (Owner, Support, etc.) without code changes.
         Gate::before(function (User $user, string $ability): ?bool {
             /** @var PermissionServiceInterface $permissions */
             $permissions = $this->app->make(PermissionServiceInterface::class);
 
-            if ($permissions->userHasRole($user, 'super-admin')) {
+            if ($permissions->userHasSystemRole($user)) {
                 return true;
             }
 
-            return null; // Fall through to individual policies / Gate::define() checks.
+            return null;
         });
     }
 }
