@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Inventory\Products\Domain\Enums\CostSource;
+use Modules\Inventory\Products\Domain\Enums\ProductStockStatus;
 use Modules\Inventory\Products\Infrastructure\Database\Factories\ProductFactory;
 use Modules\MasterData\Categories\Domain\Models\Category;
 use Modules\MasterData\Units\Domain\Models\Unit;
@@ -23,19 +25,23 @@ use Modules\MasterData\Units\Domain\Models\Unit;
  * @property string|null $description
  * @property string $category_id
  * @property string $unit_id
- * @property string $product_type
+ * @property string $product_type              Classification only — do not use for business logic
  * @property bool $is_active
  * @property string|null $image_url
  * @property float|null $regular_price
  * @property float|null $sale_price
- * @property float|null $last_purchase_cost  Updated on every posted GR
- * @property float|null $average_cost        Weighted average cost across all receipts
- * @property float|null $current_fifo_cost   Cost of the oldest available receipt layer
- * @property string|null $last_purchase_date ISO date of most recent GR post
- * @property string|null $last_supplier_id   UUID of last supplier (historical, no FK)
+ * @property float|null $last_purchase_cost    Updated on every posted GR
+ * @property float|null $average_cost          Weighted average cost across all receipts
+ * @property float|null $current_fifo_cost     Cost of the oldest available receipt layer
+ * @property string|null $last_purchase_date   ISO date of most recent GR post
+ * @property string|null $last_supplier_id     UUID of last supplier (historical, no FK)
  * @property string|null $short_description
  * @property string|null $long_description
- * @property \Modules\Inventory\Products\Domain\Enums\ProductStockStatus|null $stock_status
+ * @property ProductStockStatus|null $stock_status
+ * @property CostSource $cost_source           Which mechanism(s) update current_cost
+ * @property bool $can_manufacture             Has a recipe and may be produced
+ * @property bool $can_disassemble             May be disassembled back into components
+ * @property bool $allow_negative_stock        Raw material only — evaluated at consumption time (RC-2)
  */
 class Product extends Model
 {
@@ -76,6 +82,10 @@ class Product extends Model
         'short_description',
         'long_description',
         'stock_status',
+        'cost_source',
+        'can_manufacture',
+        'can_disassemble',
+        'allow_negative_stock',
     ];
 
     /**
@@ -84,14 +94,18 @@ class Product extends Model
     protected function casts(): array
     {
         return [
-            'is_active'           => 'boolean',
-            'regular_price'       => 'float',
-            'sale_price'          => 'float',
-            'last_purchase_cost'  => 'float',
-            'average_cost'        => 'float',
-            'current_fifo_cost'   => 'float',
-            'last_purchase_date'  => 'date:Y-m-d',
-            'stock_status'        => \Modules\Inventory\Products\Domain\Enums\ProductStockStatus::class,
+            'is_active'            => 'boolean',
+            'regular_price'        => 'float',
+            'sale_price'           => 'float',
+            'last_purchase_cost'   => 'float',
+            'average_cost'         => 'float',
+            'current_fifo_cost'    => 'float',
+            'last_purchase_date'   => 'date:Y-m-d',
+            'stock_status'         => ProductStockStatus::class,
+            'cost_source'          => CostSource::class,
+            'can_manufacture'      => 'boolean',
+            'can_disassemble'      => 'boolean',
+            'allow_negative_stock' => 'boolean',
         ];
     }
 

@@ -18,9 +18,13 @@ final class ProductDTO extends BaseDTO
         public readonly string $category_id,
         public readonly string $unit_id,
         public readonly string $product_type,
+        public readonly string $cost_source = 'purchase',
         public readonly ?string $barcode = null,
         public readonly ?string $description = null,
         public readonly bool $is_active = true,
+        public readonly bool $can_manufacture = false,
+        public readonly bool $can_disassemble = false,
+        public readonly bool $allow_negative_stock = false,
     ) {}
 
     /**
@@ -34,9 +38,13 @@ final class ProductDTO extends BaseDTO
             category_id: (string) $data['category_id'],
             unit_id: (string) $data['unit_id'],
             product_type: (string) $data['product_type'],
+            cost_source: (string) ($data['cost_source'] ?? 'purchase'),
             barcode: self::nullableString($data, 'barcode'),
             description: self::nullableString($data, 'description'),
             is_active: (bool) ($data['is_active'] ?? true),
+            can_manufacture: (bool) ($data['can_manufacture'] ?? false),
+            can_disassemble: (bool) ($data['can_disassemble'] ?? false),
+            allow_negative_stock: (bool) ($data['allow_negative_stock'] ?? false),
         );
     }
 
