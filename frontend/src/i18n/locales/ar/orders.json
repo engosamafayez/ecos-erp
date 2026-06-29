@@ -123,10 +123,19 @@
     "total": "الإجمالي",
     "paymentMethod": "الدفع",
     "productsCount": "العناصر",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "آخر تحديث",
     "address": "العنوان",
     "shippingAttempts": "محاولات الشحن",
     "shippingCompany": "شركة الشحن",
     "actions": "الإجراءات"
+  },
+  "toolbar": {
+    "columns": "الأعمدة"
+  },
+  "mobileCard": {
+    "item": "عنصر",
+    "items": "عناصر"
   },
   "table": {
     "selectAll": "تحديد الكل",

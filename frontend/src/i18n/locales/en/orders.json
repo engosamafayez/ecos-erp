@@ -126,7 +126,16 @@
     "address": "Address",
     "shippingAttempts": "Attempts",
     "shippingCompany": "Carrier",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
     "actions": "Actions"
+  },
+  "toolbar": {
+    "columns": "Columns"
+  },
+  "mobileCard": {
+    "item": "item",
+    "items": "items"
   },
   "table": {
     "selectAll": "Select all",

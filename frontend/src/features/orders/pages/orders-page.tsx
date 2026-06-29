@@ -1,25 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Filter,
-  Plus,
-  RefreshCw,
-  Search,
-  Users,
-} from 'lucide-react';
+import { CalendarDays, Filter, Search, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/crud';
 import { ConfirmDialog } from '@/components/crud';
 import { PageHeader } from '@/components/crud';
+import { useColumnVisibility } from '@/components/data-grid/use-column-visibility';
 import { useChannelOptions } from '@/features/channels/hooks/use-channel-options';
 import type { AdvancedFilterValues } from '@/features/orders/components/order-advanced-filters';
 import { OrderAdvancedFilters } from '@/features/orders/components/order-advanced-filters';
 import { OrderCustomerIntelligence } from '@/features/orders/components/order-customer-intelligence';
 import { OrderDetailDrawer } from '@/features/orders/components/order-detail-drawer';
 import { OrderFormDrawer } from '@/features/orders/components/order-form-drawer';
+import { OrderListToolbar } from '@/features/orders/components/order-list-toolbar';
 import { OrderSmartToolbar } from '@/features/orders/components/order-smart-toolbar';
 import { OrderStatusTabs } from '@/features/orders/components/order-status-tabs';
+import { ORDER_COLUMN_META } from '@/features/orders/components/order-column-meta';
 import { OrderTable } from '@/features/orders/components/order-table';
 import {
   useDeleteOrder,
@@ -96,6 +93,10 @@ export function OrdersPage() {
   // ── UI-005: Keyboard navigation ───────────────────────────────────────────────
   const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null);
 
+  // ── Column visibility — persisted in localStorage ─────────────────────────────
+  const { visibility: columnVisibility, toggle: toggleColumn, reset: resetColumns } =
+    useColumnVisibility('ecos-orders-cols', ORDER_COLUMN_META);
+
   // ── Query ─────────────────────────────────────────────────────────────────────
   const params = useMemo(
     () => ({
@@ -169,9 +170,9 @@ export function OrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Active filter counts (for badge on filter toggle) ─────────────────────────
-  const advancedActiveCount = Object.values(advancedFilters).filter(Boolean).length
-    + (channelId ? 1 : 0);
+  // ── Active filter counts ──────────────────────────────────────────────────────
+  const advancedActiveCount =
+    Object.values(advancedFilters).filter(Boolean).length + (channelId ? 1 : 0);
   const intelligenceActive = customerFilter !== null;
 
   // ── Reset helpers ─────────────────────────────────────────────────────────────
@@ -235,38 +236,69 @@ export function OrdersPage() {
     resetPage();
   }
 
+  function setDateFrom(val: string | null) {
+    setAdvancedFilters((prev) => ({ ...prev, dateFrom: val }));
+    resetPage();
+  }
+
+  function setDateTo(val: string | null) {
+    setAdvancedFilters((prev) => ({ ...prev, dateTo: val }));
+    resetPage();
+  }
+
+  // ── Page header subtitle — total count + active filter summary ────────────────
+  const totalCount = meta?.total;
+  const activeFilterCount =
+    (search ? 1 : 0) +
+    (channelId ? 1 : 0) +
+    Object.values(advancedFilters).filter(Boolean).length +
+    (customerFilter ? 1 : 0) +
+    (hasLocation !== null ? 1 : 0) +
+    (minShippingAttempts !== null ? 1 : 0);
+
+  const headerSubtitle = (
+    <span className="inline-flex items-center gap-2">
+      {totalCount !== undefined ? (
+        <span className="font-medium text-foreground">
+          {totalCount.toLocaleString()} {t('title').toLowerCase()}
+        </span>
+      ) : (
+        <span>{t('subtitle')}</span>
+      )}
+      {activeFilterCount > 0 ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+          <Filter className="size-3" />
+          {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'}
+        </span>
+      ) : null}
+    </span>
+  );
+
   return (
     <div className="flex h-full flex-col">
       {/* ── Page header ── */}
       <div className="border-b bg-background px-6 py-4">
         <PageHeader
           title={t('title')}
-          subtitle={t('subtitle')}
+          subtitle={headerSubtitle}
           breadcrumbs={[
             { label: tCommon('home'), to: ROUTES.dashboard },
             { label: t('title') },
           ]}
-          actions={
-            <div className="flex items-center gap-2">
-              <Button onClick={() => setNewOrderOpen(true)}>
-                <Plus className="size-4" />
-                {t('actions.new')}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 shrink-0"
-                onClick={() => void refetch()}
-                disabled={isFetching}
-                aria-label={tCommon('actions.refresh')}
-              >
-                <RefreshCw className={`size-3.5 ${isFetching ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-          }
         />
       </div>
+
+      {/* ── Standard Actions Toolbar ── */}
+      <OrderListToolbar
+        selectedCount={selectedIds.size}
+        isFetching={isFetching}
+        columns={ORDER_COLUMN_META}
+        columnVisibility={columnVisibility}
+        onNew={() => setNewOrderOpen(true)}
+        onRefresh={() => void refetch()}
+        onColumnToggle={toggleColumn}
+        onColumnReset={resetColumns}
+      />
 
       {/* ── Sticky status tabs ── */}
       <div className="sticky top-0 z-20 bg-background">
@@ -277,10 +309,10 @@ export function OrdersPage() {
         />
       </div>
 
-      {/* ── Filter bar: Search + Channel + toggles ── */}
+      {/* ── Filter bar: Search + Channel + Date range + toggles ── */}
       <div className="border-b bg-background px-4 py-2">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search — DD-024: also covers product name / SKU */}
+          {/* Search — DD-024 */}
           <div className="relative min-w-48 flex-1">
             <Search className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -301,10 +333,7 @@ export function OrdersPage() {
           {/* DD-023 — Channel filter */}
           <select
             value={channelId ?? ''}
-            onChange={(e) => {
-              setChannelId(e.target.value || null);
-              resetPage();
-            }}
+            onChange={(e) => { setChannelId(e.target.value || null); resetPage(); }}
             aria-label={t('filters.channel')}
             className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           >
@@ -313,6 +342,37 @@ export function OrdersPage() {
               <option key={c.value} value={c.value}>{c.label}</option>
             ))}
           </select>
+
+          {/* Date range — always visible on sm+ */}
+          <div className="hidden items-center gap-1 sm:flex">
+            <CalendarDays className="size-3.5 shrink-0 text-muted-foreground" />
+            <input
+              type="date"
+              value={advancedFilters.dateFrom ?? ''}
+              onChange={(e) => setDateFrom(e.target.value || null)}
+              aria-label={t('filters.dateFrom')}
+              className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <span className="text-xs text-muted-foreground">–</span>
+            <input
+              type="date"
+              value={advancedFilters.dateTo ?? ''}
+              onChange={(e) => setDateTo(e.target.value || null)}
+              min={advancedFilters.dateFrom ?? undefined}
+              aria-label={t('filters.dateTo')}
+              className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            {(advancedFilters.dateFrom || advancedFilters.dateTo) ? (
+              <button
+                type="button"
+                onClick={() => { setDateFrom(null); setDateTo(null); }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Clear dates"
+              >
+                ✕
+              </button>
+            ) : null}
+          </div>
 
           {/* Advanced Filters toggle — DD-026 */}
           <Button
@@ -407,6 +467,7 @@ export function OrdersPage() {
           onEdit={handleEdit}
           onDelete={(order) => setDeletingOrder(order)}
           focusedRowId={focusedRowIndex !== null ? (orders[focusedRowIndex]?.id ?? null) : null}
+          columnVisibility={columnVisibility}
         />
 
         {meta ? (
