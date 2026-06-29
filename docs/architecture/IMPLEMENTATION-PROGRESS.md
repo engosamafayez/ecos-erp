@@ -265,6 +265,161 @@ A **read-only domain service** that locates the active Recipe for a product, val
 
 ---
 
-## PKG-03 through PKG-11 — Pending
+## PKG-03A — Decision Kernel
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-003
+
+---
+
+### Architecture
+
+The Decision Kernel is a pure domain engine. It has zero infrastructure dependencies.
+
+```
+Trigger
+    ↓
+DecisionKernel.evaluate(trigger, context, ruleProvider)
+    ↓
+RuleEvaluationPipeline.run(rules, context)
+    ↓
+Select highest-priority matching rule
+    ↓
+DecisionResult  ← immutable, returned to caller
+```
+
+The kernel **never** executes business operations. It only decides. Execution belongs to the calling Engine.
+
+**Caller isolation:** The kernel does not know who called it. All callers (Orders, GR, Procurement, Manufacturing, AI, CLI, API) receive the same `DecisionResult` contract.
+
+---
+
+### Decision Kernel Architecture
+
+| Concern | Design Decision |
+|---------|----------------|
+| Independence | No imports from Orders, Inventory, Manufacturing, Procurement, Queue, Laravel |
+| Extensibility (Phase 7) | `DecisionRuleInterface` + `RuleProviderInterface` — callers supply any provider |
+| Priority resolution (Phase 5) | Highest `priority` wins; PHP 8.0+ stable sort gives first-registered on tie |
+| Snapshot support (Phase 6) | `DecisionResult.snapshot_id` + `snapshot_hash` nullable fields — architecture only |
+| No matching rule | `NoMatchingRuleException` — callers decide the default (defer, log, escalate) |
+| Immutability | All value objects are `final readonly class` |
+| No side effects | `RuleEvaluationPipeline.run()` is a pure function; `DecisionKernel.evaluate()` is stateless |
+
+---
+
+### Files Created (12)
+
+#### Domain/Contracts
+| File | Purpose |
+|------|---------|
+| `DecisionRuleInterface.php` | Contract for any rule (in-memory, DB, AI, dynamic) |
+| `RuleProviderInterface.php` | Contract for supplying rules; callers pass domain-specific providers |
+
+#### Domain/Enums
+| File | Purpose |
+|------|---------|
+| `DecisionType.php` | `Approve` \| `Reject` \| `Defer` \| `Partial` \| `Escalate` — with `isPositive()`, `isTerminal()` |
+
+#### Domain/Exceptions
+| File | Purpose |
+|------|---------|
+| `NoMatchingRuleException.php` | Thrown when no rule matches; carries `contextType()` |
+
+#### Domain/ValueObjects
+| File | Purpose |
+|------|---------|
+| `DecisionReason.php` | `code` + `message` + `context` array |
+| `DecisionTrigger.php` | `trigger_type`, `trigger_id`, `trigger_version` (RC-6), `triggered_at`, `actor_id` |
+| `DecisionContext.php` | Generic immutable data bag; `with()` builder; `get()` / `has()` / `all()` |
+| `DecisionRule.php` | Concrete in-memory rule; holds `Closure(DecisionContext): bool` |
+| `DecisionEvaluation.php` | Single rule evaluation outcome (used internally + in DecisionResult) |
+| `DecisionResult.php` | Final output: decision + reason + matched_rule + context + trigger + snapshot slots |
+
+#### Domain/Services
+| File | Purpose |
+|------|---------|
+| `RuleEvaluationPipeline.php` | Evaluates rules, collects matches, stable-sorts by priority descending |
+| `InMemoryRuleProvider.php` | Current `RuleProviderInterface` implementation — variadic constructor |
+| `DecisionKernel.php` | The kernel — 5-line `evaluate()` — delegates to pipeline, wraps winner |
+
+#### Infrastructure/Providers
+| File | Purpose |
+|------|---------|
+| `DecisionKernelServiceProvider.php` | Registers `RuleEvaluationPipeline` + `DecisionKernel` as singletons |
+
+#### Tests
+| File | Purpose |
+|------|---------|
+| `tests/Unit/Manufacturing/DecisionKernelTest.php` | 28 pure unit tests; no database, no Laravel boot |
+
+---
+
+### Files Modified (1)
+
+| File | Change |
+|------|--------|
+| `bootstrap/providers.php` | Added `DecisionKernelServiceProvider` after `BomServiceProvider` |
+
+---
+
+### Test Coverage (28 tests)
+
+| Group | Tests |
+|-------|-------|
+| Happy path (Approve, Reject, Defer decisions) | 3 |
+| Exception: no matching rule (no match, empty list) | 2 |
+| Priority: highest wins, tie → first registered | 2 |
+| Result fields (trigger, context, matched_rule, decided_at) | 4 |
+| Result immutability | 1 |
+| Snapshot fields default to null (Phase 6) | 1 |
+| Result helpers (isApproved, isRejected) | 2 |
+| toArray() serialization | 1 |
+| DecisionContext (with, get default, has, all) | 4 |
+| DecisionTrigger fields | 1 |
+| DecisionReason fields + toArray | 1 |
+| DecisionRule matches true/false | 2 |
+| DecisionType cases | 1 |
+| InMemoryRuleProvider returns all rules | 1 |
+| NoMatchingRuleException contextType | 1 |
+| DecisionEvaluation fields + toArray | 1 |
+
+---
+
+### Architecture Alignment
+
+| Architecture Decision | Implementation |
+|----------------------|----------------|
+| RC-6: `trigger_version` for idempotency | `DecisionTrigger.trigger_version` — future `decision_key` = hash(type + id + version) |
+| Caller isolation | Kernel takes `RuleProviderInterface` at call time — no knowledge of caller |
+| SOLID | Single responsibility per class; OCP via interface extension; DI via constructor |
+
+---
+
+### Future Extension Points
+
+| Extension | How |
+|-----------|-----|
+| Database rules | Implement `RuleProviderInterface` with Eloquent; no kernel changes |
+| AI-generated rules | `AiRuleProvider` calls LLM API; implements same interface |
+| Dynamic rules | Build `DecisionRule` objects at runtime from config/user input |
+| Snapshot persistence | Decision Log engine reads `DecisionResult`, persists with `snapshot_id` + `snapshot_hash` |
+| Async evaluation | Wrap `DecisionKernel.evaluate()` in a Job; result returned via callback/event |
+| Audit trail | Caller logs `DecisionResult.toArray()` to `decision_logs` table (RC-6) after kernel returns |
+
+---
+
+### Risk Assessment
+
+| Risk | Severity | Mitigation |
+|------|----------|-----------|
+| No matching rule in production | Medium | Callers must always register at least one catch-all rule or handle `NoMatchingRuleException` |
+| Priority tie non-determinism | Low | PHP 8.0+ stable sort + documented tie-breaking strategy (first-registered wins) |
+| Context data typing | Low | `DecisionContext.get()` returns `mixed` — callers own type assertions |
+
+---
+
+## PKG-03B through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
