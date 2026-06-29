@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -51,6 +51,23 @@ export function ChannelFormDrawer({ open, onOpenChange, channel }: Props) {
   }, [open, channel, form]);
 
   const isPending = createChannel.isPending || updateChannel.isPending;
+
+  // Ctrl+S — submit form while drawer is open
+  const openRef = useRef(open);
+  useEffect(() => { openRef.current = open; }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        document.getElementById(FORM_ID)?.dispatchEvent(
+          new Event('submit', { bubbles: true, cancelable: true }),
+        );
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) setServerError(null);

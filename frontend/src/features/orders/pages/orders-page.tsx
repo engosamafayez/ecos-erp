@@ -287,7 +287,7 @@ export function OrdersPage() {
               key={searchKey}
               ref={searchRef}
               type="search"
-              placeholder={t('search')}
+              placeholder={`${t('search')} · / or Ctrl+K`}
               defaultValue={search}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSearchCommit(e.currentTarget.value);

@@ -62,7 +62,7 @@ export function EntityTable<T>({
   return (
     <div className="rounded-lg border">
       <Table>
-        <TableHeader>
+        <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
           <TableRow>
             {columns.map((column) => {
               const isSorted = sort?.field === column.key;

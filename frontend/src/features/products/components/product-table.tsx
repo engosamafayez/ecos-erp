@@ -5,6 +5,7 @@ import {
   MoreHorizontal, Trash2,
 } from 'lucide-react';
 
+import { ErrorState } from '@/components/crud/error-state';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -245,8 +246,8 @@ export function ProductTable({
               <SkeletonRows count={8} visible={visible} density={density} />
             ) : isError ? (
               <tr>
-                <td colSpan={colSpan} className="py-16 text-center text-sm text-muted-foreground">
-                  Failed to load products. Please try again.
+                <td colSpan={colSpan} className="p-0">
+                  <ErrorState />
                 </td>
               </tr>
             ) : products.length === 0 ? (

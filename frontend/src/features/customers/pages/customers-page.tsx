@@ -322,7 +322,7 @@ export function CustomersPage() {
             ref={searchRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('search')}
+            placeholder={`${t('search')} · / or Ctrl+K`}
             className="max-w-lg"
             onKeyDown={(e) => {
               if (e.key === 'Escape') { setSearch(''); searchRef.current?.blur(); }
@@ -365,7 +365,7 @@ export function CustomersPage() {
       {showTable ? (
         <div className="overflow-hidden rounded-xl border bg-background">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/30">
+            <thead className="sticky top-0 z-10 border-b bg-muted/60 backdrop-blur-sm">
               <tr>
                 {/* Checkbox */}
                 <th className="w-10 px-3 py-3">

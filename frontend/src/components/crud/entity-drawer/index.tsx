@@ -40,7 +40,7 @@ export function EntityDrawer({
         side={side}
         className={cn('flex w-full flex-col gap-0 p-0 sm:max-w-xl', className)}
       >
-        <SheetHeader className="border-b">
+        <SheetHeader className="border-b px-4 py-3">
           <SheetTitle>{title}</SheetTitle>
           {description ? <SheetDescription>{description}</SheetDescription> : null}
         </SheetHeader>

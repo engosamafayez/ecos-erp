@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUpDown, Edit, ExternalLink, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { EmptyState, ErrorState } from '@/components/crud';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -217,14 +218,14 @@ export function OrderTable({
               <SkeletonRows count={8} />
             ) : isError ? (
               <tr>
-                <td colSpan={COL_COUNT} className="py-16 text-center text-sm text-muted-foreground">
-                  {t('table.error')}
+                <td colSpan={COL_COUNT} className="p-0">
+                  <ErrorState />
                 </td>
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={COL_COUNT} className="py-16 text-center text-sm text-muted-foreground">
-                  {t('table.empty')}
+                <td colSpan={COL_COUNT} className="p-0">
+                  <EmptyState title={t('table.empty')} />
                 </td>
               </tr>
             ) : (

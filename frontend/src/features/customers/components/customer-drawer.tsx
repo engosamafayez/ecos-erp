@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/crud/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Sheet,
@@ -101,17 +102,7 @@ function SummaryTab({ customer }: { customer: Customer }) {
           <p className="truncate font-semibold">{customer.name}</p>
           <p className="text-xs text-muted-foreground">{customer.code}</p>
         </div>
-        <Badge
-          className={cn(
-            'ms-auto shrink-0',
-            customer.is_active
-              ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400'
-              : '',
-          )}
-          variant={customer.is_active ? 'default' : 'secondary'}
-        >
-          {customer.is_active ? tCommon('status.active') : tCommon('status.inactive')}
-        </Badge>
+        <StatusBadge status={customer.is_active ? 'active' : 'inactive'} className="ms-auto shrink-0" />
       </div>
 
       {/* Order stats */}
