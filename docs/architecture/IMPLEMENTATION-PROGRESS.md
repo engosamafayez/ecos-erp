@@ -181,6 +181,90 @@ Implementation began: 2026-06-29
 
 ---
 
-## PKG-02B and PKG-03 through PKG-11 — Pending
+## PKG-02B — Recipe Resolver
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-002B
+
+---
+
+### Purpose
+
+A **read-only domain service** that locates the active Recipe for a product, validates its state, expands every component line (with unit from Product), and returns an immutable `RecipeSnapshot`. All recipe execution must go through this resolver.
+
+**Callers:** ManufacturingEngine, DecisionEngine, CostEngine, SimulationEngine, AIEngine.
+
+**This service MUST NOT:** consume inventory, calculate cost, execute manufacturing, create transactions, update the database, or trigger the Decision Engine.
+
+---
+
+### Files Created (5)
+
+| File | Purpose |
+|------|---------|
+| `Modules/Manufacturing/BillsOfMaterials/Domain/ValueObjects/RecipeComponent.php` | Immutable value object: one resolved component (unit + allow_negative_stock from Product) |
+| `Modules/Manufacturing/BillsOfMaterials/Domain/ValueObjects/RecipeSnapshot.php` | Immutable snapshot: full recipe at resolution time; includes `bom_version_number` for RC-10 |
+| `Modules/Manufacturing/BillsOfMaterials/Domain/Exceptions/RecipeResolverException.php` | Typed exception with 6 reason codes and named constructors |
+| `Modules/Manufacturing/BillsOfMaterials/Domain/Services/RecipeResolver.php` | 5-step read-only resolver; uses `RecipeRepositoryInterface` |
+| `tests/Feature/Manufacturing/RecipeResolverTest.php` | 22 tests covering all paths |
+
+---
+
+### Resolver Steps
+
+1. `findActiveByProduct($productId)` → null → `noActiveRecipe`
+2. Validate `$recipe->product` — null or trashed → `productUnavailable`
+3. Fresh query: `$recipe->components()->with(['component.unit'])->get()` — empty → `noComponents`
+4. For each line: null/trashed → `componentNotFound`; `!is_active` → `componentInactive`; no unit → `componentMissingUnit`; build `RecipeComponent`
+5. Return `new RecipeSnapshot(...)` with `resolved_at = now()->toIso8601String()`
+
+---
+
+### Exception Reason Codes
+
+| Constant | Trigger | Context field |
+|----------|---------|---------------|
+| `NO_ACTIVE_RECIPE` | No recipe with `is_active = true` | `$productId` |
+| `NO_COMPONENTS` | Active recipe has zero lines | `$recipeId` |
+| `COMPONENT_NOT_FOUND` | Line's `raw_material_id` is soft-deleted | `$componentId` |
+| `COMPONENT_INACTIVE` | Component product `is_active = false` | `$sku` |
+| `COMPONENT_MISSING_UNIT` | Component product has no unit relation | `$sku` |
+| `PRODUCT_UNAVAILABLE` | Output product is soft-deleted | `$productId` |
+
+---
+
+### Architecture Alignment
+
+| Architecture Decision | Implementation |
+|----------------------|----------------|
+| RC-2: `allow_negative_stock` forwarded to Decision Engine | `RecipeComponent.allow_negative_stock` copied from `Product.allow_negative_stock` |
+| RC-10: Unique constraint on `(order_line_id, bom_id, bom_version_number)` | `RecipeSnapshot.bom_version_number` captures version at resolution time |
+| Unit comes from Product | `RecipeComponent.unit_*` set from `$component->unit` — never from the line |
+| Read-only domain service | No DB writes anywhere in RecipeResolver; verified by test |
+| Immutability | Both `RecipeSnapshot` and `RecipeComponent` are `final readonly class` |
+
+---
+
+### Test Coverage (22 tests)
+
+| Group | Tests |
+|-------|-------|
+| Happy path (snapshot fields, version, bom_number, resolved_at) | 3 |
+| Components (count, type, data, unit source, allow_negative_stock) | 6 |
+| Active version selection (picks is_active=true over older versions) | 1 |
+| Exception: no active recipe (no recipe at all, only inactive) | 2 |
+| Exception: no components | 1 |
+| Exception: component deleted | 1 |
+| Exception: component inactive | 1 |
+| Exception: output product deleted | 1 |
+| Immutability (snapshot readonly, component readonly) | 2 |
+| toArray() serialization (snapshot keys, component keys) | 2 |
+| Per-component quantity accuracy | 1 |
+| Read-only (no DB writes) | 1 |
+
+---
+
+## PKG-03 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
