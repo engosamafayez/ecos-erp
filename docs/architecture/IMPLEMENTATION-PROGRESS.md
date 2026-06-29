@@ -1658,6 +1658,140 @@ ManufacturingPolicyResult { eligible, reason, policy_code, metadata }
 
 ---
 
-## PKG-07 through PKG-11 — Pending
+## PKG-07A — Order Lifecycle Coordinator
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-ORD-IMP-001
+**Tests:** 20 feature tests
+
+### Purpose
+
+The Order Lifecycle Coordinator is the **single integration point** between the Orders domain and all
+operational domains. Orders never call `ManufacturingApplicationService` directly. Orders notify the
+coordinator, which evaluates policies and invokes application services on their behalf.
+
+```
+Orders module
+    ↓
+OrderLifecycleCoordinator.handle(OrderLifecycleRequest)
+    ├── Step 1: shouldEvaluateManufacturing(status)?
+    │     No → OrderLifecycleResult::statusIgnored  (policy never runs)
+    │
+    ├── Step 2: ManufacturingPolicy.evaluate(request, order, product)
+    │     Ineligible → OrderLifecycleResult::policyRejected  (manufacturing never runs)
+    │
+    └── Step 3: ManufacturingApplicationService.manufactureProduct(...)
+          is_blocked=true  → OrderLifecycleResult::manufacturingBlocked  (handled=false)
+          is_blocked=false → OrderLifecycleResult::manufacturingTriggered (handled=true)
+```
+
+### CONTRACT — This Coordinator MUST NOT
+
+- Execute manufacturing logic directly
+- Read recipes, BOM tables, or inventory
+- Build manufacturing plans
+- Dispatch shipping or notifications
+- Update accounting records
+- Be called by any domain other than Orders (and future order-adjacent events)
+
+### Integration Architecture
+
+| Layer | Component | Responsibility |
+|-------|-----------|----------------|
+| Caller | Orders module / future triggers | Build `OrderLifecycleRequest` with pre-computed flags |
+| Gate | `shouldEvaluateManufacturing(status)` | Quick status check before policy (avoids policy overhead for completed/cancelled) |
+| Policy | `ManufacturingPolicy.evaluate()` | 7-rule eligibility check; pure domain; no DB writes |
+| Execution | `ManufacturingApplicationService.manufactureProduct()` | Full Workflow → Pipeline → Executor chain |
+| Result | `OrderLifecycleResult` | Typed outcome; callers check `handled` + `action` |
+
+### Lifecycle Actions
+
+| `LifecycleAction` | `handled` | Condition | Notes |
+|-------------------|-----------|-----------|-------|
+| `status_ignored` | false | `order_status` not in `[pending, processing]` | Policy never runs; manufacturing_result=null |
+| `policy_rejected` | false | Policy returns ineligible | Specific PolicyCode in policy_result; manufacturing_result=null |
+| `manufacturing_triggered` | true | Policy eligible + workflow executed | Transaction in DB; full manufacturing_result |
+| `manufacturing_blocked` | false | Policy eligible + workflow blocked | No transaction; manufacturing_result carries blocking_reason |
+
+### Decoupling Strategy
+
+The coordinator bridges Commerce and Manufacturing without creating module-level imports:
+
+| Concern | Decision |
+|---------|----------|
+| No `OrderStatus` enum import | `OrderLifecycleRequest.order_status: string`; coordinator checks against `['pending', 'processing']` |
+| No `Product` model import | `product_can_manufacture`, `product_has_active_recipe`, `product_is_inventory_managed` are pre-computed booleans from caller |
+| No `ManufacturingTransaction` query | `already_manufactured: bool` pre-computed by caller before building request |
+| `trigger_type: 'order_lifecycle'` | Set by coordinator; unambiguous source for manufacturing transaction audit trail |
+| `trigger_id: order_line_id` | Order line ID used as trigger_id; provides end-to-end traceability without extra columns |
+
+### Extension Pattern
+
+Future packages add operational domains by adding **private handler methods** without changing the public contract:
+
+```php
+public function handle(OrderLifecycleRequest $request): OrderLifecycleResult
+{
+    $result = $this->handleManufacturing($request);
+    // PKG-07B: $result = $this->handleShipping($result, $request);
+    // Future: $result = $this->handleCRM($result, $request);
+    // Future: $result = $this->handleNotifications($result, $request);
+    return $result;
+}
+```
+
+### Files Created (5)
+
+#### Domain/Enums (1)
+| File | Purpose |
+|------|---------|
+| `Operations/OrderLifecycle/Domain/Enums/LifecycleAction.php` | 4-case enum: `StatusIgnored`, `PolicyRejected`, `ManufacturingTriggered`, `ManufacturingBlocked`; `isManufacturingComplete()`, `isNoOp()` |
+
+#### Application/DTOs (2)
+| File | Purpose |
+|------|---------|
+| `Operations/OrderLifecycle/Application/DTOs/OrderLifecycleRequest.php` | Immutable input: all order + product + company fields pre-computed by caller |
+| `Operations/OrderLifecycle/Application/DTOs/OrderLifecycleResult.php` | Immutable output: 4 static factories (`statusIgnored`, `policyRejected`, `manufacturingTriggered`, `manufacturingBlocked`); `toArray()` |
+
+#### Application/Services (1)
+| File | Purpose |
+|------|---------|
+| `Operations/OrderLifecycle/Application/Services/OrderLifecycleCoordinator.php` | Core coordinator: `handle()` + `handleManufacturing()` + `shouldEvaluateManufacturing()`; extension-point comments |
+
+#### Infrastructure/Providers (1)
+| File | Purpose |
+|------|---------|
+| `Operations/OrderLifecycle/Infrastructure/Providers/OrderLifecycleServiceProvider.php` | Singleton `OrderLifecycleCoordinator` wired with `ManufacturingPolicy` + `ManufacturingApplicationService` |
+
+### Files Modified (1)
+
+| File | Change |
+|------|--------|
+| `backend/bootstrap/providers.php` | Added `OrderLifecycleServiceProvider` after `ManufacturingPolicyServiceProvider` |
+
+### Test Coverage (20 feature tests)
+
+| Group | Tests |
+|-------|-------|
+| Manufacturing triggered | `pending` order, `processing` order, transaction in DB |
+| Policy rejected | `can_manufacture=false`, `has_active_recipe=false`, `is_inventory_managed=false`, `already_manufactured=true`, reason propagation |
+| Manufacturing blocked | Workflow blocked (Reject rule), blocking reason in result |
+| Status ignored | `completed`, `cancelled`, unknown status; policy and result both null |
+| Context mapping | Policy metadata has `product_id`/`order_id`/`order_line_id`, manufacturing `source_metadata` carries order context |
+| Result structure invariants | `handled=false` for all non-triggered outcomes, `toArray()` keys, null sub-results for ignored |
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| `MANUFACTURING_TRIGGER_STATUSES` constant at coordinator level | Coordinator has its own status gate independent of the policy's `MANUFACTURING_ALLOWED_STATUSES` — coordinator short-circuits before policy even runs |
+| `handled = true` only for `ManufacturingTriggered` | Callers need a single boolean to know if manufacturing completed; all other outcomes are no-ops from the caller's perspective |
+| Manufacturing metadata nested under `source_metadata` | The executor's `buildTransactionMetadata()` wraps plan metadata in `source_metadata`; tests are written against actual execution behavior, not assumptions |
+| Coordinator in `Modules/Operations/` not `Modules/Commerce/` | It coordinates across multiple operational domains (Manufacturing + future Shipping, CRM); belongs to Operations, not to Commerce/Orders |
+
+---
+
+## PKG-08 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.

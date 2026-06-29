@@ -35,6 +35,7 @@ return [
     Modules\Manufacturing\ManufacturingWorkflow\Infrastructure\Providers\ManufacturingWorkflowServiceProvider::class,
     Modules\Manufacturing\ManufacturingService\Infrastructure\Providers\ManufacturingServiceProvider::class,
     Modules\Manufacturing\ManufacturingPolicy\Infrastructure\Providers\ManufacturingPolicyServiceProvider::class,
+    Modules\Operations\OrderLifecycle\Infrastructure\Providers\OrderLifecycleServiceProvider::class,
     Modules\Commerce\Synchronization\Infrastructure\Providers\SynchronizationServiceProvider::class,
     Modules\Inventory\ReceiptLayers\Infrastructure\Providers\ReceiptLayersServiceProvider::class,
     Modules\Inventory\CountSessions\Infrastructure\Providers\CountSessionsServiceProvider::class,
