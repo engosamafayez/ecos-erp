@@ -15,8 +15,10 @@ enum LedgerMovementType: string
     case TransferIn            = 'transfer_in';
     case TransferOut           = 'transfer_out';
     case DirectIssue           = 'direct_issue';
-    case ProductionConsumption = 'production_consumption';
-    case ProductionOutput      = 'production_output';
+    case ProductionConsumption  = 'production_consumption';
+    case ProductionOutput       = 'production_output';
+    case DisassemblyConsumption = 'disassembly_consumption';
+    case DisassemblyOutput      = 'disassembly_output';
 
     public function label(): string
     {
@@ -32,6 +34,8 @@ enum LedgerMovementType: string
             self::DirectIssue           => 'Direct Issue',
             self::ProductionConsumption => 'Production Consumption',
             self::ProductionOutput      => 'Production Output',
+            self::DisassemblyConsumption => 'Disassembly Consumption',
+            self::DisassemblyOutput      => 'Disassembly Output',
         };
     }
 
@@ -47,6 +51,8 @@ enum LedgerMovementType: string
             self::DirectIssue,
             self::ProductionConsumption,
             self::ProductionOutput,
+            self::DisassemblyConsumption,
+            self::DisassemblyOutput,
         ], true);
     }
 

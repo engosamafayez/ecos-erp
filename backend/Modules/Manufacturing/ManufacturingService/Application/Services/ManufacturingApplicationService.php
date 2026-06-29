@@ -16,11 +16,13 @@ use Modules\Manufacturing\ManufacturingService\Application\DTOs\Responses\Disass
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Responses\ManufactureProductResponse;
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Responses\SimulateManufacturingResponse;
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Responses\ValidateManufacturingResponse;
+use Modules\Manufacturing\Disassembly\Application\Services\DisassemblyExecutor;
+use Modules\Manufacturing\Disassembly\Domain\Services\DisassemblyWorkflow;
 use Modules\Manufacturing\ManufacturingWorkflow\Domain\Services\ManufacturingWorkflow;
 use Modules\Manufacturing\ManufacturingWorkflow\Domain\ValueObjects\ManufacturingWorkflowRequest;
 
 /**
- * PKG-06A: Manufacturing Application Service.
+ * PKG-06A / PKG-08: Manufacturing Application Service.
  *
  * The single public entry point for the entire Manufacturing domain.
  *
@@ -37,7 +39,7 @@ use Modules\Manufacturing\ManufacturingWorkflow\Domain\ValueObjects\Manufacturin
  *   manufactureProduct()    — full path: workflow → pipeline → executor
  *   simulateManufacturing() — dry-run: workflow only; no mutations
  *   validateManufacturing() — workflow + pipeline; no mutations
- *   disassembleProduct()    — placeholder; not yet implemented
+ *   disassembleProduct()    — PKG-08: disassembly workflow → executor
  */
 final class ManufacturingApplicationService
 {
@@ -45,6 +47,8 @@ final class ManufacturingApplicationService
         private readonly ManufacturingWorkflow $workflow,
         private readonly ExecutionPipeline     $pipeline,
         private readonly ManufacturingExecutor $executor,
+        private readonly DisassemblyWorkflow   $disassemblyWorkflow,
+        private readonly DisassemblyExecutor   $disassemblyExecutor,
     ) {}
 
     /**
@@ -138,12 +142,24 @@ final class ManufacturingApplicationService
     /**
      * Disassemble a finished good back into its raw material components.
      *
-     * Placeholder — not yet implemented. Returns a typed response indicating
-     * the feature is pending. Callers should check implemented = false.
+     * Flow: DisassemblyWorkflow (recipe + availability) → DisassemblyExecutor (mutations).
+     * Idempotent when trigger_id is provided — returns the original transaction on replay.
+     * Callers SHOULD evaluate DisassemblyPolicy BEFORE calling this method.
      */
     public function disassembleProduct(DisassembleProductRequest $request): DisassembleProductResponse
     {
-        return new DisassembleProductResponse();
+        $workflowResult = $this->disassemblyWorkflow->run($request);
+
+        if (! $workflowResult->isPlanReady()) {
+            return DisassembleProductResponse::blocked($workflowResult);
+        }
+
+        $executionResult = $this->disassemblyExecutor->execute(
+            plan:      $workflowResult->plan,
+            companyId: $request->company_id,
+        );
+
+        return DisassembleProductResponse::fromExecution($workflowResult, $executionResult);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

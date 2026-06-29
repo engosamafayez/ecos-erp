@@ -2007,6 +2007,115 @@ These replace sub-field inspection (`$result->manufacturing_result?->blocking_re
 
 ---
 
-## PKG-08 through PKG-11 — Pending
+## PKG-08 — Automatic Disassembly
+
+**Status: Complete — committed as PKG-08.**
+
+### Purpose
+
+When an Inventory Return is approved and physically returned, the finished good must be disassembled back into its raw material components. PKG-08 implements the full disassembly pipeline as a self-contained subdomain under `Modules/Manufacturing/Disassembly/`.
+
+### Flow
+
+```
+Inventory Return Approved
+  → DisassemblyPolicy (caller evaluates; 5 pure rules)
+  → ManufacturingApplicationService.disassembleProduct()
+  → DisassemblyWorkflow
+      Stage 1: RecipeResolver.resolve() — active BOM or block
+      Stage 2: InventoryReadInterface.availableQty() — FG availability check
+      Stage 3: Build ComponentProductionPlan[] from recipe snapshot
+  → DisassemblyExecutor (DB::transaction)
+      Step 1: consumeFinishedGoods() — decrement FG + DisassemblyConsumption ledger
+      Step 2: produceComponent() × N — increment each component + DisassemblyOutput ledger
+      Step 3: Save DisassemblyTransaction with recipe_snapshot_hash
+  → DisassemblyExecutionResult
+```
+
+### Idempotency Design
+
+| Guard | Key | When Used |
+|-------|-----|-----------|
+| Business guard (checked first) | `trigger_id` (e.g. return line UUID) | Prevents double-disassembly of same physical return |
+| Technical guard (fallback) | `plan_id` (workflow-generated UUID) | Prevents double-execution of same workflow run |
+
+The `trigger_id` partial unique index (`WHERE trigger_id IS NOT NULL AND status != 'failed'`) allows retry of failed disassemblies while blocking successful replays.
+
+### New Files (15)
+
+| Layer | File | Purpose |
+|-------|------|---------|
+| Domain/Enums | `DisassemblyPolicyCode.php` | 6 typed policy outcomes |
+| Domain/ValueObjects | `DisassemblyPolicyRequest.php` | 5-flag caller-resolved request |
+| Domain/ValueObjects | `DisassemblyPolicyResult.php` | `eligible` / `ineligible` with code + reason |
+| Domain/ValueObjects | `ComponentProductionPlan.php` | Per-component output quantities (immutable) |
+| Domain/ValueObjects | `ComponentProductionRecord.php` | Per-component execution record with before/after qty |
+| Domain/ValueObjects | `DisassemblyPlan.php` | Workflow output: FG qty, snapshot, plan_id, trigger_id |
+| Domain/ValueObjects | `DisassemblyWorkflowResult.php` | `ready(plan)` / `blocked(reason)` |
+| Domain/ValueObjects | `DisassemblyExecutionResult.php` | Full execution result with ledger IDs + component records |
+| Domain/Services | `DisassemblyPolicy.php` | Pure 5-rule evaluator; no DB queries |
+| Domain/Services | `DisassemblyWorkflow.php` | 3-stage read-only plan builder |
+| Domain/Models | `DisassemblyTransaction.php` | Audit record; HasUuids + dual idempotency keys |
+| Domain/Contracts | `DisassemblyTransactionRepositoryInterface.php` | `findByPlanId` / `findByTriggerId` / `save` |
+| Application/Services | `DisassemblyExecutor.php` | DB::transaction orchestrator |
+| Infrastructure/Adapters | `DisassemblyInventoryAdapter.php` | FIFO-aware FG consumption + component production |
+| Infrastructure/Persistence | `EloquentDisassemblyTransactionRepository.php` | Eloquent repository; `findByTriggerId` excludes `failed` |
+| Infrastructure/Database/Migrations | `2026_06_29_400000_create_disassembly_transactions_table.php` | Table + partial unique index on `trigger_id` |
+| Infrastructure/Providers | `DisassemblyServiceProvider.php` | Binds all disassembly services |
+| Tests | `tests/Feature/Manufacturing/DisassemblyTest.php` | 17 test scenarios |
+
+### Modified Files (7)
+
+| File | Change |
+|------|--------|
+| `Inventory/InventoryItems/Domain/Enums/LedgerMovementType.php` | Added `DisassemblyConsumption` + `DisassemblyOutput`; both in `affectsOnHand()` |
+| `ManufacturingService/Application/DTOs/Requests/DisassembleProductRequest.php` | Added `company_id` (required), `trigger_id`, `trigger_type` |
+| `ManufacturingService/Application/DTOs/Responses/DisassembleProductResponse.php` | Full typed response replacing placeholder |
+| `ManufacturingService/Application/Services/ManufacturingApplicationService.php` | Implemented `disassembleProduct()` |
+| `ManufacturingService/Infrastructure/Providers/ManufacturingServiceProvider.php` | Injected `disassemblyWorkflow` + `disassemblyExecutor` |
+| `bootstrap/providers.php` | Registered `DisassemblyServiceProvider` |
+| `tests/Feature/Manufacturing/ManufacturingApplicationServiceTest.php` | Updated 3 placeholder tests for new response shape |
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| DisassemblyPolicy called by callers, not by ManufacturingApplicationService | Policy is an external gate; callers pre-resolve all flags from their read models before evaluating |
+| No FIFO layers created for component outputs | `InventoryReceiptLayer` requires purchasing fields (supplier_id, goods_receipt_id); cost assignment deferred to PKG-12 |
+| FIFO layer consumption gracefully skips when no layers exist | Manufactured FG has no FIFO receipt layers; zero-layer sum returns early — consistent with existing `InventoryMutationAdapter` behavior |
+| `recipe_snapshot_hash` = SHA-256 of `RecipeSnapshot.toArray()` | Immutable audit evidence; allows detection of recipe drift between two transactions |
+| Partial unique index on `trigger_id` | Allows retry of failed disassemblies while blocking double-execution of completed ones |
+
+### Test Coverage (17 scenarios across 2 test classes)
+
+| # | Scenario | Assert |
+|---|----------|--------|
+| 1 | Successful disassembly (FG qty) | FG decremented by qty_to_disassemble |
+| 2 | Successful disassembly (component qty) | Each component incremented by qty × recipe_qty |
+| 3 | Transaction record created | `disassembly_transactions` row with correct fields |
+| 4 | Response structure | All typed fields present; produced_components count correct |
+| 5 | Multiple components | All components produced; ledger IDs = 1 + N |
+| 6 | Policy: `can_disassemble = false` | `ProductCannotDisassemble` code |
+| 7 | Policy: `has_active_recipe = false` | `RecipeNotFound` code |
+| 8 | Policy: `already_disassembled = true` | `AlreadyDisassembled` code |
+| 9 | Policy: all flags valid | `Eligible` code |
+| 10 | Workflow: no active recipe | `blocking_reason = recipe_not_found` |
+| 11 | Workflow: FG qty insufficient | `blocking_reason = insufficient_finished_goods` |
+| 12 | Duplicate trigger_id | `was_idempotent = true`; same `transaction_id` |
+| 13 | No double decrement on replay | FG qty = original − 1 (not −2) |
+| 14 | One transaction only on replay | `disassembly_transactions` count = 1 |
+| 15 | Rollback on executor failure | FG qty restored; ledger entries = 0 |
+| 16 | Ledger movement types | `disassembly_consumption` for FG; `disassembly_output` for each component |
+| 17 | Ledger entries reference plan | All entries have `reference_type = 'disassembly_plan'` |
+| 18 (LI) | FG ledger before/after qty | Correct snapshot of on_hand before and after |
+| 19 | Partial qty: remaining FG in stock | FG qty = original − disassembled |
+| 20 | Partial qty: proportional components | Component qty = recipe_qty × disassemble_qty |
+| 21 | Snapshot hash stored | `recipe_snapshot_hash` = 64-char SHA-256 hex |
+| 22 | BOM version in transaction | `bom_version_number` matches recipe; `bom_id` correct |
+| 23 | Same recipe → same hash | Two transactions on same BOM version produce identical hash |
+
+---
+
+## PKG-09 through PKG-13 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.

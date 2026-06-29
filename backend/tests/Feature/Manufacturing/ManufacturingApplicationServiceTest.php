@@ -453,11 +453,18 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     // ── disassembleProduct ────────────────────────────────────────────────────
 
-    public function test_disassemble_product_returns_placeholder_response(): void
+    public function test_disassemble_product_blocked_when_no_recipe(): void
     {
-        $request  = new DisassembleProductRequest(
-            product_id:   'product-uuid',
+        // Product with no active recipe — workflow blocks at recipe resolution
+        $product = Product::factory()->create([
+            'can_disassemble' => true,
+            'can_manufacture' => false,
+        ]);
+
+        $request = new DisassembleProductRequest(
+            product_id:   $product->id,
             warehouse_id: $this->warehouse->id,
+            company_id:   $this->company->id,
             quantity:     1.0,
             actor_id:     'test-actor',
         );
@@ -465,31 +472,49 @@ class ManufacturingApplicationServiceTest extends TestCase
         $response = $this->service->disassembleProduct($request);
 
         $this->assertInstanceOf(DisassembleProductResponse::class, $response);
-        $this->assertFalse($response->implemented);
-        $this->assertNotEmpty($response->message);
+        $this->assertTrue($response->is_blocked);
+        $this->assertSame('recipe_not_found', $response->blocking_reason);
+        $this->assertFalse($response->success);
+        $this->assertNull($response->execution_id);
     }
 
-    public function test_disassemble_product_creates_no_db_records(): void
+    public function test_disassemble_product_blocked_creates_no_disassembly_transactions(): void
     {
+        $product = Product::factory()->create(['can_disassemble' => true]);
+
         $request = new DisassembleProductRequest(
-            product_id:   'product-uuid',
+            product_id:   $product->id,
             warehouse_id: $this->warehouse->id,
+            company_id:   $this->company->id,
             quantity:     1.0,
             actor_id:     'test-actor',
         );
 
         $this->service->disassembleProduct($request);
 
+        $this->assertDatabaseCount('disassembly_transactions', 0);
         $this->assertDatabaseCount('manufacturing_transactions', 0);
     }
 
     public function test_disassemble_product_response_serializes_to_array(): void
     {
-        $response = new DisassembleProductResponse();
+        $product = Product::factory()->create(['can_disassemble' => true]);
+
+        $request = new DisassembleProductRequest(
+            product_id:   $product->id,
+            warehouse_id: $this->warehouse->id,
+            company_id:   $this->company->id,
+            quantity:     1.0,
+            actor_id:     'test-actor',
+        );
+
+        $response = $this->service->disassembleProduct($request);
         $array    = $response->toArray();
 
-        $this->assertArrayHasKey('implemented', $array);
-        $this->assertArrayHasKey('message', $array);
-        $this->assertFalse($array['implemented']);
+        $this->assertArrayHasKey('success', $array);
+        $this->assertArrayHasKey('is_blocked', $array);
+        $this->assertArrayHasKey('blocking_reason', $array);
+        $this->assertArrayHasKey('produced_components', $array);
+        $this->assertArrayHasKey('ledger_entry_ids', $array);
     }
 }

@@ -7,17 +7,24 @@ namespace Modules\Manufacturing\ManufacturingService\Application\DTOs\Requests;
 /**
  * Input DTO for ManufacturingApplicationService::disassembleProduct().
  *
- * Placeholder — disassembly is not yet implemented.
- * Reserved for future manufacturing reverse operations where a finished
- * good is broken down back into its raw material components.
+ * company_id  — Required for inventory mutations (InventoryItem lazy-creation).
+ * trigger_id  — Business idempotency anchor (e.g. return_line_id). When provided,
+ *               the executor checks for an existing successful disassembly for this
+ *               trigger and returns an idempotent result without re-executing.
  */
 final readonly class DisassembleProductRequest
 {
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
     public function __construct(
         public string $product_id,
         public string $warehouse_id,
+        public string $company_id,
         public float $quantity,
         public string $actor_id,
-        public array $metadata = [],
+        public ?string $trigger_id  = null,
+        public string $trigger_type = 'manual',
+        public array $metadata      = [],
     ) {}
 }
