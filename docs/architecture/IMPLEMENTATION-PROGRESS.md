@@ -1944,6 +1944,69 @@ A partial unique index enforces exactly-once execution at the DB level.
 
 ---
 
+## PKG-07R — Architecture Refinement: LifecycleHandler Plugin Pattern
+
+**Commit follows PKG-07. Backward-compatible refactor — no external API change.**
+
+### Problem
+
+The original `OrderLifecycleCoordinator` directly injected `ManufacturingPolicy` and `ManufacturingApplicationService` and called them in its private `handleManufacturing()` method. Adding a future integration (Shipping, Accounting, CRM) would require modifying the coordinator itself, violating the open/closed principle.
+
+### Solution: LifecycleHandlerInterface
+
+```
+OrderLifecycleCoordinator
+  ↓ dispatches to
+LifecycleHandlerInterface[] (registered in OrderLifecycleServiceProvider)
+  ↓ first handler where supports() = true
+ManufacturingLifecycleHandler
+  ↓ calls
+ManufacturingPolicy + ManufacturingApplicationService
+```
+
+**To add a new integration (e.g., Shipping):**
+1. Implement `LifecycleHandlerInterface`
+2. Register in `OrderLifecycleServiceProvider::$handlers[]`
+3. Zero changes to `OrderLifecycleCoordinator`
+
+### New LifecycleAction cases
+
+Two new actions allow `PrepareOrderManufacturingAction` to use a clean direct match without inspecting manufacturing-specific sub-fields:
+
+| Action | Meaning | Line State |
+|--------|---------|------------|
+| `ManufacturingNotRequired` | Policy approved, FG stock sufficient | `NotRequired` |
+| `ManufacturingAlreadyExecuted` | Policy found existing transaction | `Executed` (idempotent) |
+
+These replace sub-field inspection (`$result->manufacturing_result?->blocking_reason` and `$result->policy_result?->policy_code`) — the handler pre-computes the distinction.
+
+### New Files (3)
+
+| File | Purpose |
+|------|---------|
+| `Operations/OrderLifecycle/Domain/Contracts/LifecycleHandlerInterface.php` | `supports() + handle()` contract; all handlers implement this |
+| `Operations/OrderLifecycle/Application/Handlers/ManufacturingLifecycleHandler.php` | All manufacturing logic extracted from coordinator |
+| _(new directory)_ `Application/Handlers/` | Home for all future lifecycle handlers |
+
+### Modified Files (5)
+
+| File | Change |
+|------|--------|
+| `Operations/OrderLifecycle/Domain/Enums/LifecycleAction.php` | Added `ManufacturingNotRequired` + `ManufacturingAlreadyExecuted`; updated `isManufacturingComplete()` + `isNoOp()` |
+| `Operations/OrderLifecycle/Application/DTOs/OrderLifecycleResult.php` | Added `manufacturingNotRequired()` + `manufacturingAlreadyExecuted()` factories |
+| `Operations/OrderLifecycle/Application/Services/OrderLifecycleCoordinator.php` | Removed all Manufacturing imports; now accepts `list<LifecycleHandlerInterface>` |
+| `Operations/OrderLifecycle/Infrastructure/Providers/OrderLifecycleServiceProvider.php` | Injects `ManufacturingLifecycleHandler` into coordinator's handler list |
+| `Commerce/Orders/Application/Actions/PrepareOrderManufacturingAction.php` | Simplified `updateLineState()` to direct match on `LifecycleAction`; removed `PolicyCode` import |
+
+### Test Updates
+
+| Test | Change |
+|------|--------|
+| `test_returns_policy_rejected_when_already_manufactured` | Renamed + updated to expect `ManufacturingAlreadyExecuted` |
+| `test_returns_manufacturing_not_required_when_fg_stock_is_sufficient` | New: seeds FG output stock; asserts `ManufacturingNotRequired` |
+
+---
+
 ## PKG-08 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.

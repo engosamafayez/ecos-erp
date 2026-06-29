@@ -11,15 +11,13 @@ use Modules\Operations\OrderLifecycle\Domain\Enums\LifecycleAction;
 /**
  * Immutable output of OrderLifecycleCoordinator::handle().
  *
- * Check `handled` first:
- *   - true  → manufacturing was triggered and completed (or idempotent replay)
- *   - false → coordinator did not trigger manufacturing; check `action` for reason
- *
- * Then check `action` for the specific outcome:
- *   StatusIgnored         → handled=false, policy_result=null,  mfg_result=null
- *   PolicyRejected        → handled=false, policy_result=set,   mfg_result=null
- *   ManufacturingTriggered → handled=true,  policy_result=set,   mfg_result=set
- *   ManufacturingBlocked   → handled=false, policy_result=set,   mfg_result=set
+ * Check `action` for the specific outcome:
+ *   StatusIgnored               → handled=false, policy_result=null, mfg_result=null
+ *   PolicyRejected              → handled=false, policy_result=set,  mfg_result=null
+ *   ManufacturingTriggered      → handled=true,  policy_result=set,  mfg_result=set
+ *   ManufacturingBlocked        → handled=false, policy_result=set,  mfg_result=set
+ *   ManufacturingNotRequired    → handled=false, policy_result=set,  mfg_result=set
+ *   ManufacturingAlreadyExecuted → handled=false, policy_result=set, mfg_result=null
  */
 final readonly class OrderLifecycleResult
 {
@@ -115,6 +113,41 @@ final readonly class OrderLifecycleResult
             policy_result:        $policyResult,
             manufacturing_result: $mfgResult,
             metadata:             $mfgResult->metadata,
+        );
+    }
+
+    public static function manufacturingNotRequired(
+        string $orderId,
+        string $orderLineId,
+        ManufacturingPolicyResult $policyResult,
+        ManufactureProductResponse $mfgResult,
+    ): self {
+        return new self(
+            order_id:             $orderId,
+            order_line_id:        $orderLineId,
+            handled:              false,
+            action:               LifecycleAction::ManufacturingNotRequired,
+            reason:               'Manufacturing is not required: sufficient finished goods already in stock.',
+            policy_result:        $policyResult,
+            manufacturing_result: $mfgResult,
+            metadata:             $mfgResult->metadata,
+        );
+    }
+
+    public static function manufacturingAlreadyExecuted(
+        string $orderId,
+        string $orderLineId,
+        ManufacturingPolicyResult $policyResult,
+    ): self {
+        return new self(
+            order_id:             $orderId,
+            order_line_id:        $orderLineId,
+            handled:              false,
+            action:               LifecycleAction::ManufacturingAlreadyExecuted,
+            reason:               'Manufacturing already completed for this order line.',
+            policy_result:        $policyResult,
+            manufacturing_result: null,
+            metadata:             $policyResult->metadata,
         );
     }
 

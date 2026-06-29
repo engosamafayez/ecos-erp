@@ -258,7 +258,7 @@ class OrderLifecycleCoordinatorTest extends TestCase
         $this->assertEquals(PolicyCode::ProductNotInventoryManaged, $result->policy_result->policy_code);
     }
 
-    public function test_returns_policy_rejected_when_already_manufactured(): void
+    public function test_returns_manufacturing_already_executed_when_already_manufactured(): void
     {
         $output = $this->makeOutput();
 
@@ -267,8 +267,10 @@ class OrderLifecycleCoordinatorTest extends TestCase
         );
 
         $this->assertFalse($result->handled);
-        $this->assertEquals(LifecycleAction::PolicyRejected, $result->action);
+        $this->assertEquals(LifecycleAction::ManufacturingAlreadyExecuted, $result->action);
+        $this->assertNotNull($result->policy_result);
         $this->assertEquals(PolicyCode::AlreadyManufactured, $result->policy_result->policy_code);
+        $this->assertNull($result->manufacturing_result);
     }
 
     public function test_policy_rejected_reason_comes_from_policy_result(): void
@@ -281,6 +283,30 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
         $this->assertNotEmpty($result->reason);
         $this->assertEquals($result->policy_result->reason, $result->reason);
+    }
+
+    // ── Manufacturing not required ────────────────────────────────────────────
+
+    public function test_returns_manufacturing_not_required_when_fg_stock_is_sufficient(): void
+    {
+        $output    = $this->makeOutput();
+        $component = $this->makeComponent();
+        $recipe    = $this->makeRecipe($output);
+        $this->addLine($recipe, $component, 1.0);
+        $this->seedInventory($component, 5.0);
+        // Seeding the OUTPUT product with sufficient on-hand qty causes the workflow
+        // to detect it does not need to manufacture and return 'manufacturing_not_needed'.
+        $this->seedInventory($output, 10.0);
+
+        $result = $this->coordinator->handle($this->makeRequest($output, 1.0));
+
+        $this->assertFalse($result->handled);
+        $this->assertEquals(LifecycleAction::ManufacturingNotRequired, $result->action);
+        $this->assertNotNull($result->policy_result);
+        $this->assertTrue($result->policy_result->eligible);
+        $this->assertNotNull($result->manufacturing_result);
+        $this->assertTrue($result->manufacturing_result->is_blocked);
+        $this->assertDatabaseCount('manufacturing_transactions', 0);
     }
 
     // ── Manufacturing blocked ─────────────────────────────────────────────────

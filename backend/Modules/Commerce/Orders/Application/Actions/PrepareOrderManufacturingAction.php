@@ -9,7 +9,6 @@ use Modules\Commerce\Orders\Domain\Exceptions\OrderWarehouseNotAssignedException
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderLine;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Manufacturing\ManufacturingPolicy\Domain\Enums\PolicyCode;
 use Modules\Operations\OrderLifecycle\Application\DTOs\OrderLifecycleRequest;
 use Modules\Operations\OrderLifecycle\Application\DTOs\OrderLifecycleResult;
 use Modules\Operations\OrderLifecycle\Application\Services\OrderLifecycleCoordinator;
@@ -20,26 +19,24 @@ use Modules\Operations\OrderLifecycle\Domain\Enums\LifecycleAction;
  *
  * ARCHITECTURE RULE:
  *   This action NEVER calls ManufacturingApplicationService directly.
- *   It calls OrderLifecycleCoordinator, which owns the policy + service delegation.
+ *   It calls OrderLifecycleCoordinator, which dispatches to ManufacturingLifecycleHandler.
  *
  * IDEMPOTENCY:
  *   Lines with manufacturing_state = Executed are skipped unconditionally.
  *   All other states (null, Pending, Planned, Failed, Skipped, NotRequired) are re-evaluated,
  *   allowing retry after failure without duplicating successful executions.
  *
- * STATE MAPPING:
- *   LifecycleAction::ManufacturingTriggered → Executed
- *   LifecycleAction::ManufacturingBlocked
- *     - blocking_reason = 'manufacturing_not_needed' → NotRequired
- *     - all other reasons                            → Failed (retry allowed)
- *   LifecycleAction::PolicyRejected
- *     - policy_code = AlreadyManufactured            → Executed (already done)
- *     - all other codes                              → Skipped  (product ineligible)
- *   LifecycleAction::StatusIgnored                   → Skipped
+ * STATE MAPPING (via LifecycleAction — ManufacturingLifecycleHandler pre-computes distinctions):
+ *   ManufacturingTriggered      → Executed
+ *   ManufacturingAlreadyExecuted → Executed  (was done before; idempotent)
+ *   ManufacturingBlocked        → Failed     (workflow blocked; retry allowed)
+ *   ManufacturingNotRequired    → NotRequired (sufficient FG stock; healthy outcome)
+ *   PolicyRejected              → Skipped    (product ineligible: no recipe, not manufacturable, etc.)
+ *   StatusIgnored               → Skipped    (no handler supports this status)
  *
  * CONTRACT — this action MUST NOT:
  *   - Call manufacturing engines directly (Workflow, Pipeline, Executor)
- *   - Make business eligibility decisions (those live in ManufacturingPolicy)
+ *   - Make business eligibility decisions (those live in ManufacturingPolicy via the handler)
  *   - Wrap all lines in a single DB transaction (partial success must be preserved)
  */
 final class PrepareOrderManufacturingAction
@@ -114,11 +111,16 @@ final class PrepareOrderManufacturingAction
 
     private function updateLineState(OrderLine $line, OrderLifecycleResult $result): void
     {
+        // ManufacturingLifecycleHandler pre-computes the fine-grained distinctions
+        // (not_needed vs blocked, AlreadyManufactured vs other rejections), so this
+        // mapping is a clean 1:1 switch on LifecycleAction with no sub-inspections.
         $state = match ($result->action) {
-            LifecycleAction::ManufacturingTriggered => OrderLineManufacturingState::Executed,
-            LifecycleAction::ManufacturingBlocked   => $this->mapBlockedState($result),
-            LifecycleAction::PolicyRejected          => $this->mapPolicyRejectedState($result),
-            LifecycleAction::StatusIgnored           => OrderLineManufacturingState::Skipped,
+            LifecycleAction::ManufacturingTriggered       => OrderLineManufacturingState::Executed,
+            LifecycleAction::ManufacturingAlreadyExecuted => OrderLineManufacturingState::Executed,
+            LifecycleAction::ManufacturingBlocked         => OrderLineManufacturingState::Failed,
+            LifecycleAction::ManufacturingNotRequired     => OrderLineManufacturingState::NotRequired,
+            LifecycleAction::PolicyRejected               => OrderLineManufacturingState::Skipped,
+            LifecycleAction::StatusIgnored                => OrderLineManufacturingState::Skipped,
         };
 
         $line->update([
@@ -126,26 +128,5 @@ final class PrepareOrderManufacturingAction
             'manufacturing_result'       => $result->toArray(),
             'manufacturing_completed_at' => now(),
         ]);
-    }
-
-    private function mapBlockedState(OrderLifecycleResult $result): OrderLineManufacturingState
-    {
-        // 'manufacturing_not_needed' means sufficient finished goods are already in stock.
-        // This is a healthy outcome, not an error — mark as NotRequired, not Failed.
-        if (($result->manufacturing_result?->blocking_reason) === 'manufacturing_not_needed') {
-            return OrderLineManufacturingState::NotRequired;
-        }
-
-        return OrderLineManufacturingState::Failed;
-    }
-
-    private function mapPolicyRejectedState(OrderLifecycleResult $result): OrderLineManufacturingState
-    {
-        // AlreadyManufactured means a previous execution succeeded — treat as Executed.
-        if (($result->policy_result?->policy_code) === PolicyCode::AlreadyManufactured) {
-            return OrderLineManufacturingState::Executed;
-        }
-
-        return OrderLineManufacturingState::Skipped;
     }
 }
