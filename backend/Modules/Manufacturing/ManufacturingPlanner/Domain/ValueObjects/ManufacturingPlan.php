@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Manufacturing\ManufacturingPlanner\Domain\ValueObjects;
 
 use Modules\Manufacturing\AvailabilityEngine\Domain\Enums\ManufacturingEligibility;
+use Modules\Manufacturing\BillsOfMaterials\Domain\ValueObjects\RecipeSnapshot;
 use Modules\Manufacturing\DecisionKernel\Domain\Enums\DecisionType;
 use Modules\Manufacturing\DecisionKernel\Domain\ValueObjects\DecisionReason;
 
@@ -60,8 +61,15 @@ final readonly class ManufacturingPlan
         public ?int $bom_version_number,
 
         /**
+         * The RecipeSnapshot used during planning.
+         * Null when no recipe applies (Sufficient / NoRecipe).
+         * The Manufacturing Executor re-hashes this to verify integrity before executing.
+         */
+        public ?RecipeSnapshot $recipe_snapshot,
+
+        /**
          * SHA-256 of RecipeSnapshot.toArray() encoded as JSON.
-         * The Manufacturing Engine verifies this before executing.
+         * The Manufacturing Executor verifies this against recipe_snapshot before executing.
          * Null when no recipe (Sufficient / NoRecipe).
          */
         public ?string $recipe_snapshot_hash,
@@ -132,6 +140,7 @@ final readonly class ManufacturingPlan
             'available_finished_goods'  => $this->available_finished_goods,
             'recipe_id'                 => $this->recipe_id,
             'bom_version_number'        => $this->bom_version_number,
+            'recipe_snapshot'           => $this->recipe_snapshot?->toArray(),
             'recipe_snapshot_hash'      => $this->recipe_snapshot_hash,
             'components'                => array_map(
                 fn(ComponentConsumptionPlan $c): array => $c->toArray(),

@@ -79,6 +79,7 @@ final class ManufacturingPlanner
             available_finished_goods:  $availability->available_finished_goods,
             recipe_id:                 $snapshot?->recipe_id,
             bom_version_number:        $snapshot?->bom_version_number,
+            recipe_snapshot:           $snapshot,
             recipe_snapshot_hash:      $this->hashSnapshot($availability),
             components:                $components,
             negative_stock_decisions:  $negativeStockDecisions,

@@ -847,6 +847,220 @@ The Manufacturing Engine (PKG-05) receives and executes the plan.
 
 ---
 
-## PKG-05 through PKG-11 — Pending
+## PKG-05 — Manufacturing Executor
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-005
+
+---
+
+### Architecture
+
+```
+Caller
+    ↓
+ManufacturingExecutor.execute(ManufacturingPlan, companyId)
+    ├── Guard: should_manufacture == false  → ExecutionException(PLAN_NOT_APPROVED)
+    ├── Guard: recipe_snapshot_hash == null → ExecutionException(SNAPSHOT_MISSING)
+    ├── Guard: verifySnapshotIntegrity()    → ExecutionException(SNAPSHOT_MISMATCH)
+    ├── Idempotency: findByPlanId()         → if found → buildIdempotentResult()
+    └── DB::transaction()
+            ├── consumeComponent() × N      → decrement on_hand_qty + ProductionConsumption ledger entry
+            ├── produceFinishedGoods()      → increment on_hand_qty + ProductionOutput ledger entry
+            └── ManufacturingTransaction.save()
+    ↓
+ManufacturingExecutionResult  ← success=true, was_idempotent, qty_produced, consumed_components[], ledger_entry_ids[], duration_ms
+```
+
+**EXECUTION CONTRACT:**
+- Allowed: consume raw materials, create ledger entries, create manufacturing transaction, produce FG inventory
+- Forbidden: resolve recipes, check availability, build plans, evaluate rules, make decisions, select recipe versions, calculate manufacturing quantity
+
+---
+
+### Transaction Boundaries
+
+All DB writes happen inside a single `DB::transaction()`. If any step throws, Postgres rolls back:
+- Raw material `on_hand_qty` decrements
+- Finished goods `on_hand_qty` increment
+- All `StockLedgerEntry` inserts
+- `ManufacturingTransaction` insert
+
+The pre-execution guards (snapshot integrity, plan approval) run **before** the transaction opens — no rollback needed for those.
+
+---
+
+### Idempotency Strategy
+
+| Layer | Mechanism |
+|-------|-----------|
+| Pre-check | `findByPlanId()` before entering transaction |
+| DB constraint | `UNIQUE(plan_id)` on `manufacturing_transactions` |
+| Race condition | Concurrent calls with same plan_id: first to commit wins; second hits UNIQUE and rolls back |
+| Return value | `was_idempotent = true` + same `transaction_id` from original execution |
+
+---
+
+### Snapshot Integrity Check
+
+Before any DB write, the executor re-hashes the plan's embedded `RecipeSnapshot`:
+
+```
+computed = SHA-256(json_encode(plan.recipe_snapshot.toArray()))
+stored   = plan.recipe_snapshot_hash   ← set by ManufacturingPlanner at planning time
+
+computed != stored → ExecutionException(SNAPSHOT_MISMATCH)
+```
+
+This ensures a tampered or stale plan cannot drive an execution.
+
+---
+
+### Ledger Entry Convention
+
+All entries from one execution share:
+- `reference_type = 'manufacturing_plan'`
+- `reference_id   = plan.plan_id`
+
+Component consumptions: `LedgerMovementType::ProductionConsumption`
+Finished goods output: `LedgerMovementType::ProductionOutput`
+
+---
+
+### RC-2 Negative Stock Execution
+
+When a component has `allow_negative_stock = true` and insufficient stock:
+- `on_hand_qty` decrements below zero — no exception thrown
+- `ComponentConsumptionRecord.went_negative = true` flagged in result
+- Ledger entry records `on_hand_before` and `on_hand_after` (negative)
+
+---
+
+### Files Created (9)
+
+#### Domain/Enums
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Domain/Enums/TransactionStatus.php` | `Completed`, `Failed`, `RolledBack` — backed string enum |
+
+#### Domain/Exceptions
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Domain/Exceptions/ExecutionException.php` | 3 reason codes: `PLAN_NOT_APPROVED`, `SNAPSHOT_MISSING`, `SNAPSHOT_MISMATCH`; named constructors; `planId()` accessor |
+
+#### Domain/Contracts
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Domain/Contracts/ManufacturingTransactionRepositoryInterface.php` | `findByPlanId()`, `save()` |
+
+#### Domain/Models
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Domain/Models/ManufacturingTransaction.php` | Eloquent model: `HasUuids`; casts `status → TransactionStatus`, `metadata → array` |
+
+#### Domain/ValueObjects
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Domain/ValueObjects/ComponentConsumptionRecord.php` | Execution record per component: `on_hand_before`, `on_hand_after`, `went_negative`, `ledger_entry_id` |
+| `ManufacturingExecution/Domain/ValueObjects/ManufacturingExecutionResult.php` | Full execution output: `execution_id`, `transaction_id`, `success`, `was_idempotent`, `qty_produced`, `consumed_components[]`, `ledger_entry_ids[]`, `duration_ms` |
+
+#### Application/Services
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Application/Services/ManufacturingExecutor.php` | Core executor: 3 guards + idempotency + DB transaction; pure execution, no decisions |
+
+#### Infrastructure
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Infrastructure/Database/Migrations/2026_06_29_000003_create_manufacturing_transactions_table.php` | `manufacturing_transactions` table: `UNIQUE(plan_id)`, `UNIQUE(execution_id)`, nullable `order_line_id` (RC-10 anchor) |
+| `ManufacturingExecution/Infrastructure/Persistence/EloquentManufacturingTransactionRepository.php` | Eloquent implementation |
+| `ManufacturingExecution/Infrastructure/Providers/ManufacturingExecutionServiceProvider.php` | Binds `ManufacturingTransactionRepositoryInterface`; registers `ManufacturingExecutor` singleton |
+
+#### Tests
+| File | Purpose |
+|------|---------|
+| `tests/Feature/Manufacturing/ManufacturingExecutorTest.php` | 14 feature tests with `RefreshDatabase` |
+
+---
+
+### Files Modified (3)
+
+| File | Change |
+|------|--------|
+| `ManufacturingPlanner/Domain/ValueObjects/ManufacturingPlan.php` | Added `?RecipeSnapshot $recipe_snapshot` field + `toArray()` update — executor needs it for integrity re-hash |
+| `ManufacturingPlanner/Domain/Services/ManufacturingPlanner.php` | Populates `recipe_snapshot: $snapshot` in `new ManufacturingPlan(...)` |
+| `bootstrap/providers.php` | Registered `ManufacturingExecutionServiceProvider` |
+
+---
+
+### Test Coverage (14 tests)
+
+| Group | Tests |
+|-------|-------|
+| Successful execution: raw material decremented | 1 |
+| Successful execution: FG incremented | 1 |
+| Successful execution: ledger entries created (consumption + output) | 1 |
+| Successful execution: ManufacturingTransaction record created | 1 |
+| Successful execution: result structure (execution_id, success, qty, components) | 1 |
+| RC-2 negative stock: component goes below zero, `went_negative=true` | 1 |
+| Idempotency: duplicate returns `was_idempotent=true` + same `transaction_id` | 1 |
+| Idempotency: duplicate does not double-consume inventory | 1 |
+| Rollback: transaction repo failure → inventory unchanged, no ledger entries, no tx record | 1 |
+| Guard: `should_manufacture=false` → `ExecutionException(PLAN_NOT_APPROVED)` | 1 |
+| Guard: `should_manufacture=false` → no DB writes | 1 |
+| Guard: snapshot hash mismatch → `ExecutionException(SNAPSHOT_MISMATCH)` | 1 |
+| Guard: snapshot mismatch has correct `reason()` code | 1 |
+| Guard: `recipe_snapshot_hash=null` → `ExecutionException(SNAPSHOT_MISSING)` | 1 |
+
+---
+
+### Architecture Alignment
+
+| Architecture Decision | Implementation |
+|----------------------|----------------|
+| RC-2 Negative Stock at execution | `on_hand_qty` allowed to go below zero when `allow_negative_stock=true`; `went_negative` flagged |
+| RC-6 Idempotency | Pre-check `findByPlanId()` + DB `UNIQUE(plan_id)` as second guard; concurrent race → first wins |
+| RC-10 Unique constraint anchor | `order_line_id UUID NULLABLE` column present; UNIQUE constraint added when Order integration arrives |
+| Transaction boundary | All inventory + ledger + transaction writes in single `DB::transaction()`; rollback on any exception |
+| Executor vs Planner separation | Executor receives fully-decided plan; forbidden from resolving recipes or evaluating rules |
+| Snapshot integrity | Executor re-hashes `plan.recipe_snapshot` and compares to `plan.recipe_snapshot_hash` before any writes |
+
+---
+
+### `manufacturing_transactions` Table
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID PK | `HasUuids` |
+| `execution_id` | VARCHAR(36) UNIQUE | Correlation ID generated at call time |
+| `plan_id` | VARCHAR(36) UNIQUE | Idempotency key from `ManufacturingPlan.plan_id` |
+| `product_id` | UUID FK | Finished good produced |
+| `warehouse_id` | UUID FK | Execution warehouse |
+| `bom_id` | UUID NULLABLE | `recipe_id` from ManufacturingPlan |
+| `bom_version_number` | UINT NULLABLE | RC-10: monotonically increasing version |
+| `recipe_snapshot_hash` | VARCHAR(64) NULLABLE | SHA-256 audit trail |
+| `qty_produced` | DECIMAL(15,4) | |
+| `status` | VARCHAR(20) | Default `'completed'` |
+| `executed_at` | TIMESTAMP | Auto-set to current |
+| `duration_ms` | UINT NULLABLE | Wall-clock execution time |
+| `order_line_id` | UUID NULLABLE | RC-10 future anchor for Order integration |
+| `metadata` | JSON NULLABLE | |
+
+---
+
+### Failure Recovery
+
+| Failure Point | Behaviour |
+|--------------|-----------|
+| Guard check fails (pre-transaction) | `ExecutionException` thrown; zero DB writes |
+| Component inventory lock fails | `DB::transaction()` rolls back all writes; exception propagates |
+| Ledger entry insert fails | Full rollback; inventory back to original state |
+| Transaction record insert fails | Full rollback; all inventory mutations undone |
+| Concurrent duplicate plan_id | Second call hits `UNIQUE(plan_id)` DB error → transaction rolls back; first call's result stands |
+
+---
+
+## PKG-06 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
