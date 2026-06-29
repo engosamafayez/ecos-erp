@@ -32,6 +32,7 @@ return [
     Modules\Manufacturing\AvailabilityEngine\Infrastructure\Providers\AvailabilityEngineServiceProvider::class,
     Modules\Manufacturing\ManufacturingPlanner\Infrastructure\Providers\ManufacturingPlannerServiceProvider::class,
     Modules\Manufacturing\ManufacturingExecution\Infrastructure\Providers\ManufacturingExecutionServiceProvider::class,
+    Modules\Manufacturing\ManufacturingWorkflow\Infrastructure\Providers\ManufacturingWorkflowServiceProvider::class,
     Modules\Commerce\Synchronization\Infrastructure\Providers\SynchronizationServiceProvider::class,
     Modules\Inventory\ReceiptLayers\Infrastructure\Providers\ReceiptLayersServiceProvider::class,
     Modules\Inventory\CountSessions\Infrastructure\Providers\CountSessionsServiceProvider::class,

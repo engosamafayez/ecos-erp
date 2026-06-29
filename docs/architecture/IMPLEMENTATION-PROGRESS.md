@@ -1224,6 +1224,96 @@ This keeps the pipeline pure domain with no infrastructure imports.
 
 ---
 
+## PKG-04C — Manufacturing Workflow
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Commit:** (this batch)
+**Tests:** 20 feature tests
+
+### Purpose
+
+The Manufacturing Workflow is the **single entry point** for every manufacturing request in the system.
+It coordinates all manufacturing engines in a fixed, sequential order and returns a typed result
+describing where the workflow reached and why it stopped.
+
+```
+Caller
+  └─▶ ManufacturingWorkflow.run(ManufacturingWorkflowRequest)
+           │
+           ├── Stage 1: DecisionOrchestrator.orchestrate()  ──▶ [blocked: DecisionRejected/Deferred/Escalated/NoMatchingRule/RecipeNotFound]
+           │
+           ├── Stage 2: InventoryAvailabilityEngine.analyse()  ──▶ [blocked: CannotManufacture/NoRecipe]
+           │
+           └── Stage 3: ManufacturingPlanner.plan()  ──▶ [blocked: ManufacturingNotNeeded]
+                                                       └─▶ ManufacturingWorkflowResult (is_plan_ready = true)
+```
+
+### Contract — This Service MUST NOT
+
+- Consume inventory
+- Create ledger entries
+- Write database records
+- Dispatch jobs or events
+- Update costs or perform procurement
+- Call ExecutionPipeline or Executor (those are PKG-05A / PKG-05B)
+
+### New Files
+
+| File | Description |
+|------|-------------|
+| `Modules/Manufacturing/ManufacturingWorkflow/Domain/Enums/WorkflowStage.php` | `DecisionEvaluated`, `AvailabilityAnalysed`, `PlanProduced` |
+| `Modules/Manufacturing/ManufacturingWorkflow/Domain/Enums/WorkflowBlockingReason.php` | 8 typed reasons with `fromDecisionType()` + `fromEligibility()` factory methods |
+| `Modules/Manufacturing/ManufacturingWorkflow/Domain/ValueObjects/ManufacturingWorkflowRequest.php` | Immutable input: `product_id`, `warehouse_id`, `required_qty`, `trigger`, `metadata` |
+| `Modules/Manufacturing/ManufacturingWorkflow/Domain/ValueObjects/ManufacturingWorkflowResult.php` | Immutable output carrying all engine results + `isPlanReady()` |
+| `Modules/Manufacturing/ManufacturingWorkflow/Domain/Services/ManufacturingWorkflow.php` | Core coordinator service |
+| `Modules/Manufacturing/ManufacturingWorkflow/Infrastructure/Providers/ManufacturingWorkflowServiceProvider.php` | Singleton wiring |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `bootstrap/providers.php` | Added `ManufacturingWorkflowServiceProvider` |
+
+### Test Coverage
+
+| Scenario | Test |
+|----------|------|
+| Successful plan ready | `test_successful_workflow_returns_plan_ready_result` |
+| All engine outputs present | `test_successful_workflow_result_carries_all_engine_outputs` |
+| Workflow ID is UUID v4 | `test_successful_workflow_result_carries_workflow_id` |
+| Completed-at is ISO 8601 | `test_successful_workflow_result_has_completed_at_timestamp` |
+| Decision reject → blocked | `test_decision_reject_returns_blocked_at_decision_stage` |
+| Decision defer → deferred | `test_decision_defer_returns_deferred_blocking_reason` |
+| Rejected: no availability/plan called | `test_decision_blocked_does_not_call_availability_or_planner` |
+| Rejected: decision_result present | `test_decision_blocked_still_carries_decision_result` |
+| No recipe → RecipeNotFound | `test_no_recipe_blocks_at_decision_stage_with_recipe_not_found` |
+| Short components → CannotManufacture | `test_cannot_manufacture_returns_blocked_at_availability_stage` |
+| Availability blocked: result present | `test_availability_blocked_carries_availability_result` |
+| Availability blocked: no plan | `test_availability_blocked_does_not_produce_plan` |
+| Sufficient FG → NotNeeded | `test_sufficient_fg_stock_returns_manufacturing_not_needed` |
+| NotNeeded: plan present, should_manufacture=false | `test_manufacturing_not_needed_still_carries_plan` |
+| Caller metadata propagated | `test_caller_metadata_propagated_to_result` |
+| workflow_id injected into plan | `test_workflow_id_injected_into_plan_metadata` |
+| Snapshot from orchestrator in result | `test_recipe_snapshot_from_orchestrator_in_result` |
+| Plan snapshot matches result snapshot | `test_plan_carries_same_recipe_snapshot_as_workflow_result` |
+| Snapshot present even when blocked by decision | `test_snapshot_carried_into_blocked_by_decision_result` |
+| Plan carries correct product/warehouse | `test_plan_carries_correct_product_and_warehouse` |
+| Availability result in success | `test_availability_result_carried_into_successful_result` |
+| toArray() shape | `test_result_toArray_has_expected_keys` |
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Never throws for business outcomes | All blocking conditions return typed `ManufacturingWorkflowResult` |
+| First-block-wins sequential execution | Prevents calling downstream engines unnecessarily |
+| Snapshot resolved by orchestrator | Orchestrator resolves recipe → Workflow carries snapshot forward into all stages |
+| Workflow ID propagated to plan metadata | Enables full trace from plan → workflow → trigger without extra DB columns |
+| `isPlanReady()` encapsulates the check | Callers never need to inspect `should_manufacture` + `is_blocked` manually |
+
+---
+
 ## PKG-06 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
