@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Manufacturing\BillsOfMaterials\Domain\Services;
 
 use Modules\Manufacturing\BillsOfMaterials\Domain\Contracts\RecipeRepositoryInterface;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Contracts\RecipeResolverInterface;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Exceptions\RecipeResolverException;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Models\Recipe;
 use Modules\Manufacturing\BillsOfMaterials\Domain\ValueObjects\RecipeComponent;
@@ -29,7 +30,7 @@ use Modules\Manufacturing\BillsOfMaterials\Domain\ValueObjects\RecipeSnapshot;
  *
  * Callers: ManufacturingEngine, DecisionEngine, CostEngine, SimulationEngine, AIEngine.
  */
-final class RecipeResolver
+final class RecipeResolver implements RecipeResolverInterface
 {
     public function __construct(
         private readonly RecipeRepositoryInterface $recipes,

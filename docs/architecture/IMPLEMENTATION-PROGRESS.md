@@ -420,6 +420,159 @@ The kernel **never** executes business operations. It only decides. Execution be
 
 ---
 
-## PKG-03B through PKG-11 — Pending
+## PKG-03B — Decision Orchestrator
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-003B
+
+---
+
+### Architecture
+
+```
+Caller
+    ↓
+DecisionOrchestrator.orchestrate(trigger, builder, parameters, metadata)
+    ├── ContextBuilderInterface.build()        → DecisionContext
+    ├── RecipeResolverInterface.resolve()      → RecipeSnapshot (if requiresRecipe)
+    ├── enrichWithRecipe()                     → enriched DecisionContext
+    ├── RuleProviderRegistryInterface.for()    → RuleProviderInterface
+    └── DecisionKernel.evaluate()             → DecisionResult
+    ↓
+OrchestratorResult  ← DecisionResult + RecipeSnapshot? + merged metadata
+```
+
+The Orchestrator **never** executes business operations. It coordinates domain engines and returns an immutable result to the caller.
+
+---
+
+### Design Decisions
+
+| Concern | Design Decision |
+|---------|----------------|
+| Recipe access | Only via `RecipeResolverInterface` — never direct model reads |
+| Builder extensibility | `ContextBuilderInterface` — new context types = new builder class; no orchestrator changes |
+| Rule provider selection | `RuleProviderRegistryInterface` — context type → `RuleProviderInterface` mapping |
+| Recipe requirement | Builder declares `requiresRecipe(): bool`; orchestrator asks the builder |
+| Context enrichment | After resolution, `recipe_id`, `bom_version_number`, `component_count`, `recipe_resolved` injected into context |
+| Caller isolation | Orchestrator does not know its caller; all callers receive `OrchestratorResult` |
+| Error propagation | `RecipeResolverException` and `NoMatchingRuleException` propagate unchanged; only config errors become `OrchestratorException` |
+
+---
+
+### Files Created (11)
+
+#### BillsOfMaterials/Domain/Contracts (new)
+| File | Purpose |
+|------|---------|
+| `RecipeResolverInterface.php` | Abstraction over RecipeResolver; enables mocking + future CachedRecipeResolver, SimulatedRecipeResolver |
+
+#### DecisionOrchestrator/Domain/Contracts
+| File | Purpose |
+|------|---------|
+| `ContextBuilderInterface.php` | `contextType()`, `requiresRecipe()`, `build(array $params): DecisionContext` |
+| `RuleProviderRegistryInterface.php` | `for(type)`, `register(type, provider)`, `has(type)` |
+
+#### DecisionOrchestrator/Domain/Exceptions
+| File | Purpose |
+|------|---------|
+| `OrchestratorException.php` | `MISSING_PRODUCT_ID` — builder requires recipe but `product_id` absent |
+| `NoProviderForContextException.php` | No `RuleProviderInterface` registered for context type |
+
+#### DecisionOrchestrator/Domain/ValueObjects
+| File | Purpose |
+|------|---------|
+| `OrchestratorResult.php` | `final readonly`: `decision`, `recipe_snapshot?`, `metadata`; `hasRecipe()`, `toArray()` |
+
+#### DecisionOrchestrator/Domain/Builders
+| File | Purpose |
+|------|---------|
+| `ManufacturingContextBuilder.php` | `requiresRecipe=true`; keys: `product_id`, `ordered_qty`, `available_qty`, `shortage_qty` |
+| `GoodsReceiptContextBuilder.php` | `requiresRecipe=false`; keys: `gr_id`, `po_id`, `received_qty`, `ordered_qty`, `variance_pct` (auto-computed) |
+
+#### DecisionOrchestrator/Domain/Services
+| File | Purpose |
+|------|---------|
+| `InMemoryRuleProviderRegistry.php` | Mutable registry; fluent `register()` returns `static` |
+| `DecisionOrchestrator.php` | 5-step orchestration: build → resolve → enrich → select rules → evaluate |
+
+#### Infrastructure/Providers
+| File | Purpose |
+|------|---------|
+| `DecisionOrchestratorServiceProvider.php` | Singletons: `RuleProviderRegistryInterface`, `DecisionOrchestrator` |
+
+#### Tests
+| File | Purpose |
+|------|---------|
+| `tests/Unit/Manufacturing/DecisionOrchestratorTest.php` | 25 pure unit tests; PHPUnit mock for `RecipeResolverInterface`; real kernel |
+
+---
+
+### Files Modified (3)
+
+| File | Change |
+|------|--------|
+| `BillsOfMaterials/Domain/Services/RecipeResolver.php` | Added `implements RecipeResolverInterface` |
+| `BillsOfMaterials/Infrastructure/Providers/BomServiceProvider.php` | Bound `RecipeResolverInterface → RecipeResolver` |
+| `bootstrap/providers.php` | Registered `DecisionOrchestratorServiceProvider` |
+
+---
+
+### Test Coverage (25 tests)
+
+| Group | Tests |
+|-------|-------|
+| Basic orchestration (GR context, no recipe) | 1 |
+| Resolver NOT called when not required | 1 |
+| Resolver IS called when required | 1 |
+| Recipe snapshot in result | 1 |
+| Context enriched with recipe metadata | 1 |
+| Rule provider selected by context type | 1 |
+| DecisionResult in OrchestratorResult | 1 |
+| Caller metadata propagated | 1 |
+| context_type always in metadata | 1 |
+| Recipe fields in metadata when resolved | 1 |
+| RecipeResolverException propagates | 1 |
+| NoMatchingRuleException propagates | 1 |
+| NoProviderForContextException thrown + contextType() | 1 |
+| OrchestratorException when product_id missing | 1 |
+| OrchestratorResult immutability | 1 |
+| toArray() structure | 1 |
+| ManufacturingContextBuilder context type + keys | 2 |
+| ManufacturingContextBuilder requiresRecipe | 1 |
+| GoodsReceiptContextBuilder context type | 1 |
+| GoodsReceiptContextBuilder does not require recipe | 1 |
+| GoodsReceiptContextBuilder variance_pct + is_partial + over_received | 1 |
+| InMemoryRuleProviderRegistry register + retrieve | 1 |
+| InMemoryRuleProviderRegistry throws for unknown | 1 |
+| InMemoryRuleProviderRegistry has() returns false | 1 |
+
+---
+
+### Architecture Alignment
+
+| Architecture Decision | Implementation |
+|----------------------|----------------|
+| Caller isolation | Orchestrator receives `ContextBuilderInterface` — does not know if caller is Orders, GR, or AI |
+| RC-10 snapshot readiness | `OrchestratorResult.recipe_snapshot.bom_version_number` available for unique constraint |
+| RecipeResolver — never bypass | Orchestrator always calls `RecipeResolverInterface`; never imports Recipe models |
+| SOLID OCP | New context type = new builder class; no orchestrator modifications |
+
+---
+
+### Future Extension Points
+
+| Extension | How |
+|-----------|-----|
+| SchedulerContextBuilder | Implement `ContextBuilderInterface`; register in registry |
+| AiContextBuilder | Same pattern |
+| CachedRecipeResolver | Implement `RecipeResolverInterface`; swap binding in service provider |
+| DB-backed RuleProviderRegistry | Implement `RuleProviderRegistryInterface` with Eloquent |
+| Async orchestration | Wrap `orchestrate()` in a Job; kernel + resolver calls remain unchanged |
+
+---
+
+## PKG-04 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
