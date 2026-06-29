@@ -12,6 +12,7 @@ use Modules\Commerce\Orders\Application\Actions\CreateOrderAction;
 use Modules\Commerce\Orders\Application\Actions\DeleteOrderAction;
 use Modules\Commerce\Orders\Application\Actions\GetOrderAction;
 use Modules\Commerce\Orders\Application\Actions\ListOrdersAction;
+use Modules\Commerce\Orders\Application\Actions\PrepareOrderAction;
 use Modules\Commerce\Orders\Application\Actions\UpdateOrderAction;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreOrderRequest;
@@ -69,6 +70,13 @@ final class OrderController extends Controller
         $result = $action->execute($order, OrderDTO::fromArray($request->validated()));
 
         return $this->updated(new OrderResource($result->data()), $result->message());
+    }
+
+    public function prepare(string $order, PrepareOrderAction $action): JsonResponse
+    {
+        $result = $action->execute($order);
+
+        return $this->success(new OrderResource($result->data()), $result->message());
     }
 
     public function destroy(string $order, DeleteOrderAction $action): JsonResponse

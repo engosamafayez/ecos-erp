@@ -127,7 +127,7 @@ final class ManufacturingExecutor
                     'status'               => TransactionStatus::Completed->value,
                     'executed_at'          => $executedAt,
                     'duration_ms'          => $durationMs,
-                    'order_line_id'        => null, // RC-10: populated when Order integration is added
+                    'order_line_id'        => $context->plan->metadata['order_line_id'] ?? null, // RC-10
                     'metadata'             => array_merge($context->transaction_metadata, [
                         'plan_id'        => $context->plan->plan_id,
                         'correlation_id' => $context->correlation_id,

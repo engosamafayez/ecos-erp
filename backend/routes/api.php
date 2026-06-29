@@ -130,6 +130,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('channels/{channel}/import-orders', [OrderImportController::class, 'importOrders']);
     Route::apiResource('product-mappings', ProductMappingController::class);
     Route::apiResource('orders', OrderController::class);
+    Route::post('orders/{order}/prepare', [OrderController::class, 'prepare']);
     Route::apiResource('fulfillments', FulfillmentController::class);
     Route::post('fulfillments/{fulfillment}/fulfill', [FulfillmentController::class, 'fulfill']);
     Route::post('fulfillments/{fulfillment}/cancel', [FulfillmentController::class, 'cancel']);

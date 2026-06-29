@@ -1792,6 +1792,158 @@ public function handle(OrderLifecycleRequest $request): OrderLifecycleResult
 
 ---
 
+## PKG-07 — Orders ↔ Manufacturing Integration
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-ORD-IMP-001
+**Tests:** 14 feature tests
+
+### Orders Integration Flow
+
+```
+POST /api/orders/{id}/prepare
+    ↓
+PrepareOrderAction
+    ├── order.status → 'preparing'  (committed immediately)
+    └── PrepareOrderManufacturingAction.execute(order)
+            │
+            ├── [foreach line]
+            │     ├── Skip if manufacturing_state = Executed (idempotency guard)
+            │     ├── Build OrderLifecycleRequest (product flags pre-computed)
+            │     └── OrderLifecycleCoordinator.handle(request)
+            │               ├── Status gate: 'preparing' allowed
+            │               ├── ManufacturingPolicy.evaluate()
+            │               └── ManufacturingApplicationService.manufactureProduct()
+            │
+            └── Update order_line.manufacturing_state per result
+```
+
+### Manufacturing State Lifecycle
+
+| State | Meaning | Terminal? | Retry? |
+|-------|---------|-----------|--------|
+| `null` | Not yet evaluated | No | N/A |
+| `not_required` | Sufficient FG stock — no manufacturing needed | Yes | No |
+| `skipped` | Policy rejected (product ineligible, no recipe, etc.) | Yes | No |
+| `executed` | Manufacturing triggered and completed successfully | Yes | No (already done) |
+| `pending` | Queued (reserved for future async flow) | No | — |
+| `planned` | Plan produced, execution deferred (reserved) | No | — |
+| `failed` | Workflow blocked or infrastructure error | No | **Yes** |
+
+### State Mapping from Coordinator
+
+| `LifecycleAction` | Condition | `OrderLineManufacturingState` |
+|-------------------|-----------|-------------------------------|
+| `manufacturing_triggered` | — | `executed` |
+| `manufacturing_blocked` | `blocking_reason = 'manufacturing_not_needed'` | `not_required` |
+| `manufacturing_blocked` | all other reasons | `failed` |
+| `policy_rejected` | `policy_code = already_manufactured` | `executed` |
+| `policy_rejected` | all other codes | `skipped` |
+| `status_ignored` | — | `skipped` |
+
+### Idempotency Strategy
+
+Three independent guards prevent double-execution:
+
+| Layer | Mechanism |
+|-------|-----------|
+| Application | `manufacturing_state = executed` on line → skip entire coordinator call |
+| Policy (RC-10 backup) | `already_manufactured = true` in context → `AlreadyManufactured` rejection |
+| Database (RC-10) | `UNIQUE(order_line_id, bom_id, bom_version_number) WHERE status != 'failed'` partial index |
+
+### Retry Strategy
+
+Retry = call `POST /api/orders/{id}/prepare` again:
+- `executed` lines are **skipped** (idempotency guard at application layer)
+- `failed` lines are **re-evaluated** (the blocking cause may have been resolved)
+- `skipped` lines are re-evaluated (product flags may have changed)
+- `not_required` lines are re-evaluated (stock levels may have changed)
+
+### Status Gate Update (PKG-07A extension)
+
+PKG-07A built the coordinator with `MANUFACTURING_TRIGGER_STATUSES = ['pending', 'processing']`.
+PKG-07 adds `'preparing'` to both gates:
+
+| Constant | Location | Updated Values |
+|----------|----------|----------------|
+| `MANUFACTURING_TRIGGER_STATUSES` | `OrderLifecycleCoordinator` | `pending`, `processing`, `preparing` |
+| `MANUFACTURING_ALLOWED_STATUSES` | `ManufacturingPolicy` | `pending`, `processing`, `preparing` |
+
+### RC-10 Implementation
+
+The `order_line_id` column on `manufacturing_transactions` (previously `null`) is now populated
+when manufacturing is triggered from the order lifecycle:
+
+```php
+// ManufacturingExecutor.php
+'order_line_id' => $context->plan->metadata['order_line_id'] ?? null,
+```
+
+The coordinator passes `trigger_id: $request->order_line_id` into `ManufactureProductRequest`, which flows through the workflow metadata chain:
+```
+ManufactureProductRequest.metadata['order_line_id']
+  → ManufacturingWorkflowRequest.metadata
+  → ManufacturingPlan.metadata
+  → ManufacturingExecutionContext.transaction_metadata['source_metadata']
+  → ManufacturingExecutor reads plan.metadata['order_line_id']
+  → ManufacturingTransaction.order_line_id
+```
+
+A partial unique index enforces exactly-once execution at the DB level.
+
+### New Files (6)
+
+| File | Purpose |
+|------|---------|
+| `Commerce/Orders/Domain/Enums/OrderLineManufacturingState.php` | 6-case enum with `isTerminal()` and `isSuccessful()` |
+| `Commerce/Orders/Infrastructure/Database/Migrations/2026_06_29_300000_add_manufacturing_state_to_order_lines_table.php` | 4 columns: `manufacturing_state`, `manufacturing_result`, `manufacturing_started_at`, `manufacturing_completed_at` |
+| `Manufacturing/ManufacturingExecution/Infrastructure/Database/Migrations/2026_06_29_300001_add_rc10_order_line_index_to_manufacturing_transactions_table.php` | RC-10 partial unique index |
+| `Commerce/Orders/Application/Actions/PrepareOrderManufacturingAction.php` | Per-line manufacturing driver; calls coordinator; updates line state |
+| `Commerce/Orders/Application/Actions/PrepareOrderAction.php` | Sets `preparing` status + delegates to manufacturing action |
+| `tests/Feature/Orders/OrderManufacturingIntegrationTest.php` | 14 integration tests |
+
+### Modified Files (9)
+
+| File | Change |
+|------|--------|
+| `Commerce/Orders/Domain/Enums/OrderStatus.php` | Added `Preparing = 'preparing'` case |
+| `Commerce/Orders/Domain/Models/OrderLine.php` | Added 4 manufacturing state fields to fillable + casts |
+| `Commerce/Orders/Presentation/Http/Controllers/OrderController.php` | Added `prepare()` method + imported `PrepareOrderAction` |
+| `Commerce/Orders/Presentation/Http/Resources/OrderResource.php` | Added `manufacturing_state`, `manufacturing_state_label`, timestamps to line items |
+| `Operations/OrderLifecycle/Application/Services/OrderLifecycleCoordinator.php` | Added `'preparing'` to `MANUFACTURING_TRIGGER_STATUSES` |
+| `Manufacturing/ManufacturingPolicy/Domain/Services/ManufacturingPolicy.php` | Added `'preparing'` to `MANUFACTURING_ALLOWED_STATUSES` |
+| `Manufacturing/ManufacturingExecution/Application/Services/ManufacturingExecutor.php` | RC-10: populate `order_line_id` from `plan.metadata['order_line_id']` |
+| `routes/api.php` | Added `POST orders/{order}/prepare` route |
+
+### Test Coverage (14 tests)
+
+| Group | Tests |
+|-------|-------|
+| Preparing triggers manufacturing | Line → Executed state, order status → preparing, DB transaction record |
+| Idempotency (prepare twice) | No duplicate transactions, Executed state preserved |
+| Mixed order | Manufactured line → Executed, purchased line → Skipped; no TX for skipped |
+| Product without recipe | Line → Skipped, no transaction |
+| Sufficient FG stock | Line → NotRequired (not Failed), no transaction |
+| Cancelled order status | StatusIgnored → Skipped, no transaction |
+| Failed manufacturing | Line → Failed, failure reason in result, order not corrupted |
+| Retry after failure | Failed line re-evaluated and executed on retry |
+| State invariants | `manufacturing_result` stored, timestamps set, `null` before prepare |
+| RC-10 | `order_line_id` populated on `manufacturing_transactions` |
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Status change committed BEFORE manufacturing runs | Order is in `preparing` state throughout; if the process crashes mid-line, the order's `preparing` status signals that retry is needed |
+| No wrapping transaction across all lines | Partial success must survive infrastructure failures; each line is committed independently |
+| `not_required` ≠ `failed` | Sufficient stock is a healthy outcome; mapping it to `failed` would incorrectly trigger retries |
+| `actor_id = 'system:order_prepare'` | Identifies the automated trigger source in manufacturing audit trails; replaced with authenticated user in future |
+| Orders call `OrderLifecycleCoordinator`, not `ManufacturingApplicationService` | Orders module has zero direct dependency on the Manufacturing module's internal services |
+| `Preparing` status added to both gate constants | The coordinator and policy must both accept `preparing`; coordinator gates before policy runs, policy gatekeeps independently |
+
+---
+
 ## PKG-08 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.

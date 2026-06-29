@@ -7,17 +7,22 @@ namespace Modules\Commerce\Orders\Domain\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Commerce\Orders\Domain\Enums\OrderLineManufacturingState;
 use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
  * A single line on a commerce order.
  *
- * @property string $id
- * @property string $order_id
- * @property string $product_id
- * @property float $quantity
- * @property float $unit_price
- * @property float $line_total
+ * @property string                            $id
+ * @property string                            $order_id
+ * @property string                            $product_id
+ * @property float                             $quantity
+ * @property float                             $unit_price
+ * @property float                             $line_total
+ * @property OrderLineManufacturingState|null  $manufacturing_state
+ * @property array|null                        $manufacturing_result
+ * @property \Illuminate\Support\Carbon|null   $manufacturing_started_at
+ * @property \Illuminate\Support\Carbon|null   $manufacturing_completed_at
  */
 class OrderLine extends Model
 {
@@ -36,6 +41,10 @@ class OrderLine extends Model
         'quantity',
         'unit_price',
         'line_total',
+        'manufacturing_state',
+        'manufacturing_result',
+        'manufacturing_started_at',
+        'manufacturing_completed_at',
     ];
 
     /**
@@ -44,9 +53,13 @@ class OrderLine extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'float',
-            'unit_price' => 'float',
-            'line_total' => 'float',
+            'quantity'                   => 'float',
+            'unit_price'                 => 'float',
+            'line_total'                 => 'float',
+            'manufacturing_state'        => OrderLineManufacturingState::class,
+            'manufacturing_result'       => 'array',
+            'manufacturing_started_at'   => 'datetime',
+            'manufacturing_completed_at' => 'datetime',
         ];
     }
 

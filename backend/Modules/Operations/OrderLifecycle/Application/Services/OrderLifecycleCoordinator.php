@@ -64,6 +64,7 @@ final class OrderLifecycleCoordinator
     private const MANUFACTURING_TRIGGER_STATUSES = [
         'pending',
         'processing',
+        'preparing', // PKG-07: orders enter this status when PrepareOrderAction runs
     ];
 
     public function __construct(

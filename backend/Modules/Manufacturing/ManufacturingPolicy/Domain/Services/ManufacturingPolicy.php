@@ -54,6 +54,7 @@ final class ManufacturingPolicy
     private const MANUFACTURING_ALLOWED_STATUSES = [
         'pending',
         'processing',
+        'preparing', // PKG-07: order is in the process of being prepared for manufacturing
     ];
 
     /**
