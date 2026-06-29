@@ -39,34 +39,45 @@ The Queue answers one question at any moment: *"How much of each product does th
 
 ### 1.3 Net Requirement Formula
 
+The formula is **always calculated from current state** at the moment of recalculation (RC-9). It never accumulates shortages from history — it reads live data every time.
+
 ```
-net_required_quantity(product_id) =
-    gross_demand(product_id)
-  - available_inventory(product_id)
-  - in_transit_quantity(product_id)
-  - recovered_quantity(product_id)
+net_required_quantity(product_id, company_id) =
+    gross_demand(product_id, company_id)
+  - available_inventory(product_id, company_id)
+  - in_transit_quantity(product_id, company_id)
 
 where:
   gross_demand =
       SUM(required_raw_material_qty for all unfulfilled manufacturing demands)
     + SUM(direct_purchase_demand for non-manufactured products with shortfall)
+    // Sources: open orders in 'preparing' state where manufacturing failed,
+    //          and any manually registered demand
 
   available_inventory =
-      InventoryItem.on_hand_qty
-    - InventoryItem.reserved_qty
-    (per warehouse, aggregated across all warehouses in the company)
+      SUM(InventoryItem.on_hand_qty - InventoryItem.reserved_qty)
+      across all warehouses in company_id
+    // This ALREADY includes all posted GRs and all completed disassembly recoveries.
+    // There is no separate 'recovered_quantity' term — recoveries are part of on_hand_qty
+    // the moment they are posted to inventory.
 
   in_transit_quantity =
       SUM(open PO line quantities not yet received)
+    // Open PO = status NOT IN ('received', 'cancelled')
 
-  recovered_quantity =
-      SUM(disassembly recoveries since last scheduler run)
-      + SUM(goods receipts posted since last scheduler run)
-
-  result = max(0, gross_demand - available_inventory - in_transit_quantity - recovered_quantity)
+  result = max(0, gross_demand - available_inventory - in_transit_quantity)
 ```
 
 If `result ≤ 0`: entry is marked `is_satisfied = true`.
+
+**Why no separate `recovered_quantity` term:** Disassembly recoveries and Goods Receipts both post to inventory immediately when executed. Their quantities appear in `InventoryItem.on_hand_qty` within the same transaction. Subtracting them again as a separate `recovered_quantity` field would double-count them. The formula uses `available_inventory` as the single source of truth for what is currently on hand.
+
+**Recalculation triggers:** The queue entry for a product is recalculated (this formula run fresh) when:
+- Manufacturing fails with FAIL_STOCK_SHORTAGE or MANUFACTURE_WITH_SHORTAGE (adds to gross_demand picture)
+- Goods Receipt posted for this product (increases available_inventory → may clear requirement)
+- Purchase Order created for this product (increases in_transit_quantity → reduces net requirement)
+- Disassembly completed for a recipe that uses this product as a component (increases available_inventory)
+- Order cancelled that was in 'preparing' state (reduces gross_demand)
 
 ### 1.4 Queue Update Triggers
 
@@ -110,23 +121,35 @@ contributing_sources = [
 ]
 ```
 
-### 1.6 Queue Merge Rules
+### 1.6 Queue Upsert Rules
 
-The Queue maintains **one entry per product per company**. Quantities are always summed — there are no separate rows per order or per manufacturing run.
+The Queue maintains **one entry per product per company**. When any triggering event occurs, the full net requirement is recalculated from scratch (not accumulated).
 
-When a new shortfall is added:
 ```
-existing = ProcurementQueue.findByProduct(product_id, company_id)
+recalculate(product_id, company_id, trigger_source):
 
-if existing:
-  existing.net_required_quantity += new_shortfall_qty
-  existing.contributing_sources.append(new_source)
-  existing.last_recalculated_at = now()
-  existing.is_satisfied = (existing.net_required_quantity <= 0)
-  existing.save()
-else:
-  ProcurementQueue.create(product_id, new_shortfall_qty, [new_source])
+  // Compute all three inputs from live data
+  gross   = computeGrossDemand(product_id, company_id)
+  avail   = computeAvailableInventory(product_id, company_id)
+  transit = computeInTransit(product_id, company_id)
+  net_qty = max(0, gross - avail - transit)
+
+  existing = ProcurementQueue.findByProduct(product_id, company_id)
+
+  if existing:
+    existing.gross_demand_quantity  = gross
+    existing.available_quantity     = avail
+    existing.in_transit_quantity    = transit
+    existing.net_required_quantity  = net_qty
+    existing.is_satisfied           = (net_qty <= 0)
+    existing.last_recalculated_at   = now()
+    existing.save()
+  else if net_qty > 0:
+    ProcurementQueue.create(product_id, company_id, gross, avail, transit, net_qty)
+  // If net_qty = 0 and no existing entry: no-op (nothing to add)
 ```
+
+The `contributing_sources` JSONB field is maintained as a capped audit reference (max 200 entries). It is informational only — the actual net requirement comes from the formula above, not from summing contributing sources.
 
 ### 1.7 Queue Cleanup
 

@@ -130,14 +130,16 @@ When `true`: The system will automatically disassemble this product when it is r
 
 #### `allow_negative_stock` (Boolean, default: false)
 
-Controls what happens when manufacturing is triggered but raw materials are insufficient.
+Controls whether a product's stock level is permitted to fall below zero during a consumption operation.
 
-| Value | Behavior |
-|-------|----------|
-| `true` | Manufacturing proceeds. Raw material stock goes negative. Shortage added to Procurement Queue. |
-| `false` | Manufacturing is blocked. Product is added to Procurement Queue. Order is not affected. |
+This flag is **always evaluated on the product being consumed** (the raw material), not on the product being produced (the finished good). Finished goods are never produced into negative inventory — the system only ever manufactures the quantity that is short.
 
-**Note:** This flag applies to the **output product** (the finished good being manufactured). Whether the *raw material* products allow negative stock is determined by those products' own `allow_negative_stock` flag.
+| Value | Behavior during raw material consumption |
+|-------|------------------------------------------|
+| `true` | Consumption proceeds even if stock goes negative. Shortfall added to Procurement Queue. |
+| `false` | Consumption that would go negative is blocked. Shortfall added to Procurement Queue. Manufacturing of the portion requiring this material is blocked. |
+
+**Rule:** `allow_negative_stock` is checked per raw material, per recipe line, at consumption time. All raw materials in a recipe are checked independently. If any material blocks (flag=false, would go negative), manufacturing is blocked only for the units that require that material.
 
 ### 2.4 Unit
 
@@ -240,14 +242,18 @@ Each product has a configurable cost source. See Chapter 3 for full Cost Rules.
 
 #### Hybrid Cost
 
-**Definition:** The product can be both purchased and manufactured. Two cost components are tracked: `purchase_cost` and `recipe_cost`. The `current_cost` reflects the most recently updated source.
+**Definition:** The product can be both purchased and manufactured. The `hybrid` cost source is a **runtime strategy**: it accepts cost updates from BOTH purchase receipts AND recipe recalculation. `current_cost` always reflects the most recently applied update, regardless of which source produced it.
+
+**No additional columns required.** The `product_cost_histories` table captures every cost change with its `cost_source` value (`purchase_invoice` or `recipe`). The Cost Engine simply applies each update as it arrives — the most recent one wins.
 
 **Update trigger:**
-- Goods Receipt → updates `purchase_cost` component
-- Manufacturing Complete → updates `recipe_cost` component
-- `current_cost` is set to whichever was most recently updated
+- Goods Receipt posted → Cost Engine applies the landed_unit_cost (same as `purchase_invoice` source)
+- Recipe updated or component cost changed → Cost Engine recalculates and applies the recipe cost
+- `current_cost` is updated by whichever event occurred most recently
 
-**Use case:** Products that are sometimes bought (bulk periods) and sometimes manufactured (peak periods).
+**Use case:** Products that are sometimes bought (bulk periods) and sometimes manufactured (peak periods). The team does not need to manually switch between cost modes — both sources feed the same `current_cost` field.
+
+**Cost History:** Both purchase and recipe updates write to `product_cost_histories` with their respective `cost_source` values. This creates a complete audit trail showing every cost change and its origin.
 
 ---
 
@@ -323,109 +329,160 @@ The Decision Engine receives an `ORDER_PREPARING` event and evaluates each line 
 
 ### 5.2 Decision Flow
 
-For each line item in the order:
+For each line item in the order, the Decision Engine evaluates rules in strict priority order. The first matching rule wins. All rules apply per line item independently.
 
 ```
 1. Load Product for the order line's product_id
 
-2. If product.can_manufacture = false:
+   RULE MFG-001: If product.can_manufacture = false:
    → Decision: SKIP_NOT_MANUFACTURABLE
-   → Continue to next line item
+   → Continue to next line item (no manufacturing, no log for routine skips)
 
-3. Load Recipe for product_id (active recipe only)
+2. Load Recipe for product_id (active recipe only)
 
-4. If recipe = null:
+   RULE MFG-002: If recipe = null:
    → Decision: FAIL_NO_RECIPE
-   → Log DecisionLog
+   → Log DecisionLog (outcome = failed)
    → Continue to next line item (order not blocked)
 
-5. If recipe.is_active = false:
+   RULE MFG-003: If recipe.is_active = false:
    → Decision: FAIL_RECIPE_INACTIVE
-   → Log DecisionLog
+   → Log DecisionLog (outcome = failed)
    → Continue to next line item
 
-6. Validate recipe (units, components, no cycles)
-   If validation fails:
+3. Validate recipe (units, components, no cycles)
+
+   RULE MFG-004 [implicit]: If recipe validation fails at execution time:
    → Decision: FAIL_RECIPE_INVALID
-   → Log DecisionLog
+   → Log DecisionLog (outcome = failed)
    → Continue to next line item
 
-7. For each RecipeItem:
-   required_qty = item.quantity × order_line.quantity
-   available    = InventoryEngine.availableStock(item.product_id)
-   shortfall    = max(0, required_qty - available)
+4. Check finished goods availability (RC-1: manufacture only the shortage)
 
-8. If no shortfall (all materials available):
+   available_finished = InventoryEngine.availableStock(
+       product_id   = order_line.product_id,
+       warehouse_id = order.warehouse_id
+   )
+   shortage_qty = max(0, order_line.quantity - available_finished)
+
+   RULE MFG-005: If shortage_qty = 0:
+   → Decision: SKIP_STOCK_SUFFICIENT
+   → Log DecisionLog (outcome = skipped)
+   → Existing reservation satisfies demand. No manufacturing needed.
+   → Continue to next line item
+
+   // shortage_qty > 0: we need to manufacture exactly shortage_qty units.
+   // Finished goods are NEVER produced into negative inventory.
+   // We manufacture only the units that are not already in stock.
+
+5. For each RecipeItem (checking raw material availability for shortage_qty only):
+
+   For each item in recipe.items:
+     required_raw = item.quantity × shortage_qty          // not full order_qty
+     available_raw = InventoryEngine.availableStock(item.product_id, warehouse_id)
+     raw_shortfall = max(0, required_raw - available_raw)
+
+   RULE MFG-006: If no raw_shortfall for any ingredient:
    → Decision: MANUFACTURE
-   → Execute manufacturing (§5.3)
+   → Execute manufacturing of shortage_qty units (§5.3)
 
-9. If shortfall exists AND product.allow_negative_stock = true:
+   RULE MFG-007: If raw_shortfall exists for ANY ingredient
+                 AND that ingredient's allow_negative_stock = true:
    → Decision: MANUFACTURE_WITH_SHORTAGE
-   → Execute manufacturing (§5.3) — raw material goes negative
-   → Add shortfall to Procurement Queue
+   → Execute manufacturing of shortage_qty units (§5.3)
+   → Raw material stock for that ingredient goes negative
+   → Add raw shortfall to Procurement Queue
 
-10. If shortfall exists AND product.allow_negative_stock = false:
-    → Decision: FAIL_STOCK_SHORTAGE
-    → Log DecisionLog
-    → Add shortfall to Procurement Queue
-    → Do NOT execute manufacturing
+   RULE MFG-008: If raw_shortfall exists for ANY ingredient
+                 AND that ingredient's allow_negative_stock = false:
+   → Decision: FAIL_STOCK_SHORTAGE
+   → Log DecisionLog (outcome = failed)
+   → Add raw shortfall to Procurement Queue
+   → Do NOT execute manufacturing
 ```
+
+**Key invariants of this flow:**
+- Manufacturing quantity is always `shortage_qty` — never the full `order_line.quantity` when finished goods are already in stock.
+- The `allow_negative_stock` flag is evaluated on the **raw material** (ingredient), never on the finished product.
+- Finished goods never go negative — if `shortage_qty = 0`, manufacturing is skipped entirely.
+- Multiple raw material shortfalls are evaluated independently. If ingredient A blocks (flag=false) but ingredient B allows negative (flag=true), the entire manufacturing run is blocked by A.
 
 ### 5.3 Manufacturing Execution
 
-Executed inside a database transaction. All steps succeed or all are rolled back.
+Executed as a single atomic database transaction. All steps succeed or all are rolled back. The `quantity_to_produce` is always `shortage_qty` from the Decision Flow (§5.2), never the full `order_line.quantity` when finished goods are already partially available.
+
+**Execution Model (RC-7):** From the business perspective, manufacturing is synchronous — the order workflow does not advance past `preparing` until manufacturing completes. At the implementation level, this is dispatched as a Laravel Queue Job (`ManufacturingJob`) that executes immediately via a dedicated queue worker. The caller waits for job completion via a callback or polling the `inventory_manufacturing_at` timestamp on the order. The user never observes partial manufacturing.
 
 ```
-ManufacturingService.execute(order_line, recipe, decision_log_id):
+ManufacturingService.execute(order_line, recipe, shortage_qty, decision_log_id):
 
   BEGIN TRANSACTION
 
   1. Create ManufacturingTransaction (status = processing)
-     Fields: order_id, product_id, recipe_id, recipe_version,
-             quantity_to_produce, decision_log_id, executed_at
+     Fields: order_id, order_line_id, product_id, bom_id, bom_version_number,
+             quantity_produced = shortage_qty, decision_log_id
+     Idempotency: UNIQUE (order_line_id) WHERE status != 'failed'
+     If a completed transaction already exists for this order_line_id → abort, return existing.
 
   2. For each RecipeItem:
-     a. Compute consumed_qty = item.quantity × order_line.quantity
-     b. InventoryEngine.consumeStock(
+     a. consumed_qty = item.quantity × shortage_qty   // proportional to shortage only
+     b. fifo_layers = InventoryEngine.selectFIFOLayers(
           product_id   = item.product_id,
-          quantity     = consumed_qty,
           warehouse_id = order.warehouse_id,
-          movement     = MANUFACTURING_CONSUMPTION,
-          reference_id = manufacturing_transaction.id
+          quantity     = consumed_qty
         )
-     c. Record RawMaterialConsumption(
-          product_id = item.product_id,
-          quantity   = consumed_qty,
-          unit_cost  = item.product.current_cost  // snapshot at execution
+     c. For each FIFO layer consumed:
+          InventoryEngine.consumeFromLayer(
+            layer        = fifo_layer,
+            quantity     = layer_consumed_qty,
+            movement     = production_consumption,
+            reference_id = manufacturing_transaction.id,
+            consumption_type = 'manufacturing'
+          )
+     d. Record ManufacturingConsumption(
+          product_id    = item.product_id,
+          quantity      = consumed_qty,
+          unit_cost     = FIFO_weighted_avg_cost(fifo_layers),  // RC-3: FIFO cost, not current_cost
+          total_cost    = consumed_qty × unit_cost
         )
 
-  3. manufacturing_cost = SUM(all RawMaterialConsumption.unit_cost × quantity)
+  3. manufacturing_cost = SUM(all ManufacturingConsumption.total_cost)
+     unit_manufacturing_cost = manufacturing_cost / shortage_qty
 
   4. InventoryEngine.addStock(
-       product_id   = order_line.product_id,
-       quantity     = order_line.quantity,
-       warehouse_id = order.warehouse_id,
-       unit_cost    = manufacturing_cost / order_line.quantity,
-       movement     = MANUFACTURING_PRODUCTION,
-       reference_id = manufacturing_transaction.id
+       product_id        = order_line.product_id,
+       quantity          = shortage_qty,
+       warehouse_id      = order.warehouse_id,
+       unit_cost         = unit_manufacturing_cost,
+       movement          = production_output,
+       reference_id      = manufacturing_transaction.id,
+       source_type       = 'manufacturing'
      )
 
   5. Update ManufacturingTransaction(
-       status           = completed,
+       status             = completed,
        manufacturing_cost = manufacturing_cost,
-       executed_at      = now()
+       unit_cost          = unit_manufacturing_cost,
+       executed_at        = now()
      )
 
-  6. DecisionLog.update(outcome = executed, execution_id = manufacturing_transaction.id)
+  6. Update DecisionLog(outcome = executed, executed_at = now(),
+       execution_type = 'manufacturing_transaction',
+       execution_id   = manufacturing_transaction.id)
 
   7. CostEngineService.onManufacturingCompleted(
-       product_id          = order_line.product_id,
-       manufacturing_cost  = manufacturing_cost,
-       quantity            = order_line.quantity
+       product_id         = order_line.product_id,
+       manufacturing_cost = manufacturing_cost,
+       quantity           = shortage_qty
      )
+
+  8. Update orders.inventory_manufacturing_at = now()
+     (signals to the order lifecycle that manufacturing is complete)
 
   COMMIT TRANSACTION
 ```
+
+**FIFO Cost Rule (RC-3):** Step 2d uses the weighted average cost of the actual FIFO layers consumed, not `product.current_cost`. If a component has no FIFO receipt layers (e.g., negative stock scenario), `current_cost` is used as a fallback. The `ManufacturingConsumption.unit_cost` field always reflects the actual cost basis used.
 
 ### 5.4 Inventory Movement Types
 
@@ -453,79 +510,110 @@ The following additional movement types are required for disassembly:
 
 ### 6.1 Trigger
 
-Disassembly is triggered when a customer return is confirmed (goods physically received back).
+Disassembly is triggered when inventory is physically received back into the warehouse after being previously sold or consumed. This can originate from multiple sources.
 
-The Decision Engine receives an `ORDER_RETURNED` event and evaluates each returned line item.
+The Decision Engine receives an **`INVENTORY_RETURN`** event (RC-4) and evaluates each returned line item.
+
+**Event Sources:** The `INVENTORY_RETURN` event is a generic domain event. It may be emitted by:
+- A Customer Returns module (when a return receipt is confirmed)
+- A Warehouse Returns workflow (goods physically returned from a branch)
+- A Cancellation Recovery flow (ordered goods cancelled before dispatch)
+- Any future return mechanism
+
+**Design principle:** The Disassembly Engine is decoupled from any specific Returns implementation. It does not know whether the return came from a customer, a warehouse, or a cancellation. It only sees the `INVENTORY_RETURN` event with the product, quantity, and destination warehouse. The Returns domain is responsible for defining when goods are "physically received back" and emitting the event at that moment.
 
 ### 6.2 Decision Flow
 
-For each returned item:
+The Decision Engine evaluates rules per returned item from the `INVENTORY_RETURN` event payload.
 
 ```
+INVENTORY_RETURN event received:
+  return_source_type  -- 'customer_return' | 'warehouse_return' | 'cancellation' | etc.
+  return_source_id    -- ID of the source document in the originating domain
+  items: [
+    { product_id, quantity, warehouse_id }
+  ]
+
+For each returned item:
+
 1. Load Product for the returned item's product_id
 
-2. If product.can_disassemble = false:
+   RULE DIS-001: If product.can_disassemble = false:
    → Decision: SKIP_DISASSEMBLY_DISABLED
    → Receive product to finished goods inventory (standard receipt)
    → Continue to next item
 
-3. Load Recipe for product_id (active recipe only)
+2. Load Recipe for product_id (active recipe only)
 
-4. If recipe = null:
+   RULE DIS-002: If recipe = null:
    → Decision: SKIP_NO_RECIPE
    → Receive product to finished goods inventory
    → Continue to next item
 
-5. If recipe.is_active = false:
+   RULE DIS-003: If recipe.is_active = false:
    → Decision: SKIP_RECIPE_INACTIVE
    → Receive product to finished goods inventory
    → Continue to next item
 
-6. All conditions met:
+   RULE DIS-004: All conditions met:
    → Decision: DISASSEMBLE
    → Execute disassembly (§6.3)
 ```
 
 ### 6.3 Disassembly Execution
 
-```
-DisassemblyService.execute(return_item, recipe, decision_log_id):
+The inventory transaction (steps 1-5) and the procurement queue update (step 6) are in **separate transactional scopes**. The procurement queue must never roll back a completed disassembly (RC-8).
 
+```
+DisassemblyService.execute(return_event_item, recipe, decision_log_id):
+
+  // ── TRANSACTION BOUNDARY 1: Inventory ─────────────────────────────
   BEGIN TRANSACTION
 
   1. Create DisassemblyTransaction (status = processing)
-     Fields: return_id, product_id, recipe_id, recipe_version,
-             quantity_disassembled, decision_log_id
+     Fields: return_source_type, return_source_id, product_id,
+             bom_id, bom_version_number, quantity_disassembled,
+             warehouse_id, decision_log_id
 
   2. InventoryEngine.consumeStock(
-       product_id   = return_item.product_id,
-       quantity     = return_item.quantity,
-       warehouse_id = return.warehouse_id,
-       movement     = DISASSEMBLY_CONSUMPTION,
-       reference_id = disassembly_transaction.id
+       product_id       = return_event_item.product_id,
+       quantity         = return_event_item.quantity,
+       warehouse_id     = return_event_item.warehouse_id,
+       movement         = disassembly_consumption,
+       reference_id     = disassembly_transaction.id,
+       consumption_type = 'disassembly'
      )
 
   3. For each RecipeItem:
-     recovered_qty = item.quantity × return_item.quantity
+     recovered_qty = item.quantity × return_event_item.quantity
      InventoryEngine.addStock(
-       product_id   = item.product_id,
-       quantity     = recovered_qty,
-       warehouse_id = return.warehouse_id,
-       unit_cost    = item.product.current_cost,  // current cost at recovery time
-       movement     = DISASSEMBLY_PRODUCTION,
-       reference_id = disassembly_transaction.id
+       product_id    = item.product_id,
+       quantity      = recovered_qty,
+       warehouse_id  = return_event_item.warehouse_id,
+       unit_cost     = item.product.current_cost,  // current cost at recovery time
+       movement      = disassembly_output,
+       reference_id  = disassembly_transaction.id,
+       source_type   = 'disassembly_recovery'
      )
-     Record RecoveredMaterial(product_id, recovered_qty, current_cost)
+     Record DisassemblyRecovery(product_id, recovered_qty, unit_cost = current_cost)
 
-  4. Update DisassemblyTransaction(status = completed)
+  4. Update DisassemblyTransaction(status = completed, executed_at = now())
 
-  5. DecisionLog.update(outcome = executed, execution_id = disassembly_transaction.id)
-
-  6. ProcurementQueueService.recalculate(
-       affected product_ids = [item.product_id for item in recipe.items]
-     )  // Recovered materials may reduce procurement needs
+  5. Update DecisionLog(outcome = executed, executed_at = now(),
+       execution_type = 'disassembly_transaction',
+       execution_id   = disassembly_transaction.id)
 
   COMMIT TRANSACTION
+  // ── END TRANSACTION BOUNDARY 1 ────────────────────────────────────
+
+  // ── POST-COMMIT: Queue recalculation (best-effort) ─────────────────
+  6. ProcurementQueueService.recalculate(
+       affected_product_ids = [item.product_id for item in recipe.items]
+     )
+     // Recovered materials may reduce procurement needs.
+     // If this step fails: log warning only. Disassembly is NOT rolled back.
+     // The queue will self-correct on the next scheduler run.
+  // ──────────────────────────────────────────────────────────────────
 ```
 
 ### 6.4 Return Scenarios
@@ -572,17 +660,22 @@ Manufacturing and Disassembly use this existing infrastructure. No new inventory
 
 ### 7.4 Negative Inventory
 
-Per the product's `allow_negative_stock` flag:
+The `allow_negative_stock` flag is always evaluated on the **product being consumed** (the raw material or component). Finished goods are never produced into negative inventory.
 
-| Flag | Behavior |
-|------|----------|
-| `false` | Consumption that would result in negative `on_hand_qty` is rejected (for manufacturing). Sales behavior governed by existing reservation rules. |
-| `true` | Consumption proceeds. `on_hand_qty` goes negative. Shortage is logged and added to Procurement Queue. |
+| Flag on Raw Material | Behavior during manufacturing consumption |
+|---------------------|------------------------------------------|
+| `false` (default) | Consumption that would result in negative `on_hand_qty` is blocked for this manufacturing run. Shortfall is added to Procurement Queue. |
+| `true` | Consumption proceeds even if `on_hand_qty` goes negative. Negative balance is recorded. Shortfall is added to Procurement Queue. |
 
 **Validation order:**
-1. Check `allow_negative_stock` on the **raw material** being consumed.
-2. If `false` and consumption would go negative: block this manufacturing run.
-3. If `true`: allow. Record negative balance. Fire `SHORTAGE_DETECTED` event.
+1. Determine `shortage_qty` = units of finished good still needed (§5.2 step 4).
+2. For each RecipeItem, compute `required_raw` = `item.quantity × shortage_qty`.
+3. Check `InventoryEngine.availableStock(item.product_id)` ≥ `required_raw`.
+4. If not sufficient: check `item.product.allow_negative_stock`.
+5. If `false`: block manufacturing for this run. Add shortfall to queue.
+6. If `true`: proceed. Record negative FIFO layer. Add shortfall to queue.
+
+**Finished goods are never negative:** The system only manufactures `shortage_qty`, which is the exact deficit between what is ordered and what is in stock. If `shortage_qty = 0`, manufacturing does not run at all.
 
 ### 7.5 FIFO Integration
 
@@ -678,15 +771,16 @@ Complete matrix of all system decisions. Each row is one scenario with its full 
 | # | Trigger Event | Condition | Rule | Decision | Action | Expected Result |
 |---|--------------|-----------|------|----------|--------|----------------|
 | 1 | ORDER_PREPARING | `can_manufacture = false` | MFG-001 | SKIP_NOT_MANUFACTURABLE | Log only | No manufacturing |
-| 2 | ORDER_PREPARING | `can_manufacture = true`, recipe = null | MFG-002 | FAIL_NO_RECIPE | Log, no action | Manufacturing blocked |
-| 3 | ORDER_PREPARING | Recipe exists, `is_active = false` | MFG-003 | FAIL_RECIPE_INACTIVE | Log, no action | Manufacturing blocked |
-| 4 | ORDER_PREPARING | Recipe valid, all materials sufficient | MFG-004 | MANUFACTURE | Execute → consume materials → produce output | Finished goods +, raw stock - |
-| 5 | ORDER_PREPARING | Recipe valid, shortfall, `allow_negative = true` | MFG-005 | MANUFACTURE_WITH_SHORTAGE | Execute + add shortfall to queue | Finished goods +, raw stock goes negative, queue updated |
-| 6 | ORDER_PREPARING | Recipe valid, shortfall, `allow_negative = false` | MFG-006 | FAIL_STOCK_SHORTAGE | Log, add to Procurement Queue | Manufacturing blocked, queue updated |
-| 7 | ORDER_RETURNED | `can_disassemble = false` | DIS-001 | SKIP_DISASSEMBLY_DISABLED | Add to finished goods | Product received as-is |
-| 8 | ORDER_RETURNED | `can_disassemble = true`, recipe = null | DIS-002 | SKIP_NO_RECIPE | Add to finished goods | Product received as-is |
-| 9 | ORDER_RETURNED | `can_disassemble = true`, recipe inactive | DIS-003 | SKIP_RECIPE_INACTIVE | Add to finished goods | Product received as-is |
-| 10 | ORDER_RETURNED | All conditions met | DIS-004 | DISASSEMBLE | Consume finished product, recover raw materials | Raw materials +, finished goods - |
+| 2 | ORDER_PREPARING | `can_manufacture = true`, recipe = null | MFG-002 | FAIL_NO_RECIPE | Log, outcome=failed | Manufacturing blocked |
+| 3 | ORDER_PREPARING | Recipe exists, `is_active = false` | MFG-003 | FAIL_RECIPE_INACTIVE | Log, outcome=failed | Manufacturing blocked |
+| 4 | ORDER_PREPARING | Recipe valid, available_finished ≥ ordered_qty | MFG-005 | SKIP_STOCK_SUFFICIENT | Log, outcome=skipped | Existing stock satisfies demand, no manufacturing |
+| 5 | ORDER_PREPARING | Recipe valid, shortage_qty > 0, all raw materials sufficient | MFG-006 | MANUFACTURE | Execute shortage_qty units → consume raw → produce output | Finished goods +shortage_qty, raw stock - |
+| 6 | ORDER_PREPARING | Recipe valid, shortage_qty > 0, raw shortfall, raw `allow_negative = true` | MFG-007 | MANUFACTURE_WITH_SHORTAGE | Execute shortage_qty + add shortfall to queue | Finished goods +shortage_qty, raw stock goes negative, queue updated |
+| 7 | ORDER_PREPARING | Recipe valid, shortage_qty > 0, raw shortfall, raw `allow_negative = false` | MFG-008 | FAIL_STOCK_SHORTAGE | Log, add to Procurement Queue | Manufacturing blocked, queue updated |
+| 8 | INVENTORY_RETURN | `can_disassemble = false` | DIS-001 | SKIP_DISASSEMBLY_DISABLED | Add to finished goods | Product received as-is |
+| 9 | INVENTORY_RETURN | `can_disassemble = true`, recipe = null | DIS-002 | SKIP_NO_RECIPE | Add to finished goods | Product received as-is |
+| 10 | INVENTORY_RETURN | `can_disassemble = true`, recipe inactive | DIS-003 | SKIP_RECIPE_INACTIVE | Add to finished goods | Product received as-is |
+| 11 | INVENTORY_RETURN | All conditions met | DIS-004 | DISASSEMBLE | Consume finished product, recover raw materials (post-commit queue update) | Raw materials +, finished goods - |
 | 11 | GOODS_RECEIPT_POSTED | `cost_source = manual` | COST-001 | NO_COST_UPDATE | Log | No cost change |
 | 12 | GOODS_RECEIPT_POSTED | `cost_source = purchase_invoice` | COST-002 | UPDATE_COST_FROM_INVOICE | current_cost = landed_unit_cost | Cost updated, history entry created |
 | 13 | GOODS_RECEIPT_POSTED | `cost_source = recipe` | COST-003 | NO_COST_UPDATE | Log | No cost change |

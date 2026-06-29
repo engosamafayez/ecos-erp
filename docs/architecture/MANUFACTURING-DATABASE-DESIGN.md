@@ -27,37 +27,43 @@ Ten new tables are required. Three are immutable (append-only). Two have control
 CREATE TABLE decision_logs (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
+    -- Idempotency (RC-6)
+    -- Format: {event_type}:{trigger_source_type}:{trigger_source_id}:{subject_type}:{subject_id}
+    -- NULL for internal/cascaded decisions with no unique external trigger
+    decision_key        VARCHAR(256) NULL,
+    trigger_version     INTEGER      NOT NULL DEFAULT 1,  -- incremented on intentional retry
+
     -- What triggered this decision
-    event_type          VARCHAR(50)  NOT NULL,   -- ORDER_PREPARING | ORDER_RETURNED |
+    event_type          VARCHAR(50)  NOT NULL,   -- ORDER_PREPARING | INVENTORY_RETURN |
                                                   -- GOODS_RECEIPT_POSTED | RECIPE_UPDATED |
                                                   -- PROCUREMENT_SCHEDULER_TRIGGERED
-    rule_id             VARCHAR(20)  NOT NULL,   -- MFG-001 | DIS-004 | COST-002 | PROC-012
+    rule_id             VARCHAR(20)  NOT NULL,   -- MFG-006 | DIS-004 | COST-002 | PROC-012
 
     -- Source of the trigger
-    trigger_source_type VARCHAR(30)  NOT NULL,   -- order | return | goods_receipt |
+    trigger_source_type VARCHAR(30)  NOT NULL,   -- order | inventory_return | goods_receipt |
                                                   -- recipe | scheduler | system
-    trigger_source_id   UUID         NOT NULL,   -- the order_id, return_id, etc.
+    trigger_source_id   UUID         NOT NULL,   -- the order_id, return_source_id, etc.
 
     -- Subject of the decision
     subject_type        VARCHAR(30)  NOT NULL,   -- product | order_line | scheduler_run
     subject_id          UUID         NOT NULL,   -- product_id or order_line_id
 
     -- The decision itself
-    decision            VARCHAR(60)  NOT NULL,   -- MANUFACTURE | FAIL_NO_RECIPE |
-                                                  -- DISASSEMBLE | SKIP_DISASSEMBLY_DISABLED |
+    decision            VARCHAR(60)  NOT NULL,   -- MANUFACTURE | SKIP_STOCK_SUFFICIENT |
+                                                  -- FAIL_NO_RECIPE | DISASSEMBLE |
                                                   -- UPDATE_COST_FROM_INVOICE | etc.
     reason              TEXT         NOT NULL,
-    outcome             VARCHAR(20)  NOT NULL,   -- executed | skipped | failed | queued | pending
+    outcome             VARCHAR(20)  NOT NULL,   -- executed | skipped | failed | pending
 
-    -- Execution reference (set after action completes)
+    -- Execution reference (set after action completes — the only permitted post-creation update)
     execution_type      VARCHAR(40)  NULL,       -- 'manufacturing_transaction' | 'disassembly_transaction'
     execution_id        UUID         NULL,       -- the ID of the executed transaction
 
-    -- Context
-    metadata            JSONB        NULL,       -- recipe_version, costs, shortfall_qty, etc.
+    -- Context (formally typed per event_type — see DECISION-ENGINE-SPEC §4.4)
+    metadata            JSONB        NULL,
     actor_id            UUID         NULL,       -- NULL = system, UUID = user
 
-    -- Timestamps (immutable — no updated_at)
+    -- Timestamps (no updated_at — immutable except execution_id backfill)
     decided_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     executed_at         TIMESTAMPTZ  NULL,
     error_message       TEXT         NULL,
@@ -69,26 +75,34 @@ CREATE TABLE decision_logs (
 
 **Indexes:**
 ```sql
+-- Idempotency lookup (most critical index)
+CREATE UNIQUE INDEX uq_decision_logs_key ON decision_logs (decision_key)
+    WHERE decision_key IS NOT NULL;
+
 -- Find all decisions for a specific source document (e.g. all decisions for order #1042)
 CREATE INDEX idx_decision_logs_trigger ON decision_logs (trigger_source_type, trigger_source_id);
 
--- Find all decisions affecting a specific product
+-- Find all decisions affecting a specific product or order line
 CREATE INDEX idx_decision_logs_subject ON decision_logs (subject_type, subject_id);
 
--- Filter by outcome (e.g. find all failed decisions)
-CREATE INDEX idx_decision_logs_outcome ON decision_logs (outcome);
+-- Operations Dashboard: filter by outcome (find all failed decisions)
+CREATE INDEX idx_decision_logs_outcome ON decision_logs (outcome) WHERE outcome = 'failed';
 
 -- Time-series queries (AI/analytics)
 CREATE INDEX idx_decision_logs_event_time ON decision_logs (event_type, decided_at);
+
+-- Execution lookup: find the decision that triggered a specific manufacturing transaction
+CREATE INDEX idx_decision_logs_execution ON decision_logs (execution_type, execution_id)
+    WHERE execution_id IS NOT NULL;
 
 -- Retry chain traversal
 CREATE INDEX idx_decision_logs_retry_of ON decision_logs (retry_of) WHERE retry_of IS NOT NULL;
 ```
 
 **Constraints:**
-- No UPDATE permission for application DB user (enforced at DB level)
+- No UPDATE permission for application DB user (enforced at DB level) — EXCEPT execution_id backfill
 - No DELETE permission for application DB user
-- `outcome` CHECK: `IN ('executed', 'skipped', 'failed', 'queued', 'pending')`
+- `outcome` CHECK: `IN ('executed', 'skipped', 'failed', 'pending')`
 - `decided_at` is always set at creation, never NULL
 
 **AI Readiness:** This table IS the primary training dataset for decision ML models. Schema is designed for time-series analysis and pattern recognition.
@@ -202,11 +216,19 @@ CREATE INDEX idx_mfg_txn_product ON manufacturing_transactions (product_id);
 CREATE INDEX idx_mfg_txn_status ON manufacturing_transactions (status);
 CREATE INDEX idx_mfg_txn_company_created ON manufacturing_transactions (company_id, created_at DESC);
 CREATE INDEX idx_mfg_txn_bom ON manufacturing_transactions (bom_id);
+CREATE INDEX idx_mfg_txn_decision ON manufacturing_transactions (decision_log_id);
 ```
 
 **Constraints:**
 - `status` CHECK: `IN ('processing', 'completed', 'failed')`
 - Application enforces: once `status = completed` or `status = failed`, no further updates
+- **Duplicate prevention (RC-10):** One successful manufacturing transaction per order line per BOM version:
+```sql
+CREATE UNIQUE INDEX uq_mfg_txn_business_key
+    ON manufacturing_transactions (order_line_id, bom_id, bom_version_number)
+    WHERE status != 'failed';
+```
+This allows a `failed` transaction to be retried (new row, same business key) while preventing two concurrent successful runs for the same operation. Combined with the idempotency key in `decision_logs`, duplicate manufacturing from event re-delivery is fully prevented.
 
 ---
 
@@ -228,9 +250,11 @@ CREATE TABLE manufacturing_consumptions (
     -- Quantity consumed
     quantity                    DECIMAL(15,4) NOT NULL,
 
-    -- Cost snapshot (current_cost at execution time — FIFO layer cost)
+    -- Cost snapshot (RC-3: weighted average of FIFO layers consumed for this component)
+    -- Populated from inventory_receipt_layers.landed_unit_cost, not product.current_cost
+    -- Fallback: product.current_cost when no FIFO layers exist (e.g. negative stock scenario)
     unit_cost                   DECIMAL(15,4) NOT NULL,
-    total_cost                  DECIMAL(15,4) NOT NULL, -- quantity × unit_cost
+    total_cost                  DECIMAL(15,4) NOT NULL, -- quantity × unit_cost (stored for audit, not recomputed)
 
     -- Immutable
     created_at                  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
@@ -347,12 +371,11 @@ CREATE TABLE procurement_queue_entries (
     product_id            UUID          NOT NULL,  -- FK→products(id) RESTRICT
     unit_id               UUID          NOT NULL,  -- FK→units(id) RESTRICT
 
-    -- Net requirement breakdown
-    gross_demand_quantity DECIMAL(15,4) NOT NULL DEFAULT 0,   -- SUM of all unfulfilled demands
-    available_quantity    DECIMAL(15,4) NOT NULL DEFAULT 0,   -- on_hand - reserved
-    in_transit_quantity   DECIMAL(15,4) NOT NULL DEFAULT 0,   -- open PO quantities
-    recovered_quantity    DECIMAL(15,4) NOT NULL DEFAULT 0,   -- disassembly + recent GRs
-    net_required_quantity DECIMAL(15,4) NOT NULL DEFAULT 0,   -- computed: max(0, gross - avail - transit - recovered)
+    -- Net requirement breakdown (RC-9: always recalculated from current state, never accumulated)
+    gross_demand_quantity DECIMAL(15,4) NOT NULL DEFAULT 0,   -- SUM of unfulfilled manufacturing demands
+    available_quantity    DECIMAL(15,4) NOT NULL DEFAULT 0,   -- on_hand - reserved (includes GRs + recoveries already in inventory)
+    in_transit_quantity   DECIMAL(15,4) NOT NULL DEFAULT 0,   -- open PO quantities not yet received
+    net_required_quantity DECIMAL(15,4) NOT NULL DEFAULT 0,   -- max(0, gross - available - in_transit)
 
     -- Status
     is_satisfied          BOOLEAN       NOT NULL DEFAULT false,

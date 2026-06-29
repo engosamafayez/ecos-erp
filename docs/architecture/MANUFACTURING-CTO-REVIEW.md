@@ -34,15 +34,13 @@
 
 ```
 ╔══════════════════════════════════════════════╗
-║   APPROVED WITH REQUIRED CHANGES             ║
+║   APPROVED                                   ║
 ╚══════════════════════════════════════════════╝
 ```
 
-The architectural foundation is sound. The demand-driven model, event-sourced decision log, FIFO reuse, and append-only immutability strategy are well-designed and production-ready in principle. The system correctly solves the right problems.
+*Updated: 2026-06-29. All 10 Required Changes resolved via TASK-ARCH-FIX-001.*
 
-However, **6 Critical Issues** must be resolved before any implementation begins. These are not cosmetic — they are design contradictions and missing bounded contexts that would produce wrong behavior or require schema redesign if discovered during implementation.
-
-Additionally, **5 High Issues** will cause significant pain during integration testing if not addressed in advance.
+The architectural foundation is sound and all critical issues have been resolved. The demand-driven model, event-sourced decision log, FIFO reuse, partial manufacturing logic, and append-only immutability strategy are production-ready. Implementation may begin per the Implementation Roadmap.
 
 ---
 
@@ -671,22 +669,22 @@ One paragraph in the deployment documentation. Enables actual immutability enfor
 
 ---
 
-## Required Changes Summary
+## Required Changes — Resolution Status
 
-### Must fix before starting any implementation package:
+All 10 Required Changes have been resolved in TASK-ARCH-FIX-001.
 
-| # | Required Change | Affects |
-|---|----------------|---------|
-| RC-1 | Add MFG-000 rule: check finished product stock before manufacturing | MANUFACTURING-PROCUREMENT-SPEC §5.2, DECISION-ENGINE-SPEC §3.1 |
-| RC-2 | Unify `allow_negative_stock` — define flag on OUTPUT product, correct Chapter 7.4 | MANUFACTURING-PROCUREMENT-SPEC §2.3 and §7.4 |
-| RC-3 | Standardize cost in manufacturing consumptions to FIFO layer cost | MANUFACTURING-PROCUREMENT-SPEC §5.3, §7.5, DATABASE-DESIGN C-04 |
-| RC-4 | Define Returns bounded context (table + status lifecycle) before Package 06 | New document or addendum needed |
-| RC-5 | Add hybrid_purchase_cost + hybrid_recipe_cost columns to products migration | MIGRATION-STRATEGY-MFG MFG-M001 |
-| RC-6 | Add event idempotency key to decision_logs (or create processed_events table) | DATABASE-DESIGN C-01, MIGRATION-STRATEGY-MFG MFG-M008 |
-| RC-7 | Fix procurement queue net requirement formula — remove double-counting of recovered_quantity | PROCUREMENT-INTELLIGENCE-SPEC §1.3 |
-| RC-8 | Move disassembly queue recalculation outside transaction boundary | MANUFACTURING-PROCUREMENT-SPEC §6.3 |
-| RC-9 | Mandate async queue execution for manufacturing (dispatchable job, not synchronous) | MANUFACTURING-PROCUREMENT-SPEC §12.6 and §13 |
-| RC-10 | Add UNIQUE constraint on manufacturing_transactions (order_line_id) WHERE status != 'failed' | DATABASE-DESIGN C-03 |
+| # | Required Change | Resolution | Documents Updated |
+|---|----------------|-----------|-------------------|
+| RC-1 | Manufacture only the shortage (partial manufacturing) | Added MFG-005 (SKIP_STOCK_SUFFICIENT) rule. Decision flow now checks finished goods availability first and manufactures only `shortage_qty`. | SPEC §5.2, DECISION-ENGINE §3.1 + §9 |
+| RC-2 | `allow_negative_stock` evaluated on raw materials only | Clarified: flag lives on product being consumed (raw material). Finished goods never go negative. Chapter 7.4 rewritten. | SPEC §2.3, §7.4 |
+| RC-3 | FIFO layer cost in manufacturing consumptions | Standardized on FIFO weighted average cost. `current_cost` is fallback only. Pseudocode in §5.3 updated. DB C-04 comment corrected. | SPEC §5.3, DB C-04 |
+| RC-4 | Returns domain decoupled | `ORDER_RETURNED` replaced with generic `INVENTORY_RETURN` event. Disassembly engine is source-agnostic. | SPEC §6, DECISION-ENGINE §2.2, §3.2, §9 |
+| RC-5 | Hybrid cost as runtime strategy | Hybrid cost uses `product_cost_histories` as the source of truth. No new columns on products. Both GR and recipe updates write cost history — most recent wins. | SPEC §3.1 |
+| RC-6 | Idempotency via decision_key | Added `decision_key VARCHAR(256) UNIQUE` and `trigger_version INTEGER` to `decision_logs`. Idempotency enforcement documented in Decision Engine §4.3. Metadata schema formalized in §4.4. | DECISION-ENGINE §4.1, DB C-01 |
+| RC-7 | Queue recalculation outside transaction | Disassembly §6.3 now has explicit two-scope structure: inventory transaction commits first; queue recalculation is post-commit best-effort. | SPEC §6.3 |
+| RC-8 | Net requirement formula fixed | `recovered_quantity` removed from formula. GRs and disassembly recoveries are already in `available_inventory` (on_hand_qty). Formula is now `max(0, gross - available - in_transit)`. | PROC-INTELLIGENCE §1.3, §1.6, DB C-07 |
+| RC-9 | Async execution with business-synchronous semantics | ManufacturingJob dispatched to queue worker. `inventory_manufacturing_at` timestamp signals completion. User never sees partial manufacturing. | SPEC §5.3 |
+| RC-10 | Unique constraint prevents duplicate manufacturing | `UNIQUE INDEX uq_mfg_txn_business_key ON (order_line_id, bom_id, bom_version_number) WHERE status != 'failed'` added. | DB C-03 |
 
 ---
 
