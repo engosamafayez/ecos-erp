@@ -1446,6 +1446,96 @@ Three independent guards:
 
 ---
 
-## PKG-06 through PKG-11 — Pending
+## PKG-06A — Manufacturing Application Service
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-006A
+**Tests:** 18 feature tests
+
+### Purpose
+
+The Manufacturing Application Service is the **single public API** for the entire Manufacturing domain.
+No module may call Workflow, Pipeline, Executor, Availability Engine, Planner, or Decision Orchestrator directly.
+Every manufacturing entry point goes through this service.
+
+```
+Caller (Orders / POS / CLI / API Controller)
+    ↓
+ManufacturingApplicationService
+    ├── manufactureProduct()    → Workflow → Pipeline → Executor → ManufactureProductResponse
+    ├── simulateManufacturing() → Workflow only → SimulateManufacturingResponse   (no mutations)
+    ├── validateManufacturing() → Workflow + Pipeline → ValidateManufacturingResponse (no mutations)
+    └── disassembleProduct()    → DisassembleProductResponse (placeholder, not yet implemented)
+```
+
+### Contract — This Service MUST NOT
+
+- Contain business rules (they live in the domain engines)
+- Call Workflow / Pipeline / Executor / Availability Engine / Planner directly from other modules
+- Integrate with Orders, POS, Scheduler, or API Controllers (deferred to PKG-06B+)
+- Dispatch Laravel Events (reserved for PKG-06B)
+
+### Files Created (9)
+
+#### Application/DTOs/Requests (4)
+| File | Purpose |
+|------|---------|
+| `ManufacturingService/Application/DTOs/Requests/ManufactureProductRequest.php` | Full execution request: product, warehouse, company, qty, actor, trigger |
+| `ManufacturingService/Application/DTOs/Requests/SimulateManufacturingRequest.php` | Dry-run request: same as manufacture but no company_id (no execution) |
+| `ManufacturingService/Application/DTOs/Requests/ValidateManufacturingRequest.php` | Pre-flight validation: workflow + pipeline, no execution |
+| `ManufacturingService/Application/DTOs/Requests/DisassembleProductRequest.php` | Placeholder: product, warehouse, quantity, actor |
+
+#### Application/DTOs/Responses (4)
+| File | Purpose |
+|------|---------|
+| `ManufacturingService/Application/DTOs/Responses/ManufactureProductResponse.php` | `blocked()` + `fromExecution()` factories; carries all execution fields + workflow context |
+| `ManufacturingService/Application/DTOs/Responses/SimulateManufacturingResponse.php` | `fromWorkflow()` factory; carries plan details, components, negative-stock risks |
+| `ManufacturingService/Application/DTOs/Responses/ValidateManufacturingResponse.php` | `blocked()` + `fromPipeline()` factories; workflow validity + pipeline failures |
+| `ManufacturingService/Application/DTOs/Responses/DisassembleProductResponse.php` | Placeholder: `implemented=false`, descriptive message |
+
+#### Application/Services (1)
+| File | Purpose |
+|------|---------|
+| `ManufacturingService/Application/Services/ManufacturingApplicationService.php` | Coordinator: `buildWorkflowRequest()` helper, `generateUuid()` for trigger_id; no business rules |
+
+#### Infrastructure/Providers (1)
+| File | Purpose |
+|------|---------|
+| `ManufacturingService/Infrastructure/Providers/ManufacturingServiceProvider.php` | Singleton: `ManufacturingApplicationService` wired with Workflow + Pipeline + Executor |
+
+#### Tests (1)
+| File | Purpose |
+|------|---------|
+| `tests/Feature/Manufacturing/ManufacturingApplicationServiceTest.php` | 18 feature tests; RefreshDatabase; singleton reset per test |
+
+### Files Modified (1)
+
+| File | Change |
+|------|--------|
+| `backend/bootstrap/providers.php` | Added `ManufacturingServiceProvider` after `ManufacturingWorkflowServiceProvider` |
+
+### Test Coverage (18 tests)
+
+| Group | Tests |
+|-------|-------|
+| `manufactureProduct` | Happy path (response shape, DB transaction, inventory decrement), decision rejected, manufacturing not needed, no recipe, DTO toArray |
+| `simulateManufacturing` | Returns plan without executing, blocked when rejected, component details in response, DTO toArray |
+| `validateManufacturing` | Valid report when plan ready, blocked when workflow blocked, no transaction created, DTO toArray |
+| `disassembleProduct` | Placeholder response, no DB records, DTO toArray |
+
+### Design Decisions
+
+| Concern | Decision |
+|---------|----------|
+| Trigger ID generation | Application Service generates a fresh UUID v4 when `trigger_id` is null; callers may provide their own |
+| Trigger version | Always `1` for manual triggers — callers that need replay semantics provide an explicit `trigger_id` |
+| Blocking responses | All outcomes use the same typed Response DTO; callers check `is_blocked` / `was_executed` / `implemented` |
+| Simulation guarantee | `simulateManufacturing()` never calls the Executor; safe to call repeatedly with zero side effects |
+| Validation guarantee | `validateManufacturing()` never calls the Executor; returns two-layer validity (workflow + pipeline) |
+
+---
+
+## PKG-07 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
