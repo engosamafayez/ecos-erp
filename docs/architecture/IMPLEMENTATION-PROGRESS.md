@@ -1061,6 +1061,169 @@ When a component has `allow_negative_stock = true` and insufficient stock:
 
 ---
 
+## PKG-05A — Execution Pipeline
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-005A
+
+---
+
+### Architecture
+
+```
+ManufacturingPlan
+    ↓
+ExecutionPipeline.prepare(plan, alreadyExecuted, expirySeconds)
+    ├── validateRequiredMetadata()      plan_id / product_id / warehouse_id non-empty
+    ├── validatePlanExecutable()        should_manufacture == true
+    ├── validateSnapshotPresent()       recipe_snapshot != null (when required)
+    ├── validateSnapshotHashPresent()   recipe_snapshot_hash != null (when required)
+    ├── validateSnapshotHash()          re-hash == stored hash (SHA-256)
+    ├── validatePlanVersion()           bom_version_number >= 1
+    ├── validateRecipeVersion()         plan version == snapshot version
+    ├── validateDecisionKey()           recipe_id present (key can be derived)
+    ├── validateIdempotency()           alreadyExecuted == false
+    ├── validateExpiry()                age <= expirySeconds (default 24 h)
+    └── validateComponentConsistency()  all components in snapshot; qty > 0
+    ↓
+ManufacturingExecutionContext  ← always returned, never throws for business failures
+```
+
+**CONTRACT — This service MUST NOT:**
+- Consume inventory
+- Produce finished goods
+- Create ledger entries
+- Write any database records
+- Dispatch events
+- Update costs
+- Create manufacturing transactions
+
+**Failure strategy:** ALL validators run regardless of earlier failures — callers see every issue in one result. `PipelineException` is only thrown for unrecoverable internal errors (unparseable timestamp).
+
+---
+
+### Validation Rules & Failure Codes
+
+| Validator | Failure Code | Trigger |
+|-----------|-------------|---------|
+| `validateRequiredMetadata` | `MissingRequiredMetadata` | `plan_id`, `product_id`, or `warehouse_id` is empty |
+| `validatePlanExecutable` | `PlanNotExecutable` | `should_manufacture == false` |
+| `validateSnapshotPresent` | `SnapshotMissing` | `recipe_snapshot == null` but manufacturing required |
+| `validateSnapshotHashPresent` | `SnapshotHashMissing` | `recipe_snapshot_hash == null` but manufacturing required |
+| `validateSnapshotHash` | `SnapshotHashMismatch` | `hash(snapshot.toArray()) != plan.recipe_snapshot_hash` |
+| `validatePlanVersion` | `PlanVersionMissing` | `bom_version_number == null` or `< 1` |
+| `validateRecipeVersion` | `RecipeVersionMismatch` | `plan.bom_version_number != snapshot.bom_version_number` |
+| `validateDecisionKey` | `DecisionKeyUnderivable` | `recipe_id == null` on an executable plan |
+| `validateIdempotency` | `AlreadyExecuted` | Caller passed `$alreadyExecuted = true` |
+| `validateExpiry` | `PlanExpired` | `now - planned_at > expirySeconds` |
+| `validateComponentConsistency` | `ComponentInconsistency` | `qty_to_consume <= 0` or component not in snapshot |
+
+---
+
+### ManufacturingExecutionContext
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `plan` | `ManufacturingPlan` | Original plan (read-only reference) |
+| `recipe_snapshot` | `?RecipeSnapshot` | Forwarded from plan |
+| `snapshot_hash` | `?string` | Forwarded from plan |
+| `decision_key` | `string` | SHA-256 of `product_id|warehouse_id|recipe_id|bom_version|snapshot_hash` — deterministic |
+| `execution_uuid` | `string` | UUID v4 generated fresh per `prepare()` call |
+| `transaction_metadata` | `array` | Pre-built row data for ManufacturingTransaction |
+| `validation_result` | `PipelineValidationResult` | All validation failures (or valid) |
+| `correlation_id` | `string` | From `plan.metadata['correlation_id']` or fresh UUID |
+| `execution_timestamp` | `string` | ISO 8601 timestamp of when `prepare()` was called |
+
+---
+
+### Idempotency Design
+
+The pipeline never queries the database. Idempotency works as follows:
+
+1. **Caller** queries DB: `findByPlanId(plan.plan_id)` → sets `$alreadyExecuted = found`
+2. **Pipeline** validates: if `$alreadyExecuted` → `AlreadyExecuted` failure in result
+3. **Executor (PKG-05B)** has UNIQUE(plan_id) as a second guard against race conditions
+
+This keeps the pipeline pure domain with no infrastructure imports.
+
+---
+
+### Files Created (6)
+
+#### Domain/Enums
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Domain/Enums/ValidationFailureCode.php` | 11-case enum: every typed failure reason |
+
+#### Domain/Exceptions
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Domain/Exceptions/PipelineException.php` | `CLOCK_FAILURE` — thrown only when timestamp is unparseable |
+
+#### Domain/ValueObjects
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Domain/ValueObjects/ValidationFailure.php` | Typed failure: code + message + context array |
+| `ManufacturingExecution/Domain/ValueObjects/PipelineValidationResult.php` | `valid()` / `invalid(failures[])` / `hasFailure(code)` |
+| `ManufacturingExecution/Domain/ValueObjects/ManufacturingExecutionContext.php` | Full execution context: plan + ids + metadata + validation result |
+
+#### Domain/Services
+| File | Purpose |
+|------|---------|
+| `ManufacturingExecution/Domain/Services/ExecutionPipeline.php` | Core pipeline: 11 validators + 4 builders; no infrastructure deps |
+
+#### Tests
+| File | Purpose |
+|------|---------|
+| `tests/Unit/Manufacturing/ExecutionPipelineTest.php` | 30 pure unit tests; `PHPUnit\Framework\TestCase`; no DB |
+
+---
+
+### Files Modified (1)
+
+| File | Change |
+|------|--------|
+| `ManufacturingExecution/Infrastructure/Providers/ManufacturingExecutionServiceProvider.php` | Added `ExecutionPipeline` singleton registration |
+
+---
+
+### Test Coverage (30 tests)
+
+| Group | Tests |
+|-------|-------|
+| Valid plan (context structure, plan reference, execution UUID, UUID v4 format, uniqueness) | 4 |
+| Valid plan (decision key determinism, length) | 2 |
+| Valid plan (execution timestamp ISO 8601, transaction metadata keys) | 2 |
+| Valid plan (toArray keys) | 1 |
+| Invalid snapshot (SnapshotMissing failure, no throw) | 2 |
+| Hash mismatch (SnapshotHashMismatch failure, context carries stored + computed) | 2 |
+| Duplicate execution (AlreadyExecuted failure, carries plan_id, no failure when false) | 3 |
+| Invalid recipe version (RecipeVersionMismatch failure, context carries both versions) | 2 |
+| Invalid plan (PlanNotExecutable failure, carries eligibility) | 2 |
+| Missing metadata (empty plan_id, empty product_id, empty warehouse_id, lists fields) | 4 |
+| Correlation propagation (from metadata, generated when absent, different from exec UUID) | 3 |
+| Multiple failures (all collected, not short-circuited) | 1 |
+| Plan expiry (PlanExpired for stale plan, no failure for fresh plan) | 2 |
+| Component consistency (unknown component, zero qty) | 2 |
+| PipelineException (thrown, correct reason code) | 2 |
+| Validation result helpers (toArray, valid factory) | 2 |
+
+---
+
+### Architecture Alignment
+
+| Architecture Decision | Implementation |
+|----------------------|----------------|
+| No DB in pipeline | `alreadyExecuted: bool` parameter — caller does the DB lookup; pipeline stays pure |
+| All failures visible | Validators never short-circuit; all failures collected before returning context |
+| Business failures never thrown | `ValidationFailure` + `PipelineValidationResult` returned; only `PipelineException` thrown |
+| Decision key determinism | `hash(product_id|warehouse_id|recipe_id|version|snapshot_hash)` — content-addressed |
+| Correlation propagation | `plan.metadata['correlation_id']` flows through; fresh UUID generated when absent |
+| Executor still checks validity | Context carries `isValid()` — PKG-05B must check before mutating anything |
+
+---
+
 ## PKG-06 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
