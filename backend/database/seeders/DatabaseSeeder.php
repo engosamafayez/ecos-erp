@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\IAM\Infrastructure\Database\Seeders\RbacSeeder;
 use Modules\Inventory\Products\Infrastructure\Database\Seeders\ProductSeeder;
 use Modules\MasterData\Categories\Infrastructure\Database\Seeders\CategorySeeder;
 use Modules\MasterData\Units\Infrastructure\Database\Seeders\UnitSeeder;
@@ -28,6 +29,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // RBAC: roles and permissions must exist before any user is seeded.
+        $this->call(RbacSeeder::class);
+
         // Default administrator account (IAM-001).
         $this->call(AdminUserSeeder::class);
 
