@@ -1,33 +1,87 @@
 import { useMemo, useState } from 'react';
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  Building2,
+  CheckCircle,
+  Clock,
+  Download,
+  Eye,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+  XCircle,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  ActionMenu,
-  ConfirmDialog,
-  EntityTable,
-  EntityToolbar,
-  PageHeader,
-  Pagination,
-  StatusBadge,
-} from '@/components/crud';
+import { ActionMenu, EntityTable, StatusBadge } from '@/components/crud';
 import type { ColumnDef } from '@/components/crud/types';
+import {
+  PageConfirmDialog,
+  PageEmptyState,
+  PageErrorState,
+  PageLoadingState,
+  PageNoResultsState,
+  PagePagination,
+  PageToolbar,
+  QuickFilterChips,
+  WorkspacePage,
+} from '@/components/page';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { WorkspaceHeader } from '@/components/workspace';
+import type { SavedView, WorkspaceMetric } from '@/components/workspace';
 import { SupplierFormDrawer } from '@/features/suppliers/components/supplier-form-drawer';
-import { useSuppliersQuery, useDeleteSupplier } from '@/features/suppliers/hooks/use-suppliers';
+import { useDeleteSupplier, useSuppliersQuery } from '@/features/suppliers/hooks/use-suppliers';
 import type {
   Supplier,
   SupplierSortField,
   SupplierStatusFilter,
 } from '@/features/suppliers/types/supplier';
-import { ROUTES } from '@/router/routes';
 
 const PER_PAGE = 10;
+
+const METRICS: WorkspaceMetric[] = [
+  {
+    id: 'total',
+    icon: Building2,
+    label: 'Total Suppliers',
+    value: 47,
+    colorClass: 'bg-primary/10 text-primary',
+  },
+  {
+    id: 'active',
+    icon: CheckCircle,
+    label: 'Active',
+    value: 38,
+    colorClass: 'bg-emerald-500/10 text-emerald-600',
+  },
+  {
+    id: 'inactive',
+    icon: XCircle,
+    label: 'Inactive',
+    value: 9,
+    colorClass: 'bg-muted text-muted-foreground',
+  },
+  {
+    id: 'pending',
+    icon: Clock,
+    label: 'Pending Approval',
+    value: 3,
+    colorClass: 'bg-amber-500/10 text-amber-600',
+  },
+];
+
+const VIEWS: SavedView[] = [
+  { id: 'default', label: 'Default', isDefault: true },
+  { id: 'active', label: 'Active' },
+  { id: 'inactive', label: 'Inactive' },
+];
 
 export function SuppliersPage() {
   const { t } = useTranslation('suppliers');
   const { t: tCommon } = useTranslation('common');
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<SupplierStatusFilter>('all');
   const [page, setPage] = useState(1);
@@ -35,10 +89,10 @@ export function SuppliersPage() {
     field: 'created_at',
     direction: 'desc',
   });
-
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerSupplier, setDrawerSupplier] = useState<Supplier | null>(null);
   const [deleting, setDeleting] = useState<Supplier | null>(null);
+  const [savedView, setSavedView] = useState('default');
 
   const params = useMemo(
     () => ({
@@ -82,6 +136,14 @@ export function SuppliersPage() {
     setDrawerOpen(true);
   };
 
+  const clearFilters = () => {
+    setSearch('');
+    setStatusFilter('all');
+    setPage(1);
+  };
+
+  const hasActiveFilters = search !== '' || statusFilter !== 'all';
+
   const columns: ColumnDef<Supplier>[] = [
     {
       key: 'code',
@@ -119,62 +181,123 @@ export function SuppliersPage() {
     deleteSupplier.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
   };
 
+  const statusChips = [
+    {
+      key: 'all',
+      label: tCommon('status.all'),
+      active: statusFilter === 'all',
+      onClick: () => { setStatusFilter('all'); setPage(1); },
+    },
+    {
+      key: 'active',
+      label: tCommon('status.active'),
+      active: statusFilter === 'active',
+      onClick: () => { setStatusFilter('active'); setPage(1); },
+    },
+    {
+      key: 'inactive',
+      label: tCommon('status.inactive'),
+      active: statusFilter === 'inactive',
+      onClick: () => { setStatusFilter('inactive'); setPage(1); },
+    },
+  ];
+
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
+    <>
+      <WorkspaceHeader
+        breadcrumbs={[{ label: t('title') }]}
         title={t('title')}
-        subtitle={t('subtitle')}
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
-        actions={
-          <Button onClick={openCreate}>
-            <Plus className="size-4" />
-            {t('actions.new')}
-          </Button>
-        }
+        description={t('subtitle')}
+        primaryAction={{ key: 'new', label: t('actions.new'), icon: Plus, onClick: openCreate }}
+        metrics={METRICS}
+        savedViews={{ views: VIEWS, activeId: savedView, onViewChange: setSavedView }}
       />
 
-      <Card>
-        <CardContent className="flex flex-col gap-4 pt-6">
-          <EntityToolbar
-            searchPlaceholder={t('search')}
-            onSearchChange={handleSearch}
-            onRefresh={() => void refetch()}
-            isRefreshing={isFetching}
-            onExport={() => undefined}
-            onClearFilters={() => { setStatusFilter('all'); setPage(1); }}
-            filterPanel={
-              <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{tCommon('filters.status')}</span>
-                <select
-                  value={statusFilter}
-                  onChange={(event) => {
-                    setStatusFilter(event.target.value as SupplierStatusFilter);
-                    setPage(1);
-                  }}
-                  className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
-                >
-                  <option value="all">{tCommon('status.all')}</option>
-                  <option value="active">{tCommon('status.active')}</option>
-                  <option value="inactive">{tCommon('status.inactive')}</option>
-                </select>
+      <WorkspacePage
+        toolbar={
+          <PageToolbar
+            className="px-4 sm:px-6"
+            left={
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder={t('search')}
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="h-8 w-[200px] pl-8 sm:w-[260px]"
+                />
               </div>
             }
+            right={
+              <>
+                <Button variant="outline" size="sm" disabled>
+                  <Upload className="size-4" />
+                  Import
+                </Button>
+                <Button variant="outline" size="sm" disabled>
+                  <Download className="size-4" />
+                  Export
+                </Button>
+                <Button variant="outline" size="sm" disabled>
+                  Bulk Actions
+                </Button>
+              </>
+            }
           />
-
+        }
+        quickFilters={
+          <QuickFilterChips chips={statusChips} className="px-4 sm:px-6" />
+        }
+        pagination={
+          meta ? (
+            <PagePagination
+              page={meta.current_page}
+              perPage={meta.per_page}
+              total={meta.total}
+              lastPage={meta.last_page}
+              onPageChange={setPage}
+              isLoading={isFetching}
+              className="px-4 pb-2 sm:px-6"
+            />
+          ) : null
+        }
+      >
+        {isLoading ? (
+          <PageLoadingState variant="table" />
+        ) : isError ? (
+          <PageErrorState onRetry={() => void refetch()} />
+        ) : items.length === 0 && hasActiveFilters ? (
+          <PageNoResultsState query={search} onClear={clearFilters} />
+        ) : items.length === 0 ? (
+          <PageEmptyState
+            icon={Building2}
+            title="No suppliers yet"
+            description="Add your first supplier to get started."
+            action={{ label: t('actions.new'), icon: Plus, onClick: openCreate }}
+          />
+        ) : (
           <EntityTable<Supplier>
             columns={columns}
             data={items}
             getRowId={(supplier) => supplier.id}
-            isLoading={isLoading}
-            isError={isError}
             sort={sort}
             onSortChange={handleSort}
             rowActions={(supplier) => (
               <ActionMenu
                 label={`Actions for ${supplier.name}`}
                 items={[
-                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(supplier) },
-                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(supplier) },
+                  {
+                    key: 'view',
+                    label: tCommon('actions.view'),
+                    icon: Eye,
+                    onSelect: () => openEdit(supplier),
+                  },
+                  {
+                    key: 'edit',
+                    label: tCommon('common.edit'),
+                    icon: Pencil,
+                    onSelect: () => openEdit(supplier),
+                  },
                   {
                     key: 'delete',
                     label: tCommon('common.delete'),
@@ -186,20 +309,8 @@ export function SuppliersPage() {
               />
             )}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{
-                page: meta.current_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={setPage}
-            />
-          ) : null}
-        </CardContent>
-      </Card>
+        )}
+      </WorkspacePage>
 
       <SupplierFormDrawer
         open={drawerOpen}
@@ -210,7 +321,7 @@ export function SuppliersPage() {
         supplier={drawerSupplier}
       />
 
-      <ConfirmDialog
+      <PageConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
         title={t('delete.title')}
@@ -220,6 +331,6 @@ export function SuppliersPage() {
         loading={deleteSupplier.isPending}
         onConfirm={confirmDelete}
       />
-    </div>
+    </>
   );
 }
