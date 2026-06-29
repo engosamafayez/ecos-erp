@@ -29,6 +29,7 @@ return [
     Modules\Manufacturing\BillsOfMaterials\Infrastructure\Providers\BomServiceProvider::class,
     Modules\Manufacturing\DecisionKernel\Infrastructure\Providers\DecisionKernelServiceProvider::class,
     Modules\Manufacturing\DecisionOrchestrator\Infrastructure\Providers\DecisionOrchestratorServiceProvider::class,
+    Modules\Manufacturing\AvailabilityEngine\Infrastructure\Providers\AvailabilityEngineServiceProvider::class,
     Modules\Commerce\Synchronization\Infrastructure\Providers\SynchronizationServiceProvider::class,
     Modules\Inventory\ReceiptLayers\Infrastructure\Providers\ReceiptLayersServiceProvider::class,
     Modules\Inventory\CountSessions\Infrastructure\Providers\CountSessionsServiceProvider::class,

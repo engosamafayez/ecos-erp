@@ -573,6 +573,153 @@ The Orchestrator **never** executes business operations. It coordinates domain e
 
 ---
 
-## PKG-04 through PKG-11 — Pending
+## PKG-04A — Inventory Availability Engine
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-004A
+
+---
+
+### Architecture
+
+```
+Caller
+    ↓
+InventoryAvailabilityEngine.analyse(productId, warehouseId, requiredQty)
+    ├── InventoryReadInterface.availableQty()   → available FG
+    ├── RC-1: qty_to_manufacture = max(0, required − available_fg)
+    │   └── 0 → Sufficient (return early, no recipe needed)
+    ├── RecipeResolverInterface.resolve()        → RecipeSnapshot
+    │   └── RecipeResolverException → NoRecipe  (valid state, not error)
+    ├── Per component: availableQty(), scale by qty_to_manufacture
+    │   required = component.quantity × qty_to_manufacture  (RC-1 scaling)
+    │   is_satisfied = (missing == 0) || allow_negative_stock  (RC-2)
+    └── classifyEligibility()
+            All satisfied              → CanManufacture
+            Unsatisfied + all negative → Partial       (RC-2)
+            Any hard blocker           → CannotManufacture
+    ↓
+AvailabilityResult  ← immutable; no inventory written
+```
+
+**READ-ONLY GUARANTEE:** The engine never writes to inventory, never creates manufacturing transactions, and never reserves stock. Every call is side-effect-free.
+
+---
+
+### Design Decisions
+
+| Concern | Design Decision |
+|---------|----------------|
+| RC-1 (Partial Manufacturing) | `qty_to_manufacture = max(0, required − available_fg)` — only the shortage is manufactured |
+| RC-2 (Negative Stock) | Evaluated per raw material; `is_satisfied = true` when `missing == 0 \|\| allow_negative_stock` |
+| No recipe = valid state | `RecipeResolverException` caught inside engine → `NoRecipe` eligibility; not propagated |
+| Inventory read contract | `InventoryReadInterface` — thin single-method contract returning `float`; 0.0 when no record exists |
+| Infrastructure adapter | `EloquentInventoryReader` wraps `InventoryItemRepositoryInterface`; engine imports zero Eloquent |
+| `Sufficient` early exit | When FG covers full need, recipe resolution is skipped entirely (no unnecessary DB query) |
+| Empty components fallback | If recipe resolver returns a recipe with zero components (should not happen after RecipeResolver validates), engine returns `CanManufacture` — nothing missing |
+
+---
+
+### Files Created (8)
+
+#### Domain/Contracts
+| File | Purpose |
+|------|---------|
+| `AvailabilityEngine/Domain/Contracts/InventoryReadInterface.php` | Thin read contract: `availableQty(warehouseId, productId): float` |
+
+#### Domain/Enums
+| File | Purpose |
+|------|---------|
+| `AvailabilityEngine/Domain/Enums/ManufacturingEligibility.php` | 5-state enum: `Sufficient`, `CanManufacture`, `Partial`, `CannotManufacture`, `NoRecipe` with `allowsManufacturing()` and `label()` |
+
+#### Domain/ValueObjects
+| File | Purpose |
+|------|---------|
+| `AvailabilityEngine/Domain/ValueObjects/RawMaterialAvailability.php` | Per-component analysis: required/available/missing/allow_negative_stock/is_satisfied |
+| `AvailabilityEngine/Domain/ValueObjects/AvailabilityResult.php` | Full engine output: all fields + `isSufficient()`, `hasRecipe()`, `missingMaterials()`, `toArray()` |
+
+#### Domain/Services
+| File | Purpose |
+|------|---------|
+| `AvailabilityEngine/Domain/Services/InventoryAvailabilityEngine.php` | Core engine: `analyse()` + 4 private helpers |
+
+#### Infrastructure/Readers
+| File | Purpose |
+|------|---------|
+| `AvailabilityEngine/Infrastructure/Readers/EloquentInventoryReader.php` | Adapts `InventoryItemRepositoryInterface` → `InventoryReadInterface`; returns 0.0 for missing records |
+
+#### Infrastructure/Providers
+| File | Purpose |
+|------|---------|
+| `AvailabilityEngine/Infrastructure/Providers/AvailabilityEngineServiceProvider.php` | Binds `InventoryReadInterface` + registers `InventoryAvailabilityEngine` as singleton |
+
+#### Tests
+| File | Purpose |
+|------|---------|
+| `tests/Feature/Manufacturing/InventoryAvailabilityEngineTest.php` | 14 feature tests with `RefreshDatabase` |
+
+---
+
+### Files Modified (1)
+
+| File | Change |
+|------|--------|
+| `bootstrap/providers.php` | Registered `AvailabilityEngineServiceProvider` after `DecisionOrchestratorServiceProvider` |
+
+---
+
+### Test Coverage (14 tests)
+
+| Group | Tests |
+|-------|-------|
+| Sufficient stock (FG covers, exactly equal) | 2 |
+| RC-1: only shortage manufactured | 1 |
+| Can Manufacture (all materials covered, no FG) | 2 |
+| Partial — RC-2 negative stock components | 2 |
+| Cannot Manufacture (hard blocker, one blocker among many) | 2 |
+| No Recipe (no BOM, inactive BOM) | 2 |
+| Missing inventory record = 0 stock | 1 |
+| Read-only guarantee (no inventory written) | 1 |
+| Result structure (fields, snapshot, raw_material, toArray, missingMaterials) | 4 + 1 overlap in above |
+
+---
+
+### Architecture Alignment
+
+| Architecture Decision | Implementation |
+|----------------------|----------------|
+| RC-1 Partial Manufacturing | `qty_to_manufacture = max(0, required − available_fg)` — precise |
+| RC-2 Negative Stock on raw materials only | `is_satisfied = missing == 0 \|\| allow_negative_stock`; FG never goes negative (finished goods path returns Sufficient or triggers manufacturing) |
+| Analysis only — no side effects | Engine is read-only; `InventoryReadInterface` has no write methods |
+| `InventoryReadInterface` separates concerns | Engine does not import Eloquent or Inventory module models |
+| `RecipeResolverInterface` used (not RecipeResolver) | Engine is testable without DB; uses the same abstraction from PKG-03B |
+
+---
+
+### Eligibility Classification Matrix
+
+| Scenario | Eligibility | `can_manufacture` | `needs_manufacturing` |
+|----------|-------------|-------------------|-----------------------|
+| FG stock covers full need | `Sufficient` | true | false |
+| No FG, all raw materials available | `CanManufacture` | true | true |
+| No FG, some short + all have `allow_negative_stock` | `Partial` | true | true |
+| No FG, any short without `allow_negative_stock` | `CannotManufacture` | false | true |
+| No FG, no active recipe | `NoRecipe` | false | true |
+
+---
+
+### Future Extension Points
+
+| Extension | How |
+|-----------|-----|
+| Cached inventory reads | Implement `CachedInventoryReader implements InventoryReadInterface`; swap binding |
+| CQRS read model | `ProjectionInventoryReader` reads from denormalized read table; no engine changes |
+| Multi-warehouse analysis | Extend `analyse()` signature or add `analyseAcrossWarehouses()` method |
+| Reservation preview | Add optional `include_reserved: bool` parameter to `InventoryReadInterface.availableQty()` |
+
+---
+
+## PKG-04B through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
