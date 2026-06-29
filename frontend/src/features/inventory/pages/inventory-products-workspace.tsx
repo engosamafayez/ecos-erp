@@ -1,5 +1,6 @@
 import { Layers, Package, Ruler, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import { PageHeader } from '@/components/crud';
 import { WorkspaceCard } from '@/components/layout/workspace-card';
@@ -15,6 +16,7 @@ export function InventoryProductsWorkspace() {
   const { t: tProd } = useTranslation('products');
   const { t: tCat } = useTranslation('categories');
   const { t: tUnit } = useTranslation('units');
+  const navigate = useNavigate();
 
   const { data: finishedData, isLoading: finishedLoading } = useProductsQuery({
     ...COUNT_PARAMS,
@@ -44,6 +46,8 @@ export function InventoryProductsWorkspace() {
           countLabel="total"
           href={ROUTES.products}
           isLoading={finishedLoading}
+          newLabel={tProd('actions.new')}
+          onNew={() => navigate(ROUTES.products, { state: { openCreate: true } })}
         />
         <WorkspaceCard
           icon={Layers}
@@ -53,6 +57,8 @@ export function InventoryProductsWorkspace() {
           countLabel="total"
           href={ROUTES.rawMaterials}
           isLoading={rawLoading}
+          newLabel={tProd('actions.new')}
+          onNew={() => navigate(ROUTES.rawMaterials, { state: { openCreate: true } })}
         />
         <WorkspaceCard
           icon={Tag}

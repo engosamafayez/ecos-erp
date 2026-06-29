@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, type RefObject } from 'react';
 import { Download, RefreshCw, SlidersHorizontal } from 'lucide-react';
 
 import { FilterPanel } from '@/components/crud/filter-panel';
@@ -10,6 +10,8 @@ type EntityToolbarProps = {
   searchPlaceholder?: string;
   onSearchChange?: (value: string) => void;
   initialSearch?: string;
+  /** Forwarded to the search input — lets pages focus it via Ctrl+K or "/". */
+  searchRef?: RefObject<HTMLInputElement>;
   onRefresh?: () => void;
   isRefreshing?: boolean;
   onExport?: () => void;
@@ -27,6 +29,7 @@ export function EntityToolbar({
   searchPlaceholder,
   onSearchChange,
   initialSearch,
+  searchRef,
   onRefresh,
   isRefreshing = false,
   onExport,
@@ -41,6 +44,7 @@ export function EntityToolbar({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         {onSearchChange ? (
           <SearchInput
+            ref={searchRef}
             onChange={onSearchChange}
             placeholder={searchPlaceholder}
             initialValue={initialSearch}

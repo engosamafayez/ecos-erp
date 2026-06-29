@@ -28,6 +28,8 @@ type EntityTableProps<T> = {
   emptyState?: ReactNode;
   errorState?: ReactNode;
   skeletonRows?: number;
+  /** Highlights this row with a focus ring — used for keyboard arrow navigation. */
+  focusedRowId?: string | null;
 };
 
 const ALIGN_CLASS = {
@@ -53,6 +55,7 @@ export function EntityTable<T>({
   emptyState,
   errorState,
   skeletonRows = 5,
+  focusedRowId = null,
 }: EntityTableProps<T>) {
   const totalColumns = columns.length + (rowActions ? 1 : 0);
 
@@ -117,7 +120,12 @@ export function EntityTable<T>({
             </TableRow>
           ) : (
             data.map((row) => (
-              <TableRow key={getRowId(row)}>
+              <TableRow
+                key={getRowId(row)}
+                className={cn(
+                  focusedRowId === getRowId(row) && 'outline outline-1 outline-primary/50 bg-accent/30',
+                )}
+              >
                 {columns.map((column) => (
                   <TableCell
                     key={column.key}

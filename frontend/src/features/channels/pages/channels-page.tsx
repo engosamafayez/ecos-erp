@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Pencil, Plus, RefreshCw, Trash2, Wifi } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -75,6 +75,10 @@ export function ChannelsPage() {
   const [orderImportResult, setOrderImportResult] = useState<OrderImportResult | null>(null);
   const [orderImportChannelName, setOrderImportChannelName] = useState<string | undefined>();
 
+  // ── Keyboard nav ──────────────────────────────────────────────────────────────
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null);
+
   const params = useMemo(
     () => ({
       search: search || undefined,
@@ -97,6 +101,69 @@ export function ChannelsPage() {
 
   const items = data?.items ?? [];
   const meta = data?.meta;
+
+  // Reset row focus when the list changes (page/filter/search)
+  useEffect(() => { setFocusedRowIndex(null); }, [data]);
+
+  // stateRef avoids stale closures in the stable keyboard handler
+  const stateRef = useRef({ items, drawerOpen, focusedRowIndex });
+  useEffect(() => {
+    stateRef.current = { items, drawerOpen, focusedRowIndex };
+  }, [items, drawerOpen, focusedRowIndex]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const inInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      const { items: channels, drawerOpen: isOpen, focusedRowIndex: fi } = stateRef.current;
+
+      // Ctrl+K or / → focus search
+      if ((e.key === 'k' && (e.ctrlKey || e.metaKey)) || (e.key === '/' && !inInput)) {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+        return;
+      }
+
+      // Ctrl+N → new channel
+      if (e.key === 'n' && (e.ctrlKey || e.metaKey) && !inInput) {
+        e.preventDefault();
+        openCreate();
+        return;
+      }
+
+      // Esc → close drawer first, else clear focus
+      if (e.key === 'Escape' && !inInput) {
+        if (isOpen) { setDrawerOpen(false); return; }
+        setFocusedRowIndex(null);
+        return;
+      }
+
+      // Arrow Down → move focus down
+      if (e.key === 'ArrowDown' && !inInput && channels.length > 0) {
+        e.preventDefault();
+        setFocusedRowIndex(fi === null ? 0 : Math.min(fi + 1, channels.length - 1));
+        return;
+      }
+
+      // Arrow Up → move focus up
+      if (e.key === 'ArrowUp' && !inInput && channels.length > 0) {
+        e.preventDefault();
+        setFocusedRowIndex(fi === null ? 0 : Math.max(fi - 1, 0));
+        return;
+      }
+
+      // Enter → open edit for focused row
+      if (e.key === 'Enter' && !inInput && fi !== null) {
+        e.preventDefault();
+        const channel = channels[fi];
+        if (channel) openEdit(channel);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSort = (field: string) => {
     setSort((curr) =>
@@ -206,6 +273,8 @@ export function ChannelsPage() {
     },
   ];
 
+  const focusedRowId = focusedRowIndex !== null ? (items[focusedRowIndex]?.id ?? null) : null;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -227,8 +296,9 @@ export function ChannelsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={`${t('search')} · / or Ctrl+K`}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
+            searchRef={searchRef}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
             onClearFilters={() => { setStatusFilter('all'); setPlatformFilter(''); setPage(1); }}
@@ -273,6 +343,7 @@ export function ChannelsPage() {
             isError={isError}
             sort={sort}
             onSortChange={handleSort}
+            focusedRowId={focusedRowId}
             rowActions={(channel) => (
               <ActionMenu
                 label={`Actions for ${channel.name}`}
