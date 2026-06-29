@@ -3,10 +3,11 @@ import { CalendarDays, Filter, Search, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { Pagination } from '@/components/crud';
 import { ConfirmDialog } from '@/components/crud';
 import { PageHeader } from '@/components/crud';
 import { useColumnVisibility } from '@/components/data-grid/use-column-visibility';
+import { useRowSelection } from '@/components/data-grid/use-row-selection';
+import type { GridPaginationConfig } from '@/components/data-grid/types';
 import { useChannelOptions } from '@/features/channels/hooks/use-channel-options';
 import type { AdvancedFilterValues } from '@/features/orders/components/order-advanced-filters';
 import { OrderAdvancedFilters } from '@/features/orders/components/order-advanced-filters';
@@ -80,9 +81,6 @@ export function OrdersPage() {
   const [hasLocation, setHasLocation] = useState<boolean | null>(null);
   const [minShippingAttempts, setMinShippingAttempts] = useState<number | null>(null);
 
-  // ── Selection ─────────────────────────────────────────────────────────────────
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
   // ── Drawer state ──────────────────────────────────────────────────────────────
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
@@ -124,6 +122,11 @@ export function OrdersPage() {
   const deleteOrder = useDeleteOrder();
 
   const orders = data?.items ?? [];
+
+  // ── Row selection ─────────────────────────────────────────────────────────────
+  const selectionHook = useRowSelection({ items: orders, getId: (o) => o.id });
+  const { selectedIds, selectedCount, clearSelection } = selectionHook;
+
   const meta = data?.meta;
 
   // ── UI-005: stateRef avoids stale closures in the keyboard handler ────────────
@@ -147,7 +150,7 @@ export function OrdersPage() {
       if (e.key === 'Escape' && !inInput) {
         if (vo !== null) { setViewOrder(null); return; }
         if (eo || no) return;
-        setSearchKey((k) => k + 1); setSearch(''); setPage(1); setSelectedIds(new Set()); setFocusedRowIndex(null); return;
+        setSearchKey((k) => k + 1); setSearch(''); setPage(1); clearSelection(); setFocusedRowIndex(null); return;
       }
       if (e.key === 'ArrowDown' && !inInput && ords.length > 0) {
         e.preventDefault(); setFocusedRowIndex(fi === null ? 0 : Math.min(fi + 1, ords.length - 1)); return;
@@ -161,7 +164,7 @@ export function OrdersPage() {
       if (e.altKey && !e.ctrlKey && !e.metaKey && !inInput) {
         const num = parseInt(e.key, 10);
         if (num >= 1 && num <= 9 && num <= STATUS_TAB_ORDER.length) {
-          e.preventDefault(); setActiveStatus(STATUS_TAB_ORDER[num - 1]); setPage(1); setSelectedIds(new Set());
+          e.preventDefault(); setActiveStatus(STATUS_TAB_ORDER[num - 1]); setPage(1); clearSelection();
         }
       }
     };
@@ -176,18 +179,19 @@ export function OrdersPage() {
   const intelligenceActive = customerFilter !== null;
 
   // ── Reset helpers ─────────────────────────────────────────────────────────────
-  function resetPage() { setPage(1); setSelectedIds(new Set()); }
+  function resetPage() { setPage(1); clearSelection(); }
 
   function handleStatusChange(status: StatusFilter) {
     setActiveStatus(status);
     resetPage();
   }
 
-  function handleSortChange(field: OrderSortField) {
+  function handleSortChange(field: string) {
+    const sortField = field as OrderSortField;
     setSort((curr) =>
-      curr.field === field
-        ? { field, direction: curr.direction === 'asc' ? 'desc' : 'asc' }
-        : { field, direction: 'asc' },
+      curr.field === sortField
+        ? { field: sortField, direction: curr.direction === 'asc' ? 'desc' : 'asc' }
+        : { field: sortField, direction: 'asc' },
     );
     setPage(1);
   }
@@ -201,18 +205,6 @@ export function OrdersPage() {
     setSearchKey((k) => k + 1);
     setSearch('');
     resetPage();
-  }
-
-  function handleSelectRow(id: string, checked: boolean) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(id); else next.delete(id);
-      return next;
-    });
-  }
-
-  function handleSelectAll(checked: boolean) {
-    setSelectedIds(checked ? new Set(orders.map((o) => o.id)) : new Set());
   }
 
   function handleEdit(order: Order) {
@@ -290,7 +282,7 @@ export function OrdersPage() {
 
       {/* ── Standard Actions Toolbar ── */}
       <OrderListToolbar
-        selectedCount={selectedIds.size}
+        selectedCount={selectedCount}
         isFetching={isFetching}
         columns={ORDER_COLUMN_META}
         columnVisibility={columnVisibility}
@@ -460,29 +452,22 @@ export function OrdersPage() {
           isError={isError}
           sort={sort}
           onSortChange={handleSortChange}
-          selectedIds={selectedIds}
-          onSelectRow={handleSelectRow}
-          onSelectAll={handleSelectAll}
+          selection={selectionHook}
           onView={(order) => setViewOrder(order)}
           onEdit={handleEdit}
           onDelete={(order) => setDeletingOrder(order)}
           focusedRowId={focusedRowIndex !== null ? (orders[focusedRowIndex]?.id ?? null) : null}
           columnVisibility={columnVisibility}
+          pagination={meta ? ({
+            meta: {
+              page: meta.current_page,
+              perPage: meta.per_page,
+              total: meta.total,
+              lastPage: meta.last_page,
+            },
+            onPageChange: (p: number) => { setPage(p); clearSelection(); },
+          } satisfies GridPaginationConfig) : undefined}
         />
-
-        {meta ? (
-          <div className="mt-3">
-            <Pagination
-              meta={{
-                page: meta.current_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={(p) => { setPage(p); setSelectedIds(new Set()); }}
-            />
-          </div>
-        ) : null}
       </div>
 
       {/* ── Detail Drawer ── */}

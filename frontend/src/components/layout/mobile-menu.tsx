@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/common/brand-logo';
 import { Button } from '@/components/ui/button';
 import { APP_MODULES } from '@/config/module-navigation';
+import { CompanySwitcher } from '@/components/layout/header';
+import { WarehouseSwitcher } from '@/components/layout/header';
 
 type MobileMenuProps = {
   open: boolean;
@@ -25,12 +27,21 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
         <BrandLogo />
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close menu">
-          <X className="size-5" />
+          <X className="size-5" aria-hidden />
         </Button>
+      </div>
+
+      {/* Company + Warehouse context — mobile only */}
+      <div className="flex shrink-0 items-center gap-2 border-b bg-muted/30 px-4 py-3">
+        <CompanySwitcher className="flex-1" />
+        <WarehouseSwitcher className="flex-1" />
       </div>
 
       {/* Module grid */}
       <div className="flex-1 overflow-y-auto p-4">
+        <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Workspaces
+        </p>
         <div className="flex flex-col gap-1">
           {APP_MODULES.map((mod) => {
             const Icon = mod.icon;

@@ -3,10 +3,10 @@ import { LayoutDashboard, Menu, Search, ShoppingBag } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
+import { useHeaderContext } from '@/components/layout/header';
 
 type MobileBottomNavProps = {
   onOpenMenu: () => void;
-  onOpenSearch: () => void;
 };
 
 const PINNED = [
@@ -14,8 +14,9 @@ const PINNED = [
   { key: 'orders', label: 'Orders', icon: ShoppingBag, path: ROUTES.orders },
 ] as const;
 
-export function MobileBottomNav({ onOpenMenu, onOpenSearch }: MobileBottomNavProps) {
+export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
   const { pathname } = useLocation();
+  const { openSearch } = useHeaderContext();
 
   return (
     <nav
@@ -41,9 +42,10 @@ export function MobileBottomNav({ onOpenMenu, onOpenSearch }: MobileBottomNavPro
         );
       })}
 
+      {/* Search — now wired to GlobalSearch dialog via HeaderContext */}
       <button
         type="button"
-        onClick={onOpenSearch}
+        onClick={openSearch}
         aria-label="Search"
         className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
       >

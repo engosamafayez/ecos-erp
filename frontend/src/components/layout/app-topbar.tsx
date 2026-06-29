@@ -1,84 +1,76 @@
-import { Bell, PanelLeft, Plus, Search } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { PanelLeft } from 'lucide-react';
 
-import { BrandLogo } from '@/components/common/brand-logo';
-import { LanguageSwitcher } from '@/components/common/language-switcher';
-import { ThemeToggle } from '@/components/common/theme-toggle';
-import { CompanySwitcher } from '@/components/layout/company-switcher';
-import { UserMenu } from '@/components/layout/user-menu';
-import { WarehouseSwitcher } from '@/components/layout/warehouse-switcher';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { BrandLogo } from '@/components/common/brand-logo';
+
+import {
+  CompanySwitcher,
+  GlobalSearch,
+  NotificationCenter,
+  SmartCreate,
+  UserMenu,
+  WarehouseSwitcher,
+} from './header';
 
 type AppTopbarProps = {
   onOpenSidebar: () => void;
 };
 
+/**
+ * Global ERP command bar — sticky, z-40, h-14.
+ *
+ * Layout (left → right):
+ *   BrandLogo | SidebarToggle(md-only) | GlobalSearch(flex-1, sm+)
+ *   | SearchIcon(mobile) | Company(md+) | Warehouse(md+)
+ *   | SmartCreate(md+) | Notifications | UserMenu
+ *
+ * Language + Theme are accessible via the UserMenu dropdown on all screen sizes.
+ */
 export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
-  const { t } = useTranslation('common');
-
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3 sm:px-4">
-      {/* Brand — always visible, is the leftmost element */}
+    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur-sm px-3 sm:px-4">
+
+      {/* ── Left: Brand + sidebar toggle ── */}
       <BrandLogo />
 
-      {/* Sidebar toggle — tablet only (module rail visible but no persistent sidebar) */}
       <Button
         variant="ghost"
         size="icon"
-        className="hidden md:flex lg:hidden"
+        className="hidden md:flex lg:hidden shrink-0"
         onClick={onOpenSidebar}
-        aria-label="Toggle navigation"
+        aria-label="Toggle sidebar navigation"
       >
-        <PanelLeft className="size-5" />
+        <PanelLeft className="size-5" aria-hidden />
       </Button>
 
-      {/* Global search — expanded md+, icon only on mobile */}
-      <div className="relative hidden sm:block">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder={t('topbar.search')}
-          aria-label={t('topbar.search')}
-          className="w-44 pl-8 md:w-64 lg:w-80"
-        />
+      {/* ── Center: Global search (flex-1 so it fills available space) ── */}
+      <div className="hidden flex-1 sm:flex">
+        <GlobalSearch />
       </div>
 
+      {/* ── Right section ── */}
       <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
-        {/* Mobile: search icon */}
-        <Button variant="ghost" size="icon" className="sm:hidden" aria-label="Search">
-          <Search className="size-5" />
-        </Button>
 
-        {/* Company + Warehouse switchers — md+ */}
+        {/* Search icon — mobile only (dialog triggered via context) */}
+        <div className="sm:hidden">
+          <GlobalSearch />
+        </div>
+
+        {/* Company + Warehouse switchers — tablet+ */}
         <div className="hidden md:flex items-center gap-1.5">
           <CompanySwitcher />
           <WarehouseSwitcher />
         </div>
 
-        {/* Quick Create — lg+ */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="hidden lg:flex items-center gap-1.5"
-          aria-label="Quick create"
-        >
-          <Plus className="size-4" />
-          <span>Create</span>
-        </Button>
-
-        {/* Notifications */}
-        <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
-          <Bell className="size-5" />
-          <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary" aria-hidden />
-        </Button>
-
-        {/* Language + Theme — md+ */}
-        <div className="hidden md:flex items-center gap-1">
-          <LanguageSwitcher />
-          <ThemeToggle />
+        {/* Smart Create — tablet+ */}
+        <div className="hidden md:block">
+          <SmartCreate />
         </div>
 
+        {/* Notifications — always visible */}
+        <NotificationCenter />
+
+        {/* User menu — always visible (lang+theme inside dropdown) */}
         <UserMenu />
       </div>
     </header>
