@@ -6,13 +6,16 @@ namespace Modules\Manufacturing\BillsOfMaterials\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Contracts\BomRepositoryInterface;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Contracts\RecipeRepositoryInterface;
 use Modules\Manufacturing\BillsOfMaterials\Infrastructure\Repositories\EloquentBomRepository;
+use Modules\Manufacturing\BillsOfMaterials\Infrastructure\Repositories\EloquentRecipeRepository;
 
 final class BomServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->app->bind(BomRepositoryInterface::class, EloquentBomRepository::class);
+        $this->app->bind(RecipeRepositoryInterface::class, EloquentRecipeRepository::class);
     }
 
     public function boot(): void

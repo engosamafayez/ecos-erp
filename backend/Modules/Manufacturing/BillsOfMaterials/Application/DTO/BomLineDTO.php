@@ -11,7 +11,6 @@ final class BomLineDTO extends BaseDTO
     public function __construct(
         public readonly string $raw_material_id,
         public readonly float $quantity,
-        public readonly float $waste_percentage,
     ) {}
 
     /**
@@ -22,7 +21,6 @@ final class BomLineDTO extends BaseDTO
         return new self(
             raw_material_id: (string) $data['raw_material_id'],
             quantity: (float) ($data['quantity'] ?? 1),
-            waste_percentage: (float) ($data['waste_percentage'] ?? 0),
         );
     }
 }

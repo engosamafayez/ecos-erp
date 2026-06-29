@@ -21,6 +21,7 @@ final class BillOfMaterial extends Model
         'bom_number',
         'product_id',
         'version',
+        'bom_version_number',
         'is_active',
         'notes',
     ];
@@ -28,7 +29,8 @@ final class BillOfMaterial extends Model
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'is_active'          => 'boolean',
+            'bom_version_number' => 'integer',
         ];
     }
 

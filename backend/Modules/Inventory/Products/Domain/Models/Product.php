@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Inventory\Products\Domain\Enums\CostSource;
 use Modules\Inventory\Products\Domain\Enums\ProductStockStatus;
 use Modules\Inventory\Products\Infrastructure\Database\Factories\ProductFactory;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Models\Recipe;
 use Modules\MasterData\Categories\Domain\Models\Category;
 use Modules\MasterData\Units\Domain\Models\Unit;
 
@@ -123,6 +126,35 @@ class Product extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * All recipe versions for this product (newest first).
+     *
+     * @return HasMany<Recipe, $this>
+     */
+    public function recipes(): HasMany
+    {
+        return $this->hasMany(Recipe::class)->orderByDesc('bom_version_number');
+    }
+
+    /**
+     * The currently active recipe version for this product.
+     * Uses ofMany to select the highest bom_version_number among active rows.
+     *
+     * @return HasOne<Recipe, $this>
+     */
+    public function activeRecipe(): HasOne
+    {
+        return $this->hasOne(Recipe::class)
+            ->ofMany('bom_version_number', 'max')
+            ->where('is_active', true);
+    }
+
+    /** Returns true when this product has at least one active recipe. */
+    public function hasRecipe(): bool
+    {
+        return $this->recipes()->where('is_active', true)->exists();
     }
 
     protected static function newFactory(): ProductFactory

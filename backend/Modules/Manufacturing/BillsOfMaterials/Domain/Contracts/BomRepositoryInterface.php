@@ -31,4 +31,6 @@ interface BomRepositoryInterface
     public function delete(BillOfMaterial $bom): void;
 
     public function nextBomNumber(): string;
+
+    public function nextVersionNumber(string $productId): int;
 }

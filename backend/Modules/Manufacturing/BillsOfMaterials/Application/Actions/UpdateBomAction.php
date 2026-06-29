@@ -37,8 +37,7 @@ final class UpdateBomAction extends BaseAction
         $lines = array_map(
             fn (mixed $line): array => [
                 'raw_material_id' => $line->raw_material_id,
-                'quantity' => $line->quantity,
-                'waste_percentage' => $line->waste_percentage,
+                'quantity'        => $line->quantity,
             ],
             $dto->lines,
         );

@@ -79,6 +79,15 @@ final class EloquentBomRepository implements BomRepositoryInterface
         $bom->delete();
     }
 
+    public function nextVersionNumber(string $productId): int
+    {
+        $max = BillOfMaterial::withTrashed()
+            ->where('product_id', $productId)
+            ->max('bom_version_number');
+
+        return ($max === null ? 0 : (int) $max) + 1;
+    }
+
     public function nextBomNumber(): string
     {
         $last = BillOfMaterial::withTrashed()

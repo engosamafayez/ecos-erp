@@ -87,6 +87,100 @@ Implementation began: 2026-06-29
 
 ---
 
-## PKG-02 through PKG-11 — Pending
+---
+
+## PKG-02A — Recipe Foundation
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-002
+
+---
+
+### Migration Summary
+
+| Migration File | Table | Operation | Details |
+|----------------|-------|-----------|---------|
+| `2026_06_29_000002_add_bom_version_number_to_bills_of_materials.php` | `bills_of_materials` | ALTER | Adds `bom_version_number UNSIGNED INT DEFAULT 1`, index on (product_id, bom_version_number). Backfills existing rows to 1. |
+
+---
+
+### BOM Layer Refactoring (Phase 1)
+
+| Change | Details |
+|--------|---------|
+| `waste_percentage` removed from business layer | Removed from `BillOfMaterialLine.$fillable` + `casts()`, `BomLineDTO`, `BomResource`, `StoreBomRequest`, `UpdateBomRequest`, `CreateBomAction`, `UpdateBomAction`, `BomSeeder` |
+| `waste_percentage` column preserved in DB | Backward-compatible: existing data unaffected, column defaults to 0 |
+| `bom_version_number` added to BOM layer | `BillOfMaterial.$fillable` + `casts()`, `BomResource`, `CreateBomAction` passes it via repository, `EloquentBomRepository.nextVersionNumber()` |
+| `BomRepositoryInterface` extended | Added `nextVersionNumber(string $productId): int` |
+
+---
+
+### Files Created (7)
+
+| File | Purpose |
+|------|---------|
+| `2026_06_29_000002_add_bom_version_number_to_bills_of_materials.php` | Adds versioning integer column |
+| `Recipe.php` | Recipe aggregate — domain language over `bills_of_materials` table |
+| `RecipeLine.php` | Component line — domain language over `bill_of_material_lines` table (no waste_percentage) |
+| `RecipeRepositoryInterface.php` | Contract: findById, findActiveByProduct, findAllByProduct, create, activate, nextVersionNumber, nextBomNumber |
+| `EloquentRecipeRepository.php` | Eloquent implementation; manages active-version deactivation on create/activate |
+| `RecipeNotFoundException.php` | Domain exception |
+| `tests/Feature/Manufacturing/RecipeFoundationTest.php` | 22 tests |
+
+---
+
+### Files Modified (12)
+
+| File | Change |
+|------|--------|
+| `BillOfMaterial.php` | Added `bom_version_number` to fillable + casts |
+| `BillOfMaterialLine.php` | Removed `waste_percentage` from fillable + casts |
+| `BomLineDTO.php` | Removed `waste_percentage` property |
+| `BomResource.php` | Removed `waste_percentage` from line output; added `bom_version_number` to header |
+| `StoreBomRequest.php` | Removed `waste_percentage` rule; added `Rule::notIn([$product_id])` on component |
+| `UpdateBomRequest.php` | Same as StoreBomRequest |
+| `CreateBomAction.php` | Removed `waste_percentage` from line map; added `bom_version_number` via `nextVersionNumber()` |
+| `UpdateBomAction.php` | Removed `waste_percentage` from line map |
+| `BomRepositoryInterface.php` | Added `nextVersionNumber(string $productId): int` |
+| `EloquentBomRepository.php` | Added `nextVersionNumber()` implementation |
+| `BomServiceProvider.php` | Registered `RecipeRepositoryInterface → EloquentRecipeRepository` |
+| `BomSeeder.php` | Removed `waste_percentage`; added `bom_version_number: 1` |
+| `Product.php` | Added `recipes()` HasMany, `activeRecipe()` HasOne with `ofMany`, `hasRecipe()` method; imported Recipe |
+
+---
+
+### Architecture Alignment
+
+| Architecture Decision | Implementation |
+|----------------------|----------------|
+| BOM = persistence layer, Recipe = domain language | Recipe + RecipeLine model same tables as BOM. No parallel schema. |
+| Copy-on-write versioning | `bom_version_number` integer added. Sequential numbering via `nextVersionNumber()`. Trigger logic (when in-use BOM is modified) deferred to PKG-02B. |
+| No percentage quantities | `waste_percentage` removed from all new Recipe operations. DB column stays for backward compat. |
+| Unit comes from Product | No `unit_id` on `RecipeLine` — unit derived from `component.unit` relationship. |
+| One active version per product | `EloquentRecipeRepository.create()` and `activate()` call `deactivateOthers()`. |
+| Component ≠ output product | `Rule::notIn([$product_id])` on `lines.*.raw_material_id` in both BOM requests. |
+
+---
+
+### Risk Assessment
+
+| Risk | Severity | Mitigation |
+|------|----------|-----------|
+| Recipe and BillOfMaterial share the same table | Low | Intentional DDD design. Both models are read/write compatible. No ORM conflicts. |
+| `waste_percentage` removed from BOM API response | Medium | Any frontend currently reading `lines[].waste_percentage` will get `undefined`. All values were 0 anyway since it was never enforced. |
+| `bom_version_number` required for new BOMs | Low | `EloquentBomRepository.create()` sets it via `nextVersionNumber()`. Default in DB is 1 — old rows safe. |
+
+---
+
+### Compatibility Notes
+
+- **BOM CRUD API**: existing `/api/boms` endpoints remain fully functional. BOM models untouched except for `bom_version_number` addition.
+- **`waste_percentage` submissions**: silently ignored. Callers sending it will not receive a 422 — the field is not validated, just dropped.
+- **BOM rows created before this migration**: all set to `bom_version_number = 1` by the backfill.
+
+---
+
+## PKG-02B and PKG-03 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
