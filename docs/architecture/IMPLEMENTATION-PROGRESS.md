@@ -1536,6 +1536,128 @@ ManufacturingApplicationService
 
 ---
 
+## PKG-06B — Manufacturing Policy
+
+**Status:** ✅ Completed
+**Date:** 2026-06-29
+**Task:** TASK-MFG-IMP-006B
+**Tests:** 28 unit tests (pure domain, no DB)
+
+### Purpose
+
+The Manufacturing Policy is a **pure domain eligibility gate**. It answers one question:
+"Is this order/product combination eligible to proceed to manufacturing?"
+
+It performs no execution, no inventory operations, no planning, and no DB writes.
+The caller decides whether to invoke `ManufacturingApplicationService` based on the result.
+
+```
+Caller
+    ↓
+ManufacturingPolicy.evaluate(request, order, product)
+    ├── Rule 1: Order not cancelled              → OrderCancelled
+    ├── Rule 2: Order status allows mfg          → OrderStatusNotAllowed
+    ├── Rule 3: Product can manufacture          → ProductCannotManufacture
+    ├── Rule 4: Recipe exists                    → RecipeNotFound
+    ├── Rule 5: Product is inventory-managed     → ProductNotInventoryManaged
+    ├── Rule 6: Manufacturing required (qty > 0) → ManufacturingNotRequired
+    └── Rule 7: Not already manufactured         → AlreadyManufactured
+    ↓
+ManufacturingPolicyResult { eligible, reason, policy_code, metadata }
+```
+
+### CONTRACT — This Service MUST NOT
+
+- Call ManufacturingApplicationService, Executor, or Planner
+- Consume inventory or update any database record
+- Dispatch jobs or events
+- Invoke ManufacturingApplicationService itself — the caller decides
+
+### Eligibility Matrix
+
+| Rule | Evaluated Field | Ineligible Code | Notes |
+|------|----------------|-----------------|-------|
+| Order not cancelled | `order.is_cancelled` | `order_cancelled` | Checked first; supersedes all |
+| Order status | `order.order_status` in `[pending, processing]` | `order_status_not_allowed` | `completed` and `cancelled` blocked |
+| Product can manufacture | `product.can_manufacture` | `product_cannot_manufacture` | Product model flag |
+| Recipe exists | `product.has_active_recipe` | `recipe_not_found` | Caller pre-checks BOM table |
+| Inventory managed | `product.is_inventory_managed` | `product_not_inventory_managed` | Caller derives from product type |
+| Manufacturing required | `request.required_qty > 0` | `manufacturing_not_required` | Gross qty check only; RC-1 is Workflow's job |
+| Not already manufactured | `order.already_manufactured` | `already_manufactured` | Caller pre-checks ManufacturingTransaction |
+
+### Design Decisions
+
+| Concern | Decision |
+|---------|----------|
+| Decoupled from Commerce module | `OrderContext` carries `order_status: string` — policy checks against `['pending', 'processing']`; no `OrderStatus` enum import |
+| Decoupled from Inventory module | `ProductContext` carries pre-computed booleans — no Product model import |
+| Short-circuit at first failure | Returns on first ineligible rule; callers see the most important reason |
+| Caller pre-computes DB state | `already_manufactured` and `has_active_recipe` require DB reads; caller does them before building context |
+| Pure PHP value objects | No framework dependency; singleton service registered but has no constructor args |
+
+### Files Created (8)
+
+#### Domain/Enums (1)
+| File | Purpose |
+|------|---------|
+| `ManufacturingPolicy/Domain/Enums/PolicyCode.php` | 8-case enum: `Eligible` + 7 ineligible codes; `isEligible()`, `label()` |
+
+#### Domain/ValueObjects (4)
+| File | Purpose |
+|------|---------|
+| `ManufacturingPolicy/Domain/ValueObjects/ManufacturingPolicyRequest.php` | Intent: `product_id`, `required_qty`, `actor_id`, `metadata` |
+| `ManufacturingPolicy/Domain/ValueObjects/OrderContext.php` | Order state: `order_id`, `order_line_id`, `order_status`, `is_cancelled`, `already_manufactured` |
+| `ManufacturingPolicy/Domain/ValueObjects/ProductContext.php` | Product capability: `product_id`, `can_manufacture`, `has_active_recipe`, `is_inventory_managed` |
+| `ManufacturingPolicy/Domain/ValueObjects/ManufacturingPolicyResult.php` | `eligible()` + `ineligible()` factories; `toArray()` |
+
+#### Domain/Services (1)
+| File | Purpose |
+|------|---------|
+| `ManufacturingPolicy/Domain/Services/ManufacturingPolicy.php` | Core evaluator: 7 rules in priority order; `MANUFACTURING_ALLOWED_STATUSES = ['pending', 'processing']` |
+
+#### Infrastructure/Providers (1)
+| File | Purpose |
+|------|---------|
+| `ManufacturingPolicy/Infrastructure/Providers/ManufacturingPolicyServiceProvider.php` | Singleton registration (no constructor args) |
+
+#### Tests (1)
+| File | Purpose |
+|------|---------|
+| `tests/Unit/Manufacturing/ManufacturingPolicyTest.php` | 28 pure unit tests; `PHPUnit\Framework\TestCase`; no DB |
+
+### Files Modified (1)
+
+| File | Change |
+|------|--------|
+| `backend/bootstrap/providers.php` | Added `ManufacturingPolicyServiceProvider` after `ManufacturingServiceProvider` |
+
+### Test Coverage (28 tests)
+
+| Group | Tests |
+|-------|-------|
+| Happy path | All rules pass (eligible), `pending` status, `processing` status |
+| Rule 1 (Order cancelled) | Ineligible, supersedes all other failures |
+| Rule 2 (Status not allowed) | `completed`, unknown status, fires after rule 1 |
+| Rule 3 (Cannot manufacture) | Ineligible, fires after rule 2 |
+| Rule 4 (No recipe) | Ineligible, fires after rule 3 |
+| Rule 5 (Not inventory managed) | Ineligible, fires after rule 4 |
+| Rule 6 (Qty = 0 or negative) | Zero qty, negative qty, fires after rule 5 |
+| Rule 7 (Already manufactured) | Ineligible, fires last |
+| Result structure | `eligible()` factory, `ineligible()` factory, `toArray()`, metadata keys |
+| PolicyCode enum | Only `Eligible` passes `isEligible()`, all codes have non-empty labels |
+
+### Future Rules
+
+| Rule | PolicyCode | When to Add |
+|------|-----------|-------------|
+| Warehouse capacity check | `WarehouseCapacityExceeded` | When warehouse capacity planning is implemented |
+| Operator approved required | `PendingApproval` | When approval workflows are added |
+| Component reservation required | `ComponentsNotReserved` | When pre-reservation becomes mandatory |
+| Manufacturing window check | `OutsideManufacturingWindow` | When Operational Day boundary (ADR-012) gates manufacturing |
+| Machine availability | `MachineUnavailable` | When production scheduling is added (Operations module) |
+
+---
+
 ## PKG-07 through PKG-11 — Pending
 
 See [ARCHITECTURE-FREEZE.md](ARCHITECTURE-FREEZE.md) §7 for implementation package order and dependencies.
