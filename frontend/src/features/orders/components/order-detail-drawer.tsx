@@ -233,14 +233,6 @@ function ShippingTab({ order, t }: { order: Order; t: (k: string) => string }) {
   );
 }
 
-function ManufacturingTab({ t }: { t: (k: string) => string }) {
-  return (
-    <div className="flex items-center justify-center py-16 text-sm text-muted-foreground p-4">
-      {t('drawer.manufacturingEmpty')}
-    </div>
-  );
-}
-
 function NotesTab({ order, t }: { order: Order; t: (k: string) => string }) {
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -259,22 +251,6 @@ function NotesTab({ order, t }: { order: Order; t: (k: string) => string }) {
           <span className="text-muted-foreground text-sm">{t('drawer.noNotes')}</span>
         )}
       </DetailRow>
-    </div>
-  );
-}
-
-function TimelineTab({ t }: { t: (k: string) => string }) {
-  return (
-    <div className="flex items-center justify-center py-16 text-sm text-muted-foreground p-4">
-      {t('drawer.timelineEmpty')}
-    </div>
-  );
-}
-
-function HistoryTab({ t }: { t: (k: string) => string }) {
-  return (
-    <div className="flex items-center justify-center py-16 text-sm text-muted-foreground p-4">
-      {t('drawer.historyEmpty')}
     </div>
   );
 }
@@ -360,13 +336,10 @@ export function OrderDetailDrawer({ order, open, onOpenChange, onEdit }: OrderDe
     { key: 'summary',       label: t('drawer.tabs.summary'),       content: <SummaryTab order={order} t={t} /> },
     { key: 'customer',      label: t('drawer.tabs.customer'),      content: <CustomerTab order={order} t={t} /> },
     { key: 'products',      label: t('drawer.tabs.products'),      content: <ProductsTab order={order} t={t} />, badge: order.lines.length },
-    { key: 'payment',       label: t('drawer.tabs.payment'),       content: <PaymentTab order={order} t={t} /> },
-    { key: 'shipping',      label: t('drawer.tabs.shipping'),      content: <ShippingTab order={order} t={t} /> },
-    { key: 'manufacturing', label: t('drawer.tabs.manufacturing'), content: <ManufacturingTab t={t} /> },
-    { key: 'notes',         label: t('drawer.tabs.notes'),         content: <NotesTab order={order} t={t} /> },
-    { key: 'timeline',      label: t('drawer.tabs.timeline'),      content: <TimelineTab t={t} /> },
-    { key: 'history',       label: t('drawer.tabs.history'),       content: <HistoryTab t={t} /> },
-    { key: 'location',      label: t('drawer.tabs.location'),      content: <LocationTab order={order} t={t} /> },
+    { key: 'payment',   label: t('drawer.tabs.payment'),   content: <PaymentTab order={order} t={t} /> },
+    { key: 'shipping',  label: t('drawer.tabs.shipping'),  content: <ShippingTab order={order} t={t} /> },
+    { key: 'notes',     label: t('drawer.tabs.notes'),     content: <NotesTab order={order} t={t} /> },
+    { key: 'location',  label: t('drawer.tabs.location'),  content: <LocationTab order={order} t={t} /> },
   ];
 
   return (

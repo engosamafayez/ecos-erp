@@ -126,6 +126,7 @@ type OrderTableProps = {
   onStatusChange?: (order: Order) => void;
   onEditLocation?: (order: Order) => void;
   onDeleteLocation?: (order: Order) => void;
+  focusedRowId?: string | null;
 };
 
 const COL_COUNT = 13;
@@ -153,6 +154,7 @@ export function OrderTable({
   onStatusChange,
   onEditLocation,
   onDeleteLocation,
+  focusedRowId,
 }: OrderTableProps) {
   const { t } = useTranslation('orders');
 
@@ -228,15 +230,18 @@ export function OrderTable({
             ) : (
               orders.map((order) => {
                 const isSelected = selectedIds.has(order.id);
+                const isFocused = focusedRowId === order.id;
                 const phone = order.billing_phone;
                 const productsCount = order.lines.length;
 
                 return (
                   <tr
                     key={order.id}
+                    data-focused={isFocused || undefined}
                     className={cn(
                       'group transition-colors hover:bg-accent/40',
                       isSelected && 'bg-primary/5',
+                      isFocused && 'outline outline-1 outline-primary/50 bg-accent/30',
                     )}
                   >
                     {/* 1. Checkbox */}

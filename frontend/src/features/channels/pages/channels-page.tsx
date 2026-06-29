@@ -231,7 +231,6 @@ export function ChannelsPage() {
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
-            onExport={() => undefined}
             onClearFilters={() => { setStatusFilter('all'); setPlatformFilter(''); setPage(1); }}
             filterPanel={
               <div className="flex flex-col gap-3">

@@ -42,7 +42,6 @@ type OpKey =
   | 'ordersWithoutLocation'
   | 'multipleAttempts'
   | 'printOrders'
-  | 'packingQueue'
   | 'callCustomer'
   | 'codOrders';
 
@@ -82,7 +81,6 @@ function computeCounts(orders: Order[]): OpCounts {
     codOrders:             orders.filter((o) => o.payment_method?.toLowerCase() === 'cod').length,
     callCustomer:          orders.filter((o) => Boolean(o.billing_phone)).length,
     printOrders:           orders.length,
-    packingQueue:          orders.length,
   };
 }
 
@@ -91,7 +89,7 @@ function computeCounts(orders: Order[]): OpCounts {
 const CONTEXT_OPS: Record<string, OpKey[]> = {
   waiting_for_payment: ['repeatedCustomers', 'callCustomer', 'codOrders'],
   shipping:            ['sameShippingCompany', 'ordersWithoutLocation', 'multipleAttempts', 'callCustomer'],
-  preparing:           ['sameProduct', 'printOrders', 'packingQueue'],
+  preparing:           ['sameProduct', 'printOrders'],
 };
 
 // ── Default grouped view (All tab + unconfigured status tabs) ─────────────────
@@ -105,7 +103,7 @@ const DEFAULT_GROUPS: OpGroup[] = [
 ];
 
 // Ops that are always shown regardless of count (they perform actions, not filters)
-const ALWAYS_SHOW = new Set<OpKey>(['printOrders', 'packingQueue']);
+const ALWAYS_SHOW = new Set<OpKey>(['printOrders']);
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -167,8 +165,6 @@ function executeOp(key: OpKey, ctx: ToolbarCtx) {
       break;
     case 'printOrders':
       window.print();
-      break;
-    case 'packingQueue':
       break;
   }
 }

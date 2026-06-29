@@ -41,6 +41,8 @@ type ProductTableProps = {
   onDuplicate?: (product: Product) => void;
   onPublish?: (product: Product) => void;
   onDelete?: (product: Product) => void;
+  onStatusToggle?: (product: Product) => void;
+  focusedRowId?: string | null;
   hasFilters: boolean;
   onCreateProduct: () => void;
   onImportProducts?: () => void;
@@ -172,7 +174,8 @@ function SkeletonRows({ count, visible, density }: { count: number; visible: Col
 export function ProductTable({
   products, isLoading, isError, sort, onSortChange,
   selectedIds, onSelectRow, onSelectAll,
-  onView, onEdit, onDuplicate, onPublish, onDelete,
+  onView, onEdit, onDuplicate, onPublish, onDelete, onStatusToggle,
+  focusedRowId,
   hasFilters, onCreateProduct, onImportProducts, onClearFilters,
   visible, widths, onWidthChange, density,
 }: ProductTableProps) {
@@ -260,10 +263,16 @@ export function ProductTable({
             ) : (
               products.map((product) => {
                 const isSelected = selectedIds.has(product.id);
+                const isFocused  = focusedRowId === product.id;
                 return (
                   <tr
                     key={product.id}
-                    className={cn('group transition-colors hover:bg-accent/40', isSelected && 'bg-primary/5')}
+                    data-focused={isFocused || undefined}
+                    className={cn(
+                      'group transition-colors hover:bg-accent/40',
+                      isSelected && 'bg-primary/5',
+                      isFocused  && 'outline outline-1 outline-primary/50 bg-accent/30',
+                    )}
                   >
                     {/* Checkbox */}
                     <Td className={cellPy}>
@@ -312,8 +321,23 @@ export function ProductTable({
                       </Td>
                     )}
 
-                    {/* Status */}
-                    {visible.status && <Td className={cellPy}><StatusBadge status={product.is_active ? 'active' : 'inactive'} /></Td>}
+                    {/* Status — clickable toggle (UI-001) */}
+                    {visible.status && (
+                      <Td className={cellPy}>
+                        {onStatusToggle ? (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onStatusToggle(product); }}
+                            className="cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            title={product.is_active ? 'Click to deactivate' : 'Click to activate'}
+                          >
+                            <StatusBadge status={product.is_active ? 'active' : 'inactive'} />
+                          </button>
+                        ) : (
+                          <StatusBadge status={product.is_active ? 'active' : 'inactive'} />
+                        )}
+                      </Td>
+                    )}
 
                     {/* Channels */}
                     {visible.channels && <Td className={cellPy}><ChannelCell channels={product.channels} /></Td>}

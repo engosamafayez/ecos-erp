@@ -1,23 +1,14 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ChevronDown,
-  Download,
   Filter,
   Plus,
   RefreshCw,
   Search,
-  Upload,
   Users,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Pagination } from '@/components/crud';
 import { ConfirmDialog } from '@/components/crud';
 import { PageHeader } from '@/components/crud';
@@ -41,6 +32,7 @@ import type {
   OrderSortField,
   OrderStatus,
 } from '@/features/orders/types/order';
+import { STATUS_TAB_ORDER } from '@/features/orders/types/order';
 import { ROUTES } from '@/router/routes';
 import { cn } from '@/lib/utils';
 
@@ -101,6 +93,9 @@ export function OrdersPage() {
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
   const [newOrderOpen, setNewOrderOpen] = useState(false);
 
+  // ── UI-005: Keyboard navigation ───────────────────────────────────────────────
+  const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null);
+
   // ── Query ─────────────────────────────────────────────────────────────────────
   const params = useMemo(
     () => ({
@@ -129,6 +124,50 @@ export function OrdersPage() {
 
   const orders = data?.items ?? [];
   const meta = data?.meta;
+
+  // ── UI-005: stateRef avoids stale closures in the keyboard handler ────────────
+  const stateRef = useRef({ orders, viewOrder, editDrawerOpen, newOrderOpen, focusedRowIndex });
+  useEffect(() => {
+    stateRef.current = { orders, viewOrder, editDrawerOpen, newOrderOpen, focusedRowIndex };
+  }, [orders, viewOrder, editDrawerOpen, newOrderOpen, focusedRowIndex]);
+
+  // Reset row focus when data changes (new page / filter applied)
+  useEffect(() => { setFocusedRowIndex(null); }, [data]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const inInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      const { orders: ords, viewOrder: vo, editDrawerOpen: eo, newOrderOpen: no, focusedRowIndex: fi } = stateRef.current;
+
+      if ((e.key === 'k' && (e.ctrlKey || e.metaKey)) || (e.key === '/' && !inInput)) {
+        e.preventDefault(); searchRef.current?.focus(); searchRef.current?.select(); return;
+      }
+      if (e.key === 'Escape' && !inInput) {
+        if (vo !== null) { setViewOrder(null); return; }
+        if (eo || no) return;
+        setSearchKey((k) => k + 1); setSearch(''); setPage(1); setSelectedIds(new Set()); setFocusedRowIndex(null); return;
+      }
+      if (e.key === 'ArrowDown' && !inInput && ords.length > 0) {
+        e.preventDefault(); setFocusedRowIndex(fi === null ? 0 : Math.min(fi + 1, ords.length - 1)); return;
+      }
+      if (e.key === 'ArrowUp' && !inInput && ords.length > 0) {
+        e.preventDefault(); setFocusedRowIndex(fi === null ? 0 : Math.max(fi - 1, 0)); return;
+      }
+      if (e.key === 'Enter' && !inInput && fi !== null) {
+        e.preventDefault(); const order = ords[fi]; if (order) setViewOrder(order); return;
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !inInput) {
+        const num = parseInt(e.key, 10);
+        if (num >= 1 && num <= 9 && num <= STATUS_TAB_ORDER.length) {
+          e.preventDefault(); setActiveStatus(STATUS_TAB_ORDER[num - 1]); setPage(1); setSelectedIds(new Set());
+        }
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Active filter counts (for badge on filter toggle) ─────────────────────────
   const advancedActiveCount = Object.values(advancedFilters).filter(Boolean).length
@@ -213,34 +252,6 @@ export function OrdersPage() {
                 <Plus className="size-4" />
                 {t('actions.new')}
               </Button>
-              <Button variant="outline" size="sm">
-                <Upload className="size-3.5" />
-                {t('actions.import')}
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="size-3.5" />
-                {t('actions.export')}
-              </Button>
-
-              {selectedIds.size > 0 ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      {t('actions.bulkActions')}
-                      <span className="ms-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold text-primary">
-                        {selectedIds.size}
-                      </span>
-                      <ChevronDown className="size-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem>{t('bulk.confirm')}</DropdownMenuItem>
-                    <DropdownMenuItem>{t('bulk.markShipping')}</DropdownMenuItem>
-                    <DropdownMenuItem>{t('bulk.markDelivered')}</DropdownMenuItem>
-                    <DropdownMenuItem variant="destructive">{t('bulk.cancel')}</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
 
               <Button
                 variant="ghost"
@@ -395,6 +406,7 @@ export function OrdersPage() {
           onView={(order) => setViewOrder(order)}
           onEdit={handleEdit}
           onDelete={(order) => setDeletingOrder(order)}
+          focusedRowId={focusedRowIndex !== null ? (orders[focusedRowIndex]?.id ?? null) : null}
         />
 
         {meta ? (

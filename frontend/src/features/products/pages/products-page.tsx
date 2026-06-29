@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   AlignJustify, Check, ChevronDown, Columns3,
   Download, Plus, RefreshCcw, Search, SlidersHorizontal, Tags, Upload, XCircle,
@@ -24,7 +25,7 @@ import { ProductTable } from '@/features/products/components/product-table';
 import type { RowDensity } from '@/features/products/components/product-table';
 import type { ColKey } from '@/features/products/hooks/use-column-prefs';
 import { TOGGLEABLE_COLUMNS, useColumnPrefs } from '@/features/products/hooks/use-column-prefs';
-import { useDeleteProduct, useProductsQuery } from '@/features/products/hooks/use-products';
+import { useDeleteProduct, useProductsQuery, useToggleProductStatus } from '@/features/products/hooks/use-products';
 import { productsService } from '@/features/products/services/products-service';
 import type { Product, ProductSortField, SortDirection } from '@/features/products/types/product';
 import { ROUTES } from '@/router/routes';
@@ -78,6 +79,8 @@ export function ProductsPage() {
   const { t } = useTranslation('products');
   const { t: tCommon } = useTranslation('common');
   const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // ── Column prefs (Part 4) ─────────────────────────────────────────────
   const { visible, setVisible, widths, setWidth, resetPrefs } = useColumnPrefs();
@@ -107,6 +110,9 @@ export function ProductsPage() {
 
   // ── Selection ─────────────────────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // ── Arrow-key row focus (UI-002) ──────────────────────────────────────
+  const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null);
 
   // ── Drawer (Part 2 — unified drawer) ─────────────────────────────────
   const [drawerProduct, setDrawerProduct] = useState<Product | null>(null);
@@ -153,6 +159,7 @@ export function ProductsPage() {
 
   const { data, isLoading, isError, isFetching, refetch } = useProductsQuery(params);
   const deleteProduct = useDeleteProduct();
+  const toggleStatus = useToggleProductStatus();
   const products = data?.items ?? [];
   const meta = data?.meta;
 
@@ -161,6 +168,9 @@ export function ProductsPage() {
     filters.category_id !== null || filters.warehouse_id !== null || filters.channel_id !== null ||
     filters.status !== 'all' || filters.product_type !== null || filters.is_published !== null ||
     filters.low_stock || filters.out_of_stock || filters.has_images !== null || filters.not_synced;
+
+  // Reset row focus when the list contents change (search/filter/page)
+  useEffect(() => { setFocusedRowIndex(null); }, [search, filters, page]);
 
   // ── Handlers ──────────────────────────────────────────────────────────
   const handleSearch = (value: string) => { setSearch(value); setPage(1); };
@@ -208,28 +218,75 @@ export function ProductsPage() {
     toast({ type: 'info', title: 'Import', description: 'Import feature coming soon.' });
   };
 
-  // ── Keyboard shortcuts (Part 5) ───────────────────────────────────────
+  // ── UI-003: open create drawer when navigated here with { openCreate: true } ──
+  useEffect(() => {
+    if ((location.state as Record<string, unknown> | null)?.openCreate) {
+      openCreate();
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── UI-002: Keyboard shortcuts + arrow navigation ─────────────────────
+  // Use refs to read current state inside the stable event listener.
+  const stateRef = useRef({ products, drawerOpen, focusedRowIndex });
+  useEffect(() => {
+    stateRef.current = { products, drawerOpen, focusedRowIndex };
+  }, [products, drawerOpen, focusedRowIndex]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const inInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      const { products: prods, drawerOpen: isOpen, focusedRowIndex: fi } = stateRef.current;
 
       // Ctrl+K or / → focus search
       if ((e.key === 'k' && (e.ctrlKey || e.metaKey)) || (e.key === '/' && !inInput)) {
         e.preventDefault();
         searchRef.current?.focus();
         searchRef.current?.select();
+        return;
       }
 
       // Ctrl+N → new product
       if (e.key === 'n' && (e.ctrlKey || e.metaKey) && !inInput) {
         e.preventDefault();
         openCreate();
+        return;
+      }
+
+      // Esc → close drawer first, else clear search / focus
+      if (e.key === 'Escape' && !inInput) {
+        if (isOpen) { setDrawerOpen(false); return; }
+        clearFilters();
+        setFocusedRowIndex(null);
+        return;
+      }
+
+      // Arrow Down → move focus down the table
+      if (e.key === 'ArrowDown' && !inInput && prods.length > 0) {
+        e.preventDefault();
+        setFocusedRowIndex(fi === null ? 0 : Math.min(fi + 1, prods.length - 1));
+        return;
+      }
+
+      // Arrow Up → move focus up the table
+      if (e.key === 'ArrowUp' && !inInput && prods.length > 0) {
+        e.preventDefault();
+        setFocusedRowIndex(fi === null ? 0 : Math.max(fi - 1, 0));
+        return;
+      }
+
+      // Enter → open focused row
+      if (e.key === 'Enter' && !inInput && fi !== null) {
+        e.preventDefault();
+        const product = prods[fi];
+        if (product) openView(product);
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -381,6 +438,8 @@ export function ProductsPage() {
         onSelectAll={handleSelectAll}
         onView={openView}
         onEdit={openEdit}
+        onStatusToggle={(p) => toggleStatus.mutate(p)}
+        focusedRowId={focusedRowIndex !== null ? (products[focusedRowIndex]?.id ?? null) : null}
         onDuplicate={(p) => toast({ type: 'info', title: 'Duplicate', description: `Duplicating "${p.name}"…` })}
         onPublish={(p) => toast({ type: 'info', title: 'Publish',   description: `Publishing "${p.name}"…` })}
         onDelete={(p) => deleteProduct.mutate(p.id, {

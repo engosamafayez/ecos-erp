@@ -1,4 +1,14 @@
-import { Copy, MessageCircle, Pencil, Phone, Plus, Trash2, Users } from 'lucide-react';
+import {
+  Copy,
+  FileText,
+  MessageCircle,
+  Pencil,
+  Phone,
+  Plus,
+  ShoppingBag,
+  Trash2,
+  Users,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -10,21 +20,22 @@ import {
   PageHeader,
   Pagination,
 } from '@/components/crud';
-import { PhoneCell } from '@/components/ecos/phone-cell';
 import { QuickStatCard } from '@/components/ds/quick-stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CustomerDrawer } from '@/features/customers/components/customer-drawer';
 import { CustomerFormDrawer } from '@/features/customers/components/customer-form-drawer';
-import { CustomerQuickCard } from '@/features/customers/components/customer-quick-card';
+import { CustomerQuickActionCard } from '@/features/customers/components/customer-quick-action-card';
 import { useCustomersQuery, useDeleteCustomer } from '@/features/customers/hooks/use-customers';
-import type { Customer, CustomerStatusFilter } from '@/features/customers/types/customer';
+import type { Customer, CustomerSortField, CustomerStatusFilter } from '@/features/customers/types/customer';
 import { ROUTES } from '@/router/routes';
+import { cn } from '@/lib/utils';
 
 const PER_PAGE = 20;
 
-// ── Stat queries (minimal fetches for global counts) ──────────────────────────
+// ── Stat queries ──────────────────────────────────────────────────────────────
 
 function useCustomerCounts() {
   const total    = useCustomersQuery({ per_page: 1 });
@@ -37,12 +48,42 @@ function useCustomerCounts() {
   };
 }
 
+// ── Sort header ───────────────────────────────────────────────────────────────
+
+function SortTh({
+  field,
+  label,
+  sort,
+  onSort,
+}: {
+  field: CustomerSortField;
+  label: string;
+  sort: { field: CustomerSortField; direction: 'asc' | 'desc' };
+  onSort: (f: CustomerSortField) => void;
+}) {
+  const isActive = sort.field === field;
+  return (
+    <th className="px-4 py-3 text-left">
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {label}
+        <span className="text-[10px]">
+          {isActive ? (sort.direction === 'asc' ? '↑' : '↓') : '↕'}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 // ── Row skeleton ──────────────────────────────────────────────────────────────
 
 function CustomerRowSkeleton() {
   return (
     <tr className="border-b">
-      {[1, 2, 3, 4, 5].map((i) => (
+      {[1, 2, 3, 4, 5, 6, 7].map((i) => (
         <td key={i} className="px-4 py-3">
           <Skeleton className="h-4 w-full" />
         </td>
@@ -61,12 +102,22 @@ export function CustomersPage() {
   // ── State ──────────────────────────────────────────────────────────────────
   const [search, setSearch]               = useState('');
   const [debouncedSearch, setDebounced]   = useState('');
-  const [statusFilter]                    = useState<CustomerStatusFilter>('all');
+  const [statusFilter, setStatusFilter]   = useState<CustomerStatusFilter>('all');
+  const [sort, setSort]                   = useState<{ field: CustomerSortField; direction: 'asc' | 'desc' }>({
+    field: 'created_at',
+    direction: 'desc',
+  });
   const [page, setPage]                   = useState(1);
-  const [drawerOpen, setDrawerOpen]       = useState(false);
+  const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds]     = useState<Set<string>>(new Set());
+
+  // ── Drawer / dialog state ──────────────────────────────────────────────────
+  const [viewCustomer, setViewCustomer]     = useState<Customer | null>(null);
+  const [viewDefaultTab, setViewDefaultTab] = useState('summary');
+  const [drawerOpen, setDrawerOpen]         = useState(false);
   const [drawerCustomer, setDrawerCustomer] = useState<Customer | null>(null);
-  const [initialPhone, setInitialPhone]   = useState('');
-  const [deleting, setDeleting]           = useState<Customer | null>(null);
+  const [initialPhone, setInitialPhone]     = useState('');
+  const [deleting, setDeleting]             = useState<Customer | null>(null);
 
   // ── DD-055: Auto-focus search on mount ────────────────────────────────────
   useEffect(() => {
@@ -78,6 +129,7 @@ export function CustomersPage() {
     const id = setTimeout(() => {
       setDebounced(search);
       setPage(1);
+      setFocusedRowIndex(null);
     }, 300);
     return () => clearTimeout(id);
   }, [search]);
@@ -90,14 +142,19 @@ export function CustomersPage() {
     status: statusFilter,
     page,
     per_page: PER_PAGE,
-    sort_by: 'created_at',
-    sort_dir: 'desc',
+    sort_by: sort.field,
+    sort_dir: sort.direction,
   });
 
   const deleteCustomer = useDeleteCustomer();
 
   const items = data?.items ?? [];
   const meta  = data?.meta;
+
+  // Reset selection when page data changes
+  useEffect(() => {
+    setFocusedRowIndex(null);
+  }, [data]);
 
   // ── DD-056: Smart search behavior ─────────────────────────────────────────
   const isSearching = debouncedSearch.length > 0;
@@ -114,16 +171,107 @@ export function CustomersPage() {
   };
 
   const openEdit = (customer: Customer) => {
+    setViewCustomer(null);
     setDrawerCustomer(customer);
     setInitialPhone('');
     setDrawerOpen(true);
   };
 
-  const openView = (customer: Customer) => {
-    setDrawerCustomer(customer);
-    setInitialPhone('');
-    setDrawerOpen(true);
+  const openView = (customer: Customer, tab = 'summary') => {
+    setViewDefaultTab(tab);
+    setViewCustomer(customer);
   };
+
+  const openViewOrders = (customer: Customer) => openView(customer, 'orders');
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  function handleSortChange(field: CustomerSortField) {
+    setSort((curr) =>
+      curr.field === field
+        ? { field, direction: curr.direction === 'asc' ? 'desc' : 'asc' }
+        : { field, direction: 'asc' },
+    );
+    setPage(1);
+    setFocusedRowIndex(null);
+  }
+
+  // ── Keyboard navigation ───────────────────────────────────────────────────
+  const stateRef = useRef({
+    items,
+    viewCustomer,
+    drawerOpen,
+    focusedRowIndex,
+    selectedIds,
+  });
+  useEffect(() => {
+    stateRef.current = { items, viewCustomer, drawerOpen, focusedRowIndex, selectedIds };
+  }, [items, viewCustomer, drawerOpen, focusedRowIndex, selectedIds]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const inInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      const {
+        items: rows,
+        viewCustomer: vc,
+        drawerOpen: fo,
+        focusedRowIndex: fi,
+        selectedIds: sel,
+      } = stateRef.current;
+
+      // Ctrl+K or / → focus search
+      if ((e.key === 'k' && (e.ctrlKey || e.metaKey)) || (e.key === '/' && !inInput)) {
+        e.preventDefault(); searchRef.current?.focus(); searchRef.current?.select(); return;
+      }
+      // Ctrl+N → new customer
+      if (e.key === 'n' && (e.ctrlKey || e.metaKey) && !inInput) {
+        e.preventDefault(); openCreate(); return;
+      }
+      // Escape → close drawer / clear search
+      if (e.key === 'Escape' && !inInput) {
+        if (vc !== null) { setViewCustomer(null); return; }
+        if (fo) return;
+        setSearch(''); setFocusedRowIndex(null); return;
+      }
+      // Arrow Down
+      if (e.key === 'ArrowDown' && !inInput && rows.length > 0) {
+        e.preventDefault(); setFocusedRowIndex(fi === null ? 0 : Math.min(fi + 1, rows.length - 1)); return;
+      }
+      // Arrow Up
+      if (e.key === 'ArrowUp' && !inInput && rows.length > 0) {
+        e.preventDefault(); setFocusedRowIndex(fi === null ? 0 : Math.max(fi - 1, 0)); return;
+      }
+      // Enter → open focused row
+      if (e.key === 'Enter' && !inInput && fi !== null) {
+        e.preventDefault(); const c = rows[fi]; if (c) openView(c); return;
+      }
+      // Space → toggle row selection
+      if (e.key === ' ' && !inInput && fi !== null) {
+        e.preventDefault();
+        const c = rows[fi];
+        if (c) {
+          const next = new Set(sel);
+          if (next.has(c.id)) next.delete(c.id);
+          else next.add(c.id);
+          setSelectedIds(next);
+        }
+        return;
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const allSelected = items.length > 0 && items.every((c) => selectedIds.has(c.id));
 
   return (
     <div className="flex flex-col gap-6">
@@ -136,15 +284,10 @@ export function CustomersPage() {
           { label: t('title') },
         ]}
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              {t('actions.export')}
-            </Button>
-            <Button size="sm" onClick={() => openCreate()}>
-              <Plus className="size-4" />
-              {t('actions.new')}
-            </Button>
-          </div>
+          <Button size="sm" onClick={() => openCreate()}>
+            <Plus className="size-4" />
+            {t('actions.new')}
+          </Button>
         }
       />
 
@@ -154,19 +297,21 @@ export function CustomersPage() {
           title={t('quickStats.total')}
           value={counts.total ?? '—'}
           icon={Users}
-          onClick={() => { setSearch(''); }}
+          onClick={() => { setStatusFilter('all'); setSearch(''); }}
         />
         <QuickStatCard
           title={t('quickStats.active')}
           value={counts.active ?? '—'}
           icon={Users}
           colorClassName="text-emerald-600 bg-emerald-100"
+          onClick={() => { setStatusFilter('active'); setPage(1); }}
         />
         <QuickStatCard
           title={t('quickStats.inactive')}
           value={counts.inactive ?? '—'}
           icon={Users}
           colorClassName="text-amber-600 bg-amber-100"
+          onClick={() => { setStatusFilter('inactive'); setPage(1); }}
         />
       </div>
 
@@ -188,28 +333,27 @@ export function CustomersPage() {
           ) : null}
         </div>
 
-        {/* ── DD-056: Single result → Quick Action Card (not table) ───── */}
+        {/* DD-056: Single result → Quick Action Card */}
         {singleResult ? (
-          <CustomerQuickCard
+          <CustomerQuickActionCard
             customer={items[0]}
-            onOpen={openView}
+            onOpen={(c) => openView(c, 'summary')}
+            onOpenOrders={openViewOrders}
+            onEdit={openEdit}
             onCreateOrder={() => undefined}
             onClose={() => setSearch('')}
             className="max-w-md"
           />
         ) : null}
 
-        {/* ── DD-056: No result → "Customer not found" + Create CTA ────── */}
+        {/* DD-056: No result → "Customer not found" + Create CTA */}
         {noResults ? (
           <div className="flex max-w-md flex-col items-start gap-3 rounded-xl border border-dashed p-5">
             <div>
-              <p className="font-medium text-sm">{t('noResults.title')}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{t('noResults.description')}</p>
+              <p className="text-sm font-medium">{t('noResults.title')}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t('noResults.description')}</p>
             </div>
-            <Button
-              size="sm"
-              onClick={() => openCreate(debouncedSearch)}
-            >
+            <Button size="sm" onClick={() => openCreate(debouncedSearch)}>
               <Plus className="size-3.5" />
               {t('noResults.createWithPhone')}
             </Button>
@@ -217,23 +361,37 @@ export function CustomersPage() {
         ) : null}
       </div>
 
-      {/* ── Data Table (all customers or multiple-result search) ─────────── */}
+      {/* ── Data Table ───────────────────────────────────────────────────── */}
       {showTable ? (
         <div className="overflow-hidden rounded-xl border bg-background">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/30">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                  {t('columns.customer')}
+                {/* Checkbox */}
+                <th className="w-10 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    className="size-4 cursor-pointer rounded border-input"
+                    checked={allSelected}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(new Set(items.map((c) => c.id)));
+                      else setSelectedIds(new Set());
+                    }}
+                    aria-label={t('table.selectAll')}
+                  />
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                <SortTh field="name" label={t('columns.customer')} sort={sort} onSort={handleSortChange} />
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                   {t('columns.phones')}
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                  {t('columns.address')}
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                  {t('columns.defaultAddress')}
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                  {t('columns.status')}
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                  {t('columns.previousOrders')}
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                  {t('columns.intelligence')}
                 </th>
                 <th className="w-12 px-4 py-3" />
               </tr>
@@ -243,7 +401,7 @@ export function CustomersPage() {
                 Array.from({ length: 8 }).map((_, i) => <CustomerRowSkeleton key={i} />)
               ) : isError ? (
                 <tr>
-                  <td colSpan={5} className="py-12">
+                  <td colSpan={7} className="py-12">
                     <ErrorState
                       description={t('table.error')}
                       onRetry={() => void refetch()}
@@ -252,16 +410,20 @@ export function CustomersPage() {
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12">
+                  <td colSpan={7} className="py-12">
                     <EmptyState title={t('table.empty')} />
                   </td>
                 </tr>
               ) : (
-                items.map((customer) => (
+                items.map((customer, idx) => (
                   <CustomerRow
                     key={customer.id}
                     customer={customer}
+                    isFocused={focusedRowIndex === idx}
+                    isSelected={selectedIds.has(customer.id)}
+                    onToggleSelect={toggleSelect}
                     onView={openView}
+                    onViewOrders={openViewOrders}
                     onEdit={openEdit}
                     onDelete={setDeleting}
                   />
@@ -279,14 +441,23 @@ export function CustomersPage() {
                   total: meta.total,
                   lastPage: meta.last_page,
                 }}
-                onPageChange={setPage}
+                onPageChange={(p) => { setPage(p); setFocusedRowIndex(null); }}
               />
             </div>
           ) : null}
         </div>
       ) : null}
 
-      {/* ── Drawers & Dialogs ─────────────────────────────────────────────── */}
+      {/* ── Customer Profile Drawer ────────────────────────────────────── */}
+      <CustomerDrawer
+        customer={viewCustomer}
+        open={viewCustomer !== null}
+        onOpenChange={(open) => { if (!open) setViewCustomer(null); }}
+        onEdit={openEdit}
+        defaultTab={viewDefaultTab}
+      />
+
+      {/* ── Create / Edit Form Drawer ─────────────────────────────────── */}
       <CustomerFormDrawer
         open={drawerOpen}
         onOpenChange={(open) => {
@@ -298,6 +469,7 @@ export function CustomersPage() {
         onFoundExisting={openView}
       />
 
+      {/* ── Delete Confirm ────────────────────────────────────────────── */}
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
@@ -318,25 +490,54 @@ export function CustomersPage() {
 
 type RowProps = {
   customer: Customer;
-  onView: (c: Customer) => void;
+  isFocused: boolean;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
+  onView: (c: Customer, tab?: string) => void;
+  onViewOrders: (c: Customer) => void;
   onEdit: (c: Customer) => void;
   onDelete: (c: Customer) => void;
 };
 
-function CustomerRow({ customer, onView, onEdit, onDelete }: RowProps) {
+function CustomerRow({
+  customer,
+  isFocused,
+  isSelected,
+  onToggleSelect,
+  onView,
+  onViewOrders,
+  onEdit,
+  onDelete,
+}: RowProps) {
   const { t } = useTranslation('customers');
   const { t: tCommon } = useTranslation('common');
 
-  const primaryPhone  = customer.phone;
+  const primaryPhone   = customer.phone;
   const secondaryPhone = customer.mobile;
-  const address = [customer.address, customer.city, customer.country].filter(Boolean).join(', ');
+  const cityCountry    = [customer.city, customer.country].filter(Boolean).join(', ');
+  const hasAddress     = Boolean(customer.address || cityCountry);
 
   return (
     <tr
-      className="group border-b transition-colors hover:bg-accent/30 cursor-pointer"
+      className={cn(
+        'group border-b transition-colors hover:bg-accent/30 cursor-pointer',
+        isSelected && 'bg-primary/5',
+        isFocused && 'outline outline-1 outline-primary/50 bg-accent/30',
+      )}
       onClick={() => onView(customer)}
     >
-      {/* Customer column */}
+      {/* Checkbox */}
+      <td className="w-10 px-3 py-3" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          className="size-4 cursor-pointer rounded border-input"
+          checked={isSelected}
+          onChange={() => onToggleSelect(customer.id)}
+          aria-label={customer.name}
+        />
+      </td>
+
+      {/* Customer */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2.5">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
@@ -349,95 +550,93 @@ function CustomerRow({ customer, onView, onEdit, onDelete }: RowProps) {
         </div>
       </td>
 
-      {/* Phones column */}
+      {/* Phones */}
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col gap-0.5">
           {primaryPhone ? (
             <div className="flex items-center gap-1.5">
-              <PhoneCell
-                phone={primaryPhone}
-                labels={{
-                  call:     t('phone.call'),
-                  whatsapp: t('phone.whatsapp'),
-                  copy:     t('phone.copy'),
-                  copied:   t('phone.copied'),
-                }}
-              />
-              <Badge variant="secondary" className="h-4 px-1 text-[9px] font-medium">
+              <span className="font-mono text-xs">{primaryPhone}</span>
+              <Badge variant="secondary" className="h-4 px-1 text-[9px]">
                 {t('phone.primary')}
               </Badge>
+              <Button size="icon" variant="ghost" className="size-5" asChild title={t('phone.call')}>
+                <a href={`tel:${primaryPhone.replace(/\D/g, '')}`}>
+                  <Phone className="size-3" />
+                </a>
+              </Button>
+              <Button size="icon" variant="ghost" className="size-5" asChild title={t('phone.whatsapp')}>
+                <a
+                  href={`https://wa.me/${primaryPhone.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle className="size-3" />
+                </a>
+              </Button>
             </div>
           ) : (
-            <span className="text-muted-foreground text-xs">—</span>
+            <span className="text-xs text-muted-foreground">—</span>
           )}
           {secondaryPhone ? (
-            <PhoneCell
-              phone={secondaryPhone}
-              labels={{
-                call:     t('phone.call'),
-                whatsapp: t('phone.whatsapp'),
-                copy:     t('phone.copy'),
-                copied:   t('phone.copied'),
-              }}
-            />
+            <span className="font-mono text-xs text-muted-foreground">{secondaryPhone}</span>
           ) : null}
         </div>
       </td>
 
-      {/* Address column */}
+      {/* Default Address */}
       <td className="px-4 py-3">
-        <span className="truncate text-xs text-muted-foreground max-w-[200px] inline-block">
-          {address || '—'}
-        </span>
+        {hasAddress ? (
+          <div className="flex flex-col gap-0.5 max-w-[180px]">
+            {customer.address ? (
+              <p className="truncate text-xs">{customer.address}</p>
+            ) : null}
+            {cityCountry ? (
+              <p className="text-xs text-muted-foreground">{cityCountry}</p>
+            ) : null}
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        )}
       </td>
 
-      {/* Status column */}
-      <td className="px-4 py-3">
-        <Badge
-          variant={customer.is_active ? 'default' : 'secondary'}
-          className={customer.is_active ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400' : ''}
+      {/* Previous Orders */}
+      <td
+        className="px-4 py-3"
+        onClick={(e) => { e.stopPropagation(); onViewOrders(customer); }}
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 gap-1.5 px-2 text-[11px] text-muted-foreground hover:text-foreground"
         >
-          {customer.is_active ? tCommon('status.active') : tCommon('status.inactive')}
-        </Badge>
+          <ShoppingBag className="size-3.5" />
+          {t('table.viewOrders')}
+        </Button>
       </td>
 
-      {/* Actions column */}
+      {/* Customer Intelligence */}
+      <td className="px-4 py-3">
+        <div className="flex flex-wrap gap-1">
+          {customer.notes ? (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 text-[10px] text-amber-700 bg-amber-100 border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800"
+            >
+              <FileText className="size-3" />
+              {t('intelligence.hasNotes')}
+            </Badge>
+          ) : null}
+          {!customer.is_active ? (
+            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+              {t('tags.inactive')}
+            </Badge>
+          ) : null}
+        </div>
+      </td>
+
+      {/* Actions */}
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          {/* Quick call */}
-          {primaryPhone ? (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-7"
-              asChild
-              title={t('phone.call')}
-            >
-              <a href={`tel:${primaryPhone.replace(/\D/g, '')}`}>
-                <Phone className="size-3.5" />
-              </a>
-            </Button>
-          ) : null}
-
-          {/* Quick WhatsApp */}
-          {primaryPhone ? (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-7"
-              asChild
-              title={t('phone.whatsapp')}
-            >
-              <a
-                href={`https://wa.me/${primaryPhone.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <MessageCircle className="size-3.5" />
-              </a>
-            </Button>
-          ) : null}
-
           <ActionMenu
             label={`Actions for ${customer.name}`}
             items={[

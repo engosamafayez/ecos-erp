@@ -17,7 +17,7 @@
     "vip": "VIP"
   },
   "quickCard": {
-    "openCustomer": "Open Customer",
+    "openCustomer": "Open Profile",
     "openActiveOrder": "Open Active Order",
     "createOrder": "New Order",
     "call": "Call",
@@ -32,7 +32,13 @@
     "totalOrders": "Total Orders",
     "customerMemory": "Customer Memory",
     "noMemory": "No pinned notes yet.",
-    "viewAllNotes": "View All Notes"
+    "viewAllNotes": "View All Notes",
+    "returning": "Returning",
+    "vip": "VIP",
+    "editCustomer": "Edit Customer",
+    "activeOrder": "Active Order",
+    "goToOrders": "Go to Orders",
+    "loadingOrders": "Loading orders…"
   },
   "noResults": {
     "title": "Customer not found",
@@ -50,8 +56,12 @@
     "customer": "Customer",
     "phones": "Phones",
     "address": "Address",
+    "defaultAddress": "Default Address",
     "lastOrder": "Last Order",
+    "previousOrders": "Previous Orders",
+    "intelligence": "Intel",
     "status": "Status",
+    "createdAt": "Created",
     "actions": "Actions",
     "code": "Code",
     "name": "Name",
@@ -61,10 +71,15 @@
     "country": "Country",
     "city": "City"
   },
+  "intelligence": {
+    "hasNotes": "Notes",
+    "returning": "Returning"
+  },
   "table": {
     "empty": "No customers found.",
     "error": "Failed to load customers. Please try again.",
-    "selectAll": "Select all"
+    "selectAll": "Select all",
+    "viewOrders": "View Orders"
   },
   "phone": {
     "call": "Call",
@@ -103,6 +118,7 @@
     "submitEdit": "Save changes",
     "saving": "Saving…",
     "errorTitle": "Unable to save",
+    "savedMessage": "Changes saved successfully.",
     "phoneStep": {
       "title": "Enter Primary Phone",
       "description": "We'll check if this customer already exists.",
@@ -125,7 +141,70 @@
       "activity": "Activity",
       "memory": "Memory",
       "audit": "Audit"
+    },
+    "summary": {
+      "code": "Customer Code",
+      "contactPerson": "Contact Person",
+      "email": "Email",
+      "status": "Status",
+      "memberSince": "Member since",
+      "lastUpdated": "Last updated",
+      "totalOrders": "Total Orders",
+      "lastOrder": "Last Order",
+      "totalSpend": "Total Spend",
+      "noOrders": "No orders yet."
+    },
+    "phonesTab": {
+      "title": "Phone Numbers",
+      "noPhone": "No phone numbers on file.",
+      "primary": "Primary",
+      "secondary": "Secondary"
+    },
+    "addresses": {
+      "title": "Address Book",
+      "default": "Default Address",
+      "noAddress": "No address on file.",
+      "copyAddress": "Copy Address",
+      "openMap": "Open Map",
+      "city": "City",
+      "country": "Country"
+    },
+    "memory": {
+      "title": "Customer Memory",
+      "empty": "No notes saved yet.",
+      "edit": "Edit Notes",
+      "note": "Pinned Note"
+    },
+    "activity": {
+      "title": "Activity",
+      "empty": "Activity timeline is not yet available.",
+      "comingSoon": "Coming soon"
+    },
+    "orders": {
+      "empty": "No orders found for this customer.",
+      "more": "+{{count}} more"
     }
+  },
+  "detail": {
+    "tabs": {
+      "overview": "Overview",
+      "contact": "Contact",
+      "notes": "Notes",
+      "orders": "Orders"
+    },
+    "contactPerson": "Contact person",
+    "email": "Email",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "phones": "Phones",
+    "noPhone": "No phone numbers on file.",
+    "address": "Address",
+    "copyAddress": "Copy address",
+    "openMap": "Open map",
+    "noAddress": "No address on file.",
+    "noNotes": "No notes yet.",
+    "noOrders": "No orders found for this customer.",
+    "moreOrders": "+{{count}} more orders"
   },
   "delete": {
     "title": "Delete customer",

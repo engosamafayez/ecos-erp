@@ -26,7 +26,7 @@ type Props = {
   customer?: Customer | null;
   /** Phone pre-filled when opened from Quick Search / no-results CTA (DD-060). */
   initialPhone?: string;
-  /** Called when a duplicate phone is found — open that customer instead. */
+  /** Called when a duplicate phone is found or after a new customer is created — open that customer. */
   onFoundExisting?: (customer: Customer) => void;
 };
 
@@ -42,6 +42,7 @@ function extractMessage(error: unknown): string {
  * DD-060 — Phone Before Customer.
  * Create mode: 2-step flow (phone validation → form with phone prefilled).
  * Edit mode: skips step 1, opens form directly.
+ * After save: stays open in edit mode (shows success message). Create mode opens the new customer.
  */
 export function CustomerFormDrawer({
   open,
@@ -60,14 +61,17 @@ export function CustomerFormDrawer({
   const [isChecking, setIsChecking] = useState(false);
   const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null);
   const [serverError, setServerError]     = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess]     = useState(false);
 
   const phoneRef = useRef<HTMLInputElement>(null);
+  const stepRef  = useRef(step);
+  useEffect(() => { stepRef.current = step; }, [step]);
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
 
-  // ── Duplicate check query (only runs when checking) ────────────────────────
+  // ── Duplicate check query ──────────────────────────────────────────────────
   const checkQuery = useCustomersQuery(
     { search: phoneInput, per_page: 5 },
   );
@@ -77,13 +81,13 @@ export function CustomerFormDrawer({
     if (open) {
       setServerError(null);
       setFoundCustomer(null);
+      setSaveSuccess(false);
       if (isEdit) {
         setStep('form');
         form.reset(toFormValues(customer));
       } else {
         setStep('phone');
         setPhoneInput(initialPhone);
-        // If initialPhone provided, skip to form directly (DD-060: "never type twice")
         if (initialPhone) {
           setStep('form');
           form.reset({ ...toFormValues(null), phone: initialPhone });
@@ -100,6 +104,22 @@ export function CustomerFormDrawer({
     }
   }, [open, step]);
 
+  // ── Ctrl+S — submit form when drawer is open ───────────────────────────────
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 's' && (e.ctrlKey || e.metaKey) && stepRef.current === 'form') {
+        e.preventDefault();
+        document.getElementById(FORM_ID)?.dispatchEvent(
+          new Event('submit', { bubbles: true, cancelable: true }),
+        );
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   // ── Form ───────────────────────────────────────────────────────────────────
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
@@ -112,6 +132,7 @@ export function CustomerFormDrawer({
     if (!next) {
       setServerError(null);
       setFoundCustomer(null);
+      setSaveSuccess(false);
       setPhoneInput('');
       setStep(isEdit ? 'form' : 'phone');
     }
@@ -128,7 +149,6 @@ export function CustomerFormDrawer({
       const result = await checkQuery.refetch();
       const items = result.data?.items ?? [];
 
-      // Check if any customer has this exact phone (primary or mobile)
       const match = items.find(
         (c) => c.phone === trimmed || c.mobile === trimmed,
       );
@@ -136,14 +156,12 @@ export function CustomerFormDrawer({
       if (match) {
         setFoundCustomer(match);
       } else {
-        // No duplicate — proceed to form with phone prefilled
         form.reset({ ...toFormValues(null), phone: trimmed });
         setStep('form');
         setFoundCustomer(null);
       }
     } catch {
-      // If lookup fails, proceed to form anyway
-      form.reset({ ...toFormValues(null), phone: trimmed });
+      form.reset({ ...toFormValues(null), phone: phoneInput.trim() });
       setStep('form');
     } finally {
       setIsChecking(false);
@@ -153,16 +171,26 @@ export function CustomerFormDrawer({
   // ── Step 2 — Submit form ───────────────────────────────────────────────────
   const handleSubmit = (values: CustomerFormValues) => {
     setServerError(null);
+    setSaveSuccess(false);
     const payload = toPayload(values);
-    const handlers = {
-      onSuccess: () => handleOpenChange(false),
-      onError: (error: unknown) => setServerError(extractMessage(error)),
-    };
 
     if (isEdit && customer) {
-      updateCustomer.mutate({ id: customer.id, payload }, handlers);
+      updateCustomer.mutate({ id: customer.id, payload }, {
+        onSuccess: () => {
+          // Remain inside drawer — show success alert, user closes manually.
+          setSaveSuccess(true);
+        },
+        onError: (error) => setServerError(extractMessage(error)),
+      });
     } else {
-      createCustomer.mutate(payload, handlers);
+      createCustomer.mutate(payload, {
+        onSuccess: (newCustomer) => {
+          // Open the new customer's profile and close the form drawer.
+          if (onFoundExisting) onFoundExisting(newCustomer);
+          handleOpenChange(false);
+        },
+        onError: (error) => setServerError(extractMessage(error)),
+      });
     }
   };
 
@@ -194,7 +222,7 @@ export function CustomerFormDrawer({
           type="button"
           variant="ghost"
           className="mr-auto text-xs"
-          onClick={() => { setStep('phone'); setFoundCustomer(null); }}
+          onClick={() => { setStep('phone'); setFoundCustomer(null); setSaveSuccess(false); }}
         >
           ← {t('drawer.phoneStep.label')}
         </Button>
@@ -246,7 +274,6 @@ export function CustomerFormDrawer({
             </p>
           </div>
 
-          {/* Duplicate found */}
           {foundCustomer ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
               <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
@@ -281,6 +308,14 @@ export function CustomerFormDrawer({
       {/* ── Step 2: Customer form ───────────────────────────────────────── */}
       {step === 'form' ? (
         <>
+          {saveSuccess ? (
+            <Alert className="mb-4 border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30">
+              <AlertTitle className="text-emerald-800 dark:text-emerald-300">
+                {t('drawer.savedMessage')}
+              </AlertTitle>
+            </Alert>
+          ) : null}
+
           {serverError ? (
             <Alert variant="destructive" className="mb-4">
               <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
