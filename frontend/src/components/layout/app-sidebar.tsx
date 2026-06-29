@@ -1,57 +1,89 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 
-import { BrandLogo } from '@/components/common/brand-logo';
-import { CompanySwitcher } from '@/components/layout/company-switcher';
-import { NAV_GROUPS } from '@/config/navigation';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import type { AppModule } from '@/config/module-navigation';
 
 type AppSidebarProps = {
+  activeModule: AppModule | undefined;
+  collapsed?: boolean;
+  onCollapse?: () => void;
   onNavigate?: () => void;
+  className?: string;
 };
 
-export function AppSidebar({ onNavigate }: AppSidebarProps) {
-  const { t } = useTranslation('common');
+export function AppSidebar({
+  activeModule,
+  collapsed = false,
+  onCollapse,
+  onNavigate,
+  className,
+}: AppSidebarProps) {
+  if (!activeModule || activeModule.items.length === 0) return null;
+
+  if (collapsed) {
+    return (
+      <div className={cn('flex flex-col items-center bg-sidebar py-2 w-9', className)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          onClick={onCollapse}
+          aria-label="Expand sidebar"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className={cn('flex w-60 flex-col bg-sidebar', className)}>
       {/* Sidebar header */}
-      <div className="flex flex-col gap-3 border-b px-4 py-4">
-        <BrandLogo />
-        <CompanySwitcher />
+      <div className="flex h-11 shrink-0 items-center justify-between border-b px-3">
+        <span className="truncate text-sm font-semibold text-foreground">
+          {activeModule.label}
+        </span>
+        {onCollapse && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0"
+            onClick={onCollapse}
+            aria-label="Collapse sidebar"
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+        )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex flex-col gap-4 overflow-y-auto p-3 flex-1">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="flex flex-col gap-0.5">
-            <p className="text-muted-foreground px-2.5 pb-1 pt-1 text-[11px] font-semibold tracking-widest uppercase">
-              {t(`nav.groups.${group.label.toLowerCase()}`)}
-            </p>
-            {group.items.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.key}
-                  to={item.path}
-                  end
-                  onClick={onNavigate}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-primary text-primary-foreground shadow-xs'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                    )
-                  }
-                >
-                  <Icon className="size-4 shrink-0" />
-                  {item.label}
-                </NavLink>
-              );
-            })}
-          </div>
-        ))}
+      {/* Nav items */}
+      <nav
+        aria-label={`${activeModule.label} navigation`}
+        className="flex flex-col gap-0.5 overflow-y-auto p-2"
+      >
+        {activeModule.items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.key}
+              to={item.path}
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                )
+              }
+            >
+              <Icon className="size-4 shrink-0" aria-hidden />
+              <span className="truncate">{item.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
     </div>
   );

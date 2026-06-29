@@ -1,0 +1,70 @@
+import { X } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+
+import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/common/brand-logo';
+import { Button } from '@/components/ui/button';
+import { APP_MODULES } from '@/config/module-navigation';
+
+type MobileMenuProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+export function MobileMenu({ open, onClose }: MobileMenuProps) {
+  if (!open) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Navigation menu"
+      className="fixed inset-0 z-50 flex flex-col bg-background md:hidden"
+    >
+      {/* Header */}
+      <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
+        <BrandLogo />
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close menu">
+          <X className="size-5" />
+        </Button>
+      </div>
+
+      {/* Module grid */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex flex-col gap-1">
+          {APP_MODULES.map((mod) => {
+            const Icon = mod.icon;
+            return (
+              <div key={mod.id}>
+                <NavLink
+                  to={mod.defaultPath}
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 rounded-xl border p-3.5 transition-colors',
+                      isActive
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent/40',
+                    )
+                  }
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Icon className="size-5 text-primary" aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">{mod.label}</p>
+                    {mod.items.length > 0 && (
+                      <p className="truncate text-xs text-muted-foreground">
+                        {mod.items.map((i) => i.label).join(' · ')}
+                      </p>
+                    )}
+                  </div>
+                </NavLink>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

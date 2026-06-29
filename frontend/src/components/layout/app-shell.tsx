@@ -1,47 +1,74 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import { AppBreadcrumbs } from '@/components/layout/app-breadcrumbs';
 import { AppFooter } from '@/components/layout/app-footer';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AppTopbar } from '@/components/layout/app-topbar';
+import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { MobileMenu } from '@/components/layout/mobile-menu';
+import { ModuleRail } from '@/components/layout/module-rail';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { useActiveModule } from '@/hooks/use-active-module';
 
 export function AppShell() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const activeModule = useActiveModule();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [tabletSidebarOpen, setTabletSidebarOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const hasSidebarItems = (activeModule?.items.length ?? 0) > 0;
 
   return (
     <div className="flex min-h-svh flex-col">
-      <AppTopbar onOpenSidebar={() => setMobileOpen(true)} />
+      <AppTopbar onOpenSidebar={() => setTabletSidebarOpen(true)} />
 
-      <div className="flex flex-1">
-        {/* Desktop sidebar */}
-        <aside className="bg-sidebar hidden w-64 shrink-0 border-r md:flex md:flex-col">
-          <div className="sticky top-14 flex h-[calc(100svh-3.5rem)] flex-col">
-            <AppSidebar />
-          </div>
-        </aside>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Module Rail — tablet+ (md+) */}
+        <ModuleRail
+          activeModule={activeModule}
+          className="hidden md:flex"
+        />
 
-        {/* Content column */}
+        {/* Context Sidebar — laptop+ (lg+), persistent + collapsible */}
+        {hasSidebarItems && (
+          <aside className="hidden lg:block border-r">
+            <AppSidebar
+              activeModule={activeModule}
+              collapsed={sidebarCollapsed}
+              onCollapse={() => setSidebarCollapsed((v) => !v)}
+            />
+          </aside>
+        )}
+
+        {/* Main content */}
         <div className="flex min-w-0 flex-1 flex-col bg-background">
-          <AppBreadcrumbs />
-          <main className="flex-1 p-4 sm:p-6">
+          <main className="flex-1 overflow-y-auto p-4 pb-[calc(1rem+3.5rem)] sm:p-6 sm:pb-[calc(1.5rem+3.5rem)] md:pb-6">
             <Outlet />
           </main>
           <AppFooter />
         </div>
       </div>
 
-      {/* Mobile drawer — AppSidebar owns its own header (logo + company switcher) */}
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 p-0 bg-sidebar flex flex-col">
-          {/* Visually hidden title for accessibility */}
+      {/* Tablet sidebar overlay — md to lg */}
+      <Sheet open={tabletSidebarOpen} onOpenChange={setTabletSidebarOpen}>
+        <SheetContent side="left" className="w-64 p-0 bg-sidebar flex flex-col lg:hidden">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <div className="flex-1 overflow-y-auto">
-            <AppSidebar onNavigate={() => setMobileOpen(false)} />
-          </div>
+          <AppSidebar
+            activeModule={activeModule}
+            onNavigate={() => setTabletSidebarOpen(false)}
+            className="w-full"
+          />
         </SheetContent>
       </Sheet>
+
+      {/* Mobile fullscreen menu — "More" button */}
+      <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+
+      {/* Mobile bottom nav — hidden md+ */}
+      <MobileBottomNav
+        onOpenMenu={() => setMobileMenuOpen(true)}
+        onOpenSearch={() => {}}
+      />
     </div>
   );
 }
