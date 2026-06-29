@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
+import { CommandProvider } from '@/components/command-center';
 import { AppFooter } from '@/components/layout/app-footer';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AppTopbar } from '@/components/layout/app-topbar';
@@ -21,6 +22,7 @@ export function AppShell() {
 
   return (
     <HeaderProvider>
+      <CommandProvider>
       <div className="flex min-h-svh flex-col">
         <AppTopbar onOpenSidebar={() => setTabletSidebarOpen(true)} />
 
@@ -66,6 +68,7 @@ export function AppShell() {
         {/* Mobile bottom nav */}
         <MobileBottomNav onOpenMenu={() => setMobileMenuOpen(true)} />
       </div>
+      </CommandProvider>
     </HeaderProvider>
   );
 }

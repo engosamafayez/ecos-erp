@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { Search } from 'lucide-react';
 
+import { GlobalCommandPalette } from '@/components/command-center';
 import { Button } from '@/components/ui/button';
 
 import { useHeaderContext } from '../header-context';
-import { SearchCommandDialog } from './search-command-dialog';
 
 export function GlobalSearch() {
   const { searchOpen, openSearch, closeSearch } = useHeaderContext();
@@ -62,8 +62,8 @@ export function GlobalSearch() {
         <Search className="size-5" aria-hidden />
       </Button>
 
-      {/* ── Dialog (always mounted, controlled via context) ── */}
-      <SearchCommandDialog open={searchOpen} onClose={closeSearch} />
+      {/* ── Command palette (always mounted, controlled via context) ── */}
+      <GlobalCommandPalette open={searchOpen} onClose={closeSearch} />
     </>
   );
 }
