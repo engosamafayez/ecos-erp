@@ -27,7 +27,7 @@ import { Tabs } from '@/components/ds/tabs';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { useOrdersQuery, useCustomerOrderStats } from '@/features/orders/hooks/use-orders';
 import type { Customer } from '@/features/customers/types/customer';
-import { cn } from '@/lib/utils';
+;
 
 type Props = {
   customer: Customer | null;
@@ -88,7 +88,6 @@ function PhoneRow({
 
 function SummaryTab({ customer }: { customer: Customer }) {
   const { t } = useTranslation('customers');
-  const { t: tCommon } = useTranslation('common');
   const { data: stats, isLoading } = useCustomerOrderStats(customer.id);
 
   return (

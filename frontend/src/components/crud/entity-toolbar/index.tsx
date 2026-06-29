@@ -11,7 +11,7 @@ type EntityToolbarProps = {
   onSearchChange?: (value: string) => void;
   initialSearch?: string;
   /** Forwarded to the search input — lets pages focus it via Ctrl+K or "/". */
-  searchRef?: RefObject<HTMLInputElement>;
+  searchRef?: RefObject<HTMLInputElement | null>;
   onRefresh?: () => void;
   isRefreshing?: boolean;
   onExport?: () => void;
