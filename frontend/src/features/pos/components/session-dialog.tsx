@@ -1,7 +1,5 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Monitor } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Monitor, User } from 'lucide-react';
 
 import {
   Dialog,
@@ -11,20 +9,22 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useOpenSession, useCloseSession } from '@/features/pos/hooks/use-pos-queries';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useOpenSession, useCloseSession, useTerminals } from '@/features/pos/hooks/use-pos-queries';
 import { usePosStore } from '@/features/pos/store/pos-store';
+import { useAuthStore } from '@/features/auth/store/auth-store';
 
-const openSchema = z.object({
-  terminal_id:        z.string().min(1, 'Terminal ID is required'),
-  cashier_id:         z.string().min(1, 'Cashier ID is required'),
-  device_fingerprint: z.string().min(1, 'Device fingerprint is required'),
-  ip_address:         z.string().min(1, 'IP address is required'),
-  device_type:        z.string().min(1, 'Device type is required'),
-});
-
-type OpenForm = z.infer<typeof openSchema>;
+function detectDeviceType(): string {
+  if (/Mobi|Android/i.test(navigator.userAgent)) return 'mobile';
+  return 'browser';
+}
 
 type SessionDialogProps = {
   open: boolean;
@@ -33,23 +33,33 @@ type SessionDialogProps = {
 };
 
 export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) {
-  const { terminalId, cashierId, sessionId } = usePosStore();
+  const { sessionId } = usePosStore();
+  const authUser = useAuthStore((s) => s.user);
   const openSession = useOpenSession();
   const closeSession = useCloseSession();
+  const { data: terminals = [], isLoading: terminalsLoading } = useTerminals();
 
-  const form = useForm<OpenForm>({
-    resolver: zodResolver(openSchema),
-    defaultValues: {
+  const [terminalId, setTerminalId] = useState('');
+
+  // Auto-select when exactly one terminal is available
+  useEffect(() => {
+    if (terminals.length === 1 && terminals[0]) {
+      setTerminalId(terminals[0].id);
+    }
+  }, [terminals]);
+
+  // Reset selection when dialog closes
+  useEffect(() => {
+    if (!open) setTerminalId('');
+  }, [open]);
+
+  async function handleOpen() {
+    if (!terminalId) return;
+    await openSession.mutateAsync({
       terminal_id:        terminalId,
-      cashier_id:         cashierId,
       device_fingerprint: navigator.userAgent.slice(0, 64),
-      ip_address:         '0.0.0.0',
-      device_type:        'desktop',
-    },
-  });
-
-  async function onSubmit(data: OpenForm) {
-    await openSession.mutateAsync(data);
+      device_type:        detectDeviceType(),
+    });
     onOpenChange(false);
   }
 
@@ -58,6 +68,8 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
     await closeSession.mutateAsync(sessionId);
     onOpenChange(false);
   }
+
+  // ── Close mode ────────────────────────────────────────────────────────────
 
   if (mode === 'close') {
     return (
@@ -76,7 +88,7 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
               disabled={closeSession.isPending}
               onClick={handleClose}
             >
-              {closeSession.isPending ? 'Closing...' : 'Close Session'}
+              {closeSession.isPending ? 'Closing…' : 'Close Session'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -84,7 +96,12 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
     );
   }
 
-  const errors = form.formState.errors;
+  // ── Open mode ─────────────────────────────────────────────────────────────
+
+  const noTerminals = !terminalsLoading && terminals.length === 0;
+  const singleTerminal = terminals.length === 1 ? terminals[0] : null;
+  const canOpen = !!terminalId && !openSession.isPending && !noTerminals;
+  const deviceLabel = detectDeviceType() === 'mobile' ? 'Mobile' : 'Desktop';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -96,37 +113,79 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
           </div>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+        <div className="space-y-4">
+          {/* Cashier — read-only, resolved from authenticated user */}
           <div className="space-y-1.5">
-            <Label htmlFor="terminal_id">Terminal ID</Label>
-            <Input id="terminal_id" {...form.register('terminal_id')} />
-            {errors.terminal_id && (
-              <p className="text-xs text-destructive">{errors.terminal_id.message}</p>
+            <Label>Cashier</Label>
+            <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm">
+              <User className="size-4 shrink-0 text-muted-foreground" />
+              <span className="font-medium">{authUser?.name ?? '—'}</span>
+              <span className="ml-auto shrink-0 text-xs text-muted-foreground">Logged in</span>
+            </div>
+          </div>
+
+          {/* Terminal — dropdown or single display */}
+          <div className="space-y-1.5">
+            <Label htmlFor="terminal-select">Terminal</Label>
+
+            {terminalsLoading && (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                Loading terminals…
+              </div>
+            )}
+
+            {noTerminals && (
+              <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                No POS terminal is assigned to your account.
+              </div>
+            )}
+
+            {singleTerminal && (
+              <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                <span className="font-medium">{singleTerminal.name}</span>
+                <span className="ml-2 text-xs text-muted-foreground">{singleTerminal.code}</span>
+              </div>
+            )}
+
+            {!terminalsLoading && terminals.length > 1 && (
+              <Select value={terminalId} onValueChange={setTerminalId}>
+                <SelectTrigger id="terminal-select">
+                  <SelectValue placeholder="Select a terminal…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {terminals.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      <span>{t.name}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">{t.code}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
+
+          {/* Device — auto-detected, read-only */}
           <div className="space-y-1.5">
-            <Label htmlFor="cashier_id">Cashier ID</Label>
-            <Input id="cashier_id" {...form.register('cashier_id')} />
-            {errors.cashier_id && (
-              <p className="text-xs text-destructive">{errors.cashier_id.message}</p>
-            )}
+            <Label>Device</Label>
+            <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+              <span className="font-medium">{deviceLabel}</span>
+              <span className="ml-2 text-xs text-muted-foreground">Auto-detected</span>
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="device_type">Device Type</Label>
-            <Input id="device_type" {...form.register('device_type')} />
-            {errors.device_type && (
-              <p className="text-xs text-destructive">{errors.device_type.message}</p>
-            )}
-          </div>
-          <DialogFooter className="pt-2">
-            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={openSession.isPending}>
-              {openSession.isPending ? 'Opening...' : 'Open Session'}
-            </Button>
-          </DialogFooter>
-        </form>
+        </div>
+
+        <DialogFooter className="pt-2">
+          <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            disabled={!canOpen}
+            onClick={handleOpen}
+          >
+            {openSession.isPending ? 'Opening…' : 'Open Session'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

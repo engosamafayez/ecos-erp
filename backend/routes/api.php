@@ -45,6 +45,7 @@ use Modules\POS\Presentation\Http\Controllers\SaleController as PosSaleControlle
 use Modules\POS\Presentation\Http\Controllers\ReturnController as PosReturnController;
 use Modules\POS\Presentation\Http\Controllers\ExchangeController as PosExchangeController;
 use Modules\POS\Presentation\Http\Controllers\ReceiptController as PosReceiptController;
+use Modules\POS\Presentation\Http\Controllers\TerminalController as PosTerminalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -231,6 +232,9 @@ Route::middleware('auth:sanctum')->prefix('me')->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->prefix('pos')->group(function (): void {
+    // Terminals
+    Route::get('terminals', [PosTerminalController::class, 'index']);
+
     // Sessions
     Route::post('sessions',           [PosSessionController::class, 'store']);
     Route::get('sessions/{session}',  [PosSessionController::class, 'show']);

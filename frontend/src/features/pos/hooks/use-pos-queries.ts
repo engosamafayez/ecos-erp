@@ -7,6 +7,7 @@ import {
 import { usePosStore } from '@/features/pos/store/pos-store';
 import { toast } from '@/components/ds/use-toast';
 import {
+  terminalService,
   sessionService,
   shiftService,
   cartService,
@@ -18,6 +19,7 @@ import {
   posCategoriesService,
   posCustomerService,
 } from '@/features/pos/services/pos-service';
+import { useAuthStore } from '@/features/auth/store/auth-store';
 import type {
   CartLine,
   OpenSessionPayload,
@@ -35,6 +37,7 @@ import type {
 // ── Query keys ────────────────────────────────────────────────────────────────
 
 export const posKeys = {
+  terminals:  () => ['pos', 'terminals'] as const,
   session:    (id: string) => ['pos', 'session', id] as const,
   shift:      (id: string) => ['pos', 'shift', id] as const,
   cart:       (id: string) => ['pos', 'cart', id] as const,
@@ -44,6 +47,16 @@ export const posKeys = {
   categories: () => ['pos', 'categories'] as const,
   customers:  (search: string) => ['pos', 'customers', search] as const,
 };
+
+// ── Terminals ─────────────────────────────────────────────────────────────────
+
+export function useTerminals() {
+  return useQuery({
+    queryKey: posKeys.terminals(),
+    queryFn:  () => terminalService.list(),
+    staleTime: 5 * 60_000,
+  });
+}
 
 // ── Session ───────────────────────────────────────────────────────────────────
 
@@ -58,12 +71,14 @@ export function useSession() {
 }
 
 export function useOpenSession() {
-  const { setSession, setCashier } = usePosStore();
+  const { setSession, setCashier, setTerminal } = usePosStore();
+  const authUser = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: (payload: OpenSessionPayload) => sessionService.open(payload),
     onSuccess:  (session) => {
       setSession(session.id);
-      setCashier(session.cashier_id, '');
+      setTerminal(session.terminal_id);
+      setCashier(session.cashier_id, authUser?.name ?? '');
       toast.success('Session opened');
     },
     onError: () => toast.error('Failed to open session'),

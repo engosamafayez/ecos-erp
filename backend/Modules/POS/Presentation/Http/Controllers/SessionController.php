@@ -28,13 +28,25 @@ final class SessionController extends Controller
 
     public function store(OpenSessionRequest $request): JsonResponse
     {
-        $data    = $request->validated();
+        $data = $request->validated();
+
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        // Derive a stable deterministic UUID from the integer user ID so the
+        // pos_sessions.cashier_id (uuid column) always resolves to the same
+        // value for a given ECOS user without requiring a schema change.
+        $cashierId = \Ramsey\Uuid\Uuid::uuid5(
+            \Ramsey\Uuid\Uuid::NAMESPACE_OID,
+            'ecos:user:' . $user->id,
+        )->toString();
+
         $command = new OpenSessionCommand(
             terminalId:        $data['terminal_id'],
-            cashierId:         $data['cashier_id'],
-            deviceFingerprint: $data['device_fingerprint'],
-            ipAddress:         $data['ip_address'],
-            deviceType:        $data['device_type'],
+            cashierId:         $cashierId,
+            deviceFingerprint: $data['device_fingerprint'] ?? substr((string) $request->userAgent(), 0, 64),
+            ipAddress:         $request->ip() ?? '0.0.0.0',
+            deviceType:        $data['device_type'] ?? 'browser',
         );
 
         $result = $this->openSessionService->execute($command);

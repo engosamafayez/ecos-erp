@@ -18,10 +18,8 @@ final class OpenSessionRequest extends FormRequest
     {
         return [
             'terminal_id'        => ['required', 'string', 'uuid'],
-            'cashier_id'         => ['required', 'string', 'uuid'],
-            'device_fingerprint' => ['required', 'string', 'max:255'],
-            'device_type'        => ['required', 'string', 'max:100'],
-            'ip_address'         => ['required', 'ip'],
+            'device_fingerprint' => ['sometimes', 'string', 'max:255'],
+            'device_type'        => ['sometimes', 'string', 'max:100'],
         ];
     }
 }

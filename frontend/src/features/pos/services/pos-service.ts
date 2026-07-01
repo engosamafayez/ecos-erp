@@ -12,7 +12,17 @@ import type {
   ProductsResult,
   PosCategory,
   PosCustomer,
+  PosTerminal,
 } from '@/features/pos/types';
+
+// ── Terminals ─────────────────────────────────────────────────────────────────
+
+export const terminalService = {
+  async list(): Promise<PosTerminal[]> {
+    const { data } = await api.get<ApiResponse<PosTerminal[]>>('/pos/terminals');
+    return data.data;
+  },
+};
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
 

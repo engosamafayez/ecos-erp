@@ -22,11 +22,15 @@ export type Session = {
   suspended_at: string | null;
 };
 
+export type PosTerminal = {
+  id: string;
+  code: string;
+  name: string;
+};
+
 export type OpenSessionPayload = {
   terminal_id: string;
-  cashier_id: string;
   device_fingerprint: string;
-  ip_address: string;
   device_type: string;
 };
 

@@ -72,7 +72,7 @@ export const usePosStore = create<PosState>()(
       sessionId:          null,
       shiftId:            null,
       cartId:             null,
-      terminalId:         'TERM-001',
+      terminalId:         '',
       cashierId:          '',
       cashierName:        '',
       currency:           'EGP',
