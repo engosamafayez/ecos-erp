@@ -29,4 +29,9 @@ final class CustomerServiceProvider extends ServiceProvider
             validator:           new CustomerValidator(),
         ));
     }
+
+    public function boot(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+    }
 }

@@ -7,8 +7,11 @@ namespace Modules\POS\Application\Services;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Modules\MasterData\Warehouses\Domain\Contracts\WarehouseRepositoryInterface;
 use Modules\POS\Application\Commands\ProcessSaleCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
+use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Exceptions\CartNotFoundException;
 use Modules\POS\Application\Exceptions\CartNotReadyException;
 use Modules\POS\Application\Results\ProcessSaleResult;
@@ -29,16 +32,19 @@ use Modules\POS\Sale\Domain\ValueObjects\PaymentSummaryLine;
 use Modules\POS\Sale\Domain\ValueObjects\SaleLine;
 use Modules\POS\Shared\Domain\Enums\PaymentMethodType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
+use Modules\POS\Terminal\Domain\Contracts\TerminalRepositoryInterface;
 
 final class ProcessSaleService
 {
     public function __construct(
-        private readonly CartRepositoryInterface          $cartRepo,
-        private readonly PaymentRepositoryInterface       $paymentRepo,
-        private readonly SaleRepositoryInterface          $saleRepo,
-        private readonly ReceiptRepositoryInterface       $receiptRepo,
+        private readonly CartRepositoryInterface           $cartRepo,
+        private readonly PaymentRepositoryInterface        $paymentRepo,
+        private readonly SaleRepositoryInterface           $saleRepo,
+        private readonly ReceiptRepositoryInterface        $receiptRepo,
         private readonly ReceiptNumberingStrategyInterface $receiptNumbering,
-        private readonly DomainEventPublisherInterface    $publisher,
+        private readonly DomainEventPublisherInterface     $publisher,
+        private readonly TerminalRepositoryInterface       $terminals,
+        private readonly WarehouseRepositoryInterface      $warehouses,
     ) {}
 
     public function execute(ProcessSaleCommand $command): ProcessSaleResult
@@ -179,12 +185,81 @@ final class ProcessSaleService
             $this->receiptRepo->save($receipt);
         });
 
-        $this->publisher->publishAll(array_merge(
+        // Resolve the terminal → warehouse → company AFTER the transaction.
+        // If either lookup fails, the sale is still committed — we log critically
+        // and skip SaleFinalized so partial writes don't propagate bad context.
+        $domainEvents = array_merge(
             $payment->pullDomainEvents(),
             $sale->pullDomainEvents(),
             $cart->pullDomainEvents(),
             $receipt->pullDomainEvents(),
-        ));
+        );
+
+        $terminal = $this->terminals->findById($command->terminalId);
+
+        if ($terminal === null) {
+            Log::channel('daily')->critical('[POS] Terminal not found — SaleFinalized will NOT be published', [
+                'sale_id'     => (string) $sale->id,
+                'terminal_id' => $command->terminalId,
+            ]);
+
+            $this->publisher->publishAll($domainEvents);
+
+            return new ProcessSaleResult(
+                saleId:        (string) $sale->id,
+                receiptId:     (string) $receipt->id,
+                receiptNumber: $receiptNumber,
+                totalAmount:   $sale->getTotal()->amount,
+                amountPaid:    $sale->getAmountPaid()->amount,
+                changeGiven:   $sale->getChangeGiven()->amount,
+                currency:      $sale->currency,
+            );
+        }
+
+        $warehouse = $this->warehouses->findById((string) $terminal->warehouse_id);
+
+        if ($warehouse === null) {
+            Log::channel('daily')->critical('[POS] Warehouse not found — SaleFinalized will NOT be published', [
+                'sale_id'      => (string) $sale->id,
+                'terminal_id'  => $command->terminalId,
+                'warehouse_id' => $terminal->warehouse_id,
+            ]);
+
+            $this->publisher->publishAll($domainEvents);
+
+            return new ProcessSaleResult(
+                saleId:        (string) $sale->id,
+                receiptId:     (string) $receipt->id,
+                receiptNumber: $receiptNumber,
+                totalAmount:   $sale->getTotal()->amount,
+                amountPaid:    $sale->getAmountPaid()->amount,
+                changeGiven:   $sale->getChangeGiven()->amount,
+                currency:      $sale->currency,
+            );
+        }
+
+        $saleFinalized = SaleFinalized::fromSaleContext(
+            saleId:           (string) $sale->id,
+            receiptNumber:    $receiptNumber,
+            companyId:        (string) $warehouse->company_id,
+            channelId:        null,
+            warehouseId:      (string) $terminal->warehouse_id,
+            sessionId:        $command->sessionId,
+            shiftId:          $command->shiftId,
+            terminalId:       $command->terminalId,
+            cashierId:        $command->cashierId,
+            customerId:       $command->customerId,
+            saleLines:        $sale->getLines(),
+            paymentSummaries: $sale->getPaymentSummaries(),
+            subtotal:         $sale->getSubtotal()->amount,
+            discountTotal:    $sale->getDiscountTotal()->amount,
+            grandTotal:       $sale->getTotal()->amount,
+            amountPaid:       $sale->getAmountPaid()->amount,
+            changeGiven:      $sale->getChangeGiven()->amount,
+            currency:         $sale->currency,
+        );
+
+        $this->publisher->publishAll(array_merge($domainEvents, [$saleFinalized]));
 
         return new ProcessSaleResult(
             saleId:        (string) $sale->id,

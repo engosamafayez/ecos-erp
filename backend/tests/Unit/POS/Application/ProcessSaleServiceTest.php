@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Application;
 
-use DateTimeImmutable;
-use DateTimeZone;
 use Illuminate\Support\Facades\DB;
+use Modules\MasterData\Warehouses\Domain\Contracts\WarehouseRepositoryInterface;
+use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\POS\Application\Commands\ProcessSaleCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
 use Modules\POS\Application\Exceptions\CartNotFoundException;
@@ -21,6 +21,8 @@ use Modules\POS\Receipt\Domain\Contracts\ReceiptRepositoryInterface;
 use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Quantity;
+use Modules\POS\Terminal\Domain\Contracts\TerminalRepositoryInterface;
+use Modules\POS\Terminal\Domain\Models\Terminal;
 use Tests\TestCase;
 
 final class ProcessSaleServiceTest extends TestCase
@@ -31,6 +33,8 @@ final class ProcessSaleServiceTest extends TestCase
     private ReceiptRepositoryInterface $receiptRepo;
     private ReceiptNumberingStrategyInterface $numbering;
     private DomainEventPublisherInterface $publisher;
+    private TerminalRepositoryInterface $terminalRepo;
+    private WarehouseRepositoryInterface $warehouseRepo;
     private ProcessSaleService $service;
 
     protected function setUp(): void
@@ -40,14 +44,28 @@ final class ProcessSaleServiceTest extends TestCase
         DB::shouldReceive('transaction')
             ->andReturnUsing(fn(callable $cb) => $cb());
 
-        $this->cartRepo    = $this->createMock(CartRepositoryInterface::class);
-        $this->paymentRepo = $this->createMock(PaymentRepositoryInterface::class);
-        $this->saleRepo    = $this->createMock(SaleRepositoryInterface::class);
-        $this->receiptRepo = $this->createMock(ReceiptRepositoryInterface::class);
-        $this->numbering   = $this->createMock(ReceiptNumberingStrategyInterface::class);
-        $this->publisher   = $this->createMock(DomainEventPublisherInterface::class);
+        $this->cartRepo      = $this->createMock(CartRepositoryInterface::class);
+        $this->paymentRepo   = $this->createMock(PaymentRepositoryInterface::class);
+        $this->saleRepo      = $this->createMock(SaleRepositoryInterface::class);
+        $this->receiptRepo   = $this->createMock(ReceiptRepositoryInterface::class);
+        $this->numbering     = $this->createMock(ReceiptNumberingStrategyInterface::class);
+        $this->publisher     = $this->createMock(DomainEventPublisherInterface::class);
+        $this->terminalRepo  = $this->createMock(TerminalRepositoryInterface::class);
+        $this->warehouseRepo = $this->createMock(WarehouseRepositoryInterface::class);
 
         $this->numbering->method('next')->willReturn('RCP-20260701-TRM001-00001');
+
+        // Provide a terminal + warehouse by default so SaleFinalized can be built.
+        $terminal               = new Terminal();
+        $terminal->id           = 'term-1';
+        $terminal->warehouse_id = 'warehouse-unit-001';
+
+        $warehouse             = new Warehouse();
+        $warehouse->id         = 'warehouse-unit-001';
+        $warehouse->company_id = 'company-unit-001';
+
+        $this->terminalRepo->method('findById')->willReturn($terminal);
+        $this->warehouseRepo->method('findById')->willReturn($warehouse);
 
         $this->service = new ProcessSaleService(
             $this->cartRepo,
@@ -56,6 +74,8 @@ final class ProcessSaleServiceTest extends TestCase
             $this->receiptRepo,
             $this->numbering,
             $this->publisher,
+            $this->terminalRepo,
+            $this->warehouseRepo,
         );
     }
 
@@ -138,6 +158,7 @@ final class ProcessSaleServiceTest extends TestCase
         $this->cartRepo->method('save');
         $this->receiptRepo->method('save');
 
+        // Expects publishAll called once with domain events + SaleFinalized (>= 3 total)
         $this->publisher
             ->expects($this->once())
             ->method('publishAll')
@@ -146,9 +167,32 @@ final class ProcessSaleServiceTest extends TestCase
         $this->service->execute($this->makeCommand());
     }
 
+    public function test_sale_finalized_is_included_in_published_events(): void
+    {
+        $cart = $this->makeCartWithLine();
+        $this->cartRepo->method('findById')->willReturn($cart);
+        $this->paymentRepo->method('save')->willReturnCallback(fn($p) => $p->id = 'pay-unit-001');
+        $this->saleRepo->method('save')->willReturnCallback(fn($s) => $s->id = 'sale-unit-001');
+        $this->cartRepo->method('save');
+        $this->receiptRepo->method('save');
+
+        $capturedEvents = [];
+        $this->publisher
+            ->expects($this->once())
+            ->method('publishAll')
+            ->willReturnCallback(function (array $events) use (&$capturedEvents) {
+                $capturedEvents = $events;
+            });
+
+        $this->service->execute($this->makeCommand());
+
+        $eventNames = array_map(fn($e) => $e->eventName(), $capturedEvents);
+        $this->assertContains('pos.sale.finalized', $eventNames);
+    }
+
     private function makeCartWithLine(): Cart
     {
-        $cart = Cart::open('sess-1', 'shift-1', 'term-1', 'cashier-1', 'EGP');
+        $cart     = Cart::open('sess-1', 'shift-1', 'term-1', 'cashier-1', 'EGP');
         $cart->id = 'cart-unit-001';
         $cart->addLine('prod-1', 'Product A', 'SKU-001', Quantity::of('1'), Money::of('100.00', 'EGP'));
         return $cart;

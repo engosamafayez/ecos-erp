@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\POS\Listeners;
 
 use App\Core\Responses\OperationResult;
+use DateTimeImmutable;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Mockery;
@@ -13,20 +14,17 @@ use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\POS\Application\Contracts\OrderCreationPortInterface;
+use Modules\POS\Application\Events\SaleFinalized;
+use Modules\POS\Application\Events\SaleItemPayload;
+use Modules\POS\Application\Events\SalePaymentPayload;
 use Modules\POS\Application\Listeners\PosSaleOrderListener;
-use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
-use Modules\POS\Sale\Domain\Events\SaleCompleted;
-use Modules\POS\Sale\Domain\Models\Sale;
-use Modules\POS\Sale\Domain\ValueObjects\SaleLine;
-use Modules\POS\Shared\Domain\ValueObjects\Money;
-use Modules\POS\Shared\Domain\ValueObjects\Quantity;
 use Tests\TestCase;
 
 /**
  * CRIT-004 — PosSaleOrderListener unit tests.
  *
- * Uses Mockery to verify the listener delegates correctly to CreateOrderAction
- * and handles all failure modes without rethrowing.
+ * Updated to SaleFinalized: listener no longer reloads Sale from DB —
+ * all context (items, customerId, channelId) comes from the event.
  */
 final class PosSaleOrderListenerTest extends TestCase
 {
@@ -40,7 +38,6 @@ final class PosSaleOrderListenerTest extends TestCase
     private const PRODUCT_B      = 'product-uuid-bbb';
     private const ORDER_ID       = 'order-uuid-001';
 
-    private MockInterface $saleRepo;
     private MockInterface $orderCreation;
     private PosSaleOrderListener $listener;
 
@@ -48,25 +45,17 @@ final class PosSaleOrderListenerTest extends TestCase
     {
         parent::setUp();
 
-        $this->saleRepo      = Mockery::mock(SaleRepositoryInterface::class);
         $this->orderCreation = Mockery::mock(OrderCreationPortInterface::class);
-
-        $this->listener = new PosSaleOrderListener(
-            $this->saleRepo,
-            $this->orderCreation,
-        );
+        $this->listener      = new PosSaleOrderListener($this->orderCreation);
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────
 
     public function test_creates_order_for_sale_with_known_customer(): void
     {
-        $sale = $this->buildSale(
-            customerId: self::CUSTOMER_ID,
-            lines: [['product_id' => self::PRODUCT_A, 'qty' => 2.0, 'price' => 50.0]],
-        );
-
-        $this->saleRepo->shouldReceive('findById')->with(self::SALE_ID)->andReturn($sale);
+        $event = $this->makeEvent(customerId: self::CUSTOMER_ID, items: [
+            $this->item(self::PRODUCT_A, 2.0, '50.00'),
+        ]);
 
         $this->orderCreation
             ->shouldReceive('create')
@@ -82,19 +71,16 @@ final class PosSaleOrderListenerTest extends TestCase
             })
             ->andReturn(OperationResult::success($this->buildOrder()));
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     public function test_creates_order_for_anonymous_sale_using_guest_customer(): void
     {
         Config::set('pos.erp.guest_customer_id', self::GUEST_ID);
 
-        $sale = $this->buildSale(
-            customerId: null,
-            lines: [['product_id' => self::PRODUCT_A, 'qty' => 1.0, 'price' => 25.0]],
-        );
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
+        $event = $this->makeEvent(customerId: null, items: [
+            $this->item(self::PRODUCT_A, 1.0, '25.00'),
+        ]);
 
         $this->orderCreation
             ->shouldReceive('create')
@@ -102,20 +88,15 @@ final class PosSaleOrderListenerTest extends TestCase
             ->withArgs(fn (OrderDTO $dto) => $dto->customer_id === self::GUEST_ID)
             ->andReturn(OperationResult::success($this->buildOrder()));
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     public function test_creates_order_with_correct_line_count_for_multi_item_sale(): void
     {
-        $sale = $this->buildSale(
-            customerId: self::CUSTOMER_ID,
-            lines: [
-                ['product_id' => self::PRODUCT_A, 'qty' => 3.0, 'price' => 10.0],
-                ['product_id' => self::PRODUCT_B, 'qty' => 1.0, 'price' => 200.0],
-            ],
-        );
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
+        $event = $this->makeEvent(customerId: self::CUSTOMER_ID, items: [
+            $this->item(self::PRODUCT_A, 3.0, '10.00'),
+            $this->item(self::PRODUCT_B, 1.0, '200.00'),
+        ]);
 
         $this->orderCreation
             ->shouldReceive('create')
@@ -123,17 +104,14 @@ final class PosSaleOrderListenerTest extends TestCase
             ->withArgs(fn (OrderDTO $dto) => count($dto->lines) === 2)
             ->andReturn(OperationResult::success($this->buildOrder()));
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     public function test_sets_external_order_id_to_sale_id_for_traceability(): void
     {
-        $sale = $this->buildSale(
-            customerId: self::CUSTOMER_ID,
-            lines: [['product_id' => self::PRODUCT_A, 'qty' => 1.0, 'price' => 50.0]],
-        );
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
+        $event = $this->makeEvent(customerId: self::CUSTOMER_ID, items: [
+            $this->item(self::PRODUCT_A, 1.0, '50.00'),
+        ]);
 
         $this->orderCreation
             ->shouldReceive('create')
@@ -141,17 +119,14 @@ final class PosSaleOrderListenerTest extends TestCase
             ->withArgs(fn (OrderDTO $dto) => $dto->external_order_id === self::SALE_ID)
             ->andReturn(OperationResult::success($this->buildOrder()));
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     public function test_order_status_is_completed_for_pos_sale(): void
     {
-        $sale = $this->buildSale(
-            customerId: self::CUSTOMER_ID,
-            lines: [['product_id' => self::PRODUCT_A, 'qty' => 1.0, 'price' => 50.0]],
-        );
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
+        $event = $this->makeEvent(customerId: self::CUSTOMER_ID, items: [
+            $this->item(self::PRODUCT_A, 1.0, '50.00'),
+        ]);
 
         $this->orderCreation
             ->shouldReceive('create')
@@ -159,21 +134,23 @@ final class PosSaleOrderListenerTest extends TestCase
             ->withArgs(fn (OrderDTO $dto) => $dto->status === OrderStatus::Completed)
             ->andReturn(OperationResult::success($this->buildOrder()));
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
+    }
+
+    public function test_channel_id_comes_from_event(): void
+    {
+        $event = $this->makeEvent(customerId: self::CUSTOMER_ID, channelId: 'channel-uuid-001');
+
+        $this->orderCreation
+            ->shouldReceive('create')
+            ->once()
+            ->withArgs(fn (OrderDTO $dto) => $dto->channel_id === 'channel-uuid-001')
+            ->andReturn(OperationResult::success($this->buildOrder()));
+
+        $this->listener->handle($event);
     }
 
     // ── Guard-clauses ─────────────────────────────────────────────────────────
-
-    public function test_logs_error_and_returns_early_when_sale_not_found(): void
-    {
-        Log::shouldReceive('channel')->with('daily')->andReturnSelf();
-        Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Sale not found'));
-
-        $this->saleRepo->shouldReceive('findById')->andReturn(null);
-        $this->orderCreation->shouldNotReceive('create');
-
-        $this->listener->handle($this->makeEvent());
-    }
 
     public function test_skips_order_when_no_customer_and_no_guest_configured(): void
     {
@@ -182,26 +159,17 @@ final class PosSaleOrderListenerTest extends TestCase
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('warning')->once()->withArgs(fn ($msg) => str_contains($msg, 'POS_GUEST_CUSTOMER_ID'));
 
-        $sale = $this->buildSale(customerId: null, lines: [
-            ['product_id' => self::PRODUCT_A, 'qty' => 1.0, 'price' => 50.0],
-        ]);
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
+        $event = $this->makeEvent(customerId: null);
         $this->orderCreation->shouldNotReceive('create');
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     // ── Failure resilience ────────────────────────────────────────────────────
 
     public function test_logs_error_on_order_creation_failure_and_does_not_rethrow(): void
     {
-        $sale = $this->buildSale(
-            customerId: self::CUSTOMER_ID,
-            lines: [['product_id' => self::PRODUCT_A, 'qty' => 1.0, 'price' => 50.0]],
-        );
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
+        $event = $this->makeEvent(customerId: self::CUSTOMER_ID);
 
         $this->orderCreation
             ->shouldReceive('create')
@@ -210,18 +178,12 @@ final class PosSaleOrderListenerTest extends TestCase
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Failed to create ERP order'));
 
-        // Must not throw
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     public function test_notes_contain_receipt_number(): void
     {
-        $sale = $this->buildSale(
-            customerId: self::CUSTOMER_ID,
-            lines: [['product_id' => self::PRODUCT_A, 'qty' => 1.0, 'price' => 50.0]],
-        );
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
+        $event = $this->makeEvent(customerId: self::CUSTOMER_ID);
 
         $this->orderCreation
             ->shouldReceive('create')
@@ -229,59 +191,63 @@ final class PosSaleOrderListenerTest extends TestCase
             ->withArgs(fn (OrderDTO $dto) => str_contains((string) $dto->notes, self::RECEIPT_NUMBER))
             ->andReturn(OperationResult::success($this->buildOrder()));
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private function makeEvent(): SaleCompleted
-    {
-        return SaleCompleted::now(
+    /** @param SaleItemPayload[] $items */
+    private function makeEvent(
+        ?string $customerId = self::CUSTOMER_ID,
+        array   $items      = [],
+        ?string $channelId  = null,
+    ): SaleFinalized {
+        if (empty($items)) {
+            $items = [$this->item(self::PRODUCT_A, 1.0, '100.00')];
+        }
+
+        return new SaleFinalized(
+            eventId:       'event-uuid-001',
+            occurredAt:    new DateTimeImmutable('now'),
             saleId:        self::SALE_ID,
             receiptNumber: self::RECEIPT_NUMBER,
-            totalAmount:   '100.00',
+            companyId:     'company-uuid-001',
+            channelId:     $channelId,
+            warehouseId:   'warehouse-uuid-001',
+            sessionId:     'session-uuid-001',
+            shiftId:       'shift-uuid-001',
+            terminalId:    'terminal-uuid-001',
+            cashierId:     'cashier-uuid-001',
+            customerId:    $customerId,
+            items:         $items,
+            payments:      [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
+            subtotal:      '100.00',
+            discountTotal: '0.00',
+            grandTotal:    '100.00',
             amountPaid:    '100.00',
             changeGiven:   '0.00',
             currency:      'EGP',
         );
     }
 
-    /**
-     * Build a real Sale model with the given lines and customer.
-     * Sale is final — cannot be mocked — so we construct it directly.
-     *
-     * @param  array<int, array{product_id: string, qty: float, price: float}>  $lines
-     */
-    private function buildSale(?string $customerId, array $lines): Sale
+    private function item(string $productId, float $qty, string $unitPrice): SaleItemPayload
     {
-        $saleLines = array_map(function (array $l): SaleLine {
-            return new SaleLine(
-                lineId:        'line-' . $l['product_id'],
-                productId:     $l['product_id'],
-                productName:   'Product ' . $l['product_id'],
-                sku:           'SKU-' . $l['product_id'],
-                quantity:      Quantity::of($l['qty']),
-                unitPrice:     Money::of((string) $l['price'], 'EGP'),
-                discountType:  null,
-                discountValue: null,
-                lineTotal:     Money::of((string) ($l['qty'] * $l['price']), 'EGP'),
-                sortOrder:     0,
-            );
-        }, $lines);
-
-        $sale              = new Sale();
-        $sale->id          = self::SALE_ID;
-        $sale->customer_id = $customerId;
-        $sale->lines       = array_map(fn(SaleLine $l) => $l->toArray(), $saleLines);
-
-        return $sale;
+        return new SaleItemPayload(
+            lineId:      'line-' . $productId,
+            productId:   $productId,
+            productName: 'Product ' . $productId,
+            sku:         'SKU-' . $productId,
+            quantity:    $qty,
+            unitPrice:   $unitPrice,
+            lineTotal:   (string) ($qty * (float) $unitPrice),
+            currency:    'EGP',
+        );
     }
 
     private function buildOrder(): Order
     {
         $order     = new Order();
         $order->id = self::ORDER_ID;
-
         return $order;
     }
 }

@@ -4,31 +4,25 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Listeners;
 
+use DateTimeImmutable;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Mockery;
 use Mockery\MockInterface;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
-use Modules\MasterData\Warehouses\Domain\Contracts\WarehouseRepositoryInterface;
-use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\POS\Application\Contracts\StockIssuePortInterface;
+use Modules\POS\Application\Events\SaleFinalized;
+use Modules\POS\Application\Events\SaleItemPayload;
+use Modules\POS\Application\Events\SalePaymentPayload;
 use Modules\POS\Application\Listeners\PosSaleInventoryListener;
-use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
-use Modules\POS\Sale\Domain\Events\SaleCompleted;
-use Modules\POS\Sale\Domain\Models\Sale;
-use Modules\POS\Sale\Domain\ValueObjects\SaleLine;
-use Modules\POS\Shared\Domain\ValueObjects\Money;
-use Modules\POS\Shared\Domain\ValueObjects\Quantity;
-use Modules\POS\Terminal\Domain\Contracts\TerminalRepositoryInterface;
-use Modules\POS\Terminal\Domain\Models\Terminal;
 use Tests\TestCase;
 
 /**
  * CRIT-003 — PosSaleInventoryListener unit tests.
  *
- * Uses Mockery to verify the listener delegates correctly to DirectIssueStockAction
- * and handles all failure modes without rethrowing.
+ * Updated to SaleFinalized: listener no longer reloads Sale/Terminal/Warehouse
+ * from DB — all context comes from the event (zero N+1 queries).
  */
 final class PosSaleInventoryListenerTest extends TestCase
 {
@@ -42,9 +36,6 @@ final class PosSaleInventoryListenerTest extends TestCase
     private const PRODUCT_A      = 'product-uuid-aaa';
     private const PRODUCT_B      = 'product-uuid-bbb';
 
-    private MockInterface $saleRepo;
-    private MockInterface $terminalRepo;
-    private MockInterface $warehouseRepo;
     private MockInterface $stockIssue;
     private PosSaleInventoryListener $listener;
 
@@ -52,30 +43,17 @@ final class PosSaleInventoryListenerTest extends TestCase
     {
         parent::setUp();
 
-        $this->saleRepo      = Mockery::mock(SaleRepositoryInterface::class);
-        $this->terminalRepo  = Mockery::mock(TerminalRepositoryInterface::class);
-        $this->warehouseRepo = Mockery::mock(WarehouseRepositoryInterface::class);
-        $this->stockIssue    = Mockery::mock(StockIssuePortInterface::class);
-
-        $this->listener = new PosSaleInventoryListener(
-            $this->saleRepo,
-            $this->terminalRepo,
-            $this->stockIssue,
-            $this->warehouseRepo,
-        );
+        $this->stockIssue = Mockery::mock(StockIssuePortInterface::class);
+        $this->listener   = new PosSaleInventoryListener($this->stockIssue);
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────
 
     public function test_decrements_stock_for_single_line_item(): void
     {
-        $sale      = $this->buildSale([['product_id' => self::PRODUCT_A, 'qty' => 2.0]]);
-        $terminal  = $this->buildTerminal();
-        $warehouse = $this->buildWarehouse();
-
-        $this->saleRepo->shouldReceive('findById')->with(self::SALE_ID)->andReturn($sale);
-        $this->terminalRepo->shouldReceive('findById')->with(self::TERMINAL_ID)->andReturn($terminal);
-        $this->warehouseRepo->shouldReceive('findById')->with(self::WAREHOUSE_ID)->andReturn($warehouse);
+        $event = $this->makeEvent(items: [
+            $this->item(self::PRODUCT_A, 2.0),
+        ]);
 
         $this->stockIssue
             ->shouldReceive('issue')
@@ -89,68 +67,41 @@ final class PosSaleInventoryListenerTest extends TestCase
                     && $dto->reference_id   === self::SALE_ID;
             });
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     public function test_decrements_stock_once_per_line_for_multi_item_sale(): void
     {
-        $sale = $this->buildSale([
-            ['product_id' => self::PRODUCT_A, 'qty' => 3.0],
-            ['product_id' => self::PRODUCT_B, 'qty' => 1.0],
+        $event = $this->makeEvent(items: [
+            $this->item(self::PRODUCT_A, 3.0),
+            $this->item(self::PRODUCT_B, 1.0),
         ]);
-        $terminal  = $this->buildTerminal();
-        $warehouse = $this->buildWarehouse();
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
-        $this->terminalRepo->shouldReceive('findById')->andReturn($terminal);
-        $this->warehouseRepo->shouldReceive('findById')->andReturn($warehouse);
 
         $this->stockIssue->shouldReceive('issue')->twice();
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
-    // ── Missing data guard-clauses ─────────────────────────────────────────────
-
-    public function test_logs_error_and_returns_early_when_sale_not_found(): void
+    public function test_passes_correct_product_and_quantity_per_line(): void
     {
-        Log::shouldReceive('channel')->with('daily')->andReturnSelf();
-        Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Sale not found'));
+        $event = $this->makeEvent(items: [
+            $this->item(self::PRODUCT_A, 5.0),
+            $this->item(self::PRODUCT_B, 2.5),
+        ]);
 
-        $this->saleRepo->shouldReceive('findById')->andReturn(null);
-        $this->stockIssue->shouldNotReceive('issue');
+        $issuedProducts = [];
+        $this->stockIssue
+            ->shouldReceive('issue')
+            ->twice()
+            ->withArgs(function (StockOperationDTO $dto) use (&$issuedProducts) {
+                $issuedProducts[] = [$dto->product_id, $dto->quantity];
+                return true;
+            });
 
-        $this->listener->handle($this->makeEvent());
-    }
+        $this->listener->handle($event);
 
-    public function test_logs_error_and_returns_early_when_terminal_not_found(): void
-    {
-        $sale = $this->buildSale([['product_id' => self::PRODUCT_A, 'qty' => 1.0]]);
-
-        Log::shouldReceive('channel')->with('daily')->andReturnSelf();
-        Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Terminal not found'));
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
-        $this->terminalRepo->shouldReceive('findById')->andReturn(null);
-        $this->stockIssue->shouldNotReceive('issue');
-
-        $this->listener->handle($this->makeEvent());
-    }
-
-    public function test_logs_error_and_returns_early_when_warehouse_not_found(): void
-    {
-        $sale     = $this->buildSale([['product_id' => self::PRODUCT_A, 'qty' => 1.0]]);
-        $terminal = $this->buildTerminal();
-
-        Log::shouldReceive('channel')->with('daily')->andReturnSelf();
-        Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Warehouse not found'));
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
-        $this->terminalRepo->shouldReceive('findById')->andReturn($terminal);
-        $this->warehouseRepo->shouldReceive('findById')->andReturn(null);
-        $this->stockIssue->shouldNotReceive('issue');
-
-        $this->listener->handle($this->makeEvent());
+        $this->assertContains([self::PRODUCT_A, 5.0], $issuedProducts);
+        $this->assertContains([self::PRODUCT_B, 2.5], $issuedProducts);
     }
 
     // ── Insufficient stock ────────────────────────────────────────────────────
@@ -159,13 +110,7 @@ final class PosSaleInventoryListenerTest extends TestCase
     {
         Config::set('pos.inventory.allow_negative_stock', false);
 
-        $sale      = $this->buildSale([['product_id' => self::PRODUCT_A, 'qty' => 99.0]]);
-        $terminal  = $this->buildTerminal();
-        $warehouse = $this->buildWarehouse();
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
-        $this->terminalRepo->shouldReceive('findById')->andReturn($terminal);
-        $this->warehouseRepo->shouldReceive('findById')->andReturn($warehouse);
+        $event = $this->makeEvent(items: [$this->item(self::PRODUCT_A, 99.0)]);
 
         $this->stockIssue
             ->shouldReceive('issue')
@@ -174,21 +119,14 @@ final class PosSaleInventoryListenerTest extends TestCase
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Insufficient stock'));
 
-        // Must not throw
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     public function test_logs_warning_on_insufficient_stock_when_negative_allowed(): void
     {
         Config::set('pos.inventory.allow_negative_stock', true);
 
-        $sale      = $this->buildSale([['product_id' => self::PRODUCT_A, 'qty' => 5.0]]);
-        $terminal  = $this->buildTerminal();
-        $warehouse = $this->buildWarehouse();
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
-        $this->terminalRepo->shouldReceive('findById')->andReturn($terminal);
-        $this->warehouseRepo->shouldReceive('findById')->andReturn($warehouse);
+        $event = $this->makeEvent(items: [$this->item(self::PRODUCT_A, 5.0)]);
 
         $this->stockIssue
             ->shouldReceive('issue')
@@ -197,21 +135,14 @@ final class PosSaleInventoryListenerTest extends TestCase
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('warning')->once()->withArgs(fn ($msg) => str_contains($msg, 'Insufficient stock'));
 
-        // Must not throw
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     // ── Unexpected exceptions ─────────────────────────────────────────────────
 
     public function test_logs_error_on_unexpected_exception_and_does_not_rethrow(): void
     {
-        $sale      = $this->buildSale([['product_id' => self::PRODUCT_A, 'qty' => 1.0]]);
-        $terminal  = $this->buildTerminal();
-        $warehouse = $this->buildWarehouse();
-
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
-        $this->terminalRepo->shouldReceive('findById')->andReturn($terminal);
-        $this->warehouseRepo->shouldReceive('findById')->andReturn($warehouse);
+        $event = $this->makeEvent(items: [$this->item(self::PRODUCT_A, 1.0)]);
 
         $this->stockIssue
             ->shouldReceive('issue')
@@ -220,25 +151,16 @@ final class PosSaleInventoryListenerTest extends TestCase
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Unexpected error'));
 
-        // Must not throw
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     public function test_processes_remaining_lines_when_one_fails(): void
     {
-        $sale = $this->buildSale([
-            ['product_id' => self::PRODUCT_A, 'qty' => 1.0],
-            ['product_id' => self::PRODUCT_B, 'qty' => 2.0],
+        $event = $this->makeEvent(items: [
+            $this->item(self::PRODUCT_A, 1.0),
+            $this->item(self::PRODUCT_B, 2.0),
         ]);
-        $terminal  = $this->buildTerminal();
-        $warehouse = $this->buildWarehouse();
 
-        $this->saleRepo->shouldReceive('findById')->andReturn($sale);
-        $this->terminalRepo->shouldReceive('findById')->andReturn($terminal);
-        $this->warehouseRepo->shouldReceive('findById')->andReturn($warehouse);
-
-        // First line throws (insufficient stock), second line must still be issued.
-        // Logging assertions for InsufficientStockException are in separate tests.
         $this->stockIssue
             ->shouldReceive('issue')
             ->times(2)
@@ -248,82 +170,57 @@ final class PosSaleInventoryListenerTest extends TestCase
                 }
             });
 
-        // Allow any log calls the listener makes — this test only cares that
-        // both lines are attempted (verified by times(2) above).
         Log::shouldReceive('channel')->andReturnSelf();
         Log::shouldReceive('error')->zeroOrMoreTimes();
         Log::shouldReceive('warning')->zeroOrMoreTimes();
 
-        $this->listener->handle($this->makeEvent());
+        $this->listener->handle($event);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private function makeEvent(): SaleCompleted
+    /** @param SaleItemPayload[] $items */
+    private function makeEvent(array $items = []): SaleFinalized
     {
-        return SaleCompleted::now(
+        if (empty($items)) {
+            $items = [$this->item(self::PRODUCT_A, 1.0)];
+        }
+
+        return new SaleFinalized(
+            eventId:       'event-uuid-001',
+            occurredAt:    new DateTimeImmutable('now'),
             saleId:        self::SALE_ID,
             receiptNumber: self::RECEIPT_NUMBER,
-            totalAmount:   '100.00',
+            companyId:     self::COMPANY_ID,
+            channelId:     null,
+            warehouseId:   self::WAREHOUSE_ID,
+            sessionId:     'session-uuid-001',
+            shiftId:       'shift-uuid-001',
+            terminalId:    self::TERMINAL_ID,
+            cashierId:     'cashier-uuid-001',
+            customerId:    'customer-uuid-001',
+            items:         $items,
+            payments:      [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
+            subtotal:      '100.00',
+            discountTotal: '0.00',
+            grandTotal:    '100.00',
             amountPaid:    '100.00',
             changeGiven:   '0.00',
             currency:      'EGP',
         );
     }
 
-    /**
-     * Build a real Sale model with the given lines set on the `lines` attribute.
-     * Sale is final — cannot be mocked — so we construct it directly.
-     *
-     * @param  array<int, array{product_id: string, qty: float}>  $lines
-     */
-    private function buildSale(array $lines): Sale
+    private function item(string $productId, float $qty): SaleItemPayload
     {
-        $saleLines = array_map(function (array $l): SaleLine {
-            return new SaleLine(
-                lineId:        'line-' . $l['product_id'],
-                productId:     $l['product_id'],
-                productName:   'Product ' . $l['product_id'],
-                sku:           'SKU-' . $l['product_id'],
-                quantity:      Quantity::of($l['qty']),
-                unitPrice:     Money::of('50.00', 'EGP'),
-                discountType:  null,
-                discountValue: null,
-                lineTotal:     Money::of((string) ($l['qty'] * 50), 'EGP'),
-                sortOrder:     0,
-            );
-        }, $lines);
-
-        $sale              = new Sale();
-        $sale->id          = self::SALE_ID;
-        $sale->terminal_id = self::TERMINAL_ID;
-        $sale->lines       = array_map(fn(SaleLine $l) => $l->toArray(), $saleLines);
-
-        return $sale;
-    }
-
-    /**
-     * Build a real Terminal model.
-     * Terminal is final — cannot be mocked — so we construct it directly.
-     */
-    private function buildTerminal(): Terminal
-    {
-        $terminal               = new Terminal();
-        $terminal->id           = self::TERMINAL_ID;
-        $terminal->warehouse_id = self::WAREHOUSE_ID;
-
-        return $terminal;
-    }
-
-    /**
-     * Build a real Warehouse model.
-     */
-    private function buildWarehouse(): Warehouse
-    {
-        $warehouse             = new Warehouse();
-        $warehouse->id         = self::WAREHOUSE_ID;
-        $warehouse->company_id = self::COMPANY_ID;
-
-        return $warehouse;
+        return new SaleItemPayload(
+            lineId:      'line-' . $productId,
+            productId:   $productId,
+            productName: 'Product ' . $productId,
+            sku:         'SKU-' . $productId,
+            quantity:    $qty,
+            unitPrice:   '50.00',
+            lineTotal:   (string) ($qty * 50),
+            currency:    'EGP',
+        );
     }
 }

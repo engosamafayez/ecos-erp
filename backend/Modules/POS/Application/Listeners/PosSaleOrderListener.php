@@ -7,27 +7,26 @@ namespace Modules\POS\Application\Listeners;
 use Illuminate\Support\Facades\Log;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
-use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\POS\Application\Contracts\OrderCreationPortInterface;
-use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
-use Modules\POS\Sale\Domain\Events\SaleCompleted;
+use Modules\POS\Application\Events\SaleFinalized;
+use Modules\POS\Application\Events\SaleItemPayload;
 
 /**
  * CRIT-004 — Creates a standard ERP Sales Order when a POS sale completes.
  *
- * Listens to SaleCompleted (the definitive post-transaction event).
- * Reloads the Sale from the repository to obtain line items and customer_id,
- * then delegates to CreateOrderAction — the same action used by every other
- * sales channel. The POS is an entry point into the ERP, not a parallel system.
+ * Subscriber 2 of 8. Listens to SaleFinalized (the enriched integration event).
+ *
+ * All context (items, customerId, channelId) is carried by the event —
+ * no DB reloads are necessary. The order channel is resolved from
+ * $event->channelId (null for POS, since POS is not a Commerce channel).
  *
  * Customer resolution:
- *   - Known customer: $sale->customer_id is used directly.
+ *   - Known customer: $event->customerId is used directly.
  *   - Anonymous (walk-in): falls back to config('pos.erp.guest_customer_id').
  *     If unconfigured, order creation is skipped and a warning is logged.
- *     Set POS_GUEST_CUSTOMER_ID in .env to a valid Customer UUID to enable
- *     order creation for all walk-in sales.
+ *     Set POS_GUEST_CUSTOMER_ID in .env to enable order creation for walk-in sales.
  *
- * The order links back to the POS sale via external_order_id = $sale->id,
+ * The order links back to the POS sale via external_order_id = $event->saleId,
  * enabling bidirectional traceability between the POS and commerce layers.
  *
  * The listener NEVER throws — the sale is already committed and must not roll back.
@@ -39,24 +38,12 @@ use Modules\POS\Sale\Domain\Events\SaleCompleted;
 final class PosSaleOrderListener
 {
     public function __construct(
-        private readonly SaleRepositoryInterface   $sales,
         private readonly OrderCreationPortInterface $orderCreation,
     ) {}
 
-    public function handle(SaleCompleted $event): void
+    public function handle(SaleFinalized $event): void
     {
-        $sale = $this->sales->findById($event->saleId);
-
-        if ($sale === null) {
-            Log::channel('daily')->error('[POS][Order] Sale not found after SaleCompleted', [
-                'sale_id'        => $event->saleId,
-                'receipt_number' => $event->receiptNumber,
-            ]);
-
-            return;
-        }
-
-        $customerId = $sale->customer_id ?? config('pos.erp.guest_customer_id');
+        $customerId = $event->customerId ?? config('pos.erp.guest_customer_id');
 
         if (empty($customerId)) {
             Log::channel('daily')->warning(
@@ -71,12 +58,12 @@ final class PosSaleOrderListener
         }
 
         $lines = array_map(
-            static fn ($line): array => [
-                'product_id' => $line->productId,
-                'quantity'   => $line->quantity->toFloat(),
-                'unit_price' => (float) $line->unitPrice->amount,
+            static fn(SaleItemPayload $item): array => [
+                'product_id' => $item->productId,
+                'quantity'   => (float) $item->quantity,
+                'unit_price' => (float) $item->unitPrice,
             ],
-            $sale->getLines(),
+            $event->items,
         );
 
         $dto = new OrderDTO(
@@ -84,8 +71,8 @@ final class PosSaleOrderListener
             order_date:        now()->toDateString(),
             status:            OrderStatus::Completed,
             lines:             $lines,
-            channel_id:        null,
-            external_order_id: (string) $sale->id,
+            channel_id:        $event->channelId,
+            external_order_id: $event->saleId,
             notes:             "POS Sale #{$event->receiptNumber}",
         );
 

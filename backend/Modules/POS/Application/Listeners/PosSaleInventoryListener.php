@@ -7,18 +7,17 @@ namespace Modules\POS\Application\Listeners;
 use Illuminate\Support\Facades\Log;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
-use Modules\MasterData\Warehouses\Domain\Contracts\WarehouseRepositoryInterface;
 use Modules\POS\Application\Contracts\StockIssuePortInterface;
-use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
-use Modules\POS\Sale\Domain\Events\SaleCompleted;
-use Modules\POS\Terminal\Domain\Contracts\TerminalRepositoryInterface;
+use Modules\POS\Application\Events\SaleFinalized;
+use Modules\POS\Application\Events\SaleItemPayload;
 
 /**
  * CRIT-003 — Decrements inventory for every line item when a POS sale completes.
  *
- * Listens to SaleCompleted (the definitive post-transaction event).
- * Reloads the Sale from the repository to obtain line items and terminal_id,
- * then delegates each line to DirectIssueStockAction.
+ * Subscriber 1 of 8. Listens to SaleFinalized (the enriched integration event).
+ *
+ * All context (warehouseId, companyId, items) is carried by the event —
+ * no DB reloads are necessary (zero N+1 queries per subscriber).
  *
  * Negative-stock behaviour is governed by pos.inventory.allow_negative_stock:
  *   false (default) — logs an error and skips the decrement.
@@ -33,76 +32,40 @@ use Modules\POS\Terminal\Domain\Contracts\TerminalRepositoryInterface;
 final class PosSaleInventoryListener
 {
     public function __construct(
-        private readonly SaleRepositoryInterface     $sales,
-        private readonly TerminalRepositoryInterface $terminals,
-        private readonly StockIssuePortInterface     $stockIssue,
-        private readonly WarehouseRepositoryInterface $warehouses,
+        private readonly StockIssuePortInterface $stockIssue,
     ) {}
 
-    public function handle(SaleCompleted $event): void
+    public function handle(SaleFinalized $event): void
     {
-        $sale = $this->sales->findById($event->saleId);
-
-        if ($sale === null) {
-            Log::channel('daily')->error('[POS][Inventory] Sale not found after SaleCompleted', [
-                'sale_id'        => $event->saleId,
-                'receipt_number' => $event->receiptNumber,
-            ]);
-
-            return;
-        }
-
-        $terminal = $this->terminals->findById((string) $sale->terminal_id);
-
-        if ($terminal === null) {
-            Log::channel('daily')->error('[POS][Inventory] Terminal not found — cannot resolve warehouse', [
-                'sale_id'     => $event->saleId,
-                'terminal_id' => $sale->terminal_id,
-            ]);
-
-            return;
-        }
-
-        $warehouse = $this->warehouses->findById((string) $terminal->warehouse_id);
-
-        if ($warehouse === null) {
-            Log::channel('daily')->error('[POS][Inventory] Warehouse not found — cannot resolve company', [
-                'sale_id'      => $event->saleId,
-                'terminal_id'  => $terminal->id,
-                'warehouse_id' => $terminal->warehouse_id,
-            ]);
-
-            return;
-        }
-
         $allowNegative = (bool) config('pos.inventory.allow_negative_stock', false);
 
-        foreach ($sale->getLines() as $line) {
+        foreach ($event->items as $item) {
+            /** @var SaleItemPayload $item */
             try {
                 $this->stockIssue->issue(new StockOperationDTO(
-                    warehouse_id:   (string) $terminal->warehouse_id,
-                    product_id:     $line->productId,
-                    company_id:     (string) $warehouse->company_id,
-                    quantity:       $line->quantity->toFloat(),
+                    warehouse_id:   $event->warehouseId,
+                    product_id:     $item->productId,
+                    company_id:     $event->companyId,
+                    quantity:       (float) $item->quantity,
                     reference_type: 'pos_sale',
-                    reference_id:   (string) $sale->id,
-                    notes:          "POS #{$event->receiptNumber} · {$line->productName}",
+                    reference_id:   $event->saleId,
+                    notes:          "POS #{$event->receiptNumber} · {$item->productName}",
                 ));
             } catch (InsufficientStockException $e) {
                 $level = $allowNegative ? 'warning' : 'error';
 
                 Log::channel('daily')->{$level}('[POS][Inventory] Insufficient stock — inventory not decremented', [
-                    'sale_id'       => $event->saleId,
+                    'sale_id'        => $event->saleId,
                     'receipt_number' => $event->receiptNumber,
-                    'product_id'    => $line->productId,
-                    'sku'           => $line->sku,
-                    'requested'     => $line->quantity->toFloat(),
-                    'error'         => $e->getMessage(),
+                    'product_id'     => $item->productId,
+                    'sku'            => $item->sku,
+                    'requested'      => $item->quantity,
+                    'error'          => $e->getMessage(),
                 ]);
             } catch (\Throwable $e) {
                 Log::channel('daily')->error('[POS][Inventory] Unexpected error decreasing inventory', [
                     'sale_id'    => $event->saleId,
-                    'product_id' => $line->productId,
+                    'product_id' => $item->productId,
                     'error'      => $e->getMessage(),
                     'trace'      => $e->getTraceAsString(),
                 ]);

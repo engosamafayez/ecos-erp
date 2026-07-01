@@ -33,6 +33,11 @@ use Modules\POS\Application\Services\VoidReceiptService;
 
 final class ApplicationServiceProvider extends ServiceProvider
 {
+    public function boot(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+    }
+
     public function register(): void
     {
         $this->app->bind(DomainEventPublisherInterface::class, LaravelDomainEventPublisher::class);
