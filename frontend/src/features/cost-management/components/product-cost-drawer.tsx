@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { BookOpen, TrendingDown, TrendingUp } from 'lucide-react';
 
 import { Tabs } from '@/components/ds/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';

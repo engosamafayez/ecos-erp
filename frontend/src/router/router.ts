@@ -29,7 +29,6 @@ import { FulfillmentsPage } from '@/features/fulfillments/pages/fulfillments-pag
 import { CreateFulfillmentPage } from '@/features/fulfillments/pages/create-fulfillment-page';
 import { ViewFulfillmentPage } from '@/features/fulfillments/pages/view-fulfillment-page';
 import { SyncLogsPage } from '@/features/sync-logs/pages/sync-logs-page';
-import { BomsPage } from '@/features/boms/pages/boms-page';
 import { BomWorkspacePage } from '@/features/boms/pages/bom-workspace-page';
 import { RecipesPage } from '@/features/recipes/pages/recipes-page';
 import { RecipeWorkspacePage } from '@/features/recipes/pages/recipe-workspace-page';

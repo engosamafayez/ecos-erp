@@ -9,7 +9,6 @@ import {
   ExternalLink,
   Loader2,
   MoreHorizontal,
-  RefreshCw,
   TrendingDown,
   TrendingUp,
   UserPlus,
@@ -17,11 +16,8 @@ import {
 } from 'lucide-react';
 
 import { EntityToolbar, PageHeader } from '@/components/crud';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -39,7 +35,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -353,7 +348,6 @@ function SnoozeDialog({
   isPending: boolean;
 }) {
   const [selected, setSelected] = useState<string>(addDays(3));
-  const [calOpen, setCalOpen] = useState(false);
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
@@ -384,24 +378,16 @@ function SnoozeDialog({
 
           <Separator />
 
-          <Popover open={calOpen} onOpenChange={setCalOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="justify-start gap-2">
-                <span className="text-muted-foreground">Custom:</span>
-                <span className="font-medium tabular-nums">{selected}</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selected ? new Date(selected) : undefined}
-                onSelect={(d) => {
-                  if (d) { setSelected(d.toISOString().slice(0, 10)); setCalOpen(false); }
-                }}
-                disabled={(d) => d < new Date()}
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Custom:</span>
+            <Input
+              type="date"
+              value={selected}
+              min={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => { if (e.target.value) setSelected(e.target.value); }}
+              className="w-auto"
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
@@ -751,9 +737,10 @@ export function CostPricingCenterPage() {
             <thead>
               <tr className="border-b bg-muted/40 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 <th className="w-10 px-4 py-3">
-                  <Checkbox
+                  <input
+                    type="checkbox"
                     checked={allSelected}
-                    onCheckedChange={toggleAll}
+                    onChange={toggleAll}
                     aria-label="Select all"
                   />
                 </th>
@@ -821,9 +808,10 @@ export function CostPricingCenterPage() {
                       )}
                     >
                       <td className="px-4 py-3">
-                        <Checkbox
+                        <input
+                          type="checkbox"
                           checked={selectedIds.has(review.id)}
-                          onCheckedChange={() => toggleOne(review.id)}
+                          onChange={() => toggleOne(review.id)}
                           aria-label={`Select ${review.product.name}`}
                         />
                       </td>
