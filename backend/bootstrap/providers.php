@@ -52,4 +52,5 @@ return [
     Modules\POS\Sale\Infrastructure\Providers\SaleServiceProvider::class,
     Modules\POS\Returns\Infrastructure\Providers\ReturnsServiceProvider::class,
     Modules\POS\CashDrawer\Infrastructure\Providers\CashDrawerServiceProvider::class,
+    Modules\POS\Discount\Infrastructure\Providers\DiscountServiceProvider::class,
 ];
