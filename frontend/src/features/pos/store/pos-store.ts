@@ -40,6 +40,9 @@ type PosState = {
   exchangeSaleId: string | null;
   lastReceiptId: string | null;
 
+  // Ctrl+K — customer search focus request (incremented to trigger focus)
+  customerSearchTick: number;
+
   // Actions
   setSession: (id: string | null) => void;
   setShift: (id: string | null) => void;
@@ -56,6 +59,7 @@ type PosState = {
   clearTransaction: () => void;
   setLastReceipt: (id: string | null) => void;
   toggleKeyboardHelp: () => void;
+  tickCustomerSearch: () => void;
   addHeldCartSnapshot: (snapshot: HeldCartSnapshot) => void;
   removeHeldCartSnapshot: (cartId: string) => void;
   reset: () => void;
@@ -83,6 +87,7 @@ export const usePosStore = create<PosState>()(
       returnSaleId:        null,
       exchangeSaleId:      null,
       lastReceiptId:       null,
+      customerSearchTick:  0,
 
       // Actions
       setSession:  (id) => set({ sessionId: id }),
@@ -120,6 +125,7 @@ export const usePosStore = create<PosState>()(
 
       setLastReceipt:     (id) => set({ lastReceiptId: id }),
       toggleKeyboardHelp: ()  => set((s) => ({ keyboardHelpOpen: !s.keyboardHelpOpen })),
+      tickCustomerSearch: ()  => set((s) => ({ customerSearchTick: s.customerSearchTick + 1 })),
 
       addHeldCartSnapshot: (snapshot) =>
         set((s) => ({

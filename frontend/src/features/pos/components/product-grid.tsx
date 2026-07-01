@@ -62,7 +62,7 @@ export function ProductGrid({ onProductSelect }: ProductGridProps) {
 
   return (
     <div className="flex flex-col gap-2 h-full min-h-0">
-      <ProductSearch value={search} onChange={handleSearchChange} autoFocus />
+      <ProductSearch value={search} onChange={handleSearchChange} autoFocus id="pos-product-search" />
 
       {/* Category chips */}
       {categories.length > 0 && (

@@ -34,6 +34,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
   const [method, setMethod] = useState<PaymentMethod>('cash');
   const [amountStr, setAmountStr] = useState('');
   const [tenders, setTenders] = useState<PaymentTender[]>([]);
+  const [amountError, setAmountError] = useState<string | null>(null);
 
   const tendered   = tenders.reduce((s, t) => s + parseFloat(t.amount), 0);
   const remaining  = Math.max(0, total - tendered);
@@ -60,7 +61,12 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
   }, [isSufficient, processSale.isPending, cartId, tenders, method, total]);
 
   function addTender() {
-    if (currentAmount <= 0) return;
+    if (currentAmount <= 0 || isNaN(currentAmount)) {
+      setAmountError('Enter a valid amount greater than 0');
+      amountInputRef.current?.focus();
+      return;
+    }
+    setAmountError(null);
     setTenders((prev) => [...prev, { method, amount: currentAmount.toFixed(2) }]);
     setAmountStr('');
     amountInputRef.current?.focus();
@@ -146,7 +152,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
             step="0.01"
             placeholder={remaining.toFixed(2)}
             value={amountStr}
-            onChange={(e) => setAmountStr(e.target.value)}
+            onChange={(e) => { setAmountStr(e.target.value); setAmountError(null); }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.stopPropagation();
@@ -154,8 +160,15 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
                 else addTender();
               }
             }}
-            className="text-right tabular-nums"
+            className={cn('text-right tabular-nums', amountError && 'border-destructive focus-visible:ring-destructive')}
+            aria-describedby={amountError ? 'payment-amount-error' : undefined}
+            aria-invalid={!!amountError}
           />
+          {amountError && (
+            <p id="payment-amount-error" className="mt-1 text-xs text-destructive flex items-center gap-1">
+              <AlertCircle className="size-3 shrink-0" />{amountError}
+            </p>
+          )}
           {/* Quick amounts for cash — min 44px touch targets */}
           {method === 'cash' && (
             <div className="mt-2 flex gap-2">

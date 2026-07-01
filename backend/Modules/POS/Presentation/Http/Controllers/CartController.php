@@ -8,12 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Modules\POS\Application\Commands\OpenCartCommand;
+use Modules\POS\Application\Commands\SetCartCustomerCommand;
 use Modules\POS\Application\Services\CancelCartService;
 use Modules\POS\Application\Services\FindCartService;
 use Modules\POS\Application\Services\HoldCartService;
 use Modules\POS\Application\Services\OpenCartService;
 use Modules\POS\Application\Services\ResumeCartService;
+use Modules\POS\Application\Services\SetCartCustomerService;
 use Modules\POS\Presentation\Http\Requests\OpenCartRequest;
+use Modules\POS\Presentation\Http\Requests\SetCartCustomerRequest;
 use Modules\POS\Presentation\Http\Resources\CartResource;
 
 final class CartController extends Controller
@@ -21,11 +24,12 @@ final class CartController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private readonly OpenCartService   $openCartService,
-        private readonly FindCartService   $findCartService,
-        private readonly HoldCartService   $holdCartService,
-        private readonly ResumeCartService $resumeCartService,
-        private readonly CancelCartService $cancelCartService,
+        private readonly OpenCartService         $openCartService,
+        private readonly FindCartService         $findCartService,
+        private readonly HoldCartService         $holdCartService,
+        private readonly ResumeCartService       $resumeCartService,
+        private readonly CancelCartService       $cancelCartService,
+        private readonly SetCartCustomerService  $setCartCustomerService,
     ) {}
 
     public function store(OpenCartRequest $request): JsonResponse
@@ -65,6 +69,19 @@ final class CartController extends Controller
         $this->resumeCartService->execute($cart);
 
         return $this->success(null, 'Cart resumed.');
+    }
+
+    public function setCustomer(SetCartCustomerRequest $request, string $cart): JsonResponse
+    {
+        $data       = $request->validated();
+        $updated    = $this->setCartCustomerService->execute(
+            new SetCartCustomerCommand(
+                cartId:     $cart,
+                customerId: $data['customer_id'] ?? null,
+            ),
+        );
+
+        return $this->success(new CartResource($updated), 'Cart customer updated.');
     }
 
     public function destroy(string $cart): JsonResponse

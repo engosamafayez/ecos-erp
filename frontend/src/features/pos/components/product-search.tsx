@@ -11,6 +11,7 @@ type ProductSearchProps = {
   placeholder?: string;
   className?: string;
   autoFocus?: boolean;
+  id?: string;
 };
 
 export function ProductSearch({
@@ -19,6 +20,7 @@ export function ProductSearch({
   placeholder = 'Search products or scan barcode... (/)',
   className,
   autoFocus,
+  id,
 }: ProductSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,10 +49,12 @@ export function ProductSearch({
       <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         ref={inputRef}
+        id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="h-9 pl-9 pr-8 text-sm"
+        aria-label="Search products"
       />
       {value && (
         <Button

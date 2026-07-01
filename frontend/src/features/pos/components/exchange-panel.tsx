@@ -2,19 +2,28 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Search, X, ArrowLeftRight, Plus } from 'lucide-react';
+import { Search, X, ArrowLeftRight, Plus, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import { useSale, useProcessExchange } from '@/features/pos/hooks/use-pos-queries';
 import { usePosStore } from '@/features/pos/store/pos-store';
 import type { ExchangeLine } from '@/features/pos/types';
 
 const exchangeSchema = z.object({
-  reason: z.string().min(1),
+  reason: z.string().min(1, 'Reason is required'),
   notes:  z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.reason === 'other' && !data.notes?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Notes are required when reason is "other"',
+      path: ['notes'],
+    });
+  }
 });
 
 type ExchangeForm = z.infer<typeof exchangeSchema>;
@@ -30,6 +39,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
   const [activeSaleId, setActiveSaleId] = useState<string | null>(exchangeSaleId ?? null);
   const [returnedLines, setReturnedLines] = useState<ExchangeLine[]>([]);
   const [replacementLines, setReplacementLines] = useState<ExchangeLine[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { data: sale, isLoading: saleLoading } = useSale(activeSaleId);
   const processExchange = useProcessExchange();
@@ -38,6 +48,8 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
     resolver: zodResolver(exchangeSchema),
     defaultValues: { reason: 'Customer exchange' },
   });
+
+  const watchedReason = form.watch('reason');
 
   function loadSale() {
     if (saleSearch.trim()) setActiveSaleId(saleSearch.trim());
@@ -57,6 +69,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
         sort_order:       i,
       })),
     );
+    setSubmitError(null);
   }
 
   function addBlankReplacement() {
@@ -76,7 +89,14 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
   }
 
   async function onSubmit(data: ExchangeForm) {
-    if (!activeSaleId || returnedLines.length === 0) return;
+    if (!activeSaleId) return;
+
+    if (returnedLines.length === 0) {
+      setSubmitError('Select at least one item to return');
+      return;
+    }
+    setSubmitError(null);
+
     await processExchange.mutateAsync({
       original_sale_id:  activeSaleId,
       cashier_id:        cashierId,
@@ -98,7 +118,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
           <ArrowLeftRight className="size-4 text-blue-500" />
           <h2 className="text-base font-semibold">Process Exchange</h2>
         </div>
-        <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose}>
+        <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose} aria-label="Close exchange panel">
           <X className="size-4" />
         </Button>
       </div>
@@ -115,8 +135,9 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
               onChange={(e) => setSaleSearch(e.target.value)}
               placeholder="Enter sale ID..."
               onKeyDown={(e) => e.key === 'Enter' && loadSale()}
+              aria-label="Original sale ID"
             />
-            <Button variant="outline" size="icon" onClick={loadSale} disabled={saleLoading}>
+            <Button variant="outline" size="icon" onClick={loadSale} disabled={saleLoading} aria-label="Search sale">
               <Search className="size-4" />
             </Button>
           </div>
@@ -134,25 +155,40 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
             {/* Returned items */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label className="text-xs">Items Returned</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs">Items Returned</Label>
+                  {submitError && (
+                    <span className="flex items-center gap-1 text-[10px] text-destructive">
+                      <AlertCircle className="size-3" />{submitError}
+                    </span>
+                  )}
+                </div>
                 <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={addAllReturned}>
                   All Items
                 </Button>
               </div>
-              <div className="space-y-1.5">
-                {returnedLines.map((l, i) => (
-                  <div key={i} className="flex items-center gap-2 rounded border px-2 py-1.5 text-xs">
-                    <span className="flex-1 truncate">{l.product_name || l.sku}</span>
-                    <span className="text-muted-foreground tabular-nums">×{l.quantity}</span>
-                    <button
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => setReturnedLines((p) => p.filter((_, j) => j !== i))}
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              {returnedLines.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">No items selected for return.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {returnedLines.map((l, i) => (
+                    <div key={i} className="flex items-center gap-2 rounded border px-2 py-1.5 text-xs">
+                      <span className="flex-1 truncate">{l.product_name || l.sku}</span>
+                      <span className="text-muted-foreground tabular-nums">×{l.quantity}</span>
+                      <button
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => {
+                          setReturnedLines((p) => p.filter((_, j) => j !== i));
+                          setSubmitError(null);
+                        }}
+                        aria-label={`Remove ${l.product_name || l.sku} from return`}
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Replacement items */}
@@ -163,53 +199,90 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
                   <Plus className="size-3" />Add
                 </Button>
               </div>
-              <div className="space-y-1.5">
-                {replacementLines.map((l, i) => (
-                  <div key={i} className="grid grid-cols-3 gap-1.5">
-                    <Input
-                      className="h-7 text-xs col-span-2"
-                      placeholder="Product ID"
-                      value={l.product_id}
-                      onChange={(e) => {
-                        const next = [...replacementLines];
-                        next[i] = { ...next[i], product_id: e.target.value };
-                        setReplacementLines(next);
-                      }}
-                    />
-                    <div className="flex items-center gap-1">
+              {replacementLines.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">No replacement items (return-only).</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {replacementLines.map((l, i) => (
+                    <div key={i} className="grid grid-cols-3 gap-1.5">
                       <Input
-                        className="h-7 text-xs"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="Price"
-                        value={l.unit_price.amount}
+                        className="h-7 text-xs col-span-2"
+                        placeholder="Product ID"
+                        value={l.product_id}
+                        aria-label={`Replacement product ID ${i + 1}`}
                         onChange={(e) => {
                           const next = [...replacementLines];
-                          next[i] = { ...next[i], unit_price: { amount: e.target.value, currency } };
+                          next[i] = { ...next[i], product_id: e.target.value };
                           setReplacementLines(next);
                         }}
                       />
-                      <button
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => setReplacementLines((p) => p.filter((_, j) => j !== i))}
-                      >
-                        <X className="size-3" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <Input
+                          className="h-7 text-xs"
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          placeholder="Price"
+                          value={l.unit_price.amount}
+                          aria-label={`Replacement price ${i + 1}`}
+                          onChange={(e) => {
+                            const next = [...replacementLines];
+                            next[i] = { ...next[i], unit_price: { amount: e.target.value, currency } };
+                            setReplacementLines(next);
+                          }}
+                        />
+                        <button
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setReplacementLines((p) => p.filter((_, j) => j !== i))}
+                          aria-label={`Remove replacement item ${i + 1}`}
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <form id="exchange-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+              {/* Reason */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Reason</Label>
-                <Input {...form.register('reason')} />
+                <Label className="text-xs" htmlFor="exchange-reason">Reason</Label>
+                <Input
+                  id="exchange-reason"
+                  {...form.register('reason')}
+                  aria-invalid={!!form.formState.errors.reason}
+                  aria-describedby={form.formState.errors.reason ? 'exchange-reason-error' : undefined}
+                  className={cn(form.formState.errors.reason && 'border-destructive')}
+                />
+                {form.formState.errors.reason && (
+                  <p id="exchange-reason-error" className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="size-3" />
+                    {form.formState.errors.reason.message}
+                  </p>
+                )}
               </div>
+
+              {/* Notes (required when reason === 'other') */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Notes</Label>
-                <Input {...form.register('notes')} placeholder="Optional..." />
+                <Label className="text-xs" htmlFor="exchange-notes">
+                  Notes {watchedReason === 'other' && <span className="text-destructive">*</span>}
+                </Label>
+                <Input
+                  id="exchange-notes"
+                  {...form.register('notes')}
+                  placeholder={watchedReason === 'other' ? 'Required for "other" reason...' : 'Optional...'}
+                  aria-invalid={!!form.formState.errors.notes}
+                  aria-describedby={form.formState.errors.notes ? 'exchange-notes-error' : undefined}
+                  className={cn(form.formState.errors.notes && 'border-destructive')}
+                />
+                {form.formState.errors.notes && (
+                  <p id="exchange-notes-error" className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="size-3" />
+                    {form.formState.errors.notes.message}
+                  </p>
+                )}
               </div>
             </form>
           </>
@@ -223,7 +296,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
           form="exchange-form"
           type="submit"
           className="w-full"
-          disabled={!sale || returnedLines.length === 0 || processExchange.isPending}
+          disabled={!sale || processExchange.isPending}
         >
           {processExchange.isPending ? 'Processing...' : 'Process Exchange'}
         </Button>

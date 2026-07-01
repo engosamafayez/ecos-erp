@@ -1,8 +1,11 @@
+import { useRef, useState } from 'react';
 import { ShoppingCart, PauseCircle, X, CreditCard } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CartLineRow } from '@/features/pos/components/cart-line';
+import type { CartLineHandle } from '@/features/pos/components/cart-line';
+import { useKeyboardShortcuts } from '@/features/pos/hooks/use-keyboard-shortcuts';
 import {
   useCart,
   useUpdateCartLine,
@@ -34,8 +37,29 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
     updateLine.isPending || removeLine.isPending ||
     holdCart.isPending  || cancelCart.isPending;
 
+  // ── Line selection state for keyboard navigation ────────────────────────────
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  const lineHandles = useRef(new Map<string, CartLineHandle>());
+
+  function selectedIndex(): number {
+    return lines.findIndex((l: CartLine) => l.id === selectedLineId);
+  }
+
+  function selectByIndex(idx: number) {
+    if (lines.length === 0) return;
+    const clamped = Math.max(0, Math.min(idx, lines.length - 1));
+    setSelectedLineId(lines[clamped].id);
+  }
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
   async function handleRemove(lineId: string) {
     if (!cartId) return;
+    if (selectedLineId === lineId) {
+      const idx = lines.findIndex((l: CartLine) => l.id === lineId);
+      const nextId = lines[idx + 1]?.id ?? lines[idx - 1]?.id ?? null;
+      setSelectedLineId(nextId);
+    }
     await removeLine.mutateAsync({ cartId, lineId });
   }
 
@@ -56,6 +80,73 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
     await cancelCart.mutateAsync(cartId);
   }
 
+  // ── Keyboard navigation shortcuts (scoped to this panel) ───────────────────
+  useKeyboardShortcuts([
+    {
+      key: 'ArrowDown',
+      description: 'Select next cart line',
+      handler: () => {
+        if (lines.length === 0) return;
+        const idx = selectedLineId === null ? -1 : selectedIndex();
+        selectByIndex(idx + 1);
+      },
+    },
+    {
+      key: 'ArrowUp',
+      description: 'Select previous cart line',
+      handler: () => {
+        if (lines.length === 0) return;
+        const idx = selectedLineId === null ? lines.length : selectedIndex();
+        selectByIndex(idx - 1);
+      },
+    },
+    {
+      key: 'Enter',
+      description: 'Edit quantity of selected line',
+      handler: () => {
+        if (selectedLineId) {
+          lineHandles.current.get(selectedLineId)?.startEdit();
+        }
+      },
+    },
+    {
+      key: '+',
+      description: 'Increment selected line qty',
+      handler: () => {
+        if (!selectedLineId || !cartId) return;
+        const line = lines.find((l: CartLine) => l.id === selectedLineId);
+        if (line) handleQtyChange(selectedLineId, parseFloat(line.quantity) + 1);
+      },
+    },
+    {
+      key: '=',
+      description: 'Increment selected line qty (no-shift +)',
+      handler: () => {
+        if (!selectedLineId || !cartId) return;
+        const line = lines.find((l: CartLine) => l.id === selectedLineId);
+        if (line) handleQtyChange(selectedLineId, parseFloat(line.quantity) + 1);
+      },
+    },
+    {
+      key: '-',
+      description: 'Decrement selected line qty',
+      handler: () => {
+        if (!selectedLineId || !cartId) return;
+        const line = lines.find((l: CartLine) => l.id === selectedLineId);
+        if (!line) return;
+        const newQty = parseFloat(line.quantity) - 1;
+        if (newQty > 0) handleQtyChange(selectedLineId, newQty);
+      },
+    },
+    {
+      key: 'Delete',
+      description: 'Remove selected line',
+      handler: () => {
+        if (selectedLineId) handleRemove(selectedLineId);
+      },
+    },
+  ], lines.length > 0 && !isBusy);
+
   const heldCount = heldCartSnapshots.length;
 
   return (
@@ -72,7 +163,6 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
           )}
         </div>
         <div className="flex items-center gap-0.5">
-          {/* Held carts button — always visible so cashier can always reach held carts */}
           <Button
             variant="ghost"
             size="sm"
@@ -120,7 +210,12 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
       <Separator />
 
       {/* Lines */}
-      <div className="flex-1 overflow-y-auto px-1 py-1">
+      <div
+        className="flex-1 overflow-y-auto px-1 py-1"
+        role="listbox"
+        aria-label="Cart items"
+        aria-activedescendant={selectedLineId ?? undefined}
+      >
         {lines.length === 0 ? (
           <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
             Scan a product or search above
@@ -129,10 +224,16 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
           lines.map((line: CartLine) => (
             <CartLineRow
               key={line.id}
+              ref={(handle) => {
+                if (handle) lineHandles.current.set(line.id, handle);
+                else lineHandles.current.delete(line.id);
+              }}
               line={line}
               onRemove={handleRemove}
               onQtyChange={handleQtyChange}
               disabled={isBusy}
+              isSelected={selectedLineId === line.id}
+              onSelect={() => setSelectedLineId(line.id)}
             />
           ))
         )}
@@ -162,11 +263,17 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
 
       {/* Checkout */}
       <div className="px-3 pb-3 shrink-0">
+        {lines.length > 0 && (
+          <p className="mb-1.5 text-[10px] text-muted-foreground text-center">
+            ↑↓ navigate · Enter edit qty · +/- adjust · Del remove
+          </p>
+        )}
         <Button
           className="w-full gap-2"
           size="lg"
           disabled={lines.length === 0 || isBusy}
           onClick={() => { openPayment(); onCheckout(); }}
+          aria-label={`Proceed to payment. Total: ${currencyCode} ${total}`}
         >
           <CreditCard className="size-4" />
           Pay {currencyCode} {total}

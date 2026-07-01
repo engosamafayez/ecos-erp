@@ -237,16 +237,19 @@ Route::middleware('auth:sanctum')->prefix('pos')->group(function (): void {
     Route::delete('sessions/{session}', [PosSessionController::class, 'destroy']);
 
     // Shifts
-    Route::post('shifts',          [PosShiftController::class, 'store']);
-    Route::get('shifts/{shift}',   [PosShiftController::class, 'show']);
-    Route::delete('shifts/{shift}', [PosShiftController::class, 'destroy']);
+    Route::post('shifts',                    [PosShiftController::class, 'store']);
+    Route::get('shifts/{shift}',             [PosShiftController::class, 'show']);
+    Route::delete('shifts/{shift}',          [PosShiftController::class, 'destroy']);
+    Route::put('shifts/{shift}/approve',     [PosShiftController::class, 'approve']);
+    Route::put('shifts/{shift}/reject',      [PosShiftController::class, 'reject']);
 
     // Carts
     Route::post('carts',             [PosCartController::class, 'store']);
     Route::get('carts/{cart}',       [PosCartController::class, 'show']);
-    Route::post('carts/{cart}/hold', [PosCartController::class, 'hold']);
-    Route::delete('carts/{cart}/hold', [PosCartController::class, 'resume']);
-    Route::delete('carts/{cart}',    [PosCartController::class, 'destroy']);
+    Route::post('carts/{cart}/hold',         [PosCartController::class, 'hold']);
+    Route::delete('carts/{cart}/hold',       [PosCartController::class, 'resume']);
+    Route::put('carts/{cart}/customer',      [PosCartController::class, 'setCustomer']);
+    Route::delete('carts/{cart}',            [PosCartController::class, 'destroy']);
 
     // Cart lines
     Route::post('carts/{cart}/lines',              [PosCartLineController::class, 'store']);

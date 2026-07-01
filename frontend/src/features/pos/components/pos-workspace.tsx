@@ -37,7 +37,7 @@ export function PosWorkspace() {
     terminalId, cashierId, currency, activeCustomerId,
     paymentPanelOpen, openPayment, closePayment,
     lastReceiptId, setLastReceipt,
-    toggleKeyboardHelp,
+    toggleKeyboardHelp, tickCustomerSearch,
     clearTransaction,
     reset,
     setCart,
@@ -46,6 +46,7 @@ export function PosWorkspace() {
   const [rightPanel, setRightPanel] = useState<RightPanel>('cart');
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const productSearchId = 'pos-product-search';
 
   const addLine    = useAddCartLine();
   const updateLine = useUpdateCartLine();
@@ -148,6 +149,8 @@ export function PosWorkspace() {
       setBarcodeError('Barcode lookup failed. Please try again.');
     } finally {
       setBarcodeLoading(false);
+      // Restore focus to product search after every scan
+      document.getElementById(productSearchId)?.focus();
     }
   }
 
@@ -209,6 +212,12 @@ export function PosWorkspace() {
       ctrl: true,
       description: 'Held carts',
       handler: () => setRightPanel((p) => p === 'held-carts' ? 'cart' : 'held-carts'),
+    },
+    {
+      key: 'k',
+      ctrl: true,
+      description: 'Focus customer search',
+      handler: () => { if (!isManagerMode) tickCustomerSearch(); },
     },
     {
       key: '?',

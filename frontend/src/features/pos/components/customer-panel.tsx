@@ -12,13 +12,21 @@ type CustomerPanelProps = {
 };
 
 export function CustomerPanel({ className }: CustomerPanelProps) {
-  const { activeCustomerId, activeCustomerName, cartId, setCustomer } = usePosStore();
+  const { activeCustomerId, activeCustomerName, cartId, setCustomer, customerSearchTick } = usePosStore();
   const setCartCustomer = useSetCartCustomer();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Ctrl+K — expand and focus customer search
+  useEffect(() => {
+    if (customerSearchTick === 0) return;
+    setExpanded(true);
+    // Input auto-focuses when expanded, but the state update needs a tick
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, [customerSearchTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 300ms debounce
   useEffect(() => {
