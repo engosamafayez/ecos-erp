@@ -44,4 +44,5 @@ return [
     Modules\Core\UserPreferences\Infrastructure\Providers\UserPreferenceServiceProvider::class,
     Modules\Operations\DemandAnalysis\Infrastructure\Providers\DemandAnalysisServiceProvider::class,
     Modules\POS\Shared\Infrastructure\Providers\POSServiceProvider::class,
+    Modules\POS\Terminal\Infrastructure\Providers\TerminalServiceProvider::class,
 ];
