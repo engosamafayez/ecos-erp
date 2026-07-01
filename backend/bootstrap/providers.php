@@ -49,4 +49,5 @@ return [
     Modules\POS\Shift\Infrastructure\Providers\ShiftServiceProvider::class,
     Modules\POS\Cart\Infrastructure\Providers\CartServiceProvider::class,
     Modules\POS\Payment\Infrastructure\Providers\PaymentServiceProvider::class,
+    Modules\POS\Sale\Infrastructure\Providers\SaleServiceProvider::class,
 ];
