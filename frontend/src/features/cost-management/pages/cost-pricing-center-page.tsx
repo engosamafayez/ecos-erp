@@ -742,6 +742,7 @@ export function CostPricingCenterPage() {
                     checked={allSelected}
                     onChange={toggleAll}
                     aria-label="Select all"
+                    className="size-4 cursor-pointer rounded accent-primary"
                   />
                 </th>
                 <th className="px-4 py-3">
@@ -813,6 +814,7 @@ export function CostPricingCenterPage() {
                           checked={selectedIds.has(review.id)}
                           onChange={() => toggleOne(review.id)}
                           aria-label={`Select ${review.product.name}`}
+                          className="size-4 cursor-pointer rounded accent-primary"
                         />
                       </td>
                       <td className="px-4 py-3">
