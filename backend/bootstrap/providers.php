@@ -46,4 +46,5 @@ return [
     Modules\POS\Shared\Infrastructure\Providers\POSServiceProvider::class,
     Modules\POS\Terminal\Infrastructure\Providers\TerminalServiceProvider::class,
     Modules\POS\Session\Infrastructure\Providers\SessionServiceProvider::class,
+    Modules\POS\Shift\Infrastructure\Providers\ShiftServiceProvider::class,
 ];

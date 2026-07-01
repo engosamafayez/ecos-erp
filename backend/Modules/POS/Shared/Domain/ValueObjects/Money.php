@@ -42,6 +42,12 @@ final readonly class Money
         return new self('0.00', strtoupper(trim($currency)));
     }
 
+    /** @param array{amount: string, currency: string} $data */
+    public static function fromArray(array $data): self
+    {
+        return self::of($data['amount'], $data['currency']);
+    }
+
     public function add(Money $other): self
     {
         $this->guardSameCurrency($other);
