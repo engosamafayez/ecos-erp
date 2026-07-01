@@ -58,11 +58,13 @@ export function PosPage() {
           Open Session
         </Button>
 
-        <SessionDialog
-          open={sessionDialogOpen}
-          mode="open"
-          onOpenChange={setSessionDialogOpen}
-        />
+        {sessionDialogOpen && (
+          <SessionDialog
+            open
+            mode="open"
+            onOpenChange={setSessionDialogOpen}
+          />
+        )}
       </div>
     );
   }
@@ -95,16 +97,20 @@ export function PosPage() {
           </Button>
         </div>
 
-        <SessionDialog
-          open={sessionDialogOpen}
-          mode="close"
-          onOpenChange={setSessionDialogOpen}
-        />
-        <ShiftDialog
-          open={shiftDialogOpen}
-          mode="open"
-          onOpenChange={setShiftDialogOpen}
-        />
+        {sessionDialogOpen && (
+          <SessionDialog
+            open
+            mode="close"
+            onOpenChange={setSessionDialogOpen}
+          />
+        )}
+        {shiftDialogOpen && (
+          <ShiftDialog
+            open
+            mode="open"
+            onOpenChange={setShiftDialogOpen}
+          />
+        )}
       </div>
     );
   }

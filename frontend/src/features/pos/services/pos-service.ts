@@ -10,6 +10,8 @@ import type {
   ExchangeResult, ProcessExchangePayload,
   Receipt,
   ProductsResult,
+  PosCategory,
+  PosCustomer,
 } from '@/features/pos/types';
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
@@ -97,6 +99,15 @@ export const cartService = {
     const { data } = await api.delete<ApiResponse<Cart>>(`/pos/carts/${cartId}`);
     return data.data;
   },
+
+  // PUT /pos/carts/{cartId}/customer — bind or clear the customer on an open cart.
+  // Backend endpoint required: PUT /pos/carts/{id}/customer { customer_id: string|null }
+  async setCustomer(cartId: string, customerId: string | null): Promise<Cart> {
+    const { data } = await api.put<ApiResponse<Cart>>(`/pos/carts/${cartId}/customer`, {
+      customer_id: customerId,
+    });
+    return data.data;
+  },
 };
 
 // ── Sales ─────────────────────────────────────────────────────────────────────
@@ -163,5 +174,29 @@ export const catalogService = {
   }): Promise<ProductsResult> {
     const { data } = await api.get<ApiResponse<ProductsResult>>('/products', { params });
     return data.data;
+  },
+};
+
+// ── Product Categories (for grid filter) ─────────────────────────────────────
+
+export const posCategoriesService = {
+  async list(): Promise<PosCategory[]> {
+    const { data } = await api.get<ApiResponse<{ items: PosCategory[]; meta: unknown }>>(
+      '/categories',
+      { params: { status: 'active', per_page: 100, sort_by: 'sort_order', sort_dir: 'asc' } },
+    );
+    return data.data.items;
+  },
+};
+
+// ── Customer Search (for customer panel) ──────────────────────────────────────
+
+export const posCustomerService = {
+  async search(query: string): Promise<PosCustomer[]> {
+    const { data } = await api.get<ApiResponse<{ items: PosCustomer[]; meta: unknown }>>(
+      '/customers',
+      { params: { search: query, per_page: 10 } },
+    );
+    return data.data.items;
   },
 };

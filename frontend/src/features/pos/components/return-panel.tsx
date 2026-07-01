@@ -98,7 +98,7 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
           <RotateCcw className="size-4 text-amber-500" />
           <h2 className="text-base font-semibold">Process Return</h2>
         </div>
-        <Button variant="ghost" size="icon" className="size-8" onClick={onClose}>
+        <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose}>
           <X className="size-4" />
         </Button>
       </div>
@@ -177,6 +177,11 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
               <div className="space-y-1.5">
                 <Label className="text-xs">Refund Method</Label>
                 <Input {...form.register('refund_method')} placeholder="cash" />
+                {form.formState.errors.refund_method && (
+                  <p className="text-xs text-destructive">
+                    {form.formState.errors.refund_method.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -191,6 +196,11 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
       <Separator />
 
       <div className="px-4 py-3 shrink-0">
+        {form.formState.errors.lines && (
+          <p className="mb-2 text-xs text-destructive">
+            Select at least one item to return.
+          </p>
+        )}
         <Button
           form="return-form"
           type="submit"

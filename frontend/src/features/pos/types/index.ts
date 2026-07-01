@@ -327,6 +327,23 @@ export type ProductsResult = {
   last_page: number;
 };
 
+// ── Category (for product grid filter) ───────────────────────────────────────
+
+export type PosCategory = {
+  id: string;
+  name: string;
+};
+
+// ── Customer (for POS customer search) ───────────────────────────────────────
+
+export type PosCustomer = {
+  id: string;
+  name: string;
+  code: string;
+  phone: string | null;
+  email: string | null;
+};
+
 // ── POS UI State types ────────────────────────────────────────────────────────
 
 export type PosMode = 'sale' | 'return' | 'exchange' | 'manager';

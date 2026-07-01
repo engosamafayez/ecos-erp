@@ -98,7 +98,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
           <ArrowLeftRight className="size-4 text-blue-500" />
           <h2 className="text-base font-semibold">Process Exchange</h2>
         </div>
-        <Button variant="ghost" size="icon" className="size-8" onClick={onClose}>
+        <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose}>
           <X className="size-4" />
         </Button>
       </div>

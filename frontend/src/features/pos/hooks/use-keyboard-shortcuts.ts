@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 
 export type ShortcutHandler = (e: KeyboardEvent) => void;
 
@@ -19,33 +19,36 @@ function matches(e: KeyboardEvent, shortcut: KeyboardShortcut): boolean {
   return keyMatch && ctrlMatch && altMatch && shiftMatch;
 }
 
+// Registers the event listener once. Reads current shortcuts and enabled state
+// from refs on each keydown, so there is no re-registration on every render.
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[], enabled = true) {
-  const handler = useCallback(
-    (e: KeyboardEvent) => {
-      if (!enabled) return;
+  const shortcutsRef = useRef(shortcuts);
+  shortcutsRef.current = shortcuts;
 
-      // Don't intercept when typing in inputs
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (!enabledRef.current) return;
+
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
-        // Allow Escape to bubble even from inputs
         if (e.key !== 'Escape') return;
       }
 
-      for (const shortcut of shortcuts) {
+      for (const shortcut of shortcutsRef.current) {
         if (matches(e, shortcut)) {
           e.preventDefault();
           shortcut.handler(e);
           break;
         }
       }
-    },
-    [shortcuts, enabled],
-  );
+    }
 
-  useEffect(() => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handler]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /** Canonical POS keyboard shortcut definitions (for display in help panel). */

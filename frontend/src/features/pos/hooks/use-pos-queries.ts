@@ -1,9 +1,11 @@
+// @refresh reset
 import {
   useQuery,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
 import { usePosStore } from '@/features/pos/store/pos-store';
+import { toast } from '@/components/ds/use-toast';
 import {
   sessionService,
   shiftService,
@@ -13,8 +15,11 @@ import {
   exchangeService,
   receiptService,
   catalogService,
+  posCategoriesService,
+  posCustomerService,
 } from '@/features/pos/services/pos-service';
 import type {
+  CartLine,
   OpenSessionPayload,
   OpenShiftPayload,
   CloseShiftPayload,
@@ -30,12 +35,14 @@ import type {
 // ── Query keys ────────────────────────────────────────────────────────────────
 
 export const posKeys = {
-  session:  (id: string) => ['pos', 'session', id] as const,
-  shift:    (id: string) => ['pos', 'shift', id] as const,
-  cart:     (id: string) => ['pos', 'cart', id] as const,
-  sale:     (id: string) => ['pos', 'sale', id] as const,
-  receipt:  (id: string) => ['pos', 'receipt', id] as const,
-  catalog:  (params: object) => ['pos', 'catalog', params] as const,
+  session:    (id: string) => ['pos', 'session', id] as const,
+  shift:      (id: string) => ['pos', 'shift', id] as const,
+  cart:       (id: string) => ['pos', 'cart', id] as const,
+  sale:       (id: string) => ['pos', 'sale', id] as const,
+  receipt:    (id: string) => ['pos', 'receipt', id] as const,
+  catalog:    (params: object) => ['pos', 'catalog', params] as const,
+  categories: () => ['pos', 'categories'] as const,
+  customers:  (search: string) => ['pos', 'customers', search] as const,
 };
 
 // ── Session ───────────────────────────────────────────────────────────────────
@@ -57,7 +64,9 @@ export function useOpenSession() {
     onSuccess:  (session) => {
       setSession(session.id);
       setCashier(session.cashier_id, '');
+      toast.success('Session opened');
     },
+    onError: () => toast.error('Failed to open session'),
   });
 }
 
@@ -65,7 +74,11 @@ export function useCloseSession() {
   const { reset } = usePosStore();
   return useMutation({
     mutationFn: (sessionId: string) => sessionService.close(sessionId),
-    onSuccess:  () => reset(),
+    onSuccess:  () => {
+      reset();
+      toast.success('Session closed');
+    },
+    onError: () => toast.error('Failed to close session'),
   });
 }
 
@@ -89,7 +102,9 @@ export function useOpenShift() {
     onSuccess:  (shift) => {
       setShift(shift.id);
       qc.setQueryData(posKeys.shift(shift.id), shift);
+      toast.success('Shift opened', `Opening cash: ${shift.opening_cash.amount}`);
     },
+    onError: () => toast.error('Failed to open shift'),
   });
 }
 
@@ -102,7 +117,9 @@ export function useCloseShift() {
     onSuccess: (shift) => {
       qc.setQueryData(posKeys.shift(shift.id), shift);
       if (shift.status === 'closed') setShift(null);
+      toast.success('Shift submitted for approval');
     },
+    onError: () => toast.error('Failed to submit shift'),
   });
 }
 
@@ -111,7 +128,11 @@ export function useApproveShift() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: ApproveShiftPayload }) =>
       shiftService.approve(id, payload),
-    onSuccess: (shift) => qc.setQueryData(posKeys.shift(shift.id), shift),
+    onSuccess: (shift) => {
+      qc.setQueryData(posKeys.shift(shift.id), shift);
+      toast.success('Shift approved');
+    },
+    onError: () => toast.error('Failed to approve shift'),
   });
 }
 
@@ -120,7 +141,11 @@ export function useRejectShift() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: RejectShiftPayload }) =>
       shiftService.reject(id, payload),
-    onSuccess: (shift) => qc.setQueryData(posKeys.shift(shift.id), shift),
+    onSuccess: (shift) => {
+      qc.setQueryData(posKeys.shift(shift.id), shift);
+      toast.warning('Shift count rejected');
+    },
+    onError: () => toast.error('Failed to reject shift'),
   });
 }
 
@@ -167,15 +192,95 @@ export function useRemoveCartLine() {
   });
 }
 
+// Remove the line then re-add with the new quantity.
+// If newQty ≤ 0 the line is only removed (no re-add).
+export type UpdateCartLineArgs = {
+  cartId: string;
+  lineId: string;
+  newQty: number;
+  line: CartLine;
+};
+
+export function useUpdateCartLine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ cartId, lineId, newQty, line }: UpdateCartLineArgs) => {
+      const afterRemove = await cartService.removeLine(cartId, lineId);
+      if (newQty <= 0) return afterRemove;
+      return cartService.addLine(cartId, {
+        product_id:   line.product_id,
+        product_name: line.product_name,
+        sku:          line.sku,
+        quantity:     String(newQty),
+        unit_price:   line.unit_price.amount,
+        currency:     line.unit_price.currency,
+      });
+    },
+    onSuccess: (cart) => qc.setQueryData(posKeys.cart(cart.id), cart),
+    onError:   () => toast.error('Failed to update quantity'),
+  });
+}
+
 export function useHoldCart() {
   const qc = useQueryClient();
-  const { clearTransaction } = usePosStore();
+  const { clearTransaction, addHeldCartSnapshot, activeCustomerName, currency } = usePosStore();
   return useMutation({
     mutationFn: (cartId: string) => cartService.hold(cartId),
     onSuccess: (cart) => {
+      addHeldCartSnapshot({
+        cartId:       cart.id,
+        customerName: activeCustomerName,
+        total:        cart.total.amount,
+        currency:     cart.currency ?? currency,
+        lineCount:    cart.lines.length,
+        heldAt:       cart.held_at ?? new Date().toISOString(),
+      });
       qc.setQueryData(posKeys.cart(cart.id), cart);
       clearTransaction();
+      toast.success('Cart held', `${cart.lines.length} item(s) saved`);
     },
+    onError: () => toast.error('Failed to hold cart'),
+  });
+}
+
+export function useResumeCart() {
+  const { setCart, removeHeldCartSnapshot } = usePosStore();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (cartId: string) => cartService.resume(cartId),
+    onSuccess: (cart) => {
+      setCart(cart.id);
+      qc.setQueryData(posKeys.cart(cart.id), cart);
+      removeHeldCartSnapshot(cart.id);
+      toast.success('Cart resumed');
+    },
+    onError: () => toast.error('Failed to resume cart'),
+  });
+}
+
+export function useDeleteHeldCart() {
+  const qc = useQueryClient();
+  const { removeHeldCartSnapshot } = usePosStore();
+  return useMutation({
+    mutationFn: (cartId: string) => cartService.cancel(cartId),
+    onSuccess: (cart) => {
+      qc.removeQueries({ queryKey: posKeys.cart(cart.id) });
+      removeHeldCartSnapshot(cart.id);
+      toast.info('Held cart deleted');
+    },
+    onError: () => toast.error('Failed to delete held cart'),
+  });
+}
+
+// Bind or clear the customer on an existing open cart.
+// Requires PUT /pos/carts/{id}/customer on the backend.
+// Fails silently (404) until backend implements the endpoint — Zustand still tracks the customer.
+export function useSetCartCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cartId, customerId }: { cartId: string; customerId: string | null }) =>
+      cartService.setCustomer(cartId, customerId),
+    onSuccess: (cart) => qc.setQueryData(posKeys.cart(cart.id), cart),
   });
 }
 
@@ -201,6 +306,7 @@ export function useProcessSale() {
       setLastReceipt(result.receipt_id);
       clearTransaction();
     },
+    onError: () => toast.error('Payment failed', 'Please check the cart and try again'),
   });
 }
 
@@ -223,6 +329,7 @@ export function useProcessReturn() {
       setLastReceipt(result.receipt_id);
       clearTransaction();
     },
+    onError: () => toast.error('Return failed', 'Please verify the sale ID and try again'),
   });
 }
 
@@ -236,6 +343,7 @@ export function useProcessExchange() {
       setLastReceipt(result.receipt_id);
       clearTransaction();
     },
+    onError: () => toast.error('Exchange failed', 'Please verify the sale ID and try again'),
   });
 }
 
@@ -253,6 +361,8 @@ export function useReceipt(id: string | null) {
 export function useReprintReceipt() {
   return useMutation({
     mutationFn: (id: string) => receiptService.reprint(id),
+    onSuccess: () => toast.success('Receipt reprinted'),
+    onError:   () => toast.error('Reprint failed'),
   });
 }
 
@@ -264,5 +374,26 @@ export function useCatalog(params: { search?: string; category_id?: string; page
     queryFn:  () => catalogService.list({ ...params, per_page: 48 }),
     staleTime: 60_000,
     placeholderData: (prev) => prev,
+  });
+}
+
+// ── Product categories (for grid filter) ─────────────────────────────────────
+
+export function useProductCategories() {
+  return useQuery({
+    queryKey: posKeys.categories(),
+    queryFn:  () => posCategoriesService.list(),
+    staleTime: 5 * 60_000,
+  });
+}
+
+// ── Customer search (for customer panel) ─────────────────────────────────────
+
+export function useCustomerSearch(search: string) {
+  return useQuery({
+    queryKey: posKeys.customers(search),
+    queryFn:  () => posCustomerService.search(search),
+    enabled:  search.length >= 2,
+    staleTime: 30_000,
   });
 }

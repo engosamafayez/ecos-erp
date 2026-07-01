@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Banknote, CreditCard, Wallet, X, Check } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Banknote, CreditCard, Wallet, X, Check, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,23 +28,42 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
   const { cartId, currency } = usePosStore();
   const { data: cart } = useCart();
   const processSale = useProcessSale();
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   const total = parseFloat(cart?.total?.amount ?? '0');
   const [method, setMethod] = useState<PaymentMethod>('cash');
   const [amountStr, setAmountStr] = useState('');
   const [tenders, setTenders] = useState<PaymentTender[]>([]);
 
-  const tendered = tenders.reduce((s, t) => s + parseFloat(t.amount), 0);
-  const remaining = Math.max(0, total - tendered);
-  const change = Math.max(0, tendered - total);
+  const tendered   = tenders.reduce((s, t) => s + parseFloat(t.amount), 0);
+  const remaining  = Math.max(0, total - tendered);
+  const change     = Math.max(0, tendered - total);
   const isSufficient = tendered >= total;
 
   const currentAmount = amountStr ? parseFloat(amountStr) : remaining;
+
+  // Focus amount input on mount so cashier can type immediately
+  useEffect(() => {
+    amountInputRef.current?.focus();
+  }, []);
+
+  // Enter key confirms payment when sufficient
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Enter' && isSufficient && !processSale.isPending) {
+        e.preventDefault();
+        handlePay();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isSufficient, processSale.isPending, cartId, tenders, method, total]);
 
   function addTender() {
     if (currentAmount <= 0) return;
     setTenders((prev) => [...prev, { method, amount: currentAmount.toFixed(2) }]);
     setAmountStr('');
+    amountInputRef.current?.focus();
   }
 
   async function handlePay() {
@@ -63,7 +82,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <h2 className="text-base font-semibold">Payment</h2>
-        <Button variant="ghost" size="icon" className="size-8" onClick={onClose}>
+        <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose}>
           <X className="size-4" />
         </Button>
       </div>
@@ -84,7 +103,10 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
                 <span>{currency} {tendered.toFixed(2)}</span>
               </div>
               <Separator className="my-2" />
-              <div className={cn('flex justify-between text-base font-bold', remaining > 0 ? 'text-destructive' : 'text-emerald-600')}>
+              <div className={cn(
+                'flex justify-between text-base font-bold',
+                remaining > 0 ? 'text-destructive' : 'text-emerald-600',
+              )}>
                 <span>{remaining > 0 ? 'Remaining' : 'Change'}</span>
                 <span>{currency} {remaining > 0 ? remaining.toFixed(2) : change.toFixed(2)}</span>
               </div>
@@ -92,7 +114,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
           )}
         </div>
 
-        {/* Method selector */}
+        {/* Method selector — min 44px touch targets */}
         <div>
           <Label className="mb-2 text-xs">Payment Method</Label>
           <div className="grid grid-cols-2 gap-2">
@@ -101,7 +123,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
                 key={m}
                 onClick={() => setMethod(m)}
                 className={cn(
-                  'flex items-center gap-2 rounded-md border p-2.5 text-sm font-medium transition-colors',
+                  'flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors',
                   method === m
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'hover:bg-accent',
@@ -118,22 +140,30 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
         <div>
           <Label className="mb-2 text-xs">Amount</Label>
           <Input
+            ref={amountInputRef}
             type="number"
             min="0"
             step="0.01"
             placeholder={remaining.toFixed(2)}
             value={amountStr}
             onChange={(e) => setAmountStr(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.stopPropagation();
+                if (isSufficient) handlePay();
+                else addTender();
+              }
+            }}
             className="text-right tabular-nums"
           />
-          {/* Quick amounts for cash */}
+          {/* Quick amounts for cash — min 44px touch targets */}
           {method === 'cash' && (
             <div className="mt-2 flex gap-2">
               {QUICK_AMOUNTS.map((amt) => (
                 <button
                   key={amt}
-                  onClick={() => setAmountStr(amt.toString())}
-                  className="flex-1 rounded border py-1 text-xs hover:bg-accent"
+                  onClick={() => { setAmountStr(amt.toString()); amountInputRef.current?.focus(); }}
+                  className="flex min-h-11 flex-1 items-center justify-center rounded border text-xs hover:bg-accent"
                 >
                   {amt}
                 </button>
@@ -143,7 +173,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
         </div>
 
         {/* Add tender (for split payments) */}
-        {(tenders.length > 0 || remaining > 0) && tendered < total && (
+        {tendered < total && (
           <Button variant="outline" className="w-full" onClick={addTender}>
             + Add Tender
           </Button>
@@ -169,11 +199,19 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
             ))}
           </div>
         )}
+
+        {/* Inline error */}
+        {processSale.isError && (
+          <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>Payment failed. Please check the amount and try again.</span>
+          </div>
+        )}
       </div>
 
       <Separator />
 
-      {/* Confirm button */}
+      {/* Confirm button — Enter key hint shown when sufficient */}
       <div className="px-4 py-3 shrink-0">
         <Button
           className="w-full gap-2"
@@ -187,6 +225,11 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
             <>
               <Check className="size-4" />
               Confirm Payment
+              {isSufficient && (
+                <kbd className="ml-auto rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1.5 py-0.5 font-mono text-[10px]">
+                  Enter
+                </kbd>
+              )}
             </>
           )}
         </Button>

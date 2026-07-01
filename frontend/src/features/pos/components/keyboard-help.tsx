@@ -1,4 +1,4 @@
-import { Keyboard, X } from 'lucide-react';
+import { Keyboard } from 'lucide-react';
 
 import {
   Dialog,
@@ -11,18 +11,34 @@ import { usePosStore } from '@/features/pos/store/pos-store';
 
 type Shortcut = { keys: string[]; description: string };
 
-const SHORTCUTS: Shortcut[] = [
-  { keys: ['Ctrl', 'N'],     description: 'New sale' },
-  { keys: ['F8'],            description: 'Open payment' },
-  { keys: ['F9'],            description: 'Hold cart' },
-  { keys: ['Escape'],        description: 'Cancel / close dialog' },
-  { keys: ['Ctrl', 'R'],     description: 'Switch to Return mode' },
-  { keys: ['Ctrl', 'E'],     description: 'Switch to Exchange mode' },
-  { keys: ['Alt', '1'],      description: 'Switch to Sale mode' },
-  { keys: ['Ctrl', 'M'],     description: 'Manager view' },
-  { keys: ['/'],             description: 'Focus product search' },
-  { keys: ['Shift', '?'],    description: 'Toggle this help panel' },
-  { keys: ['Enter'],         description: 'Add scanned barcode item' },
+const SHORTCUT_GROUPS: { heading: string; shortcuts: Shortcut[] }[] = [
+  {
+    heading: 'Transaction',
+    shortcuts: [
+      { keys: ['Ctrl', 'N'],  description: 'New sale' },
+      { keys: ['F8'],         description: 'Open payment' },
+      { keys: ['F9'],         description: 'Hold cart' },
+      { keys: ['Ctrl', 'H'], description: 'View held carts' },
+      { keys: ['Escape'],     description: 'Cancel / close panel' },
+    ],
+  },
+  {
+    heading: 'Modes',
+    shortcuts: [
+      { keys: ['Alt', '1'],   description: 'Switch to Sale mode' },
+      { keys: ['Ctrl', 'R'],  description: 'Switch to Return mode' },
+      { keys: ['Ctrl', 'E'],  description: 'Switch to Exchange mode' },
+      { keys: ['Ctrl', 'M'],  description: 'Manager view' },
+    ],
+  },
+  {
+    heading: 'Navigation',
+    shortcuts: [
+      { keys: ['/'],          description: 'Focus product search' },
+      { keys: ['Enter'],      description: 'Confirm barcode scan' },
+      { keys: ['Shift', '?'], description: 'Toggle this help panel' },
+    ],
+  },
 ];
 
 export function KeyboardHelp() {
@@ -38,18 +54,27 @@ export function KeyboardHelp() {
           </div>
         </DialogHeader>
 
-        <div className="space-y-1.5">
-          {SHORTCUTS.map((shortcut, i) => (
-            <div key={i} className="flex items-center justify-between py-1">
-              <span className="text-sm text-muted-foreground">{shortcut.description}</span>
-              <div className="flex items-center gap-1">
-                {shortcut.keys.map((key) => (
-                  <kbd
-                    key={key}
-                    className="rounded border bg-muted px-1.5 py-0.5 font-mono text-xs font-medium"
-                  >
-                    {key}
-                  </kbd>
+        <div className="space-y-4">
+          {SHORTCUT_GROUPS.map((group) => (
+            <div key={group.heading}>
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {group.heading}
+              </p>
+              <div className="space-y-1">
+                {group.shortcuts.map((shortcut, i) => (
+                  <div key={i} className="flex items-center justify-between py-0.5">
+                    <span className="text-sm text-muted-foreground">{shortcut.description}</span>
+                    <div className="flex items-center gap-1">
+                      {shortcut.keys.map((key) => (
+                        <kbd
+                          key={key}
+                          className="rounded border bg-muted px-1.5 py-0.5 font-mono text-xs font-medium"
+                        >
+                          {key}
+                        </kbd>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

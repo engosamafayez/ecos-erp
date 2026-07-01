@@ -5,51 +5,45 @@ import { Separator } from '@/components/ui/separator';
 import { CartLineRow } from '@/features/pos/components/cart-line';
 import {
   useCart,
-  useAddCartLine,
+  useUpdateCartLine,
   useRemoveCartLine,
   useHoldCart,
   useCancelCart,
-  useOpenCart,
 } from '@/features/pos/hooks/use-pos-queries';
 import { usePosStore } from '@/features/pos/store/pos-store';
-import type { Product } from '@/features/pos/types';
+import type { CartLine } from '@/features/pos/types';
 
 type CartPanelProps = {
   onCheckout: () => void;
-  onProductAdd?: (product: Product) => void;
+  onViewHeld: () => void;
 };
 
-export function CartPanel({ onCheckout }: CartPanelProps) {
-  const { cartId, shiftId, sessionId, terminalId, cashierId, currency, openPayment } = usePosStore();
+export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
+  const { cartId, currency, openPayment, heldCartSnapshots } = usePosStore();
 
   const { data: cart } = useCart();
-  const openCart = useOpenCart();
-  const addLine = useAddCartLine();
+  const updateLine = useUpdateCartLine();
   const removeLine = useRemoveCartLine();
-  const holdCart = useHoldCart();
+  const holdCart   = useHoldCart();
   const cancelCart = useCancelCart();
 
   const lines = cart?.lines ?? [];
   const total = cart?.total?.amount ?? '0.00';
   const currencyCode = cart?.currency ?? currency;
   const isBusy =
-    addLine.isPending || removeLine.isPending || holdCart.isPending || cancelCart.isPending;
-
-  async function ensureCart() {
-    if (!cartId && sessionId && shiftId) {
-      await openCart.mutateAsync({
-        session_id: sessionId,
-        shift_id: shiftId,
-        terminal_id: terminalId,
-        cashier_id: cashierId,
-        currency,
-      });
-    }
-  }
+    updateLine.isPending || removeLine.isPending ||
+    holdCart.isPending  || cancelCart.isPending;
 
   async function handleRemove(lineId: string) {
     if (!cartId) return;
     await removeLine.mutateAsync({ cartId, lineId });
+  }
+
+  async function handleQtyChange(lineId: string, newQty: number) {
+    if (!cartId) return;
+    const line = lines.find((l: CartLine) => l.id === lineId);
+    if (!line) return;
+    await updateLine.mutateAsync({ cartId, lineId, newQty, line });
   }
 
   async function handleHold() {
@@ -61,6 +55,8 @@ export function CartPanel({ onCheckout }: CartPanelProps) {
     if (!cartId) return;
     await cancelCart.mutateAsync(cartId);
   }
+
+  const heldCount = heldCartSnapshots.length;
 
   return (
     <div className="flex flex-col h-full">
@@ -75,30 +71,50 @@ export function CartPanel({ onCheckout }: CartPanelProps) {
             </span>
           )}
         </div>
-        {cart && (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              title="Hold cart (F9)"
-              onClick={handleHold}
-              disabled={isBusy || lines.length === 0}
-            >
-              <PauseCircle className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 text-destructive hover:text-destructive"
-              title="Cancel cart (Esc)"
-              onClick={handleCancel}
-              disabled={isBusy}
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-0.5">
+          {/* Held carts button — always visible so cashier can always reach held carts */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+            title="View held carts (Ctrl+H)"
+            onClick={onViewHeld}
+          >
+            <PauseCircle className="size-3.5" />
+            {heldCount > 0 ? (
+              <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
+                {heldCount}
+              </span>
+            ) : (
+              <span className="text-[10px]">Held</span>
+            )}
+          </Button>
+
+          {cart && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-9"
+                title="Hold cart (F9)"
+                onClick={handleHold}
+                disabled={isBusy || lines.length === 0}
+              >
+                <PauseCircle className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-9 text-destructive hover:text-destructive"
+                title="Cancel cart"
+                onClick={handleCancel}
+                disabled={isBusy}
+              >
+                <X className="size-4" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <Separator />
@@ -110,11 +126,12 @@ export function CartPanel({ onCheckout }: CartPanelProps) {
             Scan a product or search above
           </div>
         ) : (
-          lines.map((line) => (
+          lines.map((line: CartLine) => (
             <CartLineRow
               key={line.id}
               line={line}
               onRemove={handleRemove}
+              onQtyChange={handleQtyChange}
               disabled={isBusy}
             />
           ))

@@ -4,6 +4,15 @@ import type { PosMode } from '@/features/pos/types';
 
 const POS_STORAGE_KEY = 'ecos_pos_context';
 
+export type HeldCartSnapshot = {
+  cartId: string;
+  customerName: string | null;
+  total: string;
+  currency: string;
+  lineCount: number;
+  heldAt: string;
+};
+
 type PosState = {
   // Persisted operational context
   sessionId: string | null;
@@ -13,6 +22,9 @@ type PosState = {
   cashierId: string;
   cashierName: string;
   currency: string;
+
+  // Persisted held cart snapshots for this terminal
+  heldCartSnapshots: HeldCartSnapshot[];
 
   // Current operational mode
   mode: PosMode;
@@ -24,8 +36,8 @@ type PosState = {
   // UI state
   keyboardHelpOpen: boolean;
   paymentPanelOpen: boolean;
-  returnSaleId: string | null;   // sale being returned
-  exchangeSaleId: string | null; // sale being exchanged
+  returnSaleId: string | null;
+  exchangeSaleId: string | null;
   lastReceiptId: string | null;
 
   // Actions
@@ -44,6 +56,8 @@ type PosState = {
   clearTransaction: () => void;
   setLastReceipt: (id: string | null) => void;
   toggleKeyboardHelp: () => void;
+  addHeldCartSnapshot: (snapshot: HeldCartSnapshot) => void;
+  removeHeldCartSnapshot: (cartId: string) => void;
   reset: () => void;
 };
 
@@ -51,13 +65,14 @@ export const usePosStore = create<PosState>()(
   persist(
     (set) => ({
       // Default persisted context
-      sessionId:   null,
-      shiftId:     null,
-      cartId:      null,
-      terminalId:  'TERM-001',
-      cashierId:   '',
-      cashierName: '',
-      currency:    'EGP',
+      sessionId:          null,
+      shiftId:            null,
+      cartId:             null,
+      terminalId:         'TERM-001',
+      cashierId:          '',
+      cashierName:        '',
+      currency:           'EGP',
+      heldCartSnapshots:  [],
 
       // Runtime state (not persisted)
       mode:                'sale',
@@ -103,8 +118,21 @@ export const usePosStore = create<PosState>()(
           mode:                'sale',
         }),
 
-      setLastReceipt:   (id) => set({ lastReceiptId: id }),
-      toggleKeyboardHelp: () => set((s) => ({ keyboardHelpOpen: !s.keyboardHelpOpen })),
+      setLastReceipt:     (id) => set({ lastReceiptId: id }),
+      toggleKeyboardHelp: ()  => set((s) => ({ keyboardHelpOpen: !s.keyboardHelpOpen })),
+
+      addHeldCartSnapshot: (snapshot) =>
+        set((s) => ({
+          heldCartSnapshots: [
+            ...s.heldCartSnapshots.filter((h) => h.cartId !== snapshot.cartId),
+            snapshot,
+          ],
+        })),
+
+      removeHeldCartSnapshot: (cartId) =>
+        set((s) => ({
+          heldCartSnapshots: s.heldCartSnapshots.filter((h) => h.cartId !== cartId),
+        })),
 
       reset: () =>
         set({
@@ -114,22 +142,25 @@ export const usePosStore = create<PosState>()(
           mode:                'sale',
           activeCustomerId:    null,
           activeCustomerName:  null,
+          keyboardHelpOpen:    false,
           paymentPanelOpen:    false,
           returnSaleId:        null,
           exchangeSaleId:      null,
           lastReceiptId:       null,
+          heldCartSnapshots:   [],
         }),
     }),
     {
-      name:    POS_STORAGE_KEY,
+      name: POS_STORAGE_KEY,
       partialize: (state) => ({
-        sessionId:   state.sessionId,
-        shiftId:     state.shiftId,
-        cartId:      state.cartId,
-        terminalId:  state.terminalId,
-        cashierId:   state.cashierId,
-        cashierName: state.cashierName,
-        currency:    state.currency,
+        sessionId:          state.sessionId,
+        shiftId:            state.shiftId,
+        cartId:             state.cartId,
+        terminalId:         state.terminalId,
+        cashierId:          state.cashierId,
+        cashierName:        state.cashierName,
+        currency:           state.currency,
+        heldCartSnapshots:  state.heldCartSnapshots,
       }),
     },
   ),

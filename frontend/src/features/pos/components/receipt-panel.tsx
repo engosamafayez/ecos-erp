@@ -1,4 +1,4 @@
-import { Printer, RotateCcw, X } from 'lucide-react';
+import { Plus, Printer, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -9,9 +9,10 @@ import { usePosStore } from '@/features/pos/store/pos-store';
 type ReceiptPanelProps = {
   receiptId?: string | null;
   onClose: () => void;
+  onNewSale?: () => void;
 };
 
-export function ReceiptPanel({ receiptId, onClose }: ReceiptPanelProps) {
+export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProps) {
   const { lastReceiptId } = usePosStore();
   const id = receiptId ?? lastReceiptId;
   const { data: receipt, isLoading } = useReceipt(id);
@@ -174,6 +175,26 @@ export function ReceiptPanel({ receiptId, onClose }: ReceiptPanelProps) {
             <p className="text-center text-[10px] text-muted-foreground">*** REPRINT ***</p>
           )}
         </div>
+      )}
+
+      {/* New Sale CTA */}
+      {receipt && (
+        <>
+          <Separator />
+          <div className="px-4 py-3 shrink-0">
+            <Button
+              className="w-full gap-2"
+              size="lg"
+              onClick={onNewSale ?? onClose}
+            >
+              <Plus className="size-4" />
+              New Sale
+              <kbd className="ml-auto rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1.5 py-0.5 font-mono text-[10px]">
+                Ctrl+N
+              </kbd>
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
