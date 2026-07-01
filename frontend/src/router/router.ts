@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, redirect } from 'react-router-dom';
 
 import { ComingSoonPage } from '@/components/common/coming-soon-page';
 import { AppShell } from '@/components/layout/app-shell';
@@ -10,6 +10,9 @@ import { CompaniesPage } from '@/features/companies/pages/companies-page';
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 import { HomePage } from '@/features/home/pages/home-page';
 import { InventoryProductsWorkspace } from '@/features/inventory/pages/inventory-products-workspace';
+import { PackagingMaterialsPage } from '@/features/inventory/pages/packaging-materials-page';
+import { ConsumablesPage } from '@/features/inventory/pages/consumables-page';
+import { SemiFinishedMaterialsPage } from '@/features/inventory/pages/semi-finished-materials-page';
 import { OrganizationWorkspace } from '@/features/organization/pages/organization-workspace';
 import { ProductsPage } from '@/features/products/pages/products-page';
 import { RawMaterialsPage } from '@/features/products/pages/raw-materials-page';
@@ -28,6 +31,8 @@ import { ViewFulfillmentPage } from '@/features/fulfillments/pages/view-fulfillm
 import { SyncLogsPage } from '@/features/sync-logs/pages/sync-logs-page';
 import { BomsPage } from '@/features/boms/pages/boms-page';
 import { BomWorkspacePage } from '@/features/boms/pages/bom-workspace-page';
+import { RecipesPage } from '@/features/recipes/pages/recipes-page';
+import { RecipeWorkspacePage } from '@/features/recipes/pages/recipe-workspace-page';
 import { CustomersPage } from '@/features/customers/pages/customers-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
 import { InventoryDashboardPage } from '@/features/inventory-control/pages/inventory-dashboard-page';
@@ -41,6 +46,7 @@ import { GoodsReceiptsPage } from '@/features/goods-receipts/pages/goods-receipt
 import { ViewGoodsReceiptPage } from '@/features/goods-receipts/pages/view-goods-receipt-page';
 import { SuppliersPage } from '@/features/suppliers/pages/suppliers-page';
 import { ViewSupplierPage } from '@/features/suppliers/pages/view-supplier-page';
+import { CostPricingCenterPage } from '@/features/cost-management/pages/cost-pricing-center-page';
 import { DemandAnalysisPage } from '@/features/operations/pages/demand-analysis-page';
 import { PosPage } from '@/features/pos/pages/pos-page';
 import { AuthLayout } from '@/layouts/auth-layout';
@@ -117,11 +123,22 @@ export const router = createBrowserRouter(
             // Commerce
             { path: ROUTES.productMappings, Component: ProductMappingsPage },
             { path: ROUTES.syncLogs, Component: SyncLogsPage },
-            // Manufacturing
-            { path: ROUTES.boms, Component: BomsPage },
-            { path: ROUTES.bomsNew, Component: BomWorkspacePage },
+            // Materials sub-sections
+            { path: ROUTES.packagingMaterials, Component: PackagingMaterialsPage },
+            { path: ROUTES.consumables, Component: ConsumablesPage },
+            { path: ROUTES.semiFinishedMaterials, Component: SemiFinishedMaterialsPage },
+            // Recipes (canonical home: Inventory)
+            { path: ROUTES.recipes, Component: RecipesPage },
+            { path: ROUTES.recipesNew, Component: RecipeWorkspacePage },
+            { path: `${ROUTES.recipes}/:id/edit`, Component: RecipeWorkspacePage },
+            { path: `${ROUTES.recipes}/:id`, Component: RecipeWorkspacePage },
+            // Legacy BOM routes — redirect to canonical recipe paths
+            { path: ROUTES.boms, loader: () => redirect(ROUTES.recipes) },
+            { path: ROUTES.bomsNew, loader: () => redirect(ROUTES.recipesNew) },
             { path: `${ROUTES.boms}/:id/edit`, Component: BomWorkspacePage },
             { path: `${ROUTES.boms}/:id`, Component: BomWorkspacePage },
+            // Cost management
+            { path: ROUTES.costPricingCenter, Component: CostPricingCenterPage },
             // Operations
             { path: ROUTES.operationsDemandAnalysis, Component: DemandAnalysisPage },
             ...moduleRoutes,

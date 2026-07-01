@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PosMode } from '@/features/pos/types';
+import type { PaymentTender, PosMode } from '@/features/pos/types';
 
 const POS_STORAGE_KEY = 'ecos_pos_context';
 
@@ -14,7 +14,7 @@ export type HeldCartSnapshot = {
 };
 
 type PosState = {
-  // Persisted operational context
+  // ── Persisted operational context ─────────────────────────────────────────
   sessionId: string | null;
   shiftId: string | null;
   cartId: string | null;
@@ -26,24 +26,27 @@ type PosState = {
   // Persisted held cart snapshots for this terminal
   heldCartSnapshots: HeldCartSnapshot[];
 
-  // Current operational mode
-  mode: PosMode;
-
-  // Active customer for the current transaction
+  // Persisted customer context — survives browser crash / refresh
   activeCustomerId: string | null;
   activeCustomerName: string | null;
 
-  // UI state
+  // Persisted payment draft — tenders entered before a crash
+  tenderDraft: PaymentTender[] | null;
+
+  // Persisted last receipt ID — receipt screen survives refresh
+  lastReceiptId: string | null;
+
+  // ── Runtime state (not persisted) ─────────────────────────────────────────
+  mode: PosMode;
   keyboardHelpOpen: boolean;
   paymentPanelOpen: boolean;
   returnSaleId: string | null;
   exchangeSaleId: string | null;
-  lastReceiptId: string | null;
 
   // Ctrl+K — customer search focus request (incremented to trigger focus)
   customerSearchTick: number;
 
-  // Actions
+  // ── Actions ───────────────────────────────────────────────────────────────
   setSession: (id: string | null) => void;
   setShift: (id: string | null) => void;
   setCart: (id: string | null) => void;
@@ -52,6 +55,7 @@ type PosState = {
   setCurrency: (currency: string) => void;
   setMode: (mode: PosMode) => void;
   setCustomer: (id: string | null, name: string | null) => void;
+  setTenderDraft: (tenders: PaymentTender[] | null) => void;
   openPayment: () => void;
   closePayment: () => void;
   openReturn: (saleId: string) => void;
@@ -77,16 +81,17 @@ export const usePosStore = create<PosState>()(
       cashierName:        '',
       currency:           'EGP',
       heldCartSnapshots:  [],
+      activeCustomerId:   null,
+      activeCustomerName: null,
+      tenderDraft:        null,
+      lastReceiptId:      null,
 
-      // Runtime state (not persisted)
+      // Runtime state (not persisted — reset on every mount)
       mode:                'sale',
-      activeCustomerId:    null,
-      activeCustomerName:  null,
       keyboardHelpOpen:    false,
       paymentPanelOpen:    false,
       returnSaleId:        null,
       exchangeSaleId:      null,
-      lastReceiptId:       null,
       customerSearchTick:  0,
 
       // Actions
@@ -103,6 +108,8 @@ export const usePosStore = create<PosState>()(
       setCustomer: (id, name) =>
         set({ activeCustomerId: id, activeCustomerName: name }),
 
+      setTenderDraft: (tenders) => set({ tenderDraft: tenders }),
+
       openPayment:  () => set({ paymentPanelOpen: true }),
       closePayment: () => set({ paymentPanelOpen: false }),
 
@@ -117,15 +124,17 @@ export const usePosStore = create<PosState>()(
           cartId:              null,
           activeCustomerId:    null,
           activeCustomerName:  null,
+          tenderDraft:         null,
           paymentPanelOpen:    false,
           returnSaleId:        null,
           exchangeSaleId:      null,
           mode:                'sale',
         }),
 
-      setLastReceipt:     (id) => set({ lastReceiptId: id }),
-      toggleKeyboardHelp: ()  => set((s) => ({ keyboardHelpOpen: !s.keyboardHelpOpen })),
-      tickCustomerSearch: ()  => set((s) => ({ customerSearchTick: s.customerSearchTick + 1 })),
+      setLastReceipt: (id) => set({ lastReceiptId: id }),
+
+      toggleKeyboardHelp: () => set((s) => ({ keyboardHelpOpen: !s.keyboardHelpOpen })),
+      tickCustomerSearch: () => set((s) => ({ customerSearchTick: s.customerSearchTick + 1 })),
 
       addHeldCartSnapshot: (snapshot) =>
         set((s) => ({
@@ -148,11 +157,12 @@ export const usePosStore = create<PosState>()(
           mode:                'sale',
           activeCustomerId:    null,
           activeCustomerName:  null,
+          tenderDraft:         null,
+          lastReceiptId:       null,
           keyboardHelpOpen:    false,
           paymentPanelOpen:    false,
           returnSaleId:        null,
           exchangeSaleId:      null,
-          lastReceiptId:       null,
           heldCartSnapshots:   [],
         }),
     }),
@@ -167,6 +177,11 @@ export const usePosStore = create<PosState>()(
         cashierName:        state.cashierName,
         currency:           state.currency,
         heldCartSnapshots:  state.heldCartSnapshots,
+        // Recovery-critical: these survive browser crashes and refreshes
+        activeCustomerId:   state.activeCustomerId,
+        activeCustomerName: state.activeCustomerName,
+        tenderDraft:        state.tenderDraft,
+        lastReceiptId:      state.lastReceiptId,
       }),
     },
   ),

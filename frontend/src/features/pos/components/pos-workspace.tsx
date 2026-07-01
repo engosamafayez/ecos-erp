@@ -15,6 +15,7 @@ import { ManagerPanel } from '@/features/pos/components/manager-panel';
 import { CustomerPanel } from '@/features/pos/components/customer-panel';
 import { HeldCartsPanel } from '@/features/pos/components/held-carts-panel';
 import { KeyboardHelp } from '@/features/pos/components/keyboard-help';
+import { CartRecoveryDialog } from '@/features/pos/components/cart-recovery-dialog';
 import { useBarcodeScanner } from '@/features/pos/hooks/use-barcode-scanner';
 import { useKeyboardShortcuts } from '@/features/pos/hooks/use-keyboard-shortcuts';
 import {
@@ -24,6 +25,7 @@ import {
   useUpdateCartLine,
   useOpenCart,
   useHoldCart,
+  useCancelCart,
 } from '@/features/pos/hooks/use-pos-queries';
 import { catalogService } from '@/features/pos/services/pos-service';
 import { usePosStore } from '@/features/pos/store/pos-store';
@@ -35,6 +37,7 @@ export function PosWorkspace() {
   const {
     mode, setMode, cartId, shiftId, sessionId,
     terminalId, cashierId, currency, activeCustomerId,
+    activeCustomerName, tenderDraft,
     paymentPanelOpen, openPayment, closePayment,
     lastReceiptId, setLastReceipt,
     toggleKeyboardHelp, tickCustomerSearch,
@@ -46,13 +49,17 @@ export function PosWorkspace() {
   const [rightPanel, setRightPanel] = useState<RightPanel>('cart');
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
   const isScanningRef = useRef(false);
+  // True only when there was a persisted cartId from a previous session at mount time
+  const hadCartOnMount = useRef(Boolean(cartId));
   const productSearchId = 'pos-product-search';
 
   const addLine    = useAddCartLine();
   const updateLine = useUpdateCartLine();
   const openCart   = useOpenCart();
   const holdCart   = useHoldCart();
+  const cancelCart = useCancelCart();
 
   const { data: cart, isError: cartError } = useCart();
   const { isError: sessionError } = useSession();
@@ -68,9 +75,21 @@ export function PosWorkspace() {
   useEffect(() => {
     if (cartError && cartId) {
       setCart(null);
+      hadCartOnMount.current = false;
       toast.warning('Cart reset', 'Previous cart is no longer available');
     }
   }, [cartError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Recovery detection: show dialog once when a previous cart is found on startup
+  useEffect(() => {
+    if (!hadCartOnMount.current) return;
+    if (cart) {
+      hadCartOnMount.current = false;
+      if (cart.status === 'open' && cart.lines.length > 0) {
+        setShowRecovery(true);
+      }
+    }
+  }, [cart]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-dismiss barcode error after 3 seconds
   useEffect(() => {
@@ -250,6 +269,26 @@ export function PosWorkspace() {
     setRightPanel('receipt');
   }
 
+  // ── Recovery handlers ────────────────────────────────────────────────────────
+  function handleResumeRecovery() {
+    setShowRecovery(false);
+    toast.success('Sale resumed', 'Your previous items are ready');
+  }
+
+  function handleDiscardRecovery() {
+    if (cartId) {
+      cancelCart.mutate(cartId, {
+        onSuccess: () => setShowRecovery(false),
+        onError: () => {
+          clearTransaction();
+          setShowRecovery(false);
+        },
+      });
+    } else {
+      setShowRecovery(false);
+    }
+  }
+
   // ── Layout ───────────────────────────────────────────────────────────────────
   const isManagerMode = mode === 'manager';
 
@@ -379,6 +418,19 @@ export function PosWorkspace() {
 
       {/* Keyboard help dialog */}
       <KeyboardHelp />
+
+      {/* Cart recovery dialog — shown once when a previous unfinished sale is detected */}
+      {showRecovery && cart && (
+        <CartRecoveryDialog
+          open={showRecovery}
+          cart={cart}
+          customerName={activeCustomerName}
+          hasTenderDraft={Boolean(tenderDraft?.length)}
+          onResume={handleResumeRecovery}
+          onDiscard={handleDiscardRecovery}
+          isDiscarding={cancelCart.isPending}
+        />
+      )}
     </div>
   );
 }

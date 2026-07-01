@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Banknote, CreditCard, Wallet, X, Check, AlertCircle } from 'lucide-react';
+import { Banknote, CreditCard, RotateCcw, Wallet, X, Check, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,15 +25,22 @@ type PaymentPanelProps = {
 };
 
 export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
-  const { cartId, currency } = usePosStore();
+  const { cartId, currency, setTenderDraft } = usePosStore();
   const { data: cart } = useCart();
   const processSale = useProcessSale();
   const amountInputRef = useRef<HTMLInputElement>(null);
 
+  // Restore tenders from draft if the panel was open during a crash.
+  // We read directly from the store's current state at mount time to avoid
+  // creating a subscription that would re-initialize on every store update.
+  const [tenders, setTenders] = useState<PaymentTender[]>(
+    () => usePosStore.getState().tenderDraft ?? [],
+  );
+  const wasRestored = useRef((usePosStore.getState().tenderDraft?.length ?? 0) > 0);
+
   const total = parseFloat(cart?.total?.amount ?? '0');
   const [method, setMethod] = useState<PaymentMethod>('cash');
   const [amountStr, setAmountStr] = useState('');
-  const [tenders, setTenders] = useState<PaymentTender[]>([]);
   const [amountError, setAmountError] = useState<string | null>(null);
 
   const tendered   = tenders.reduce((s, t) => s + parseFloat(t.amount), 0);
@@ -48,6 +55,11 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
     amountInputRef.current?.focus();
   }, []);
 
+  // Auto-save tenders to store so they survive a browser crash
+  useEffect(() => {
+    setTenderDraft(tenders.length > 0 ? tenders : null);
+  }, [tenders, setTenderDraft]);
+
   // Enter key confirms payment when sufficient
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -58,7 +70,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isSufficient, processSale.isPending, cartId, tenders, method, total]);
+  }, [isSufficient, processSale.isPending, cartId, tenders, method, total]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function addTender() {
     if (currentAmount <= 0 || isNaN(currentAmount)) {
@@ -80,6 +92,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
       : tenders;
 
     await processSale.mutateAsync({ cart_id: cartId, payments });
+    // clearTransaction() (called inside useProcessSale.onSuccess) wipes tenderDraft from store
     onSuccess();
   }
 
@@ -96,6 +109,14 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
       <Separator />
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+        {/* Restored draft notice */}
+        {wasRestored.current && (
+          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+            <RotateCcw className="size-3.5 shrink-0" />
+            Payment details restored from your previous session.
+          </div>
+        )}
+
         {/* Total due */}
         <div className="rounded-lg bg-muted p-3">
           <div className="flex justify-between text-sm text-muted-foreground">

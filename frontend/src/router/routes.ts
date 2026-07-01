@@ -30,13 +30,22 @@ export const ROUTES = {
   fulfillmentsNew: '/fulfillments/new',
   stockSyncLogs: '/stock-sync-logs',
   syncLogs: '/sync-logs',
+  // Legacy BOM routes — kept for redirect compatibility
   boms: '/boms',
   bomsNew: '/boms/new',
+  // Recipe routes (canonical home: Inventory)
+  recipes: '/inventory/recipes',
+  recipesNew: '/inventory/recipes/new',
+  // Materials sub-sections
+  packagingMaterials: '/inventory/packaging-materials',
+  consumables: '/inventory/consumables',
+  semiFinishedMaterials: '/inventory/semi-finished-materials',
   inventoryDashboard: '/inventory/dashboard',
   inventoryAbcClassifications: '/inventory/abc-classifications',
   inventoryCycleCountPlanner: '/inventory/cycle-count-planner',
   inventoryVarianceAnalytics: '/inventory/variance-analytics',
   inventoryWarehousePerformance: '/inventory/warehouse-performance',
+  costPricingCenter: '/inventory/cost-management',
   inventory: '/inventory',
   purchasing: '/purchasing',
   sales: '/sales',

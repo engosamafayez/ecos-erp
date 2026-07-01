@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, History, Pencil, Plus, Trash2, TrendingUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -39,6 +39,10 @@ type ProductsViewProps = {
   createLabel: string;
   /** When true, omits PageHeader and Card wrapper — renders bare content for embedding in a tab. */
   headless?: boolean;
+  /** Override the "View" row action — receives the clicked product. */
+  onView?: (product: Product) => void;
+  /** Extra row actions appended after the built-in ones. */
+  onViewTab?: (product: Product, tab: string) => void;
 };
 
 export function ProductsView({
@@ -49,6 +53,8 @@ export function ProductsView({
   searchPlaceholder,
   createLabel,
   headless = false,
+  onView,
+  onViewTab,
 }: ProductsViewProps) {
   const { t } = useTranslation('products');
   const { t: tCommon } = useTranslation('common');
@@ -248,8 +254,19 @@ export function ProductsView({
             <ActionMenu
               label={`Actions for ${product.name}`}
               items={[
-                { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(product) },
+                {
+                  key: 'view',
+                  label: tCommon('actions.view'),
+                  icon: Eye,
+                  onSelect: () => (onView ? onView(product) : openEdit(product)),
+                },
                 { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(product) },
+                ...(onViewTab
+                  ? [
+                      { key: 'stock-history', label: 'Stock History', icon: History, onSelect: () => onViewTab(product, 'stock-history') },
+                      { key: 'price-history', label: 'Price History', icon: TrendingUp, onSelect: () => onViewTab(product, 'price-history') },
+                    ]
+                  : []),
                 {
                   key: 'delete',
                   label: tCommon('common.delete'),
