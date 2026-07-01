@@ -56,4 +56,5 @@ return [
     Modules\POS\Promotion\Infrastructure\Providers\PromotionServiceProvider::class,
     Modules\POS\Pricing\Infrastructure\Providers\PricingServiceProvider::class,
     Modules\POS\Customer\Infrastructure\Providers\CustomerServiceProvider::class,
+    Modules\POS\Exchange\Infrastructure\Providers\ExchangeServiceProvider::class,
 ];
