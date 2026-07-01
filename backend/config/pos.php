@@ -125,4 +125,18 @@ return [
         'email_on_sale'         => env('POS_RECEIPT_AUTO_EMAIL', false),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | ERP Integration
+    |--------------------------------------------------------------------------
+    |
+    | guest_customer_id — UUID of the Customer record used for anonymous
+    | (walk-in) POS sales. Set POS_GUEST_CUSTOMER_ID in .env to a valid
+    | Customer UUID. When null, ERP orders are not created for walk-in sales.
+    |
+    */
+    'erp' => [
+        'guest_customer_id' => env('POS_GUEST_CUSTOMER_ID', null),
+    ],
+
 ];

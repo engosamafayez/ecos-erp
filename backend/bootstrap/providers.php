@@ -59,4 +59,5 @@ return [
     Modules\POS\Exchange\Infrastructure\Providers\ExchangeServiceProvider::class,
     Modules\POS\Receipt\Infrastructure\Providers\ReceiptServiceProvider::class,
     Modules\POS\Application\Infrastructure\Providers\ApplicationServiceProvider::class,
+    Modules\POS\Application\Infrastructure\Providers\EventServiceProvider::class,
 ];
