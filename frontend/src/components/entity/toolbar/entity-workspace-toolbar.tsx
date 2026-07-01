@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react';
+import type { ComponentType } from 'react';
 import { Download, Plus, Search, Upload } from 'lucide-react';
 
 import { PageToolbar } from '@/components/page';

@@ -1,11 +1,11 @@
 import {
-  KeyboardEvent,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
+import type { KeyboardEvent } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Search, Sparkles, X } from 'lucide-react';
 

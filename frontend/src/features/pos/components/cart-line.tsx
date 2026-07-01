@@ -41,7 +41,7 @@ export const CartLineRow = forwardRef<CartLineHandle, CartLineProps>(
       setIsEditing(false);
       const n = parseFloat(editValue);
       if (!isNaN(n) && n > 0 && n !== qty) {
-        onQtyChange(line.id, n);
+        onQtyChange?.(line.id, n);
       }
     }
 
