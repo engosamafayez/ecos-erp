@@ -54,4 +54,5 @@ return [
     Modules\POS\CashDrawer\Infrastructure\Providers\CashDrawerServiceProvider::class,
     Modules\POS\Discount\Infrastructure\Providers\DiscountServiceProvider::class,
     Modules\POS\Promotion\Infrastructure\Providers\PromotionServiceProvider::class,
+    Modules\POS\Pricing\Infrastructure\Providers\PricingServiceProvider::class,
 ];
