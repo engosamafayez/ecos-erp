@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\POS\Application\Exceptions;
 
-final class CartNotReadyException extends \RuntimeException
+use App\Core\Exceptions\BusinessException;
+
+final class CartNotReadyException extends BusinessException
 {
     public static function notActive(string $cartId, string $status): self
     {
-        return new self("Cart '{$cartId}' is not in a payable state (status: {$status}).");
+        return new self("Cart '{$cartId}' is not in a payable state (status: {$status}).", [], 422);
     }
 }

@@ -9,6 +9,11 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Modules\POS\Cart\Domain\Exceptions\InvalidCartTransitionException;
+use Modules\POS\Receipt\Domain\Exceptions\ReceiptAlreadyVoidedException;
+use Modules\POS\Receipt\Domain\Exceptions\ReprintNotAllowedException;
+use Modules\POS\Session\Domain\Exceptions\InvalidSessionTransitionException;
+use Modules\POS\Shift\Domain\Exceptions\InvalidShiftTransitionException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -45,6 +50,42 @@ return Application::configure(basePath: dirname(__DIR__))
                 return ApiResponse::error($e->getMessage(), $e->getStatusCode(), $e->getErrors());
             }
 
+            return null;
+        });
+
+        // POS domain exceptions — pure domain types that do not extend BusinessException.
+        $exceptions->render(function (InvalidSessionTransitionException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
+            return null;
+        });
+
+        $exceptions->render(function (InvalidShiftTransitionException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
+            return null;
+        });
+
+        $exceptions->render(function (InvalidCartTransitionException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
+            return null;
+        });
+
+        $exceptions->render(function (ReceiptAlreadyVoidedException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
+            return null;
+        });
+
+        $exceptions->render(function (ReprintNotAllowedException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
             return null;
         });
     })->create();

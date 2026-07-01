@@ -37,6 +37,14 @@ use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\WarehousePe
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\CycleCountPlanController;
 use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
 use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController;
+use Modules\POS\Presentation\Http\Controllers\SessionController as PosSessionController;
+use Modules\POS\Presentation\Http\Controllers\ShiftController as PosShiftController;
+use Modules\POS\Presentation\Http\Controllers\CartController as PosCartController;
+use Modules\POS\Presentation\Http\Controllers\CartLineController as PosCartLineController;
+use Modules\POS\Presentation\Http\Controllers\SaleController as PosSaleController;
+use Modules\POS\Presentation\Http\Controllers\ReturnController as PosReturnController;
+use Modules\POS\Presentation\Http\Controllers\ExchangeController as PosExchangeController;
+use Modules\POS\Presentation\Http\Controllers\ReceiptController as PosReceiptController;
 
 /*
 |--------------------------------------------------------------------------
@@ -215,6 +223,49 @@ Route::middleware('auth:sanctum')->prefix('me')->group(function (): void {
 
     Route::delete('preferences/{category}', [UserPreferenceController::class, 'resetCategory'])
         ->where('category', '[a-z][a-z0-9._-]{0,149}');
+});
+
+/*
+|--------------------------------------------------------------------------
+| POS — Point of Sale (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('pos')->group(function (): void {
+    // Sessions
+    Route::post('sessions',           [PosSessionController::class, 'store']);
+    Route::get('sessions/{session}',  [PosSessionController::class, 'show']);
+    Route::delete('sessions/{session}', [PosSessionController::class, 'destroy']);
+
+    // Shifts
+    Route::post('shifts',          [PosShiftController::class, 'store']);
+    Route::get('shifts/{shift}',   [PosShiftController::class, 'show']);
+    Route::delete('shifts/{shift}', [PosShiftController::class, 'destroy']);
+
+    // Carts
+    Route::post('carts',             [PosCartController::class, 'store']);
+    Route::get('carts/{cart}',       [PosCartController::class, 'show']);
+    Route::post('carts/{cart}/hold', [PosCartController::class, 'hold']);
+    Route::delete('carts/{cart}/hold', [PosCartController::class, 'resume']);
+    Route::delete('carts/{cart}',    [PosCartController::class, 'destroy']);
+
+    // Cart lines
+    Route::post('carts/{cart}/lines',              [PosCartLineController::class, 'store']);
+    Route::delete('carts/{cart}/lines/{line}',     [PosCartLineController::class, 'destroy']);
+
+    // Sales
+    Route::post('sales',          [PosSaleController::class, 'store']);
+    Route::get('sales/{sale}',    [PosSaleController::class, 'show']);
+
+    // Returns
+    Route::post('returns', [PosReturnController::class, 'store']);
+
+    // Exchanges
+    Route::post('exchanges', [PosExchangeController::class, 'store']);
+
+    // Receipts
+    Route::get('receipts/{receipt}',              [PosReceiptController::class, 'show']);
+    Route::post('receipts/{receipt}/reprint',     [PosReceiptController::class, 'reprint']);
+    Route::delete('receipts/{receipt}',           [PosReceiptController::class, 'destroy']);
 });
 
 /*

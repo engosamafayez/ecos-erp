@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\POS\Application\Exceptions;
 
-final class ShiftAlreadyOpenException extends \RuntimeException
+use App\Core\Exceptions\BusinessException;
+
+final class ShiftAlreadyOpenException extends BusinessException
 {
     public static function forSession(string $sessionId): self
     {
-        return new self("Session '{$sessionId}' already has an open shift.");
+        return new self("Session '{$sessionId}' already has an open shift.", [], 409);
     }
 }

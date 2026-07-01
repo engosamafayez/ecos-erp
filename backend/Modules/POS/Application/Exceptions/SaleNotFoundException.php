@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\POS\Application\Exceptions;
 
-final class SaleNotFoundException extends \RuntimeException
+use App\Core\Exceptions\BusinessException;
+
+final class SaleNotFoundException extends BusinessException
 {
     public static function withId(string $id): self
     {
-        return new self("Sale '{$id}' not found.");
+        return new self("Sale '{$id}' not found.", [], 404);
     }
 }
