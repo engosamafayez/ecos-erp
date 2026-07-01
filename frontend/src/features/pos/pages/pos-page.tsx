@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Monitor, Clock, AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { PosWorkspace } from '@/features/pos/components/pos-workspace';
+import { PosErrorBoundary } from '@/features/pos/components/pos-error-boundary';
 import { SessionDialog } from '@/features/pos/components/session-dialog';
 import { ShiftDialog } from '@/features/pos/components/shift-dialog';
 import { usePosStore } from '@/features/pos/store/pos-store';
@@ -116,5 +117,9 @@ export function PosPage() {
   }
 
   // gate === 'ready'
-  return <PosWorkspace />;
+  return (
+    <PosErrorBoundary>
+      <PosWorkspace />
+    </PosErrorBoundary>
+  );
 }

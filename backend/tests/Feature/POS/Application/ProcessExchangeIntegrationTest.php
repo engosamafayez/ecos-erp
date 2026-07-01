@@ -69,7 +69,7 @@ final class ProcessExchangeIntegrationTest extends TestCase
 
         $exchange = $this->exchangeRepo->findById($result->exchangeId);
         $this->assertNotNull($exchange);
-        $this->assertSame('EXC-INTG-001', $exchange->exchange_number);
+        $this->assertStringStartsWith('EXC-', $exchange->exchange_number);
         $this->assertTrue($exchange->isCompleted());
     }
 
@@ -84,13 +84,13 @@ final class ProcessExchangeIntegrationTest extends TestCase
         $this->assertSame($result->receiptNumber, $receipt->receipt_number);
     }
 
-    public function test_exchange_number_matches_result(): void
+    public function test_exchange_number_is_sequential_format(): void
     {
         $sale = $this->makePersistedSale();
 
         $result = $this->service->execute($this->makeCommand((string) $sale->id));
 
-        $this->assertSame('EXC-INTG-001', $result->exchangeNumber);
+        $this->assertStringStartsWith('EXC-', $result->exchangeNumber);
     }
 
     private function makePersistedSale(): Sale
@@ -144,7 +144,6 @@ final class ProcessExchangeIntegrationTest extends TestCase
             cashierId:          self::CASHIER_ID,
             customerId:         null,
             currency:           self::CURRENCY,
-            exchangeNumber:     'EXC-INTG-001',
             returnedLines:      [
                 [
                     'original_line_id' => 'ln-exc-intg-1',

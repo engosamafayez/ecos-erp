@@ -30,12 +30,16 @@ final class ProcessReturnRequest extends FormRequest
             'lines.*.product_id'            => ['required', 'string', 'uuid'],
             'lines.*.product_name'          => ['required', 'string', 'max:255'],
             'lines.*.sku'                   => ['required', 'string', 'max:100'],
-            'lines.*.quantity'              => ['required', 'numeric', 'min:0.001'],
-            'lines.*.unit_price'            => ['required', 'numeric', 'min:0'],
-            'lines.*.refund_amount'         => ['required', 'numeric', 'min:0'],
-            'lines.*.reason'                => ['nullable', 'string', 'max:500'],
-            'lines.*.should_restock'        => ['sometimes', 'boolean'],
-            'lines.*.sort_order'            => ['sometimes', 'integer', 'min:0'],
+            'lines.*.quantity'                => ['required', 'numeric', 'min:0.001'],
+            'lines.*.unit_price'              => ['required', 'array'],
+            'lines.*.unit_price.amount'       => ['required', 'numeric', 'min:0'],
+            'lines.*.unit_price.currency'     => ['required', 'string', 'size:3'],
+            'lines.*.refund_amount'           => ['required', 'array'],
+            'lines.*.refund_amount.amount'    => ['required', 'numeric', 'min:0'],
+            'lines.*.refund_amount.currency'  => ['required', 'string', 'size:3'],
+            'lines.*.reason'                  => ['nullable', 'string', 'max:500'],
+            'lines.*.should_restock'          => ['sometimes', 'boolean'],
+            'lines.*.sort_order'              => ['sometimes', 'integer', 'min:0'],
         ];
     }
 }

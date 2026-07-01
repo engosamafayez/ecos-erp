@@ -6,8 +6,12 @@ namespace Modules\POS\Returns\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Modules\POS\Returns\Domain\Events\ReturnCancelled;
+use Modules\POS\Returns\Domain\Events\ReturnInitiated;
+use Modules\POS\Returns\Domain\Events\ReturnProcessed;
 use Modules\POS\Returns\Domain\Exceptions\InvalidReturnTransitionException;
 use Modules\POS\Returns\Domain\ValueObjects\ReturnLine;
+use Modules\POS\Shared\Domain\Contracts\DomainEvent;
 use Modules\POS\Shared\Domain\Enums\PaymentMethodType;
 use Modules\POS\Shared\Domain\Enums\ReturnStatus;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -31,6 +35,8 @@ final class SaleReturn extends Model
 
     protected $guarded = [];
 
+    private array $domainEvents = [];
+
     protected function casts(): array
     {
         return [
@@ -42,6 +48,28 @@ final class SaleReturn extends Model
             'processed_at'  => 'datetime',
             'cancelled_at'  => 'datetime',
         ];
+    }
+
+    // ── Domain event collection ────────────────────────────────────────────────
+
+    public function addEvent(DomainEvent $event): void
+    {
+        $this->domainEvents[] = $event;
+    }
+
+    public function pullDomainEvents(): array
+    {
+        $events             = $this->domainEvents;
+        $this->domainEvents = [];
+        return $events;
+    }
+
+    private static function generateUuid(): string
+    {
+        $bytes    = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
     }
 
     // ── Factory ───────────────────────────────────────────────────────────────
@@ -95,6 +123,7 @@ final class SaleReturn extends Model
         }
 
         $saleReturn                         = new self();
+        $saleReturn->id                     = self::generateUuid();
         $saleReturn->sale_id                = $saleId;
         $saleReturn->original_receipt_number = trim($originalReceiptNumber);
         $saleReturn->session_id             = $sessionId;
@@ -115,6 +144,22 @@ final class SaleReturn extends Model
         $saleReturn->cancelled_at           = null;
         $saleReturn->cancelled_reason       = null;
 
+        $saleReturn->addEvent(ReturnInitiated::now(
+            returnId:              $saleReturn->id,
+            saleId:                $saleId,
+            originalReceiptNumber: trim($originalReceiptNumber),
+            returnNumber:          trim($returnNumber),
+            sessionId:             $sessionId,
+            shiftId:               $shiftId,
+            terminalId:            $terminalId,
+            cashierId:             $cashierId,
+            customerId:            $customerId,
+            currency:              strtoupper(trim($currency)),
+            refundTotal:           $refundTotal->amount,
+            refundMethod:          $refundMethod->value,
+            lineCount:             count($lines),
+        ));
+
         return $saleReturn;
     }
 
@@ -129,6 +174,15 @@ final class SaleReturn extends Model
 
         $this->status       = ReturnStatus::Processed;
         $this->processed_at = now();
+
+        $this->addEvent(ReturnProcessed::now(
+            returnId:     (string) $this->id,
+            returnNumber: (string) $this->return_number,
+            saleId:       (string) $this->sale_id,
+            refundTotal:  $this->getRefundTotal()->amount,
+            currency:     (string) $this->currency,
+            refundMethod: $this->refund_method->value,
+        ));
     }
 
     /** Cancel a pending return before it is processed. Pending → Cancelled. */
@@ -141,6 +195,13 @@ final class SaleReturn extends Model
         $this->status           = ReturnStatus::Cancelled;
         $this->cancelled_at     = now();
         $this->cancelled_reason = $reason;
+
+        $this->addEvent(ReturnCancelled::now(
+            returnId:     (string) $this->id,
+            returnNumber: (string) $this->return_number,
+            saleId:       (string) $this->sale_id,
+            reason:       $reason,
+        ));
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────

@@ -6,9 +6,18 @@ namespace Modules\POS\Cart\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Modules\POS\Cart\Domain\Events\CartCancelled;
+use Modules\POS\Cart\Domain\Events\CartCompleted;
+use Modules\POS\Cart\Domain\Events\CartExpired;
+use Modules\POS\Cart\Domain\Events\CartHeld;
+use Modules\POS\Cart\Domain\Events\CartLineAdded;
+use Modules\POS\Cart\Domain\Events\CartLineRemoved;
+use Modules\POS\Cart\Domain\Events\CartOpened;
+use Modules\POS\Cart\Domain\Events\CartResumed;
 use Modules\POS\Cart\Domain\Exceptions\InvalidCartTransitionException;
 use Modules\POS\Cart\Domain\ValueObjects\CartLine;
 use Modules\POS\Cart\Domain\ValueObjects\ReceiptNumber;
+use Modules\POS\Shared\Domain\Contracts\DomainEvent;
 use Modules\POS\Shared\Domain\Enums\CartStatus;
 use Modules\POS\Shared\Domain\Enums\DiscountType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -38,6 +47,8 @@ final class Cart extends Model
     protected $keyType   = 'string';
     protected $table     = 'pos_carts';
 
+    private array $domainEvents = [];
+
     protected $fillable = [
         'session_id', 'shift_id', 'terminal_id', 'cashier_id', 'customer_id',
         'status', 'currency', 'lines', 'subtotal', 'discount_total', 'total',
@@ -59,6 +70,29 @@ final class Cart extends Model
             'cancelled_at'   => 'datetime',
             'expired_at'     => 'datetime',
         ];
+    }
+
+    // ── Domain event collection ────────────────────────────────────────────────
+
+    public function addEvent(DomainEvent $event): void
+    {
+        $this->domainEvents[] = $event;
+    }
+
+    /** Pull and clear all accumulated domain events. Call after save(). */
+    public function pullDomainEvents(): array
+    {
+        $events             = $this->domainEvents;
+        $this->domainEvents = [];
+        return $events;
+    }
+
+    private static function generateUuid(): string
+    {
+        $bytes    = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
     }
 
     // ── Factory ────────────────────────────────────────────────────────────────
@@ -92,6 +126,7 @@ final class Cart extends Model
         $zero = Money::zero($currency)->toArray();
 
         $cart = new self();
+        $cart->id             = self::generateUuid();
         $cart->session_id     = $sessionId;
         $cart->shift_id       = $shiftId;
         $cart->terminal_id    = $terminalId;
@@ -103,6 +138,16 @@ final class Cart extends Model
         $cart->subtotal       = $zero;
         $cart->discount_total = $zero;
         $cart->total          = $zero;
+
+        $cart->addEvent(CartOpened::now(
+            cartId:     $cart->id,
+            sessionId:  $sessionId,
+            shiftId:    $shiftId,
+            terminalId: $terminalId,
+            cashierId:  $cashierId,
+            customerId: $customerId,
+            currency:   $currency,
+        ));
 
         return $cart;
     }
@@ -140,6 +185,18 @@ final class Cart extends Model
         $lines[] = $line;
         $this->setLines($lines);
         $this->recalculateTotals();
+
+        $this->addEvent(CartLineAdded::now(
+            cartId:          (string) $this->id,
+            lineId:          $line->id,
+            productId:       $productId,
+            productName:     $productName,
+            sku:             $sku,
+            quantity:        $quantity->value,
+            unitPriceAmount: $unitPrice->amount,
+            lineTotalAmount: $line->lineTotal->amount,
+            currency:        $unitPrice->currency,
+        ));
 
         return $line->id;
     }
@@ -186,6 +243,11 @@ final class Cart extends Model
 
         $this->setLines($filtered);
         $this->recalculateTotals();
+
+        $this->addEvent(CartLineRemoved::now(
+            cartId: (string) $this->id,
+            lineId: $lineId,
+        ));
     }
 
     /** Apply an order-level discount; recalculates the cart total. Only allowed from Active. */
@@ -221,6 +283,16 @@ final class Cart extends Model
 
         $this->status  = CartStatus::Held;
         $this->held_at = now();
+
+        $this->addEvent(CartHeld::now(
+            cartId:      (string) $this->id,
+            sessionId:   (string) $this->session_id,
+            terminalId:  (string) $this->terminal_id,
+            cashierId:   (string) $this->cashier_id,
+            lineCount:   $this->getLineCount(),
+            totalAmount: $this->getTotal()->amount,
+            currency:    $this->currency,
+        ));
     }
 
     /** Resume a previously held cart. Held → Active. */
@@ -234,6 +306,13 @@ final class Cart extends Model
 
         $this->status  = CartStatus::Active;
         $this->held_at = null;
+
+        $this->addEvent(CartResumed::now(
+            cartId:     (string) $this->id,
+            sessionId:  (string) $this->session_id,
+            terminalId: (string) $this->terminal_id,
+            cashierId:  (string) $this->cashier_id,
+        ));
     }
 
     /**
@@ -250,6 +329,12 @@ final class Cart extends Model
 
         $this->status     = CartStatus::Expired;
         $this->expired_at = now();
+
+        $this->addEvent(CartExpired::now(
+            cartId:    (string) $this->id,
+            sessionId: (string) $this->session_id,
+            terminalId:(string) $this->terminal_id,
+        ));
     }
 
     /**
@@ -300,6 +385,17 @@ final class Cart extends Model
         $this->status         = CartStatus::Completed;
         $this->receipt_number = $receiptNumber->value;
         $this->completed_at   = now();
+
+        $this->addEvent(CartCompleted::now(
+            cartId:        (string) $this->id,
+            sessionId:     (string) $this->session_id,
+            terminalId:    (string) $this->terminal_id,
+            cashierId:     (string) $this->cashier_id,
+            receiptNumber: $receiptNumber->value,
+            totalAmount:   $this->getTotal()->amount,
+            currency:      $this->currency,
+            lineCount:     $this->getLineCount(),
+        ));
     }
 
     /**
@@ -319,6 +415,13 @@ final class Cart extends Model
 
         $this->status       = CartStatus::Cancelled;
         $this->cancelled_at = now();
+
+        $this->addEvent(CartCancelled::now(
+            cartId:     (string) $this->id,
+            sessionId:  (string) $this->session_id,
+            terminalId: (string) $this->terminal_id,
+            cashierId:  (string) $this->cashier_id,
+        ));
     }
 
     // ── Getters ────────────────────────────────────────────────────────────────

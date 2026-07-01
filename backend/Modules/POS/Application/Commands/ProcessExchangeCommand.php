@@ -22,7 +22,6 @@ final readonly class ProcessExchangeCommand
         public string  $cashierId,
         public ?string $customerId,
         public string  $currency,
-        public string  $exchangeNumber,
         public array   $returnedLines,
         public array   $replacementLines,
         public string  $reason,

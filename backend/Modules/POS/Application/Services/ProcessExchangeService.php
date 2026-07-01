@@ -11,6 +11,7 @@ use Modules\POS\Application\Commands\ProcessExchangeCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
 use Modules\POS\Application\Exceptions\SaleNotFoundException;
 use Modules\POS\Application\Results\ProcessExchangeResult;
+use Modules\POS\Exchange\Domain\Contracts\ExchangeNumberingStrategyInterface;
 use Modules\POS\Exchange\Domain\Contracts\ExchangeRepositoryInterface;
 use Modules\POS\Exchange\Domain\Enums\ExchangeReason;
 use Modules\POS\Exchange\Domain\Models\Exchange;
@@ -28,11 +29,12 @@ use Modules\POS\Shared\Domain\ValueObjects\Money;
 final class ProcessExchangeService
 {
     public function __construct(
-        private readonly SaleRepositoryInterface          $saleRepo,
-        private readonly ExchangeRepositoryInterface      $exchangeRepo,
-        private readonly ReceiptRepositoryInterface       $receiptRepo,
+        private readonly SaleRepositoryInterface           $saleRepo,
+        private readonly ExchangeRepositoryInterface       $exchangeRepo,
+        private readonly ReceiptRepositoryInterface        $receiptRepo,
         private readonly ReceiptNumberingStrategyInterface $receiptNumbering,
-        private readonly DomainEventPublisherInterface    $publisher,
+        private readonly ExchangeNumberingStrategyInterface $exchangeNumbering,
+        private readonly DomainEventPublisherInterface     $publisher,
     ) {}
 
     public function execute(ProcessExchangeCommand $command): ProcessExchangeResult
@@ -43,15 +45,16 @@ final class ProcessExchangeService
             throw SaleNotFoundException::withId($command->originalSaleId);
         }
 
-        $receiptNumber = $this->receiptNumbering->next(
-            $command->terminalId,
-            new DateTimeImmutable('now', new DateTimeZone('UTC')),
-        );
+        $exchange      = null;
+        $receipt       = null;
+        $receiptNumber = null;
 
-        $exchange = null;
-        $receipt  = null;
+        $exchangeNumber = null;
 
-        DB::transaction(function () use ($command, $receiptNumber, &$exchange, &$receipt) {
+        DB::transaction(function () use ($command, $sale, &$exchange, &$receipt, &$receiptNumber, &$exchangeNumber) {
+            $now            = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+            $receiptNumber  = $this->receiptNumbering->next($command->terminalId, $now);
+            $exchangeNumber = $this->exchangeNumbering->next($command->terminalId, $now);
             $returnedLines = array_map(
                 fn(array $line) => ExchangeLine::fromArray($line),
                 $command->returnedLines,
@@ -63,7 +66,7 @@ final class ProcessExchangeService
             );
 
             $exchange = Exchange::initiate(
-                exchangeNumber:   $command->exchangeNumber,
+                exchangeNumber:   $exchangeNumber,
                 originalSaleId:   $command->originalSaleId,
                 originalSaleNumber: $command->originalSaleNumber,
                 terminalId:       $command->terminalId,
@@ -82,8 +85,15 @@ final class ProcessExchangeService
             $exchange->complete();
             $this->exchangeRepo->save($exchange);
 
-            $returnedTotal     = $exchange->getReturnedTotal();
-            $replacementTotal  = $exchange->getReplacementTotal();
+            $returnedTotal    = $exchange->getReturnedTotal();
+            $replacementTotal = $exchange->getReplacementTotal();
+
+            if (bccomp($returnedTotal->amount, $sale->getTotal()->amount, 2) >= 0) {
+                $sale->markRefunded();
+            } else {
+                $sale->markPartiallyRefunded();
+            }
+            $this->saleRepo->save($sale);
             $valueDiff         = $exchange->getValueDifference();
 
             $receiptLineItems = [];
@@ -134,7 +144,7 @@ final class ProcessExchangeService
                 receiptNumber:             $receiptNumber,
                 type:                      ReceiptType::Exchange,
                 originalTransactionId:     (string) $exchange->id,
-                originalTransactionNumber: $command->exchangeNumber,
+                originalTransactionNumber: $exchangeNumber,
                 terminalId:                $command->terminalId,
                 sessionId:                 $command->sessionId,
                 shiftId:                   $command->shiftId,
@@ -152,14 +162,15 @@ final class ProcessExchangeService
             $this->receiptRepo->save($receipt);
         });
 
-        $exchangeEvents = $exchange->pullDomainEvents();
-        $receiptEvents  = $receipt->pullDomainEvents();
-
-        $this->publisher->publishAll(array_merge($exchangeEvents, $receiptEvents));
+        $this->publisher->publishAll(array_merge(
+            $exchange->pullDomainEvents(),
+            $sale->pullDomainEvents(),
+            $receipt->pullDomainEvents(),
+        ));
 
         return new ProcessExchangeResult(
             exchangeId:     (string) $exchange->id,
-            exchangeNumber: $command->exchangeNumber,
+            exchangeNumber: $exchangeNumber,
             receiptId:      (string) $receipt->id,
             receiptNumber:  $receiptNumber,
         );

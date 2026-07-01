@@ -17,11 +17,11 @@ import { useOpenSession, useCloseSession } from '@/features/pos/hooks/use-pos-qu
 import { usePosStore } from '@/features/pos/store/pos-store';
 
 const openSchema = z.object({
-  terminal_id:        z.string().min(1),
-  cashier_id:         z.string().min(1),
-  device_fingerprint: z.string().min(1),
-  ip_address:         z.string().min(1),
-  device_type:        z.string().min(1),
+  terminal_id:        z.string().min(1, 'Terminal ID is required'),
+  cashier_id:         z.string().min(1, 'Cashier ID is required'),
+  device_fingerprint: z.string().min(1, 'Device fingerprint is required'),
+  ip_address:         z.string().min(1, 'IP address is required'),
+  device_type:        z.string().min(1, 'Device type is required'),
 });
 
 type OpenForm = z.infer<typeof openSchema>;
@@ -84,6 +84,8 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
     );
   }
 
+  const errors = form.formState.errors;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
@@ -98,14 +100,23 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
           <div className="space-y-1.5">
             <Label htmlFor="terminal_id">Terminal ID</Label>
             <Input id="terminal_id" {...form.register('terminal_id')} />
+            {errors.terminal_id && (
+              <p className="text-xs text-destructive">{errors.terminal_id.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cashier_id">Cashier ID</Label>
             <Input id="cashier_id" {...form.register('cashier_id')} />
+            {errors.cashier_id && (
+              <p className="text-xs text-destructive">{errors.cashier_id.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="device_type">Device Type</Label>
             <Input id="device_type" {...form.register('device_type')} />
+            {errors.device_type && (
+              <p className="text-xs text-destructive">{errors.device_type.message}</p>
+            )}
           </div>
           <DialogFooter className="pt-2">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>

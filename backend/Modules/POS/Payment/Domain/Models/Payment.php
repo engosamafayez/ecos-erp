@@ -7,9 +7,14 @@ namespace Modules\POS\Payment\Domain\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Modules\POS\Payment\Domain\Enums\PaymentStatus;
+use Modules\POS\Payment\Domain\Events\PaymentCaptured;
+use Modules\POS\Payment\Domain\Events\PaymentInitiated;
+use Modules\POS\Payment\Domain\Events\TenderAdded;
+use Modules\POS\Payment\Domain\Events\TenderRemoved;
 use Modules\POS\Payment\Domain\Exceptions\InsufficientPaymentException;
 use Modules\POS\Payment\Domain\Exceptions\InvalidPaymentStateException;
 use Modules\POS\Payment\Domain\ValueObjects\PaymentTender;
+use Modules\POS\Shared\Domain\Contracts\DomainEvent;
 use Modules\POS\Shared\Domain\Enums\PaymentMethodType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 
@@ -20,6 +25,8 @@ final class Payment extends Model
     protected $table = 'pos_payments';
 
     protected $guarded = [];
+
+    private array $domainEvents = [];
 
     protected function casts(): array
     {
@@ -32,6 +39,28 @@ final class Payment extends Model
             'metadata'        => 'array',
             'captured_at'     => 'datetime',
         ];
+    }
+
+    // ── Domain event collection ────────────────────────────────────────────────
+
+    public function addEvent(DomainEvent $event): void
+    {
+        $this->domainEvents[] = $event;
+    }
+
+    public function pullDomainEvents(): array
+    {
+        $events             = $this->domainEvents;
+        $this->domainEvents = [];
+        return $events;
+    }
+
+    private static function generateUuid(): string
+    {
+        $bytes    = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
     }
 
     // ── Factory ───────────────────────────────────────────────────────────────
@@ -63,6 +92,7 @@ final class Payment extends Model
         $currency = $cartTotal->currency;
 
         $payment                  = new self();
+        $payment->id              = self::generateUuid();
         $payment->cart_id         = $cartId;
         $payment->session_id      = $sessionId;
         $payment->shift_id        = $shiftId;
@@ -74,6 +104,17 @@ final class Payment extends Model
         $payment->tenders         = [];
         $payment->amount_tendered = Money::zero($currency)->toArray();
         $payment->change_due      = Money::zero($currency)->subtract($cartTotal)->toArray();
+
+        $payment->addEvent(PaymentInitiated::now(
+            paymentId:       $payment->id,
+            cartId:          $cartId,
+            sessionId:       $sessionId,
+            shiftId:         $shiftId,
+            terminalId:      $terminalId,
+            cashierId:       $cashierId,
+            cartTotalAmount: $cartTotal->amount,
+            currency:        $currency,
+        ));
 
         return $payment;
     }
@@ -95,6 +136,17 @@ final class Payment extends Model
         $this->setTenders($tenders);
         $this->recalculateAmounts();
 
+        $this->addEvent(TenderAdded::now(
+            paymentId:           (string) $this->id,
+            cartId:              (string) $this->cart_id,
+            tenderId:            $tender->id,
+            type:                $type->value,
+            tenderAmount:        $amount->amount,
+            currency:            $amount->currency,
+            reference:           $reference,
+            amountTenderedTotal: $this->getAmountTendered()->amount,
+        ));
+
         return $tender->id;
     }
 
@@ -111,8 +163,24 @@ final class Payment extends Model
             throw InvalidPaymentStateException::tenderNotFound($this->id ?? '', $tenderId);
         }
 
+        $removed = null;
+        foreach ($tenders as $t) {
+            if ($t->id === $tenderId) {
+                $removed = $t;
+                break;
+            }
+        }
+
         $this->setTenders($filtered);
         $this->recalculateAmounts();
+
+        $this->addEvent(TenderRemoved::now(
+            paymentId:           (string) $this->id,
+            cartId:              (string) $this->cart_id,
+            tenderId:            $tenderId,
+            type:                $removed->type->value,
+            amountTenderedTotal: $this->getAmountTendered()->amount,
+        ));
     }
 
     // ── State Transition ──────────────────────────────────────────────────────
@@ -133,6 +201,19 @@ final class Payment extends Model
 
         $this->status      = PaymentStatus::Captured;
         $this->captured_at = now();
+
+        $this->addEvent(PaymentCaptured::now(
+            paymentId:            (string) $this->id,
+            cartId:               (string) $this->cart_id,
+            sessionId:            (string) $this->session_id,
+            terminalId:           (string) $this->terminal_id,
+            cashierId:            (string) $this->cashier_id,
+            cartTotalAmount:      $this->getCartTotal()->amount,
+            amountTenderedAmount: $this->getAmountTendered()->amount,
+            changeDueAmount:      $this->getChangeDue()->amount,
+            currency:             (string) $this->currency,
+            tenderCount:          $this->getTenderCount(),
+        ));
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────

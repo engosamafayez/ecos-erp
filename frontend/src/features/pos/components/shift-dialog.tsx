@@ -23,8 +23,8 @@ import {
 import { usePosStore } from '@/features/pos/store/pos-store';
 
 const moneySchema = z.object({
-  amount:   z.string().min(1),
-  currency: z.string().length(3),
+  amount:   z.string().min(1, 'Amount is required'),
+  currency: z.string().length(3, 'Currency must be 3 characters'),
 });
 
 const openSchema = z.object({
@@ -40,7 +40,7 @@ const approveSchema = z.object({
 });
 
 const rejectSchema = z.object({
-  reason: z.string().min(1).max(500),
+  reason: z.string().min(1, 'Reason is required').max(500),
 });
 
 type ShiftDialogProps = {
@@ -52,15 +52,15 @@ type ShiftDialogProps = {
 export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
   const { sessionId, shiftId, terminalId, cashierId, currency } = usePosStore();
 
-  const openShift   = useOpenShift();
-  const closeShift  = useCloseShift();
+  const openShift    = useOpenShift();
+  const closeShift   = useCloseShift();
   const approveShift = useApproveShift();
-  const rejectShift = useRejectShift();
+  const rejectShift  = useRejectShift();
 
-  const openForm = useForm({ resolver: zodResolver(openSchema), defaultValues: { opening_cash: { amount: '0.00', currency } } });
-  const closeForm = useForm({ resolver: zodResolver(closeSchema), defaultValues: { closing_count: { amount: '0.00', currency } } });
+  const openForm    = useForm({ resolver: zodResolver(openSchema),    defaultValues: { opening_cash:     { amount: '0.00', currency } } });
+  const closeForm   = useForm({ resolver: zodResolver(closeSchema),   defaultValues: { closing_count:    { amount: '0.00', currency } } });
   const approveForm = useForm({ resolver: zodResolver(approveSchema), defaultValues: { expected_closing: { amount: '0.00', currency } } });
-  const rejectForm = useForm({ resolver: zodResolver(rejectSchema), defaultValues: { reason: '' } });
+  const rejectForm  = useForm({ resolver: zodResolver(rejectSchema),  defaultValues: { reason: '' } });
 
   async function handleOpen(data: z.infer<typeof openSchema>) {
     if (!sessionId) return;
@@ -87,6 +87,7 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
   }
 
   if (mode === 'open') {
+    const errors = openForm.formState.errors;
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-sm">
@@ -105,6 +106,9 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
                 step="0.01"
                 {...openForm.register('opening_cash.amount')}
               />
+              {errors.opening_cash?.amount && (
+                <p className="text-xs text-destructive">{errors.opening_cash.amount.message}</p>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -119,6 +123,7 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
   }
 
   if (mode === 'close') {
+    const errors = closeForm.formState.errors;
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-sm">
@@ -129,6 +134,9 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
             <div className="space-y-1.5">
               <Label>Closing Count ({currency})</Label>
               <Input type="number" min="0" step="0.01" {...closeForm.register('closing_count.amount')} />
+              {errors.closing_count?.amount && (
+                <p className="text-xs text-destructive">{errors.closing_count.amount.message}</p>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -143,6 +151,9 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
   }
 
   // Approve mode (manager screen)
+  const approveErrors = approveForm.formState.errors;
+  const rejectErrors  = rejectForm.formState.errors;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
@@ -160,6 +171,9 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
               <div className="space-y-1.5">
                 <Label>Expected Closing ({currency})</Label>
                 <Input type="number" min="0" step="0.01" {...approveForm.register('expected_closing.amount')} />
+                {approveErrors.expected_closing?.amount && (
+                  <p className="text-xs text-destructive">{approveErrors.expected_closing.amount.message}</p>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -175,6 +189,9 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
               <div className="space-y-1.5">
                 <Label>Rejection Reason</Label>
                 <Input {...rejectForm.register('reason')} placeholder="Enter reason..." />
+                {rejectErrors.reason && (
+                  <p className="text-xs text-destructive">{rejectErrors.reason.message}</p>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancel</Button>

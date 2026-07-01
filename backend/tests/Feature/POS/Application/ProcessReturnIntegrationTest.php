@@ -69,7 +69,7 @@ final class ProcessReturnIntegrationTest extends TestCase
 
         $saleReturn = $this->returnRepo->findById($result->returnId);
         $this->assertNotNull($saleReturn);
-        $this->assertSame('RTN-INTG-001', $saleReturn->return_number);
+        $this->assertStringStartsWith('RTN-', $saleReturn->return_number);
     }
 
     public function test_receipt_record_exists_in_database(): void
@@ -156,7 +156,6 @@ final class ProcessReturnIntegrationTest extends TestCase
             cashierId:             self::CASHIER_ID,
             customerId:            null,
             currency:              self::CURRENCY,
-            returnNumber:          'RTN-INTG-001',
             lines:                 [
                 [
                     'line_id'        => 'ln-intg-1',

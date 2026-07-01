@@ -88,7 +88,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <h2 className="text-base font-semibold">Payment</h2>
-        <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose}>
+        <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose} aria-label="Close payment panel">
           <X className="size-4" />
         </Button>
       </div>

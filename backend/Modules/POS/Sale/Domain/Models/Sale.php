@@ -6,9 +6,15 @@ namespace Modules\POS\Sale\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Modules\POS\Sale\Domain\Events\SaleCompleted;
+use Modules\POS\Sale\Domain\Events\SalePartiallyRefunded;
+use Modules\POS\Sale\Domain\Events\SaleRecorded;
+use Modules\POS\Sale\Domain\Events\SaleRefunded;
+use Modules\POS\Sale\Domain\Events\SaleVoided;
 use Modules\POS\Sale\Domain\Exceptions\InvalidSaleTransitionException;
 use Modules\POS\Sale\Domain\ValueObjects\PaymentSummaryLine;
 use Modules\POS\Sale\Domain\ValueObjects\SaleLine;
+use Modules\POS\Shared\Domain\Contracts\DomainEvent;
 use Modules\POS\Shared\Domain\Enums\SaleStatus;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 
@@ -19,6 +25,30 @@ final class Sale extends Model
     protected $table = 'pos_sales';
 
     protected $guarded = [];
+
+    private array $domainEvents = [];
+
+    // ── Domain event collection ────────────────────────────────────────────────
+
+    public function addEvent(DomainEvent $event): void
+    {
+        $this->domainEvents[] = $event;
+    }
+
+    public function pullDomainEvents(): array
+    {
+        $events             = $this->domainEvents;
+        $this->domainEvents = [];
+        return $events;
+    }
+
+    private static function generateUuid(): string
+    {
+        $bytes    = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
+    }
 
     protected function casts(): array
     {
@@ -96,6 +126,7 @@ final class Sale extends Model
         }
 
         $sale                   = new self();
+        $sale->id               = self::generateUuid();
         $sale->cart_id          = $cartId;
         $sale->payment_id       = $paymentId;
         $sale->session_id       = $sessionId;
@@ -121,6 +152,22 @@ final class Sale extends Model
             array_map(fn(PaymentSummaryLine $p) => $p->toArray(), $paymentSummaries)
         );
 
+        $sale->addEvent(SaleRecorded::now(
+            saleId:        $sale->id,
+            cartId:        $cartId,
+            paymentId:     $paymentId,
+            sessionId:     $sessionId,
+            shiftId:       $shiftId,
+            terminalId:    $terminalId,
+            cashierId:     $cashierId,
+            customerId:    $customerId,
+            receiptNumber: trim($receiptNumber),
+            totalAmount:   $total->amount,
+            amountPaid:    $amountPaid->amount,
+            currency:      strtoupper(trim($currency)),
+            lineCount:     count($lines),
+        ));
+
         return $sale;
     }
 
@@ -134,6 +181,15 @@ final class Sale extends Model
 
         $this->status       = SaleStatus::Completed;
         $this->completed_at = now();
+
+        $this->addEvent(SaleCompleted::now(
+            saleId:        (string) $this->id,
+            receiptNumber: (string) $this->receipt_number,
+            totalAmount:   $this->getTotal()->amount,
+            amountPaid:    $this->getAmountPaid()->amount,
+            changeGiven:   $this->getChangeGiven()->amount,
+            currency:      (string) $this->currency,
+        ));
     }
 
     public function void(string $reason = ''): void
@@ -142,9 +198,15 @@ final class Sale extends Model
             throw InvalidSaleTransitionException::cannotVoid($this->id ?? '', $this->status);
         }
 
-        $this->status       = SaleStatus::Voided;
-        $this->voided_at    = now();
+        $this->status        = SaleStatus::Voided;
+        $this->voided_at     = now();
         $this->voided_reason = $reason;
+
+        $this->addEvent(SaleVoided::now(
+            saleId:        (string) $this->id,
+            receiptNumber: (string) $this->receipt_number,
+            reason:        $reason,
+        ));
     }
 
     public function markRefunded(): void
@@ -154,6 +216,11 @@ final class Sale extends Model
         }
 
         $this->status = SaleStatus::Refunded;
+
+        $this->addEvent(SaleRefunded::now(
+            saleId:        (string) $this->id,
+            receiptNumber: (string) $this->receipt_number,
+        ));
     }
 
     public function markPartiallyRefunded(): void
@@ -163,6 +230,11 @@ final class Sale extends Model
         }
 
         $this->status = SaleStatus::PartiallyRefunded;
+
+        $this->addEvent(SalePartiallyRefunded::now(
+            saleId:        (string) $this->id,
+            receiptNumber: (string) $this->receipt_number,
+        ));
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────

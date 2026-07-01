@@ -54,6 +54,7 @@ export const CartLineRow = forwardRef<CartLineHandle, CartLineProps>(
 
     return (
       <div
+        id={line.id}
         role="option"
         aria-selected={isSelected}
         className={cn(

@@ -13,6 +13,7 @@ use Modules\POS\Application\Exceptions\SaleNotFoundException;
 use Modules\POS\Application\Results\ProcessReturnResult;
 use Modules\POS\Receipt\Domain\Contracts\ReceiptNumberingStrategyInterface;
 use Modules\POS\Receipt\Domain\Contracts\ReceiptRepositoryInterface;
+use Modules\POS\Returns\Domain\Contracts\ReturnNumberingStrategyInterface;
 use Modules\POS\Receipt\Domain\Enums\ReceiptType;
 use Modules\POS\Receipt\Domain\Models\Receipt;
 use Modules\POS\Receipt\Domain\ValueObjects\ReceiptLineItem;
@@ -32,6 +33,7 @@ final class ProcessReturnService
         private readonly SaleReturnRepositoryInterface    $returnRepo,
         private readonly ReceiptRepositoryInterface       $receiptRepo,
         private readonly ReceiptNumberingStrategyInterface $receiptNumbering,
+        private readonly ReturnNumberingStrategyInterface  $returnNumbering,
         private readonly DomainEventPublisherInterface    $publisher,
     ) {}
 
@@ -43,15 +45,15 @@ final class ProcessReturnService
             throw SaleNotFoundException::withId($command->saleId);
         }
 
-        $receiptNumber = $this->receiptNumbering->next(
-            $command->terminalId,
-            new DateTimeImmutable('now', new DateTimeZone('UTC')),
-        );
+        $saleReturn    = null;
+        $receipt       = null;
+        $receiptNumber = null;
 
-        $saleReturn = null;
-        $receipt    = null;
+        DB::transaction(function () use ($command, $sale, &$saleReturn, &$receipt, &$receiptNumber) {
+            $now           = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+            $receiptNumber = $this->receiptNumbering->next($command->terminalId, $now);
+            $returnNumber  = $this->returnNumbering->next($command->terminalId, $now);
 
-        DB::transaction(function () use ($command, $sale, $receiptNumber, &$saleReturn, &$receipt) {
             $returnLines = array_map(
                 fn(array $line) => ReturnLine::fromArray($line),
                 $command->lines,
@@ -68,7 +70,7 @@ final class ProcessReturnService
                 cashierId:             $command->cashierId,
                 customerId:            $command->customerId,
                 currency:              $command->currency,
-                returnNumber:          $command->returnNumber,
+                returnNumber:          $returnNumber,
                 lines:                 $returnLines,
                 refundTotal:           $refundTotal,
                 refundMethod:          PaymentMethodType::from($command->refundMethod),
@@ -119,7 +121,7 @@ final class ProcessReturnService
                 receiptNumber:             $receiptNumber,
                 type:                      ReceiptType::Return,
                 originalTransactionId:     (string) $saleReturn->id,
-                originalTransactionNumber: $command->returnNumber,
+                originalTransactionNumber: $returnNumber,
                 terminalId:                $command->terminalId,
                 sessionId:                 $command->sessionId,
                 shiftId:                   $command->shiftId,
@@ -137,7 +139,11 @@ final class ProcessReturnService
             $this->receiptRepo->save($receipt);
         });
 
-        $this->publisher->publishAll($receipt->pullDomainEvents());
+        $this->publisher->publishAll(array_merge(
+            $saleReturn->pullDomainEvents(),
+            $sale->pullDomainEvents(),
+            $receipt->pullDomainEvents(),
+        ));
 
         return new ProcessReturnResult(
             returnId:      (string) $saleReturn->id,

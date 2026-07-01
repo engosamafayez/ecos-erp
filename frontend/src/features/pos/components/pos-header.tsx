@@ -46,14 +46,15 @@ export function PosHeader({ onModeChange }: PosHeaderProps) {
 
       <div className="h-4 w-px bg-border" />
 
-      {/* Mode buttons */}
+      {/* Mode buttons — min 44px touch targets */}
       <div className="flex items-center gap-1">
         {modes.map((m) => (
           <button
             key={m}
             onClick={() => onModeChange(m)}
+            aria-pressed={mode === m}
             className={cn(
-              'rounded px-2.5 py-1 text-xs font-semibold transition-colors',
+              'flex min-h-11 items-center rounded px-3 text-xs font-semibold transition-colors',
               mode === m ? MODE_COLORS[m] : 'text-muted-foreground hover:bg-accent',
             )}
           >
@@ -85,7 +86,7 @@ export function PosHeader({ onModeChange }: PosHeaderProps) {
       <Button
         variant="ghost"
         size="icon"
-        className="size-8"
+        className="min-h-11 min-w-11"
         title="Keyboard shortcuts (?)"
         onClick={toggleKeyboardHelp}
       >

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\POS\Receipt\Infrastructure\Repositories;
 
 use Modules\POS\Receipt\Domain\Contracts\ReceiptRepositoryInterface;
-use Modules\POS\Receipt\Domain\Exceptions\ReceiptNotFoundException;
 use Modules\POS\Receipt\Domain\Models\Receipt;
 
 final class EloquentReceiptRepository implements ReceiptRepositoryInterface
@@ -15,15 +14,9 @@ final class EloquentReceiptRepository implements ReceiptRepositoryInterface
         $receipt->save();
     }
 
-    public function findById(string $id): Receipt
+    public function findById(string $id): ?Receipt
     {
-        $receipt = Receipt::find($id);
-
-        if ($receipt === null) {
-            throw ReceiptNotFoundException::withId($id);
-        }
-
-        return $receipt;
+        return Receipt::find($id);
     }
 
     public function findByNumber(string $receiptNumber): Receipt

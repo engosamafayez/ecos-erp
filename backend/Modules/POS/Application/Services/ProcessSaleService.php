@@ -24,8 +24,6 @@ use Modules\POS\Receipt\Domain\ValueObjects\ReceiptLineItem;
 use Modules\POS\Receipt\Domain\ValueObjects\ReceiptPayment;
 use Modules\POS\Receipt\Domain\ValueObjects\ReceiptTotals;
 use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
-use Modules\POS\Sale\Domain\Events\SaleCompleted;
-use Modules\POS\Sale\Domain\Events\SaleRecorded;
 use Modules\POS\Sale\Domain\Models\Sale;
 use Modules\POS\Sale\Domain\ValueObjects\PaymentSummaryLine;
 use Modules\POS\Sale\Domain\ValueObjects\SaleLine;
@@ -55,15 +53,17 @@ final class ProcessSaleService
             throw CartNotReadyException::notActive($command->cartId, $cart->status->value);
         }
 
-        $receiptNumber = $this->receiptNumbering->next(
-            $command->terminalId,
-            new DateTimeImmutable('now', new DateTimeZone('UTC')),
-        );
+        $sale          = null;
+        $receipt       = null;
+        $payment       = null;
+        $receiptNumber = null;
 
-        $sale    = null;
-        $receipt = null;
+        DB::transaction(function () use ($command, $cart, &$sale, &$receipt, &$payment, &$receiptNumber) {
+            $receiptNumber = $this->receiptNumbering->next(
+                $command->terminalId,
+                new DateTimeImmutable('now', new DateTimeZone('UTC')),
+            );
 
-        DB::transaction(function () use ($command, $cart, $receiptNumber, &$sale, &$receipt) {
             if ($cart->isActive()) {
                 $cart->initiatePayment();
             }
@@ -179,37 +179,12 @@ final class ProcessSaleService
             $this->receiptRepo->save($receipt);
         });
 
-        $events = [
-            SaleRecorded::now(
-                saleId:        (string) $sale->id,
-                cartId:        (string) $cart->id,
-                paymentId:     $sale->payment_id,
-                sessionId:     $sale->session_id,
-                shiftId:       $sale->shift_id,
-                terminalId:    $sale->terminal_id,
-                cashierId:     $sale->cashier_id,
-                customerId:    $sale->customer_id,
-                receiptNumber: $sale->receipt_number,
-                totalAmount:   $sale->getTotal()->amount,
-                amountPaid:    $sale->getAmountPaid()->amount,
-                currency:      $sale->currency,
-                lineCount:     $sale->getLineCount(),
-            ),
-            SaleCompleted::now(
-                saleId:        (string) $sale->id,
-                receiptNumber: $sale->receipt_number,
-                totalAmount:   $sale->getTotal()->amount,
-                amountPaid:    $sale->getAmountPaid()->amount,
-                changeGiven:   $sale->getChangeGiven()->amount,
-                currency:      $sale->currency,
-            ),
-        ];
-
-        foreach ($receipt->pullDomainEvents() as $event) {
-            $events[] = $event;
-        }
-
-        $this->publisher->publishAll($events);
+        $this->publisher->publishAll(array_merge(
+            $payment->pullDomainEvents(),
+            $sale->pullDomainEvents(),
+            $cart->pullDomainEvents(),
+            $receipt->pullDomainEvents(),
+        ));
 
         return new ProcessSaleResult(
             saleId:        (string) $sale->id,

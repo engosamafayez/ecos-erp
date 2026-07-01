@@ -30,9 +30,11 @@ final class CartResource extends JsonResource
             'status'         => $this->status->value,
             'currency'       => $this->currency,
             'lines'          => $lines,
-            'subtotal'       => $this->getSubtotal()->amount(),
-            'discount_total' => $this->getDiscountTotal()->amount(),
-            'total'          => $this->getTotal()->amount(),
+            'subtotal'       => $this->getSubtotal()->toArray(),
+            'discount_total' => $this->getDiscountTotal()->toArray(),
+            'total'          => $this->getTotal()->toArray(),
+            'notes'          => $this->notes,
+            'held_at'        => $this->held_at?->toISOString(),
         ];
     }
 }

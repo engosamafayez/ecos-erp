@@ -7,8 +7,13 @@ namespace Modules\POS\Session\Domain\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Modules\POS\Session\Domain\Enums\DeviceType;
+use Modules\POS\Session\Domain\Events\SessionClosed;
+use Modules\POS\Session\Domain\Events\SessionOpened;
+use Modules\POS\Session\Domain\Events\SessionResumed;
+use Modules\POS\Session\Domain\Events\SessionSuspended;
 use Modules\POS\Session\Domain\Exceptions\InvalidSessionTransitionException;
 use Modules\POS\Session\Domain\ValueObjects\DeviceFingerprint;
+use Modules\POS\Shared\Domain\Contracts\DomainEvent;
 use Modules\POS\Shared\Domain\Enums\SessionStatus;
 
 final class Session extends Model
@@ -20,6 +25,8 @@ final class Session extends Model
     protected $keyType = 'string';
 
     protected $table = 'pos_sessions';
+
+    private array $domainEvents = [];
 
     protected $fillable = [
         'terminal_id',
@@ -46,6 +53,28 @@ final class Session extends Model
         ];
     }
 
+    // ── Domain event collection ────────────────────────────────────────────────
+
+    public function addEvent(DomainEvent $event): void
+    {
+        $this->domainEvents[] = $event;
+    }
+
+    public function pullDomainEvents(): array
+    {
+        $events             = $this->domainEvents;
+        $this->domainEvents = [];
+        return $events;
+    }
+
+    private static function generateUuid(): string
+    {
+        $bytes    = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
+    }
+
     /**
      * Opens a new cashier session on the given terminal.
      *
@@ -68,6 +97,7 @@ final class Session extends Model
         }
 
         $session                     = new self();
+        $session->id                 = self::generateUuid();
         $session->terminal_id        = $terminalId;
         $session->cashier_id         = $cashierId;
         $session->status             = SessionStatus::Open;
@@ -75,6 +105,15 @@ final class Session extends Model
         $session->device_type        = $deviceType;
         $session->ip_address         = $ipAddress;
         $session->opened_at          = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+
+        $session->addEvent(SessionOpened::now(
+            sessionId:         $session->id,
+            terminalId:        $terminalId,
+            cashierId:         $cashierId,
+            deviceFingerprint: $fingerprint->value,
+            deviceType:        $deviceType->value,
+            ipAddress:         $ipAddress,
+        ));
 
         return $session;
     }
@@ -92,6 +131,12 @@ final class Session extends Model
 
         $this->status       = SessionStatus::Suspended;
         $this->suspended_at = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+
+        $this->addEvent(SessionSuspended::now(
+            sessionId:  (string) $this->id,
+            terminalId: (string) $this->terminal_id,
+            cashierId:  (string) $this->cashier_id,
+        ));
     }
 
     /**
@@ -115,7 +160,7 @@ final class Session extends Model
      * Resumes a Suspended or RecoveryPending session back to Open.
      * For RecoveryPending, the caller must obtain supervisor approval before calling this.
      */
-    public function resume(): void
+    public function resume(bool $sameDevice = true): void
     {
         if (!in_array($this->status, [SessionStatus::Suspended, SessionStatus::RecoveryPending], true)) {
             throw InvalidSessionTransitionException::cannotTransition(
@@ -127,6 +172,13 @@ final class Session extends Model
 
         $this->status       = SessionStatus::Open;
         $this->suspended_at = null;
+
+        $this->addEvent(SessionResumed::now(
+            sessionId:  (string) $this->id,
+            terminalId: (string) $this->terminal_id,
+            cashierId:  (string) $this->cashier_id,
+            sameDevice: $sameDevice,
+        ));
     }
 
     /** Closes the session from any non-terminal state. */
@@ -139,8 +191,21 @@ final class Session extends Model
             );
         }
 
+        $now       = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $openedAt  = $this->opened_at instanceof \DateTimeInterface
+            ? \DateTimeImmutable::createFromInterface($this->opened_at)
+            : new \DateTimeImmutable((string) $this->opened_at, new \DateTimeZone('UTC'));
+        $durationMinutes = (int) max(0, (int) ceil(($now->getTimestamp() - $openedAt->getTimestamp()) / 60));
+
         $this->status    = SessionStatus::Closed;
-        $this->closed_at = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+        $this->closed_at = $now->format('Y-m-d H:i:s');
+
+        $this->addEvent(SessionClosed::now(
+            sessionId:       (string) $this->id,
+            terminalId:      (string) $this->terminal_id,
+            cashierId:       (string) $this->cashier_id,
+            durationMinutes: $durationMinutes,
+        ));
     }
 
     public function getDeviceFingerprint(): DeviceFingerprint

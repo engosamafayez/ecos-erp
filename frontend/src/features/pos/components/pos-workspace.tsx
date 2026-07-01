@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Loader2, X } from 'lucide-react';
 import { toast } from '@/components/ds/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -46,6 +46,7 @@ export function PosWorkspace() {
   const [rightPanel, setRightPanel] = useState<RightPanel>('cart');
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const isScanningRef = useRef(false);
   const productSearchId = 'pos-product-search';
 
   const addLine    = useAddCartLine();
@@ -116,7 +117,8 @@ export function PosWorkspace() {
   // When the same product is scanned again, increment the existing cart line
   // instead of adding a duplicate.
   async function onScan(barcode: string) {
-    if (mode !== 'sale') return;
+    if (mode !== 'sale' || isScanningRef.current) return;
+    isScanningRef.current = true;
     setBarcodeError(null);
     setBarcodeLoading(true);
 
@@ -148,6 +150,7 @@ export function PosWorkspace() {
     } catch {
       setBarcodeError('Barcode lookup failed. Please try again.');
     } finally {
+      isScanningRef.current = false;
       setBarcodeLoading(false);
       // Restore focus to product search after every scan
       document.getElementById(productSearchId)?.focus();

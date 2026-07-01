@@ -7,14 +7,16 @@ namespace Modules\POS\Application\Services;
 use Modules\POS\Application\Commands\CloseSessionCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
 use Modules\POS\Application\Exceptions\SessionNotFoundException;
+use Modules\POS\Application\Exceptions\ShiftStillOpenException;
 use Modules\POS\Application\Results\CloseSessionResult;
 use Modules\POS\Session\Domain\Contracts\SessionRepositoryInterface;
-use Modules\POS\Session\Domain\Events\SessionClosed;
+use Modules\POS\Shift\Domain\Contracts\ShiftRepositoryInterface;
 
 final class CloseSessionService
 {
     public function __construct(
         private readonly SessionRepositoryInterface    $sessionRepo,
+        private readonly ShiftRepositoryInterface      $shiftRepo,
         private readonly DomainEventPublisherInterface $publisher,
     ) {}
 
@@ -26,21 +28,14 @@ final class CloseSessionService
             throw SessionNotFoundException::withId($command->sessionId);
         }
 
-        $durationMinutes = $session->opened_at
-            ? (int) ceil($session->opened_at->diffInMinutes(now()))
-            : 0;
+        if ($this->shiftRepo->findOpenBySession($command->sessionId) !== null) {
+            throw ShiftStillOpenException::forSession($command->sessionId);
+        }
 
         $session->close();
         $this->sessionRepo->save($session);
 
-        $this->publisher->publishAll([
-            SessionClosed::now(
-                sessionId:       (string) $session->id,
-                terminalId:      $session->terminal_id,
-                cashierId:       $session->cashier_id,
-                durationMinutes: $durationMinutes,
-            ),
-        ]);
+        $this->publisher->publishAll($session->pullDomainEvents());
 
         return new CloseSessionResult((string) $session->id);
     }

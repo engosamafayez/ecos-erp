@@ -7,7 +7,6 @@ namespace Modules\POS\Presentation\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Str;
 use Modules\POS\Application\Commands\ProcessExchangeCommand;
 use Modules\POS\Application\Services\FindSaleService;
 use Modules\POS\Application\Services\ProcessExchangeService;
@@ -36,7 +35,6 @@ final class ExchangeController extends Controller
             cashierId:          $data['cashier_id'],
             customerId:         $sale->customer_id ? (string) $sale->customer_id : null,
             currency:           $data['currency'],
-            exchangeNumber:     'EXC-' . strtoupper(Str::random(8)),
             returnedLines:      $data['returned_lines'],
             replacementLines:   $data['replacement_lines'],
             reason:             $data['reason'],

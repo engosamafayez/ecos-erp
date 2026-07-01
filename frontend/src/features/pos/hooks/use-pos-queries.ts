@@ -244,12 +244,16 @@ export function useHoldCart() {
 }
 
 export function useResumeCart() {
-  const { setCart, removeHeldCartSnapshot } = usePosStore();
+  const { setCart, setCustomer, heldCartSnapshots, removeHeldCartSnapshot } = usePosStore();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (cartId: string) => cartService.resume(cartId),
     onSuccess: (cart) => {
+      const snapshot = heldCartSnapshots.find((h) => h.cartId === cart.id);
       setCart(cart.id);
+      if (cart.customer_id) {
+        setCustomer(cart.customer_id, snapshot?.customerName ?? null);
+      }
       qc.setQueryData(posKeys.cart(cart.id), cart);
       removeHeldCartSnapshot(cart.id);
       toast.success('Cart resumed');

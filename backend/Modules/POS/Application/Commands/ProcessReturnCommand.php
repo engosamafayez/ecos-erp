@@ -21,7 +21,6 @@ final readonly class ProcessReturnCommand
         public string  $cashierId,
         public ?string $customerId,
         public string  $currency,
-        public string  $returnNumber,
         public array   $lines,
         public string  $refundTotalAmount,
         public string  $refundMethod,
