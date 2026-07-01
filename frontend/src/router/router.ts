@@ -42,6 +42,7 @@ import { ViewGoodsReceiptPage } from '@/features/goods-receipts/pages/view-goods
 import { SuppliersPage } from '@/features/suppliers/pages/suppliers-page';
 import { ViewSupplierPage } from '@/features/suppliers/pages/view-supplier-page';
 import { DemandAnalysisPage } from '@/features/operations/pages/demand-analysis-page';
+import { PosPage } from '@/features/pos/pages/pos-page';
 import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
@@ -68,6 +69,8 @@ export const router = createBrowserRouter(
     {
       Component: ProtectedRoute,
       children: [
+        // POS is full-screen — outside AppShell
+        { path: ROUTES.pos, Component: PosPage },
         {
           Component: AppShell,
           children: [

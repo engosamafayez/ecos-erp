@@ -23,6 +23,7 @@ import {
   Truck,
   Users,
   Warehouse,
+  Monitor,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -31,6 +32,7 @@ import { ROUTES } from '@/router/routes';
 export type ModuleId =
   | 'dashboard'
   | 'commerce'
+  | 'pos'
   | 'inventory'
   | 'purchasing'
   | 'finance'
@@ -63,6 +65,14 @@ export const APP_MODULES: AppModule[] = [
     railLabel: 'Home',
     icon: LayoutDashboard,
     defaultPath: ROUTES.dashboard,
+    items: [],
+  },
+  {
+    id: 'pos',
+    label: 'Point of Sale',
+    railLabel: 'POS',
+    icon: Monitor,
+    defaultPath: ROUTES.pos,
     items: [],
   },
   {
