@@ -50,4 +50,5 @@ return [
     Modules\POS\Cart\Infrastructure\Providers\CartServiceProvider::class,
     Modules\POS\Payment\Infrastructure\Providers\PaymentServiceProvider::class,
     Modules\POS\Sale\Infrastructure\Providers\SaleServiceProvider::class,
+    Modules\POS\Returns\Infrastructure\Providers\ReturnsServiceProvider::class,
 ];
