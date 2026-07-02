@@ -4,6 +4,7 @@ import { pricingReviewService } from '@/features/cost-management/services/pricin
 import type {
   ApprovePayload,
   AssignPayload,
+  BulkApprovePayload,
   PricingReviewsQuery,
   SnoozePayload,
 } from '@/features/cost-management/types/pricing-review';
@@ -57,8 +58,8 @@ export function useAssignReview() {
 export function useBulkApprove() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ ids, action }: { ids: string[]; action: ApprovePayload['action'] }) =>
-      pricingReviewService.bulkApprove(ids, action),
+    mutationFn: (payload: BulkApprovePayload) =>
+      pricingReviewService.bulkApprove(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });
 }

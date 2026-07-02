@@ -1,16 +1,22 @@
 import axios from 'axios';
 import { api } from '@/lib/axios';
-import type { ApiResponse } from '@/types';
 import type {
   ApprovePayload,
   AssignPayload,
+  BulkApprovePayload,
+  CostDashboardStats,
+  MaterialCostHistoryQuery,
+  MaterialCostHistoryResult,
   ProductCostDetail,
   PricingReviewsQuery,
   PricingReviewsResult,
   SnoozePayload,
 } from '@/features/cost-management/types/pricing-review';
 
-const BASE = '/cost-management/pricing-reviews';
+const BASE     = '/cost-management/pricing-reviews';
+const DASH_URL = '/cost-management/dashboard';
+const HIST_URL = '/cost-management/cost-history';
+const MAT_URL  = '/cost-management/materials';
 
 async function safeFetch<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
@@ -24,29 +30,37 @@ async function safeFetch<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
 }
 
 const emptyResult: PricingReviewsResult = {
-  items: [],
-  summary: {
-    pending_count: 0,
-    below_target_count: 0,
-    above_target_count: 0,
-    cost_increased_today: 0,
-    cost_decreased_today: 0,
-    expected_profit_change: 0,
-  },
-  meta: { current_page: 1, per_page: 20, total: 0, last_page: 1 },
+  data: [],
+  pagination: { current_page: 1, per_page: 20, total: 0, last_page: 1 },
+  summary: { pending: 0, approved: 0, kept: 0, custom_price: 0, snoozed: 0 },
+};
+
+const emptyHistory: MaterialCostHistoryResult = {
+  data: [],
+  pagination: { current_page: 1, per_page: 30, total: 0, last_page: 1 },
+};
+
+const emptyDashboard: CostDashboardStats = {
+  pending_reviews: 0,
+  below_target_margin: 0,
+  cost_increased_today: 0,
+  cost_decreased_today: 0,
+  expected_profit_impact: 0,
+  average_margin: null,
+  awaiting_approval: 0,
 };
 
 export const pricingReviewService = {
   async list(params: PricingReviewsQuery): Promise<PricingReviewsResult> {
     return safeFetch(async () => {
-      const { data } = await api.get<ApiResponse<PricingReviewsResult>>(BASE, { params });
-      return data.data;
+      const { data } = await api.get<PricingReviewsResult>(BASE, { params });
+      return data;
     }, emptyResult);
   },
 
   async getDetail(id: string): Promise<ProductCostDetail | null> {
     return safeFetch(async () => {
-      const { data } = await api.get<ApiResponse<ProductCostDetail>>(`${BASE}/${id}/detail`);
+      const { data } = await api.get<{ data: ProductCostDetail }>(`${BASE}/${id}/detail`);
       return data.data;
     }, null);
   },
@@ -63,7 +77,36 @@ export const pricingReviewService = {
     await api.post(`${BASE}/${id}/assign`, payload);
   },
 
-  async bulkApprove(ids: string[], action: ApprovePayload['action']): Promise<void> {
-    await api.post(`${BASE}/bulk-approve`, { ids, action });
+  async bulkApprove(payload: BulkApprovePayload): Promise<void> {
+    await api.post(`${BASE}/bulk-approve`, payload);
+  },
+};
+
+export const costDashboardService = {
+  async getStats(): Promise<CostDashboardStats> {
+    return safeFetch(async () => {
+      const { data } = await api.get<{ data: CostDashboardStats }>(DASH_URL);
+      return data.data;
+    }, emptyDashboard);
+  },
+};
+
+export const materialCostService = {
+  async getGlobalHistory(params: MaterialCostHistoryQuery): Promise<MaterialCostHistoryResult> {
+    return safeFetch(async () => {
+      const { data } = await api.get<MaterialCostHistoryResult>(HIST_URL, { params });
+      return data;
+    }, emptyHistory);
+  },
+
+  async getMaterialHistory(productId: string, params: { page?: number; per_page?: number }): Promise<MaterialCostHistoryResult> {
+    return safeFetch(async () => {
+      const { data } = await api.get<MaterialCostHistoryResult>(`${MAT_URL}/${productId}/cost-history`, { params });
+      return data;
+    }, emptyHistory);
+  },
+
+  async updateMaterialCost(productId: string, materialCost: number, reason?: string): Promise<void> {
+    await api.patch(`${MAT_URL}/${productId}/cost`, { material_cost: materialCost, reason });
   },
 };

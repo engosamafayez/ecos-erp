@@ -36,6 +36,9 @@ use Modules\MasterData\Units\Domain\Models\Unit;
  * @property float|null $last_purchase_cost    Updated on every posted GR
  * @property float|null $average_cost          Weighted average cost across all receipts
  * @property float|null $current_fifo_cost     Cost of the oldest available receipt layer
+ * @property float|null $material_cost         Official Material Cost (TASK-ARCH-PRICE-001 dictionary)
+ * @property float|null $product_cost          Finished-good manufacturing cost (recipe_cost ÷ yield)
+ * @property float|null $unit_cost             product_cost ÷ yield_quantity
  * @property string|null $last_purchase_date   ISO date of most recent GR post
  * @property string|null $last_supplier_id     UUID of last supplier (historical, no FK)
  * @property string|null $short_description
@@ -89,6 +92,9 @@ class Product extends Model
         'can_manufacture',
         'can_disassemble',
         'allow_negative_stock',
+        'material_cost',
+        'product_cost',
+        'unit_cost',
     ];
 
     /**
@@ -103,6 +109,9 @@ class Product extends Model
             'last_purchase_cost'   => 'float',
             'average_cost'         => 'float',
             'current_fifo_cost'    => 'float',
+            'material_cost'        => 'float',
+            'product_cost'         => 'float',
+            'unit_cost'            => 'float',
             'last_purchase_date'   => 'date:Y-m-d',
             'stock_status'         => ProductStockStatus::class,
             'cost_source'          => CostSource::class,

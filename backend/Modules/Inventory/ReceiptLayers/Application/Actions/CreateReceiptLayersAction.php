@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\ReceiptLayers\Application\Actions;
 
+use Modules\CostManagement\Domain\Enums\CostUpdateSource;
+use Modules\CostManagement\Domain\Services\MaterialCostService;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
@@ -19,6 +21,10 @@ use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceiptLine;
  */
 final class CreateReceiptLayersAction
 {
+    public function __construct(
+        private readonly MaterialCostService $materialCostService,
+    ) {}
+
     /**
      * @param  array<string, float>  $preReceiptQtys  Map of product_id → on_hand_qty BEFORE this receipt
      */
@@ -83,6 +89,16 @@ final class CreateReceiptLayersAction
                 'last_supplier_id'   => $supplierId,
                 'current_fifo_cost'  => $oldestLayer?->landed_unit_cost ?? $landedUnitCost,
             ]);
+
+            // Update official Material Cost and cascade to Recipe/Product costs
+            $this->materialCostService->update(
+                material: $product,
+                newCost:  $landedUnitCost,
+                source:   CostUpdateSource::PurchaseInvoice,
+                meta: [
+                    'goods_receipt_id' => $receipt->id,
+                ],
+            );
         }
     }
 }

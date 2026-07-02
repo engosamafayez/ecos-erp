@@ -199,8 +199,8 @@ function CustomPriceDialog({
   const [reason, setReason] = useState('');
 
   const priceNum = parseFloat(price) || 0;
-  const margin = priceNum > 0 ? ((priceNum - review.current_cost) / priceNum) * 100 : 0;
-  const profit = priceNum - review.current_cost;
+  const margin = priceNum > 0 ? ((priceNum - review.product_cost) / priceNum) * 100 : 0;
+  const profit = priceNum - review.product_cost;
   const valid = priceNum > 0 && reason.trim().length > 0;
 
   return (
@@ -254,7 +254,7 @@ function CustomPriceDialog({
 
           <div className="flex gap-2 text-xs">
             {[
-              { label: 'Current', value: review.current_selling_price },
+              { label: 'Current', value: review.selling_price },
               { label: 'Suggested', value: review.suggested_selling_price },
             ].map((ref) => (
               <button
@@ -300,7 +300,7 @@ function KeepCurrentDialog({
         <DialogHeader>
           <DialogTitle>Keep Current Price</DialogTitle>
           <DialogDescription>
-            {review.product.name} — current price {fmt(review.current_selling_price)}
+            {review.product.name} — current price {fmt(review.selling_price)}
           </DialogDescription>
         </DialogHeader>
         <div className="py-2">
@@ -443,7 +443,8 @@ function AssignDialog({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function CostPricingCenterPage() {
-  const [query, setQuery] = useState<PricingReviewsQuery>({ status: 'all', impact: 'all', page: 1, per_page: 25 });
+  const [query, setQuery] = useState<PricingReviewsQuery>({ status: 'all', page: 1, per_page: 25 });
+  const [impactFilter, setImpactFilter] = useState<ImpactType | 'all'>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [dialogState, setDialogState] = useState<DialogState>(null);
   const [drawerReview, setDrawerReview] = useState<PricingReview | null>(null);
@@ -457,10 +458,11 @@ export function CostPricingCenterPage() {
   const assignReview   = useAssignReview();
   const bulkApprove    = useBulkApprove();
 
-  const items   = data?.items   ?? [];
-  const summary = data?.summary ?? { pending_count: 0, below_target_count: 0, above_target_count: 0, cost_increased_today: 0, cost_decreased_today: 0, expected_profit_change: 0 };
+  const items   = data?.data    ?? [];
+  const summary = data?.summary ?? { pending: 0, approved: 0, kept: 0, custom_price: 0, snoozed: 0 };
 
-  // ── Selection helpers ───────────────────────────────────────────────────────
+  // ── Selection helpers (operate on filteredItems, defined after filteredItems) ─
+  // Note: filteredItems is defined after handleBulkApprove below — used lazily
   const allSelected   = items.length > 0 && items.every((r) => selectedIds.has(r.id));
   const someSelected  = items.some((r) => selectedIds.has(r.id));
 
@@ -571,17 +573,23 @@ export function CostPricingCenterPage() {
     );
   }
 
+  // client-side impact filter applied after fetch
+  const filteredItems = impactFilter === 'all'
+    ? items
+    : items.filter((r) => r.impacts.includes(impactFilter));
+
   function handleExport() {
     const headers = [
       'Product', 'SKU', 'Company', 'Channel',
-      'Current Cost', 'Previous Cost', 'Change%',
-      'Current Price', 'Suggested Price', 'Current Margin', 'Target Margin',
+      'Product Cost', 'Previous Product Cost', 'Change%',
+      'Selling Price', 'Suggested Selling Price', 'Current Margin', 'Target Margin',
       'Status',
     ];
     const rows = items.map((r) => [
       r.product.name, r.product.sku, r.company.name, r.channel.name,
-      r.current_cost, r.previous_cost, r.cost_change_pct.toFixed(2),
-      r.current_selling_price, r.suggested_selling_price,
+      r.product_cost, r.previous_product_cost,
+      r.cost_change_pct != null ? r.cost_change_pct.toFixed(2) : '',
+      r.selling_price, r.suggested_selling_price,
       r.current_margin.toFixed(2), r.target_margin.toFixed(2),
       r.status,
     ]);
@@ -613,8 +621,8 @@ export function CostPricingCenterPage() {
       </Select>
 
       <Select
-        value={query.impact ?? 'all'}
-        onValueChange={(v) => setQuery((q) => ({ ...q, impact: v as ImpactType | 'all', page: 1 }))}
+        value={impactFilter}
+        onValueChange={(v) => setImpactFilter(v as ImpactType | 'all')}
       >
         <SelectTrigger className="w-44">
           <SelectValue placeholder="Impact" />
@@ -649,47 +657,36 @@ export function CostPricingCenterPage() {
       />
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <KpiCard
-          label="Pending Reviews"
-          value={summary.pending_count}
+          label="Pending"
+          value={summary.pending}
           icon={<AlertTriangle className="size-5" />}
-          accent={summary.pending_count > 0 ? 'amber' : 'default'}
+          accent={summary.pending > 0 ? 'amber' : 'default'}
         />
         <KpiCard
-          label="Below Target"
-          value={summary.below_target_count}
-          icon={<XCircle className="size-5" />}
-          accent={summary.below_target_count > 0 ? 'red' : 'default'}
-          subtext="margin"
-        />
-        <KpiCard
-          label="Above Target"
-          value={summary.above_target_count}
+          label="Approved"
+          value={summary.approved}
           icon={<CheckCircle2 className="size-5" />}
-          accent={summary.above_target_count > 0 ? 'green' : 'default'}
-          subtext="margin"
+          accent={summary.approved > 0 ? 'green' : 'default'}
         />
         <KpiCard
-          label="Cost Up Today"
-          value={summary.cost_increased_today}
+          label="Kept Current"
+          value={summary.kept}
+          icon={<XCircle className="size-5" />}
+          accent="default"
+        />
+        <KpiCard
+          label="Custom Price"
+          value={summary.custom_price}
           icon={<TrendingUp className="size-5" />}
-          accent={summary.cost_increased_today > 0 ? 'red' : 'default'}
-          subtext="products"
+          accent="blue"
         />
         <KpiCard
-          label="Cost Down Today"
-          value={summary.cost_decreased_today}
+          label="Snoozed"
+          value={summary.snoozed}
           icon={<TrendingDown className="size-5" />}
-          accent={summary.cost_decreased_today > 0 ? 'green' : 'default'}
-          subtext="products"
-        />
-        <KpiCard
-          label="Expected Profit Δ"
-          value={`${summary.expected_profit_change >= 0 ? '+' : ''}${fmt(summary.expected_profit_change)}`}
-          icon={<TrendingUp className="size-5" />}
-          accent={summary.expected_profit_change >= 0 ? 'green' : 'red'}
-          subtext="if all approved"
+          accent={summary.snoozed > 0 ? 'amber' : 'default'}
         />
       </div>
 
@@ -727,7 +724,7 @@ export function CostPricingCenterPage() {
         onRefresh={() => refetch()}
         isRefreshing={isFetching}
         filterPanel={filterPanel}
-        onClearFilters={() => setQuery({ status: 'all', impact: 'all', page: 1, per_page: 25 })}
+        onClearFilters={() => { setQuery({ status: 'all', page: 1, per_page: 25 }); setImpactFilter('all'); }}
       />
 
       {/* Table */}
@@ -752,18 +749,18 @@ export function CostPricingCenterPage() {
                 </th>
                 <th className="px-4 py-3">Channel</th>
                 <th className="px-4 py-3">
-                  <button type="button" className="flex items-center" onClick={() => handleSort('current_cost')}>
-                    Current Cost <SortIcon field="current_cost" />
+                  <button type="button" className="flex items-center" onClick={() => handleSort('product_cost')}>
+                    Product Cost <SortIcon field="product_cost" />
                   </button>
                 </th>
-                <th className="px-4 py-3">Prev. Cost</th>
+                <th className="px-4 py-3">Prev. Product Cost</th>
                 <th className="px-4 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('cost_change_pct')}>
                     Change <SortIcon field="cost_change_pct" />
                   </button>
                 </th>
-                <th className="px-4 py-3">Current Price</th>
-                <th className="px-4 py-3">Suggested Price</th>
+                <th className="px-4 py-3">Selling Price</th>
+                <th className="px-4 py-3">Suggested Selling Price</th>
                 <th className="px-4 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('current_margin')}>
                     Margin <SortIcon field="current_margin" />
@@ -789,7 +786,7 @@ export function CostPricingCenterPage() {
                     <Button variant="link" size="sm" onClick={() => refetch()}>Retry</Button>
                   </td>
                 </tr>
-              ) : items.length === 0 ? (
+              ) : filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={13} className="py-16 text-center">
                     <CheckCircle2 className="size-8 mx-auto mb-2 text-emerald-500" />
@@ -797,8 +794,8 @@ export function CostPricingCenterPage() {
                   </td>
                 </tr>
               ) : (
-                items.map((review) => {
-                  const priceGap = review.suggested_selling_price - review.current_selling_price;
+                filteredItems.map((review) => {
+                  const priceGap = review.suggested_selling_price - review.selling_price;
                   const belowTarget = review.current_margin < review.target_margin;
                   return (
                     <tr
@@ -839,21 +836,23 @@ export function CostPricingCenterPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 tabular-nums font-medium">
-                        {fmt(review.current_cost)}
+                        {fmt(review.product_cost)}
                       </td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                        {fmt(review.previous_cost)}
+                        {fmt(review.previous_product_cost)}
                       </td>
                       <td className="px-4 py-3">
                         <span className={cn(
                           'text-xs font-medium tabular-nums',
-                          review.cost_change_pct > 0 ? 'text-red-600' : review.cost_change_pct < 0 ? 'text-emerald-600' : 'text-muted-foreground',
+                          (review.cost_change_pct ?? 0) > 0 ? 'text-red-600' : (review.cost_change_pct ?? 0) < 0 ? 'text-emerald-600' : 'text-muted-foreground',
                         )}>
-                          {review.cost_change_pct > 0 ? '+' : ''}{review.cost_change_pct.toFixed(2)}%
+                          {review.cost_change_pct != null
+                            ? `${review.cost_change_pct > 0 ? '+' : ''}${review.cost_change_pct.toFixed(2)}%`
+                            : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3 tabular-nums">
-                        {fmt(review.current_selling_price)}
+                        {fmt(review.selling_price)}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col">
@@ -937,16 +936,16 @@ export function CostPricingCenterPage() {
           </table>
         </div>
 
-        {data && data.meta.total > 0 && (
+        {data && (data.pagination?.total ?? 0) > 0 && (
           <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
             <span>
-              {data.meta.total} total · page {data.meta.current_page} of {data.meta.last_page}
+              {data.pagination.total} total · page {data.pagination.current_page} of {data.pagination.last_page}
             </span>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                disabled={data.meta.current_page <= 1}
+                disabled={data.pagination.current_page <= 1}
                 onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) - 1 }))}
               >
                 Previous
@@ -954,7 +953,7 @@ export function CostPricingCenterPage() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={data.meta.current_page >= data.meta.last_page}
+                disabled={data.pagination.current_page >= data.pagination.last_page}
                 onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) + 1 }))}
               >
                 Next

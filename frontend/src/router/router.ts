@@ -46,6 +46,8 @@ import { ViewGoodsReceiptPage } from '@/features/goods-receipts/pages/view-goods
 import { SuppliersPage } from '@/features/suppliers/pages/suppliers-page';
 import { ViewSupplierPage } from '@/features/suppliers/pages/view-supplier-page';
 import { CostPricingCenterPage } from '@/features/cost-management/pages/cost-pricing-center-page';
+import { CostManagementDashboardPage } from '@/features/cost-management/pages/cost-management-dashboard-page';
+import { CostHistoryPage } from '@/features/cost-management/pages/cost-history-page';
 import { DemandAnalysisPage } from '@/features/operations/pages/demand-analysis-page';
 import { PosPage } from '@/features/pos/pages/pos-page';
 import { AuthLayout } from '@/layouts/auth-layout';
@@ -137,7 +139,9 @@ export const router = createBrowserRouter(
             { path: `${ROUTES.boms}/:id/edit`, Component: BomWorkspacePage },
             { path: `${ROUTES.boms}/:id`, Component: BomWorkspacePage },
             // Cost management
-            { path: ROUTES.costPricingCenter, Component: CostPricingCenterPage },
+            { path: ROUTES.costManagement, Component: CostManagementDashboardPage },
+            { path: ROUTES.costManagementPriceReview, Component: CostPricingCenterPage },
+            { path: ROUTES.costManagementCostHistory, Component: CostHistoryPage },
             // Operations
             { path: ROUTES.operationsDemandAnalysis, Component: DemandAnalysisPage },
             ...moduleRoutes,

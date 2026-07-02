@@ -8,7 +8,7 @@ export type ImpactType =
   | 'packaging_changed';
 
 export type PersonRef = {
-  id: string;
+  id: string | null;
   name: string;
 };
 
@@ -17,7 +17,7 @@ export type ProductRef = {
   name: string;
   sku: string;
   image_url: string | null;
-  category: string | null;
+  unit: string | null;
 };
 
 export type CompanyRef = { id: string; name: string };
@@ -28,11 +28,12 @@ export type PricingReview = {
   product: ProductRef;
   company: CompanyRef;
   channel: ChannelRef;
-  current_cost: number;
-  previous_cost: number;
+  // Official Pricing Dictionary (TASK-ARCH-PRICE-001 Part 1)
+  product_cost: number;
+  previous_product_cost: number;
   cost_difference: number;
-  cost_change_pct: number;
-  current_selling_price: number;
+  cost_change_pct: number | null;
+  selling_price: number;
   suggested_selling_price: number;
   current_margin: number;
   target_margin: number;
@@ -48,8 +49,8 @@ export type PricingReview = {
 export type CostBreakdownLine = {
   label: string;
   category: 'raw_material' | 'packaging' | 'other';
-  current_cost: number;
-  previous_cost: number;
+  product_cost: number;
+  previous_product_cost: number;
   difference: number;
   pct_of_total: number;
 };
@@ -57,8 +58,8 @@ export type CostBreakdownLine = {
 export type RecipeChangeLine = {
   material_name: string;
   sku: string;
-  old_price: number;
-  new_price: number;
+  old_material_cost: number;
+  new_material_cost: number;
   difference: number;
   quantity: number;
 };
@@ -66,19 +67,20 @@ export type RecipeChangeLine = {
 export type PriceHistoryEntry = {
   date: string;
   selling_price: number;
-  cost: number;
+  product_cost: number;
   margin: number;
   changed_by: PersonRef;
 };
 
 export type ApprovalHistoryEntry = {
   id: string;
-  action: 'approved' | 'kept' | 'custom_price' | 'snoozed' | 'assigned';
-  old_price: number | null;
-  new_price: number | null;
+  action: 'approve_suggested' | 'keep_current' | 'custom_price' | 'snoozed' | 'assigned';
+  old_selling_price: number | null;
+  new_selling_price: number | null;
   reason: string | null;
-  actor: PersonRef;
-  created_at: string;
+  manager_name: string | null;
+  approved_channels: string[];
+  approved_at: string | null;
 };
 
 export type ProductCostDetail = {
@@ -86,33 +88,85 @@ export type ProductCostDetail = {
   cost_breakdown: CostBreakdownLine[];
   recipe_changes: RecipeChangeLine[];
   price_history: PriceHistoryEntry[];
-  approval_history: ApprovalHistoryEntry[];
+  approvals: ApprovalHistoryEntry[];
 };
 
 export type ReviewSummary = {
-  pending_count: number;
-  below_target_count: number;
-  above_target_count: number;
-  cost_increased_today: number;
-  cost_decreased_today: number;
-  expected_profit_change: number;
+  pending: number;
+  approved: number;
+  kept: number;
+  custom_price: number;
+  snoozed: number;
 };
 
 export type PricingReviewsQuery = {
   search?: string;
-  company_id?: string;
-  channel_id?: string;
-  category_id?: string;
   status?: ReviewStatus | 'all';
-  impact?: ImpactType | 'all';
   page?: number;
   per_page?: number;
 };
 
 export type PricingReviewsResult = {
-  items: PricingReview[];
+  data: PricingReview[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
   summary: ReviewSummary;
-  meta: {
+};
+
+export type ApprovePayload = {
+  action: 'approve_suggested' | 'keep_current' | 'custom_price';
+  custom_price?: number;
+  reason?: string;
+  manager_name?: string;
+  channels?: string[];
+};
+
+export type SnoozePayload = { until: string };
+export type AssignPayload  = { reviewer_name: string };
+export type BulkApprovePayload = {
+  ids: string[];
+  action: ApprovePayload['action'];
+  reason?: string;
+  manager_name?: string;
+  channels?: string[];
+};
+
+// Dashboard KPI types
+export type CostDashboardStats = {
+  pending_reviews: number;
+  below_target_margin: number;
+  cost_increased_today: number;
+  cost_decreased_today: number;
+  expected_profit_impact: number;
+  average_margin: number | null;
+  awaiting_approval: number;
+};
+
+// Material Cost History types
+export type MaterialCostHistoryEntry = {
+  id: string;
+  product: { id: string; name: string; sku: string };
+  previous_cost: number | null;
+  new_cost: number;
+  difference: number;
+  change_pct: number | null;
+  source: 'manual' | 'purchase_invoice';
+  goods_receipt_id: string | null;
+  updated_by: string | null;
+  affected_recipe_count: number;
+  affected_product_count: number;
+  affected_recipe_ids: string[];
+  affected_product_ids: string[];
+  occurred_at: string;
+};
+
+export type MaterialCostHistoryResult = {
+  data: MaterialCostHistoryEntry[];
+  pagination: {
     current_page: number;
     per_page: number;
     total: number;
@@ -120,11 +174,11 @@ export type PricingReviewsResult = {
   };
 };
 
-export type ApprovePayload = {
-  action: 'approve_suggested' | 'keep_current' | 'custom_price';
-  custom_price?: number;
-  reason?: string;
+export type MaterialCostHistoryQuery = {
+  search?: string;
+  source?: 'manual' | 'purchase_invoice';
+  from?: string;
+  to?: string;
+  page?: number;
+  per_page?: number;
 };
-
-export type SnoozePayload = { until: string };
-export type AssignPayload  = { reviewer_name: string };

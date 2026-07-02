@@ -51,8 +51,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ── Tab components ────────────────────────────────────────────────────────────
 
 function CostBreakdownTab({ review }: { review: PricingReview; detailLoading: boolean }) {
-  const totalCurrent = review.current_cost;
-  const totalPrevious = review.previous_cost;
+  const totalCurrent = review.product_cost;
+  const totalPrevious = review.previous_product_cost;
 
   const rows = [
     { label: 'Raw Materials', current: totalCurrent * 0.72, previous: totalPrevious * 0.72, category: 'raw_material' as const },
@@ -118,8 +118,8 @@ function CostBreakdownTab({ review }: { review: PricingReview; detailLoading: bo
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Previous Cost', value: fmt(totalPrevious), muted: true },
-          { label: 'Current Cost', value: fmt(totalCurrent) },
+          { label: 'Prev. Product Cost', value: fmt(totalPrevious), muted: true },
+          { label: 'Product Cost', value: fmt(totalCurrent) },
           {
             label: 'Net Change',
             value: `${totalCurrent >= totalPrevious ? '+' : ''}${fmt(totalCurrent - totalPrevious)}`,
@@ -199,7 +199,7 @@ function PriceHistoryTab({ review }: { review: PricingReview }) {
   const mockHistory = [
     { date: '2026-06-01', selling_price: 40.00, cost: 19.00, margin: 52.5, changed_by: 'Ahmed Hassan' },
     { date: '2026-04-15', selling_price: 42.00, cost: 20.50, margin: 51.2, changed_by: 'Sara Ali' },
-    { date: '2026-01-10', selling_price: review.current_selling_price, cost: review.previous_cost, margin: review.current_margin, changed_by: 'Ahmed Hassan' },
+    { date: '2026-01-10', selling_price: review.selling_price, cost: review.previous_product_cost, margin: review.current_margin, changed_by: 'Ahmed Hassan' },
   ];
 
   return (
@@ -242,7 +242,7 @@ function MarginSimulationTab({ review }: { review: PricingReview }) {
   const [simPrice, setSimPrice] = useState(review.suggested_selling_price.toFixed(2));
 
   const price = parseFloat(simPrice) || 0;
-  const cost = review.current_cost;
+  const cost = review.product_cost;
   const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
   const profit = price - cost;
   const currentMargin = review.current_margin;
@@ -314,7 +314,7 @@ function MarginSimulationTab({ review }: { review: PricingReview }) {
         <SectionLabel>Reference Points</SectionLabel>
         <div className="flex flex-col gap-2 text-sm">
           {[
-            { label: 'Current Selling Price', value: review.current_selling_price, note: `${currentMargin.toFixed(1)}% margin` },
+            { label: 'Selling Price', value: review.selling_price, note: `${currentMargin.toFixed(1)}% margin` },
             { label: 'Suggested Price', value: review.suggested_selling_price, note: 'maintains target margin' },
             { label: 'Break-even Price', value: cost, note: '0% margin' },
           ].map((ref) => (
@@ -367,8 +367,8 @@ function ApprovalHistoryTab({ review }: { review: PricingReview }) {
     {
       id: '1',
       action: review.status === 'snoozed' ? 'snoozed' : review.status,
-      old_price: review.previous_cost + 10,
-      new_price: review.current_selling_price,
+      old_price: review.previous_product_cost + 10,
+      new_price: review.selling_price,
       reason: review.status === 'kept' ? 'Competitive pricing pressure — will review next quarter' : null,
       actor: { id: 'u1', name: 'Ahmed Hassan' },
       created_at: review.updated_at,
@@ -463,8 +463,8 @@ export function ProductCostDrawer({ review, open, onOpenChange }: ProductCostDra
               </p>
             </div>
             <div className="flex flex-col items-end gap-1 flex-shrink-0">
-              <span className="text-xs text-muted-foreground">Current Cost</span>
-              <span className="text-lg font-semibold tabular-nums">{fmt(review.current_cost)}</span>
+              <span className="text-xs text-muted-foreground">Product Cost</span>
+              <span className="text-lg font-semibold tabular-nums">{fmt(review.product_cost)}</span>
             </div>
           </div>
         </SheetHeader>

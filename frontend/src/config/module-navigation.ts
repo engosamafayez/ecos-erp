@@ -112,7 +112,9 @@ export const APP_MODULES: AppModule[] = [
       { key: 'cycle-count', label: 'Cycle Planner', path: ROUTES.inventoryCycleCountPlanner, icon: CalendarClock },
       { key: 'variance', label: 'Variance Analytics', path: ROUTES.inventoryVarianceAnalytics, icon: LineChart },
       { key: 'wh-performance', label: 'WH Performance', path: ROUTES.inventoryWarehousePerformance, icon: Warehouse },
-      { key: 'cost-pricing', label: 'Cost & Pricing', path: ROUTES.costPricingCenter, icon: BarChart3 },
+      { key: 'cost-dashboard', label: 'Cost Dashboard', path: ROUTES.costManagement, icon: BarChart3 },
+      { key: 'cost-price-review', label: 'Price Review', path: ROUTES.costManagementPriceReview, icon: DollarSign },
+      { key: 'cost-history', label: 'Cost History', path: ROUTES.costManagementCostHistory, icon: TrendingDown },
     ],
   },
   {

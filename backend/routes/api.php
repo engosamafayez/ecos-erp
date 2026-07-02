@@ -46,6 +46,9 @@ use Modules\POS\Presentation\Http\Controllers\ReturnController as PosReturnContr
 use Modules\POS\Presentation\Http\Controllers\ExchangeController as PosExchangeController;
 use Modules\POS\Presentation\Http\Controllers\ReceiptController as PosReceiptController;
 use Modules\POS\Presentation\Http\Controllers\TerminalController as PosTerminalController;
+use Modules\CostManagement\Presentation\Http\Controllers\CostManagementDashboardController;
+use Modules\CostManagement\Presentation\Http\Controllers\MaterialCostController;
+use Modules\CostManagement\Presentation\Http\Controllers\PricingReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -273,6 +276,29 @@ Route::middleware('auth:sanctum')->prefix('pos')->group(function (): void {
     Route::get('receipts/{receipt}',              [PosReceiptController::class, 'show']);
     Route::post('receipts/{receipt}/reprint',     [PosReceiptController::class, 'reprint']);
     Route::delete('receipts/{receipt}',           [PosReceiptController::class, 'destroy']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Cost Management — Dashboard, Price Review, Material Cost History (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('cost-management')->group(function (): void {
+    // Dashboard KPIs
+    Route::get('dashboard', [CostManagementDashboardController::class, 'index']);
+
+    // Price Review Center
+    Route::get('pricing-reviews',                              [PricingReviewController::class, 'index']);
+    Route::get('pricing-reviews/{id}/detail',                  [PricingReviewController::class, 'detail']);
+    Route::post('pricing-reviews/{id}/approve',                [PricingReviewController::class, 'approve']);
+    Route::post('pricing-reviews/{id}/snooze',                 [PricingReviewController::class, 'snooze']);
+    Route::post('pricing-reviews/{id}/assign',                 [PricingReviewController::class, 'assign']);
+    Route::post('pricing-reviews/bulk-approve',                [PricingReviewController::class, 'bulkApprove']);
+
+    // Material Cost History (global and per-material)
+    Route::get('cost-history',                                 [MaterialCostController::class, 'globalHistory']);
+    Route::get('materials/{productId}/cost-history',           [MaterialCostController::class, 'history']);
+    Route::patch('materials/{productId}/cost',                 [MaterialCostController::class, 'update']);
 });
 
 /*
