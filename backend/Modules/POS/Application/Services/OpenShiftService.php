@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\POS\Application\Services;
 
-use Illuminate\Support\Facades\DB;
 use Modules\POS\Application\Commands\OpenShiftCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
 use Modules\POS\Application\Exceptions\SessionNotFoundException;
@@ -32,34 +31,25 @@ final class OpenShiftService
             throw SessionNotFoundException::withId($command->sessionId);
         }
 
-        $shift = null;
+        $existingShift = $this->shiftRepo->findOpenBySession($command->sessionId);
 
-        DB::transaction(function () use ($command, &$shift): void {
-            // Serialises concurrent shift-open attempts for the same session,
-            // making the duplicate-check + countByTerminal + save atomic.
-            DB::statement('SELECT pg_advisory_xact_lock(hashtext(?))', [$command->sessionId . '-shift']);
+        if ($existingShift !== null) {
+            throw ShiftAlreadyOpenException::forSession($command->sessionId);
+        }
 
-            $existingShift = $this->shiftRepo->findOpenBySession($command->sessionId);
+        $shiftCount  = $this->shiftRepo->countByTerminal($command->terminalId);
+        $shiftNumber = ShiftNumber::of($shiftCount + 1);
+        $openingCash = Money::of($command->openingCashAmount, $command->openingCashCurrency);
 
-            if ($existingShift !== null) {
-                throw ShiftAlreadyOpenException::forSession($command->sessionId);
-            }
+        $shift = Shift::open(
+            sessionId:   $command->sessionId,
+            terminalId:  $command->terminalId,
+            cashierId:   $command->cashierId,
+            openingCash: $openingCash,
+            shiftNumber: $shiftNumber,
+        );
 
-            $shiftCount  = $this->shiftRepo->countByTerminal($command->terminalId);
-            $shiftNumber = ShiftNumber::of($shiftCount + 1);
-            $openingCash = Money::of($command->openingCashAmount, $command->openingCashCurrency);
-
-            $shift = Shift::open(
-                sessionId:   $command->sessionId,
-                terminalId:  $command->terminalId,
-                cashierId:   $command->cashierId,
-                openingCash: $openingCash,
-                shiftNumber: $shiftNumber,
-            );
-
-            $this->shiftRepo->save($shift);
-        });
-
+        $this->shiftRepo->save($shift);
         $this->publisher->publishAll($shift->pullDomainEvents());
 
         return new OpenShiftResult((string) $shift->id, $shift->shift_number);

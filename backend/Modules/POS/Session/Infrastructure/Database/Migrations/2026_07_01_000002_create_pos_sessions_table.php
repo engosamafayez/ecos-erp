@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -22,18 +21,19 @@ return new class extends Migration
             $table->timestamp('opened_at');
             $table->timestamp('suspended_at')->nullable();
             $table->timestamp('closed_at')->nullable();
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
+
+            // Nullable slot that holds terminal_id when the session is Open, NULL otherwise.
+            // A standard UNIQUE index on a nullable column allows many NULLs but rejects
+            // a second non-NULL duplicate — giving us the "one open session per terminal"
+            // invariant on MySQL, MariaDB, and PostgreSQL without partial indexes.
+            $table->uuid('terminal_open_lock')->nullable()->unique();
 
             $table->index('terminal_id');
             $table->index('cashier_id');
             $table->index('status');
         });
-
-        // Partial unique index: only one Open session per terminal at a time.
-        DB::statement(
-            "CREATE UNIQUE INDEX pos_sessions_one_open_per_terminal ON pos_sessions (terminal_id) WHERE status = 'open'"
-        );
     }
 
     public function down(): void

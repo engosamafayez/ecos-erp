@@ -39,6 +39,7 @@ final class Session extends Model
         'suspended_at',
         'closed_at',
         'metadata',
+        'terminal_open_lock',
     ];
 
     protected function casts(): array
@@ -101,6 +102,7 @@ final class Session extends Model
         $session->terminal_id        = $terminalId;
         $session->cashier_id         = $cashierId;
         $session->status             = SessionStatus::Open;
+        $session->terminal_open_lock = $terminalId;
         $session->device_fingerprint = $fingerprint->value;
         $session->device_type        = $deviceType;
         $session->ip_address         = $ipAddress;
@@ -129,8 +131,9 @@ final class Session extends Model
             );
         }
 
-        $this->status       = SessionStatus::Suspended;
-        $this->suspended_at = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+        $this->status             = SessionStatus::Suspended;
+        $this->terminal_open_lock = null;
+        $this->suspended_at       = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
 
         $this->addEvent(SessionSuspended::now(
             sessionId:  (string) $this->id,
@@ -170,8 +173,9 @@ final class Session extends Model
             );
         }
 
-        $this->status       = SessionStatus::Open;
-        $this->suspended_at = null;
+        $this->status             = SessionStatus::Open;
+        $this->terminal_open_lock = (string) $this->terminal_id;
+        $this->suspended_at       = null;
 
         $this->addEvent(SessionResumed::now(
             sessionId:  (string) $this->id,
@@ -197,8 +201,9 @@ final class Session extends Model
             : new \DateTimeImmutable((string) $this->opened_at, new \DateTimeZone('UTC'));
         $durationMinutes = (int) max(0, (int) ceil(($now->getTimestamp() - $openedAt->getTimestamp()) / 60));
 
-        $this->status    = SessionStatus::Closed;
-        $this->closed_at = $now->format('Y-m-d H:i:s');
+        $this->status             = SessionStatus::Closed;
+        $this->terminal_open_lock = null;
+        $this->closed_at          = $now->format('Y-m-d H:i:s');
 
         $this->addEvent(SessionClosed::now(
             sessionId:       (string) $this->id,

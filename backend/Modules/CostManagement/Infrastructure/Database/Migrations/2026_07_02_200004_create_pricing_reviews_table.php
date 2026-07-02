@@ -39,7 +39,7 @@ return new class extends Migration
             $table->decimal('current_margin',          8,  4)->default(0);
 
             // Impact flags (array: 'cost_increased','cost_decreased','recipe_changed', etc.)
-            $table->jsonb('impacts')->default('[]');
+            $table->json('impacts')->nullable();
 
             // Workflow
             $table->string('status', 20)->default('pending');   // pending|approved|kept|custom_price|snoozed

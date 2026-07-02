@@ -162,12 +162,9 @@ final class SalesCustomerGatewayTest extends TestCase
         string  $phone  = '0501000000',
         bool    $active = true,
     ): Customer {
-        static $seq = 0;
-        $seq++;
-
         return Customer::create([
-            'code'      => $seq > 1 ? "{$code}-{$seq}" : $code,
-            'name'      => "Test Customer {$seq}",
+            'code'      => $code,
+            'name'      => 'Test Customer',
             'email'     => $email,
             'phone'     => $phone,
             'mobile'    => null,

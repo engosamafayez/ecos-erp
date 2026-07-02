@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('customer_id', 36)->nullable();
 
             // Full structured payload stored as JSONB for flexible querying
-            $table->jsonb('payload');
+            $table->json('payload');
 
             // Business timestamp (when the sale occurred, not when the row was inserted)
             $table->timestampTz('occurred_at');

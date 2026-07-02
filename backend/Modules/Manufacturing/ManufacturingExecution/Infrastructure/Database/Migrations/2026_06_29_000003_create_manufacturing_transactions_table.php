@@ -47,7 +47,7 @@ return new class extends Migration
              * RC-10 future anchor: UNIQUE(order_line_id, bom_id, bom_version_number)
              * WHERE status != 'failed' will be enforced once Order integration is added.
              */
-            $table->uuid('order_line_id')->nullable();
+            $table->string('order_line_id', 100)->nullable();
 
             $table->json('metadata')->nullable();
 

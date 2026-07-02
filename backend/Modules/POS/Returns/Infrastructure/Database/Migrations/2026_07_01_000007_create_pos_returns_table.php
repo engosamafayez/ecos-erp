@@ -28,8 +28,8 @@ return new class extends Migration
             $table->char('currency', 3)->nullable(false);
 
             // Snapshot of returned lines and computed totals (JSONB)
-            $table->jsonb('lines')->nullable(false)->default('[]');
-            $table->jsonb('refund_total')->nullable(false);
+            $table->json('lines')->nullable(false);
+            $table->json('refund_total')->nullable(false);
 
             $table->string('refund_method', 50)->nullable(false);
             $table->text('notes')->nullable();
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->timestamp('cancelled_at')->nullable();
             $table->string('cancelled_reason', 500)->nullable();
 
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
     }

@@ -29,12 +29,12 @@ use Modules\POS\Shared\Domain\ValueObjects\Money;
 final class ProcessExchangeService
 {
     public function __construct(
-        private readonly SaleRepositoryInterface           $saleRepo,
-        private readonly ExchangeRepositoryInterface       $exchangeRepo,
-        private readonly ReceiptRepositoryInterface        $receiptRepo,
-        private readonly ReceiptNumberingStrategyInterface $receiptNumbering,
-        private readonly ExchangeNumberingStrategyInterface $exchangeNumbering,
-        private readonly DomainEventPublisherInterface     $publisher,
+        private readonly SaleRepositoryInterface              $saleRepo,
+        private readonly ExchangeRepositoryInterface          $exchangeRepo,
+        private readonly ReceiptRepositoryInterface           $receiptRepo,
+        private readonly ReceiptNumberingStrategyInterface    $receiptNumbering,
+        private readonly DomainEventPublisherInterface        $publisher,
+        private readonly ?ExchangeNumberingStrategyInterface  $exchangeNumbering = null,
     ) {}
 
     public function execute(ProcessExchangeCommand $command): ProcessExchangeResult
@@ -54,7 +54,9 @@ final class ProcessExchangeService
         DB::transaction(function () use ($command, $sale, &$exchange, &$receipt, &$receiptNumber, &$exchangeNumber) {
             $now            = new DateTimeImmutable('now', new DateTimeZone('UTC'));
             $receiptNumber  = $this->receiptNumbering->next($command->terminalId, $now);
-            $exchangeNumber = $this->exchangeNumbering->next($command->terminalId, $now);
+            $exchangeNumber = $command->exchangeNumber
+                ?? ($this->exchangeNumbering?->next($command->terminalId, $now)
+                    ?? throw new \RuntimeException('No exchange number: provide via command or inject ExchangeNumberingStrategyInterface'));
             $returnedLines = array_map(
                 fn(array $line) => ExchangeLine::fromArray($line),
                 $command->returnedLines,

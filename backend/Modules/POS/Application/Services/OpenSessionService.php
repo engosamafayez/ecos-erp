@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\POS\Application\Services;
 
-use Illuminate\Support\Facades\DB;
 use Modules\POS\Application\Commands\OpenSessionCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
 use Modules\POS\Application\Exceptions\SessionAlreadyOpenException;
@@ -23,29 +22,19 @@ final class OpenSessionService
 
     public function execute(OpenSessionCommand $command): OpenSessionResult
     {
-        $session = null;
+        if ($this->sessionRepo->hasOpenSessionForTerminal($command->terminalId)) {
+            throw SessionAlreadyOpenException::forTerminal($command->terminalId);
+        }
 
-        DB::transaction(function () use ($command, &$session): void {
-            // Serialises concurrent open-session attempts for the same terminal.
-            // hashtext() maps an arbitrary string to a 32-bit integer required
-            // by pg_advisory_xact_lock; the lock is released at transaction end.
-            DB::statement('SELECT pg_advisory_xact_lock(hashtext(?))', [$command->terminalId]);
+        $session = Session::open(
+            terminalId:  $command->terminalId,
+            cashierId:   $command->cashierId,
+            fingerprint: DeviceFingerprint::of($command->deviceFingerprint),
+            ipAddress:   $command->ipAddress,
+            deviceType:  DeviceType::from($command->deviceType),
+        );
 
-            if ($this->sessionRepo->hasOpenSessionForTerminal($command->terminalId)) {
-                throw SessionAlreadyOpenException::forTerminal($command->terminalId);
-            }
-
-            $session = Session::open(
-                terminalId:  $command->terminalId,
-                cashierId:   $command->cashierId,
-                fingerprint: DeviceFingerprint::of($command->deviceFingerprint),
-                ipAddress:   $command->ipAddress,
-                deviceType:  DeviceType::from($command->deviceType),
-            );
-
-            $this->sessionRepo->save($session);
-        });
-
+        $this->sessionRepo->save($session);
         $this->publisher->publishAll($session->pullDomainEvents());
 
         return new OpenSessionResult((string) $session->id);

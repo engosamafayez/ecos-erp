@@ -11,9 +11,9 @@ use Modules\POS\Promotion\Domain\Models\Promotion;
 
 final class EloquentPromotionRepository implements PromotionRepositoryInterface
 {
-    public function findById(string $id): Promotion
+    public function findById(string $id): ?Promotion
     {
-        return Promotion::find($id) ?? throw PromotionNotFoundException::withId($id);
+        return Promotion::find($id);
     }
 
     public function findAllActive(): array

@@ -35,6 +35,8 @@ export type Product = {
   image_url: string | null;
   regular_price: number | null;
   sale_price: number | null;
+  material_cost?: number | null;
+  last_purchase_cost?: number | null;
   short_description: string | null;
   long_description: string | null;
   stock_status: ProductStockStatus | null;

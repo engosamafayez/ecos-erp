@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Manufacturing;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Modules\Inventory\Products\Domain\Models\Product;
@@ -23,6 +24,14 @@ use Tests\TestCase;
 class RecipeFoundationTest extends TestCase
 {
     use RefreshDatabase;
+
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+    }
 
     // ── 1. Migration: bom_version_number column ───────────────────────────────
 
@@ -274,7 +283,7 @@ class RecipeFoundationTest extends TestCase
         $product = Product::factory()->finishedGood()->manufacturable()->create();
 
         // Attempt to create a recipe where the component is the output product
-        $response = $this->postJson('/api/boms', [
+        $response = $this->actingAs($this->user)->postJson('/api/boms', [
             'product_id' => $product->id,
             'version'    => '1.0',
             'is_active'  => true,
@@ -291,7 +300,7 @@ class RecipeFoundationTest extends TestCase
     {
         $product = Product::factory()->finishedGood()->manufacturable()->create();
 
-        $response = $this->postJson('/api/boms', [
+        $response = $this->actingAs($this->user)->postJson('/api/boms', [
             'product_id' => $product->id,
             'version'    => '1.0',
             'is_active'  => false,
@@ -307,7 +316,7 @@ class RecipeFoundationTest extends TestCase
         $product  = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
-        $response = $this->postJson('/api/boms', [
+        $response = $this->actingAs($this->user)->postJson('/api/boms', [
             'product_id' => $product->id,
             'version'    => '1.0',
             'is_active'  => false,
@@ -326,7 +335,7 @@ class RecipeFoundationTest extends TestCase
         $material = Product::factory()->rawMaterial()->create();
 
         // Submitting waste_percentage should be silently ignored (backward compat)
-        $response = $this->postJson('/api/boms', [
+        $response = $this->actingAs($this->user)->postJson('/api/boms', [
             'product_id' => $product->id,
             'version'    => '1.0',
             'is_active'  => true,

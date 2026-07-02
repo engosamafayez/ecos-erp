@@ -38,7 +38,7 @@ return new class extends Migration
 
             // Who & where
             $table->string('manager_name')->nullable();
-            $table->jsonb('approved_channels')->default('[]'); // ['pos','website','wholesale','marketplace']
+            $table->json('approved_channels')->nullable(); // ['pos','website','wholesale','marketplace']
 
             $table->timestampTz('approved_at');
             $table->timestampTz('created_at')->useCurrent();

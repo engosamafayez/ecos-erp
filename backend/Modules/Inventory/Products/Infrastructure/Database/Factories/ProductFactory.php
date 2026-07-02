@@ -33,7 +33,7 @@ final class ProductFactory extends Factory
             'category_id' => Category::factory(),
             'unit_id' => Unit::factory(),
             'product_type' => $this->faker->randomElement(Product::TYPES),
-            'is_active' => $this->faker->boolean(85),
+            'is_active' => true,
             'cost_source' => CostSource::Purchase->value,
             'can_manufacture' => false,
             'can_disassemble' => false,

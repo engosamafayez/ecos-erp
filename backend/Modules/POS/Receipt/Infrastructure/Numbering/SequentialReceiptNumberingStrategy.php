@@ -54,9 +54,9 @@ final class SequentialReceiptNumberingStrategy implements ReceiptNumberingStrate
 
     private function abbreviateTerminalId(string $terminalId): string
     {
-        // Use last segment of UUID or first 6 uppercase chars of the raw value
+        // Use last 6 chars of the UUID's final segment for uniqueness
         $parts = explode('-', $terminalId);
 
-        return strtoupper(substr(end($parts), 0, 6));
+        return strtoupper(substr(end($parts), -6));
     }
 }

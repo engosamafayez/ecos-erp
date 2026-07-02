@@ -29,12 +29,12 @@ use Modules\POS\Shared\Domain\ValueObjects\Money;
 final class ProcessReturnService
 {
     public function __construct(
-        private readonly SaleRepositoryInterface          $saleRepo,
-        private readonly SaleReturnRepositoryInterface    $returnRepo,
-        private readonly ReceiptRepositoryInterface       $receiptRepo,
+        private readonly SaleRepositoryInterface           $saleRepo,
+        private readonly SaleReturnRepositoryInterface     $returnRepo,
+        private readonly ReceiptRepositoryInterface        $receiptRepo,
         private readonly ReceiptNumberingStrategyInterface $receiptNumbering,
-        private readonly ReturnNumberingStrategyInterface  $returnNumbering,
-        private readonly DomainEventPublisherInterface    $publisher,
+        private readonly DomainEventPublisherInterface     $publisher,
+        private readonly ?ReturnNumberingStrategyInterface $returnNumbering = null,
     ) {}
 
     public function execute(ProcessReturnCommand $command): ProcessReturnResult
@@ -52,7 +52,9 @@ final class ProcessReturnService
         DB::transaction(function () use ($command, $sale, &$saleReturn, &$receipt, &$receiptNumber) {
             $now           = new DateTimeImmutable('now', new DateTimeZone('UTC'));
             $receiptNumber = $this->receiptNumbering->next($command->terminalId, $now);
-            $returnNumber  = $this->returnNumbering->next($command->terminalId, $now);
+            $returnNumber  = $command->returnNumber
+                ?? ($this->returnNumbering?->next($command->terminalId, $now)
+                    ?? throw new \RuntimeException('No return number: provide via command or inject ReturnNumberingStrategyInterface'));
 
             $returnLines = array_map(
                 fn(array $line) => ReturnLine::fromArray($line),

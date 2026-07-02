@@ -28,7 +28,7 @@ final class ReprintReceiptService
         $receipt->reprint(
             cashierId:   $command->cashierId,
             terminalId:  $command->terminalId,
-            reason:      ReprintReason::from($command->reason),
+            reason:      ReprintReason::tryFrom($command->reason) ?? ReprintReason::Other,
             maxReprints: $maxReprints,
         );
 

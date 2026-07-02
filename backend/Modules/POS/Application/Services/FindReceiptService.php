@@ -16,12 +16,10 @@ final class FindReceiptService
 
     public function execute(string $receiptId): Receipt
     {
-        $receipt = $this->receiptRepo->findById($receiptId);
-
-        if ($receipt === null) {
+        try {
+            return $this->receiptRepo->findById($receiptId);
+        } catch (\Modules\POS\Receipt\Domain\Exceptions\ReceiptNotFoundException) {
             throw ReceiptNotFoundException::withId($receiptId);
         }
-
-        return $receipt;
     }
 }

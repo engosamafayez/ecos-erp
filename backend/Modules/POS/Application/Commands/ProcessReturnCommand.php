@@ -24,6 +24,7 @@ final readonly class ProcessReturnCommand
         public array   $lines,
         public string  $refundTotalAmount,
         public string  $refundMethod,
+        public ?string $returnNumber = null,
         public ?string $notes        = null,
         public ?string $cashierName  = null,
         public ?string $customerName = null,

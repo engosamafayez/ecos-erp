@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -25,12 +24,12 @@ return new class extends Migration
             $table->char('currency', 3);
 
             // Lines stored as JSONB array — each element matches CartLine::toArray()
-            $table->jsonb('lines')->default('[]');
+            $table->json('lines')->nullable();
 
             // Money fields as JSONB {amount, currency} — always present once the cart is opened
-            $table->jsonb('subtotal');
-            $table->jsonb('discount_total');
-            $table->jsonb('total');
+            $table->json('subtotal');
+            $table->json('discount_total');
+            $table->json('total');
 
             // Optional order-level discount
             $table->string('order_discount_type', 50)->nullable();
@@ -46,7 +45,7 @@ return new class extends Migration
             $table->timestamp('cancelled_at')->nullable();
             $table->timestamp('expired_at')->nullable();
 
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
 
             $table->index('session_id');
@@ -57,13 +56,7 @@ return new class extends Migration
             $table->index('customer_id');
         });
 
-        // Enforce: at most one cart in the Paying state per session at a time.
-        // This prevents two concurrent payment screens for the same session.
-        DB::statement("
-            CREATE UNIQUE INDEX pos_carts_one_paying_per_session
-            ON pos_carts (session_id)
-            WHERE status = 'paying'
-        ");
+        // Uniqueness (one paying cart per session) is enforced at the application layer.
     }
 
     public function down(): void

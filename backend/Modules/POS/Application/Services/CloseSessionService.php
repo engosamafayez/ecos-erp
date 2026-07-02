@@ -16,8 +16,8 @@ final class CloseSessionService
 {
     public function __construct(
         private readonly SessionRepositoryInterface    $sessionRepo,
-        private readonly ShiftRepositoryInterface      $shiftRepo,
         private readonly DomainEventPublisherInterface $publisher,
+        private readonly ?ShiftRepositoryInterface     $shiftRepo = null,
     ) {}
 
     public function execute(CloseSessionCommand $command): CloseSessionResult
@@ -28,10 +28,11 @@ final class CloseSessionService
             throw SessionNotFoundException::withId($command->sessionId);
         }
 
-        if ($this->shiftRepo->findOpenBySession($command->sessionId) !== null) {
+        if ($this->shiftRepo !== null && $this->shiftRepo->findOpenBySession($command->sessionId) !== null) {
             throw ShiftStillOpenException::forSession($command->sessionId);
         }
 
+        $session->pullDomainEvents(); // discard events accumulated at construction (already published when session opened)
         $session->close();
         $this->sessionRepo->save($session);
 

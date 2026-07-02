@@ -13,9 +13,8 @@ return new class extends Migration
     {
         Schema::table('bills_of_materials', function (Blueprint $table): void {
             // Integer version counter for copy-on-write versioning (RC-10 architecture).
-            // Monotonically increasing per product. Used in manufacturing_transactions
-            // unique constraint: (order_line_id, bom_id, bom_version_number) WHERE status != 'failed'.
-            $table->unsignedInteger('bom_version_number')->default(1)->after('version');
+            // Monotonically increasing per product. Idempotency enforced at the application layer.
+            $table->unsignedInteger('bom_version_number')->default(1);
 
             $table->index(['product_id', 'bom_version_number'], 'idx_bom_product_version');
         });

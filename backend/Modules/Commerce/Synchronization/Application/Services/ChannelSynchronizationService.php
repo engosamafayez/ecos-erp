@@ -33,7 +33,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
  *   WooCommerce (idempotent PUT), dispatching the same quantity twice has no
  *   observable side-effect. No additional deduplication is required in Phase B.
  */
-final class ChannelSynchronizationService
+class ChannelSynchronizationService
 {
     /**
      * Entry point called by InventoryChannelSynchronizationListener for every

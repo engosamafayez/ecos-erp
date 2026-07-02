@@ -12,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('bills_of_materials', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->string('bom_number', 20)->unique();
+            $table->string('bom_number', 50)->unique();
             $table->foreignUuid('product_id')->constrained('products')->restrictOnDelete();
             $table->string('version', 20)->default('1.0');
             $table->boolean('is_active')->default(false);

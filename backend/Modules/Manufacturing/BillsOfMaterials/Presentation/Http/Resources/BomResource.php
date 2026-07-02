@@ -45,7 +45,7 @@ final class BomResource extends JsonResource
                         'symbol' => $line->rawMaterial->unit->symbol,
                     ] : null,
                 ] : null,
-                'quantity'       => (float) $line->quantity,
+                'quantity'        => (float) $line->quantity,
             ])->all()),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

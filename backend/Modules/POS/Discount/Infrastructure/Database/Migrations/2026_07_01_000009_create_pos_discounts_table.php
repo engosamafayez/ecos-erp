@@ -18,7 +18,7 @@ return new class extends Migration
 
             $table->string('scope', 20);            // 'line_item' | 'cart_total'
             $table->string('discount_type', 20);    // 'percentage' | 'fixed_amount'
-            $table->jsonb('discount_value');        // full DiscountValue VO serialization
+            $table->json('discount_value');        // full DiscountValue VO serialization
 
             $table->string('status', 20)->default('pending');
 

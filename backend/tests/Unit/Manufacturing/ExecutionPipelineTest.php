@@ -102,8 +102,8 @@ class ExecutionPipelineTest extends TestCase
      */
     private function makePlan(
         bool $shouldManufacture = true,
-        ?RecipeSnapshot $snapshot = null,
-        ?string $snapshotHash = null,
+        RecipeSnapshot|false|null $snapshot = false,
+        string|false|null $snapshotHash = false,
         ?int $bomVersionNumber = 1,
         array $components = [],
         string $planId = 'plan-uuid-0001',
@@ -113,11 +113,13 @@ class ExecutionPipelineTest extends TestCase
         array $metadata = [],
         ?string $recipeId = 'recipe-abc-001',
     ): ManufacturingPlan {
-        if ($snapshot === null) {
+        // false = "caller did not specify" → fill in a default.
+        // null  = "caller explicitly wants null" → pass through as-is.
+        if ($snapshot === false) {
             $snapshot = $this->makeSnapshot($bomVersionNumber ?? 1);
         }
-        if ($snapshotHash === null) {
-            $snapshotHash = $this->hashSnapshot($snapshot);
+        if ($snapshotHash === false) {
+            $snapshotHash = $snapshot !== null ? $this->hashSnapshot($snapshot) : null;
         }
         if ($components === []) {
             $components = [$this->makeComponentPlan()];

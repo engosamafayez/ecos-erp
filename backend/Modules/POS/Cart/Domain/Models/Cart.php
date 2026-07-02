@@ -241,12 +241,15 @@ final class Cart extends Model
             throw InvalidCartTransitionException::lineNotFound($this->id ?? '', $lineId);
         }
 
+        $removedLine = current(array_filter($lines, fn(CartLine $l) => $l->id === $lineId));
+
         $this->setLines($filtered);
         $this->recalculateTotals();
 
         $this->addEvent(CartLineRemoved::now(
-            cartId: (string) $this->id,
-            lineId: $lineId,
+            cartId:    (string) $this->id,
+            lineId:    $lineId,
+            productId: $removedLine ? $removedLine->productId : '',
         ));
     }
 

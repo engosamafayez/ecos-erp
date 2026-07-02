@@ -10,7 +10,8 @@ interface ReceiptRepositoryInterface
 {
     public function save(Receipt $receipt): void;
 
-    public function findById(string $id): ?Receipt;
+    /** @throws \Modules\POS\Receipt\Domain\Exceptions\ReceiptNotFoundException */
+    public function findById(string $id): Receipt;
 
     /** @throws \Modules\POS\Receipt\Domain\Exceptions\ReceiptNotFoundException */
     public function findByNumber(string $receiptNumber): Receipt;

@@ -40,12 +40,12 @@ return new class extends Migration
             $table->uuid('template_id')->nullable();
 
             // Immutable snapshot (JSONB for efficient querying)
-            $table->jsonb('line_items')->default('[]');
-            $table->jsonb('totals');
-            $table->jsonb('payments')->default('[]');
+            $table->json('line_items')->nullable();
+            $table->json('totals');
+            $table->json('payments')->nullable();
 
             // Reprint audit
-            $table->jsonb('reprints')->default('[]');
+            $table->json('reprints')->nullable();
             $table->unsignedInteger('reprint_count')->default(0);
 
             // Void tracking

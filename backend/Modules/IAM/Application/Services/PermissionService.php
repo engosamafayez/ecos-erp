@@ -34,9 +34,7 @@ final class PermissionService implements PermissionServiceInterface
 
     private const CACHE_PREFIX = 'rbac.user.';
 
-    private const CACHE_TAG = 'rbac';
-
-    public function userHasPermission(User $user, string $permission): bool
+public function userHasPermission(User $user, string $permission): bool
     {
         return in_array($permission, $this->getUserPermissions($user), true);
     }
@@ -74,8 +72,10 @@ final class PermissionService implements PermissionServiceInterface
      */
     public function getUserPermissions(User $user): array
     {
-        $key      = self::CACHE_PREFIX.$user->id.'.perms';
-        $resolver = function () use ($user): array {
+        $key = self::CACHE_PREFIX.$user->id.'.perms';
+
+        /** @var list<string> $perms */
+        $perms = Cache::remember($key, self::TTL, function () use ($user): array {
             return $user->roles()
                 ->with('permissions')
                 ->get()
@@ -83,54 +83,20 @@ final class PermissionService implements PermissionServiceInterface
                 ->unique()
                 ->values()
                 ->all();
-        };
-
-        /** @var list<string> $perms */
-        $perms = $this->supportsTags()
-            ? Cache::tags([self::CACHE_TAG])->remember($key, self::TTL, $resolver)
-            : Cache::remember($key, self::TTL, $resolver);
+        });
 
         return $perms;
     }
 
     public function invalidateUserCache(int $userId): void
     {
-        $key = self::CACHE_PREFIX.$userId.'.perms';
-
-        if ($this->supportsTags()) {
-            Cache::tags([self::CACHE_TAG])->forget($key);
-        } else {
-            Cache::forget($key);
-        }
+        Cache::forget(self::CACHE_PREFIX.$userId.'.perms');
     }
 
     public function invalidateRoleCache(Role $role): void
     {
-        if ($this->supportsTags()) {
-            // Tag-aware drivers: flush the entire rbac group at once.
-            Cache::tags([self::CACHE_TAG])->flush();
-
-            return;
-        }
-
-        // Tag-unsupported drivers: iterate role members individually.
         $role->users()->select('users.id')->each(
             fn (User $user) => $this->invalidateUserCache($user->id),
         );
-    }
-
-    /**
-     * Detect whether the active cache store supports tag-based operations.
-     * Returns false for file, database, and array drivers.
-     */
-    private function supportsTags(): bool
-    {
-        try {
-            Cache::tags([self::CACHE_TAG]);
-
-            return true;
-        } catch (\BadMethodCallException) {
-            return false;
-        }
     }
 }

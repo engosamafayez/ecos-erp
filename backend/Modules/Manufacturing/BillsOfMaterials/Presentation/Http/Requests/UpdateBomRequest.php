@@ -35,6 +35,7 @@ final class UpdateBomRequest extends FormRequest
                 Rule::notIn(array_filter([$productId])),
             ],
             'lines.*.quantity'        => ['required', 'numeric', 'min:0.0001'],
+            'lines.*.waste_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];
     }
 

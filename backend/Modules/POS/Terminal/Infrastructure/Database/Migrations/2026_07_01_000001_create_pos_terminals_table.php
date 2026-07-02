@@ -31,12 +31,12 @@ return new class extends Migration
 
             $table->string('status', 50)->default('inactive');
 
-            $table->jsonb('hardware_config')->default('{}');
+            $table->json('hardware_config')->nullable();
 
             $table->timestamp('last_seen_at')->nullable();
             $table->string('last_seen_ip', 45)->nullable();
 
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
 
             $table->timestamps();
 

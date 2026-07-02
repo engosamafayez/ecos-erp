@@ -45,6 +45,7 @@ final class ProductResource extends JsonResource
             'short_description' => $this->short_description,
             'long_description' => $this->long_description,
             'stock_status'         => $this->stock_status?->value,
+            'material_cost'        => $this->material_cost,
             'last_purchase_cost'   => $this->last_purchase_cost,
             'average_cost'         => $this->average_cost,
             'current_fifo_cost'    => $this->current_fifo_cost,

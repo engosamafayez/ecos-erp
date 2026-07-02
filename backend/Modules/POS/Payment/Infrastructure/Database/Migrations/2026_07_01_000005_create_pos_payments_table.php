@@ -19,12 +19,12 @@ return new class extends Migration
             $table->uuid('cashier_id');
             $table->string('status', 50)->default('pending');
             $table->char('currency', 3);
-            $table->jsonb('cart_total');
-            $table->jsonb('tenders')->default('[]');
-            $table->jsonb('amount_tendered');
-            $table->jsonb('change_due');
+            $table->json('cart_total');
+            $table->json('tenders')->nullable();
+            $table->json('amount_tendered');
+            $table->json('change_due');
             $table->timestamp('captured_at')->nullable();
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
 
             $table->index('session_id');

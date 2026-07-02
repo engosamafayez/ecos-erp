@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -60,12 +59,7 @@ return new class extends Migration
             $table->index(['bom_id', 'bom_version_number']);
         });
 
-        // Partial unique index: one non-failed disassembly per trigger_id
-        DB::statement(
-            "CREATE UNIQUE INDEX disassembly_transactions_trigger_id_non_failed_unique
-             ON disassembly_transactions (trigger_id)
-             WHERE trigger_id IS NOT NULL AND status != 'failed'"
-        );
+        // Idempotency (one non-failed disassembly per trigger_id) is enforced in DisassemblyExecutor.
     }
 
     public function down(): void

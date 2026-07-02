@@ -22,18 +22,18 @@ return new class extends Migration
             $table->string('status', 50)->default('pending');
             $table->char('currency', 3);
             $table->string('receipt_number', 100)->unique();
-            $table->jsonb('lines')->default('[]');
-            $table->jsonb('subtotal');
-            $table->jsonb('discount_total');
-            $table->jsonb('total');
-            $table->jsonb('amount_paid');
-            $table->jsonb('change_given');
-            $table->jsonb('payment_summaries')->default('[]');
+            $table->json('lines')->nullable();
+            $table->json('subtotal');
+            $table->json('discount_total');
+            $table->json('total');
+            $table->json('amount_paid');
+            $table->json('change_given');
+            $table->json('payment_summaries')->nullable();
             $table->text('notes')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamp('voided_at')->nullable();
             $table->string('voided_reason', 500)->nullable();
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
 
             $table->index('session_id');

@@ -29,12 +29,12 @@ return new class extends Migration
             $table->char('currency', 3)->nullable(false);
 
             // Snapshot of returned and replacement lines (JSONB)
-            $table->jsonb('returned_lines')->nullable(false)->default('[]');
-            $table->jsonb('replacement_lines')->nullable(false)->default('[]');
+            $table->json('returned_lines')->nullable(false);
+            $table->json('replacement_lines')->nullable(false);
 
             // Pre-computed totals for reporting (JSONB Money objects)
-            $table->jsonb('returned_total')->nullable(false);
-            $table->jsonb('replacement_total')->nullable(false);
+            $table->json('returned_total')->nullable(false);
+            $table->json('replacement_total')->nullable(false);
 
             $table->text('notes')->nullable();
 
@@ -43,7 +43,7 @@ return new class extends Migration
             $table->timestamp('cancelled_at')->nullable();
             $table->string('cancelled_reason', 500)->nullable();
 
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
     }

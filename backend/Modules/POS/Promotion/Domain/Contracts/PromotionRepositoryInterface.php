@@ -8,7 +8,7 @@ use Modules\POS\Promotion\Domain\Models\Promotion;
 
 interface PromotionRepositoryInterface
 {
-    public function findById(string $id): Promotion;
+    public function findById(string $id): ?Promotion;
 
     /** @return Promotion[] */
     public function findAllActive(): array;

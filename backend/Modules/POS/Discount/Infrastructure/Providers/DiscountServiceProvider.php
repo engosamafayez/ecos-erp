@@ -10,6 +10,11 @@ use Modules\POS\Discount\Infrastructure\Repositories\EloquentDiscountRepository;
 
 final class DiscountServiceProvider extends ServiceProvider
 {
+    public function boot(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+    }
+
     public function register(): void
     {
         $this->app->bind(

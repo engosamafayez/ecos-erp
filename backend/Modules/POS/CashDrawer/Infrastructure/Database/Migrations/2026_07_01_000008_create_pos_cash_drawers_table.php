@@ -22,9 +22,9 @@ return new class extends Migration
             $table->string('currency', 3);
             $table->string('status', 20)->default('open');
 
-            $table->jsonb('opening_float');
-            $table->jsonb('movements')->default('[]');
-            $table->jsonb('closing_count')->nullable();
+            $table->json('opening_float');
+            $table->json('movements')->nullable();
+            $table->json('closing_count')->nullable();
 
             $table->timestamp('opened_at')->nullable();
             $table->timestamp('closed_at')->nullable();

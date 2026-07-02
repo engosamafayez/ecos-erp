@@ -36,7 +36,7 @@ final readonly class DecisionTrigger
          * Monotonically increasing version per (trigger_type, trigger_id) pair.
          * Used to prevent duplicate decision execution (RC-6).
          */
-        public int $trigger_version,
+        public int|string $trigger_version,
 
         /** ISO 8601 timestamp of when the trigger occurred. */
         public string $triggered_at,
@@ -51,7 +51,7 @@ final readonly class DecisionTrigger
     public static function now(
         string $type,
         string $id,
-        int $version = 1,
+        int|string $version = 1,
         ?string $actor = null,
         array $metadata = [],
     ): self {

@@ -37,8 +37,8 @@ return new class extends Migration
             $table->string('updated_by')->nullable();        // user name or ID
 
             // Cascade impact (stored as JSON arrays of UUIDs)
-            $table->jsonb('affected_recipe_ids')->default('[]');
-            $table->jsonb('affected_product_ids')->default('[]');
+            $table->json('affected_recipe_ids')->nullable();
+            $table->json('affected_product_ids')->nullable();
 
             $table->timestampTz('occurred_at');
             $table->timestampTz('created_at')->useCurrent();

@@ -25,8 +25,9 @@ final readonly class ProcessExchangeCommand
         public array   $returnedLines,
         public array   $replacementLines,
         public string  $reason,
-        public ?string $notes        = null,
-        public ?string $cashierName  = null,
-        public ?string $customerName = null,
+        public ?string $exchangeNumber = null,
+        public ?string $notes          = null,
+        public ?string $cashierName    = null,
+        public ?string $customerName   = null,
     ) {}
 }

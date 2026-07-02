@@ -51,7 +51,7 @@ final class PosCustomerListener
 
     private function upsertStats(SaleFinalized $event): void
     {
-        // PostgreSQL-native conditional upsert: only increment when the sale_id
+        // PostgreSQL conditional upsert: only increment when the sale_id
         // has not already been processed (idempotency guard).
         DB::statement(
             <<<'SQL'

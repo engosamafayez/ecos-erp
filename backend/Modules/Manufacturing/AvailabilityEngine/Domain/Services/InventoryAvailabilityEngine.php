@@ -149,32 +149,31 @@ final class InventoryAvailabilityEngine
     private function classifyEligibility(array $materials): ManufacturingEligibility
     {
         if ($materials === []) {
-            // Recipe has no components (should not happen after RecipeResolver validates,
-            // but treat defensively as CanManufacture — nothing missing).
             return ManufacturingEligibility::CanManufacture;
         }
 
-        $hasAnyUnsatisfied             = false;
-        $allUnsatisfiedAllowNegative   = true;
+        $hasHardBlocker  = false;
+        $hasSoftShortage = false;
 
         foreach ($materials as $material) {
-            if (!$material->is_satisfied) {
-                $hasAnyUnsatisfied = true;
-                if (!$material->allow_negative_stock) {
-                    $allUnsatisfiedAllowNegative = false;
+            if ($material->missing_qty > 0.0) {
+                if ($material->allow_negative_stock) {
+                    $hasSoftShortage = true;
+                } else {
+                    $hasHardBlocker = true;
                 }
             }
         }
 
-        if (!$hasAnyUnsatisfied) {
-            return ManufacturingEligibility::CanManufacture;
+        if ($hasHardBlocker) {
+            return ManufacturingEligibility::CannotManufacture;
         }
 
-        if ($allUnsatisfiedAllowNegative) {
+        if ($hasSoftShortage) {
             return ManufacturingEligibility::Partial;
         }
 
-        return ManufacturingEligibility::CannotManufacture;
+        return ManufacturingEligibility::CanManufacture;
     }
 
     private function sufficientResult(

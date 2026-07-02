@@ -28,6 +28,7 @@ final class CloseShiftService
 
         $closingCount = Money::of($command->closingCountAmount, $command->closingCountCurrency);
 
+        $shift->pullDomainEvents(); // discard events accumulated at construction (already published when shift opened)
         $shift->submitForClosure($closingCount);
         $this->shiftRepo->save($shift);
 

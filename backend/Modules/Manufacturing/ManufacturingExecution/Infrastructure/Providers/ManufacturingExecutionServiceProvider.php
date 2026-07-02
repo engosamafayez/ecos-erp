@@ -14,6 +14,11 @@ use Modules\Manufacturing\ManufacturingExecution\Infrastructure\Persistence\Eloq
 
 final class ManufacturingExecutionServiceProvider extends ServiceProvider
 {
+    public function boot(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+    }
+
     public function register(): void
     {
         $this->app->bind(

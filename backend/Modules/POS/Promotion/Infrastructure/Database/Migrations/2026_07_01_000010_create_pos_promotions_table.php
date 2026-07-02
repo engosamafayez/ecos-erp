@@ -18,8 +18,8 @@ return new class extends Migration
 
             $table->string('status', 20)->default('draft');
 
-            $table->jsonb('conditions');   // PromotionCondition[] serialization
-            $table->jsonb('reward');       // PromotionReward serialization
+            $table->json('conditions');   // PromotionCondition[] serialization
+            $table->json('reward');       // PromotionReward serialization
 
             $table->timestamp('valid_from');
             $table->timestamp('valid_until')->nullable();

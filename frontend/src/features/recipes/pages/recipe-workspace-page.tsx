@@ -161,6 +161,18 @@ function MaterialPicker({
                     <p className="truncate text-sm font-medium">{m.name}</p>
                     <p className="text-muted-foreground text-xs">{m.sku}</p>
                   </div>
+                  <div className="flex flex-col items-end flex-shrink-0 min-w-[64px]">
+                    {m.material_cost != null && m.material_cost > 0 ? (
+                      <span className="text-xs font-medium tabular-nums">{fmt(m.material_cost)}</span>
+                    ) : (
+                      <span className="text-xs text-amber-500 flex items-center gap-0.5">
+                        <TriangleAlert className="size-3" />No cost
+                      </span>
+                    )}
+                    <span className={`text-xs ${m.stock_status === 'instock' ? 'text-green-600' : m.stock_status === 'outofstock' ? 'text-red-500' : 'text-muted-foreground'}`}>
+                      {m.stock_status === 'instock' ? 'In Stock' : m.stock_status === 'outofstock' ? 'Out of Stock' : m.stock_status ?? '—'}
+                    </span>
+                  </div>
                   {added && (
                     <Badge variant="secondary" className="text-xs">Added</Badge>
                   )}
@@ -193,8 +205,11 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
 
   const lineCosts = recipe.lines.map((line) => {
     const product = rmMap.get(line.raw_material_id);
-    const unitCost = product?.regular_price ?? 0;
-    return { ...line, unitCost, lineTotal: line.quantity * unitCost };
+    const unitCost = product?.material_cost ?? product?.last_purchase_cost ?? null;
+    const hasCost = unitCost != null && unitCost > 0;
+    const effectiveQty = line.quantity * (1 + (line.waste_percentage || 0) / 100);
+    const lineTotal = hasCost ? effectiveQty * (unitCost as number) : 0;
+    return { ...line, unitCost, hasCost, effectiveQty, lineTotal };
   });
   const totalCost = lineCosts.reduce((sum, l) => sum + l.lineTotal, 0);
 
@@ -264,8 +279,18 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                           </td>
                           <td className="py-2 pe-3 text-end">{fmt(line.quantity, 4)}</td>
                           <td className="py-2 pe-3 text-end">{fmt(line.waste_percentage)}%</td>
-                          <td className="py-2 pe-3 text-end">{fmt(line.unitCost)}</td>
-                          <td className="py-2 pe-3 text-end">{fmt(line.lineTotal)}</td>
+                          <td className="py-2 pe-3 text-end">
+                            {line.hasCost ? (
+                              <span className="tabular-nums">{fmt(line.unitCost as number)}</span>
+                            ) : (
+                              <span className="text-amber-500 text-xs flex items-center justify-end gap-1">
+                                <TriangleAlert className="size-3" />No cost
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 pe-3 text-end tabular-nums">
+                            {line.hasCost ? fmt(line.lineTotal) : '—'}
+                          </td>
                           <td className="py-2 text-end text-muted-foreground">{fmt(costPct)}%</td>
                         </tr>
                       );
@@ -379,12 +404,22 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
     () =>
       watchedLines.map((line) => {
         const product = rmMap.get(line.raw_material_id);
-        const unitCost = product?.regular_price ?? 0;
-        return { unitCost, lineTotal: (line.quantity || 0) * unitCost };
+        const unitCost = product?.material_cost ?? product?.last_purchase_cost ?? null;
+        const hasCost = unitCost != null && unitCost > 0;
+        const effectiveQty = (line.quantity || 0) * (1 + (line.waste_percentage || 0) / 100);
+        const lineTotal = hasCost ? effectiveQty * (unitCost as number) : 0;
+        return { unitCost, hasCost, effectiveQty, lineTotal };
       }),
     [watchedLines, rmMap],
   );
   const totalCost = lineCosts.reduce((sum, l) => sum + l.lineTotal, 0);
+
+  const anyMissingCost = fields.length > 0 && watchedLines.some((l, i) => {
+    if (!l.raw_material_id) return false;
+    const p = rmMap.get(l.raw_material_id);
+    if (!p) return false;
+    return !lineCosts[i]?.hasCost;
+  });
 
   const selectedMaterialIds = watchedLines.map((l) => l.raw_material_id).filter(Boolean);
 
@@ -540,7 +575,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                             const errs = lineErrors?.[index];
                             const line = watchedLines[index];
                             const product = rmMap.get(line?.raw_material_id ?? '');
-                            const { unitCost, lineTotal } = lineCosts[index] ?? { unitCost: 0, lineTotal: 0 };
+                            const { unitCost, hasCost, lineTotal } = lineCosts[index] ?? { unitCost: 0, hasCost: false, lineTotal: 0 };
                             const costPct = totalCost > 0 ? (lineTotal / totalCost) * 100 : 0;
 
                             return (
@@ -608,10 +643,16 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                                   />
                                 </td>
                                 <td className="py-2 pe-3 text-end tabular-nums">
-                                  {fmt(unitCost)}
+                                  {hasCost ? (
+                                    fmt(unitCost as number)
+                                  ) : (
+                                    <span className="text-amber-500 text-xs flex items-center justify-end gap-1">
+                                      <TriangleAlert className="size-3" />No cost
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="py-2 pe-3 text-end font-medium tabular-nums">
-                                  {fmt(lineTotal)}
+                                  {hasCost ? fmt(lineTotal) : '—'}
                                 </td>
                                 <td className="py-2 pe-3 text-end text-muted-foreground tabular-nums text-xs">
                                   {fmt(costPct)}%
@@ -704,9 +745,15 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   </div>
                   {fields.length > 0 && <Separator />}
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Total Cost</span>
+                    <span className="text-sm font-medium">Recipe Cost</span>
                     <span className="text-sm font-semibold tabular-nums">{fmt(totalCost)}</span>
                   </div>
+                  {anyMissingCost && (
+                    <div className="flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                      <TriangleAlert className="size-3.5 flex-shrink-0 mt-0.5" />
+                      <span>Some materials have no cost set. Set material costs before saving.</span>
+                    </div>
+                  )}
                 </div>
               </WorkspaceCard>
             </div>
@@ -724,7 +771,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
           >
             Cancel
           </Button>
-          <Button type="submit" form={FORM_ID} disabled={isPending}>
+          <Button type="submit" form={FORM_ID} disabled={isPending || anyMissingCost}>
             {isPending
               ? mode === 'create'
                 ? 'Creating…'

@@ -21,9 +21,9 @@ final class SaleResource extends JsonResource
             'status'         => $this->status->value,
             'currency'       => $this->currency,
             'lines'          => $this->lines,
-            'total'          => $this->getTotal()->amount(),
-            'amount_paid'    => $this->getAmountPaid()->amount(),
-            'change_given'   => $this->getChangeGiven()->amount(),
+            'total'          => $this->getTotal()->amount,
+            'amount_paid'    => $this->getAmountPaid()->amount,
+            'change_given'   => $this->getChangeGiven()->amount,
         ];
     }
 }

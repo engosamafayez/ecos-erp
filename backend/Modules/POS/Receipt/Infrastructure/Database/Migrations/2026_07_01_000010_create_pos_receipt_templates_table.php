@@ -14,13 +14,13 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name', 255);
             $table->boolean('is_default')->default(false);
-            $table->text('header_text')->default('');
-            $table->text('footer_text')->default('');
+            $table->text('header_text')->nullable();
+            $table->text('footer_text')->nullable();
 
             // Display settings and configurable max_reprints
             // Keys: show_sku, show_cashier_name, show_customer_name,
             //       show_tax_breakdown, max_reprints
-            $table->jsonb('settings')->default('{}');
+            $table->json('settings')->nullable();
 
             $table->timestampsTz();
 

@@ -498,7 +498,7 @@ class DisassemblyTest extends TestCase
 
         $this->assertCount(2, $entries);
 
-        $types = $entries->pluck('movement_type')->toArray();
+        $types = $entries->pluck('movement_type')->map(fn ($t) => $t instanceof \BackedEnum ? $t->value : $t)->toArray();
         $this->assertContains('disassembly_consumption', $types);
         $this->assertContains('disassembly_output', $types);
     }

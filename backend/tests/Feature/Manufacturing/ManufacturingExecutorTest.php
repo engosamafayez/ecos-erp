@@ -276,7 +276,7 @@ class ManufacturingExecutorTest extends TestCase
             ->get();
 
         $this->assertCount(2, $entries);
-        $types = $entries->pluck('movement_type')->toArray();
+        $types = $entries->pluck('movement_type')->map(fn ($t) => $t instanceof \BackedEnum ? $t->value : $t)->toArray();
         $this->assertContains('production_consumption', $types);
         $this->assertContains('production_output', $types);
     }

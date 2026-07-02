@@ -20,16 +20,16 @@ return new class extends Migration
 
             // Cash amounts stored as JSONB {amount, currency} — currency is consistent
             // across all amounts within a single shift (enforced by the domain aggregate).
-            $table->jsonb('opening_cash');
-            $table->jsonb('closing_count')->nullable();
-            $table->jsonb('expected_closing')->nullable();
-            $table->jsonb('variance')->nullable();
+            $table->json('opening_cash');
+            $table->json('closing_count')->nullable();
+            $table->json('expected_closing')->nullable();
+            $table->json('variance')->nullable();
 
             $table->string('rejection_reason', 500)->nullable();
             $table->timestamp('opened_at');
             $table->timestamp('submitted_at')->nullable();
             $table->timestamp('closed_at')->nullable();
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
 
             // Each shift number is unique within a terminal, enforcing sequential identity.
