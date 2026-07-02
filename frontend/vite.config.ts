@@ -21,6 +21,17 @@ export default defineConfig({
     host: true, // listen on 0.0.0.0 so it works inside containers
     port: 5173,
     strictPort: true,
+
+    // Forward /api requests to the local nginx container (port 80),
+    // which in turn proxies to PHP-FPM. Without this, the browser sends
+    // /api/* to Vite itself (port 5173) and gets 404.
+    proxy: {
+      '/api': {
+        target: 'http://localhost',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   build: {
     // Output directly into backend/public/app so Nginx (docker-compose volume) can serve
