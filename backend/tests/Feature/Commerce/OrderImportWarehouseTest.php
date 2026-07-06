@@ -10,6 +10,7 @@ use Modules\Commerce\OrderImport\Application\Services\WooCommerceOrderImporter;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
+use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
@@ -18,6 +19,7 @@ class OrderImportWarehouseTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+    private Brand $brand;
     private Warehouse $warehouse;
     private Channel $channel;
 
@@ -25,10 +27,10 @@ class OrderImportWarehouseTest extends TestCase
     {
         parent::setUp();
         $this->company   = Company::factory()->create();
+        $this->brand     = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
         $this->channel   = Channel::factory()->create([
-            'company_id'           => $this->company->id,
-            'default_warehouse_id' => $this->warehouse->id,
+            'brand_id' => $this->brand->id,
         ]);
     }
 
@@ -80,7 +82,11 @@ class OrderImportWarehouseTest extends TestCase
         ];
     }
 
-    public function test_order_gets_assigned_warehouse_from_channel(): void
+    /**
+     * ADR-015: Warehouse assignment happens at allocation time, not at import.
+     * Imported orders always start with assigned_warehouse_id = null.
+     */
+    public function test_imported_order_has_null_warehouse_assignment(): void
     {
         $product = Product::factory()->create(['sku' => 'SKU-WH-001']);
 
@@ -90,14 +96,13 @@ class OrderImportWarehouseTest extends TestCase
         $this->assertTrue($imported);
 
         $order = Order::query()->where('external_order_id', '1001')->firstOrFail();
-        $this->assertEquals($this->warehouse->id, $order->assigned_warehouse_id);
+        $this->assertNull($order->assigned_warehouse_id);
     }
 
     public function test_assigned_warehouse_null_when_channel_has_no_default(): void
     {
         $channelWithoutWarehouse = Channel::factory()->create([
-            'company_id'           => $this->company->id,
-            'default_warehouse_id' => null,
+            'brand_id' => $this->brand->id,
         ]);
 
         $product = Product::factory()->create(['sku' => 'SKU-WH-002']);
@@ -109,5 +114,36 @@ class OrderImportWarehouseTest extends TestCase
 
         $order = Order::query()->where('external_order_id', '1002')->firstOrFail();
         $this->assertNull($order->assigned_warehouse_id);
+    }
+
+    /** Regression: channel is owned by brand, not directly by company. */
+    public function test_channel_ownership_is_brand_not_company(): void
+    {
+        $channel = Channel::factory()->create(['brand_id' => $this->brand->id]);
+
+        $this->assertNotNull($channel->brand_id);
+        $this->assertSame($this->brand->id, $channel->brand_id);
+
+        // Company is resolved indirectly — not a direct column on channels
+        $channel->load('brand.company');
+        $this->assertSame($this->company->id, $channel->brand?->company?->id);
+        $this->assertFalse(isset($channel->company_id));
+    }
+
+    /** Regression: creating a channel with company_id in payload must be rejected by validation. */
+    public function test_store_channel_rejects_payload_without_brand_id(): void
+    {
+        $user = \App\Models\User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson('/api/channels', [
+                'name'       => 'Test Channel',
+                'platform'   => 'woocommerce',
+                'store_url'  => 'https://example.com',
+                'is_active'  => true,
+                // Missing brand_id — must fail validation
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['brand_id']);
     }
 }

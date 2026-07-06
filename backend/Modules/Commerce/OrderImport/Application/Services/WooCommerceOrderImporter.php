@@ -336,7 +336,7 @@ final class WooCommerceOrderImporter
 
         $orderAttributes = [
             'channel_id' => (string) $channel->id,
-            'assigned_warehouse_id' => $channel->default_warehouse_id,
+            'assigned_warehouse_id' => null,
             'customer_id' => (string) $customer->id,
             'external_order_id' => $externalId,
             'order_number' => $this->orders->nextOrderNumber(),
