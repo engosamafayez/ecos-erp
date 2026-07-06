@@ -30,20 +30,42 @@ final class CreateReceiptLayersAction
      */
     public function execute(GoodsReceipt $receipt, array $preReceiptQtys): void
     {
-        $po         = $receipt->purchaseOrder;
-        $supplierId = $po->supplier_id;
+        $po          = $receipt->purchaseOrder;
+        $supplierId  = $po->supplier_id;
+        $companyId   = $po->company_id ?? $receipt->warehouse?->company_id;
         $receiptDate = $receipt->receipt_date->toDateString();
 
-        foreach ($receipt->lines as $line) {
+        $activeLines = $receipt->lines->filter(
+            fn (GoodsReceiptLine $l) => $l->effectiveReceivedQty() > 0 && (float) ($l->landed_unit_cost ?? 0) > 0
+        );
+
+        if ($activeLines->isEmpty()) {
+            return;
+        }
+
+        // Batch-load products to avoid N queries inside the loop
+        $productIds = $activeLines->pluck('product_id')->unique()->values()->all();
+        $products   = Product::query()
+            ->whereIn('id', $productIds)
+            ->get()
+            ->keyBy('id');
+
+        // Batch-fetch oldest open FIFO layer per product — 1 query replaces N
+        $oldestLayers = InventoryReceiptLayer::query()
+            ->whereIn('product_id', $productIds)
+            ->where('remaining_qty', '>', 0)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('product_id')
+            ->map(fn ($layers) => $layers->first());
+
+        foreach ($activeLines as $line) {
             /** @var GoodsReceiptLine $line */
             $netQty         = $line->effectiveReceivedQty();
             $landedUnitCost = (float) ($line->landed_unit_cost ?? 0);
+            $product        = $products->get($line->product_id);
 
-            if ($netQty <= 0 || $landedUnitCost <= 0) {
-                continue;
-            }
-
-            $product          = Product::query()->find($line->product_id);
             $salePriceSnapshot = $product ? (float) ($product->sale_price ?? 0) : null;
 
             // ── Create receipt layer ──────────────────────────────────────────
@@ -60,27 +82,19 @@ final class CreateReceiptLayersAction
                 'receipt_date'          => $receiptDate,
             ]);
 
-            // ── Update product cost intelligence ─────────────────────────────
             if ($product === null) {
                 continue;
             }
 
-            $oldQty  = $preReceiptQtys[$line->product_id] ?? 0.0;
-            $oldAvg  = (float) ($product->average_cost ?? $landedUnitCost);
-
-            // Weighted average cost: (old_value + new_value) / (old_qty + new_qty)
-            $totalQty  = $oldQty + $netQty;
+            // ── Update product cost intelligence ─────────────────────────────
+            $oldQty     = $preReceiptQtys[$line->product_id] ?? 0.0;
+            $oldAvg     = (float) ($product->average_cost ?? $landedUnitCost);
+            $totalQty   = $oldQty + $netQty;
             $newAvgCost = $totalQty > 0
                 ? round(($oldQty * $oldAvg + $netQty * $landedUnitCost) / $totalQty, 4)
                 : $landedUnitCost;
 
-            // current_fifo_cost = cost of the oldest remaining layer
-            $oldestLayer = \Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer::query()
-                ->where('product_id', $line->product_id)
-                ->where('remaining_qty', '>', 0)
-                ->orderBy('created_at')
-                ->orderBy('id')
-                ->first();
+            $oldestLayer = $oldestLayers->get($line->product_id);
 
             $product->update([
                 'last_purchase_cost' => $landedUnitCost,
@@ -90,13 +104,14 @@ final class CreateReceiptLayersAction
                 'current_fifo_cost'  => $oldestLayer?->landed_unit_cost ?? $landedUnitCost,
             ]);
 
-            // Update official Material Cost and cascade to Recipe/Product costs
+            // Update official Material Cost and trigger full cascade to pricing reviews
             $this->materialCostService->update(
                 material: $product,
                 newCost:  $landedUnitCost,
                 source:   CostUpdateSource::PurchaseInvoice,
                 meta: [
                     'goods_receipt_id' => $receipt->id,
+                    'company_id'       => $companyId,
                 ],
             );
         }

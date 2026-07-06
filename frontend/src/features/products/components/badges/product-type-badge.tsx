@@ -1,4 +1,4 @@
-import { Package, Layers } from 'lucide-react';
+import { Box, Layers, Package } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { ProductType } from '@/features/products/types/product';
@@ -15,6 +15,12 @@ const CONFIG: Record<ProductType, { label: string; icon: typeof Package; classNa
     icon: Layers,
     className:
       'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-400',
+  },
+  packaging_material: {
+    label: 'Packaging',
+    icon: Box,
+    className:
+      'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-950/50 dark:text-teal-400',
   },
 };
 

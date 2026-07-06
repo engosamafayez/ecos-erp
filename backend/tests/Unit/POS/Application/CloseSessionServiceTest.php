@@ -42,7 +42,7 @@ final class CloseSessionServiceTest extends TestCase
 
     public function test_closes_session_and_saves(): void
     {
-        $session = Session::open('term-1', 'cashier-1', DeviceFingerprint::of('fp'), '127.0.0.1', DeviceType::Browser);
+        $session = Session::open('cashier-1', 'company-1', null, 'warehouse-1', DeviceFingerprint::of('fp'), '127.0.0.1', DeviceType::Browser);
         $session->id = 'sess-1';
 
         $this->sessionRepo->method('findById')->willReturn($session);
@@ -54,7 +54,7 @@ final class CloseSessionServiceTest extends TestCase
 
     public function test_returns_result(): void
     {
-        $session = Session::open('term-1', 'cashier-1', DeviceFingerprint::of('fp'), '127.0.0.1', DeviceType::Browser);
+        $session = Session::open('cashier-1', 'company-1', null, 'warehouse-1', DeviceFingerprint::of('fp'), '127.0.0.1', DeviceType::Browser);
         $session->id = 'sess-1';
 
         $this->sessionRepo->method('findById')->willReturn($session);
@@ -69,7 +69,7 @@ final class CloseSessionServiceTest extends TestCase
 
     public function test_publishes_session_closed_event(): void
     {
-        $session = Session::open('term-1', 'cashier-1', DeviceFingerprint::of('fp'), '127.0.0.1', DeviceType::Browser);
+        $session = Session::open('cashier-1', 'company-1', null, 'warehouse-1', DeviceFingerprint::of('fp'), '127.0.0.1', DeviceType::Browser);
         $session->id = 'sess-1';
 
         $this->sessionRepo->method('findById')->willReturn($session);

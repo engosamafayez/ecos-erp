@@ -120,7 +120,7 @@ final class OpenShiftServiceTest extends TestCase
 
     private function makeSession(): Session
     {
-        $s = Session::open('term-1', 'cashier-1', DeviceFingerprint::of('fp'), '127.0.0.1', DeviceType::Browser);
+        $s = Session::open('cashier-1', 'company-1', null, 'warehouse-1', DeviceFingerprint::of('fp'), '127.0.0.1', DeviceType::Browser);
         $s->id = 'sess-1';
         return $s;
     }

@@ -1,13 +1,12 @@
-import { useFormContext } from 'react-hook-form';
-import { useWatch } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { Combobox } from '@/components/crud/combobox';
 import { FormField } from '@/components/crud';
 import { Input } from '@/components/ui/input';
+import { useBrandOptions } from '@/features/brands/hooks/use-brand-options';
 import type { ChannelFormValues } from '@/features/channels/components/channel-form-schema';
 import { useCompanyOptions } from '@/features/channels/hooks/use-company-options';
-import { useWarehouseOptions } from '@/features/goods-receipts/hooks/use-warehouse-options';
 
 const PLATFORM_OPTIONS = [
   { value: 'woocommerce', label: 'WooCommerce' },
@@ -21,23 +20,40 @@ const PLATFORM_OPTIONS = [
 export function ChannelFormFields() {
   const { t } = useTranslation('channels');
   const { register, setValue, control } = useFormContext<ChannelFormValues>();
-  const { data: companyOptions = [], isLoading: companiesLoading } = useCompanyOptions();
-  const { data: warehouseOptions = [], isLoading: warehousesLoading } = useWarehouseOptions();
 
   const companyId = useWatch({ control, name: 'company_id' });
-  const defaultWarehouseId = useWatch({ control, name: 'default_warehouse_id' });
+  const brandId = useWatch({ control, name: 'brand_id' });
+
+  const { data: companyOptions = [], isLoading: companiesLoading } = useCompanyOptions();
+  const { data: brandOptions = [], isLoading: brandsLoading } = useBrandOptions(companyId || null);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <FormField name="company_id" label={t('form.company.label')} required>
+          <FormField name="company_id" label={t('form.company.label', 'Company (filter brands)')}>
             <Combobox
               options={companyOptions}
               value={companyId || null}
-              onChange={(val) => setValue('company_id', val, { shouldValidate: true })}
-              placeholder={t('form.company.placeholder')}
+              onChange={(val) => {
+                setValue('company_id', val, { shouldValidate: false });
+                setValue('brand_id', '', { shouldValidate: false });
+              }}
+              placeholder={t('form.company.placeholder', 'All companies')}
               loading={companiesLoading}
+            />
+          </FormField>
+        </div>
+
+        <div className="sm:col-span-2">
+          <FormField name="brand_id" label={t('form.brand.label', 'Brand')} required>
+            <Combobox
+              options={brandOptions}
+              value={brandId || null}
+              onChange={(val) => setValue('brand_id', val, { shouldValidate: true })}
+              placeholder={companyId ? t('form.brand.placeholder', 'Select brand…') : 'Select a company first'}
+              loading={brandsLoading}
+              disabled={!companyId}
             />
           </FormField>
         </div>
@@ -45,18 +61,6 @@ export function ChannelFormFields() {
         <FormField name="name" label={t('form.name.label')} required>
           <Input placeholder={t('form.name.placeholder')} {...register('name')} />
         </FormField>
-
-        <div className="sm:col-span-2">
-          <FormField name="default_warehouse_id" label={t('form.warehouse.label')}>
-            <Combobox
-              options={warehouseOptions}
-              value={defaultWarehouseId ?? null}
-              onChange={(val) => setValue('default_warehouse_id', val || null, { shouldValidate: true })}
-              placeholder={t('form.warehouse.placeholder')}
-              loading={warehousesLoading}
-            />
-          </FormField>
-        </div>
 
         <FormField name="platform" label={t('form.platform.label')} required>
           <select

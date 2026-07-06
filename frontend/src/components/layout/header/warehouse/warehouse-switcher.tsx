@@ -8,52 +8,34 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-// ── Mock data ─────────────────────────────────────────────────────────────────
-
-type WarehouseItem = {
-  id: string;
-  name: string;
-  location: string;
-  zone: string;
-  capacityPct: number;
-};
-
-const WAREHOUSES: WarehouseItem[] = [
-  { id: '1', name: 'Main Warehouse', location: 'Dubai, UAE', zone: 'Zone A', capacityPct: 92 },
-  { id: '2', name: 'Branch Warehouse', location: 'Abu Dhabi, UAE', zone: 'Zone B', capacityPct: 61 },
-  { id: '3', name: 'Overflow Storage', location: 'Sharjah, UAE', zone: 'Zone C', capacityPct: 38 },
-];
-
-// ── Capacity helpers ──────────────────────────────────────────────────────────
-
-function getCapacityColor(pct: number) {
-  if (pct >= 90) return { bar: 'bg-destructive', badge: 'text-destructive bg-destructive/10' };
-  if (pct >= 70) return { bar: 'bg-amber-500', badge: 'text-amber-600 bg-amber-500/10 dark:text-amber-400' };
-  return { bar: 'bg-emerald-500', badge: 'text-emerald-600 bg-emerald-500/10 dark:text-emerald-400' };
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
+import { useWarehousesQuery } from '@/features/warehouses/hooks/use-warehouses';
 
 export function WarehouseSwitcher({ className }: { className?: string }) {
+  const { activeCompanyId, activeWarehouseId, setActiveWarehouseId } = useOrganizationContext();
   const [open, setOpen] = useState(false);
-  const [activeId, setActiveId] = useState(WAREHOUSES[0].id);
   const [search, setSearch] = useState('');
   const [focusIdx, setFocusIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const active = WAREHOUSES.find((w) => w.id === activeId) ?? WAREHOUSES[0];
+  const { data } = useWarehousesQuery({
+    per_page: 100,
+    company_id: activeCompanyId ?? undefined,
+  });
+  const warehouses = data?.items ?? [];
+
+  const activeId = activeWarehouseId ?? warehouses[0]?.id ?? null;
+  const active = warehouses.find((w) => w.id === activeId) ?? warehouses[0] ?? null;
 
   const filtered = search.trim()
-    ? WAREHOUSES.filter(
+    ? warehouses.filter(
         (w) =>
           w.name.toLowerCase().includes(search.toLowerCase()) ||
-          w.location.toLowerCase().includes(search.toLowerCase()) ||
-          w.zone.toLowerCase().includes(search.toLowerCase()),
+          (w.city ?? '').toLowerCase().includes(search.toLowerCase()) ||
+          w.code.toLowerCase().includes(search.toLowerCase()),
       )
-    : WAREHOUSES;
+    : warehouses;
 
-  // Reset + focus input when dropdown opens
   useEffect(() => {
     if (open) {
       setSearch('');
@@ -68,7 +50,7 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
   }, [filtered.length]);
 
   function selectWarehouse(id: string) {
-    setActiveId(id);
+    setActiveWarehouseId(id);
     setOpen(false);
   }
 
@@ -92,7 +74,9 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
     }
   }
 
-  const activeCapacity = getCapacityColor(active.capacityPct);
+  const location = active
+    ? [active.city, active.country].filter(Boolean).join(', ') || active.code
+    : '';
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -100,34 +84,19 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
         <Button
           variant="outline"
           size="sm"
-          aria-label={`Current warehouse: ${active.name}. Click to switch.`}
+          aria-label={active ? `Current warehouse: ${active.name}. Click to switch.` : 'Select warehouse'}
           aria-expanded={open}
           className={cn('h-9 gap-2 px-2 sm:px-3', className)}
         >
-          {/* Warehouse icon */}
           <Warehouse className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-
-          {/* Name + location — hidden xs, visible sm+ */}
           <span className="hidden flex-col items-start sm:flex">
             <span className="max-w-[7rem] truncate text-xs font-semibold leading-tight lg:max-w-[9rem]">
-              {active.name}
+              {active?.name ?? 'Loading…'}
             </span>
             <span className="max-w-[7rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[9rem]">
-              {active.location}
+              {location}
             </span>
           </span>
-
-          {/* Capacity badge — sm+ */}
-          <span
-            className={cn(
-              'hidden rounded-full px-1.5 py-0.5 text-[9px] font-semibold sm:inline-block',
-              activeCapacity.badge,
-            )}
-            aria-hidden
-          >
-            {active.capacityPct}%
-          </span>
-
           <ChevronsUpDown className="size-3.5 shrink-0 opacity-40" aria-hidden />
         </Button>
       </DropdownMenuTrigger>
@@ -161,13 +130,13 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-1 py-8 text-center">
               <p className="text-sm font-medium text-muted-foreground">No warehouses found</p>
-              <p className="text-xs text-muted-foreground/60">Try a different location or name</p>
+              <p className="text-xs text-muted-foreground/60">Try a different name or location</p>
             </div>
           ) : (
             filtered.map((wh, idx) => {
               const isActive = wh.id === activeId;
               const isFocused = idx === focusIdx;
-              const cap = getCapacityColor(wh.capacityPct);
+              const loc = [wh.city, wh.country].filter(Boolean).join(', ');
               return (
                 <button
                   key={wh.id}
@@ -183,33 +152,22 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
                       : 'text-foreground hover:bg-accent/60',
                   )}
                 >
-                  {/* Icon badge */}
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                     <Warehouse className="size-4" aria-hidden />
                   </span>
-
-                  {/* Info */}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{wh.name}</span>
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="size-3 shrink-0" aria-hidden />
-                      <span className="truncate">{wh.location} · {wh.zone}</span>
+                      {loc ? (
+                        <>
+                          <MapPin className="size-3 shrink-0" aria-hidden />
+                          <span className="truncate">{loc}</span>
+                        </>
+                      ) : (
+                        <span className="font-mono">{wh.code}</span>
+                      )}
                     </span>
-                    {/* Capacity bar */}
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className={cn('h-full rounded-full transition-all', cap.bar)}
-                          style={{ width: `${wh.capacityPct}%` }}
-                        />
-                      </div>
-                      <span className={cn('shrink-0 text-[9px] font-semibold', cap.badge.split(' ')[0])}>
-                        {wh.capacityPct}%
-                      </span>
-                    </div>
                   </span>
-
-                  {/* Active check */}
                   {isActive ? (
                     <Check className="size-4 shrink-0 text-primary" aria-hidden />
                   ) : null}
@@ -217,23 +175,6 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
               );
             })
           )}
-        </div>
-
-        {/* ── Footer ── */}
-        <div className="border-t px-1 py-1">
-          <button
-            type="button"
-            disabled
-            className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-md px-2 py-2 text-start opacity-50"
-          >
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
-              +
-            </span>
-            <span className="text-xs text-muted-foreground">Add warehouse</span>
-            <span className="ml-auto rounded-full border border-primary/30 bg-primary/5 px-1.5 py-0.5 text-[9px] font-medium text-primary/70">
-              Soon
-            </span>
-          </button>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

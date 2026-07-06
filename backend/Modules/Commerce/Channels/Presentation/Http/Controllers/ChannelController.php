@@ -25,13 +25,15 @@ final class ChannelController extends Controller
     public function index(Request $request, ListChannelsAction $action): JsonResponse
     {
         $filters = [
-            'search' => $request->query('search'),
-            'status' => $request->query('status', 'all'),
-            'platform' => $request->query('platform'),
-            'company_id' => $request->query('company_id'),
-            'sort_by' => $request->query('sort_by', 'created_at'),
-            'sort_dir' => $request->query('sort_dir', 'desc'),
-            'per_page' => $request->query('per_page', 10),
+            'search'             => $request->query('search'),
+            'status'             => $request->query('status', 'all'),
+            'platform'           => $request->query('platform'),
+            'company_id'         => $request->query('company_id'),
+            'brand_id'           => $request->query('brand_id'),
+            'business_account_id' => $request->query('business_account_id'),
+            'sort_by'            => $request->query('sort_by', 'created_at'),
+            'sort_dir'           => $request->query('sort_dir', 'desc'),
+            'per_page'           => $request->query('per_page', 10),
         ];
 
         $paginator = $action->execute($filters)->data();

@@ -9,13 +9,17 @@ use App\Core\Responses\OperationResult;
 use InvalidArgumentException;
 use Modules\MasterData\Warehouses\Application\DTO\WarehouseDTO;
 use Modules\MasterData\Warehouses\Domain\Contracts\WarehouseRepositoryInterface;
+use Modules\MasterData\Warehouses\Domain\Services\WarehouseCodeGeneratorService;
 
 /**
- * Creates a new warehouse.
+ * Creates a new warehouse with an auto-generated code if none is provided.
  */
 final class CreateWarehouseAction extends BaseAction
 {
-    public function __construct(private readonly WarehouseRepositoryInterface $warehouses) {}
+    public function __construct(
+        private readonly WarehouseRepositoryInterface $warehouses,
+        private readonly WarehouseCodeGeneratorService $codeGenerator,
+    ) {}
 
     /**
      * @param  mixed  ...$arguments  Expects a single {@see WarehouseDTO}.
@@ -28,7 +32,9 @@ final class CreateWarehouseAction extends BaseAction
             throw new InvalidArgumentException('CreateWarehouseAction::execute expects a WarehouseDTO.');
         }
 
-        $warehouse = $this->warehouses->create($dto->toArray());
+        $code = $dto->code ?? $this->codeGenerator->next($dto->company_id);
+
+        $warehouse = $this->warehouses->create(array_merge($dto->toArray(), ['code' => $code]));
 
         return OperationResult::success($warehouse, 'Warehouse created successfully.');
     }

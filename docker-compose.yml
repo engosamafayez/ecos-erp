@@ -138,6 +138,7 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/ecos.cnf:ro
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     networks:
       - ecos-network
     healthcheck:

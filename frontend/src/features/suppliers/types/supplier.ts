@@ -16,6 +16,13 @@ export type Supplier = {
   is_active: boolean;
   created_at: string | null;
   updated_at: string | null;
+  // Aggregate fields — populated on list endpoint (LEFT JOIN subqueries), optional on single-record fetch
+  total_invoiced?: number;
+  total_paid?: number;
+  outstanding_balance?: number;
+  last_purchase_date?: string | null;
+  active_pos_count?: number;
+  inventory_cost_value?: number;
 };
 
 export type SupplierPayload = {
@@ -35,6 +42,12 @@ export type SupplierPayload = {
 export type SupplierSortField = 'code' | 'name' | 'country' | 'city' | 'is_active' | 'created_at';
 export type SortDirection = 'asc' | 'desc';
 export type SupplierStatusFilter = 'all' | 'active' | 'inactive';
+
+/** Six-state supplier lifecycle — maps to is_active for now; extended when backend adds multi-status. */
+export type SupplierStatus = 'draft' | 'active' | 'preferred' | 'on_hold' | 'blocked' | 'archived';
+
+/** Procurement health score tiers — computed server-side by GetProcurementHealthQuery. */
+export type ProcurementHealth = 'excellent' | 'good' | 'watch' | 'risk' | 'critical';
 
 export type SuppliersQuery = {
   search?: string;

@@ -12,15 +12,36 @@ import type {
   ProductsResult,
   PosCategory,
   PosCustomer,
-  PosTerminal,
+  PosCompany,
+  PosWarehouse,
+  PosChannel,
 } from '@/features/pos/types';
 
-// ── Terminals ─────────────────────────────────────────────────────────────────
+// ── POS Context (companies / warehouses / channels) ───────────────────────────
 
-export const terminalService = {
-  async list(): Promise<PosTerminal[]> {
-    const { data } = await api.get<ApiResponse<PosTerminal[]>>('/pos/terminals');
-    return data.data;
+export const posContextService = {
+  async companies(): Promise<PosCompany[]> {
+    const { data } = await api.get<ApiResponse<{ items: PosCompany[]; meta: unknown }>>(
+      '/companies',
+      { params: { status: 'active', per_page: 100 } },
+    );
+    return data.data.items;
+  },
+
+  async warehouses(): Promise<PosWarehouse[]> {
+    const { data } = await api.get<ApiResponse<{ items: PosWarehouse[]; meta: unknown }>>(
+      '/warehouses',
+      { params: { status: 'active', per_page: 100 } },
+    );
+    return data.data.items;
+  },
+
+  async channels(): Promise<PosChannel[]> {
+    const { data } = await api.get<ApiResponse<{ items: PosChannel[]; meta: unknown }>>(
+      '/channels',
+      { params: { status: 'active', per_page: 100 } },
+    );
+    return data.data.items;
   },
 };
 

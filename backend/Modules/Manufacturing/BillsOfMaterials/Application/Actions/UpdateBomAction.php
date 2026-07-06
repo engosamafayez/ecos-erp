@@ -28,10 +28,13 @@ final class UpdateBomAction extends BaseAction
         }
 
         $attributes = [
-            'product_id' => $dto->product_id,
-            'version' => $dto->version,
-            'is_active' => $dto->is_active,
-            'notes' => $dto->notes,
+            'product_id'             => $dto->product_id,
+            'version'                => $dto->version,
+            'is_active'              => $dto->is_active,
+            'notes'                  => $dto->notes,
+            'manufacturing_cost'     => $dto->manufacturing_cost,
+            'other_costs'            => $dto->other_costs,
+            'execution_instructions' => $dto->execution_instructions,
         ];
 
         $lines = array_map(

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Monitor, User } from 'lucide-react';
+import { Building2, User } from 'lucide-react';
 
 import {
   Dialog,
@@ -17,7 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useOpenSession, useCloseSession, useTerminals } from '@/features/pos/hooks/use-pos-queries';
+import {
+  useOpenSession,
+  useCloseSession,
+  usePosCompanies,
+  usePosWarehouses,
+  usePosChannels,
+} from '@/features/pos/hooks/use-pos-queries';
 import { usePosStore } from '@/features/pos/store/pos-store';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 
@@ -37,26 +43,57 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
   const authUser = useAuthStore((s) => s.user);
   const openSession = useOpenSession();
   const closeSession = useCloseSession();
-  const { data: terminals = [], isLoading: terminalsLoading } = useTerminals();
 
-  const [terminalId, setTerminalId] = useState('');
+  const { data: companies = [], isLoading: companiesLoading } = usePosCompanies();
+  const { data: allWarehouses = [], isLoading: warehousesLoading } = usePosWarehouses();
+  const { data: allChannels = [] } = usePosChannels();
 
-  // Auto-select when exactly one terminal is available
+  const [companyId, setCompanyId] = useState('');
+  const [warehouseId, setWarehouseId] = useState('');
+  const [channelId, setChannelId] = useState('');
+
+  // Filter warehouses and channels by selected company
+  const warehouses = companyId
+    ? allWarehouses.filter((w) => w.company_id === companyId)
+    : allWarehouses;
+  const channels = companyId
+    ? allChannels.filter((c) => c.company_id === companyId)
+    : allChannels;
+
+  // Auto-select when only one option is available
   useEffect(() => {
-    if (terminals.length === 1 && terminals[0]) {
-      setTerminalId(terminals[0].id);
+    if (companies.length === 1 && companies[0] && !companyId) {
+      setCompanyId(companies[0].id);
     }
-  }, [terminals]);
+  }, [companies, companyId]);
 
-  // Reset selection when dialog closes
   useEffect(() => {
-    if (!open) setTerminalId('');
+    if (warehouses.length === 1 && warehouses[0] && !warehouseId) {
+      setWarehouseId(warehouses[0].id);
+    }
+  }, [warehouses, warehouseId]);
+
+  // Reset warehouse/channel when company changes
+  useEffect(() => {
+    setWarehouseId('');
+    setChannelId('');
+  }, [companyId]);
+
+  // Reset all selections when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setCompanyId('');
+      setWarehouseId('');
+      setChannelId('');
+    }
   }, [open]);
 
   async function handleOpen() {
-    if (!terminalId) return;
+    if (!companyId || !warehouseId) return;
     await openSession.mutateAsync({
-      terminal_id:        terminalId,
+      company_id:         companyId,
+      channel_id:         channelId || undefined,
+      warehouse_id:       warehouseId,
       device_fingerprint: navigator.userAgent.slice(0, 64),
       device_type:        detectDeviceType(),
     });
@@ -98,17 +135,18 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
 
   // ── Open mode ─────────────────────────────────────────────────────────────
 
-  const noTerminals = !terminalsLoading && terminals.length === 0;
-  const singleTerminal = terminals.length === 1 ? terminals[0] : null;
-  const canOpen = !!terminalId && !openSession.isPending && !noTerminals;
+  const isLoading = companiesLoading || warehousesLoading;
+  const canOpen = !!companyId && !!warehouseId && !openSession.isPending;
   const deviceLabel = detectDeviceType() === 'mobile' ? 'Mobile' : 'Desktop';
+  const singleCompany = companies.length === 1 ? companies[0] : null;
+  const singleWarehouse = warehouses.length === 1 ? warehouses[0] : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <Monitor className="size-5" />
+            <Building2 className="size-5" />
             <DialogTitle>Open POS Session</DialogTitle>
           </div>
         </DialogHeader>
@@ -124,45 +162,81 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
             </div>
           </div>
 
-          {/* Terminal — dropdown or single display */}
+          {/* Company */}
           <div className="space-y-1.5">
-            <Label htmlFor="terminal-select">Terminal</Label>
-
-            {terminalsLoading && (
+            <Label htmlFor="company-select">
+              Company <span className="text-destructive">*</span>
+            </Label>
+            {isLoading ? (
               <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                Loading terminals…
+                Loading…
               </div>
-            )}
-
-            {noTerminals && (
-              <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                No POS terminal is assigned to your account.
-              </div>
-            )}
-
-            {singleTerminal && (
+            ) : singleCompany ? (
               <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
-                <span className="font-medium">{singleTerminal.name}</span>
-                <span className="ml-2 text-xs text-muted-foreground">{singleTerminal.code}</span>
+                <span className="font-medium">{singleCompany.name}</span>
               </div>
-            )}
-
-            {!terminalsLoading && terminals.length > 1 && (
-              <Select value={terminalId} onValueChange={setTerminalId}>
-                <SelectTrigger id="terminal-select">
-                  <SelectValue placeholder="Select a terminal…" />
+            ) : (
+              <Select value={companyId} onValueChange={setCompanyId}>
+                <SelectTrigger id="company-select">
+                  <SelectValue placeholder="Select company…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {terminals.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      <span>{t.name}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">{t.code}</span>
-                    </SelectItem>
+                  {companies.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
           </div>
+
+          {/* Warehouse */}
+          <div className="space-y-1.5">
+            <Label htmlFor="warehouse-select">
+              Warehouse <span className="text-destructive">*</span>
+            </Label>
+            {singleWarehouse ? (
+              <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                <span className="font-medium">{singleWarehouse.name}</span>
+              </div>
+            ) : (
+              <Select value={warehouseId} onValueChange={setWarehouseId} disabled={!companyId}>
+                <SelectTrigger id="warehouse-select">
+                  <SelectValue
+                    placeholder={companyId ? 'Select warehouse…' : 'Select company first'}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          {/* Sales Channel (optional — only shown when channels exist for this company) */}
+          {channels.length > 0 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="channel-select">
+                Sales Channel
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Select value={channelId} onValueChange={setChannelId}>
+                <SelectTrigger id="channel-select">
+                  <SelectValue placeholder="Walk-in / No channel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Walk-in / No channel</SelectItem>
+                  {channels.map((ch) => (
+                    <SelectItem key={ch.id} value={ch.id}>
+                      {ch.name}
+                      <span className="ml-2 text-xs text-muted-foreground">{ch.platform_label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Device — auto-detected, read-only */}
           <div className="space-y-1.5">

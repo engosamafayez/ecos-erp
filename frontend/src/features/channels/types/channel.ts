@@ -10,9 +10,18 @@ export type ChannelPlatform =
 
 export type Channel = {
   id: string;
-  company_id: string;
-  company: { id: string; name: string } | null;
-  default_warehouse_id: string | null;
+  brand_id: string;
+  brand: {
+    id: string;
+    code: string;
+    name: string;
+    company: { id: string; name: string } | null;
+  } | null;
+  business_account_id: string | null;
+  business_account: { id: string; code: string; name: string; provider: string } | null;
+  code: string | null;
+  channel_type: string | null;
+  channel_role: string | null;
   name: string;
   platform: ChannelPlatform;
   platform_label: string;
@@ -30,8 +39,7 @@ export type Channel = {
 };
 
 export type ChannelPayload = {
-  company_id: string;
-  default_warehouse_id?: string | null;
+  brand_id: string;
   name: string;
   platform: ChannelPlatform;
   store_url: string;
@@ -53,6 +61,8 @@ export type ChannelsQuery = {
   status?: ChannelStatusFilter;
   platform?: string;
   company_id?: string;
+  brand_id?: string;
+  business_account_id?: string;
   page?: number;
   per_page?: number;
   sort_by?: ChannelSortField;

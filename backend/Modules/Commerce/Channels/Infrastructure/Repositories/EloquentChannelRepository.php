@@ -13,16 +13,18 @@ final class EloquentChannelRepository implements ChannelRepositoryInterface
 {
     private const SORTABLE = ['name', 'platform', 'is_active', 'last_sync_at', 'created_at'];
 
+    private const EAGER = ['brand.company', 'businessAccount'];
+
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Channel::query()->with('company');
+        $query = Channel::query()->with(self::EAGER);
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
                 $builder
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('store_url', 'like', "%{$search}%");
+                    ->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('store_url', 'ilike', "%{$search}%");
             });
         }
 
@@ -40,7 +42,17 @@ final class EloquentChannelRepository implements ChannelRepositoryInterface
 
         $companyId = trim((string) ($filters['company_id'] ?? ''));
         if ($companyId !== '') {
-            $query->where('company_id', $companyId);
+            $query->whereHas('brand', fn (Builder $b) => $b->where('company_id', $companyId));
+        }
+
+        $brandId = trim((string) ($filters['brand_id'] ?? ''));
+        if ($brandId !== '') {
+            $query->where('brand_id', $brandId);
+        }
+
+        $businessAccountId = trim((string) ($filters['business_account_id'] ?? ''));
+        if ($businessAccountId !== '') {
+            $query->where('business_account_id', $businessAccountId);
         }
 
         $sortBy = (string) ($filters['sort_by'] ?? 'created_at');
@@ -56,7 +68,7 @@ final class EloquentChannelRepository implements ChannelRepositoryInterface
 
     public function findById(string $id): ?Channel
     {
-        return Channel::query()->with('company')->find($id);
+        return Channel::query()->with(self::EAGER)->find($id);
     }
 
     public function create(array $attributes, ?array $credentials): Channel
@@ -67,7 +79,7 @@ final class EloquentChannelRepository implements ChannelRepositoryInterface
             $channel->credential()->create($credentials);
         }
 
-        return $channel->refresh()->load('company');
+        return $channel->refresh()->load(self::EAGER);
     }
 
     public function update(Channel $channel, array $attributes, ?array $credentials): Channel
@@ -78,7 +90,7 @@ final class EloquentChannelRepository implements ChannelRepositoryInterface
             $channel->credential()->updateOrCreate([], $credentials);
         }
 
-        return $channel->refresh()->load('company');
+        return $channel->refresh()->load(self::EAGER);
     }
 
     public function delete(Channel $channel): void

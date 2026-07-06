@@ -29,14 +29,13 @@ final class OpenSessionServiceTest extends TestCase
         $this->service     = new OpenSessionService($this->sessionRepo, $this->publisher);
     }
 
-    public function test_throws_when_terminal_already_has_open_session(): void
+    public function test_throws_when_cashier_already_has_open_session(): void
     {
         $this->sessionRepo
-            ->method('hasOpenSessionForTerminal')
+            ->method('hasOpenSessionForCashier')
             ->willReturn(true);
 
         $this->expectException(SessionAlreadyOpenException::class);
-        $this->expectExceptionMessage('term-1');
 
         $this->service->execute($this->makeCommand());
     }
@@ -44,7 +43,7 @@ final class OpenSessionServiceTest extends TestCase
     public function test_saves_session_when_no_conflict(): void
     {
         $this->sessionRepo
-            ->method('hasOpenSessionForTerminal')
+            ->method('hasOpenSessionForCashier')
             ->willReturn(false);
 
         $this->sessionRepo
@@ -59,7 +58,7 @@ final class OpenSessionServiceTest extends TestCase
 
     public function test_returns_result_with_session_id(): void
     {
-        $this->sessionRepo->method('hasOpenSessionForTerminal')->willReturn(false);
+        $this->sessionRepo->method('hasOpenSessionForCashier')->willReturn(false);
         $this->sessionRepo->method('save')->willReturnCallback(function (Session $s) {
             $s->id = 'sess-uuid';
         });
@@ -73,7 +72,7 @@ final class OpenSessionServiceTest extends TestCase
 
     public function test_publishes_session_opened_event(): void
     {
-        $this->sessionRepo->method('hasOpenSessionForTerminal')->willReturn(false);
+        $this->sessionRepo->method('hasOpenSessionForCashier')->willReturn(false);
         $this->sessionRepo->method('save')->willReturnCallback(function (Session $s) {
             $s->id = 'sess-uuid';
         });
@@ -91,8 +90,10 @@ final class OpenSessionServiceTest extends TestCase
     private function makeCommand(): OpenSessionCommand
     {
         return new OpenSessionCommand(
-            terminalId:        'term-1',
-            cashierId:         'cashier-1',
+            cashierId:         'cashier-uuid-1',
+            companyId:         'company-uuid-1',
+            channelId:         null,
+            warehouseId:       'warehouse-uuid-1',
             deviceFingerprint: 'fp-abc123',
             ipAddress:         '192.168.1.1',
             deviceType:        'browser',

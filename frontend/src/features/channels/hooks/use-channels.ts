@@ -10,11 +10,12 @@ import type {
 
 export const CHANNELS_KEY = 'channels';
 
-export function useChannelsQuery(params: ChannelsQuery) {
+export function useChannelsQuery(params: ChannelsQuery, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [CHANNELS_KEY, params],
     queryFn: () => channelsService.list(params),
     placeholderData: keepPreviousData,
+    enabled: options?.enabled ?? true,
   });
 }
 

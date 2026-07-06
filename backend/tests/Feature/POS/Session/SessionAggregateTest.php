@@ -12,42 +12,25 @@ use Modules\POS\Shared\Domain\Enums\SessionStatus;
 use Tests\TestCase;
 
 /**
- * PKG-POS-004: Session aggregate invariant tests.
- *
- * Tests all domain invariants and the status-transition state machine
- * purely in-memory — no database is touched, so these run without a
- * running PostgreSQL instance.
- *
- * State machine under test:
- *
- *   Open ──suspend()──▶ Suspended ──requestRecovery()──▶ RecoveryPending
- *    ▲                      │                                   │
- *    └──────resume()─────────┴───────────resume()───────────────┘
- *
- *   Open / Suspended / RecoveryPending ──close()──▶ Closed  (terminal)
- *
- * Invalid transitions:
- *   Open         ──requestRecovery()──▶ ❌
- *   Open         ──resume()──────────▶ ❌
- *   Closed       ──(any)──────────────▶ ❌
+ * PKG-POS-004: Session aggregate invariant tests (in-memory, no DB required).
  */
 final class SessionAggregateTest extends TestCase
 {
-    // No RefreshDatabase — all tests are purely in-memory.
-
-    private const TERMINAL_ID = 'terminal-uuid-1';
-    private const CASHIER_ID  = 'cashier-uuid-1';
+    private const CASHIER_ID   = 'cashier-uuid-1';
+    private const COMPANY_ID   = 'company-uuid-1';
+    private const WAREHOUSE_ID = 'warehouse-uuid-1';
 
     private function makeSession(
-        string     $terminalId = self::TERMINAL_ID,
-        string     $cashierId  = self::CASHIER_ID,
+        string     $cashierId   = self::CASHIER_ID,
         string     $fingerprint = 'device-fp-001',
-        string     $ip         = '10.0.0.1',
-        DeviceType $deviceType = DeviceType::Browser,
+        string     $ip          = '10.0.0.1',
+        DeviceType $deviceType  = DeviceType::Browser,
     ): Session {
         return Session::open(
-            terminalId:  $terminalId,
             cashierId:   $cashierId,
+            companyId:   self::COMPANY_ID,
+            channelId:   null,
+            warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of($fingerprint),
             ipAddress:   $ip,
             deviceType:  $deviceType,
@@ -65,12 +48,15 @@ final class SessionAggregateTest extends TestCase
         $this->assertFalse($session->isClosed());
     }
 
-    public function test_open_stores_terminal_and_cashier_ids(): void
+    public function test_open_stores_cashier_id_and_context(): void
     {
         $session = $this->makeSession();
 
-        $this->assertSame(self::TERMINAL_ID, $session->terminal_id);
         $this->assertSame(self::CASHIER_ID, $session->cashier_id);
+        $this->assertSame(self::CASHIER_ID, $session->terminal_id); // terminal_id = cashier_id
+        $this->assertSame(self::COMPANY_ID, $session->company_id);
+        $this->assertSame(self::WAREHOUSE_ID, $session->warehouse_id);
+        $this->assertNull($session->channel_id);
     }
 
     public function test_open_stores_device_fingerprint(): void
@@ -101,27 +87,28 @@ final class SessionAggregateTest extends TestCase
         $this->assertNotNull($session->opened_at);
     }
 
-    public function test_open_throws_for_empty_terminal_id(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Terminal ID cannot be empty');
-
-        Session::open('', self::CASHIER_ID, DeviceFingerprint::of('fp'), '1.2.3.4');
-    }
-
-    public function test_open_throws_for_whitespace_terminal_id(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-
-        Session::open('   ', self::CASHIER_ID, DeviceFingerprint::of('fp'), '1.2.3.4');
-    }
-
     public function test_open_throws_for_empty_cashier_id(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Cashier ID cannot be empty');
 
-        Session::open(self::TERMINAL_ID, '', DeviceFingerprint::of('fp'), '1.2.3.4');
+        Session::open('', self::COMPANY_ID, null, self::WAREHOUSE_ID, DeviceFingerprint::of('fp'), '1.2.3.4');
+    }
+
+    public function test_open_throws_for_empty_company_id(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Company ID cannot be empty');
+
+        Session::open(self::CASHIER_ID, '', null, self::WAREHOUSE_ID, DeviceFingerprint::of('fp'), '1.2.3.4');
+    }
+
+    public function test_open_throws_for_empty_warehouse_id(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Warehouse ID cannot be empty');
+
+        Session::open(self::CASHIER_ID, self::COMPANY_ID, null, '', DeviceFingerprint::of('fp'), '1.2.3.4');
     }
 
     // ── suspend() ────────────────────────────────────────────────────────────

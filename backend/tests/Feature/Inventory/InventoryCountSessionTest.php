@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Inventory;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\IAM\Domain\Models\Permission;
+use Modules\IAM\Domain\Models\Role;
 use Modules\Inventory\CountSessions\Application\Actions\ApproveCountSessionAction;
 use Modules\Inventory\CountSessions\Application\Actions\CancelCountSessionAction;
 use Modules\Inventory\CountSessions\Application\Actions\CompleteCountSessionAction;
@@ -386,5 +389,110 @@ class InventoryCountSessionTest extends TestCase
         $this->expectException(\Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException::class);
 
         app(ApproveCountSessionAction::class)->execute($session);
+    }
+
+    // ── REGRESSION: TASK-INV-FIX-001 ─────────────────────────────────────────
+
+    // ── R1. Zero-cost prevention — 422 when product has no valid cost ─────────
+
+    public function test_approve_rejects_when_product_has_no_cost(): void
+    {
+        // Product with no cost fields set
+        $product = Product::factory()->create([
+            'regular_price'     => 50.0,
+            'sale_price'        => 50.0,
+            'average_cost'      => null,
+            'last_purchase_cost'=> null,
+            'current_fifo_cost' => null,
+        ]);
+        $this->seedItem($product, 10.0);
+
+        $session = $this->createSession();
+        app(StartCountSessionAction::class)->execute($session);
+        $this->setCountedQty($session, $product->id, 12.0); // +2 variance → will be adjusted
+
+        app(CompleteCountSessionAction::class)->execute($session->refresh());
+
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException::class);
+
+        app(ApproveCountSessionAction::class)->execute($session->refresh());
+    }
+
+    // ── R2. Permission enforcement — 403 without inventory.count.approve ──────
+
+    public function test_approve_route_returns_403_without_permission(): void
+    {
+        $user = User::factory()->create();
+
+        // Assign a role that has NO inventory.count.approve permission
+        $role = Role::create(['name' => 'Inventory Operator', 'slug' => 'inventory-operator', 'is_system' => false]);
+        $viewPerm = Permission::create(['name' => 'inventory.count.view', 'module' => 'inventory', 'resource' => 'count', 'action' => 'view']);
+        $role->permissions()->attach($viewPerm->id);
+        $user->roles()->attach($role->id);
+
+        $this->seedItem($this->makeProduct(), 5.0);
+        $session = $this->createSession();
+
+        $this->actingAs($user)
+            ->postJson("/api/inventory-counts/{$session->id}/approve")
+            ->assertForbidden();
+    }
+
+    // ── R3. Fractional quantities — BCMath exact decimal variance ────────────
+
+    public function test_complete_computes_exact_fractional_variance(): void
+    {
+        $product = $this->makeProduct(price: 100.0, avgCost: 80.0);
+        $this->seedItem($product, 12.375); // system_qty = 12.3750
+
+        $session = $this->createSession();
+        app(StartCountSessionAction::class)->execute($session);
+
+        $this->setCountedQty($session, $product->id, 12.125); // counted = 12.1250
+
+        $completed = app(CompleteCountSessionAction::class)->execute($session->refresh());
+
+        $line = $completed->lines->firstWhere('product_id', $product->id);
+        $this->assertNotNull($line);
+
+        // variance_qty must be exactly -0.2500 (BCMath: 12.1250 - 12.3750 = -0.2500)
+        $this->assertEquals('-0.2500', $line->variance_qty);
+
+        // variance_value = -0.2500 × 80.00 = -20.00
+        $this->assertEquals('-20.00', $line->variance_value);
+    }
+
+    // ── R4. Photo field removed — no errors on model or API ──────────────────
+
+    public function test_photo_path_is_not_in_count_line_fillable(): void
+    {
+        $line = new InventoryCountLine();
+
+        $this->assertNotContains('photo_path', $line->getFillable());
+    }
+
+    public function test_updating_count_line_without_photo_path_succeeds(): void
+    {
+        $product = $this->makeProduct();
+        $this->seedItem($product, 10.0);
+
+        $session = $this->createSession();
+        app(StartCountSessionAction::class)->execute($session);
+
+        // Direct model update without photo_path — must not throw
+        InventoryCountLine::query()
+            ->where('session_id', $session->id)
+            ->where('product_id', $product->id)
+            ->update(['counted_qty' => 9.0, 'notes' => 'Counted carefully.']);
+
+        $line = InventoryCountLine::query()
+            ->where('session_id', $session->id)
+            ->where('product_id', $product->id)
+            ->first();
+
+        $this->assertNotNull($line);
+        $this->assertEquals('9.0000', $line->counted_qty);
+        $this->assertSame('Counted carefully.', $line->notes);
+        $this->assertFalse(isset($line->photo_path));
     }
 }

@@ -17,7 +17,7 @@ enum CountSessionStatus: string
         return match ($this) {
             self::Draft      => 'Draft',
             self::InProgress => 'In Progress',
-            self::Completed  => 'Completed',
+            self::Completed  => 'Pending Approval',
             self::Approved   => 'Approved',
             self::Cancelled  => 'Cancelled',
         };

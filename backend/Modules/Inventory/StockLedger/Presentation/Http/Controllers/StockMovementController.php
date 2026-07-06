@@ -8,9 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Inventory\StockLedger\Application\Actions\AddManualStockAction;
 use Modules\Inventory\StockLedger\Application\Actions\GetStockMovementAction;
 use Modules\Inventory\StockLedger\Application\Actions\ListStockMovementsAction;
 use Modules\Inventory\StockLedger\Presentation\Http\Resources\StockMovementResource;
+use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 
 final class StockMovementController extends Controller
 {
@@ -41,6 +44,33 @@ final class StockMovementController extends Controller
                 'last_page' => $paginator->lastPage(),
             ],
         ]);
+    }
+
+    public function store(Request $request, AddManualStockAction $action): JsonResponse
+    {
+        $validated = $request->validate([
+            'product_id'   => ['required', 'uuid', 'exists:products,id'],
+            'warehouse_id' => ['required', 'uuid', 'exists:warehouses,id'],
+            'quantity'     => ['required', 'numeric', 'gt:0'],
+            'unit_cost'    => ['nullable', 'numeric', 'min:0'],
+            'notes'        => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $product   = Product::findOrFail($validated['product_id']);
+        $warehouse = Warehouse::findOrFail($validated['warehouse_id']);
+
+        $movement = $action->execute(
+            $product,
+            $warehouse,
+            (float) $validated['quantity'],
+            [
+                'unit_cost'  => $validated['unit_cost'] ?? null,
+                'notes'      => $validated['notes'] ?? null,
+                'updated_by' => $request->user()?->name,
+            ],
+        )->data();
+
+        return $this->success(new StockMovementResource($movement), 201);
     }
 
     public function show(string $stockMovement, GetStockMovementAction $action): JsonResponse

@@ -18,9 +18,12 @@ type PosState = {
   sessionId: string | null;
   shiftId: string | null;
   cartId: string | null;
-  terminalId: string;
+  terminalId: string;   // equals cashierId after refactor — kept for shift/cart payloads
   cashierId: string;
   cashierName: string;
+  companyId: string | null;
+  channelId: string | null;
+  warehouseId: string | null;
   currency: string;
 
   // Persisted held cart snapshots for this terminal
@@ -52,6 +55,7 @@ type PosState = {
   setCart: (id: string | null) => void;
   setTerminal: (id: string, name?: string) => void;
   setCashier: (id: string, name: string) => void;
+  setContext: (companyId: string | null, channelId: string | null, warehouseId: string | null) => void;
   setCurrency: (currency: string) => void;
   setMode: (mode: PosMode) => void;
   setCustomer: (id: string | null, name: string | null) => void;
@@ -79,6 +83,9 @@ export const usePosStore = create<PosState>()(
       terminalId:         '',
       cashierId:          '',
       cashierName:        '',
+      companyId:          null,
+      channelId:          null,
+      warehouseId:        null,
       currency:           'EGP',
       heldCartSnapshots:  [],
       activeCustomerId:   null,
@@ -100,6 +107,7 @@ export const usePosStore = create<PosState>()(
       setCart:     (id) => set({ cartId: id }),
       setTerminal: (id) => set({ terminalId: id }),
       setCashier:  (id, name) => set({ cashierId: id, cashierName: name }),
+      setContext:  (companyId, channelId, warehouseId) => set({ companyId, channelId, warehouseId }),
       setCurrency: (currency) => set({ currency }),
 
       setMode: (mode) =>
@@ -154,6 +162,9 @@ export const usePosStore = create<PosState>()(
           sessionId:           null,
           shiftId:             null,
           cartId:              null,
+          companyId:           null,
+          channelId:           null,
+          warehouseId:         null,
           mode:                'sale',
           activeCustomerId:    null,
           activeCustomerName:  null,
@@ -175,6 +186,9 @@ export const usePosStore = create<PosState>()(
         terminalId:         state.terminalId,
         cashierId:          state.cashierId,
         cashierName:        state.cashierName,
+        companyId:          state.companyId,
+        channelId:          state.channelId,
+        warehouseId:        state.warehouseId,
         currency:           state.currency,
         heldCartSnapshots:  state.heldCartSnapshots,
         // Recovery-critical: these survive browser crashes and refreshes

@@ -12,10 +12,43 @@ type CategoryFormFieldsProps = {
 
 export function CategoryFormFields({ currentId }: CategoryFormFieldsProps) {
   const { t } = useTranslation('categories');
-  const { register, control } = useFormContext<CategoryFormValues>();
+  const { register, control, watch } = useFormContext<CategoryFormValues>();
+  const currentScope = watch('category_scope');
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Category Type (scope) */}
+      <FormField name="category_scope" label="Category Type">
+        <Controller
+          control={control}
+          name="category_scope"
+          render={({ field }) => (
+            <div className="flex flex-col gap-2 pt-1">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="radio"
+                  className="size-4 accent-primary"
+                  value="product"
+                  checked={field.value === 'product'}
+                  onChange={() => field.onChange('product')}
+                />
+                <span className="text-sm">Product Category</span>
+              </label>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="radio"
+                  className="size-4 accent-primary"
+                  value="material"
+                  checked={field.value === 'material'}
+                  onChange={() => field.onChange('material')}
+                />
+                <span className="text-sm">Material Category</span>
+              </label>
+            </div>
+          )}
+        />
+      </FormField>
+
       <FormField name="parent_id" label={t('form.parentCategory')}>
         <Controller
           control={control}
@@ -25,6 +58,7 @@ export function CategoryFormFields({ currentId }: CategoryFormFieldsProps) {
               value={field.value ?? ''}
               onChange={field.onChange}
               excludeId={currentId}
+              scope={currentScope}
             />
           )}
         />

@@ -14,10 +14,11 @@ export function useCompanyQuery(id: string) {
 }
 
 /** Paginated, filtered, sorted companies list. */
-export function useCompaniesQuery(params: CompaniesQuery) {
+export function useCompaniesQuery(params: CompaniesQuery, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [COMPANIES_KEY, params],
     queryFn: () => companiesService.list(params),
+    enabled: options?.enabled ?? true,
     placeholderData: keepPreviousData,
   });
 }

@@ -110,6 +110,7 @@ class MaterialCostController extends Controller
             source:   CostUpdateSource::Manual,
             meta: [
                 'updated_by' => $updatedBy,
+                'reason'     => $request->validated('reason'),
             ],
         );
 

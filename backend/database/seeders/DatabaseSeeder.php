@@ -11,7 +11,10 @@ use Modules\MasterData\Categories\Infrastructure\Database\Seeders\CategorySeeder
 use Modules\MasterData\Units\Infrastructure\Database\Seeders\UnitSeeder;
 use Modules\MasterData\Warehouses\Infrastructure\Database\Seeders\WarehouseSeeder;
 use Modules\Organization\Branches\Infrastructure\Database\Seeders\BranchSeeder;
+use Modules\Organization\Brands\Infrastructure\Database\Seeders\BrandSeeder;
+use Modules\Organization\BusinessAccounts\Infrastructure\Database\Seeders\BusinessAccountSeeder;
 use Modules\Organization\Companies\Infrastructure\Database\Seeders\CompanySeeder;
+use Modules\Organization\Teams\Infrastructure\Database\Seeders\TeamSeeder;
 use Modules\Inventory\StockLedger\Infrastructure\Database\Seeders\StockLedgerSeeder;
 use Modules\Commerce\Channels\Infrastructure\Database\Seeders\ChannelSeeder;
 use Modules\Commerce\ProductMappings\Infrastructure\Database\Seeders\ProductMappingSeeder;
@@ -35,9 +38,12 @@ class DatabaseSeeder extends Seeder
         // Default administrator account (IAM-001).
         $this->call(AdminUserSeeder::class);
 
-        // Organization module (ORG-001 companies, ORG-002 branches).
+        // Organization module (ORG-001 companies, ORG-002 branches, ORG-003 brands, ORG-004 teams).
         $this->call(CompanySeeder::class);
         $this->call(BranchSeeder::class);
+        $this->call(BrandSeeder::class);
+        $this->call(BusinessAccountSeeder::class);
+        $this->call(TeamSeeder::class);
 
         // Master Data module (MD-001).
         $this->call(UnitSeeder::class);

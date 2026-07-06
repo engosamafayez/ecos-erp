@@ -1,5 +1,5 @@
 /**
- * Warehouses feature types.
+ * Warehouses feature types. Branch dependency removed — warehouses belong to Company only.
  */
 export type WarehouseRef = {
   id: string;
@@ -11,8 +11,6 @@ export type Warehouse = {
   id: string;
   company_id: string;
   company?: WarehouseRef;
-  branch_id: string;
-  branch?: WarehouseRef;
   code: string;
   name: string;
   address: string | null;
@@ -25,8 +23,7 @@ export type Warehouse = {
 
 export type WarehousePayload = {
   company_id: string;
-  branch_id: string;
-  code: string;
+  code?: string;
   name: string;
   address?: string;
   city?: string;
@@ -41,7 +38,6 @@ export type WarehouseStatusFilter = 'all' | 'active' | 'inactive';
 export type WarehousesQuery = {
   search?: string;
   company_id?: string;
-  branch_id?: string;
   page?: number;
   per_page?: number;
   sort_by?: WarehouseSortField;

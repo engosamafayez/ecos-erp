@@ -7,7 +7,7 @@ namespace Modules\Commerce\Channels\Infrastructure\Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
 use Modules\Commerce\Channels\Domain\Models\Channel;
-use Modules\Organization\Companies\Domain\Models\Company;
+use Modules\Organization\Brands\Domain\Models\Brand;
 
 /**
  * @extends Factory<Channel>
@@ -25,7 +25,7 @@ final class ChannelFactory extends Factory
     public function definition(): array
     {
         return [
-            'company_id' => Company::factory(),
+            'brand_id' => Brand::factory(),
             'name' => $this->faker->company().' Store',
             'platform' => $this->faker->randomElement(ChannelPlatform::cases())->value,
             'store_url' => $this->faker->url(),

@@ -15,18 +15,28 @@ final class EloquentSessionRepository implements SessionRepositoryInterface
         return Session::find($id);
     }
 
-    public function findOpenByTerminal(string $terminalId): ?Session
+    public function findOpenByCashier(string $cashierId): ?Session
     {
-        return Session::where('terminal_id', $terminalId)
+        return Session::where('cashier_id', $cashierId)
             ->where('status', SessionStatus::Open->value)
             ->first();
     }
 
-    public function hasOpenSessionForTerminal(string $terminalId): bool
+    public function hasOpenSessionForCashier(string $cashierId): bool
     {
-        return Session::where('terminal_id', $terminalId)
+        return Session::where('cashier_id', $cashierId)
             ->where('status', SessionStatus::Open->value)
             ->exists();
+    }
+
+    public function findOpenByTerminal(string $terminalId): ?Session
+    {
+        return $this->findOpenByCashier($terminalId);
+    }
+
+    public function hasOpenSessionForTerminal(string $terminalId): bool
+    {
+        return $this->hasOpenSessionForCashier($terminalId);
     }
 
     public function save(Session $session): void

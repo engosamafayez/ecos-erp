@@ -1,6 +1,7 @@
 import { Eye, Package, Pencil } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 
 import { PublishBadge } from './badges/publish-badge';
@@ -71,9 +72,9 @@ export function ProductMobileCard({
         aria-label={`View ${product.name}`}
       >
         {/* Thumbnail */}
-        {product.image_url ? (
+        {getMediaUrl(product.image_url) ? (
           <img
-            src={product.image_url}
+            src={getMediaUrl(product.image_url)!}
             alt=""
             className="size-12 shrink-0 rounded border object-cover"
           />

@@ -26,6 +26,7 @@ import type {
   ProductStatusFilter,
   ProductType,
 } from '@/features/products/types/product';
+import { getMediaUrl } from '@/lib/media';
 import { ROUTES } from '@/router/routes';
 
 const PER_PAGE = 10;
@@ -122,8 +123,8 @@ export function ProductsView({
       key: 'image_url',
       header: t('columns.image'),
       cell: (p) =>
-        p.image_url ? (
-          <img src={p.image_url} alt={p.name} className="size-10 rounded object-cover" />
+        getMediaUrl(p.image_url) ? (
+          <img src={getMediaUrl(p.image_url)!} alt={p.name} className="size-10 rounded object-cover" />
         ) : (
           <span className="text-muted-foreground">—</span>
         ),

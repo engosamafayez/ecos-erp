@@ -70,7 +70,6 @@ export function WarehousesContent() {
 
   const columns: ColumnDef<Warehouse>[] = [
     { key: 'company', header: t('columns.company'), cell: (w) => w.company?.name ?? '—' },
-    { key: 'branch', header: t('columns.branch'), cell: (w) => w.branch?.name ?? '—' },
     {
       key: 'code',
       header: t('columns.code'),

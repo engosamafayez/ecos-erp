@@ -14,6 +14,16 @@ import {
 import type { GridPaginationConfig, GridSortState } from '@/components/data-grid/types';
 import { EmptyState } from '@/components/crud';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ds/use-toast';
 
 import type { DrawerMode } from '@/features/products/components/product-detail-drawer';
@@ -21,6 +31,7 @@ import { ProductDetailDrawer } from '@/features/products/components/product-deta
 import { ProductFilterBar, DEFAULT_FILTERS } from '@/features/products/components/product-filter-bar';
 import type { ProductFilters } from '@/features/products/components/product-filter-bar';
 import { PRODUCT_COLUMN_META } from '@/features/products/components/product-column-meta';
+import { ProductImportModal } from '@/features/products/components/product-import-modal';
 import {
   ProductQuickStats,
   type StatFilter,
@@ -31,6 +42,7 @@ import {
   useDeleteProduct,
   useProductsQuery,
   useToggleProductStatus,
+  useBulkUpdateStockStatus,
 } from '@/features/products/hooks/use-products';
 import { productsService } from '@/features/products/services/products-service';
 import type { Product, ProductSortField } from '@/features/products/types/product';
@@ -39,7 +51,7 @@ import { ROUTES } from '@/router/routes';
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PER_PAGE = 20;
-const COLUMN_STORAGE_KEY = 'ecos_products_cols_v2';
+const COLUMN_STORAGE_KEY = 'ecos_products_cols_v3';
 
 // ── Stat filter helpers ───────────────────────────────────────────────────────
 
@@ -47,12 +59,18 @@ function applyStatFilter(stat: StatFilter | null): Partial<ProductFilters> {
   if (!stat) return DEFAULT_FILTERS;
   const base = { ...DEFAULT_FILTERS };
   switch (stat.type) {
-    case 'status':       return { ...base, status: stat.value };
-    case 'is_published': return { ...base, is_published: stat.value };
-    case 'low_stock':    return { ...base, low_stock: stat.value };
-    case 'not_synced':   return { ...base, not_synced: stat.value };
-    case 'product_type': return { ...base, product_type: stat.value };
-    default:             return base;
+    case 'status':               return { ...base, status: stat.value };
+    case 'is_published':         return { ...base, is_published: stat.value };
+    case 'low_stock':            return { ...base, low_stock: stat.value };
+    case 'not_synced':           return { ...base, not_synced: stat.value };
+    case 'manufacturing_ready':  return { ...base, manufacturing_ready: stat.value };
+    case 'missing_recipe':       return { ...base, has_recipe: 'false' };
+    case 'needs_pricing_review': return { ...base, needs_pricing_review: stat.value };
+    case 'low_margin':           return { ...base, low_margin: stat.value };
+    case 'mfg_instock':         return { ...base, manufacturing_availability: 'instock' };
+    case 'mfg_outofstock':      return { ...base, manufacturing_availability: 'outofstock' };
+    case 'mfg_recipe_missing':  return { ...base, manufacturing_availability: 'recipe_missing' };
+    default:                     return base;
   }
 }
 
@@ -60,17 +78,31 @@ function applyStatFilter(stat: StatFilter | null): Partial<ProductFilters> {
 
 function useProductStats(): ProductStatsData {
   const base = { product_type: 'finished_good' as const, per_page: 1, page: 1 };
-  const { data: totalData }     = useQuery({ queryKey: ['ps', 'total'],     queryFn: () => productsService.list(base),                            staleTime: 30_000 });
-  const { data: publishedData } = useQuery({ queryKey: ['ps', 'published'], queryFn: () => productsService.list({ ...base, is_published: true }), staleTime: 30_000 });
-  const { data: lowStockData }  = useQuery({ queryKey: ['ps', 'lowStock'],  queryFn: () => productsService.list({ ...base, low_stock: true }),    staleTime: 30_000 });
-  const { data: inactiveData }  = useQuery({ queryKey: ['ps', 'inactive'],  queryFn: () => productsService.list({ ...base, status: 'inactive' }), staleTime: 30_000 });
-  const { data: notSyncedData } = useQuery({ queryKey: ['ps', 'notSynced'], queryFn: () => productsService.list({ ...base, not_synced: true }),   staleTime: 30_000 });
+  const { data: totalData }            = useQuery({ queryKey: ['ps', 'total'],            queryFn: () => productsService.list(base),                                      staleTime: 30_000 });
+  const { data: publishedData }        = useQuery({ queryKey: ['ps', 'published'],        queryFn: () => productsService.list({ ...base, is_published: true }),            staleTime: 30_000 });
+  const { data: lowStockData }         = useQuery({ queryKey: ['ps', 'lowStock'],         queryFn: () => productsService.list({ ...base, low_stock: true }),               staleTime: 30_000 });
+  const { data: inactiveData }         = useQuery({ queryKey: ['ps', 'inactive'],         queryFn: () => productsService.list({ ...base, status: 'inactive' }),            staleTime: 30_000 });
+  const { data: notSyncedData }        = useQuery({ queryKey: ['ps', 'notSynced'],        queryFn: () => productsService.list({ ...base, not_synced: true }),              staleTime: 30_000 });
+  const { data: mfgReadyData }         = useQuery({ queryKey: ['ps', 'mfgReady'],         queryFn: () => productsService.list({ ...base, manufacturing_ready: true }),     staleTime: 30_000 });
+  const { data: missingRecipeData }    = useQuery({ queryKey: ['ps', 'missingRecipe'],    queryFn: () => productsService.list({ ...base, has_recipe: 'false' }),           staleTime: 30_000 });
+  const { data: pendingReviewData }    = useQuery({ queryKey: ['ps', 'pendingReview'],    queryFn: () => productsService.list({ ...base, needs_pricing_review: true }),    staleTime: 30_000 });
+  const { data: lowMarginData }        = useQuery({ queryKey: ['ps', 'lowMargin'],        queryFn: () => productsService.list({ ...base, low_margin: true }),                                  staleTime: 30_000 });
+  const { data: mfgInStockData }       = useQuery({ queryKey: ['ps', 'mfgInStock'],       queryFn: () => productsService.list({ ...base, manufacturing_availability: 'instock' }),       staleTime: 30_000 });
+  const { data: mfgOutOfStockData }    = useQuery({ queryKey: ['ps', 'mfgOutOfStock'],    queryFn: () => productsService.list({ ...base, manufacturing_availability: 'outofstock' }),    staleTime: 30_000 });
+  const { data: mfgRecipeMissingData } = useQuery({ queryKey: ['ps', 'mfgRecipeMissing'], queryFn: () => productsService.list({ ...base, manufacturing_availability: 'recipe_missing' }), staleTime: 30_000 });
   return {
-    total:     totalData?.meta.total     ?? 0,
-    published: publishedData?.meta.total ?? 0,
-    lowStock:  lowStockData?.meta.total  ?? 0,
-    notSynced: notSyncedData?.meta.total ?? 0,
-    inactive:  inactiveData?.meta.total  ?? 0,
+    total:               totalData?.meta.total             ?? 0,
+    published:           publishedData?.meta.total         ?? 0,
+    lowStock:            lowStockData?.meta.total          ?? 0,
+    notSynced:           notSyncedData?.meta.total         ?? 0,
+    inactive:            inactiveData?.meta.total          ?? 0,
+    manufacturingReady:  mfgReadyData?.meta.total          ?? 0,
+    missingRecipe:       missingRecipeData?.meta.total     ?? 0,
+    needsPricingReview:  pendingReviewData?.meta.total     ?? 0,
+    lowMargin:           lowMarginData?.meta.total         ?? 0,
+    mfgInStock:          mfgInStockData?.meta.total        ?? 0,
+    mfgOutOfStock:       mfgOutOfStockData?.meta.total     ?? 0,
+    mfgRecipeMissing:    mfgRecipeMissingData?.meta.total  ?? 0,
   };
 }
 
@@ -111,42 +143,67 @@ export function ProductsPage() {
   const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null);
 
   // ── Drawer ────────────────────────────────────────────────────────────────
-  const [drawerProduct, setDrawerProduct] = useState<Product | null>(null);
-  const [drawerOpen, setDrawerOpen]       = useState(false);
-  const [drawerMode, setDrawerMode]       = useState<DrawerMode>('view');
+  const [drawerProduct, setDrawerProduct]   = useState<Product | null>(null);
+  const [drawerOpen, setDrawerOpen]         = useState(false);
+  const [drawerMode, setDrawerMode]         = useState<DrawerMode>('view');
+  const [drawerInitialTab, setDrawerInitialTab] = useState<string>('general');
 
-  function openView(product: Product) {
+  function openView(product: Product, tab?: string) {
     setDrawerProduct(product);
     setDrawerMode('view');
+    setDrawerInitialTab(tab ?? 'general');
     setDrawerOpen(true);
   }
   function openEdit(product: Product) {
     setDrawerProduct(product);
     setDrawerMode('edit');
+    setDrawerInitialTab('general');
     setDrawerOpen(true);
   }
   function openCreate() {
     setDrawerProduct(null);
     setDrawerMode('edit');
+    setDrawerInitialTab('general');
     setDrawerOpen(true);
+  }
+
+  // ── Recipe callbacks (PART 8) ─────────────────────────────────────────────
+  function handleViewRecipe(product: Product) {
+    openView(product, 'recipe');
+  }
+  function handleCreateRecipe(product: Product) {
+    navigate(ROUTES.recipesNew, { state: { product_id: product.id } });
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
   const stats = useProductStats();
 
+  // ── Bulk availability (PART 3) ────────────────────────────────────────────
+  const [availDialog, setAvailDialog] = useState<{ status: 'instock' | 'outofstock' } | null>(null);
+  const bulkUpdateStock = useBulkUpdateStockStatus();
+
+  // ── Import modal (PART 1) ─────────────────────────────────────────────────
+  const [importOpen, setImportOpen] = useState(false);
+
   // ── Main query ────────────────────────────────────────────────────────────
   const params = useMemo(() => ({
-    search:       search || undefined,
-    product_type: 'finished_good' as const,
-    category_id:  filters.category_id  ?? undefined,
-    warehouse_id: filters.warehouse_id ?? undefined,
-    channel_id:   filters.channel_id   ?? undefined,
-    status:       filters.status !== 'all' ? filters.status : undefined,
-    is_published: filters.is_published  ?? undefined,
-    low_stock:    filters.low_stock     || undefined,
-    out_of_stock: filters.out_of_stock  || undefined,
-    has_images:   filters.has_images    ?? undefined,
-    not_synced:   filters.not_synced    || undefined,
+    search:               search || undefined,
+    product_type:         'finished_good' as const,
+    category_id:          filters.category_id       ?? undefined,
+    warehouse_id:         filters.warehouse_id      ?? undefined,
+    brand_id:             filters.brand_id          ?? undefined,
+    channel_id:           filters.channel_id        ?? undefined,
+    status:               filters.status !== 'all' ? filters.status : undefined,
+    stock_status:         filters.stock_status      || undefined,
+    is_published:         filters.is_published      ?? undefined,
+    low_stock:            filters.low_stock         || undefined,
+    has_images:           filters.has_images        ?? undefined,
+    not_synced:           filters.not_synced        || undefined,
+    has_recipe:                filters.has_recipe                   ?? undefined,
+    manufacturing_ready:       filters.manufacturing_ready          || undefined,
+    needs_pricing_review:      filters.needs_pricing_review         || undefined,
+    low_margin:                filters.low_margin                   || undefined,
+    manufacturing_availability: filters.manufacturing_availability  || undefined,
     page,
     per_page:  PER_PAGE,
     sort_by:   sort.field as ProductSortField,
@@ -161,9 +218,11 @@ export function ProductsPage() {
 
   const hasFilters =
     Boolean(search) ||
-    filters.category_id !== null || filters.warehouse_id !== null || filters.channel_id !== null ||
-    filters.status !== 'all' || filters.product_type !== null || filters.is_published !== null ||
-    filters.low_stock || filters.out_of_stock || filters.has_images !== null || filters.not_synced;
+    filters.category_id !== null || filters.brand_id !== null || filters.warehouse_id !== null || filters.channel_id !== null ||
+    filters.status !== 'all' || filters.stock_status !== '' || filters.is_published !== null ||
+    filters.low_stock || filters.has_images !== null || filters.not_synced ||
+    filters.has_recipe !== null || filters.manufacturing_ready || filters.needs_pricing_review || filters.low_margin ||
+    filters.manufacturing_availability !== '';
 
   // Reset row focus when list contents change
   useEffect(() => { setFocusedRowIndex(null); }, [search, filters, page]);
@@ -205,9 +264,74 @@ export function ProductsPage() {
     selection.clearSelection();
   };
 
-  const handleImport = () => {
-    toast({ type: 'info', title: 'Import', description: 'Import feature coming soon.' });
+  const handleBulkAvailability = () => {
+    if (!availDialog) return;
+    const ids = Array.from(selection.selectedIds);
+    bulkUpdateStock.mutate(
+      { ids, status: availDialog.status },
+      {
+        onSuccess: () => {
+          toast({
+            type: 'success',
+            title: availDialog.status === 'instock' ? 'Marked Available' : 'Marked Unavailable',
+            description: `${ids.length} product(s) updated.`,
+          });
+          selection.clearSelection();
+          setAvailDialog(null);
+        },
+        onError: () => {
+          toast({ type: 'error', title: 'Error', description: 'Failed to update stock status.' });
+        },
+      },
+    );
   };
+
+  const handleExport = async () => {
+    try {
+      const result = await productsService.list({ ...params, per_page: 9999, page: 1 });
+      const visibleMeta = PRODUCT_COLUMN_META.filter(
+        (col) => col.alwaysVisible || columnVisibility[col.key] !== false,
+      );
+      const header = visibleMeta.map((c) => c.label).join(',');
+      const rows = result.items.map((p) =>
+        visibleMeta
+          .map((col) => {
+            switch (col.key) {
+              case 'image':         return '';
+              case 'name':          return `"${(p.name ?? '').replace(/"/g, '""')}"`;
+              case 'category':      return `"${p.category?.name ?? ''}"`;
+              case 'channels':      return `"${(p.channels ?? []).map((c) => c.name).join(', ')}"`;
+              case 'product_cost':  return p.product_cost ?? '';
+              case 'regular_price': return p.regular_price ?? '';
+              case 'sale_price':    return p.sale_price ?? '';
+              case 'gross_profit':  return p.gross_profit_pct != null ? p.gross_profit_pct.toFixed(2) : '';
+              case 'final_margin':  return p.final_margin_pct != null ? p.final_margin_pct.toFixed(2) : '';
+              case 'stock_status':  return p.stock_status === 'instock' ? 'In Stock' : 'Out of Stock';
+              case 'recipe':        return p.has_recipe ? 'Available' : 'Missing';
+              case 'sku':           return p.sku;
+              case 'is_published':  return p.is_published ? 'Published' : 'Unpublished';
+              case 'sync_status':   return p.sync_status ?? '';
+              case 'updated_at':    return p.updated_at ?? '';
+              case 'pricing_review': return p.pending_review ? 'Review Required' : 'OK';
+              default:              return '';
+            }
+          })
+          .join(','),
+      );
+      const csv = [header, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `products-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ type: 'error', title: 'Export failed', description: 'Could not export products.' });
+    }
+  };
+
+  const handleImport = () => setImportOpen(true);
 
   // ── Open-create navigation effect ─────────────────────────────────────────
   useEffect(() => {
@@ -330,16 +454,19 @@ export function ProductsPage() {
             key: 'export',
             label: t('actions.export'),
             icon: Download,
-            onClick: () => handleBulkAction('Export all'),
+            onClick: handleExport,
             hideOnMobile: true,
           },
         ]}
         bulkActions={[
-          { key: 'activate',         label: 'Activate',             onClick: () => handleBulkAction('Activate') },
-          { key: 'deactivate',       label: 'Deactivate',           onClick: () => handleBulkAction('Deactivate') },
-          { key: 'publish',          label: 'Publish to channels',  onClick: () => handleBulkAction('Publish to channels') },
-          { key: 'assign-category',  label: 'Assign category',      onClick: () => handleBulkAction('Assign category'), separator: true },
-          { key: 'export-selected',  label: 'Export selected',      onClick: () => handleBulkAction('Export selected'), separator: true },
+          { key: 'mark-available',       label: '🟢 Mark Available',    onClick: () => setAvailDialog({ status: 'instock' }) },
+          { key: 'mark-unavailable',     label: '🔴 Mark Unavailable',  onClick: () => setAvailDialog({ status: 'outofstock' }) },
+          { key: 'activate',             label: 'Activate',             onClick: () => handleBulkAction('Activate'), separator: true },
+          { key: 'deactivate',           label: 'Deactivate',           onClick: () => handleBulkAction('Deactivate') },
+          { key: 'publish',              label: 'Publish to channels',  onClick: () => handleBulkAction('Publish to channels') },
+          { key: 'assign-category',      label: 'Assign category',      onClick: () => handleBulkAction('Assign category'), separator: true },
+          { key: 'create-price-review',  label: 'Create Price Review',  onClick: () => navigate(ROUTES.costManagementPriceReview), separator: true },
+          { key: 'export-selected',      label: 'Export selected',      onClick: handleExport, separator: true },
         ]}
         bulkActionsLabel="Bulk Actions"
         selectedCount={selection.selectedCount}
@@ -416,6 +543,8 @@ export function ProductsPage() {
           })
         }
         onStatusToggle={(p) => toggleStatus.mutate(p)}
+        onViewRecipe={handleViewRecipe}
+        onCreateRecipe={handleCreateRecipe}
         focusedRowId={focusedRowIndex !== null ? (products[focusedRowIndex]?.id ?? null) : null}
         columnVisibility={columnVisibility}
         pagination={pagination}
@@ -434,6 +563,40 @@ export function ProductsPage() {
         open={drawerOpen}
         onOpenChange={(open) => { setDrawerOpen(open); if (!open) setDrawerProduct(null); }}
         initialMode={drawerMode}
+        initialTab={drawerInitialTab}
+      />
+
+      {/* ── Bulk Availability Confirmation (PART 3) ── */}
+      <AlertDialog
+        open={availDialog !== null}
+        onOpenChange={(open) => { if (!open) setAvailDialog(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Availability Change</AlertDialogTitle>
+            <AlertDialogDescription>
+              {availDialog?.status === 'instock'
+                ? `Mark ${selection.selectedCount} selected product(s) as 🟢 Available (In Stock)?`
+                : `Mark ${selection.selectedCount} selected product(s) as 🔴 Unavailable (Out of Stock)?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkAvailability}
+              disabled={bulkUpdateStock.isPending}
+            >
+              {bulkUpdateStock.isPending ? 'Updating…' : 'Confirm'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Import Modal (PART 1) ── */}
+      <ProductImportModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onSuccess={() => { void refetch(); setImportOpen(false); }}
       />
     </div>
   );

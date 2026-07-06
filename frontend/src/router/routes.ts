@@ -7,6 +7,7 @@ export const ROUTES = {
   dashboard: '/dashboard',
   organization: '/organization',
   companies: '/companies',
+  brands: '/brands',
   branches: '/branches',
   inventoryProducts: '/inventory/products',
   products: '/products',
@@ -51,6 +52,13 @@ export const ROUTES = {
   costManagementCostHistory: '/inventory/cost-management/cost-history',
   inventory: '/inventory',
   purchasing: '/purchasing',
+  procurementHub: '/purchasing/hub',
+  purchaseMaterials: '/purchasing/purchase-materials',
+  materialRequests: '/purchasing/material-requests',
+  purchases: '/purchasing/purchases',
+  supplierInvoices: '/purchasing/supplier-invoices',
+  receivingCenter: '/purchasing/receiving',
+  supplierReturns: '/purchasing/supplier-returns',
   sales: '/sales',
   accounting: '/accounting',
   crm: '/crm',
@@ -58,7 +66,34 @@ export const ROUTES = {
   reports: '/reports',
   settings: '/settings',
   operationsDemandAnalysis: '/operations/demand-analysis',
+  // Preparation OS
+  preparationDashboard: '/operations/preparation',
+  preparationWaves:     '/operations/preparation/waves',
+  preparedPool:         '/operations/preparation/pool',
+  preparationStations:  '/operations/preparation/stations',
+  preparationAnalytics: '/operations/preparation/analytics',
   pos: '/pos',
+  // Inventory Master Data
+  inventoryCategories: '/inventory/master-data/categories',
+  inventoryProductCategories: '/inventory/master-data/product-categories',
+  inventoryMaterialCategories: '/inventory/master-data/material-categories',
+  inventoryUnits: '/inventory/master-data/units',
+  // Inventory Count Sessions
+  inventoryCount: '/inventory/count',
+  inventoryCountDetail: '/inventory/count/:id',
+  // Waste Investigations & Warehouse Liabilities
+  wasteInvestigations: '/inventory/waste-investigations',
+  warehouseLiabilities: '/inventory/warehouse-liabilities',
+  // Stock Transfers (placeholder — backend not yet implemented)
+  stockTransfers: '/inventory/stock-transfers',
+  // Organization — WP-ORG-002
+  businessAccounts: '/business-accounts',
+  teams: '/teams',
+  // Organization — WP-ORG-003 (People & Access — ComingSoon)
+  users: '/admin/users',
+  userInvitations: '/admin/users/invitations',
+  roles: '/admin/roles',
+  orgSearch: '/organization/search',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

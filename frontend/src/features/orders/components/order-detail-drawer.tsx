@@ -14,6 +14,7 @@ import {
 import { Tabs } from '@/components/ds/tabs';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import type { Order } from '@/features/orders/types/order';
+import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 
 // ── Helper primitives ─────────────────────────────────────────────────────────
@@ -140,8 +141,8 @@ function ProductsTab({ order, t }: { order: Order; t: (k: string) => string }) {
         <div className="flex flex-col divide-y">
           {order.lines.map((line) => (
             <div key={line.id} className="flex items-center gap-3 py-3">
-              {line.product?.image_url ? (
-                <img src={line.product.image_url} alt={line.product.name ?? ''} className="size-10 rounded-md object-cover ring-1 ring-border shrink-0" />
+              {getMediaUrl(line.product?.image_url) ? (
+                <img src={getMediaUrl(line.product!.image_url)!} alt={line.product!.name ?? ''} className="size-10 rounded-md object-cover ring-1 ring-border shrink-0" />
               ) : (
                 <div className="flex size-10 items-center justify-center rounded-md bg-muted ring-1 ring-border shrink-0">
                   <Package className="size-4 text-muted-foreground" />

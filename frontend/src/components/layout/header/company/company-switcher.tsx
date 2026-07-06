@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronsUpDown, Search } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Search } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -8,67 +8,58 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { CompanyFormDrawer } from '@/features/companies/components/company-form-drawer';
+import { useCompaniesQuery } from '@/features/companies/hooks/use-companies';
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
+// ── Color helpers ─────────────────────────────────────────────────────────────
 
-type Company = {
-  id: string;
-  name: string;
-  type: string;
-  branches: number;
-  initials: string;
-  colorClass: string;
-  ringClass: string;
-};
-
-const COMPANIES: Company[] = [
-  {
-    id: '1',
-    name: 'ECOS Holding',
-    type: 'Holding Company',
-    branches: 3,
-    initials: 'EH',
-    colorClass: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
-    ringClass: 'ring-blue-500/30',
-  },
-  {
-    id: '2',
-    name: 'ECOS Retail',
-    type: 'Retail Operations',
-    branches: 5,
-    initials: 'ER',
-    colorClass: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-    ringClass: 'ring-emerald-500/30',
-  },
-  {
-    id: '3',
-    name: 'ECOS Logistics',
-    type: 'Logistics Division',
-    branches: 2,
-    initials: 'EL',
-    colorClass: 'bg-orange-500/15 text-orange-600 dark:text-orange-400',
-    ringClass: 'ring-orange-500/30',
-  },
+const BADGE_COLORS = [
+  'bg-blue-500/15 text-blue-600 ring-blue-500/30',
+  'bg-emerald-500/15 text-emerald-600 ring-emerald-500/30',
+  'bg-orange-500/15 text-orange-600 ring-orange-500/30',
+  'bg-purple-500/15 text-purple-600 ring-purple-500/30',
+  'bg-rose-500/15 text-rose-600 ring-rose-500/30',
 ];
+
+function companyColorClass(id: string): string {
+  const sum = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return BADGE_COLORS[sum % BADGE_COLORS.length];
+}
+
+function companyInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0] ?? '')
+    .join('')
+    .toUpperCase();
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function CompanySwitcher({ className }: { className?: string }) {
+  const { activeCompanyId, setActiveCompanyId } = useOrganizationContext();
   const [open, setOpen] = useState(false);
-  const [activeId, setActiveId] = useState(COMPANIES[0].id);
+  const [formOpen, setFormOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [focusIdx, setFocusIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const active = COMPANIES.find((c) => c.id === activeId) ?? COMPANIES[0];
+  const { data } = useCompaniesQuery({ per_page: 100, status: 'all' });
+  const companies = data?.items ?? [];
+
+  // If no active company set yet, default to first in the list
+  const activeId = activeCompanyId ?? companies[0]?.id ?? null;
+  const active = companies.find((c) => c.id === activeId) ?? companies[0] ?? null;
 
   const filtered = search.trim()
-    ? COMPANIES.filter(
+    ? companies.filter(
         (c) =>
           c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.type.toLowerCase().includes(search.toLowerCase()),
+          c.code.toLowerCase().includes(search.toLowerCase()),
       )
-    : COMPANIES;
+    : companies;
 
   // Reset + focus input when dropdown opens; reset on close
   useEffect(() => {
@@ -86,7 +77,7 @@ export function CompanySwitcher({ className }: { className?: string }) {
   }, [filtered.length]);
 
   function selectCompany(id: string) {
-    setActiveId(id);
+    setActiveCompanyId(id);
     setOpen(false);
   }
 
@@ -110,13 +101,17 @@ export function CompanySwitcher({ className }: { className?: string }) {
     }
   }
 
+  const activeInitials = active ? companyInitials(active.name) : '—';
+  const activeColor = active ? companyColorClass(active.id) : BADGE_COLORS[0];
+
   return (
+  <>
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
           size="sm"
-          aria-label={`Current company: ${active.name}. Click to switch.`}
+          aria-label={active ? `Current company: ${active.name}. Click to switch.` : 'Select company'}
           aria-expanded={open}
           className={cn('h-9 gap-2 px-2 sm:px-3', className)}
         >
@@ -124,21 +119,20 @@ export function CompanySwitcher({ className }: { className?: string }) {
           <span
             className={cn(
               'flex size-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold leading-none ring-1',
-              active.colorClass,
-              active.ringClass,
+              activeColor,
             )}
             aria-hidden
           >
-            {active.initials}
+            {activeInitials}
           </span>
 
-          {/* Name + type — hidden on xs, visible sm+ */}
+          {/* Name + code — hidden on xs, visible sm+ */}
           <span className="hidden flex-col items-start sm:flex">
             <span className="max-w-[7rem] truncate text-xs font-semibold leading-tight lg:max-w-[9rem]">
-              {active.name}
+              {active?.name ?? 'Loading…'}
             </span>
             <span className="max-w-[7rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[9rem]">
-              {active.type}
+              {active?.code ?? ''}
             </span>
           </span>
 
@@ -181,6 +175,8 @@ export function CompanySwitcher({ className }: { className?: string }) {
             filtered.map((company, idx) => {
               const isActive = company.id === activeId;
               const isFocused = idx === focusIdx;
+              const initials = companyInitials(company.name);
+              const colorClass = companyColorClass(company.id);
               return (
                 <button
                   key={company.id}
@@ -200,19 +196,18 @@ export function CompanySwitcher({ className }: { className?: string }) {
                   <span
                     className={cn(
                       'flex size-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ring-1',
-                      company.colorClass,
-                      company.ringClass,
+                      colorClass,
                     )}
                     aria-hidden
                   >
-                    {company.initials}
+                    {initials}
                   </span>
 
                   {/* Info */}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{company.name}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {company.type} · {company.branches} branches
+                      {company.code}
                     </span>
                   </span>
 
@@ -230,19 +225,19 @@ export function CompanySwitcher({ className }: { className?: string }) {
         <div className="border-t px-1 py-1">
           <button
             type="button"
-            disabled
-            className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-md px-2 py-2 text-start opacity-50"
+            onClick={() => { setOpen(false); setFormOpen(true); }}
+            className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-start transition-colors hover:bg-accent/60"
           >
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
-              +
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/5 text-primary">
+              <Plus className="size-3.5" aria-hidden />
             </span>
-            <span className="text-xs text-muted-foreground">Add company</span>
-            <span className="ml-auto rounded-full border border-primary/30 bg-primary/5 px-1.5 py-0.5 text-[9px] font-medium text-primary/70">
-              Soon
-            </span>
+            <span className="text-xs font-medium">New Company</span>
           </button>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <CompanyFormDrawer open={formOpen} onOpenChange={setFormOpen} />
+  </>
   );
 }

@@ -64,6 +64,15 @@ export function AppSidebar({
         className="flex flex-col gap-0.5 overflow-y-auto p-2"
       >
         {activeModule.items.map((item) => {
+          if (item.isSection) {
+            return (
+              <div key={item.key} className="mb-1 mt-4 px-3 first:mt-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {item.label}
+                </p>
+              </div>
+            );
+          }
           const Icon = item.icon;
           return (
             <NavLink

@@ -23,13 +23,26 @@ final class CategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'parent_id' => null,
-            'code' => strtoupper($this->faker->unique()->bothify('CAT-####')),
-            'name' => ucfirst($this->faker->unique()->word()),
-            'description' => $this->faker->sentence(),
-            'level' => 1,
-            'sort_order' => $this->faker->numberBetween(0, 50),
-            'is_active' => true,
+            'parent_id'      => null,
+            'code'           => strtoupper($this->faker->unique()->bothify('CAT-####')),
+            'name'           => ucfirst($this->faker->unique()->word()),
+            'description'    => $this->faker->sentence(),
+            'level'          => 1,
+            'sort_order'     => $this->faker->numberBetween(0, 50),
+            'is_active'      => true,
+            'category_scope' => 'product',
         ];
+    }
+
+    /** State: creates a material-scoped category. */
+    public function material(): static
+    {
+        return $this->state(['category_scope' => 'material']);
+    }
+
+    /** State: creates a product-scoped category (explicit, mirrors material()). */
+    public function product(): static
+    {
+        return $this->state(['category_scope' => 'product']);
     }
 }

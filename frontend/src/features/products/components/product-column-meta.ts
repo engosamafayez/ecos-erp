@@ -3,21 +3,24 @@ import type { ColumnMeta } from '@/components/data-grid/types';
 /**
  * Canonical column metadata for the Products workspace.
  * Drives both useColumnVisibility (persistence) and ColumnVisibilityMenu (toggle UI).
- * Columns marked alwaysVisible are excluded from the toggle menu automatically.
+ * Final approved layout: 17 columns per PKG-PRODUCT-004.
  */
 export const PRODUCT_COLUMN_META: ColumnMeta[] = [
-  { key: 'image',         label: 'Image',       alwaysVisible: false, defaultVisible: false },
-  { key: 'sku',           label: 'SKU',          alwaysVisible: true },
-  { key: 'name',          label: 'Name',         alwaysVisible: true },
-  { key: 'type',          label: 'Type',         defaultVisible: true },
-  { key: 'category',      label: 'Category',     defaultVisible: true },
-  { key: 'channels',      label: 'Channels',     defaultVisible: true },
-  { key: 'regular_price', label: 'Price',        defaultVisible: true },
-  { key: 'sale_price',    label: 'Sale Price',   defaultVisible: false },
-  { key: 'stock_status',  label: 'Stock',        defaultVisible: true },
-  { key: 'is_published',  label: 'Published',    defaultVisible: true },
-  { key: 'sync_status',   label: 'Sync',         defaultVisible: false },
-  { key: 'is_active',     label: 'Status',       defaultVisible: true },
-  { key: 'updated_at',    label: 'Updated',      defaultVisible: true },
-  { key: 'actions',       label: '',             alwaysVisible: true },
+  { key: 'image',          label: 'Image',          alwaysVisible: false, defaultVisible: true  },
+  { key: 'name',           label: 'Name',           alwaysVisible: true                         },
+  { key: 'category',       label: 'Category',       defaultVisible: true                        },
+  { key: 'channels',       label: 'Channels',       defaultVisible: true                        },
+  { key: 'product_cost',   label: 'Product Cost',   defaultVisible: true                        },
+  { key: 'regular_price',  label: 'Regular Price',  defaultVisible: true                        },
+  { key: 'sale_price',     label: 'Sale Price',     defaultVisible: true                        },
+  { key: 'gross_profit',   label: 'Gross Profit %', defaultVisible: true                        },
+  { key: 'final_margin',   label: 'Final Margin %', defaultVisible: true                        },
+  { key: 'stock_status',   label: 'Stock Status',   defaultVisible: true                        },
+  { key: 'recipe',         label: 'Recipe',         defaultVisible: true                        },
+  { key: 'sku',            label: 'SKU',            defaultVisible: false                       },
+  { key: 'is_published',   label: 'Published',      defaultVisible: false                       },
+  { key: 'sync_status',    label: 'Sync',           defaultVisible: false                       },
+  { key: 'updated_at',     label: 'Updated',        defaultVisible: false                       },
+  { key: 'pricing_review', label: 'Price Review',   defaultVisible: true                        },
+  { key: 'actions',        label: '',               alwaysVisible: true                         },
 ];

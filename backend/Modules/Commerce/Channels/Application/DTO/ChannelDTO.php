@@ -10,7 +10,7 @@ use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
 final class ChannelDTO extends BaseDTO
 {
     public function __construct(
-        public readonly string $company_id,
+        public readonly string $brand_id,
         public readonly string $name,
         public readonly ChannelPlatform $platform,
         public readonly string $store_url,
@@ -21,7 +21,10 @@ final class ChannelDTO extends BaseDTO
         public readonly bool $sync_customers = true,
         public readonly ?string $consumer_key = null,
         public readonly ?string $consumer_secret = null,
-        public readonly ?string $default_warehouse_id = null,
+        public readonly ?string $code = null,
+        public readonly ?string $channel_type = null,
+        public readonly ?string $channel_role = null,
+        public readonly ?string $business_account_id = null,
     ) {}
 
     /**
@@ -29,8 +32,10 @@ final class ChannelDTO extends BaseDTO
      */
     public static function fromArray(array $data): self
     {
+        $ns = fn (array $d, string $k): ?string => isset($d[$k]) && $d[$k] !== '' ? (string) $d[$k] : null;
+
         return new self(
-            company_id: (string) $data['company_id'],
+            brand_id: (string) $data['brand_id'],
             name: (string) $data['name'],
             platform: ChannelPlatform::from((string) $data['platform']),
             store_url: (string) $data['store_url'],
@@ -39,9 +44,12 @@ final class ChannelDTO extends BaseDTO
             sync_prices: (bool) ($data['sync_prices'] ?? true),
             sync_stock: (bool) ($data['sync_stock'] ?? true),
             sync_customers: (bool) ($data['sync_customers'] ?? true),
-            consumer_key: self::nullableString($data, 'consumer_key'),
-            consumer_secret: self::nullableString($data, 'consumer_secret'),
-            default_warehouse_id: self::nullableString($data, 'default_warehouse_id'),
+            consumer_key: $ns($data, 'consumer_key'),
+            consumer_secret: $ns($data, 'consumer_secret'),
+            code: $ns($data, 'code'),
+            channel_type: $ns($data, 'channel_type'),
+            channel_role: $ns($data, 'channel_role'),
+            business_account_id: $ns($data, 'business_account_id'),
         );
     }
 
@@ -51,16 +59,18 @@ final class ChannelDTO extends BaseDTO
     public function channelAttributes(): array
     {
         return [
-            'company_id' => $this->company_id,
-            'default_warehouse_id' => $this->default_warehouse_id,
-            'name' => $this->name,
-            'platform' => $this->platform->value,
-            'store_url' => $this->store_url,
-            'is_active' => $this->is_active,
-            'sync_products' => $this->sync_products,
-            'sync_prices' => $this->sync_prices,
-            'sync_stock' => $this->sync_stock,
-            'sync_customers' => $this->sync_customers,
+            'brand_id'             => $this->brand_id,
+            'business_account_id'  => $this->business_account_id,
+            'name'                 => $this->name,
+            'channel_type'         => $this->channel_type,
+            'channel_role'         => $this->channel_role,
+            'platform'             => $this->platform->value,
+            'store_url'            => $this->store_url,
+            'is_active'            => $this->is_active,
+            'sync_products'        => $this->sync_products,
+            'sync_prices'          => $this->sync_prices,
+            'sync_stock'           => $this->sync_stock,
+            'sync_customers'       => $this->sync_customers,
         ];
     }
 
@@ -74,18 +84,8 @@ final class ChannelDTO extends BaseDTO
         }
 
         return [
-            'consumer_key' => $this->consumer_key ?? '',
+            'consumer_key'    => $this->consumer_key ?? '',
             'consumer_secret' => $this->consumer_secret ?? '',
         ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private static function nullableString(array $data, string $key): ?string
-    {
-        $value = $data[$key] ?? null;
-
-        return $value === null || $value === '' ? null : (string) $value;
     }
 }

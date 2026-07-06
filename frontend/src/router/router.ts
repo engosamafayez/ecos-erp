@@ -3,25 +3,24 @@ import { createBrowserRouter, redirect } from 'react-router-dom';
 import { ComingSoonPage } from '@/components/common/coming-soon-page';
 import { AppShell } from '@/components/layout/app-shell';
 import { LoginPage } from '@/features/auth/pages/login-page';
+import { BrandsPage } from '@/features/brands/pages/brands-page';
+import { BusinessAccountsPage } from '@/features/business-accounts/pages/business-accounts-page';
+import { TeamsPage } from '@/features/teams/pages/teams-page';
 import { BranchesPage } from '@/features/branches/pages/branches-page';
 import { CategoriesPage } from '@/features/categories/pages/categories-page';
 import { ChannelsPage } from '@/features/channels/pages/channels-page';
 import { CompaniesPage } from '@/features/companies/pages/companies-page';
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 import { HomePage } from '@/features/home/pages/home-page';
-import { InventoryProductsWorkspace } from '@/features/inventory/pages/inventory-products-workspace';
 import { PackagingMaterialsPage } from '@/features/inventory/pages/packaging-materials-page';
 import { ConsumablesPage } from '@/features/inventory/pages/consumables-page';
 import { SemiFinishedMaterialsPage } from '@/features/inventory/pages/semi-finished-materials-page';
 import { OrganizationWorkspace } from '@/features/organization/pages/organization-workspace';
+import { OrgSearchPage } from '@/features/organization/pages/org-search-page';
 import { ProductsPage } from '@/features/products/pages/products-page';
 import { RawMaterialsPage } from '@/features/products/pages/raw-materials-page';
 import { UnitsPage } from '@/features/units/pages/units-page';
 import { WarehousesPage } from '@/features/warehouses/pages/warehouses-page';
-import { CreatePurchaseOrderPage } from '@/features/purchase-orders/pages/create-purchase-order-page';
-import { EditPurchaseOrderPage } from '@/features/purchase-orders/pages/edit-purchase-order-page';
-import { PurchaseOrdersPage } from '@/features/purchase-orders/pages/purchase-orders-page';
-import { ViewPurchaseOrderPage } from '@/features/purchase-orders/pages/view-purchase-order-page';
 import { ProductMappingsPage } from '@/features/product-mappings/pages/product-mappings-page';
 import { OrdersPage } from '@/features/orders/pages/orders-page';
 import { OrderWorkspacePage } from '@/features/orders/pages/order-workspace-page';
@@ -41,14 +40,28 @@ import { VarianceAnalyticsPage } from '@/features/inventory-control/pages/varian
 import { WarehousePerformancePage } from '@/features/inventory-control/pages/warehouse-performance-page';
 import { CreateGoodsReceiptPage } from '@/features/goods-receipts/pages/create-goods-receipt-page';
 import { EditGoodsReceiptPage } from '@/features/goods-receipts/pages/edit-goods-receipt-page';
-import { GoodsReceiptsPage } from '@/features/goods-receipts/pages/goods-receipts-page';
 import { ViewGoodsReceiptPage } from '@/features/goods-receipts/pages/view-goods-receipt-page';
 import { SuppliersPage } from '@/features/suppliers/pages/suppliers-page';
 import { ViewSupplierPage } from '@/features/suppliers/pages/view-supplier-page';
+import { MaterialRequestsPage } from '@/features/purchase-materials/pages/material-requests-page';
+import { PurchasesPage } from '@/features/purchase-materials/pages/purchases-page';
+import { ProcurementHubPage } from '@/features/procurement/pages/procurement-hub-page';
+import { ReceivingCenterPage } from '@/features/receiving-center/pages/receiving-center-page';
+import { SupplierReturnsPage } from '@/features/supplier-returns/pages/supplier-returns-page';
+import { SupplierInvoicesPage } from '@/features/supplier-invoices/pages/supplier-invoices-page';
 import { CostPricingCenterPage } from '@/features/cost-management/pages/cost-pricing-center-page';
 import { CostManagementDashboardPage } from '@/features/cost-management/pages/cost-management-dashboard-page';
 import { CostHistoryPage } from '@/features/cost-management/pages/cost-history-page';
+import { InventoryCountPage } from '@/features/inventory-count/pages/inventory-count-page';
+import { WasteInvestigationsPage } from '@/features/inventory-count/pages/waste-investigations-page';
+import { WarehouseLiabilityPage } from '@/features/inventory-count/pages/warehouse-liability-page';
+import { StockTransfersPage } from '@/features/stock-transfers/pages/stock-transfers-page';
 import { DemandAnalysisPage } from '@/features/operations/pages/demand-analysis-page';
+import { PreparationDashboardPage } from '@/features/operations/pages/preparation-dashboard-page';
+import { PreparationWavesPage } from '@/features/operations/pages/preparation-waves-page';
+import { PreparedPoolPage } from '@/features/operations/pages/prepared-pool-page';
+import { PreparationStationsPage } from '@/features/operations/pages/preparation-stations-page';
+import { PreparationAnalyticsPage } from '@/features/operations/pages/preparation-analytics-page';
 import { PosPage } from '@/features/pos/pages/pos-page';
 import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
@@ -56,13 +69,14 @@ import { ProtectedRoute } from '@/router/guards/protected-route';
 import { ROUTES } from '@/router/routes';
 
 const moduleRoutes = [
-  ROUTES.purchasing,
   ROUTES.sales,
   ROUTES.accounting,
   ROUTES.crm,
   ROUTES.hr,
   ROUTES.reports,
   ROUTES.settings,
+  ROUTES.users,
+  ROUTES.roles,
 ].map((path) => ({ path, Component: ComingSoonPage }));
 
 export const router = createBrowserRouter(
@@ -84,34 +98,61 @@ export const router = createBrowserRouter(
             { path: ROUTES.dashboard, Component: DashboardPage },
             // Organization workspace + sub-pages
             { path: ROUTES.organization, Component: OrganizationWorkspace },
+            { path: ROUTES.orgSearch, Component: OrgSearchPage },
             { path: ROUTES.companies, Component: CompaniesPage },
+            { path: ROUTES.brands, Component: BrandsPage },
+            { path: ROUTES.businessAccounts, Component: BusinessAccountsPage },
+            { path: ROUTES.teams, Component: TeamsPage },
             { path: ROUTES.branches, Component: BranchesPage },
             { path: ROUTES.warehouses, Component: WarehousesPage },
             { path: ROUTES.channels, Component: ChannelsPage },
             // Inventory workspace + sub-pages
-            { path: ROUTES.inventoryProducts, Component: InventoryProductsWorkspace },
+            // Old hub URL redirects to Products workspace
+            { path: ROUTES.inventoryProducts, loader: () => redirect(ROUTES.products) },
             { path: ROUTES.products, Component: ProductsPage },
             { path: ROUTES.rawMaterials, Component: RawMaterialsPage },
-            { path: ROUTES.categories, Component: CategoriesPage },
-            { path: ROUTES.units, Component: UnitsPage },
             { path: ROUTES.stockLedger, Component: StockLedgerPage },
+            // Legacy flat routes redirect to new Master Data paths
+            { path: ROUTES.categories, loader: () => redirect(ROUTES.inventoryCategories) },
+            { path: ROUTES.units, loader: () => redirect(ROUTES.inventoryUnits) },
+            // Old scoped routes redirect to unified categories with scope query param
+            { path: ROUTES.inventoryProductCategories, loader: () => redirect(`${ROUTES.inventoryCategories}?scope=product`) },
+            { path: ROUTES.inventoryMaterialCategories, loader: () => redirect(`${ROUTES.inventoryCategories}?scope=material`) },
+            // Inventory Master Data — unified categories workspace
+            { path: ROUTES.inventoryCategories, Component: CategoriesPage },
+            { path: ROUTES.inventoryUnits, Component: UnitsPage },
             // Inventory Control
             { path: ROUTES.inventoryDashboard, Component: InventoryDashboardPage },
             { path: ROUTES.inventoryAbcClassifications, Component: AbcClassificationPage },
             { path: ROUTES.inventoryCycleCountPlanner, Component: CycleCountPlannerPage },
             { path: ROUTES.inventoryVarianceAnalytics, Component: VarianceAnalyticsPage },
             { path: ROUTES.inventoryWarehousePerformance, Component: WarehousePerformancePage },
-            // Purchasing
-            { path: ROUTES.suppliers, Component: SuppliersPage },
-            { path: `${ROUTES.suppliers}/:id`, Component: ViewSupplierPage },
-            { path: ROUTES.purchaseOrders, Component: PurchaseOrdersPage },
-            { path: ROUTES.purchaseOrdersNew, Component: CreatePurchaseOrderPage },
-            { path: `${ROUTES.purchaseOrders}/:id`, Component: ViewPurchaseOrderPage },
-            { path: `${ROUTES.purchaseOrders}/:id/edit`, Component: EditPurchaseOrderPage },
-            { path: ROUTES.goodsReceipts, Component: GoodsReceiptsPage },
+            // Inventory Count Sessions + Waste / Liability
+            { path: ROUTES.inventoryCount, Component: InventoryCountPage },
+            { path: ROUTES.wasteInvestigations, Component: WasteInvestigationsPage },
+            { path: ROUTES.warehouseLiabilities, Component: WarehouseLiabilityPage },
+            // Stock Transfers (placeholder)
+            { path: ROUTES.stockTransfers, Component: StockTransfersPage },
+            // Procurement — full suite
+            { path: ROUTES.procurementHub, Component: ProcurementHubPage },
+            { path: ROUTES.materialRequests, Component: MaterialRequestsPage },
+            { path: ROUTES.purchases, Component: PurchasesPage },
+            { path: ROUTES.supplierInvoices, Component: SupplierInvoicesPage },
+            { path: ROUTES.receivingCenter, Component: ReceivingCenterPage },
+            { path: ROUTES.supplierReturns, Component: SupplierReturnsPage },
+            // Legacy redirects
+            { path: ROUTES.purchaseMaterials, loader: () => redirect(ROUTES.purchases) },
+            { path: ROUTES.purchaseOrders, loader: () => redirect(ROUTES.purchases) },
+            { path: ROUTES.purchaseOrdersNew, loader: () => redirect(ROUTES.purchases) },
+            { path: `${ROUTES.purchaseOrders}/:id`, loader: () => redirect(ROUTES.purchases) },
+            { path: `${ROUTES.purchaseOrders}/:id/edit`, loader: () => redirect(ROUTES.purchases) },
+            // Goods receipts — legacy paths redirect to Receiving Center
+            { path: ROUTES.goodsReceipts, loader: () => redirect(ROUTES.receivingCenter) },
             { path: ROUTES.goodsReceiptsNew, Component: CreateGoodsReceiptPage },
             { path: `${ROUTES.goodsReceipts}/:id`, Component: ViewGoodsReceiptPage },
             { path: `${ROUTES.goodsReceipts}/:id/edit`, Component: EditGoodsReceiptPage },
+            { path: ROUTES.suppliers, Component: SuppliersPage },
+            { path: `${ROUTES.suppliers}/:id`, Component: ViewSupplierPage },
             // Sales
             { path: ROUTES.orders, Component: OrdersPage },
             { path: ROUTES.ordersNew, Component: OrderWorkspacePage },
@@ -144,6 +185,12 @@ export const router = createBrowserRouter(
             { path: ROUTES.costManagementCostHistory, Component: CostHistoryPage },
             // Operations
             { path: ROUTES.operationsDemandAnalysis, Component: DemandAnalysisPage },
+            // Preparation OS
+            { path: ROUTES.preparationDashboard, Component: PreparationDashboardPage },
+            { path: ROUTES.preparationWaves,     Component: PreparationWavesPage },
+            { path: ROUTES.preparedPool,          Component: PreparedPoolPage },
+            { path: ROUTES.preparationStations,  Component: PreparationStationsPage },
+            { path: ROUTES.preparationAnalytics, Component: PreparationAnalyticsPage },
             ...moduleRoutes,
           ],
         },

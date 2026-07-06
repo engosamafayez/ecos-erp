@@ -21,20 +21,25 @@ class PricingReviewController extends Controller
 
     /**
      * GET /cost-management/pricing-reviews
-     * List pending/filtered pricing reviews with summary counts.
      */
     public function index(Request $request): JsonResponse
     {
-        $status  = $request->query('status', 'pending');
-        $search  = $request->query('search');
-        $perPage = (int) $request->query('per_page', 20);
+        $status    = $request->query('status', 'pending');
+        $search    = $request->query('search');
+        $productId = $request->query('product_id');
+        $brandId   = $request->query('brand_id');
+        $perPage   = (int) $request->query('per_page', 20);
 
         $query = PricingReview::query()
-            ->with(['product.unit'])
+            ->with(['product.unit', 'product.brand'])
             ->latest('created_at');
 
         if ($status && $status !== 'all') {
             $query->where('status', $status);
+        }
+
+        if ($productId) {
+            $query->where('product_id', $productId);
         }
 
         if ($search) {
@@ -44,15 +49,23 @@ class PricingReviewController extends Controller
             });
         }
 
+        if ($brandId) {
+            $query->whereHas('product', function ($q) use ($brandId) {
+                $q->where('brand_id', $brandId);
+            });
+        }
+
         $reviews = $query->paginate($perPage);
 
-        // Summary counts for the UI tabs
+        // Summary counts + below-brand-margin count
         $summary = [
-            'pending'      => PricingReview::query()->where('status', PricingReviewStatus::Pending->value)->count(),
-            'approved'     => PricingReview::query()->where('status', PricingReviewStatus::Approved->value)->count(),
-            'kept'         => PricingReview::query()->where('status', PricingReviewStatus::Kept->value)->count(),
-            'custom_price' => PricingReview::query()->where('status', PricingReviewStatus::CustomPrice->value)->count(),
-            'snoozed'      => PricingReview::query()->where('status', PricingReviewStatus::Snoozed->value)->count(),
+            'pending'            => PricingReview::query()->where('status', PricingReviewStatus::Pending->value)->count(),
+            'approved'           => PricingReview::query()->where('status', PricingReviewStatus::Approved->value)->count(),
+            'kept'               => PricingReview::query()->where('status', PricingReviewStatus::Kept->value)->count(),
+            'custom_price'       => PricingReview::query()->where('status', PricingReviewStatus::CustomPrice->value)->count(),
+            'snoozed'            => PricingReview::query()->where('status', PricingReviewStatus::Snoozed->value)->count(),
+            'rejected'           => PricingReview::query()->where('status', PricingReviewStatus::Rejected->value)->count(),
+            'below_brand_margin' => 0, // computed client-side from brand.default_target_margin vs current_margin
         ];
 
         return response()->json([
@@ -69,22 +82,22 @@ class PricingReviewController extends Controller
 
     /**
      * GET /cost-management/pricing-reviews/{id}/detail
-     * Full detail: cost breakdown, recipe snapshot, price history.
      */
     public function detail(string $id): JsonResponse
     {
         $review = PricingReview::query()
             ->with([
                 'product.unit',
+                'product.brand',
                 'product.activeRecipe.components',
                 'approvals',
+                'company',
             ])
             ->findOrFail($id);
 
         $resource = new PricingReviewResource($review);
         $data     = $resource->toArray(request());
 
-        // Augment with approval history
         $data['approvals'] = $review->approvals->map(fn ($a) => [
             'id'               => $a->id,
             'action'           => $a->action,
@@ -102,7 +115,6 @@ class PricingReviewController extends Controller
 
     /**
      * POST /cost-management/pricing-reviews/{id}/approve
-     * Approve / keep / set custom price for a review.
      */
     public function approve(ApprovePricingReviewRequest $request, string $id): JsonResponse
     {
@@ -136,8 +148,106 @@ class PricingReviewController extends Controller
     }
 
     /**
+     * PATCH /cost-management/pricing-reviews/{id}/inline
+     * Inline editing: target_margin, markup, regular_price, sale_price.
+     */
+    public function inline(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'target_margin' => ['nullable', 'numeric', 'min:0', 'max:99.9999'],
+            'markup'        => ['nullable', 'numeric', 'min:0'],
+            'regular_price' => ['nullable', 'numeric', 'min:0'],
+            'sale_price'    => ['nullable', 'numeric', 'min:0'],
+            'pricing_mode'  => ['nullable', 'string', 'in:brand_policy,custom'],
+        ]);
+
+        $review  = PricingReview::query()->with(['product.brand', 'company'])->findOrFail($id);
+        $product = $review->product;
+        $updated = [];
+
+        // Resolve target_margin from either input
+        $newMargin = null;
+        if ($request->filled('markup')) {
+            $mk        = (float) $request->input('markup');
+            $newMargin = round($mk / (100 + $mk) * 100, 4);
+        } elseif ($request->filled('target_margin')) {
+            $newMargin = (float) $request->input('target_margin');
+        }
+
+        if ($newMargin !== null) {
+            $suggestedPrice     = $newMargin < 100
+                ? round($review->product_cost / (1 - $newMargin / 100), 4)
+                : $review->product_cost;
+            $discountPct        = $product->effectiveDiscountPct();
+            $suggestedSalePrice = round($suggestedPrice * (1 - $discountPct / 100), 4);
+
+            $review->update([
+                'target_margin'           => $newMargin,
+                'suggested_selling_price' => $suggestedPrice,
+                'suggested_sale_price'    => $suggestedSalePrice,
+            ]);
+
+            // Update product custom policy
+            $product->update([
+                'pricing_mode'         => 'custom',
+                'custom_target_margin' => $newMargin,
+                'custom_markup'        => $newMargin < 100
+                    ? round($newMargin / (100 - $newMargin) * 100, 4)
+                    : 0.0,
+            ]);
+
+            $updated[] = 'target_margin';
+        }
+
+        if ($request->filled('pricing_mode')) {
+            $mode = $request->input('pricing_mode');
+            $product->update(['pricing_mode' => $mode]);
+            if ($mode === 'brand_policy') {
+                $product->loadMissing('brand');
+                $brandMargin        = $product->brand?->default_target_margin ?? PricingReviewService::DEFAULT_TARGET_MARGIN;
+                $suggestedPrice     = $brandMargin < 100
+                    ? round($review->product_cost / (1 - $brandMargin / 100), 4)
+                    : $review->product_cost;
+                $discountPct        = $product->effectiveDiscountPct();
+                $suggestedSalePrice = round($suggestedPrice * (1 - $discountPct / 100), 4);
+                $review->update([
+                    'target_margin'           => $brandMargin,
+                    'suggested_selling_price' => $suggestedPrice,
+                    'suggested_sale_price'    => $suggestedSalePrice,
+                ]);
+            }
+            $updated[] = 'pricing_mode';
+        }
+
+        if ($request->filled('regular_price')) {
+            $price = (float) $request->input('regular_price');
+            $product->update(['regular_price' => $price]);
+            $newMarginVal  = $price > 0
+                ? round(($price - $review->product_cost) / $price * 100, 4)
+                : 0.0;
+            $review->update([
+                'selling_price'  => $price,
+                'current_margin' => $newMarginVal,
+            ]);
+            $updated[] = 'regular_price';
+        }
+
+        if ($request->has('sale_price')) {
+            $product->update(['sale_price' => $request->input('sale_price')]);
+            $updated[] = 'sale_price';
+        }
+
+        $review->load(['product.brand', 'product.unit', 'company']);
+
+        return response()->json([
+            'message' => 'Review updated.',
+            'updated' => $updated,
+            'review'  => (new PricingReviewResource($review))->toArray($request),
+        ]);
+    }
+
+    /**
      * POST /cost-management/pricing-reviews/{id}/snooze
-     * Snooze a review until a date.
      */
     public function snooze(Request $request, string $id): JsonResponse
     {
@@ -158,7 +268,6 @@ class PricingReviewController extends Controller
 
     /**
      * POST /cost-management/pricing-reviews/{id}/assign
-     * Assign a reviewer name to a review.
      */
     public function assign(Request $request, string $id): JsonResponse
     {
@@ -174,13 +283,12 @@ class PricingReviewController extends Controller
 
     /**
      * POST /cost-management/pricing-reviews/bulk-approve
-     * Bulk-approve multiple reviews with the same action.
      */
     public function bulkApprove(ApprovePricingReviewRequest $request): JsonResponse
     {
         $request->validate([
-            'ids'    => ['required', 'array', 'min:1'],
-            'ids.*'  => ['required', 'string'],
+            'ids'   => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'string'],
         ]);
 
         $ids     = (array) $request->input('ids', []);
@@ -213,6 +321,98 @@ class PricingReviewController extends Controller
             'message'  => "Bulk approval complete: {$resolved} resolved, {$skipped} skipped.",
             'resolved' => $resolved,
             'skipped'  => $skipped,
+        ]);
+    }
+
+    /**
+     * POST /cost-management/pricing-reviews/bulk-policy
+     * Apply brand policy, set target margin, or set markup to multiple reviews at once.
+     */
+    public function bulkPolicy(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids'          => ['required', 'array', 'min:1'],
+            'ids.*'        => ['required', 'string'],
+            'action'       => ['required', 'string', 'in:apply_brand_policy,set_target_margin,set_markup,snooze'],
+            'value'        => ['nullable', 'numeric', 'min:0'],
+            'snooze_until' => ['nullable', 'date', 'after:today'],
+        ]);
+
+        $ids     = (array) $request->input('ids');
+        $action  = (string) $request->input('action');
+        $reviews = PricingReview::query()->with(['product.brand'])->whereIn('id', $ids)->get();
+
+        $processed = 0;
+
+        foreach ($reviews as $review) {
+            $product = $review->product;
+
+            switch ($action) {
+                case 'apply_brand_policy':
+                    $brandMargin        = $product?->brand?->default_target_margin ?? PricingReviewService::DEFAULT_TARGET_MARGIN;
+                    $brandDiscountPct   = $product?->brand?->default_discount_pct ?? 0.0;
+                    $product?->update(['pricing_mode' => 'brand_policy']);
+                    $suggestedPrice     = $brandMargin < 100
+                        ? round($review->product_cost / (1 - $brandMargin / 100), 4)
+                        : $review->product_cost;
+                    $review->update([
+                        'target_margin'           => $brandMargin,
+                        'suggested_selling_price' => $suggestedPrice,
+                        'suggested_sale_price'    => round($suggestedPrice * (1 - $brandDiscountPct / 100), 4),
+                    ]);
+                    break;
+
+                case 'set_target_margin':
+                    $margin             = (float) ($request->input('value') ?? PricingReviewService::DEFAULT_TARGET_MARGIN);
+                    $suggestedPrice     = $margin < 100
+                        ? round($review->product_cost / (1 - $margin / 100), 4)
+                        : $review->product_cost;
+                    $discountPct        = $product?->effectiveDiscountPct() ?? 0.0;
+                    $review->update([
+                        'target_margin'           => $margin,
+                        'suggested_selling_price' => $suggestedPrice,
+                        'suggested_sale_price'    => round($suggestedPrice * (1 - $discountPct / 100), 4),
+                    ]);
+                    $product?->update([
+                        'pricing_mode'         => 'custom',
+                        'custom_target_margin' => $margin,
+                        'custom_markup'        => $margin < 100 ? round($margin / (100 - $margin) * 100, 4) : 0.0,
+                    ]);
+                    break;
+
+                case 'set_markup':
+                    $mk                 = (float) ($request->input('value') ?? 0);
+                    $margin             = round($mk / (100 + $mk) * 100, 4);
+                    $suggestedPrice     = $margin < 100
+                        ? round($review->product_cost / (1 - $margin / 100), 4)
+                        : $review->product_cost;
+                    $discountPct        = $product?->effectiveDiscountPct() ?? 0.0;
+                    $review->update([
+                        'target_margin'           => $margin,
+                        'suggested_selling_price' => $suggestedPrice,
+                        'suggested_sale_price'    => round($suggestedPrice * (1 - $discountPct / 100), 4),
+                    ]);
+                    $product?->update([
+                        'pricing_mode'         => 'custom',
+                        'custom_target_margin' => $margin,
+                        'custom_markup'        => $mk,
+                    ]);
+                    break;
+
+                case 'snooze':
+                    if (! $review->status->isResolved()) {
+                        $until = $request->input('snooze_until') ?? now()->addDays(3)->toDateString();
+                        $this->service->snooze($review, $until);
+                    }
+                    break;
+            }
+
+            $processed++;
+        }
+
+        return response()->json([
+            'message'   => "Bulk policy applied: {$processed} reviews updated.",
+            'processed' => $processed,
         ]);
     }
 }

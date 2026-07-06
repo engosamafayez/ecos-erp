@@ -31,6 +31,9 @@ final class Session extends Model
     protected $fillable = [
         'terminal_id',
         'cashier_id',
+        'company_id',
+        'channel_id',
+        'warehouse_id',
         'status',
         'device_fingerprint',
         'device_type',
@@ -77,32 +80,44 @@ final class Session extends Model
     }
 
     /**
-     * Opens a new cashier session on the given terminal.
+     * Opens a new cashier session.
      *
-     * The caller is responsible for first checking hasOpenSessionForTerminal()
-     * to ensure no conflicting Open session exists for the terminal.
+     * terminal_id is set to cashier_id so all downstream tables (shifts, carts,
+     * receipts) continue to receive a non-null UUID without schema changes.
+     * The terminal_open_lock unique column enforces "one open session per cashier."
+     *
+     * The caller is responsible for first checking hasOpenSessionForCashier()
+     * to ensure no conflicting Open session exists for the cashier.
      * The returned session is NOT persisted — call $repository->save() after.
      */
     public static function open(
-        string            $terminalId,
         string            $cashierId,
+        string            $companyId,
+        ?string           $channelId,
+        string            $warehouseId,
         DeviceFingerprint $fingerprint,
         string            $ipAddress,
         DeviceType        $deviceType = DeviceType::Browser,
     ): self {
-        if (trim($terminalId) === '') {
-            throw new \InvalidArgumentException('Terminal ID cannot be empty.');
-        }
         if (trim($cashierId) === '') {
             throw new \InvalidArgumentException('Cashier ID cannot be empty.');
+        }
+        if (trim($companyId) === '') {
+            throw new \InvalidArgumentException('Company ID cannot be empty.');
+        }
+        if (trim($warehouseId) === '') {
+            throw new \InvalidArgumentException('Warehouse ID cannot be empty.');
         }
 
         $session                     = new self();
         $session->id                 = self::generateUuid();
-        $session->terminal_id        = $terminalId;
+        $session->terminal_id        = $cashierId; // cashier_id doubles as terminal for downstream tables
         $session->cashier_id         = $cashierId;
+        $session->company_id         = $companyId;
+        $session->channel_id         = $channelId;
+        $session->warehouse_id       = $warehouseId;
         $session->status             = SessionStatus::Open;
-        $session->terminal_open_lock = $terminalId;
+        $session->terminal_open_lock = $cashierId; // unique per-cashier lock
         $session->device_fingerprint = $fingerprint->value;
         $session->device_type        = $deviceType;
         $session->ip_address         = $ipAddress;
@@ -110,7 +125,7 @@ final class Session extends Model
 
         $session->addEvent(SessionOpened::now(
             sessionId:         $session->id,
-            terminalId:        $terminalId,
+            terminalId:        $cashierId,
             cashierId:         $cashierId,
             deviceFingerprint: $fingerprint->value,
             deviceType:        $deviceType->value,

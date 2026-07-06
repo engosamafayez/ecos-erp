@@ -30,14 +30,23 @@ final class CostCascadeService
     /**
      * Run the cascade for one material product.
      *
-     * @return array{affected_recipe_ids: list<string>, affected_product_ids: list<string>}
+     * Returns affected recipe IDs, affected product IDs, and a `affected_products`
+     * array of ['product', 'previous_cost', 'new_cost'] entries so callers can
+     * create pricing reviews without a second DB lookup.
+     *
+     * @return array{
+     *   affected_recipe_ids:  list<string>,
+     *   affected_product_ids: list<string>,
+     *   affected_products:    list<array{product: Product, previous_cost: float, new_cost: float}>,
+     * }
      */
     public function cascadeFromMaterial(Product $material): array
     {
         $affectedRecipeIds  = [];
         $affectedProductIds = [];
+        $affectedProducts   = [];
 
-        DB::transaction(function () use ($material, &$affectedRecipeIds, &$affectedProductIds): void {
+        DB::transaction(function () use ($material, &$affectedRecipeIds, &$affectedProductIds, &$affectedProducts): void {
             // Step 1: Find all ACTIVE recipes that use this material as a component
             $recipeIds = RecipeLine::query()
                 ->where('raw_material_id', $material->id)
@@ -56,6 +65,9 @@ final class CostCascadeService
                 ->with(['components.component', 'product.activeRecipe'])
                 ->get();
 
+            // Track products already processed in this cascade run to deduplicate
+            $processedProductIds = [];
+
             foreach ($recipes as $recipe) {
                 /** @var Recipe $recipe */
                 try {
@@ -65,9 +77,23 @@ final class CostCascadeService
 
                     // Step 3: Recalculate Product Cost + Unit Cost for the finished good
                     $product = $recipe->product;
-                    if ($product !== null) {
-                        $this->productCostCalculator->recalculate($product);
-                        $affectedProductIds[] = $product->id;
+                    if ($product !== null && ! in_array($product->id, $processedProductIds, true)) {
+                        $previousCost = (float) ($product->product_cost ?? 0.0);
+
+                        // Set the just-recalculated recipe on the product so ProductCostCalculator
+                        // uses the updated recipe_cost rather than the stale eager-loaded copy.
+                        $product->setRelation('activeRecipe', $recipe);
+
+                        $result  = $this->productCostCalculator->recalculate($product);
+                        $newCost = $result !== null ? $result['product_cost'] : $previousCost;
+
+                        $affectedProductIds[]  = $product->id;
+                        $processedProductIds[] = $product->id;
+                        $affectedProducts[]    = [
+                            'product'       => $product,
+                            'previous_cost' => $previousCost,
+                            'new_cost'      => $newCost,
+                        ];
                     }
                 } catch (\Throwable $e) {
                     Log::channel('daily')->error(
@@ -85,6 +111,7 @@ final class CostCascadeService
         return [
             'affected_recipe_ids'  => array_values(array_unique($affectedRecipeIds)),
             'affected_product_ids' => array_values(array_unique($affectedProductIds)),
+            'affected_products'    => $affectedProducts,
         ];
     }
 }

@@ -1,7 +1,8 @@
 # Operations Planning Engine
 
-**Status:** Approved (Domain Sprint 03)
-**Layer:** Operations Planning
+**Status:** Updated — ADR-015 Adopted  
+**Layer:** Operations Planning  
+**Last Updated:** 2026-07-04 (TASK-FULFILLMENT-ARCH-001 — reflects Enterprise Fulfillment Platform)
 
 ---
 
@@ -13,60 +14,87 @@ It is NOT:
 - Inventory management (separate layer)
 - Manufacturing management (separate layer)
 - Shipping management (separate layer)
+- Vehicle Loading (owned by Loading & Allocation OS — see ADR-015)
+- Packing (owned by Packing OS — workflow-dependent, see ADR-015)
 
 It IS:
 - The planning layer that bridges Commerce (Orders) and Execution (Warehouse)
 - The system that converts individual orders into efficient batch operations
-- The engine that calculates materials, production, and logistics requirements
+- The engine that calculates materials, production, and preparation requirements
 
 ### The Fundamental Shift
 
 > Warehouse teams never work directly on individual orders.
-> Warehouse teams work on **Fulfillment Batches**.
+> Warehouse teams work on **Preparation Waves**.
 
 This is the most important operational decision in the system.
 
 ---
 
-## 2. Operations Flow
+## 2. Enterprise Fulfillment Flow
+
+> **Note:** This document covers the Planning and Preparation stages.  
+> Geography grouping, vehicle planning, loading, allocation, and delivery are owned by separate modules.  
+> See `docs/architecture/ADR-015-enterprise-fulfillment-architecture.md` for the full platform.
 
 ```
-Orders (from Commerce layer)
+Sales Orders (from Commerce layer)
     ↓
-Operations Planning
+Reservation Engine                ← Inventory Module
+    ↓
+Geography & Coverage Engine       ← groups orders by zone, assigns shipping company
+    ↓
+[Operations Planning — THIS DOC]
     ↓
 Material Requirements Planning (MRP)
     ↓
 Production Requirements Planning (PRP)
     ↓
-Wave Picking
+Wave Picking / Preparation OS
     ↓
-Channel Distribution
+Prepared Products Pool            ← formal inventory handoff point
     ↓
-Vehicle Loading
+Vehicle Planning Engine           ← calculates vehicle count, distributes orders
     ↓
-Shipping
+Loading & Allocation OS           ← separate module (ADR-015)
+    ↓
+Vehicle Mobile Warehouse          ← loading output
+    ↓
+Product Allocation Engine         ← allocates vehicle inventory to orders
+    ↓
+Channel Fulfillment Engine        ← configurable per channel (Fulfillment Profiles)
+    ↓
+Packing OS (if profile requires)  ← workflow-dependent
+    ↓
+Logistics OS
+    ↓
+Delivery
+    ↓
+Returns
 ```
 
 ---
 
-## 3. Fulfillment Batch
+## 3. Fulfillment Batch / Preparation Wave
 
-The Fulfillment Batch is the **primary operational unit** in the warehouse.
+The **Preparation Wave** is the primary operational unit in the warehouse preparation stage.
+
+> Prior terminology: "FulfillmentBatch". New terminology aligns with Enterprise Fulfillment Platform (ADR-015).  
+> The wave covers preparation only — it does NOT include loading, packing, or shipping.
 
 ### Definition
 
-A Fulfillment Batch groups multiple orders into a single executable warehouse operation. The warehouse team works the batch as a unit — not order by order.
+A Preparation Wave groups multiple orders into a single executable warehouse preparation operation. The warehouse team works the wave as a unit — not order by order. The wave ends when products are placed into the **Prepared Products Pool**.
 
-### Batch Fields
+### Wave Fields
 
 ```
-FulfillmentBatch
+PreparationWave (formerly FulfillmentBatch)
 ├── id
-├── batch_number (e.g. BATCH-2025-001234)
+├── wave_number (e.g. WAVE-2025-001234)
 ├── warehouse_id → Warehouse
 ├── planning_date
-├── status: BatchStatus
+├── status: WaveStatus
 ├── stats
 │   ├── orders_count
 │   ├── products_count
@@ -76,7 +104,6 @@ FulfillmentBatch
 │   └── required_materials[] → { material_id, quantity_needed, quantity_available, shortage }
 ├── assignment
 │   ├── areas[] → WarehouseArea
-│   ├── vehicles[] → Vehicle
 │   └── users[] → User
 ├── notes
 ├── created_by → User
@@ -86,7 +113,9 @@ FulfillmentBatch
 └── ActivityEvents[]
 ```
 
-### Batch Lifecycle
+> Vehicles are no longer assigned at the wave level. Vehicle assignment is managed entirely by **Loading & Allocation OS** (ADR-015).
+
+### Wave Lifecycle
 
 ```
 Draft
@@ -101,9 +130,7 @@ Ready For Picking
   ↓
 Picking
   ↓
-Distribution (channel dispatch profiles applied)
-  ↓
-Loading (vehicles assigned and loaded)
+Prepared (products placed in Prepared Products Pool)
   ↓
 Completed
 
@@ -111,13 +138,16 @@ Dead ends:
 Cancelled
 ```
 
+> Removed states from old batch lifecycle: `Distribution`, `Loading`.  
+> These stages now belong to Loading & Allocation OS and Channel Fulfillment Engine respectively.
+
 ---
 
-## 4. Batch Builder
+## 4. Wave Builder
 
 ### Step 1 — Select Orders
 
-Operator selects orders to include in the batch using filters:
+Operator selects orders to include in the wave using filters:
 
 | Filter | Examples |
 |--------|---------|
@@ -142,12 +172,13 @@ The system automatically calculates:
 
 - Warehouse (from default or manual selection)
 - Areas within the warehouse
-- Vehicles
 - Responsible team / users
 
-### Step 4 — Generate Batch
+> Vehicles are NOT assigned at this step. Vehicle assignment happens in Loading & Allocation OS after products are in the Prepared Products Pool.
 
-System creates the FulfillmentBatch record with status `Planning`.
+### Step 4 — Generate Wave
+
+System creates the PreparationWave record with status `Planning`.
 
 ### Step 5 — Review & Approve
 
@@ -155,9 +186,8 @@ Planning supervisor reviews:
 - Requirements accuracy
 - Material availability
 - Manufacturing timeline
-- Vehicle assignment
 
-Approves → batch moves to `Waiting Materials` or `Ready For Picking`.
+Approves → wave moves to `Waiting Materials` or `Ready For Picking`.
 
 ---
 
@@ -167,7 +197,7 @@ The MRP engine calculates what raw materials must be procured.
 
 ### MRP Calculation
 
-For each batch:
+For each wave:
 1. Collect all products and quantities
 2. Explode Bill-of-Materials for each product
 3. Sum total raw material requirements
@@ -178,7 +208,7 @@ For each batch:
 
 ```
 PurchaseRequirement
-├── batch_id
+├── wave_id
 ├── material_id → RawMaterial
 ├── quantity_required
 ├── quantity_available (current stock)
@@ -196,17 +226,17 @@ The PRP engine calculates what finished products must be manufactured.
 
 ### PRP Calculation
 
-For each batch:
+For each wave:
 1. Sum required finished product quantities
 2. Compare against available finished goods stock
 3. Calculate products to manufacture
-4. Assign manufacturing priority (based on batch date)
+4. Assign manufacturing priority (based on wave date)
 
 ### PRP Output
 
 ```
 ManufacturingPlan
-├── batch_id
+├── wave_id
 ├── product_id → Product
 ├── quantity_required
 ├── quantity_available
@@ -227,7 +257,7 @@ Wave Picking is the warehouse execution method for collecting products.
 The warehouse does NOT pick products order-by-order.
 
 Instead:
-1. Sum ALL products needed across ALL orders in the batch
+1. Sum ALL products needed across ALL orders in the wave
 2. Generate a consolidated pick list
 3. Warehouse team picks all quantities at once
 
@@ -247,7 +277,7 @@ One warehouse pick operation serves all 125 orders.
 
 ```
 WavePickList
-├── batch_id
+├── wave_id
 ├── items[]
 │   ├── product_id → Product
 │   ├── sku
@@ -259,43 +289,46 @@ WavePickList
 
 ---
 
-## 8. Channel Distribution
+## 8. Prepared Products Pool (Handoff Point)
 
-After Wave Picking, products are distributed according to each channel's **Dispatch Profile**.
+After Wave Picking, products are placed into the **Prepared Products Pool** — the formal inventory handoff point between Preparation OS and Loading & Allocation OS.
 
-### Dispatch Profiles
+**What Preparation OS contributes to the pool:**
+- Exact product quantities, traced to the originating wave
+- Quality status per product
+- Preparation timestamp
 
-| Profile | Process |
-|---------|---------|
-| `bulk_distribution` | Products loaded directly by quantity. No individual packing. Vehicle receives: "Honey: 120 units, Coffee: 45 units." |
-| `pack_during_loading` | Products are packed into individual customer cartons during driver handover. Packing happens at the vehicle, not in the warehouse. |
-| `pre_packed` | Orders are pre-packed in the warehouse before the vehicle arrives. Each package is labeled and ready. |
+**What happens after the pool:**
+- Loading & Allocation OS reads the pool and begins Shipping Wave Planning
+- Products are reserved for specific shipping waves
+- Loading Sessions move products from the pool to vehicle inventory
+- See `LOADING-ALLOCATION-OS-SPEC.md` for details
 
-Each channel defines its own dispatch profile. New profiles can be added as business requirements evolve without changing the planning engine.
+> Preparation OS ends at the Prepared Products Pool.  
+> Preparation OS never allocates products to specific orders.  
+> Preparation OS never packs.  
+> Preparation OS never loads vehicles.
 
 ---
 
-## 9. Vehicle Loading
+## 9. Channel Fulfillment Profiles
 
-Each vehicle receives an assignment for a specific batch.
+After vehicle loading, product distribution to channels is governed by **Fulfillment Profiles** — not the old "Dispatch Profiles" concept.
 
-```
-VehicleAssignment
-├── batch_id
-├── vehicle_id → Vehicle
-├── driver → User
-├── areas[] (governorates / cities covered)
-├── orders[] → Order[]
-├── products[] → { product_id, quantity }
-├── packed_items[] (for pack_during_loading profile)
-├── loading_checklist[]
-│   ├── item: string
-│   ├── checked: boolean
-│   └── checked_by → User
-├── departure_time (planned)
-├── actual_departure_time
-└── status: pending | loading | loaded | dispatched
-```
+> This replaces the previous Section 8 "Channel Distribution" and Section 9 "Vehicle Loading".
+
+**Key changes from old dispatch profiles:**
+
+| Old Concept | New Concept |
+|---|---|
+| `bulk_distribution` profile | Handled by `vehicle_allocation` + `delivery` stages |
+| `pack_during_loading` profile | `packing` stage with `pack_at_vehicle: true` config |
+| `pre_packed` profile | `packing` stage with `pack_at_vehicle: false` config |
+| Dispatch profiles embedded in Operations Planning | **Fulfillment Profiles** owned by Channel Fulfillment Engine |
+| Profiles applied at Distribution step | Profiles applied across all post-loading stages |
+
+**Fulfillment Profiles are configurable per channel and owned by the Channel Fulfillment Engine.**  
+See `docs/architecture/FULFILLMENT-PROFILES-SPEC.md` for full specification.
 
 ---
 
@@ -308,13 +341,13 @@ Real-time operational view of today's operations.
 | KPI | Description |
 |-----|-------------|
 | Today's Orders | Total orders for today |
-| Fulfillment Batches | Active batches today |
-| Products Required | Total SKU count across active batches |
+| Preparation Waves | Active waves today |
+| Products Required | Total SKU count across active waves |
 | Raw Materials Required | Materials needed for today's production |
 | Manufacturing Jobs | Open manufacturing orders |
-| Vehicles Ready | Vehicles cleared for loading |
-| Vehicles Loading | Vehicles currently being loaded |
-| Dispatch Progress | % of today's batches dispatched |
+| Pool Ready | Products in Prepared Products Pool awaiting loading |
+| Active Loading Sessions | Vehicles currently being loaded |
+| Vehicles Dispatched | Vehicles in transit today |
 | Completed Deliveries | Confirmed deliveries today |
 
 ---
@@ -325,54 +358,114 @@ Every operational action generates an Activity event:
 
 | Event | Trigger |
 |-------|---------|
-| `batch_created` | Batch builder completes |
-| `planning_approved` | Supervisor approves batch plan |
+| `wave_created` | Wave builder completes |
+| `planning_approved` | Supervisor approves wave plan |
 | `materials_calculated` | MRP run completes |
-| `manufacturing_started` | Manufacturing job linked to batch |
+| `manufacturing_started` | Manufacturing job linked to wave |
 | `picking_started` | Wave pick list activated |
 | `picking_completed` | All products picked |
-| `distribution_started` | Channel dispatch profiles applied |
-| `vehicle_loaded` | Vehicle loading completed |
-| `batch_completed` | All vehicles dispatched |
+| `pool_updated` | Products entered Prepared Products Pool |
+| `wave_completed` | All products placed in pool |
+
+> Events for loading, vehicle dispatch, and delivery are owned by Loading & Allocation OS and Logistics OS.
 
 ---
 
 ## 12. Design Principles
 
 1. **Planning before Execution** — plan is always created before warehouse execution begins
-2. **Batch before Order** — warehouse team sees batches, not individual orders
-3. **Wave Picking before Packing** — collect all products first, then distribute
-4. **Channel Dispatch Rules after Picking** — dispatch profiles are applied post-collection
-5. **Warehouse operators execute batches** — not orders (customer service executes orders)
-6. **Planning is centralized** — done once per batch by an authorized planner
-7. **Execution is decentralized** — warehouse team, production team, drivers work independently
-8. **Everything generates Activity** — every action creates an audit trail
-9. **Everything is auditable** — all decisions can be reviewed and explained
+2. **Wave before Order** — warehouse team sees waves, not individual orders
+3. **Wave Picking before Distribution** — collect all products first, then distribute
+4. **Preparation ends at the Pool** — wave is complete when products are in the Prepared Products Pool
+
+---
+
+## 13. Configuration Platform Dependency (TASK-CONFIGURATION-ARCH-001)
+
+Operations Planning consumes `ReservationPolicy` and `ManufacturingPolicy` from the Enterprise Configuration Platform. No planning threshold, shortage rule, or manufacturing trigger is hardcoded.
+
+### Policies Consumed
+
+| Policy | Used For |
+|---|---|
+| `ReservationPolicy` | Stock reservation rules, shortage tolerance, negative stock behavior |
+| `ManufacturingPolicy` | When to trigger manufacturing jobs, batch size rules, priority assignment |
+| `InventoryPolicy` | How to calculate available quantity, FIFO rules, warehouse priority |
+
+### Configuration Settings
+
+| Setting Key | Description |
+|---|---|
+| `preparation.wave.max_size` | Maximum orders per preparation wave |
+| `preparation.wave.auto_start` | Auto-start preparation when queue threshold is reached |
+| `inventory.reservation.allow_negative_stock` | Whether negative stock is permitted at reservation time |
+| `manufacturing.mrp.auto_trigger` | Auto-trigger manufacturing job from MRP shortage output |
+| `manufacturing.prp.priority_mode` | How manufacturing priority is assigned (sla_deadline / fifo / manual) |
+
+### Feature Flags
+
+```
+modules.preparation_os           — must be enabled for Preparation OS to run
+workflow.stages.preparation      — preparation stage enabled in Fulfillment Profiles
+```
+
+### Audit
+
+Every Wave creation, MRP calculation, and PRP trigger stores the `config_version_id` of the active `ReservationPolicy` / `ManufacturingPolicy` at the time of planning. This enables point-in-time reconstruction of why a wave was sized the way it was and which rules were applied.
+
+> Full specification: `docs/architecture/ENTERPRISE-CONFIGURATION-PLATFORM.md`
+5. **Channel Fulfillment Profiles own post-loading workflow** — not Operations Planning
+6. **Vehicle assignment is a Loading & Allocation concern** — never assigned during wave planning
+7. **Warehouse operators execute waves** — not orders (customer service executes orders)
+8. **Planning is centralized** — done once per wave by an authorized planner
+9. **Execution is decentralized** — warehouse team, production team, drivers work independently
+10. **Everything generates Activity** — every action creates an audit trail
+11. **Everything is auditable** — all decisions can be reviewed and explained
 
 ---
 
 ## 13. Entity Relationships
 
 ```
-FulfillmentBatch
+PreparationWave
 ├── → Warehouse
 ├── Orders[] → Order
 ├── RequiredProducts[] → Product
 ├── RequiredMaterials[] → RawMaterial
 ├── ManufacturingJobs[] → ManufacturingJob
 ├── WavePickList → WavePickList
-├── VehicleAssignments[] → Vehicle
-├── ChannelDistributions[] (by dispatch profile)
+├── PreparedProductsPool entries[] (output)
 └── ActivityEvents[]
+
+[Owned by Loading & Allocation OS — not Operations Planning:]
+ShippingWave → Vehicle[] → VehicleInventory → Logistics OS
 ```
 
 ---
 
-## 14. Future Suggestions
+## 14. Enterprise UX Architecture
 
-- **Route Optimization** — optimize vehicle routes across order delivery addresses
-- **Dynamic Batching** — AI-suggested batch groupings based on area and vehicle capacity
+The Operations Planning / Preparation OS follows the Enterprise UX Architecture defined in `docs/ux/`.
+
+| Component | UX Standard |
+|---|---|
+| Main workspace (waves) | WORKSPACE-FRAMEWORK.md (Standard Operational) |
+| Wave DataGrid | DATAGRID-STANDARD.md (grouping by status, AI insights column) |
+| Wave Detail Drawer | DETAIL-DRAWER-STANDARD.md (Wide 90% — complex operational object) |
+| Timeline tab | TIMELINE-UX-STANDARD.md |
+| Documents tab | DOCUMENTS-UX-STANDARD.md |
+| AI wave suggestions | AI-UX-STANDARD.md (EP-AI-01: Smart Action Chips; EP-AI-02: Workspace Panel) |
+| Exception + SLA alerts | NOTIFICATION-UX-STANDARD.md (Exception, Alert types) |
+| Mobile (warehouse floor) | MOBILE-UX-STANDARD.md |
+
+> Full UX Architecture: `docs/ux/ENTERPRISE-UX-ARCHITECTURE.md`
+
+---
+
+## 15. Future Suggestions
+
+- **Dynamic Wave Building** — AI-suggested wave groupings based on area and vehicle capacity
 - **Real-time Driver App** — mobile interface for drivers to confirm deliveries
 - **Warehouse Navigation** — pick path optimization based on shelf locations
-- **Batch Templates** — save batch configurations for recurring daily operations
+- **Wave Templates** — save wave configurations for recurring daily operations
 - **Predictive MRP** — use historical patterns to pre-calculate next-day requirements

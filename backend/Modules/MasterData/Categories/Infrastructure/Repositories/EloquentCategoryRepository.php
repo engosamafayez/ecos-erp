@@ -21,6 +21,11 @@ final class EloquentCategoryRepository implements CategoryRepositoryInterface
     {
         $query = Category::query()->with('parent');
 
+        $scope = trim((string) ($filters['scope'] ?? ''));
+        if ($scope !== '') {
+            $query->where('category_scope', $scope);
+        }
+
         $parentId = trim((string) ($filters['parent_id'] ?? ''));
         if ($parentId !== '') {
             $query->where('parent_id', $parentId);

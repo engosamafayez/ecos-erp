@@ -7,6 +7,7 @@ namespace Modules\Inventory\CountSessions\Domain\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\Products\Domain\Models\Product;
 
@@ -20,7 +21,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
  * @property float|null $variance_qty
  * @property float|null $variance_value
  * @property string|null $notes
- * @property string|null $photo_path
+ * Phase 1.1: photo_path deferred — see PKG-COUNT-002
  */
 class InventoryCountLine extends Model
 {
@@ -39,20 +40,26 @@ class InventoryCountLine extends Model
         'inventory_item_id',
         'system_qty',
         'counted_qty',
+        'damaged_qty',
+        'damage_reason',
+        'shortage_qty',
         'variance_qty',
         'variance_value',
+        'unit_cost_snapshot',
         'notes',
-        'photo_path',
     ];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
         return [
-            'system_qty'    => 'decimal:4',
-            'counted_qty'   => 'decimal:4',
-            'variance_qty'  => 'decimal:4',
-            'variance_value'=> 'decimal:2',
+            'system_qty'         => 'decimal:4',
+            'counted_qty'        => 'decimal:4',
+            'damaged_qty'        => 'decimal:4',
+            'shortage_qty'       => 'decimal:4',
+            'variance_qty'       => 'decimal:4',
+            'variance_value'     => 'decimal:2',
+            'unit_cost_snapshot' => 'decimal:4',
         ];
     }
 
@@ -72,5 +79,11 @@ class InventoryCountLine extends Model
     public function inventoryItem(): BelongsTo
     {
         return $this->belongsTo(InventoryItem::class);
+    }
+
+    /** @return HasMany<InventoryCountLineAttachment, $this> */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(InventoryCountLineAttachment::class, 'count_line_id');
     }
 }

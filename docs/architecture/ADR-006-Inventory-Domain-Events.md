@@ -683,3 +683,14 @@ in ADR-005.
   event payloads satisfy all subscribers' expectations becomes important. Consumer-driven
   contract tests (e.g. Pact) should be evaluated when the event catalog reaches five or more
   active subscribers.
+
+---
+
+## Related ADRs
+
+- **[ADR-012 — Unified Enterprise Pricing Policy](adr/ADR-012-unified-enterprise-pricing-policy.md):**
+  The `InventoryStockReceived` event — published by `ReceiveStockAction` after a goods receipt
+  commits — is the upstream trigger for the full pricing cascade. The landed unit cost carried
+  in the event payload seeds the `material_cost` update, which cascades through `recipe_cost`
+  to `product_cost`, which creates a mandatory `PricingReview`. ADR-012 defines the rules and
+  approval workflow that govern what happens after this cascade completes.

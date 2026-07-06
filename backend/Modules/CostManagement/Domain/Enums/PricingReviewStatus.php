@@ -11,11 +11,12 @@ enum PricingReviewStatus: string
     case Kept        = 'kept';
     case CustomPrice = 'custom_price';
     case Snoozed     = 'snoozed';
+    case Rejected    = 'rejected';
 
     public function isResolved(): bool
     {
         return match ($this) {
-            self::Approved, self::Kept, self::CustomPrice => true,
+            self::Approved, self::Kept, self::CustomPrice, self::Rejected => true,
             default => false,
         };
     }

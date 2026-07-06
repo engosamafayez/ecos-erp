@@ -44,6 +44,7 @@ class MaterialCostHistory extends Model
         'source',
         'goods_receipt_id',
         'updated_by',
+        'reason',
         'affected_recipe_ids',
         'affected_product_ids',
         'occurred_at',

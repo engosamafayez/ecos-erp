@@ -15,7 +15,7 @@ import {
   type CategoryFormValues,
 } from '@/features/categories/components/category-form-schema';
 import { useCreateCategory, useUpdateCategory } from '@/features/categories/hooks/use-categories';
-import type { Category } from '@/features/categories/types/category';
+import type { Category, CategoryScope } from '@/features/categories/types/category';
 
 const FORM_ID = 'category-form';
 
@@ -23,6 +23,7 @@ type CategoryFormDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   category?: Category | null;
+  defaultScope?: CategoryScope;
 };
 
 function extractMessage(error: unknown): string {
@@ -31,7 +32,7 @@ function extractMessage(error: unknown): string {
     : 'Something went wrong. Please try again.';
 }
 
-export function CategoryFormDrawer({ open, onOpenChange, category }: CategoryFormDrawerProps) {
+export function CategoryFormDrawer({ open, onOpenChange, category, defaultScope }: CategoryFormDrawerProps) {
   const { t } = useTranslation('categories');
   const { t: tCommon } = useTranslation('common');
   const isEdit = Boolean(category);
@@ -41,14 +42,14 @@ export function CategoryFormDrawer({ open, onOpenChange, category }: CategoryFor
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
-    defaultValues: toFormValues(category),
+    defaultValues: toFormValues(category, defaultScope),
   });
 
   useEffect(() => {
     if (open) {
-      form.reset(toFormValues(category));
+      form.reset(toFormValues(category, defaultScope));
     }
-  }, [open, category, form]);
+  }, [open, category, defaultScope, form]);
 
   const isPending = createCategory.isPending || updateCategory.isPending;
 

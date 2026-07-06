@@ -23,21 +23,29 @@ final class CompleteCountSessionAction
         return DB::transaction(function () use ($session): InventoryCountSession {
             $session->loadMissing('lines');
 
-            // Calculate variance per line and store computed variance_value
             foreach ($session->lines as $line) {
                 /** @var InventoryCountLine $line */
                 if ($line->counted_qty === null) {
                     continue;
                 }
 
-                $varianceQty = round((float) $line->counted_qty - (float) $line->system_qty, 4);
-
-                // Variance value uses average_cost as a proxy (product must be loaded)
                 $line->loadMissing('product');
-                $avgCost      = (float) ($line->product?->average_cost ?? 0);
-                $varianceValue = round($varianceQty * $avgCost, 2);
+
+                $countedStr  = (string) $line->counted_qty;
+                $damagedStr  = (string) ($line->damaged_qty ?? '0');
+                $systemStr   = (string) $line->system_qty;
+                $avgCostStr  = (string) ($line->product?->average_cost ?? '0');
+
+                // shortage = system - counted - damaged  (> 0 means units are unaccounted)
+                $totalAccountedStr = bcadd($countedStr, $damagedStr, 4);
+                $shortageQty       = bcsub($systemStr, $totalAccountedStr, 4);
+
+                // variance = counted - system  (kept for compatibility; negative when there's a shortage)
+                $varianceQty   = bcsub($countedStr, $systemStr, 4);
+                $varianceValue = bcmul($varianceQty, $avgCostStr, 2);
 
                 $line->update([
+                    'shortage_qty'   => $shortageQty,
                     'variance_qty'   => $varianceQty,
                     'variance_value' => $varianceValue,
                 ]);

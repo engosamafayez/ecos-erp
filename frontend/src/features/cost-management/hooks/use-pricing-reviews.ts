@@ -5,6 +5,8 @@ import type {
   ApprovePayload,
   AssignPayload,
   BulkApprovePayload,
+  BulkPolicyPayload,
+  InlineUpdatePayload,
   PricingReviewsQuery,
   SnoozePayload,
 } from '@/features/cost-management/types/pricing-review';
@@ -60,6 +62,24 @@ export function useBulkApprove() {
   return useMutation({
     mutationFn: (payload: BulkApprovePayload) =>
       pricingReviewService.bulkApprove(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
+export function useInlineUpdateReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: InlineUpdatePayload }) =>
+      pricingReviewService.inlineUpdate(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
+export function useBulkPolicyUpdate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BulkPolicyPayload) =>
+      pricingReviewService.bulkPolicy(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });
 }

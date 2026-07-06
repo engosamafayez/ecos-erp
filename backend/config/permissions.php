@@ -36,12 +36,19 @@ return [
             'categories' => ['view', 'create', 'update', 'delete'],
             'units'      => ['view', 'create', 'update', 'delete'],
             'stock'      => ['view', 'adjust', 'receive', 'count'],
+            'count'      => ['view', 'create', 'update', 'delete', 'approve'],
         ],
 
         'purchasing' => [
-            'suppliers'       => ['view', 'create', 'update', 'delete'],
-            'purchase_orders' => ['view', 'create', 'update', 'delete'],
-            'goods_receipts'  => ['view', 'create', 'update', 'delete'],
+            'suppliers'          => ['view', 'create', 'update', 'delete'],
+            'purchase_orders'    => ['view', 'create', 'update', 'delete'],
+            'goods_receipts'     => ['view', 'create', 'update', 'delete'],
+            'materials'          => ['view', 'create', 'update', 'delete', 'submit', 'review', 'select_supplier', 'approve', 'cancel'],
+            'material_requests'  => ['view', 'create', 'edit', 'cancel', 'submit'],
+            'purchases'          => ['view', 'create', 'review', 'merge', 'split', 'select_supplier', 'approve', 'execute', 'cancel', 'export'],
+            'supplier_returns'   => ['view', 'create', 'edit', 'submit', 'approve', 'reject', 'cancel', 'complete'],
+            'supplier_invoices'  => ['view', 'create', 'edit', 'validate', 'post', 'cancel'],
+            'receiving'          => ['view', 'create', 'post', 'cancel'],
         ],
 
         'sales' => [
@@ -88,9 +95,11 @@ return [
             'inventory.units'            => ['view', 'create', 'update', 'delete'],
             'inventory.products'         => ['view', 'create', 'update', 'delete'],
             'inventory.stock'            => ['view', 'adjust', 'receive', 'count'],
+            'inventory.count'            => ['view', 'create', 'update', 'delete', 'approve'],
             'purchasing.suppliers'       => ['view', 'create', 'update', 'delete'],
             'purchasing.purchase_orders' => ['view', 'create', 'update', 'delete'],
             'purchasing.goods_receipts'  => ['view', 'create', 'update', 'delete'],
+            'purchasing.materials'       => ['view', 'create', 'update', 'delete', 'submit', 'review', 'select_supplier', 'approve', 'cancel'],
             'crm.customers'              => ['view', 'create', 'update', 'delete'],
             'sales.channels'             => ['view', 'create', 'update', 'delete', 'sync'],
             'sales.orders'               => ['view', 'create', 'update', 'delete', 'fulfill'],
@@ -98,12 +107,14 @@ return [
         ],
 
         'warehouse-manager' => [
-            'inventory.warehouses' => ['view', 'create', 'update'],
-            'inventory.categories' => ['view'],
-            'inventory.units'      => ['view'],
-            'inventory.products'   => ['view'],
-            'inventory.stock'      => ['view', 'adjust', 'receive', 'count'],
+            'inventory.warehouses'  => ['view', 'create', 'update'],
+            'inventory.categories'  => ['view'],
+            'inventory.units'       => ['view'],
+            'inventory.products'    => ['view'],
+            'inventory.stock'       => ['view', 'adjust', 'receive', 'count'],
+            'inventory.count'       => ['view', 'create', 'update', 'approve'],
             'purchasing.goods_receipts' => ['view', 'create'],
+            'purchasing.materials'  => ['view', 'create', 'submit'],
         ],
 
         'purchasing' => [
@@ -114,6 +125,7 @@ return [
             'purchasing.suppliers'       => ['view', 'create', 'update', 'delete'],
             'purchasing.purchase_orders' => ['view', 'create', 'update', 'delete'],
             'purchasing.goods_receipts'  => ['view', 'create', 'update', 'delete'],
+            'purchasing.materials'       => ['view', 'create', 'update', 'delete', 'submit', 'review', 'select_supplier', 'approve', 'cancel'],
         ],
 
         'sales' => [
@@ -131,6 +143,7 @@ return [
             'inventory.units'      => ['view'],
             'inventory.products'   => ['view'],
             'inventory.stock'      => ['view', 'adjust', 'receive', 'count'],
+            'inventory.count'      => ['view', 'create', 'update'],
             'purchasing.goods_receipts' => ['view'],
         ],
 
@@ -146,6 +159,7 @@ return [
             'purchasing.suppliers'       => ['view'],
             'purchasing.purchase_orders' => ['view'],
             'purchasing.goods_receipts'  => ['view'],
+            'purchasing.materials'       => ['view'],
             'crm.customers'              => ['view'],
             'sales.channels'             => ['view'],
             'sales.orders'               => ['view'],

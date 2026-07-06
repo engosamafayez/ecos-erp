@@ -43,6 +43,7 @@ class Category extends Model
         'level',
         'sort_order',
         'is_active',
+        'category_scope',
     ];
 
     /**

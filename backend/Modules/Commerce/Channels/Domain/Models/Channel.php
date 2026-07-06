@@ -14,16 +14,19 @@ use Modules\Commerce\Channels\Domain\Enums\ChannelHealthStatus;
 use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
 use Modules\Commerce\Channels\Domain\Enums\ConnectionStatus;
 use Modules\Commerce\Channels\Infrastructure\Database\Factories\ChannelFactory;
-use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
-use Modules\Organization\Companies\Domain\Models\Company;
+use Modules\Organization\Brands\Domain\Models\Brand;
+use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
 
 /**
  * Commerce channel (WooCommerce store, Shopify shop, etc.).
  *
  * @property string $id
- * @property string $company_id
- * @property string|null $default_warehouse_id
+ * @property string $brand_id
+ * @property string|null $business_account_id
+ * @property string|null $code
  * @property string $name
+ * @property string|null $channel_type
+ * @property string|null $channel_role
  * @property ChannelPlatform $platform
  * @property string $store_url
  * @property bool $is_active
@@ -58,9 +61,12 @@ class Channel extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'company_id',
-        'default_warehouse_id',
+        'brand_id',
+        'business_account_id',
+        'code',
         'name',
+        'channel_type',
+        'channel_role',
         'platform',
         'store_url',
         'is_active',
@@ -104,19 +110,19 @@ class Channel extends Model
     }
 
     /**
-     * @return BelongsTo<Company, $this>
+     * @return BelongsTo<Brand, $this>
      */
-    public function company(): BelongsTo
+    public function brand(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Brand::class);
     }
 
     /**
-     * @return BelongsTo<Warehouse, $this>
+     * @return BelongsTo<BusinessAccount, $this>
      */
-    public function defaultWarehouse(): BelongsTo
+    public function businessAccount(): BelongsTo
     {
-        return $this->belongsTo(Warehouse::class, 'default_warehouse_id');
+        return $this->belongsTo(BusinessAccount::class);
     }
 
     /**

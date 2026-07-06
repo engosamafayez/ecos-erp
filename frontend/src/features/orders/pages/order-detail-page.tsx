@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OrderFormDrawer } from '@/features/orders/components/order-form-drawer';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { useOrderQuery } from '@/features/orders/hooks/use-orders';
+import { getMediaUrl } from '@/lib/media';
 import { ROUTES } from '@/router/routes';
 
 function fmt(n: number) {
@@ -206,10 +207,10 @@ export function OrderDetailPage() {
               {order.lines.map((line) => (
                 <tr key={line.id}>
                   <td className="py-2 pr-3">
-                    {line.product?.image_url ? (
+                    {getMediaUrl(line.product?.image_url) ? (
                       <img
-                        src={line.product.image_url}
-                        alt={line.product.name}
+                        src={getMediaUrl(line.product!.image_url)!}
+                        alt={line.product!.name}
                         className="size-10 rounded object-cover"
                       />
                     ) : (

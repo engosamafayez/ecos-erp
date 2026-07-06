@@ -32,6 +32,7 @@ final class CategoryResource extends JsonResource
             'level' => (int) $this->level,
             'sort_order' => (int) $this->sort_order,
             'is_active' => (bool) $this->is_active,
+            'category_scope' => $this->category_scope ?? 'product',
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

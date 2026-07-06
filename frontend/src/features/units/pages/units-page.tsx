@@ -115,7 +115,7 @@ export function UnitsPage() {
         subtitle={t('subtitle')}
         breadcrumbs={[
           { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: 'Products', to: ROUTES.inventoryProducts },
+          { label: 'Inventory', to: ROUTES.products },
           { label: t('title') },
         ]}
         actions={

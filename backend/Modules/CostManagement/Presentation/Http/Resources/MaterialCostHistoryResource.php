@@ -32,6 +32,7 @@ class MaterialCostHistoryResource extends JsonResource
             'source'               => $this->source?->value ?? $this->source,
             'goods_receipt_id'     => $this->goods_receipt_id,
             'updated_by'           => $this->updated_by,
+            'reason'               => $this->reason,
             'affected_recipe_count'=> count((array) ($this->affected_recipe_ids ?? [])),
             'affected_product_count'=> count((array) ($this->affected_product_ids ?? [])),
             'affected_recipe_ids'  => $this->affected_recipe_ids ?? [],

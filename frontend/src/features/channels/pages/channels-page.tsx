@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, Pencil, Plus, RefreshCw, Trash2, Wifi } from 'lucide-react';
+import { Download, Pencil, Plus, RefreshCw, SlidersHorizontal, Trash2, Wifi } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -14,6 +14,14 @@ import {
 import type { ColumnDef } from '@/components/crud/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ChannelFormDrawer } from '@/features/channels/components/channel-form-drawer';
 import { ConnectionStatusBadge } from '@/features/channels/components/connection-status-badge';
 import { ImportOrdersResultDialog } from '@/features/channels/components/import-orders-result-dialog';
@@ -41,6 +49,32 @@ import { ROUTES } from '@/router/routes';
 
 const PER_PAGE = 10;
 
+const OPTIONAL_COLS = [
+  { key: 'brand',             label: 'Brand' },
+  { key: 'company',           label: 'Company' },
+  { key: 'platform',          label: 'Platform' },
+  { key: 'store_url',         label: 'Store URL' },
+  { key: 'connection_status', label: 'Connection' },
+  { key: 'last_sync_at',      label: 'Last Sync' },
+] as const;
+
+function exportChannelsCsv(items: Channel[]) {
+  const headers = ['Name', 'Brand', 'Company', 'Platform', 'Store URL', 'Connection', 'Status', 'Last Sync'];
+  const rows = items.map((c) => [
+    c.name, c.brand?.name ?? '', c.brand?.company?.name ?? '', c.platform, c.store_url,
+    c.connection_status, c.is_active ? 'Active' : 'Inactive',
+    c.last_sync_at ? new Date(c.last_sync_at).toLocaleDateString() : '',
+  ]);
+  const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `channels-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const PLATFORM_OPTIONS: { value: ChannelPlatform; label: string }[] = [
   { value: 'woocommerce', label: 'WooCommerce' },
   { value: 'shopify', label: 'Shopify' },
@@ -64,6 +98,7 @@ export function ChannelsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerChannel, setDrawerChannel] = useState<Channel | null>(null);
   const [deleting, setDeleting] = useState<Channel | null>(null);
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
   const [testingId, setTestingId] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncResult, setSyncResult] = useState<SyncStockResult | null>(null);
@@ -165,6 +200,14 @@ export function ChannelsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function toggleCol(key: string) {
+    setHiddenCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
+
   const handleSort = (field: string) => {
     setSort((curr) =>
       curr.field === field
@@ -226,9 +269,14 @@ export function ChannelsPage() {
       cell: (c) => <span className="font-medium">{c.name}</span>,
     },
     {
+      key: 'brand',
+      header: t('columns.brand', 'Brand'),
+      cell: (c) => <span className="text-muted-foreground">{c.brand?.name ?? '—'}</span>,
+    },
+    {
       key: 'company',
       header: t('columns.company'),
-      cell: (c) => <span className="text-muted-foreground">{c.company?.name ?? '—'}</span>,
+      cell: (c) => <span className="text-muted-foreground">{c.brand?.company?.name ?? '—'}</span>,
     },
     {
       key: 'platform',
@@ -293,6 +341,40 @@ export function ChannelsPage() {
         }
       />
 
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-muted-foreground text-sm">{t('kpi.total', 'Total Channels')}</div>
+            <div className="text-2xl font-bold">{isLoading ? '—' : (meta?.total ?? 0)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-muted-foreground text-sm">{t('kpi.active', 'Active')}</div>
+            <div className="text-2xl font-bold text-emerald-600">
+              {isLoading ? '—' : items.filter((c) => c.is_active).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-muted-foreground text-sm">{t('kpi.connected', 'Connected')}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {isLoading ? '—' : items.filter((c) => c.connection_status === 'connected').length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-muted-foreground text-sm">{t('kpi.platforms', 'Platforms')}</div>
+            <div className="text-2xl font-bold">
+              {isLoading ? '—' : new Set(items.map((c) => c.platform)).size}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
@@ -301,6 +383,7 @@ export function ChannelsPage() {
             searchRef={searchRef}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
+            onExport={() => exportChannelsCsv(items)}
             onClearFilters={() => { setStatusFilter('all'); setPlatformFilter(''); setPage(1); }}
             filterPanel={
               <div className="flex flex-col gap-3">
@@ -333,10 +416,32 @@ export function ChannelsPage() {
                 </div>
               </div>
             }
-          />
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <SlidersHorizontal className="size-4" />
+                  Columns
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {OPTIONAL_COLS.map(({ key, label }) => (
+                  <DropdownMenuCheckboxItem
+                    key={key}
+                    checked={!hiddenCols.has(key)}
+                    onCheckedChange={() => toggleCol(key)}
+                  >
+                    {label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </EntityToolbar>
 
           <EntityTable<Channel>
-            columns={columns}
+            columns={columns.filter((c) => !hiddenCols.has(c.key))}
             data={items}
             getRowId={(c) => c.id}
             isLoading={isLoading}

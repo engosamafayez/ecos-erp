@@ -18,6 +18,7 @@ use Modules\Operations\DemandAnalysis\Application\Services\DemandAnalysisService
 use Modules\Operations\DemandAnalysis\Domain\Enums\InventoryStatus;
 use Modules\Operations\DemandAnalysis\Events\DemandAnalysisCompleted;
 use Modules\Operations\DemandAnalysis\Events\DemandAnalysisStarted;
+use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Tests\TestCase;
@@ -31,6 +32,7 @@ class DemandAnalysisTest extends TestCase
 
     private User $user;
     private Company $company;
+    private Brand $brand;
     private Warehouse $warehouse;
     private Channel $channel;
     private Customer $customer;
@@ -40,10 +42,10 @@ class DemandAnalysisTest extends TestCase
         parent::setUp();
 
         $this->company   = Company::factory()->create();
+        $this->brand     = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
         $this->channel   = Channel::factory()->create([
-            'company_id'           => $this->company->id,
-            'default_warehouse_id' => $this->warehouse->id,
+            'brand_id' => $this->brand->id,
         ]);
         $this->customer = Customer::factory()->create();
         $this->user     = User::factory()->create();

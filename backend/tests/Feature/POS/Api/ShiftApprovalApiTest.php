@@ -6,6 +6,7 @@ namespace Tests\Feature\POS\Api;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Modules\POS\Session\Domain\Contracts\SessionRepositoryInterface;
 use Modules\POS\Session\Domain\Enums\DeviceType;
 use Modules\POS\Session\Domain\Models\Session;
@@ -26,9 +27,8 @@ final class ShiftApprovalApiTest extends TestCase
     private User                     $user;
     private ShiftRepositoryInterface $shiftRepo;
 
-    private const TERMINAL_ID = 'a0000000-0000-4000-a000-000000000033';
-    private const CASHIER_ID  = 'b0000000-0000-4000-b000-000000000033';
-    private const CURRENCY    = 'EGP';
+    private const CASHIER_ID = 'b0000000-0000-4000-b000-000000000033';
+    private const CURRENCY   = 'EGP';
 
     protected function setUp(): void
     {
@@ -121,8 +121,10 @@ final class ShiftApprovalApiTest extends TestCase
         // Open shift — cannot be approved directly (must submit first)
         $sessionRepo = app(SessionRepositoryInterface::class);
         $session     = Session::open(
-            terminalId:  self::TERMINAL_ID,
             cashierId:   self::CASHIER_ID,
+            companyId:   'c0000000-0000-4000-c000-000000000033',
+            channelId:   null,
+            warehouseId: 'w0000000-0000-4000-w000-000000000033',
             fingerprint: DeviceFingerprint::of('fp-approval-open'),
             ipAddress:   '127.0.0.1',
             deviceType:  DeviceType::Browser,
@@ -131,7 +133,7 @@ final class ShiftApprovalApiTest extends TestCase
 
         $shift = Shift::open(
             sessionId:   (string) $session->id,
-            terminalId:  self::TERMINAL_ID,
+            terminalId:  self::CASHIER_ID, // terminal_id = cashier_id after refactor
             cashierId:   self::CASHIER_ID,
             openingCash: Money::of('500.00', self::CURRENCY),
             shiftNumber: ShiftNumber::of(1),
@@ -150,8 +152,10 @@ final class ShiftApprovalApiTest extends TestCase
     {
         $sessionRepo = app(SessionRepositoryInterface::class);
         $session     = Session::open(
-            terminalId:  self::TERMINAL_ID,
-            cashierId:   self::CASHIER_ID,
+            cashierId:   Str::uuid()->toString(), // unique UUID per test invocation
+            companyId:   'c0000000-0000-4000-c000-000000000033',
+            channelId:   null,
+            warehouseId: 'w0000000-0000-4000-w000-000000000033',
             fingerprint: DeviceFingerprint::of('fp-approval-test-' . uniqid()),
             ipAddress:   '127.0.0.1',
             deviceType:  DeviceType::Browser,
@@ -160,7 +164,7 @@ final class ShiftApprovalApiTest extends TestCase
 
         $shift = Shift::open(
             sessionId:   (string) $session->id,
-            terminalId:  self::TERMINAL_ID,
+            terminalId:  self::CASHIER_ID, // terminal_id = cashier_id after refactor
             cashierId:   self::CASHIER_ID,
             openingCash: Money::of('500.00', self::CURRENCY),
             shiftNumber: ShiftNumber::of(1),

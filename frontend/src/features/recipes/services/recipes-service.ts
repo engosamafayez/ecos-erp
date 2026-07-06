@@ -27,4 +27,23 @@ export const recipesService = {
   async remove(id: string): Promise<void> {
     await api.delete(`/boms/${id}`);
   },
+
+  async toggleStatus(recipe: Recipe): Promise<Recipe> {
+    const payload: RecipePayload = {
+      product_id:              recipe.product_id,
+      version:                 recipe.version,
+      is_active:               !recipe.is_active,
+      notes:                   recipe.notes,
+      manufacturing_cost:      recipe.manufacturing_cost ?? 0,
+      other_costs:             recipe.other_costs ?? 0,
+      execution_instructions:  recipe.execution_instructions,
+      lines: (recipe.lines ?? []).map((l) => ({
+        raw_material_id:  l.raw_material_id,
+        quantity:         l.quantity,
+        waste_percentage: l.waste_percentage ?? 0,
+      })),
+    };
+    const { data } = await api.put<ApiResponse<Recipe>>(`/boms/${recipe.id}`, payload);
+    return data.data;
+  },
 };

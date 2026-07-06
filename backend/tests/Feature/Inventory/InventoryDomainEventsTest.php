@@ -34,6 +34,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Inventory\StockLedger\Domain\Enums\MovementType;
 use Modules\Inventory\StockLedger\Domain\Models\StockMovement;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
+use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
@@ -347,8 +348,9 @@ class InventoryDomainEventsTest extends TestCase
         Queue::fake();
 
         // Wire up a product with an active channel mapping that has sync_stock enabled.
+        $brand = Brand::factory()->create(['company_id' => $this->company->id]);
         $channel = Channel::factory()->create([
-            'company_id' => $this->company->id,
+            'brand_id'   => $brand->id,
             'is_active'  => true,
             'sync_stock' => true,
         ]);

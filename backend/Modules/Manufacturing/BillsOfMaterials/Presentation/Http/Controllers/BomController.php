@@ -27,9 +27,20 @@ final class BomController extends Controller
     public function index(Request $request, ListBomsAction $action): JsonResponse
     {
         $filters = [
-            'search' => $request->query('search'),
-            'is_active' => $request->query('is_active', 'all'),
-            'sort_by' => $request->query('sort_by', 'created_at'),
+            'search'     => $request->query('search'),
+            'product_id' => $request->query('product_id'),
+            'company_id' => $request->query('company_id'),
+            'channel_id' => $request->query('channel_id'),
+            'is_active'  => match ($request->query('status', 'all')) {
+                'active' => true,
+                'draft'  => false,
+                default  => 'all',
+            },
+            'has_manufacturing_cost'  => $request->boolean('has_manufacturing_cost'),
+            'has_packaging_materials' => $request->boolean('has_packaging_materials'),
+            'updated_from'            => $request->query('updated_from'),
+            'updated_to'              => $request->query('updated_to'),
+            'sort_by'  => $request->query('sort_by', 'created_at'),
             'sort_dir' => $request->query('sort_dir', 'desc'),
             'per_page' => $request->query('per_page', 20),
         ];

@@ -8,7 +8,6 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Modules\MasterData\Warehouses\Domain\Contracts\WarehouseRepositoryInterface;
 use Modules\POS\Application\Commands\ProcessSaleCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
 use Modules\POS\Application\Events\SaleFinalized;
@@ -30,9 +29,9 @@ use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
 use Modules\POS\Sale\Domain\Models\Sale;
 use Modules\POS\Sale\Domain\ValueObjects\PaymentSummaryLine;
 use Modules\POS\Sale\Domain\ValueObjects\SaleLine;
+use Modules\POS\Session\Domain\Contracts\SessionRepositoryInterface;
 use Modules\POS\Shared\Domain\Enums\PaymentMethodType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
-use Modules\POS\Terminal\Domain\Contracts\TerminalRepositoryInterface;
 
 final class ProcessSaleService
 {
@@ -43,8 +42,7 @@ final class ProcessSaleService
         private readonly ReceiptRepositoryInterface        $receiptRepo,
         private readonly ReceiptNumberingStrategyInterface $receiptNumbering,
         private readonly DomainEventPublisherInterface     $publisher,
-        private readonly TerminalRepositoryInterface       $terminals,
-        private readonly WarehouseRepositoryInterface      $warehouses,
+        private readonly SessionRepositoryInterface        $sessionRepo,
     ) {}
 
     public function execute(ProcessSaleCommand $command): ProcessSaleResult
@@ -185,9 +183,6 @@ final class ProcessSaleService
             $this->receiptRepo->save($receipt);
         });
 
-        // Resolve the terminal → warehouse → company AFTER the transaction.
-        // If either lookup fails, the sale is still committed — we log critically
-        // and skip SaleFinalized so partial writes don't propagate bad context.
         $domainEvents = array_merge(
             $payment->pullDomainEvents(),
             $sale->pullDomainEvents(),
@@ -195,34 +190,13 @@ final class ProcessSaleService
             $receipt->pullDomainEvents(),
         );
 
-        $terminal = $this->terminals->findById($command->terminalId);
+        // Resolve company + warehouse from the session record — no terminal lookup needed.
+        $session = $this->sessionRepo->findById($command->sessionId);
 
-        if ($terminal === null) {
-            Log::channel('daily')->critical('[POS] Terminal not found — SaleFinalized will NOT be published', [
-                'sale_id'     => (string) $sale->id,
-                'terminal_id' => $command->terminalId,
-            ]);
-
-            $this->publisher->publishAll($domainEvents);
-
-            return new ProcessSaleResult(
-                saleId:        (string) $sale->id,
-                receiptId:     (string) $receipt->id,
-                receiptNumber: $receiptNumber,
-                totalAmount:   $sale->getTotal()->amount,
-                amountPaid:    $sale->getAmountPaid()->amount,
-                changeGiven:   $sale->getChangeGiven()->amount,
-                currency:      $sale->currency,
-            );
-        }
-
-        $warehouse = $this->warehouses->findById((string) $terminal->warehouse_id);
-
-        if ($warehouse === null) {
-            Log::channel('daily')->critical('[POS] Warehouse not found — SaleFinalized will NOT be published', [
-                'sale_id'      => (string) $sale->id,
-                'terminal_id'  => $command->terminalId,
-                'warehouse_id' => $terminal->warehouse_id,
+        if ($session === null || $session->warehouse_id === null || $session->company_id === null) {
+            Log::channel('daily')->warning('[POS] Session context incomplete — SaleFinalized will NOT be published', [
+                'sale_id'    => (string) $sale->id,
+                'session_id' => $command->sessionId,
             ]);
 
             $this->publisher->publishAll($domainEvents);
@@ -241,9 +215,9 @@ final class ProcessSaleService
         $saleFinalized = SaleFinalized::fromSaleContext(
             saleId:           (string) $sale->id,
             receiptNumber:    $receiptNumber,
-            companyId:        (string) $warehouse->company_id,
-            channelId:        null,
-            warehouseId:      (string) $terminal->warehouse_id,
+            companyId:        (string) $session->company_id,
+            channelId:        $session->channel_id ? (string) $session->channel_id : null,
+            warehouseId:      (string) $session->warehouse_id,
             sessionId:        $command->sessionId,
             shiftId:          $command->shiftId,
             terminalId:       $command->terminalId,

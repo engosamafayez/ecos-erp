@@ -26,6 +26,9 @@ final class StoreBomRequest extends FormRequest
             'version'                 => ['required', 'string', 'max:20'],
             'is_active'               => ['boolean'],
             'notes'                   => ['nullable', 'string', 'max:2000'],
+            'manufacturing_cost'      => ['nullable', 'numeric', 'min:0'],
+            'other_costs'             => ['nullable', 'numeric', 'min:0'],
+            'execution_instructions'  => ['nullable', 'string', 'max:5000'],
             'lines'                   => ['required', 'array', 'min:1'],
             'lines.*.raw_material_id' => [
                 'required',

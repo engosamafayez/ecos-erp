@@ -11,8 +11,10 @@ export type SessionStatus = 'open' | 'suspended' | 'closed';
 
 export type Session = {
   id: string;
-  terminal_id: string;
   cashier_id: string;
+  company_id: string | null;
+  channel_id: string | null;
+  warehouse_id: string | null;
   status: SessionStatus;
   device_fingerprint: string;
   device_type: string;
@@ -22,14 +24,35 @@ export type Session = {
   suspended_at: string | null;
 };
 
-export type PosTerminal = {
+export type PosCompany = {
   id: string;
   code: string;
   name: string;
+  currency: string;
+  is_active: boolean;
+};
+
+export type PosWarehouse = {
+  id: string;
+  company_id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+};
+
+export type PosChannel = {
+  id: string;
+  company_id: string;
+  name: string;
+  platform: string;
+  platform_label: string;
+  is_active: boolean;
 };
 
 export type OpenSessionPayload = {
-  terminal_id: string;
+  company_id: string;
+  channel_id?: string;
+  warehouse_id: string;
   device_fingerprint: string;
   device_type: string;
 };
@@ -355,8 +378,10 @@ export type PosMode = 'sale' | 'return' | 'exchange' | 'manager';
 export type PosContext = {
   sessionId: string | null;
   shiftId: string | null;
-  terminalId: string;
   cashierId: string;
   cashierName: string;
+  companyId: string | null;
+  channelId: string | null;
+  warehouseId: string | null;
   currency: string;
 };

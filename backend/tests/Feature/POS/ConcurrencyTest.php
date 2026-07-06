@@ -30,13 +30,14 @@ final class ConcurrencyTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const TERMINAL_ID = 'a0000000-0000-4000-a000-000000099001';
-    private const CASHIER_ID  = 'b0000000-0000-4000-b000-000000099001';
-    private const CURRENCY    = 'EGP';
+    private const CASHIER_ID   = 'b0000000-0000-4000-b000-000000099001';
+    private const COMPANY_ID   = 'c0000000-0000-4000-c000-000000099001';
+    private const WAREHOUSE_ID = 'w0000000-0000-4000-w000-000000099001';
+    private const CURRENCY     = 'EGP';
 
     // ── Session guard ─────────────────────────────────────────────────────────
 
-    public function test_opening_second_session_for_same_terminal_throws(): void
+    public function test_opening_second_session_for_same_cashier_throws(): void
     {
         $service = app(OpenSessionService::class);
         $command = $this->makeSessionCommand();
@@ -47,25 +48,29 @@ final class ConcurrencyTest extends TestCase
         $service->execute($command);
     }
 
-    public function test_opening_sessions_for_different_terminals_succeeds(): void
+    public function test_opening_sessions_for_different_cashiers_succeeds(): void
     {
         $service = app(OpenSessionService::class);
 
-        $terminalA = 'a0000000-0000-4000-a000-000000099002';
-        $terminalB = 'a0000000-0000-4000-a000-000000099003';
+        $cashierA = 'b0000000-0000-4000-b000-000000099002';
+        $cashierB = 'b0000000-0000-4000-b000-000000099003';
 
         $service->execute(new OpenSessionCommand(
-            terminalId:        $terminalA,
-            cashierId:         self::CASHIER_ID,
-            deviceFingerprint: 'fp-terminal-a',
+            cashierId:         $cashierA,
+            companyId:         self::COMPANY_ID,
+            channelId:         null,
+            warehouseId:       self::WAREHOUSE_ID,
+            deviceFingerprint: 'fp-cashier-a',
             ipAddress:         '10.0.0.1',
             deviceType:        'browser',
         ));
 
         $service->execute(new OpenSessionCommand(
-            terminalId:        $terminalB,
-            cashierId:         self::CASHIER_ID,
-            deviceFingerprint: 'fp-terminal-b',
+            cashierId:         $cashierB,
+            companyId:         self::COMPANY_ID,
+            channelId:         null,
+            warehouseId:       self::WAREHOUSE_ID,
+            deviceFingerprint: 'fp-cashier-b',
             ipAddress:         '10.0.0.2',
             deviceType:        'browser',
         ));
@@ -87,15 +92,16 @@ final class ConcurrencyTest extends TestCase
         $service->execute($command);
     }
 
-    public function test_shift_numbers_are_sequential_for_same_terminal(): void
+    public function test_shift_numbers_are_sequential_for_same_cashier(): void
     {
-        $sessionRepo = app(SessionRepositoryInterface::class);
+        $sessionRepo  = app(SessionRepositoryInterface::class);
         $shiftService = app(OpenShiftService::class);
 
-        // First session + shift
         $session1 = Session::open(
-            terminalId:  self::TERMINAL_ID,
             cashierId:   self::CASHIER_ID,
+            companyId:   self::COMPANY_ID,
+            channelId:   null,
+            warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of('fp-seq-1'),
             ipAddress:   '127.0.0.1',
             deviceType:  DeviceType::Browser,
@@ -104,7 +110,7 @@ final class ConcurrencyTest extends TestCase
 
         $result1 = $shiftService->execute(new OpenShiftCommand(
             sessionId:           (string) $session1->id,
-            terminalId:          self::TERMINAL_ID,
+            terminalId:          self::CASHIER_ID, // terminal_id = cashier_id after refactor
             cashierId:           self::CASHIER_ID,
             openingCashAmount:   '100.00',
             openingCashCurrency: self::CURRENCY,
@@ -120,9 +126,10 @@ final class ConcurrencyTest extends TestCase
         $strategy = app(ReceiptNumberingStrategyInterface::class);
         $now      = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
 
-        $terminalId = self::TERMINAL_ID;
-        $n1 = $strategy->next($terminalId, $now);
-        $n2 = $strategy->next($terminalId, $now);
+        // terminal_id = cashier_id in the new model; receipt counters are keyed on cashier_id
+        $cashierId = self::CASHIER_ID;
+        $n1 = $strategy->next($cashierId, $now);
+        $n2 = $strategy->next($cashierId, $now);
 
         $this->assertNotSame($n1, $n2);
         $this->assertStringStartsWith('RCP-', $n1);
@@ -131,10 +138,10 @@ final class ConcurrencyTest extends TestCase
 
     public function test_receipt_numbering_sequences_are_isolated_per_terminal(): void
     {
-        $strategy   = app(ReceiptNumberingStrategyInterface::class);
-        $now        = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $terminalA  = 'a0000000-0000-4000-a000-000000099010';
-        $terminalB  = 'a0000000-0000-4000-a000-000000099011';
+        $strategy  = app(ReceiptNumberingStrategyInterface::class);
+        $now       = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $terminalA = 'a0000000-0000-4000-a000-000000099010';
+        $terminalB = 'a0000000-0000-4000-a000-000000099011';
 
         $nA = $strategy->next($terminalA, $now);
         $nB = $strategy->next($terminalB, $now);
@@ -148,8 +155,10 @@ final class ConcurrencyTest extends TestCase
     {
         $sessionRepo = app(SessionRepositoryInterface::class);
         $session     = Session::open(
-            terminalId:  self::TERMINAL_ID,
             cashierId:   self::CASHIER_ID,
+            companyId:   self::COMPANY_ID,
+            channelId:   null,
+            warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of('fp-conc-test-' . uniqid()),
             ipAddress:   '127.0.0.1',
             deviceType:  DeviceType::Browser,
@@ -162,8 +171,10 @@ final class ConcurrencyTest extends TestCase
     private function makeSessionCommand(): OpenSessionCommand
     {
         return new OpenSessionCommand(
-            terminalId:        self::TERMINAL_ID,
             cashierId:         self::CASHIER_ID,
+            companyId:         self::COMPANY_ID,
+            channelId:         null,
+            warehouseId:       self::WAREHOUSE_ID,
             deviceFingerprint: 'fp-conc-' . uniqid(),
             ipAddress:         '127.0.0.1',
             deviceType:        'browser',
@@ -174,7 +185,7 @@ final class ConcurrencyTest extends TestCase
     {
         return new OpenShiftCommand(
             sessionId:           $sessionId,
-            terminalId:          self::TERMINAL_ID,
+            terminalId:          self::CASHIER_ID, // terminal_id = cashier_id after refactor
             cashierId:           self::CASHIER_ID,
             openingCashAmount:   '500.00',
             openingCashCurrency: self::CURRENCY,

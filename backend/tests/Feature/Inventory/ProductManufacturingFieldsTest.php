@@ -237,7 +237,7 @@ class ProductManufacturingFieldsTest extends TestCase
     {
         $this->assertSame('finished_good', Product::TYPE_FINISHED_GOOD);
         $this->assertSame('raw_material', Product::TYPE_RAW_MATERIAL);
-        $this->assertSame([Product::TYPE_FINISHED_GOOD, Product::TYPE_RAW_MATERIAL], Product::TYPES);
+        $this->assertSame([Product::TYPE_FINISHED_GOOD, Product::TYPE_RAW_MATERIAL, Product::TYPE_PACKAGING_MATERIAL], Product::TYPES);
     }
 
     public function test_raw_material_can_have_any_cost_source(): void

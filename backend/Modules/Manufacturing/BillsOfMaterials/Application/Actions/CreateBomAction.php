@@ -26,12 +26,15 @@ final class CreateBomAction extends BaseAction
         }
 
         $attributes = [
-            'bom_number'         => $this->boms->nextBomNumber(),
-            'product_id'         => $dto->product_id,
-            'version'            => $dto->version,
-            'bom_version_number' => $this->boms->nextVersionNumber($dto->product_id),
-            'is_active'          => $dto->is_active,
-            'notes'              => $dto->notes,
+            'bom_number'             => $this->boms->nextBomNumber(),
+            'product_id'             => $dto->product_id,
+            'version'                => $dto->version,
+            'bom_version_number'     => $this->boms->nextVersionNumber($dto->product_id),
+            'is_active'              => $dto->is_active,
+            'notes'                  => $dto->notes,
+            'manufacturing_cost'     => $dto->manufacturing_cost,
+            'other_costs'            => $dto->other_costs,
+            'execution_instructions' => $dto->execution_instructions,
         ];
 
         $lines = array_map(

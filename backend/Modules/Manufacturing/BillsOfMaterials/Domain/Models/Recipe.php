@@ -45,13 +45,24 @@ class Recipe extends Model
         'bom_version_number',
         'is_active',
         'notes',
+        'manufacturing_cost',
+        'other_costs',
+        'execution_instructions',
+        'yield_quantity',
+        'recipe_cost',
+        'recipe_cost_updated_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active'          => 'boolean',
-            'bom_version_number' => 'integer',
+            'is_active'              => 'boolean',
+            'bom_version_number'     => 'integer',
+            'manufacturing_cost'     => 'float',
+            'other_costs'            => 'float',
+            'yield_quantity'         => 'float',
+            'recipe_cost'            => 'float',
+            'recipe_cost_updated_at' => 'datetime',
         ];
     }
 

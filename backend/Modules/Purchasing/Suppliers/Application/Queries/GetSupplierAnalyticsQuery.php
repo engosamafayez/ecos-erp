@@ -60,6 +60,68 @@ final class GetSupplierAnalyticsQuery
         $grossProfit = max(0.0, $saleValue - $costValue);
         $marginPct   = $saleValue > 0 ? round($grossProfit / $saleValue * 100, 2) : 0.0;
 
+        // ── Performance metrics ───────────────────────────────────────────────
+        $leadTime = DB::table('goods_receipts as gr')
+            ->join('purchase_orders as po', 'gr.purchase_order_id', '=', 'po.id')
+            ->where('po.supplier_id', $supplierId)
+            ->where('gr.status', GoodsReceiptStatus::Posted->value)
+            ->whereNull('gr.deleted_at')
+            ->selectRaw("
+                AVG(DATEDIFF(gr.receipt_date, po.order_date)) as avg_lead_time_days
+            ")
+            ->value('avg_lead_time_days');
+
+        $deliveryRow = DB::table('goods_receipts as gr')
+            ->join('purchase_orders as po', 'gr.purchase_order_id', '=', 'po.id')
+            ->where('po.supplier_id', $supplierId)
+            ->where('gr.status', GoodsReceiptStatus::Posted->value)
+            ->whereNotNull('po.expected_date')
+            ->whereNull('gr.deleted_at')
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN gr.receipt_date <= po.expected_date THEN 1 ELSE 0 END) as on_time
+            ")
+            ->first();
+
+        $onTimeRate = ($deliveryRow && (int) $deliveryRow->total > 0)
+            ? round((float) $deliveryRow->on_time / (float) $deliveryRow->total * 100, 1)
+            : null;
+
+        $fillRow = DB::table('goods_receipt_lines as grl')
+            ->join('goods_receipts as gr', 'grl.goods_receipt_id', '=', 'gr.id')
+            ->join('purchase_orders as po', 'gr.purchase_order_id', '=', 'po.id')
+            ->where('po.supplier_id', $supplierId)
+            ->where('gr.status', GoodsReceiptStatus::Posted->value)
+            ->whereNull('gr.deleted_at')
+            ->selectRaw("
+                COALESCE(SUM(COALESCE(grl.net_received_quantity, grl.received_quantity)), 0) as received,
+                COALESCE(SUM(grl.ordered_quantity), 0) as ordered
+            ")
+            ->first();
+
+        $fillRate = ($fillRow && (float) $fillRow->ordered > 0)
+            ? round((float) $fillRow->received / (float) $fillRow->ordered * 100, 1)
+            : null;
+
+        $activePosCount = DB::table('purchase_orders')
+            ->where('supplier_id', $supplierId)
+            ->whereIn('status', ['approved', 'partially_received'])
+            ->whereNull('deleted_at')
+            ->count();
+
+        $pendingGrsCount = DB::table('goods_receipts as gr')
+            ->join('purchase_orders as po', 'gr.purchase_order_id', '=', 'po.id')
+            ->where('po.supplier_id', $supplierId)
+            ->where('gr.status', '!=', GoodsReceiptStatus::Posted->value)
+            ->whereNull('gr.deleted_at')
+            ->count();
+
+        $totalProductsSupplied = DB::table('inventory_receipt_layers')
+            ->where('supplier_id', $supplierId)
+            ->where('remaining_qty', '>', 0)
+            ->distinct('product_id')
+            ->count('product_id');
+
         return [
             'supplier_id'   => $supplierId,
             'supplier_name' => $supplier->name,
@@ -77,12 +139,18 @@ final class GetSupplierAnalyticsQuery
             'current_inventory_cost_value'    => round($costValue, 2),
             'current_inventory_sale_value'    => round($saleValue, 2),
             'potential_gross_profit'          => round($grossProfit, 2),
-
-            // New: open-layer profitability
             'inventory_remaining_cost'          => round($costValue, 2),
             'inventory_remaining_sale_value'     => round($saleValue, 2),
             'inventory_remaining_profit'         => round($grossProfit, 2),
             'inventory_remaining_margin_percent' => $marginPct,
+
+            // Performance metrics
+            'avg_lead_time_days'    => $leadTime !== null ? round((float) $leadTime, 1) : null,
+            'on_time_delivery_rate' => $onTimeRate,
+            'fill_rate'             => $fillRate,
+            'active_pos_count'      => $activePosCount,
+            'pending_grs_count'     => $pendingGrsCount,
+            'total_products_supplied' => $totalProductsSupplied,
         ];
     }
 }

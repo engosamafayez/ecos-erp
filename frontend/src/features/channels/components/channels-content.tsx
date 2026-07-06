@@ -146,9 +146,14 @@ export function ChannelsContent() {
       cell: (c) => <span className="font-medium">{c.name}</span>,
     },
     {
+      key: 'brand',
+      header: t('columns.brand', 'Brand'),
+      cell: (c) => <span className="text-muted-foreground">{c.brand?.name ?? '—'}</span>,
+    },
+    {
       key: 'company',
       header: t('columns.company'),
-      cell: (c) => <span className="text-muted-foreground">{c.company?.name ?? '—'}</span>,
+      cell: (c) => <span className="text-muted-foreground">{c.brand?.company?.name ?? '—'}</span>,
     },
     {
       key: 'platform',

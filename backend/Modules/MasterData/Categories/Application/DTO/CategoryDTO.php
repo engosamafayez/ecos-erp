@@ -19,6 +19,7 @@ final class CategoryDTO extends BaseDTO
         public readonly ?string $description = null,
         public readonly int $sort_order = 0,
         public readonly bool $is_active = true,
+        public readonly string $category_scope = 'product',
     ) {}
 
     /**
@@ -33,6 +34,7 @@ final class CategoryDTO extends BaseDTO
             description: self::nullableString($data, 'description'),
             sort_order: (int) ($data['sort_order'] ?? 0),
             is_active: (bool) ($data['is_active'] ?? true),
+            category_scope: (string) ($data['category_scope'] ?? 'product'),
         );
     }
 

@@ -24,6 +24,10 @@ final class BillOfMaterial extends Model
         'bom_version_number',
         'is_active',
         'notes',
+        'manufacturing_cost',
+        'other_costs',
+        'execution_instructions',
+        'recipe_cost',
     ];
 
     protected function casts(): array
@@ -31,6 +35,9 @@ final class BillOfMaterial extends Model
         return [
             'is_active'          => 'boolean',
             'bom_version_number' => 'integer',
+            'manufacturing_cost' => 'float',
+            'other_costs'        => 'float',
+            'recipe_cost'        => 'float',
         ];
     }
 

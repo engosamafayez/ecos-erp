@@ -34,6 +34,8 @@ export type ProductTableProps = {
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
   onStatusToggle: (product: Product) => void;
+  onViewRecipe?: (product: Product) => void;
+  onCreateRecipe?: (product: Product) => void;
   focusedRowId?: string | null;
   columnVisibility?: ColumnVisibilityState;
   pagination?: GridPaginationConfig;
@@ -60,15 +62,17 @@ export function ProductTable({
   onEdit,
   onDelete,
   onStatusToggle,
+  onViewRecipe,
+  onCreateRecipe,
   focusedRowId,
   columnVisibility,
   pagination,
   emptyState,
 }: ProductTableProps) {
   const columns = useMemo(
-    () => createProductColumns({ onView, onEdit, onDelete, onStatusToggle }),
+    () => createProductColumns({ onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onView, onEdit, onDelete, onStatusToggle],
+    [onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe],
   );
 
   return (

@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\IAM\Application\Services\PermissionService;
+use Modules\IAM\Application\Commands\ResetDevAdminCommand;
 use Modules\IAM\Domain\Contracts\AuthServiceInterface;
 use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
 use Modules\IAM\Infrastructure\Middleware\RequirePermissionMiddleware;
@@ -35,6 +36,10 @@ final class IamServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([ResetDevAdminCommand::class]);
+        }
 
         $this->app['router']->aliasMiddleware('permission', RequirePermissionMiddleware::class);
 

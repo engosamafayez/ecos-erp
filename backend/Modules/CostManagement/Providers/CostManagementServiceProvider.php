@@ -28,6 +28,7 @@ class CostManagementServiceProvider extends ServiceProvider
         $this->app->singleton(MaterialCostService::class, function ($app) {
             return new MaterialCostService(
                 $app->make(CostCascadeService::class),
+                $app->make(PricingReviewService::class),
             );
         });
 

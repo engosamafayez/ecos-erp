@@ -19,25 +19,20 @@ final class EloquentWarehouseRepository implements WarehouseRepositoryInterface
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Warehouse::query()->with(['company', 'branch']);
+        $query = Warehouse::query()->with(['company']);
 
         $companyId = trim((string) ($filters['company_id'] ?? ''));
         if ($companyId !== '') {
             $query->where('company_id', $companyId);
         }
 
-        $branchId = trim((string) ($filters['branch_id'] ?? ''));
-        if ($branchId !== '') {
-            $query->where('branch_id', $branchId);
-        }
-
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
                 $builder
-                    ->where('code', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%")
-                    ->orWhere('city', 'like', "%{$search}%");
+                    ->where('code', 'ilike', "%{$search}%")
+                    ->orWhere('name', 'ilike', "%{$search}%")
+                    ->orWhere('city', 'ilike', "%{$search}%");
             });
         }
 
@@ -54,30 +49,28 @@ final class EloquentWarehouseRepository implements WarehouseRepositoryInterface
         }
 
         $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
-
-        $perPage = (int) ($filters['per_page'] ?? 10);
-        $perPage = max(1, min($perPage, 100));
+        $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
 
         return $query->orderBy($sortBy, $sortDir)->paginate($perPage);
     }
 
     public function findById(string $id): ?Warehouse
     {
-        return Warehouse::query()->with(['company', 'branch'])->find($id);
+        return Warehouse::query()->with(['company'])->find($id);
     }
 
     public function create(array $attributes): Warehouse
     {
         $warehouse = Warehouse::query()->create($attributes);
 
-        return $warehouse->load(['company', 'branch']);
+        return $warehouse->load(['company']);
     }
 
     public function update(Warehouse $warehouse, array $attributes): Warehouse
     {
         $warehouse->update($attributes);
 
-        return $warehouse->load(['company', 'branch']);
+        return $warehouse->load(['company']);
     }
 
     public function delete(Warehouse $warehouse): void

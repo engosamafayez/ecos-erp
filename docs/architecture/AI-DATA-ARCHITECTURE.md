@@ -496,3 +496,577 @@ These events can be streamed via PostgreSQL LISTEN/NOTIFY to an AI inference ser
 | Per-BOM version performance | ✓ DESIGNED | bom_version_number in manufacturing_transactions |
 
 **Awaiting approval before any implementation begins.**
+
+---
+
+## Enterprise Platform Services AI Integration (TASK-EPS-ARCH-001)
+
+### AI and EPS-01 — Enterprise Event Platform
+
+AI integrates with the Enterprise Event Platform as a first-class subscriber and publisher.
+
+**AI as subscriber:**
+- AI subscribes to event categories relevant to its models (logistics, preparation, allocation, manufacturing, etc.)
+- AI never queries operational modules directly — all historical data is sourced from events
+- AI event subscriptions are configured via `AIPolicy` (`ai.event_subscriptions` setting)
+
+**AI as publisher (ai.* event category):**
+- `ai.recommendation.generated` — a new recommendation is ready
+- `ai.prediction.made` — a demand/availability/delay prediction is produced
+- `ai.anomaly.detected` — pattern deviation detected in operational data
+- `ai.model.retrained` — a model completed a training cycle
+
+**Governance (GOV-015):**
+AI consumes Events and produces Recommendations. AI never queries operational module databases directly.
+
+### AI and EPS-04 — Enterprise Notification Platform
+
+AI-triggered notifications flow exclusively through the Notification Platform:
+- AI publishes `ai.recommendation.generated` event → EPS-04 delivers to relevant users
+- Notification priority and targeting governed by `NotificationPolicy`
+- AI may not call notification delivery APIs directly
+
+### AI Event Entry Points (EPS extensions)
+
+| Entry Point | Event Consumed | AI Action |
+|---|---|---|
+| EP-AI-01 | `logistics.delivery.failed` | Update delivery failure prediction model |
+| EP-AI-02 | `preparation.shortage.detected` | Update shortage risk scores |
+| EP-AI-03 | `loading.exception.raised` | Update loading delay prediction model |
+| EP-AI-04 | `allocation.partial` | Train partial allocation pattern detector |
+| EP-AI-05 | `manufacturing.job.completed` | Update yield prediction model |
+| EP-AI-06 | `order.confirmed` | Update demand forecast |
+
+---
+
+## Configuration Platform AI Integration (TASK-CONFIGURATION-ARCH-001)
+
+The AI Platform is governed by `AIPolicy` resolved from the Enterprise Configuration Platform. AI never bypasses the Policy Engine.
+
+### AIPolicy Configuration Settings
+
+| Setting Key | Description |
+|---|---|
+| `ai.recommendations_enabled` | Global AI recommendations switch |
+| `ai.min_confidence_threshold` | Minimum confidence to surface a recommendation |
+| `ai.require_explanation` | AI must always provide explanation text |
+| `ai.allow_auto_apply` | AI may apply recommendations without human approval |
+| `ai.auto_apply_max_confidence` | Confidence floor for auto-apply |
+| `ai.audit_all_evaluations` | Log every AI evaluation (high-volume toggle) |
+
+### AI Recommendation Structure
+
+Every AI recommendation must include:
+
+```
+AIRecommendation
+├── entry_point               string    — which EP-* generated this (e.g. "EP-A1")
+├── policy_id                 → Policy  — which policy was consulted
+├── policy_version            int
+├── config_version_id         → ConfigurationVersion
+├── recommendation            mixed     — the suggested decision
+├── confidence                decimal   — 0.0 to 1.0
+├── explanation               text      — human-readable reason
+├── override_permitted        bool      — can a human override this?
+├── evaluation_audit_id       → PolicyEvaluationAudit
+└── generated_at              timestamp
+```
+
+### Feature Flags for AI
+
+```
+ai.recommendations.enabled                 — global toggle
+ai.recommendations.allocation              — allocation suggestions
+ai.recommendations.vehicle_planning        — vehicle planning suggestions
+ai.recommendations.route_optimization      — route optimization
+ai.recommendations.demand_forecast         — demand forecasting
+ai.recommendations.supplier_scoring        — supplier scoring
+ai.auto_apply.enabled                      — auto-application without human review
+```
+
+---
+
+## Enterprise Fulfillment AI Integration
+
+> **Added:** TASK-FULFILLMENT-ARCH-001 (ADR-015)  
+> **Scope:** Fulfillment Platform — Preparation OS, Loading & Allocation OS, Vehicle Mobile Warehouse, Logistics OS
+
+The Enterprise Fulfillment Platform generates rich operational data at each stage of the fulfillment pipeline. This section documents the AI entry points and training datasets produced by the new fulfillment modules.
+
+---
+
+### Entry Point EP-G1 — Shipping Company Auto-Selection Optimization
+
+**Where:** `channel_shipping_rules` + `shipping_coverage` + historical delivery performance  
+**Signal:** Every auto-selected shipping company, with the delivery outcome (on-time, failed, returned).
+
+**Current (rule-based):** Selection is deterministic — first company with coverage + available capacity, ordered by static priority number.
+
+**AI opportunity:**
+- **Dynamic priority scoring** — replace static priority numbers with predicted delivery success rates per company per zone per day-of-week
+- **Capacity prediction** — predict which companies will hit their daily cap before planning starts
+- **Zone performance patterns** — detect that Company A consistently fails in Zone X during Ramadan; auto-deprioritize
+
+**Training signal:** `shipping_coverage` + `channel_shipping_rules` + delivery outcome per (company, zone, channel) combination.
+
+---
+
+### Entry Point EP-G2 — Address Resolution Quality
+
+**Where:** `orders` (geography_zone_id resolution status)  
+**Signal:** Orders that failed address resolution vs. those that succeeded, with the zone they eventually landed in.
+
+**AI opportunity:**
+- **Fuzzy address matching** — use historical resolution patterns to resolve ambiguous addresses automatically
+- **Address quality scoring** — predict at order creation whether the address is likely to fail geocoding
+- **Zone boundary learning** — learn zone assignments from manually resolved cases
+
+**Training signal:** Historical manual zone assignments + their corresponding raw address strings.
+
+---
+
+### Entry Point EP-V1 — Vehicle Count Pre-Estimation
+
+**Where:** `vehicle_plans` + `geography_groups`  
+**Signal:** Historical VehiclePlans with their final vehicle count, total orders, total weight, total volume, and any planner-added extra vehicles.
+
+**Current (rule-based):** CEIL formula applied separately for each constraint dimension.
+
+**AI opportunity:**
+- **Pre-estimation** — predict final vehicle count before full calculation (reduces planning latency for large order sets)
+- **Planner override prediction** — predict when the planner is likely to add/remove vehicles and pre-suggest it
+- **Utilization optimization** — suggest order redistributions that bring all vehicles to within 5% utilization of each other
+
+**Training signal:** `vehicle_plans` + `vehicle_plan_slots` (final approved distribution) vs. initial calculated distribution.
+
+---
+
+### Entry Point EP-V2 — Route-Aware Order Distribution
+
+**Where:** `vehicle_plan_slots` + `orders` (delivery addresses) + `delivery_stops` (historical timing)  
+**Signal:** Clusters of orders that, when assigned to the same vehicle, produced efficient routes vs. those that caused backtracking.
+
+**AI opportunity:**
+- **Geographic clustering** — automatically group orders into slots that minimize total route distance
+- **Backtracking detection** — flag proposed slot distributions that will require inefficient routing
+- **Time-window optimization** — group orders with similar customer-preferred delivery windows
+
+**Training signal:** `delivery_stops` (sequence vs. actual travel times) + `vehicle_plan_slots` (order distribution) + geographic coordinates.
+
+---
+
+### Entry Point EP-A1 — Allocation Priority Learning
+
+**Where:** `order_allocations` + `partial_fulfillment_events`  
+**Signal:** Which allocation priority policies produced the best delivery outcomes (on-time, no returns, no complaints).
+
+**Current (rule-based):** Priority is a static ordered list (Paid → COD → Deferred → Others).
+
+**AI opportunity:**
+- **Dynamic priority scoring** — score each order's delivery success probability and use it to sequence allocation
+- **Partial allocation impact modeling** — predict which partial allocations will lead to customer complaints
+- **Policy recommendation** — suggest changes to the AllocationPriorityPolicy based on observed outcomes
+
+**Training signal:** `order_allocations` (allocation_mode, priority_rank) + delivery outcomes + return rates per order type.
+
+---
+
+### Entry Point EP-A2 — Driver Override Pattern Analysis
+
+**Where:** `allocation_revisions` (actor_type = driver)  
+**Signal:** Which driver overrides led to better outcomes vs. worse outcomes.
+
+**AI opportunity:**
+- **Override quality scoring** — score drivers on whether their overrides improve or degrade delivery success
+- **Override anomaly detection** — detect drivers who consistently override in patterns that suggest fraud or negligence
+- **Driver coaching** — identify specific override types that correlate with improved customer satisfaction
+
+**Training signal:** `allocation_revisions` (driver overrides) + delivery outcomes + customer feedback per order.
+
+---
+
+### Entry Point EP-F1 — Preparation Wave Size Optimization
+
+**Where:** `preparation_waves` + `wave_pick_lists` + `prepared_products_pool`  
+**Signal:** Every wave records planned vs. actual preparation quantities, preparation time, and quality status.
+
+**Current (rule-based):** Wave size is configured manually per channel (`wave_size_max` in FulfillmentProfile).
+
+**AI opportunity:**
+- **Optimal wave size prediction** — predict the ideal wave size to minimize preparation time and pool wait time based on today's order volume, staff headcount, and available warehouse zones
+- **Preparation time estimation** — estimate how long a wave will take given its product mix and quantity
+- **Quality failure prediction** — predict which products are most likely to fail QC based on batch history
+
+**Training signal:** `preparation_waves` (planned vs. actual completion time) + `prepared_products_pool` (quality_status per entry) + staffing data.
+
+---
+
+### Entry Point EP-F2 — Shipping Wave Auto-Planning
+
+**Where:** `shipping_waves` + `vehicle_assignments` + `orders`  
+**Signal:** Every shipping wave records which orders were grouped together, which vehicles were assigned, utilization percentages, and whether the wave completed on time.
+
+**Current (rule-based):** Wave planner manually assigns orders to vehicles by region.
+
+**AI opportunity:**
+- **Auto-wave creation** — automatically group today's orders into optimal waves by region, vehicle capacity, and SLA deadline
+- **Vehicle assignment optimization** — recommend which vehicle to assign to each wave sub-group based on capacity and geographic coverage
+- **SLA risk prediction** — predict which waves are at risk of missing their SLA deadline based on current loading progress
+
+**Training signal:** Historical waves with vehicle utilization, on-time completion, and order groupings.
+
+---
+
+### Entry Point EP-F3 — Loading Session Anomaly Detection
+
+**Where:** `loading_sessions` + `loading_exceptions`  
+**Signal:** Every loading session records start time, completion time, products loaded, required quantities, and any exceptions raised.
+
+**Current (rule-based):** Exceptions are raised reactively when a scan reveals a missing product or wrong quantity.
+
+**AI opportunity:**
+- **Pre-loading shortage prediction** — before a loading session opens, predict which products are likely to be missing from the Prepared Products Pool
+- **Loading duration estimation** — estimate how long a loading session will take given the vehicle type and product count
+- **Exception pattern detection** — detect patterns (same product missing every Monday, same vehicle consistently under-loaded) for proactive intervention
+
+**Training signal:** `loading_sessions` (duration, exception count) + `loading_exceptions` (exception_type, product_id) + pool availability at session start.
+
+---
+
+### Entry Point EP-F4 — Vehicle Capacity Utilization
+
+**Where:** `vehicle_inventory_items` + `vehicles`  
+**Signal:** Every loaded vehicle has a complete weight and volume utilization record per trip.
+
+**Current (rule-based):** Capacity is checked reactively during loading — block if overloaded.
+
+**AI opportunity:**
+- **Load optimization** — given a set of orders and available vehicles, recommend the optimal distribution to maximize utilization while staying within capacity
+- **Vehicle fleet planning** — predict how many vehicles of each type are needed for tomorrow's orders based on demand forecast
+- **Refrigerated vehicle demand prediction** — predict demand for refrigerated capacity based on temperature-sensitive product orders
+
+**Training signal:** Historical `vehicle_inventory_items` (total weight, volume per trip) + orders per trip + delivery completion rates.
+
+---
+
+### Entry Point EP-F5 — Route & Delivery Optimization
+
+**Where:** `vehicle_routes` + `delivery_stops`  
+**Signal:** Every route records planned vs. actual delivery time per stop, stop sequence, total distance, and completion status.
+
+**Current (rule-based):** Route planning is manual or uses static geographic zones.
+
+**AI opportunity:**
+- **Dynamic route optimization** — reorder delivery stops in real time based on traffic, weather, and driver feedback
+- **ETA prediction** — predict arrival time at each stop based on current position, remaining stops, and historical travel patterns
+- **Failed delivery prediction** — predict which stops are likely to result in failed delivery (customer not home, address issue) based on historical patterns
+
+**Training signal:** `delivery_stops` (planned_arrival vs. actual_arrival, status) + geographic data + time-of-day patterns.
+
+---
+
+### Entry Point EP-F6 — End-of-Shift Reconciliation Variance Prediction
+
+**Where:** `vehicle_shift_reconciliations` + `vehicle_inventory_movements`  
+**Signal:** Every reconciliation records whether variance was found, the variance amount per product, and how it was resolved.
+
+**Current (rule-based):** Variance is detected and resolved manually at end of shift.
+
+**AI opportunity:**
+- **Variance prediction** — before the shift ends, predict which vehicles are likely to report variance based on their delivery confirmation patterns
+- **Write-off risk scoring** — predict which variances are likely to be written off vs. resolved as late delivery confirmations
+- **Driver performance scoring** — score drivers on delivery confirmation timeliness and reconciliation accuracy
+
+**Training signal:** `vehicle_shift_reconciliations` (has_variance, variance_resolution) + `vehicle_inventory_movements` (movement timestamps, confirmation gaps).
+
+---
+
+### Entry Point EP-F7 — Fulfillment Profile Performance
+
+**Where:** `fulfillment_profiles` + `fulfillment_stages` + order outcome data  
+**Signal:** Every executed fulfillment profile generates a completion time and outcome (delivered, failed, returned) per stage.
+
+**Current:** No per-profile performance measurement.
+
+**AI opportunity:**
+- **Profile effectiveness scoring** — score each profile by on-time delivery rate, exception rate, and cost per delivery
+- **Stage bottleneck detection** — detect which stage in a profile adds the most delay across all channels
+- **Profile configuration suggestions** — suggest profile modifications based on performance data (e.g., "enabling `allow_partial_loading` for Channel X would improve on-time rate by X%")
+
+**Training signal:** Per-order stage completion times + outcome metrics joined to `fulfillment_profiles.id`.
+
+---
+
+### Entry Point EP-F8 — Returns Prediction
+
+**Where:** `returns` + `delivery_stops` + product and customer data  
+**Signal:** Returns capture: product, customer, channel, return reason, and whether the inventory was restocked or written off.
+
+**Current:** Returns are reactive — processed after they arrive.
+
+**AI opportunity:**
+- **Return probability scoring** — at order creation, score the probability that an order will be returned based on product, customer, and channel history
+- **Return reason classification** — automatically classify return reasons from free-text descriptions
+- **Restocking feasibility** — predict whether a returned product can be restocked (condition prediction) before it physically arrives
+
+**Training signal:** Historical returns with return_reason + product condition at return + restock outcome.
+
+---
+
+## Fulfillment Training Datasets
+
+---
+
+### DS-G1 · Shipping Company Performance by Zone
+
+**Purpose:** Train shipping company selection optimization and delivery success prediction models.
+
+**Grain:** One row per order delivery, with shipping company, zone, channel, and outcome
+
+**Source tables:**
+```
+orders                          — order context
+delivery_stops                  — actual delivery outcome per stop
+shipping_companies              — carrier context
+zones                           — geographic context
+```
+
+**Key analytical fields:**
+```
+o.channel_id
+ds.vehicle_id → va.shipping_company_id   -- which company served this order
+z.id AS zone_id
+z.governorate_id
+ds.status                                -- delivered | failed
+DAYOFWEEK(ds.planned_arrival)            -- day of week
+MONTH(ds.planned_arrival)                -- month (seasonal patterns)
+ds.actual_arrival IS NOT NULL            -- was it on time?
+```
+
+---
+
+### DS-V1 · Vehicle Plan Accuracy
+
+**Purpose:** Train vehicle count pre-estimation and planner override prediction models.
+
+**Grain:** One row per VehiclePlan
+
+**Source tables:**
+```
+vehicle_plans               — core fact
+vehicle_plan_slots          — final distribution
+geography_groups            — input context
+```
+
+**Key analytical fields:**
+```
+vp.geography_group_id
+vp.shipping_company_id
+gg.zone_id
+gg.total_order_count
+gg.total_weight_kg
+gg.total_volume_m3
+COUNT(vps.id) AS final_vehicle_count
+AVG(vps.utilization_pct) AS avg_utilization
+MAX(vps.order_count) - MIN(vps.order_count) AS slot_imbalance
+```
+
+---
+
+### DS-A1 · Allocation Decision Outcomes
+
+**Purpose:** Train allocation priority optimization and override quality models.
+
+**Grain:** One row per OrderAllocation with its final delivery outcome
+
+**Source tables:**
+```
+order_allocations               — allocation decisions
+allocation_revisions            — override history
+delivery_stops                  — final delivery outcome
+orders                          — order context (payment_status, type)
+```
+
+**Key analytical fields:**
+```
+oa.allocation_mode
+oa.priority_rank
+oa.is_partial
+oa.allocated_by                 -- system | dispatcher | driver
+COUNT(ar.id) AS override_count
+ds.status AS delivery_outcome   -- delivered | failed
+o.payment_status
+o.order_type
+```
+
+---
+
+### DS-F1 · Preparation Wave Performance
+
+**Purpose:** Train preparation time estimation and wave size optimization models.
+
+**Grain:** One row per preparation wave
+
+**Source tables:**
+```
+preparation_waves           -- core fact
+wave_pick_lists             -- pick list completion timing
+prepared_products_pool      -- output (quality status, quantity per product)
+```
+
+**Key analytical fields:**
+```
+pw.id
+pw.orders_count
+pw.products_count
+pw.planning_date
+pw.approved_at
+pw.completed_at
+-- derived:
+EXTRACT(EPOCH FROM pw.completed_at - pw.approved_at) / 60 AS preparation_minutes
+COUNT(ppp.id) FILTER (WHERE ppp.quality_status = 'failed') AS quality_failures
+```
+
+---
+
+### DS-F2 · Shipping Wave Efficiency
+
+**Purpose:** Train wave auto-planning and SLA prediction models.
+
+**Grain:** One row per shipping wave
+
+**Source tables:**
+```
+shipping_waves              -- core fact
+vehicle_assignments         -- vehicles assigned
+loading_sessions            -- loading timing
+orders                      -- orders in wave
+```
+
+**Key analytical fields:**
+```
+sw.id
+sw.wave_number
+sw.orders_count
+sw.vehicles_count
+sw.region
+sw.sla_deadline
+sw.loading_completed_at
+-- derived:
+sw.sla_deadline > sw.dispatch_at AS met_sla
+COUNT(ls.exceptions) AS total_loading_exceptions
+AVG(va.utilization_pct) AS avg_vehicle_utilization
+```
+
+---
+
+### DS-F3 · Vehicle Trip Analytics
+
+**Purpose:** Train vehicle capacity optimization and driver performance models.
+
+**Grain:** One row per vehicle trip (one wave per vehicle per day)
+
+**Source tables:**
+```
+vehicle_inventory_items         -- products loaded + delivered
+vehicle_inventory_movements     -- movement events
+vehicle_shift_reconciliations   -- end-of-shift outcome
+vehicles                        -- capacity specs
+```
+
+**Key analytical fields:**
+```
+vii.vehicle_id
+vsr.trip_date
+SUM(vii.quantity_loaded * p.weight_per_unit) AS total_weight_loaded
+v.capacity_weight_kg
+SUM(vii.quantity_loaded * p.weight_per_unit) / v.capacity_weight_kg AS weight_utilization_pct
+SUM(vii.quantity_delivered) / SUM(vii.quantity_loaded) AS delivery_completion_rate
+vsr.has_variance
+vsr.variance_resolution
+```
+
+---
+
+### DS-F4 · Delivery Stop Performance
+
+**Purpose:** Train route optimization and ETA prediction models.
+
+**Grain:** One row per delivery stop
+
+**Source tables:**
+```
+delivery_stops              -- core fact
+vehicle_routes              -- route context
+orders                      -- order context (address, channel)
+```
+
+**Key analytical fields:**
+```
+ds.id
+ds.vehicle_id
+ds.trip_date
+ds.sequence
+ds.planned_arrival
+ds.actual_arrival
+ds.status
+-- derived:
+EXTRACT(EPOCH FROM ds.actual_arrival - ds.planned_arrival) / 60 AS arrival_delta_minutes
+ds.status = 'failed' AS is_failed_delivery
+DAYOFWEEK(ds.planned_arrival) AS day_of_week
+HOUR(ds.planned_arrival) AS hour_of_day
+```
+
+---
+
+### DS-F5 · Loading Session Audit
+
+**Purpose:** Train loading duration estimation and exception prediction models.
+
+**Grain:** One row per loading session
+
+**Source tables:**
+```
+loading_sessions            -- core fact
+loading_exceptions          -- exceptions raised
+```
+
+**Key analytical fields:**
+```
+ls.id
+ls.vehicle_id
+ls.wave_id
+ls.started_at
+ls.finished_at
+ls.status
+COUNT(DISTINCT le.id) AS exception_count
+COUNT(DISTINCT le.id) FILTER (WHERE le.severity = 'blocking') AS blocking_exceptions
+-- derived:
+EXTRACT(EPOCH FROM ls.finished_at - ls.started_at) / 60 AS session_duration_minutes
+ls.status = 'closed_with_exceptions' AS had_exceptions
+```
+
+---
+
+## Fulfillment AI Readiness Checklist
+
+| Requirement | Status | Notes |
+|---|---|---|
+| Wave performance data | ✓ DESIGNED | preparation_waves with timing fields |
+| Vehicle inventory movements (immutable) | ✓ DESIGNED | VehicleInventoryMovement append-only |
+| Delivery stop timing | ✓ DESIGNED | planned vs actual arrival per stop |
+| Loading exception catalog | ✓ DESIGNED | 8 exception types with severity |
+| End-of-shift reconciliation outcome | ✓ DESIGNED | VehicleShiftReconciliation with variance_resolution |
+| Fulfillment profile version history | ✓ DESIGNED | profile versioning on every modification |
+| Return reason tracking | ✓ DESIGNED | Returns linked to order + vehicle + loading session |
+| SLA tracking per wave | ✓ DESIGNED | sla_deadline vs actual dispatch |
+| Vehicle utilization data | ✓ DESIGNED | weight + volume per trip |
+| Quality status per pool entry | ✓ DESIGNED | PreparedProductsPool.quality_status |
+| Shipping company performance per zone | ✓ DESIGNED | delivery_stops + zone_id + shipping_company_id |
+| Vehicle plan accuracy tracking | ✓ DESIGNED | vehicle_plans with final slot distribution |
+| Allocation decision chain (immutable) | ✓ DESIGNED | allocation_revisions append-only |
+| Driver override tracking | ✓ DESIGNED | allocation_revisions with actor_type = driver |
+| Partial fulfillment event catalog | ✓ DESIGNED | partial_fulfillment_events with reason + outcome |
+| Geography resolution quality | ✓ DESIGNED | orders.geography_zone_id + resolution status |
+
+**Architecture approved. Implementation deferred pending module development.**

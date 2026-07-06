@@ -4,13 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/components/crud';
 import { Input } from '@/components/ui/input';
 import { CompanySelect } from '@/features/branches/components/company-select';
-import { BranchSelect } from '@/features/warehouses/components/branch-select';
 import type { WarehouseFormValues } from '@/features/warehouses/components/warehouse-form-schema';
 
 export function WarehouseFormFields() {
   const { t } = useTranslation('warehouses');
-  const { register, control, setValue, watch } = useFormContext<WarehouseFormValues>();
-  const companyId = watch('company_id');
+  const { register, control } = useFormContext<WarehouseFormValues>();
 
   return (
     <div className="flex flex-col gap-4">
@@ -22,29 +20,13 @@ export function WarehouseFormFields() {
             render={({ field }) => (
               <CompanySelect
                 value={field.value || null}
-                onChange={(value) => {
-                  field.onChange(value);
-                  setValue('branch_id', '');
-                }}
-              />
-            )}
-          />
-        </FormField>
-        <FormField name="branch_id" label={t('form.branch.label')} required>
-          <Controller
-            control={control}
-            name="branch_id"
-            render={({ field }) => (
-              <BranchSelect
-                companyId={companyId}
-                value={field.value || null}
                 onChange={field.onChange}
               />
             )}
           />
         </FormField>
-        <FormField name="code" label={t('form.code.label')} required>
-          <Input placeholder={t('form.code.placeholder')} {...register('code')} />
+        <FormField name="code" label={t('form.code.label')}>
+          <Input placeholder="Auto-generated" {...register('code')} />
         </FormField>
         <FormField name="name" label={t('form.name.label')} required>
           <Input placeholder={t('form.name.placeholder')} {...register('name')} />

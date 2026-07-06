@@ -4,8 +4,7 @@ import type { Warehouse, WarehousePayload } from '@/features/warehouses/types/wa
 
 export const warehouseSchema = z.object({
   company_id: z.string().min(1, 'Company is required.'),
-  branch_id: z.string().min(1, 'Branch is required.'),
-  code: z.string().min(1, 'Code is required.').max(50),
+  code: z.string().max(20).optional(),
   name: z.string().min(1, 'Name is required.').max(255),
   address: z.string().max(255).optional(),
   city: z.string().max(100).optional(),
@@ -15,11 +14,9 @@ export const warehouseSchema = z.object({
 
 export type WarehouseFormValues = z.infer<typeof warehouseSchema>;
 
-/** Build form values from an existing warehouse (or empty defaults for create). */
 export function toFormValues(warehouse?: Warehouse | null): WarehouseFormValues {
   return {
     company_id: warehouse?.company_id ?? '',
-    branch_id: warehouse?.branch_id ?? '',
     code: warehouse?.code ?? '',
     name: warehouse?.name ?? '',
     address: warehouse?.address ?? '',
@@ -30,5 +27,13 @@ export function toFormValues(warehouse?: Warehouse | null): WarehouseFormValues 
 }
 
 export function toPayload(values: WarehouseFormValues): WarehousePayload {
-  return { ...values };
+  return {
+    company_id: values.company_id,
+    code: values.code || undefined,
+    name: values.name,
+    address: values.address || undefined,
+    city: values.city || undefined,
+    country: values.country || undefined,
+    is_active: values.is_active,
+  };
 }

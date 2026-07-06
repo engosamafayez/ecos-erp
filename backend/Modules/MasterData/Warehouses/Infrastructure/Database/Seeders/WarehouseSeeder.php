@@ -6,7 +6,6 @@ namespace Modules\MasterData\Warehouses\Infrastructure\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
-use Modules\Organization\Branches\Domain\Models\Branch;
 use Modules\Organization\Companies\Domain\Models\Company;
 
 /**
@@ -22,22 +21,12 @@ final class WarehouseSeeder extends Seeder
             return;
         }
 
-        $branch = Branch::query()
-            ->where('company_id', $company->id)
-            ->where('code', 'CAI-HQ')
-            ->first();
-
-        if ($branch === null) {
-            return;
-        }
-
         Warehouse::updateOrCreate(
             ['company_id' => $company->id, 'code' => 'WH-MAIN'],
             [
-                'branch_id' => $branch->id,
-                'name' => 'Main Warehouse',
-                'city' => 'Cairo',
-                'country' => 'Egypt',
+                'name'      => 'Main Warehouse',
+                'city'      => 'Cairo',
+                'country'   => 'Egypt',
                 'is_active' => true,
             ],
         );

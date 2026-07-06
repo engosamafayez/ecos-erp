@@ -266,3 +266,13 @@ Actions related to stock reservation and fulfilment shipment will be defined in 
   movement may produce excessive API call volume at scale. A batch push strategy (every N
   minutes, aggregated per channel) should be evaluated and documented in a future ADR covering
   channel sync performance.
+
+---
+
+## Related ADRs
+
+- **[ADR-012 — Unified Enterprise Pricing Policy](adr/ADR-012-unified-enterprise-pricing-policy.md):**
+  The FIFO receipt layers and weighted-average cost fields defined in this ADR are the upstream
+  inputs for the cost cascade that drives pricing reviews. When a goods receipt posts a
+  `landed_unit_cost`, that value flows through `material_cost → recipe_cost → product_cost`
+  and triggers a mandatory `PricingReview` before any selling price change is made.

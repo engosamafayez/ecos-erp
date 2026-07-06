@@ -19,12 +19,14 @@ final class BillOfMaterialLine extends Model
         'bom_id',
         'raw_material_id',
         'quantity',
+        'waste_percentage',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity' => 'float',
+            'quantity'         => 'float',
+            'waste_percentage' => 'float',
         ];
     }
 

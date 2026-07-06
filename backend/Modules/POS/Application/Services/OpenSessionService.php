@@ -22,13 +22,15 @@ final class OpenSessionService
 
     public function execute(OpenSessionCommand $command): OpenSessionResult
     {
-        if ($this->sessionRepo->hasOpenSessionForTerminal($command->terminalId)) {
-            throw SessionAlreadyOpenException::forTerminal($command->terminalId);
+        if ($this->sessionRepo->hasOpenSessionForCashier($command->cashierId)) {
+            throw SessionAlreadyOpenException::forCashier($command->cashierId);
         }
 
         $session = Session::open(
-            terminalId:  $command->terminalId,
             cashierId:   $command->cashierId,
+            companyId:   $command->companyId,
+            channelId:   $command->channelId,
+            warehouseId: $command->warehouseId,
             fingerprint: DeviceFingerprint::of($command->deviceFingerprint),
             ipAddress:   $command->ipAddress,
             deviceType:  DeviceType::from($command->deviceType),

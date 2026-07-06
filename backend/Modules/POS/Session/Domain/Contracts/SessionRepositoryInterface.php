@@ -10,10 +10,16 @@ interface SessionRepositoryInterface
 {
     public function findById(string $id): ?Session;
 
-    /** Returns the currently Open session for the given terminal, or null if none exists. */
+    /** Returns the currently Open session for the given cashier, or null if none exists. */
+    public function findOpenByCashier(string $cashierId): ?Session;
+
+    /** Returns true if the cashier currently has an Open session. */
+    public function hasOpenSessionForCashier(string $cashierId): bool;
+
+    /** @deprecated Use findOpenByCashier(). terminal_id now holds cashier_id. */
     public function findOpenByTerminal(string $terminalId): ?Session;
 
-    /** Returns true if the terminal currently has an Open session. */
+    /** @deprecated Use hasOpenSessionForCashier(). terminal_id now holds cashier_id. */
     public function hasOpenSessionForTerminal(string $terminalId): bool;
 
     public function save(Session $session): void;

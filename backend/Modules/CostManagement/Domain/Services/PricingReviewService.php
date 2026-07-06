@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\CostManagement\Domain\Services;
 
 use Illuminate\Support\Collection;
+use Modules\Commerce\ProductMappings\Domain\Enums\SyncStatus;
+use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
 use Modules\CostManagement\Domain\Enums\PricingReviewStatus;
 use Modules\CostManagement\Domain\Models\PriceApproval;
 use Modules\CostManagement\Domain\Models\PricingReview;
@@ -21,7 +23,97 @@ use Modules\Inventory\Products\Domain\Models\Product;
  */
 final class PricingReviewService
 {
-    private const DEFAULT_TARGET_MARGIN = 30.0;
+    public const DEFAULT_TARGET_MARGIN = 30.0;
+
+    /**
+     * Create or update a pending pricing review for a finished product.
+     *
+     * Rules enforced here:
+     *  - If product_cost did not actually change: returns null (no-op).
+     *  - If an open (pending/snoozed) review already exists: update it in-place.
+     *  - Otherwise: create a new Pending review.
+     *
+     * Callers should call this inside the same DB transaction as the cost update
+     * so that a concurrent cascade for the same product cannot race to create two rows.
+     */
+    public function upsertForProduct(
+        Product $product,
+        float $newProductCost,
+        float $previousProductCost,
+        string $companyId,
+        ?string $historyId,
+    ): ?PricingReview {
+        // No-op: cost did not move
+        if (abs($newProductCost - $previousProductCost) < 0.0001) {
+            return null;
+        }
+
+        $product->loadMissing('brand');
+        $sellingPrice   = (float) ($product->regular_price ?? 0.0);
+        $targetMargin   = $product->effectiveTargetMargin();
+        $suggestedPrice = $targetMargin < 100
+            ? round($newProductCost / (1 - $targetMargin / 100), 4)
+            : $newProductCost;
+        $discountPct       = $product->effectiveDiscountPct();
+        $suggestedSalePrice = round($suggestedPrice * (1 - $discountPct / 100), 4);
+        $currentMargin  = $sellingPrice > 0
+            ? round((($sellingPrice - $newProductCost) / $sellingPrice) * 100, 4)
+            : 0.0;
+
+        $diff    = $newProductCost - $previousProductCost;
+        $impacts = $diff > 0 ? ['cost_increased'] : ['cost_decreased'];
+        if ($currentMargin < $targetMargin) {
+            $impacts[] = 'margin_below_target';
+        }
+        $impacts = array_values(array_unique($impacts));
+
+        // Look for an open review (pending or snoozed) for this product+company
+        $existing = PricingReview::query()
+            ->where('product_id', $product->id)
+            ->where('company_id', $companyId)
+            ->whereNull('channel_id')
+            ->whereIn('status', [
+                PricingReviewStatus::Pending->value,
+                PricingReviewStatus::Snoozed->value,
+            ])
+            ->lockForUpdate()
+            ->first();
+
+        if ($existing !== null) {
+            // Keep the original previous_cost so the delta shows total drift
+            $existing->update([
+                'product_cost'                 => round($newProductCost, 4),
+                'cost_difference'              => round($newProductCost - (float) ($existing->previous_product_cost ?? $previousProductCost), 4),
+                'selling_price'                => $sellingPrice,
+                'suggested_selling_price'      => $suggestedPrice,
+                'suggested_sale_price'         => $suggestedSalePrice,
+                'current_margin'               => $currentMargin,
+                'impacts'                      => $impacts,
+                'status'                       => PricingReviewStatus::Pending->value,
+                'snooze_until'                 => null,
+                'triggered_by_cost_history_id' => $historyId,
+            ]);
+
+            return $existing->fresh();
+        }
+
+        return PricingReview::query()->create([
+            'product_id'                   => $product->id,
+            'company_id'                   => $companyId,
+            'channel_id'                   => null,
+            'product_cost'                 => round($newProductCost, 4),
+            'previous_product_cost'        => round($previousProductCost, 4),
+            'cost_difference'              => round($diff, 4),
+            'selling_price'                => $sellingPrice,
+            'suggested_selling_price'      => $suggestedPrice,
+            'suggested_sale_price'         => $suggestedSalePrice,
+            'target_margin'                => $targetMargin,
+            'current_margin'               => $currentMargin,
+            'impacts'                      => $impacts,
+            'status'                       => PricingReviewStatus::Pending->value,
+            'triggered_by_cost_history_id' => $historyId,
+        ]);
+    }
 
     /**
      * Create a pricing review for a finished product whose cost just changed.
@@ -35,13 +127,17 @@ final class PricingReviewService
         ?string $channelId,
         ?string $triggeredByCostHistoryId,
     ): PricingReview {
+        $product->loadMissing('brand');
         $sellingPrice  = (float) ($product->regular_price ?? 0.0);
-        $targetMargin  = self::DEFAULT_TARGET_MARGIN;
+        $targetMargin  = $product->effectiveTargetMargin();
 
         // Suggested Selling Price = cost / (1 - margin%)
         $suggestedPrice = $targetMargin < 100
             ? round($newProductCost / (1 - $targetMargin / 100), 4)
             : $newProductCost;
+
+        $discountPct        = $product->effectiveDiscountPct();
+        $suggestedSalePrice = round($suggestedPrice * (1 - $discountPct / 100), 4);
 
         $currentMargin = $sellingPrice > 0
             ? round((($sellingPrice - $newProductCost) / $sellingPrice) * 100, 4)
@@ -65,6 +161,7 @@ final class PricingReviewService
             'cost_difference'              => round($newProductCost - $previousProductCost, 4),
             'selling_price'                => $sellingPrice,
             'suggested_selling_price'      => $suggestedPrice,
+            'suggested_sale_price'         => $suggestedSalePrice,
             'target_margin'                => $targetMargin,
             'current_margin'               => $currentMargin,
             'impacts'                      => array_values(array_unique($impacts)),
@@ -87,17 +184,36 @@ final class PricingReviewService
         array $channels,
     ): PriceApproval {
         $product       = $review->product;
-        $oldPrice      = $review->selling_price;
-        $newPrice      = match ($action) {
+        $product->loadMissing('brand');
+
+        $oldPrice = $review->selling_price;
+        $newPrice = match ($action) {
             'approve_suggested' => $review->suggested_selling_price,
             'keep_current'      => $review->selling_price,
             'custom_price'      => $customPrice ?? $review->selling_price,
+            'reject'            => $review->selling_price,
             default             => $review->selling_price,
         };
 
-        // Update selling price if changed and channels includes website/pos
-        if ($newPrice !== $oldPrice) {
-            $product->update(['regular_price' => $newPrice]);
+        // Reject never updates prices; other actions always write both regular and sale price.
+        if ($action !== 'reject') {
+            $discountPct = $product->effectiveDiscountPct();
+
+            // For approve_suggested: use the stored suggested_sale_price shown to the user.
+            // For keep_current / custom_price: derive sale from the chosen price + live discount.
+            $salePrice = $action === 'approve_suggested'
+                ? ($review->suggested_sale_price ?? round($newPrice * (1 - $discountPct / 100), 4))
+                : round($newPrice * (1 - $discountPct / 100), 4);
+
+            $product->update([
+                'regular_price' => $newPrice,
+                'sale_price'    => $salePrice > 0.0 ? $salePrice : null,
+            ]);
+
+            // Mark all channel mappings for re-sync so updated prices propagate.
+            ProductMapping::query()
+                ->where('product_id', $product->id)
+                ->update(['sync_status' => SyncStatus::Pending->value]);
         }
 
         // Create audit record
@@ -122,6 +238,7 @@ final class PricingReviewService
             'approve_suggested' => PricingReviewStatus::Approved,
             'keep_current'      => PricingReviewStatus::Kept,
             'custom_price'      => PricingReviewStatus::CustomPrice,
+            'reject'            => PricingReviewStatus::Rejected,
             default             => PricingReviewStatus::Approved,
         };
         $review->resolve($status);

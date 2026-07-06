@@ -16,6 +16,9 @@ final class BomDTO extends BaseDTO
         public readonly string $version,
         public readonly bool $is_active,
         public readonly ?string $notes,
+        public readonly float $manufacturing_cost,
+        public readonly float $other_costs,
+        public readonly ?string $execution_instructions,
         public readonly array $lines,
     ) {}
 
@@ -36,6 +39,11 @@ final class BomDTO extends BaseDTO
             version: (string) ($data['version'] ?? '1.0'),
             is_active: (bool) ($data['is_active'] ?? false),
             notes: isset($data['notes']) && $data['notes'] !== '' ? (string) $data['notes'] : null,
+            manufacturing_cost: (float) ($data['manufacturing_cost'] ?? 0),
+            other_costs: (float) ($data['other_costs'] ?? 0),
+            execution_instructions: isset($data['execution_instructions']) && $data['execution_instructions'] !== ''
+                ? (string) $data['execution_instructions']
+                : null,
             lines: array_values($lines),
         );
     }

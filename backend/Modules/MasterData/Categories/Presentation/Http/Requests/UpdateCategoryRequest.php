@@ -37,6 +37,7 @@ final class UpdateCategoryRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:500'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
+            'category_scope' => ['sometimes', 'string', 'in:product,material'],
         ];
     }
 }

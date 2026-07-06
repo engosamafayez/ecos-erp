@@ -4,9 +4,12 @@ import type {
   ApprovePayload,
   AssignPayload,
   BulkApprovePayload,
+  BulkPolicyPayload,
   CostDashboardStats,
+  InlineUpdatePayload,
   MaterialCostHistoryQuery,
   MaterialCostHistoryResult,
+  PricingReview,
   ProductCostDetail,
   PricingReviewsQuery,
   PricingReviewsResult,
@@ -32,7 +35,7 @@ async function safeFetch<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
 const emptyResult: PricingReviewsResult = {
   data: [],
   pagination: { current_page: 1, per_page: 20, total: 0, last_page: 1 },
-  summary: { pending: 0, approved: 0, kept: 0, custom_price: 0, snoozed: 0 },
+  summary: { pending: 0, approved: 0, kept: 0, custom_price: 0, snoozed: 0, rejected: 0 },
 };
 
 const emptyHistory: MaterialCostHistoryResult = {
@@ -79,6 +82,15 @@ export const pricingReviewService = {
 
   async bulkApprove(payload: BulkApprovePayload): Promise<void> {
     await api.post(`${BASE}/bulk-approve`, payload);
+  },
+
+  async inlineUpdate(id: string, payload: InlineUpdatePayload): Promise<{ review: PricingReview }> {
+    const { data } = await api.patch<{ review: PricingReview }>(`${BASE}/${id}/inline`, payload);
+    return data;
+  },
+
+  async bulkPolicy(payload: BulkPolicyPayload): Promise<void> {
+    await api.post(`${BASE}/bulk-policy`, payload);
   },
 };
 

@@ -24,6 +24,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Inventory\StockLedger\Domain\Enums\MovementType;
 use Modules\Inventory\StockLedger\Domain\Models\StockMovement;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
+use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
@@ -48,6 +49,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+    private Brand $brand;
     private Warehouse $warehouse;
     private Product $product;
 
@@ -56,6 +58,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
         parent::setUp();
 
         $this->company   = Company::factory()->create();
+        $this->brand     = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
         $this->product   = Product::factory()->create();
     }
@@ -77,7 +80,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
     private function activeChannel(): Channel
     {
         return Channel::factory()->create([
-            'company_id' => $this->company->id,
+            'brand_id'   => $this->brand->id,
             'is_active'  => true,
             'sync_stock' => true,
         ]);
@@ -156,7 +159,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
 
         // Active channel exists but no ProductMapping for this product.
         Channel::factory()->create([
-            'company_id' => $this->company->id,
+            'brand_id'   => $this->brand->id,
             'is_active'  => true,
             'sync_stock' => true,
         ]);
@@ -171,7 +174,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
         Queue::fake();
 
         $channel = Channel::factory()->create([
-            'company_id' => $this->company->id,
+            'brand_id'   => $this->brand->id,
             'is_active'  => false,
             'sync_stock' => true,
         ]);
@@ -187,7 +190,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
         Queue::fake();
 
         $channel = Channel::factory()->create([
-            'company_id' => $this->company->id,
+            'brand_id'   => $this->brand->id,
             'is_active'  => true,
             'sync_stock' => false,
         ]);

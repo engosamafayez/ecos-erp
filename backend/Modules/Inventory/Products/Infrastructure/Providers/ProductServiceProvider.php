@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory\Products\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Inventory\Products\Application\Commands\RepairImageUrlsCommand;
 use Modules\Inventory\Products\Domain\Contracts\ProductRepositoryInterface;
 use Modules\Inventory\Products\Infrastructure\Repositories\EloquentProductRepository;
 
@@ -21,5 +22,9 @@ final class ProductServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([RepairImageUrlsCommand::class]);
+        }
     }
 }

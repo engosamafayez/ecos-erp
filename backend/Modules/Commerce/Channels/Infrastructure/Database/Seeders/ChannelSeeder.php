@@ -8,6 +8,8 @@ use Illuminate\Database\Seeder;
 use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Channels\Domain\Models\ChannelCredential;
+use Modules\Organization\Brands\Domain\Models\Brand;
+use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
 use Modules\Organization\Companies\Domain\Models\Company;
 
 final class ChannelSeeder extends Seeder
@@ -19,6 +21,14 @@ final class ChannelSeeder extends Seeder
         if ($company === null) {
             return;
         }
+
+        $brand = Brand::query()->where('company_id', $company->id)->first();
+
+        if ($brand === null) {
+            return;
+        }
+
+        $businessAccount = BusinessAccount::query()->where('brand_id', $brand->id)->first();
 
         $channels = [
             [
@@ -46,16 +56,17 @@ final class ChannelSeeder extends Seeder
         foreach ($channels as $data) {
             $channel = Channel::updateOrCreate(
                 [
-                    'company_id' => $company->id,
-                    'name' => $data['name'],
+                    'brand_id' => $brand->id,
+                    'name'     => $data['name'],
                 ],
                 [
-                    'platform' => $data['platform'],
-                    'store_url' => $data['store_url'],
-                    'is_active' => true,
-                    'sync_products' => $data['sync_products'],
-                    'sync_prices' => $data['sync_prices'],
-                    'sync_stock' => $data['sync_stock'],
+                    'business_account_id' => $businessAccount?->id,
+                    'platform'            => $data['platform'],
+                    'store_url'           => $data['store_url'],
+                    'is_active'           => true,
+                    'sync_products'       => $data['sync_products'],
+                    'sync_prices'         => $data['sync_prices'],
+                    'sync_stock'          => $data['sync_stock'],
                 ],
             );
 

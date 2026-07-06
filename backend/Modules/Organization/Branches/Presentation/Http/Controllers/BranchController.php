@@ -14,6 +14,8 @@ use Modules\Organization\Branches\Application\Actions\GetBranchAction;
 use Modules\Organization\Branches\Application\Actions\ListBranchesAction;
 use Modules\Organization\Branches\Application\Actions\UpdateBranchAction;
 use Modules\Organization\Branches\Application\DTO\BranchDTO;
+use Modules\Organization\Branches\Domain\Exceptions\BranchNotFoundException;
+use Modules\Organization\Branches\Domain\Exceptions\DuplicateHeadOfficeException;
 use Modules\Organization\Branches\Presentation\Http\Requests\StoreBranchRequest;
 use Modules\Organization\Branches\Presentation\Http\Requests\UpdateBranchRequest;
 use Modules\Organization\Branches\Presentation\Http\Resources\BranchResource;
@@ -52,14 +54,22 @@ final class BranchController extends Controller
 
     public function show(string $branch, GetBranchAction $action): JsonResponse
     {
-        $model = $action->execute($branch)->data();
+        try {
+            $model = $action->execute($branch)->data();
+        } catch (BranchNotFoundException) {
+            return $this->error('Branch not found.', 404);
+        }
 
         return $this->success(new BranchResource($model));
     }
 
     public function store(StoreBranchRequest $request, CreateBranchAction $action): JsonResponse
     {
-        $result = $action->execute(BranchDTO::fromArray($request->validated()));
+        try {
+            $result = $action->execute(BranchDTO::fromArray($request->validated()));
+        } catch (DuplicateHeadOfficeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
 
         return $this->created(new BranchResource($result->data()), $result->message());
     }
@@ -69,14 +79,24 @@ final class BranchController extends Controller
         string $branch,
         UpdateBranchAction $action,
     ): JsonResponse {
-        $result = $action->execute($branch, BranchDTO::fromArray($request->validated()));
+        try {
+            $result = $action->execute($branch, BranchDTO::fromArray($request->validated()));
+        } catch (BranchNotFoundException) {
+            return $this->error('Branch not found.', 404);
+        } catch (DuplicateHeadOfficeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
 
         return $this->updated(new BranchResource($result->data()), $result->message());
     }
 
     public function destroy(string $branch, DeleteBranchAction $action): JsonResponse
     {
-        $result = $action->execute($branch);
+        try {
+            $result = $action->execute($branch);
+        } catch (BranchNotFoundException) {
+            return $this->error('Branch not found.', 404);
+        }
 
         return $this->deleted($result->message() ?? 'Branch deleted successfully.');
     }

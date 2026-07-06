@@ -23,18 +23,21 @@ final class StoreChannelRequest extends FormRequest
         $platforms = array_column(ChannelPlatform::cases(), 'value');
 
         return [
-            'company_id' => ['required', 'uuid', 'exists:companies,id'],
-            'default_warehouse_id' => ['nullable', 'uuid', 'exists:warehouses,id'],
-            'name' => ['required', 'string', 'max:255'],
-            'platform' => ['required', 'string', Rule::in($platforms)],
-            'store_url' => ['required', 'string', 'url', 'max:500'],
-            'is_active' => ['boolean'],
-            'sync_products' => ['boolean'],
-            'sync_prices' => ['boolean'],
-            'sync_stock' => ['boolean'],
-            'sync_customers' => ['boolean'],
-            'consumer_key' => ['nullable', 'string', 'max:500'],
-            'consumer_secret' => ['nullable', 'string', 'max:500'],
+            'brand_id'             => ['required', 'uuid', 'exists:brands,id'],
+            'business_account_id'  => ['nullable', 'uuid', 'exists:business_accounts,id'],
+            'code'                 => ['nullable', 'string', 'max:20'],
+            'name'                 => ['required', 'string', 'max:255'],
+            'channel_type'         => ['nullable', 'string', Rule::in(['Website', 'Marketplace', 'Social Commerce', 'POS', 'B2B', 'Custom'])],
+            'channel_role'         => ['nullable', 'string', Rule::in(['Sales', 'Marketplace', 'Social', 'POS', 'Wholesale', 'Internal', 'External'])],
+            'platform'             => ['required', 'string', Rule::in($platforms)],
+            'store_url'            => ['required', 'string', 'url', 'max:500'],
+            'is_active'            => ['boolean'],
+            'sync_products'        => ['boolean'],
+            'sync_prices'          => ['boolean'],
+            'sync_stock'           => ['boolean'],
+            'sync_customers'       => ['boolean'],
+            'consumer_key'         => ['nullable', 'string', 'max:500'],
+            'consumer_secret'      => ['nullable', 'string', 'max:500'],
         ];
     }
 }

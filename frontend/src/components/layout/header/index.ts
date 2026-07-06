@@ -7,6 +7,7 @@ export { SearchCommandDialog } from './search/search-command-dialog';
 
 // Context switchers
 export { CompanySwitcher } from './company/company-switcher';
+export { BrandSwitcher } from './brand/brand-switcher';
 export { WarehouseSwitcher } from './warehouse/warehouse-switcher';
 
 // Actions

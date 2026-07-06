@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { BrandLogo } from '@/components/common/brand-logo';
 
 import {
+  BrandSwitcher,
   CompanySwitcher,
   GlobalSearch,
   NotificationCenter,
@@ -56,9 +57,10 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
           <GlobalSearch />
         </div>
 
-        {/* Company + Warehouse switchers — tablet+ */}
+        {/* Company + Brand + Warehouse switchers — tablet+ */}
         <div className="hidden md:flex items-center gap-1.5">
           <CompanySwitcher />
+          <BrandSwitcher />
           <WarehouseSwitcher />
         </div>
 

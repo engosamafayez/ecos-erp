@@ -14,7 +14,6 @@ use Modules\POS\Application\Services\FindSessionService;
 use Modules\POS\Application\Services\OpenSessionService;
 use Modules\POS\Presentation\Http\Requests\OpenSessionRequest;
 use Modules\POS\Presentation\Http\Resources\SessionResource;
-use Modules\POS\Session\Domain\ValueObjects\DeviceFingerprint;
 
 final class SessionController extends Controller
 {
@@ -42,8 +41,10 @@ final class SessionController extends Controller
         )->toString();
 
         $command = new OpenSessionCommand(
-            terminalId:        $data['terminal_id'],
             cashierId:         $cashierId,
+            companyId:         $data['company_id'],
+            channelId:         $data['channel_id'] ?? null,
+            warehouseId:       $data['warehouse_id'],
             deviceFingerprint: $data['device_fingerprint'] ?? substr((string) $request->userAgent(), 0, 64),
             ipAddress:         $request->ip() ?? '0.0.0.0',
             deviceType:        $data['device_type'] ?? 'browser',

@@ -32,11 +32,11 @@ final class RecipeCostCalculator
                 return 0.0;
             }
 
-            $unitCost = (float) ($component->material_cost
-                ?? $component->last_purchase_cost
-                ?? 0.0);
+            $unitCost     = (float) ($component->material_cost ?? $component->last_purchase_cost ?? 0.0);
+            $wastePct     = (float) ($line->waste_percentage ?? 0.0);
+            $effectiveQty = (float) $line->quantity * (1.0 + $wastePct / 100.0);
 
-            return $unitCost * (float) $line->quantity;
+            return $unitCost * $effectiveQty;
         });
 
         $recipeCost = round($recipeCost, 4);
@@ -62,10 +62,10 @@ final class RecipeCostCalculator
                 if ($component === null) {
                     return 0.0;
                 }
-                $unitCost = (float) ($component->material_cost
-                    ?? $component->last_purchase_cost
-                    ?? 0.0);
-                return $unitCost * (float) $line->quantity;
+                $unitCost     = (float) ($component->material_cost ?? $component->last_purchase_cost ?? 0.0);
+                $wastePct     = (float) ($line->waste_percentage ?? 0.0);
+                $effectiveQty = (float) $line->quantity * (1.0 + $wastePct / 100.0);
+                return $unitCost * $effectiveQty;
             }),
             4
         );

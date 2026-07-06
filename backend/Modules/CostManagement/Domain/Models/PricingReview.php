@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\CostManagement\Domain\Enums\PricingReviewStatus;
 use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Organization\Companies\Domain\Models\Company;
 
 /**
  * A pricing decision request created whenever Product Cost changes.
@@ -26,6 +27,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
  * @property float                 $cost_difference
  * @property float                 $selling_price
  * @property float                 $suggested_selling_price
+ * @property float|null            $suggested_sale_price
  * @property float                 $target_margin
  * @property float                 $current_margin
  * @property array<string>         $impacts
@@ -53,6 +55,7 @@ class PricingReview extends Model
         'cost_difference',
         'selling_price',
         'suggested_selling_price',
+        'suggested_sale_price',
         'target_margin',
         'current_margin',
         'impacts',
@@ -70,9 +73,10 @@ class PricingReview extends Model
             'product_cost'          => 'float',
             'previous_product_cost' => 'float',
             'cost_difference'       => 'float',
-            'selling_price'         => 'float',
+            'selling_price'           => 'float',
             'suggested_selling_price' => 'float',
-            'target_margin'         => 'float',
+            'suggested_sale_price'    => 'float',
+            'target_margin'           => 'float',
             'current_margin'        => 'float',
             'impacts'               => 'array',
             'status'                => PricingReviewStatus::class,
@@ -85,6 +89,12 @@ class PricingReview extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /** @return BelongsTo<Company, $this> */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     /** @return HasMany<PriceApproval, $this> */

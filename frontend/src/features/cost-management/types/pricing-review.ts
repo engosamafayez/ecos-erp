@@ -1,4 +1,4 @@
-export type ReviewStatus = 'pending' | 'approved' | 'kept' | 'custom_price' | 'snoozed';
+export type ReviewStatus = 'pending' | 'approved' | 'kept' | 'custom_price' | 'snoozed' | 'rejected';
 
 export type ImpactType =
   | 'margin_below_target'
@@ -18,6 +18,18 @@ export type ProductRef = {
   sku: string;
   image_url: string | null;
   unit: string | null;
+  pricing_mode?: 'brand_policy' | 'custom';
+  custom_target_margin?: number | null;
+  custom_markup?: number | null;
+  custom_discount_pct?: number | null;
+};
+
+export type BrandRef = {
+  id: string;
+  name: string;
+  default_target_margin: number | null;
+  default_markup: number | null;
+  default_discount_pct: number | null;
 };
 
 export type CompanyRef = { id: string; name: string };
@@ -26,6 +38,7 @@ export type ChannelRef  = { id: string; name: string };
 export type PricingReview = {
   id: string;
   product: ProductRef;
+  brand: BrandRef | null;
   company: CompanyRef;
   channel: ChannelRef;
   // Official Pricing Dictionary (TASK-ARCH-PRICE-001 Part 1)
@@ -34,9 +47,15 @@ export type PricingReview = {
   cost_difference: number;
   cost_change_pct: number | null;
   selling_price: number;
+  sale_price: number | null;
   suggested_selling_price: number;
+  suggested_sale_price: number;
+  discount_pct: number;
   current_margin: number;
   target_margin: number;
+  markup: number;
+  gross_profit_pct: number | null;
+  final_margin_pct: number | null;
   impacts: ImpactType[];
   status: ReviewStatus;
   reviewer: PersonRef | null;
@@ -74,7 +93,7 @@ export type PriceHistoryEntry = {
 
 export type ApprovalHistoryEntry = {
   id: string;
-  action: 'approve_suggested' | 'keep_current' | 'custom_price' | 'snoozed' | 'assigned';
+  action: 'approve_suggested' | 'keep_current' | 'custom_price' | 'snoozed' | 'assigned' | 'reject';
   old_selling_price: number | null;
   new_selling_price: number | null;
   reason: string | null;
@@ -97,11 +116,15 @@ export type ReviewSummary = {
   kept: number;
   custom_price: number;
   snoozed: number;
+  rejected: number;
+  below_brand_margin?: number;
 };
 
 export type PricingReviewsQuery = {
   search?: string;
   status?: ReviewStatus | 'all';
+  product_id?: string;
+  brand_id?: string;
   page?: number;
   per_page?: number;
 };
@@ -118,7 +141,7 @@ export type PricingReviewsResult = {
 };
 
 export type ApprovePayload = {
-  action: 'approve_suggested' | 'keep_current' | 'custom_price';
+  action: 'approve_suggested' | 'keep_current' | 'custom_price' | 'reject';
   custom_price?: number;
   reason?: string;
   manager_name?: string;
@@ -133,6 +156,21 @@ export type BulkApprovePayload = {
   reason?: string;
   manager_name?: string;
   channels?: string[];
+};
+
+export type InlineUpdatePayload = {
+  target_margin?: number;
+  markup?: number;
+  regular_price?: number;
+  sale_price?: number | null;
+  pricing_mode?: 'brand_policy' | 'custom';
+};
+
+export type BulkPolicyPayload = {
+  ids: string[];
+  action: 'apply_brand_policy' | 'set_target_margin' | 'set_markup' | 'snooze';
+  value?: number;
+  snooze_until?: string;
 };
 
 // Dashboard KPI types

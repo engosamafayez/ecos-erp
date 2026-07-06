@@ -1,33 +1,37 @@
 import {
-  Activity,
+  AlertTriangle,
   ArrowLeftRight,
   BarChart3,
   BookOpen,
+  Briefcase,
   Building2,
-  CalendarClock,
   ClipboardList,
   DollarSign,
   Factory,
   FlaskConical,
+  Globe,
   LayoutDashboard,
-  LineChart,
+  Layers,
   Link2,
   ListTree,
   Monitor,
   Package,
   PackageCheck,
   PackageOpen,
-  Recycle,
+  RotateCcw,
+  Ruler,
   Settings,
+  Shield,
   ShoppingBag,
   ShoppingCart,
   Tag,
   TrendingDown,
   TrendingUp,
   Truck,
-  Users,
-  UtensilsCrossed,
+  Users as UsersIcon,
   Warehouse,
+  Waves,
+  SearchCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -46,12 +50,23 @@ export type ModuleId =
   | 'reports'
   | 'administration';
 
-export type ModuleNavItem = {
+/** A regular navigation link inside a module sidebar. */
+export type ModuleNavLink = {
   key: string;
   label: string;
   path: string;
   icon: LucideIcon;
+  isSection?: false;
 };
+
+/** A section header divider (not a clickable link). */
+export type ModuleNavSection = {
+  key: string;
+  label: string;
+  isSection: true;
+};
+
+export type ModuleNavItem = ModuleNavLink | ModuleNavSection;
 
 export type AppModule = {
   id: ModuleId;
@@ -98,35 +113,38 @@ export const APP_MODULES: AppModule[] = [
     label: 'Inventory',
     railLabel: 'Inventory',
     icon: Package,
-    defaultPath: ROUTES.inventoryProducts,
+    defaultPath: ROUTES.inventoryDashboard,
     items: [
-      { key: 'inv-dashboard', label: 'Dashboard', path: ROUTES.inventoryDashboard, icon: Activity },
-      { key: 'products', label: 'Products', path: ROUTES.inventoryProducts, icon: Package },
+      { key: 'inv-dashboard', label: 'Dashboard', path: ROUTES.inventoryDashboard, icon: LayoutDashboard },
+      { key: 'products', label: 'Products', path: ROUTES.products, icon: Package },
       { key: 'raw-materials', label: 'Raw Materials', path: ROUTES.rawMaterials, icon: FlaskConical },
-      { key: 'packaging', label: 'Packaging Materials', path: ROUTES.packagingMaterials, icon: Recycle },
-      { key: 'consumables', label: 'Consumables', path: ROUTES.consumables, icon: UtensilsCrossed },
-      { key: 'semi-finished', label: 'Semi-Finished', path: ROUTES.semiFinishedMaterials, icon: Factory },
       { key: 'recipes', label: 'Recipes', path: ROUTES.recipes, icon: ListTree },
+      { key: 'price-review', label: 'Price Review', path: ROUTES.costManagementPriceReview, icon: SearchCheck },
       { key: 'stock-ledger', label: 'Stock Ledger', path: ROUTES.stockLedger, icon: BookOpen },
-      { key: 'abc', label: 'ABC Classification', path: ROUTES.inventoryAbcClassifications, icon: Tag },
-      { key: 'cycle-count', label: 'Cycle Planner', path: ROUTES.inventoryCycleCountPlanner, icon: CalendarClock },
-      { key: 'variance', label: 'Variance Analytics', path: ROUTES.inventoryVarianceAnalytics, icon: LineChart },
-      { key: 'wh-performance', label: 'WH Performance', path: ROUTES.inventoryWarehousePerformance, icon: Warehouse },
-      { key: 'cost-dashboard', label: 'Cost Dashboard', path: ROUTES.costManagement, icon: BarChart3 },
-      { key: 'cost-price-review', label: 'Price Review', path: ROUTES.costManagementPriceReview, icon: DollarSign },
-      { key: 'cost-history', label: 'Cost History', path: ROUTES.costManagementCostHistory, icon: TrendingDown },
+      { key: 'inventory-count', label: 'Inventory Count', path: ROUTES.inventoryCount, icon: ClipboardList },
+      { key: 'waste-investigations', label: 'Waste Investigations', path: ROUTES.wasteInvestigations, icon: AlertTriangle },
+      { key: 'warehouse-liabilities', label: 'Warehouse Liabilities', path: ROUTES.warehouseLiabilities, icon: Shield },
+      // Phase 1.1 — Stock Transfers deferred; restore entry above to re-enable (PKG-TRANSFERS-001)
+      // Master Data section
+      { key: 'master-data-section', label: 'Master Data', isSection: true },
+      { key: 'categories', label: 'Categories', path: ROUTES.inventoryCategories, icon: Tag },
+      { key: 'units', label: 'Units of Measure', path: ROUTES.inventoryUnits, icon: Ruler },
     ],
   },
   {
     id: 'purchasing',
-    label: 'Purchasing',
-    railLabel: 'Purchasing',
+    label: 'Procurement',
+    railLabel: 'Procure',
     icon: Truck,
-    defaultPath: ROUTES.purchaseOrders,
+    defaultPath: ROUTES.procurementHub,
     items: [
+      { key: 'procurement-hub', label: 'Procurement Hub', path: ROUTES.procurementHub, icon: LayoutDashboard },
       { key: 'suppliers', label: 'Suppliers', path: ROUTES.suppliers, icon: Truck },
-      { key: 'purchase-orders', label: 'Purchase Orders', path: ROUTES.purchaseOrders, icon: ClipboardList },
-      { key: 'goods-receipts', label: 'Goods Receipts', path: ROUTES.goodsReceipts, icon: PackageOpen },
+      { key: 'material-requests', label: 'Material Requests', path: ROUTES.materialRequests, icon: ClipboardList },
+      { key: 'purchases', label: 'Purchases', path: ROUTES.purchases, icon: ShoppingCart },
+      { key: 'supplier-invoices', label: 'Supplier Invoices', path: ROUTES.supplierInvoices, icon: DollarSign },
+      { key: 'receiving-center', label: 'Receiving Center', path: ROUTES.receivingCenter, icon: PackageOpen },
+      { key: 'supplier-returns', label: 'Supplier Returns', path: ROUTES.supplierReturns, icon: RotateCcw },
     ],
   },
   {
@@ -141,7 +159,7 @@ export const APP_MODULES: AppModule[] = [
     id: 'crm',
     label: 'CRM',
     railLabel: 'CRM',
-    icon: Users,
+    icon: UsersIcon,
     defaultPath: ROUTES.crm,
     items: [],
   },
@@ -160,9 +178,16 @@ export const APP_MODULES: AppModule[] = [
     label: 'Operations',
     railLabel: 'Ops.',
     icon: TrendingUp,
-    defaultPath: ROUTES.operationsDemandAnalysis,
+    defaultPath: ROUTES.preparationDashboard,
     items: [
-      { key: 'demand-analysis', label: 'Demand Analysis', path: ROUTES.operationsDemandAnalysis, icon: TrendingDown },
+      { key: 'prep-section',       label: 'Preparation OS',   isSection: true },
+      { key: 'prep-dashboard',     label: 'Dashboard',        path: ROUTES.preparationDashboard, icon: LayoutDashboard },
+      { key: 'prep-waves',         label: 'Waves',            path: ROUTES.preparationWaves,     icon: Waves },
+      { key: 'prep-pool',          label: 'Prepared Pool',    path: ROUTES.preparedPool,          icon: PackageCheck },
+      { key: 'prep-stations',      label: 'Stations',         path: ROUTES.preparationStations,  icon: Warehouse },
+      { key: 'prep-analytics',     label: 'Analytics',        path: ROUTES.preparationAnalytics, icon: BarChart3 },
+      { key: 'analysis-section',   label: 'Analysis',         isSection: true },
+      { key: 'demand-analysis',    label: 'Demand Analysis',  path: ROUTES.operationsDemandAnalysis, icon: TrendingDown },
     ],
   },
   {
@@ -180,7 +205,17 @@ export const APP_MODULES: AppModule[] = [
     icon: Settings,
     defaultPath: ROUTES.organization,
     items: [
-      { key: 'organization', label: 'Organization', path: ROUTES.organization, icon: Building2 },
+      { key: 'org-section', label: 'Organization', isSection: true },
+      { key: 'organization', label: 'Overview', path: ROUTES.organization, icon: Building2 },
+      { key: 'companies', label: 'Companies', path: ROUTES.companies, icon: Building2 },
+      { key: 'brands', label: 'Brands', path: ROUTES.brands, icon: Layers },
+      { key: 'business-accounts', label: 'Business Accounts', path: ROUTES.businessAccounts, icon: Briefcase },
+      { key: 'channels', label: 'Sales Channels', path: ROUTES.channels, icon: Globe },
+      { key: 'warehouses', label: 'Warehouses', path: ROUTES.warehouses, icon: Warehouse },
+      { key: 'teams', label: 'Teams', path: ROUTES.teams, icon: UsersIcon },
+      { key: 'users-section', label: 'People & Access', isSection: true },
+      { key: 'users', label: 'Users', path: ROUTES.users, icon: UsersIcon },
+      { key: 'roles', label: 'Roles & Permissions', path: ROUTES.roles, icon: Shield },
       { key: 'settings', label: 'Settings', path: ROUTES.settings, icon: Settings },
     ],
   },
@@ -191,7 +226,7 @@ export function findModuleByPath(pathname: string): AppModule | undefined {
   return APP_MODULES.find((m) => {
     if (m.defaultPath === pathname) return true;
     return m.items.some(
-      (item) => pathname === item.path || pathname.startsWith(item.path + '/'),
+      (item) => !item.isSection && (pathname === item.path || pathname.startsWith(item.path + '/')),
     );
   });
 }

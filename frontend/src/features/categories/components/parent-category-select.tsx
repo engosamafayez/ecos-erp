@@ -2,12 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 
 import { Combobox } from '@/components/crud';
 import { categoriesService } from '@/features/categories/services/categories-service';
+import type { CategoryScope } from '@/features/categories/types/category';
 
 type ParentCategorySelectProps = {
   value: string | null;
   onChange: (value: string) => void;
   /** Category id to exclude from the options (prevents selecting self). */
   excludeId?: string;
+  /** Only show parents with this scope so a product category cannot nest under a material category. */
+  scope?: CategoryScope;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -24,13 +27,14 @@ export function ParentCategorySelect({
   value,
   onChange,
   excludeId,
+  scope,
   placeholder = 'Select parent…',
   disabled,
   className,
 }: ParentCategorySelectProps) {
   const { data, isLoading } = useQuery({
-    queryKey: ['category-options'],
-    queryFn: () => categoriesService.list({ per_page: 100, sort_by: 'name', sort_dir: 'asc' }),
+    queryKey: ['category-options', scope ?? 'all'],
+    queryFn: () => categoriesService.list({ per_page: 100, sort_by: 'name', sort_dir: 'asc', scope }),
     staleTime: 60 * 1000,
   });
 

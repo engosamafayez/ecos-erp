@@ -6,11 +6,12 @@ import type { WarehousesQuery, WarehousePayload } from '@/features/warehouses/ty
 const WAREHOUSES_KEY = 'warehouses';
 
 /** Paginated, filtered, sorted warehouses list. */
-export function useWarehousesQuery(params: WarehousesQuery) {
+export function useWarehousesQuery(params: WarehousesQuery, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [WAREHOUSES_KEY, params],
     queryFn: () => warehousesService.list(params),
     placeholderData: keepPreviousData,
+    enabled: options?.enabled ?? true,
   });
 }
 

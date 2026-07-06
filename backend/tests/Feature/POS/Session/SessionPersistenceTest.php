@@ -14,13 +14,6 @@ use Tests\TestCase;
 
 /**
  * PKG-POS-004: Session repository persistence tests.
- *
- * Requires a running PostgreSQL database. These tests verify that the
- * EloquentSessionRepository correctly persists and retrieves sessions,
- * and that Eloquent casts survive the DB round-trip.
- *
- * Run these tests when the database is available:
- *   php artisan test tests/Feature/POS/Session/SessionPersistenceTest.php
  */
 final class SessionPersistenceTest extends TestCase
 {
@@ -28,9 +21,9 @@ final class SessionPersistenceTest extends TestCase
 
     private SessionRepositoryInterface $repository;
 
-    // No FK constraints on these — any UUID is valid.
-    private const TERMINAL_ID = 'a0000000-0000-4000-a000-000000000001';
-    private const CASHIER_ID  = 'b0000000-0000-4000-b000-000000000001';
+    private const CASHIER_ID   = 'b0000000-0000-4000-b000-000000000001';
+    private const COMPANY_ID   = 'c0000000-0000-4000-c000-000000000001';
+    private const WAREHOUSE_ID = 'd0000000-0000-4000-d000-000000000001';
 
     protected function setUp(): void
     {
@@ -40,14 +33,15 @@ final class SessionPersistenceTest extends TestCase
     }
 
     private function makeSession(
-        string $terminalId  = self::TERMINAL_ID,
-        string $cashierId   = self::CASHIER_ID,
-        string $fingerprint = 'test-fp-001',
-        string $ip          = '10.0.0.1',
+        string  $cashierId   = self::CASHIER_ID,
+        string  $fingerprint = 'test-fp-001',
+        string  $ip          = '10.0.0.1',
     ): Session {
         return Session::open(
-            terminalId:  $terminalId,
             cashierId:   $cashierId,
+            companyId:   self::COMPANY_ID,
+            channelId:   null,
+            warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of($fingerprint),
             ipAddress:   $ip,
         );
@@ -65,8 +59,10 @@ final class SessionPersistenceTest extends TestCase
         $this->assertNotNull($found);
         $this->assertSame($session->id, $found->id);
         $this->assertSame(SessionStatus::Open, $found->status);
-        $this->assertSame(self::TERMINAL_ID, $found->terminal_id);
         $this->assertSame(self::CASHIER_ID, $found->cashier_id);
+        $this->assertSame(self::CASHIER_ID, $found->terminal_id); // terminal_id = cashier_id
+        $this->assertSame(self::COMPANY_ID, $found->company_id);
+        $this->assertSame(self::WAREHOUSE_ID, $found->warehouse_id);
     }
 
     public function test_find_by_id_returns_null_for_unknown(): void
@@ -93,8 +89,10 @@ final class SessionPersistenceTest extends TestCase
     public function test_device_type_enum_round_trips_through_database(): void
     {
         $session = Session::open(
-            terminalId:  self::TERMINAL_ID,
             cashierId:   self::CASHIER_ID,
+            companyId:   self::COMPANY_ID,
+            channelId:   null,
+            warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of('fp-mobile'),
             ipAddress:   '1.2.3.4',
             deviceType:  DeviceType::Mobile,
@@ -109,50 +107,50 @@ final class SessionPersistenceTest extends TestCase
 
     // ── Open-session queries ──────────────────────────────────────────────────
 
-    public function test_find_open_by_terminal_returns_active_session(): void
+    public function test_find_open_by_cashier_returns_active_session(): void
     {
         $session = $this->makeSession();
         $this->repository->save($session);
 
-        $found = $this->repository->findOpenByTerminal(self::TERMINAL_ID);
+        $found = $this->repository->findOpenByCashier(self::CASHIER_ID);
 
         $this->assertNotNull($found);
         $this->assertSame($session->id, $found->id);
     }
 
-    public function test_find_open_by_terminal_returns_null_when_session_is_closed(): void
+    public function test_find_open_by_cashier_returns_null_when_session_is_closed(): void
     {
         $session = $this->makeSession();
         $session->close();
         $this->repository->save($session);
 
-        $found = $this->repository->findOpenByTerminal(self::TERMINAL_ID);
+        $found = $this->repository->findOpenByCashier(self::CASHIER_ID);
 
         $this->assertNull($found);
     }
 
-    public function test_find_open_by_terminal_returns_null_for_unknown_terminal(): void
+    public function test_find_open_by_cashier_returns_null_for_unknown_cashier(): void
     {
-        $found = $this->repository->findOpenByTerminal('c0000000-0000-0000-0000-000000000099');
+        $found = $this->repository->findOpenByCashier('c0000000-0000-0000-0000-000000000099');
 
         $this->assertNull($found);
     }
 
-    public function test_has_open_session_for_terminal_returns_true(): void
+    public function test_has_open_session_for_cashier_returns_true(): void
     {
         $session = $this->makeSession();
         $this->repository->save($session);
 
-        $this->assertTrue($this->repository->hasOpenSessionForTerminal(self::TERMINAL_ID));
+        $this->assertTrue($this->repository->hasOpenSessionForCashier(self::CASHIER_ID));
     }
 
-    public function test_has_open_session_for_terminal_returns_false_after_close(): void
+    public function test_has_open_session_for_cashier_returns_false_after_close(): void
     {
         $session = $this->makeSession();
         $session->close();
         $this->repository->save($session);
 
-        $this->assertFalse($this->repository->hasOpenSessionForTerminal(self::TERMINAL_ID));
+        $this->assertFalse($this->repository->hasOpenSessionForCashier(self::CASHIER_ID));
     }
 
     // ── State change persistence ──────────────────────────────────────────────
@@ -193,9 +191,9 @@ final class SessionPersistenceTest extends TestCase
         $this->assertTrue($found->status->requiresSupervisorReview());
     }
 
-    // ── Partial unique index ───────────────────────────────────────────────────
+    // ── Unique lock (one open session per cashier) ────────────────────────────
 
-    public function test_partial_unique_index_prevents_two_open_sessions_for_same_terminal(): void
+    public function test_unique_lock_prevents_two_open_sessions_for_same_cashier(): void
     {
         $first = $this->makeSession();
         $this->repository->save($first);
@@ -216,7 +214,7 @@ final class SessionPersistenceTest extends TestCase
         $second = $this->makeSession(fingerprint: 'device-2');
         $this->repository->save($second);
 
-        $open = $this->repository->findOpenByTerminal(self::TERMINAL_ID);
+        $open = $this->repository->findOpenByCashier(self::CASHIER_ID);
 
         $this->assertNotNull($open);
         $this->assertSame($second->id, $open->id);

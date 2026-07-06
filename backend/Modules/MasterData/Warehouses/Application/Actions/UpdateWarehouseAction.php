@@ -12,7 +12,7 @@ use Modules\MasterData\Warehouses\Domain\Contracts\WarehouseRepositoryInterface;
 use Modules\MasterData\Warehouses\Domain\Exceptions\WarehouseNotFoundException;
 
 /**
- * Updates an existing warehouse.
+ * Updates an existing warehouse. Code and company are immutable after creation.
  */
 final class UpdateWarehouseAction extends BaseAction
 {
@@ -38,7 +38,10 @@ final class UpdateWarehouseAction extends BaseAction
             throw new WarehouseNotFoundException;
         }
 
-        $warehouse = $this->warehouses->update($warehouse, $dto->toArray());
+        // Strip immutable fields — code and company_id cannot change after creation.
+        $attributes = array_diff_key($dto->toArray(), array_flip(['code', 'company_id']));
+
+        $warehouse = $this->warehouses->update($warehouse, $attributes);
 
         return OperationResult::success($warehouse, 'Warehouse updated successfully.');
     }

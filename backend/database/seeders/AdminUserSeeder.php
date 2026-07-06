@@ -11,9 +11,9 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        // firstOrCreate: password is only set when the account is created for the
-        // first time. Re-running this seeder never overwrites an existing password.
-        User::firstOrCreate(
+        // updateOrCreate: always restores the canonical dev password so credentials
+        // cannot drift between seeder runs, factory calls, or manual DB changes.
+        User::updateOrCreate(
             ['email' => 'admin@ecos.local'],
             [
                 'name'     => 'Administrator',

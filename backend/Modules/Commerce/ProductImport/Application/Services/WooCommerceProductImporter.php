@@ -100,6 +100,7 @@ final class WooCommerceProductImporter
                             $wooCategoryMap,
                             $defaultCategory->id,
                             $defaultUnit->id,
+                            $channel,
                         );
 
                         if ($wasCreated) {
@@ -205,6 +206,7 @@ final class WooCommerceProductImporter
         array $wooCategoryMap,
         string $defaultCategoryId,
         string $defaultUnitId,
+        Channel $channel,
     ): array {
         $enrichment = $this->extractEnrichment($wooProduct);
         $categoryId = $this->resolveDeepestEcosCategory(
@@ -234,6 +236,9 @@ final class WooCommerceProductImporter
             'unit_id' => $defaultUnitId,
             'product_type' => Product::TYPE_FINISHED_GOOD,
             'is_active' => $isActive,
+            // ADR-013 Principle 8 / TASK-PRODUCT-OWNERSHIP-002:
+            // Brand is the direct owner; channel.brand_id is always set (non-nullable after TASK-ADMIN-005).
+            'brand_id' => $channel->brand_id,
         ], $enrichment));
 
         return [$product, true];

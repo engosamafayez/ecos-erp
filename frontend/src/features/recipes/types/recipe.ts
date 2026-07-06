@@ -1,10 +1,24 @@
 // Recipe types — same underlying API shape as BOM, renamed for the domain.
 
+export type RecipeProductChannel = {
+  id: string;
+  name: string;
+  company_id: string;
+  company_name: string | null;
+};
+
+export type RecipeProductCategory = {
+  id: string;
+  name: string;
+};
+
 export type RecipeProduct = {
   id: string;
   sku: string;
   name: string;
   image_url: string | null;
+  category: RecipeProductCategory | null;
+  channels: RecipeProductChannel[];
 };
 
 export type RecipeUnit = {
@@ -17,6 +31,9 @@ export type RecipeMaterial = {
   id: string;
   sku: string;
   name: string;
+  product_type: 'raw_material' | 'packaging_material' | string;
+  image_url: string | null;
+  material_cost: number;
   unit: RecipeUnit | null;
 };
 
@@ -36,6 +53,12 @@ export type Recipe = {
   version: string;
   is_active: boolean;
   notes: string | null;
+  manufacturing_cost: number;
+  other_costs: number;
+  recipe_cost: number;
+  total_waste_pct: number;
+  execution_instructions: string | null;
+  lines_count: number;
   lines: RecipeLine[];
   created_at: string | null;
   updated_at: string | null;
@@ -52,10 +75,21 @@ export type RecipePayload = {
   version: string;
   is_active: boolean;
   notes?: string | null;
+  manufacturing_cost?: number;
+  other_costs?: number;
+  execution_instructions?: string | null;
   lines: RecipeLinePayload[];
 };
 
-export type RecipeSortField = 'bom_number' | 'created_at';
+export type RecipeSortField =
+  | 'bom_number'
+  | 'created_at'
+  | 'updated_at'
+  | 'product_name'
+  | 'category'
+  | 'recipe_cost'
+  | 'total_waste_pct'
+  | 'lines_count';
 export type SortDirection = 'asc' | 'desc';
 
 export type RecipesQuery = {
@@ -64,6 +98,14 @@ export type RecipesQuery = {
   per_page?: number;
   sort_by?: RecipeSortField;
   sort_dir?: SortDirection;
+  status?: 'active' | 'draft' | 'all';
+  product_id?: string;
+  company_id?: string;
+  channel_id?: string;
+  has_manufacturing_cost?: boolean;
+  has_packaging_materials?: boolean;
+  updated_from?: string;
+  updated_to?: string;
 };
 
 export type PaginationMeta = {
@@ -76,4 +118,11 @@ export type PaginationMeta = {
 export type RecipesResult = {
   items: Recipe[];
   meta: PaginationMeta;
+};
+
+export type RecipeStats = {
+  total: number;
+  active: number;
+  draft: number;
+  avgCost: number;
 };

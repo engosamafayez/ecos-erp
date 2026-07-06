@@ -10,6 +10,8 @@ import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { MobileMenu } from '@/components/layout/mobile-menu';
 import { ModuleRail } from '@/components/layout/module-rail';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { OrganizationProvider } from '@/features/organization/context/organization-context';
+import { CompanyProvider } from '@/features/organization/context/company-context';
 import { useActiveModule } from '@/hooks/use-active-module';
 
 export function AppShell() {
@@ -21,6 +23,8 @@ export function AppShell() {
   const hasSidebarItems = (activeModule?.items.length ?? 0) > 0;
 
   return (
+    <OrganizationProvider>
+    <CompanyProvider>
     <HeaderProvider>
       <CommandProvider>
       <div className="flex min-h-svh flex-col">
@@ -70,5 +74,7 @@ export function AppShell() {
       </div>
       </CommandProvider>
     </HeaderProvider>
+    </CompanyProvider>
+    </OrganizationProvider>
   );
 }

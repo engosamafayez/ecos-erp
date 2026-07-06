@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Validation for creating a warehouse.
+ * Validation for creating a warehouse. Code is optional — auto-generated if omitted.
  */
 final class StoreWarehouseRequest extends FormRequest
 {
@@ -26,20 +26,19 @@ final class StoreWarehouseRequest extends FormRequest
 
         return [
             'company_id' => ['required', 'uuid', 'exists:companies,id'],
-            'branch_id' => ['required', 'uuid', 'exists:branches,id'],
-            'code' => [
-                'required',
+            'code'       => [
+                'nullable',
                 'string',
-                'max:50',
+                'max:20',
                 Rule::unique('warehouses', 'code')->where(
                     fn ($query) => $query->where('company_id', $companyId)->whereNull('deleted_at'),
                 ),
             ],
-            'name' => ['required', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'country' => ['nullable', 'string', 'max:100'],
-            'is_active' => ['boolean'],
+            'name'       => ['required', 'string', 'max:255'],
+            'address'    => ['nullable', 'string', 'max:255'],
+            'city'       => ['nullable', 'string', 'max:100'],
+            'country'    => ['nullable', 'string', 'max:100'],
+            'is_active'  => ['boolean'],
         ];
     }
 }

@@ -10,16 +10,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\MasterData\Warehouses\Infrastructure\Database\Factories\WarehouseFactory;
-use Modules\Organization\Branches\Domain\Models\Branch;
 use Modules\Organization\Companies\Domain\Models\Company;
 
 /**
- * Warehouse entity (UUID primary key, soft-deletable) belonging to a company
- * and a branch.
+ * Warehouse entity (UUID primary key, soft-deletable) belonging to a company.
  *
  * @property string $id
  * @property string $company_id
- * @property string $branch_id
  * @property string $code
  * @property string $name
  * @property bool $is_active
@@ -38,7 +35,6 @@ class Warehouse extends Model
      */
     protected $fillable = [
         'company_id',
-        'branch_id',
         'code',
         'name',
         'address',
@@ -63,14 +59,6 @@ class Warehouse extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
-    }
-
-    /**
-     * @return BelongsTo<Branch, $this>
-     */
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
     }
 
     protected static function newFactory(): WarehouseFactory

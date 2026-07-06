@@ -1,0 +1,186 @@
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { toast } from '@/components/ds/use-toast';
+import { rawMaterialsService } from '@/features/raw-materials/services/raw-materials-service';
+import { materialCostService } from '@/features/cost-management/services/pricing-review-service';
+import { stockLedgerService } from '@/features/stock-ledger/services/stock-ledger-service';
+import type { RawMaterial, RawMaterialPayload, RawMaterialsQuery } from '@/features/raw-materials/types';
+import type { StockMovementsQuery } from '@/features/stock-ledger/types/stock-movement';
+
+const KEY = 'raw-materials';
+
+export function useRawMaterialsQuery(params: RawMaterialsQuery) {
+  return useQuery({
+    queryKey: [KEY, params],
+    queryFn:  () => rawMaterialsService.list(params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useRawMaterialStats(
+  query: Pick<RawMaterialsQuery, 'material_type' | 'category_id' | 'supplier_id' | 'warehouse_id'> = {},
+) {
+  return useQuery({
+    queryKey: [KEY, 'stats', query],
+    queryFn:  () => rawMaterialsService.stats(query),
+    staleTime: 30_000,
+  });
+}
+
+export function useNextMaterialSku(prefix: 'RM' | 'PM' = 'RM') {
+  return useQuery({
+    queryKey: [KEY, 'next-sku', prefix],
+    queryFn:  () => rawMaterialsService.nextSku(prefix),
+    staleTime: 0,
+  });
+}
+
+/** @deprecated Use useNextMaterialSku('RM') */
+export function useNextRawMaterialSku() {
+  return useNextMaterialSku('RM');
+}
+
+export function useCreateRawMaterial() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: RawMaterialPayload) => rawMaterialsService.create(payload),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
+export function useUpdateRawMaterial() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: RawMaterialPayload }) =>
+      rawMaterialsService.update(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
+export function useDeleteRawMaterial() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => rawMaterialsService.remove(id),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
+export function useToggleAllowNegative() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, allow_negative_stock }: { id: string; allow_negative_stock: boolean }) =>
+      rawMaterialsService.patch(id, { allow_negative_stock }),
+    onMutate: async ({ id, allow_negative_stock }) => {
+      await qc.cancelQueries({ queryKey: [KEY] });
+      const snapshots = qc.getQueriesData<{ items: RawMaterial[] }>({ queryKey: [KEY] });
+      qc.setQueriesData<{ items: RawMaterial[]; meta?: unknown }>(
+        { queryKey: [KEY] },
+        (old) => {
+          if (!old || !Array.isArray(old.items)) return old;
+          return {
+            ...old,
+            items: old.items.map((m) =>
+              m.id === id ? { ...m, allow_negative_stock } : m,
+            ),
+          };
+        },
+      );
+      return { snapshots };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.snapshots) {
+        for (const [key, data] of context.snapshots) {
+          qc.setQueryData(key, data);
+        }
+      }
+      toast.error('Failed to update inventory policy.');
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
+export function useBulkUpdateRawMaterials() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      ids,
+      patch,
+    }: {
+      ids:   string[];
+      patch: Partial<RawMaterialPayload>;
+    }) => {
+      await Promise.all(
+        ids.map((id) =>
+          rawMaterialsService.update(id, {
+            sku:          '',
+            name:         '',
+            category_id:  '',
+            unit_id:      '',
+            product_type: 'raw_material',
+            is_active:    true,
+            cost_source:  'purchase',
+            ...patch,
+          } as RawMaterialPayload),
+        ),
+      );
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
+export function useAddStock() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      product_id:   string;
+      warehouse_id: string;
+      quantity:     number;
+      unit_cost?:   number | null;
+      notes?:       string | null;
+    }) => rawMaterialsService.addStock(payload),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['stock-movements'] });
+      qc.invalidateQueries({ queryKey: ['material-cost-history', vars.product_id] });
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+export function useUpdateMaterialCost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, materialCost, reason }: { id: string; materialCost: number; reason: string }) =>
+      materialCostService.updateMaterialCost(id, materialCost, reason),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [KEY] });
+      qc.invalidateQueries({ queryKey: ['material-cost-history', vars.id] });
+    },
+    onError: () => {
+      toast.error('Failed to update material cost.');
+    },
+  });
+}
+
+export function useRawMaterialCostHistory(
+  productId: string | undefined,
+  params: { page?: number; per_page?: number } = {},
+) {
+  return useQuery({
+    queryKey: ['material-cost-history', productId, params],
+    queryFn:  () => materialCostService.getMaterialHistory(productId!, params),
+    enabled:  !!productId,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useRawMaterialStockMovements(
+  productId: string | undefined,
+  params: Omit<StockMovementsQuery, 'product_id'> = {},
+) {
+  return useQuery({
+    queryKey: ['stock-movements', { product_id: productId, ...params }],
+    queryFn:  () => stockLedgerService.list({ product_id: productId, ...params }),
+    enabled:  !!productId,
+    placeholderData: keepPreviousData,
+  });
+}

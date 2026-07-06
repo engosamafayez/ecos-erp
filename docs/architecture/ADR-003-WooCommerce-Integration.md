@@ -253,3 +253,13 @@ which re-dispatches the original job.
 - **Dead letter queue:** Failed jobs that exhaust retries currently remain as failed queue
   records. A formal dead letter queue strategy with alerting should be implemented for
   production environments.
+
+---
+
+## Related ADRs
+
+- **[ADR-012 — Unified Enterprise Pricing Policy](adr/ADR-012-unified-enterprise-pricing-policy.md):**
+  Extends this ADR's master-of-record principle to selling prices specifically. Defines the
+  one-price rule, the mandatory pricing review workflow, and the rule that channel-originated
+  prices must never overwrite `products.regular_price`. Price sync to channels after manager
+  approval uses the observer → queued job transport defined in Section 3 of this ADR.

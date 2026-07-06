@@ -1,14 +1,9 @@
 import { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
-import {
-  EntityTable,
-  EntityToolbar,
-  PageHeader,
-  Pagination,
-} from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import { PageHeader, Pagination } from '@/components/crud';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { MovementTypeBadge } from '@/features/stock-ledger/components/movement-type-badge';
 import { useStockMovementsQuery } from '@/features/stock-ledger/hooks/use-stock-ledger';
 import type {
@@ -18,7 +13,7 @@ import type {
 } from '@/features/stock-ledger/types/stock-movement';
 import { ROUTES } from '@/router/routes';
 
-const PER_PAGE = 15;
+const PER_PAGE = 20;
 
 const MOVEMENT_TYPE_VALUES: (MovementType | 'all')[] = [
   'all',
@@ -30,22 +25,80 @@ const MOVEMENT_TYPE_VALUES: (MovementType | 'all')[] = [
   'transfer_out',
 ];
 
-function fmt(n: number) {
+const MOVEMENT_TYPE_LABELS: Record<MovementType | 'all', string> = {
+  all: 'All Types',
+  purchase_receipt: 'Purchase Receipt',
+  sales_issue: 'Sales Issue',
+  adjustment_in: 'Adjustment In',
+  adjustment_out: 'Adjustment Out',
+  transfer_in: 'Transfer In',
+  transfer_out: 'Transfer Out',
+};
+
+const IN_TYPES: MovementType[] = ['purchase_receipt', 'adjustment_in', 'transfer_in'];
+const OUT_TYPES: MovementType[] = ['sales_issue', 'adjustment_out', 'transfer_out'];
+
+function fmtQty(n: number): string {
+  if (n === 0) return '0';
   return n % 1 === 0 ? String(n) : n.toFixed(4).replace(/\.?0+$/, '');
 }
 
+function fmtBalance(n: number): string {
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+}
+
+function ReferenceCell({ movement }: { movement: StockMovement }) {
+  if (!movement.reference_type && !movement.reference_id) {
+    return <span className="text-muted-foreground text-xs">—</span>;
+  }
+  const label = movement.reference_type
+    ? movement.reference_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    : '';
+  const shortId = movement.reference_id ? movement.reference_id.slice(0, 8) : '';
+  return (
+    <div className="leading-tight">
+      {label && <p className="text-xs text-muted-foreground">{label}</p>}
+      {shortId && <p className="font-mono text-xs">{shortId}…</p>}
+    </div>
+  );
+}
+
+function exportCsv(items: StockMovement[]) {
+  const headers = ['Date', 'Type', 'Product', 'SKU', 'Warehouse', 'In', 'Out', 'Balance', 'Reference'];
+  const rows = items.map((m) => {
+    const isIn = IN_TYPES.includes(m.movement_type);
+    const isOut = OUT_TYPES.includes(m.movement_type);
+    return [
+      m.movement_date,
+      m.movement_type_label ?? m.movement_type,
+      m.product?.name ?? '',
+      m.product?.sku ?? '',
+      m.warehouse?.name ?? '',
+      isIn ? fmtQty(Math.abs(m.quantity)) : '',
+      isOut ? fmtQty(Math.abs(m.quantity)) : '',
+      fmtBalance(m.balance_after),
+      [m.reference_type, m.reference_id].filter(Boolean).join(' / '),
+    ];
+  });
+  const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `stock-ledger-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+type SortState = { field: StockMovementSortField; direction: 'asc' | 'desc' };
+
 export function StockLedgerPage() {
-  const { t } = useTranslation('stock-ledger');
-  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [movementTypeFilter, setMovementTypeFilter] = useState<MovementType | 'all'>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<{ field: StockMovementSortField; direction: 'asc' | 'desc' }>({
-    field: 'created_at',
-    direction: 'desc',
-  });
+  const [sort, setSort] = useState<SortState>({ field: 'movement_date', direction: 'desc' });
 
   const params = useMemo(
     () => ({
@@ -66,165 +119,206 @@ export function StockLedgerPage() {
   const items = data?.items ?? [];
   const meta = data?.meta;
 
-  const handleSort = (field: string) => {
+  function handleSort(field: StockMovementSortField) {
     setSort((curr) =>
       curr.field === field
-        ? { field: field as StockMovementSortField, direction: curr.direction === 'asc' ? 'desc' : 'asc' }
-        : { field: field as StockMovementSortField, direction: 'asc' },
+        ? { ...curr, direction: curr.direction === 'asc' ? 'desc' : 'asc' }
+        : { field, direction: 'asc' },
     );
     setPage(1);
-  };
+  }
 
-  const columns: ColumnDef<StockMovement>[] = [
-    {
-      key: 'movement_date',
-      header: t('columns.date'),
-      sortable: true,
-      cell: (m) => m.movement_date,
-    },
-    {
-      key: 'product',
-      header: t('columns.product'),
-      cell: (m) => (
-        <div>
-          <span className="font-medium">{m.product?.name ?? '—'}</span>
-          {m.product?.sku && (
-            <span className="text-muted-foreground ml-1.5 text-xs">{m.product.sku}</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'warehouse',
-      header: t('columns.warehouse'),
-      cell: (m) => m.warehouse?.name ?? '—',
-    },
-    {
-      key: 'movement_type',
-      header: t('columns.type'),
-      sortable: true,
-      cell: (m) => <MovementTypeBadge type={m.movement_type} />,
-    },
-    {
-      key: 'quantity',
-      header: t('columns.quantity'),
-      sortable: true,
-      cell: (m) => (
-        <span className="font-mono tabular-nums">{fmt(m.quantity)}</span>
-      ),
-    },
-    {
-      key: 'balance_before',
-      header: t('columns.before'),
-      cell: (m) => (
-        <span className="text-muted-foreground font-mono tabular-nums">{fmt(m.balance_before)}</span>
-      ),
-    },
-    {
-      key: 'balance_after',
-      header: t('columns.after'),
-      cell: (m) => (
-        <span className="font-mono tabular-nums">{fmt(m.balance_after)}</span>
-      ),
-    },
-    {
-      key: 'reference_type',
-      header: t('columns.refType'),
-      cell: (m) =>
-        m.reference_type
-          ? m.reference_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-          : '—',
-    },
-    {
-      key: 'reference_id',
-      header: t('columns.reference'),
-      cell: (m) =>
-        m.reference_id ? (
-          <span className="font-mono text-xs">{m.reference_id.slice(0, 8)}…</span>
-        ) : (
-          '—'
-        ),
-    },
-  ];
+  function SortIcon({ field }: { field: StockMovementSortField }) {
+    if (sort.field !== field) return <span className="ml-1 text-muted-foreground opacity-40">↕</span>;
+    return <span className="ml-1">{sort.direction === 'asc' ? '↑' : '↓'}</span>;
+  }
+
+  const hasActiveFilters = movementTypeFilter !== 'all' || dateFrom || dateTo || search;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
+        title="Stock Ledger"
+        subtitle="Complete audit trail of all inventory movements."
+        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Stock Ledger' }]}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCsv(items)}
+            disabled={items.length === 0}
+          >
+            Export CSV
+          </Button>
+        }
       />
 
       <Card>
-        <CardContent className="flex flex-col gap-4 pt-6">
-          <EntityToolbar
-            searchPlaceholder={t('search')}
-            onSearchChange={(v) => { setSearch(v); setPage(1); }}
-            onRefresh={() => void refetch()}
-            isRefreshing={isFetching}
-            onClearFilters={() => {
-              setMovementTypeFilter('all');
-              setDateFrom('');
-              setDateTo('');
-              setPage(1);
-            }}
-            filterPanel={
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.type')}</span>
-                  <select
-                    value={movementTypeFilter}
-                    onChange={(e) => {
-                      setMovementTypeFilter(e.target.value as MovementType | 'all');
-                      setPage(1);
-                    }}
-                    className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+        <CardContent className="flex flex-col gap-4 pt-4">
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1 min-w-[180px]">
+              <label className="text-xs text-muted-foreground">Search</label>
+              <Input
+                placeholder="Product name or SKU…"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="h-8 text-sm"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Movement Type</label>
+              <select
+                value={movementTypeFilter}
+                onChange={(e) => { setMovementTypeFilter(e.target.value as MovementType | 'all'); setPage(1); }}
+                className="h-8 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+              >
+                {MOVEMENT_TYPE_VALUES.map((val) => (
+                  <option key={val} value={val}>{MOVEMENT_TYPE_LABELS[val]}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">From</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+                className="h-8 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">To</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+                className="h-8 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
+              />
+            </div>
+
+            <div className="flex gap-2 ml-auto">
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => { setMovementTypeFilter('all'); setDateFrom(''); setDateTo(''); setSearch(''); setPage(1); }}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => void refetch()}
+                disabled={isFetching}
+              >
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto rounded-md border">
+            <table className="w-full text-sm min-w-[800px]">
+              <thead>
+                <tr className="border-b bg-muted/40">
+                  <th
+                    className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                    onClick={() => handleSort('movement_date')}
                   >
-                    {MOVEMENT_TYPE_VALUES.map((val) => (
-                      <option key={val} value={val}>
-                        {t(`movementTypes.${val}`)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    Date <SortIcon field="movement_date" />
+                  </th>
+                  <th
+                    className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                    onClick={() => handleSort('movement_type')}
+                  >
+                    Type <SortIcon field="movement_type" />
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Product / Material</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Warehouse</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground text-emerald-700">In</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground text-red-600">Out</th>
+                  <th
+                    className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                    onClick={() => handleSort('quantity')}
+                  >
+                    Balance <SortIcon field="quantity" />
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">Loading…</td>
+                  </tr>
+                ) : isError ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-destructive">Failed to load. Try refreshing.</td>
+                  </tr>
+                ) : items.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">No movements found.</td>
+                  </tr>
+                ) : (
+                  items.map((m) => {
+                    const isIn = IN_TYPES.includes(m.movement_type);
+                    const isOut = OUT_TYPES.includes(m.movement_type);
+                    const qty = Math.abs(m.quantity);
+                    return (
+                      <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-2.5 text-xs tabular-nums text-muted-foreground whitespace-nowrap">
+                          {m.movement_date}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <MovementTypeBadge type={m.movement_type} />
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <p className="font-medium">{m.product?.name ?? '—'}</p>
+                          {m.product?.sku && (
+                            <p className="text-[10px] text-muted-foreground">{m.product.sku}</p>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-sm">{m.warehouse?.name ?? '—'}</td>
+                        <td className="px-4 py-2.5 text-right font-mono text-sm tabular-nums">
+                          {isIn ? (
+                            <span className="text-emerald-600 font-medium">+{fmtQty(qty)}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-sm tabular-nums">
+                          {isOut ? (
+                            <span className="text-red-600 font-medium">−{fmtQty(qty)}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-sm tabular-nums">
+                          {fmtBalance(m.balance_after)}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <ReferenceCell movement={m} />
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.dateFrom')}</span>
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-                    className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.dateTo')}</span>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-                    className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
-                  />
-                </div>
-              </div>
-            }
-          />
-
-          <EntityTable<StockMovement>
-            columns={columns}
-            data={items}
-            getRowId={(m) => m.id}
-            isLoading={isLoading}
-            isError={isError}
-            sort={sort}
-            onSortChange={handleSort}
-          />
-
+          {/* Pagination */}
           {meta ? (
             <Pagination
               meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-              onPageChange={setPage}
+              onPageChange={(p) => { setPage(p); }}
             />
           ) : null}
         </CardContent>

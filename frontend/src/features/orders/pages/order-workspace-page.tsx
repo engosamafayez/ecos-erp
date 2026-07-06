@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
+import { getMediaUrl } from '@/lib/media';
 import {
   orderSchema,
   toFormValues,
@@ -258,10 +259,10 @@ function FormProductLines({ productMap }: { productMap: Map<string, Product> }) 
               return (
                 <tr key={field.id}>
                   <td className="py-2 pr-3">
-                    {selectedProduct?.image_url ? (
+                    {getMediaUrl(selectedProduct?.image_url) ? (
                       <img
-                        src={selectedProduct.image_url}
-                        alt={selectedProduct.name}
+                        src={getMediaUrl(selectedProduct!.image_url)!}
+                        alt={selectedProduct!.name}
                         className="size-10 rounded object-cover"
                       />
                     ) : (
@@ -592,10 +593,10 @@ function ViewWorkspace({ order }: { order: Order }) {
                   {order.lines.map((line) => (
                     <tr key={line.id}>
                       <td className="py-2 pr-3">
-                        {line.product?.image_url ? (
+                        {getMediaUrl(line.product?.image_url) ? (
                           <img
-                            src={line.product.image_url}
-                            alt={line.product.name}
+                            src={getMediaUrl(line.product!.image_url)!}
+                            alt={line.product!.name}
                             className="size-10 rounded object-cover"
                           />
                         ) : (

@@ -7,7 +7,7 @@ import {
 import { usePosStore } from '@/features/pos/store/pos-store';
 import { toast } from '@/components/ds/use-toast';
 import {
-  terminalService,
+  posContextService,
   sessionService,
   shiftService,
   cartService,
@@ -37,7 +37,9 @@ import type {
 // ── Query keys ────────────────────────────────────────────────────────────────
 
 export const posKeys = {
-  terminals:  () => ['pos', 'terminals'] as const,
+  companies:  () => ['pos', 'companies'] as const,
+  warehouses: () => ['pos', 'warehouses'] as const,
+  channels:   () => ['pos', 'channels'] as const,
   session:    (id: string) => ['pos', 'session', id] as const,
   shift:      (id: string) => ['pos', 'shift', id] as const,
   cart:       (id: string) => ['pos', 'cart', id] as const,
@@ -48,12 +50,28 @@ export const posKeys = {
   customers:  (search: string) => ['pos', 'customers', search] as const,
 };
 
-// ── Terminals ─────────────────────────────────────────────────────────────────
+// ── POS Context (companies / warehouses / channels) ───────────────────────────
 
-export function useTerminals() {
+export function usePosCompanies() {
   return useQuery({
-    queryKey: posKeys.terminals(),
-    queryFn:  () => terminalService.list(),
+    queryKey: posKeys.companies(),
+    queryFn:  () => posContextService.companies(),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function usePosWarehouses() {
+  return useQuery({
+    queryKey: posKeys.warehouses(),
+    queryFn:  () => posContextService.warehouses(),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function usePosChannels() {
+  return useQuery({
+    queryKey: posKeys.channels(),
+    queryFn:  () => posContextService.channels(),
     staleTime: 5 * 60_000,
   });
 }
@@ -71,14 +89,15 @@ export function useSession() {
 }
 
 export function useOpenSession() {
-  const { setSession, setCashier, setTerminal } = usePosStore();
+  const { setSession, setCashier, setTerminal, setContext } = usePosStore();
   const authUser = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: (payload: OpenSessionPayload) => sessionService.open(payload),
     onSuccess:  (session) => {
       setSession(session.id);
-      setTerminal(session.terminal_id);
+      setTerminal(session.cashier_id); // terminal_id = cashier_id after refactor
       setCashier(session.cashier_id, authUser?.name ?? '');
+      setContext(session.company_id, session.channel_id, session.warehouse_id);
       toast.success('Session opened');
     },
     onError: () => toast.error('Failed to open session'),

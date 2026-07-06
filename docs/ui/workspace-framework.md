@@ -1,7 +1,15 @@
 # ECOS Workspace Framework
 
-**Status:** Approved (Foundation Sprint 02)  
+**Status:** Approved (Foundation Sprint 02) — Implementation Reference  
 **Applies to:** All operational workspaces in ECOS ERP
+
+> **Architecture Notice:** The workspace structure and behavioral rules are now governed by the Enterprise UX Architecture documents in `docs/ux/`. Specifically:
+> - `docs/ux/WORKSPACE-FRAMEWORK.md` — Architecture-level workspace standard (supersedes this document for structural decisions)
+> - `docs/ux/SMART-TOOLBAR-STANDARD.md` — Smart Toolbar specification
+> - `docs/ux/DATAGRID-STANDARD.md` — DataGrid specification
+> - `docs/ux/DETAIL-DRAWER-STANDARD.md` — Detail Drawer specification
+>
+> This document remains as the **implementation reference** for the current CRUD component library. New modules should follow `docs/ux/` architecture first, then map to these implementation components.
 
 ---
 

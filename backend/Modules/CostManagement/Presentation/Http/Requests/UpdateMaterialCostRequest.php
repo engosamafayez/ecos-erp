@@ -12,7 +12,7 @@ class UpdateMaterialCostRequest extends FormRequest
     {
         return [
             'material_cost' => ['required', 'numeric', 'min:0'],
-            'reason'        => ['nullable', 'string', 'max:500'],
+            'reason'        => ['required', 'string', 'min:3', 'max:500'],
         ];
     }
 }

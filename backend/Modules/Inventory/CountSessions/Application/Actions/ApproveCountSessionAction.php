@@ -11,35 +11,31 @@ use Modules\Inventory\CountSessions\Domain\Models\InventoryCountSession;
 use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
 use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
 use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentInAction;
-use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentOutAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
-use Modules\Inventory\ReceiptLayers\Application\Services\InventoryLayerConsumptionService;
-use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
 use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
+use Modules\Inventory\WarehouseLiabilities\Domain\Models\WarehouseLiability;
+use Modules\Inventory\WasteInvestigations\Domain\Models\WasteInvestigation;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
  * Posts inventory adjustments for a completed count session.
  *
- * Positive variance: AdjustmentInAction
- * Negative variance: AdjustmentOutAction + FIFO layer consumption
+ * Positive overstock  → AdjustmentIn immediately (counted_qty > system_qty)
+ * Shortage (shortage_qty > 0) → WarehouseLiability (pending). Deducted on approval.
+ * Damaged (damaged_qty > 0)   → WasteInvestigation (pending). Deducted on resolution.
  *
- * Requires approval; must be in 'completed' status.
- *
- * Publishes InventoryCountApproved AFTER the outermost DB transaction commits.
- * This is the authoritative event for a count session approval.
- *
- * Note: AdjustmentIn/Out actions called internally also publish
- * InventoryStockAdjusted events (at savepoint-release time, not at outermost
- * commit). Phase B will unify this with a PendingDomainEvents collector.
+ * No automatic AdjustmentOut for shortage or damage — those go through their
+ * respective accountability workflows before inventory is touched.
  */
 final class ApproveCountSessionAction
 {
+    private const SCALE_QTY   = 4;
+    private const SCALE_VALUE = 2;
+
     public function __construct(
         private readonly AdjustmentInAction $adjustmentIn,
-        private readonly AdjustmentOutAction $adjustmentOut,
-        private readonly InventoryLayerConsumptionService $layerConsumption,
         private readonly InventoryItemRepositoryInterface $inventory,
         private readonly DomainEventBus $eventBus,
     ) {}
@@ -52,74 +48,141 @@ final class ApproveCountSessionAction
             );
         }
 
-        $linesAdjusted = 0;
+        $session->loadMissing(['lines.product', 'warehouse']);
 
-        $result = DB::transaction(function () use ($session, $approvedBy, &$linesAdjusted): InventoryCountSession {
-            $session->loadMissing('lines.product', 'warehouse');
+        $companyId   = $session->warehouse->company_id;
+        $warehouseId = $session->warehouse_id;
+        $month       = now()->format('Y-m');
 
-            $companyId   = $session->warehouse->company_id;
-            $warehouseId = $session->warehouse_id;
+        // ── Zero-cost guard for positive overstock adjustments ────────────────
+        foreach ($session->lines as $line) {
+            /** @var InventoryCountLine $line */
+            if ($line->counted_qty === null) {
+                continue;
+            }
+            $countedStr = (string) $line->counted_qty;
+            $systemStr  = (string) $line->system_qty;
+            if (bccomp($countedStr, $systemStr, self::SCALE_QTY) <= 0) {
+                continue; // only check cost for adjustment-in lines
+            }
+            $product = $line->product;
+            $hasCost = $product?->average_cost !== null
+                || $product?->last_purchase_cost !== null
+                || $product?->current_fifo_cost !== null;
+
+            if (! $hasCost) {
+                throw new UnprocessableEntityHttpException(
+                    "Cannot approve: {$product?->name} ({$product?->sku}) has no valid inventory cost."
+                );
+            }
+        }
+
+        $linesAdjusted      = 0;
+        $liabilitiesCreated = 0;
+        $investigationsCreated = 0;
+
+        $result = DB::transaction(function () use (
+            $session, $approvedBy, $companyId, $warehouseId, $month,
+            &$linesAdjusted, &$liabilitiesCreated, &$investigationsCreated
+        ): InventoryCountSession {
 
             foreach ($session->lines as $line) {
                 /** @var InventoryCountLine $line */
-                if ($line->counted_qty === null || (float) $line->variance_qty === 0.0) {
+                if ($line->counted_qty === null) {
                     continue;
                 }
 
-                $varianceQty = (float) $line->variance_qty;
-                $dto = new StockOperationDTO(
-                    warehouse_id:   $warehouseId,
-                    product_id:     $line->product_id,
-                    company_id:     $companyId,
-                    quantity:       abs($varianceQty),
-                    reference_type: 'inventory_count',
-                    reference_id:   $session->id,
-                    notes:          "Adjustment from count {$session->count_number}",
+                $countedStr  = (string) $line->counted_qty;
+                $systemStr   = (string) $line->system_qty;
+                $damagedStr  = (string) ($line->damaged_qty ?? '0');
+                $shortageStr = (string) ($line->shortage_qty ?? '0');
+
+                $product   = $line->product;
+                $unitCost  = (float) (
+                    $product?->average_cost
+                    ?? $product?->last_purchase_cost
+                    ?? $product?->current_fifo_cost
+                    ?? 0
                 );
 
-                if ($varianceQty > 0) {
-                    // Positive: more stock than system shows → adjustment in
+                // Freeze unit cost on the line for historical report accuracy
+                $line->update(['unit_cost_snapshot' => $unitCost]);
+
+                // ── Case A: Overstock (counted > system) → AdjustmentIn immediately
+                if (bccomp($countedStr, $systemStr, self::SCALE_QTY) > 0) {
+                    $overQtyStr = bcsub($countedStr, $systemStr, self::SCALE_QTY);
+
+                    $dto = new StockOperationDTO(
+                        warehouse_id:   $warehouseId,
+                        product_id:     $line->product_id,
+                        company_id:     $companyId,
+                        quantity:       (float) $overQtyStr,
+                        reference_type: 'inventory_count',
+                        reference_id:   $session->id,
+                        notes:          "Overstock adjustment from count {$session->count_number}",
+                    );
                     $this->adjustmentIn->execute($dto);
 
-                    // Create a new receipt layer for the adjustment in (no real GR or supplier)
-                    $unitCost = (float) ($line->product?->average_cost ?? $line->product?->last_purchase_cost ?? 0);
                     InventoryReceiptLayer::query()->create([
-                        'supplier_id'           => $line->product?->last_supplier_id,
+                        'supplier_id'           => $product?->last_supplier_id,
                         'product_id'            => $line->product_id,
                         'goods_receipt_id'      => null,
                         'goods_receipt_line_id' => null,
                         'warehouse_id'          => $warehouseId,
-                        'received_qty'          => $varianceQty,
-                        'remaining_qty'         => $varianceQty,
-                        'landed_unit_cost'      => $unitCost,
-                        'sale_price_snapshot'   => $line->product?->sale_price,
+                        'received_qty'          => $overQtyStr,
+                        'remaining_qty'         => $overQtyStr,
+                        'landed_unit_cost'      => (string) $unitCost,
+                        'sale_price_snapshot'   => $product?->sale_price,
                         'receipt_date'          => now()->toDateString(),
                     ]);
-                } else {
-                    // Negative: less stock than system shows → adjustment out
-                    $absQty = abs($varianceQty);
 
-                    $this->adjustmentOut->execute($dto);
-
-                    // FIFO layer consumption for the adjustment out
-                    $inventoryItem = $this->inventory->findByWarehouseAndProduct($warehouseId, $line->product_id);
-                    if ($inventoryItem !== null) {
-                        $this->layerConsumption->consume(
-                            inventoryItemId: $inventoryItem->id,
-                            productId:       $line->product_id,
-                            warehouseId:     $warehouseId,
-                            companyId:       $companyId,
-                            quantity:        $absQty,
-                            orderId:         null,
-                            orderLineId:     null,
-                        );
-                    }
+                    $this->refreshFifoCost($line->product_id);
+                    $linesAdjusted++;
                 }
 
-                // Update current FIFO cost after each adjustment
-                $this->refreshFifoCost($line->product_id);
+                // ── Case B: Shortage > 0 → WarehouseLiability (pending)
+                if (bccomp($shortageStr, '0', self::SCALE_QTY) > 0) {
+                    $shortageQty   = (float) $shortageStr;
+                    $shortageTotal = round($shortageQty * $unitCost, 2);
 
-                $linesAdjusted++;
+                    WarehouseLiability::query()->create([
+                        'company_id'        => $companyId,
+                        'warehouse_id'      => $warehouseId,
+                        'product_id'        => $line->product_id,
+                        'count_session_id'  => $session->id,
+                        'count_line_id'     => $line->id,
+                        'liability_type'    => 'inventory_shortage',
+                        'quantity'          => $shortageQty,
+                        'unit_cost'         => $unitCost,
+                        'total_cost'        => $shortageTotal,
+                        'status'            => 'pending',
+                        'month'             => $month,
+                    ]);
+
+                    $liabilitiesCreated++;
+                }
+
+                // ── Case C: Damaged > 0 → WasteInvestigation (pending)
+                if (bccomp($damagedStr, '0', self::SCALE_QTY) > 0) {
+                    $damagedQty   = (float) $damagedStr;
+                    $damagedTotal = round($damagedQty * $unitCost, 2);
+
+                    WasteInvestigation::query()->create([
+                        'company_id'       => $companyId,
+                        'warehouse_id'     => $warehouseId,
+                        'count_session_id' => $session->id,
+                        'count_line_id'    => $line->id,
+                        'product_id'       => $line->product_id,
+                        'quantity'         => $damagedQty,
+                        'unit_cost'        => $unitCost,
+                        'total_cost'       => $damagedTotal,
+                        'damage_reason'    => $line->damage_reason,
+                        'status'           => 'pending_investigation',
+                        'month'            => $month,
+                    ]);
+
+                    $investigationsCreated++;
+                }
             }
 
             $session->update([
@@ -130,13 +193,11 @@ final class ApproveCountSessionAction
             return $session->refresh();
         });
 
-        // ── Publish after outermost commit ───────────────────────────────────
-        // DB::transaction() commits before returning; if it threw, we never reach here.
         $this->eventBus->publish(new InventoryCountApproved(
             countSessionId: $result->id,
             countNumber:    $result->count_number,
             warehouseId:    $result->warehouse_id,
-            companyId:      $result->warehouse->company_id,
+            companyId:      $companyId,
             linesAdjusted:  $linesAdjusted,
             approvedBy:     $approvedBy,
         ));

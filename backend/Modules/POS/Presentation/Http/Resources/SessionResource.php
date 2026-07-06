@@ -17,8 +17,10 @@ final class SessionResource extends JsonResource
     {
         return [
             'id'                 => $this->id,
-            'terminal_id'        => $this->terminal_id,
             'cashier_id'         => $this->cashier_id,
+            'company_id'         => $this->company_id,
+            'channel_id'         => $this->channel_id,
+            'warehouse_id'       => $this->warehouse_id,
             'status'             => $this->status->value,
             'device_fingerprint' => $this->device_fingerprint,
             'device_type'        => $this->device_type?->value,

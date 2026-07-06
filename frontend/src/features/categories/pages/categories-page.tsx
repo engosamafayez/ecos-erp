@@ -1,34 +1,51 @@
-import { useMemo, useState } from 'react';
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { useCallback, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Layers, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
 
-import {
-  ActionMenu,
-  ConfirmDialog,
-  EntityTable,
-  EntityToolbar,
-  PageHeader,
-  Pagination,
-  StatusBadge,
-} from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
-import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog, PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { toast } from '@/components/ds/use-toast';
 import { CategoryFormDrawer } from '@/features/categories/components/category-form-drawer';
 import { useCategoriesQuery, useDeleteCategory } from '@/features/categories/hooks/use-categories';
 import type {
   Category,
+  CategoryScope,
   CategorySortField,
   CategoryStatusFilter,
 } from '@/features/categories/types/category';
-import { ROUTES } from '@/router/routes';
 
-const PER_PAGE = 10;
+const PER_PAGE = 15;
+
+type ScopeTab = 'all' | CategoryScope;
+
+function ScopeTypeBadge({ scope }: { scope: CategoryScope }) {
+  if (scope === 'product') {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+        <Tag className="size-2.5" />
+        Product
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <Layers className="size-2.5" />
+      Material
+    </span>
+  );
+}
+
+function fmtDate(d: string | null | undefined): string {
+  if (!d) return '—';
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(d));
+}
 
 export function CategoriesPage() {
-  const { t } = useTranslation('categories');
-  const { t: tCommon } = useTranslation('common');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const scopeParam = searchParams.get('scope') as ScopeTab | null;
+  const activeScope: ScopeTab = scopeParam === 'product' || scopeParam === 'material' ? scopeParam : 'all';
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<CategoryStatusFilter>('all');
   const [page, setPage] = useState(1);
@@ -36,175 +53,292 @@ export function CategoriesPage() {
     field: 'created_at',
     direction: 'desc',
   });
-
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerCategory, setDrawerCategory] = useState<Category | null>(null);
   const [deleting, setDeleting] = useState<Category | null>(null);
 
-  const params = useMemo(
+  function setScope(tab: ScopeTab) {
+    const next = new URLSearchParams(searchParams);
+    if (tab === 'all') next.delete('scope');
+    else next.set('scope', tab);
+    setSearchParams(next, { replace: true });
+    setPage(1);
+  }
+
+  const scopeQueryArg = activeScope === 'all' ? undefined : activeScope;
+
+  const mainParams = useMemo(
     () => ({
       search: search || undefined,
       status: statusFilter,
+      scope: scopeQueryArg,
       page,
       per_page: PER_PAGE,
       sort_by: sort.field,
       sort_dir: sort.direction,
     }),
-    [search, statusFilter, page, sort],
+    [search, statusFilter, scopeQueryArg, page, sort],
   );
 
-  const { data, isLoading, isError, isFetching, refetch } = useCategoriesQuery(params);
-  const deleteCategory = useDeleteCategory();
+  const { data, isLoading, isError, isFetching } = useCategoriesQuery(mainParams);
 
+  // Lightweight count queries for tab labels (per_page=1 → meta.total)
+  const { data: allCount } = useCategoriesQuery({ per_page: 1, page: 1 });
+  const { data: productCount } = useCategoriesQuery({ per_page: 1, page: 1, scope: 'product' });
+  const { data: materialCount } = useCategoriesQuery({ per_page: 1, page: 1, scope: 'material' });
+
+  const deleteCategory = useDeleteCategory();
   const items = data?.items ?? [];
   const meta = data?.meta;
 
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    setPage(1);
-  };
+  const openCreate = useCallback(() => {
+    setDrawerCategory(null);
+    setDrawerOpen(true);
+  }, []);
 
-  const handleSort = (field: string) => {
+  const openEdit = useCallback((cat: Category) => {
+    setDrawerCategory(cat);
+    setDrawerOpen(true);
+  }, []);
+
+  function handleSort(field: string) {
     setSort((current) =>
       current.field === field
         ? { field: field as CategorySortField, direction: current.direction === 'asc' ? 'desc' : 'asc' }
         : { field: field as CategorySortField, direction: 'asc' },
     );
     setPage(1);
-  };
+  }
 
-  const openCreate = () => {
-    setDrawerCategory(null);
-    setDrawerOpen(true);
-  };
+  function handleDelete(cat: Category) {
+    deleteCategory.mutate(cat.id, {
+      onSuccess: () => {
+        setDeleting(null);
+        toast.success(`Category "${cat.name}" deleted.`);
+      },
+      onError: () => toast.error('Failed to delete category.'),
+    });
+  }
 
-  const openEdit = (category: Category) => {
-    setDrawerCategory(category);
-    setDrawerOpen(true);
-  };
+  const SortBtn = ({ field, label }: { field: CategorySortField; label: string }) => (
+    <button
+      type="button"
+      onClick={() => handleSort(field)}
+      className="flex items-center gap-0.5 hover:text-foreground transition-colors"
+    >
+      {label}
+      {sort.field === field && (
+        <span className="text-primary ml-0.5">{sort.direction === 'asc' ? '↑' : '↓'}</span>
+      )}
+    </button>
+  );
 
-  const columns: ColumnDef<Category>[] = [
-    {
-      key: 'code',
-      header: t('columns.code'),
-      sortable: true,
-      cell: (c) => <span className="font-medium">{c.code}</span>,
-    },
-    { key: 'name', header: t('columns.name'), sortable: true, cell: (c) => c.name },
-    { key: 'parent', header: t('columns.parent'), cell: (c) => c.parent?.name ?? '—' },
-    {
-      key: 'level',
-      header: t('columns.level'),
-      sortable: true,
-      cell: (c) => <Badge variant="secondary">L{c.level}</Badge>,
-    },
-    {
-      key: 'sort_order',
-      header: t('columns.sort'),
-      sortable: true,
-      cell: (c) => <span className="text-muted-foreground">{c.sort_order}</span>,
-    },
-    {
-      key: 'is_active',
-      header: t('columns.status'),
-      sortable: true,
-      cell: (c) => <StatusBadge status={c.is_active ? 'active' : 'inactive'} />,
-    },
+  const TABS: { id: ScopeTab; label: string; count: number | undefined }[] = [
+    { id: 'all',      label: 'All',       count: allCount?.meta.total },
+    { id: 'product',  label: 'Products',  count: productCount?.meta.total },
+    { id: 'material', label: 'Materials', count: materialCount?.meta.total },
   ];
 
-  const confirmDelete = () => {
-    if (!deleting) return;
-    deleteCategory.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
-  };
+  const defaultScope = activeScope === 'all' ? undefined : activeScope;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col h-full">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
-        breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: 'Products', to: ROUTES.inventoryProducts },
-          { label: t('title') },
-        ]}
+        title="Categories"
+        subtitle="Unified workspace for Product and Material categories."
         actions={
           <Button onClick={openCreate}>
-            <Plus className="size-4" />
-            {t('actions.new')}
+            <Plus className="size-4 mr-1.5" />
+            New Category
           </Button>
         }
       />
 
-      <Card>
-        <CardContent className="flex flex-col gap-4 pt-6">
-          <EntityToolbar
-            searchPlaceholder={t('search')}
-            onSearchChange={handleSearch}
-            onRefresh={() => void refetch()}
-            isRefreshing={isFetching}
-            onExport={() => undefined}
-            onClearFilters={() => {
-              setStatusFilter('all');
-              setPage(1);
-            }}
-            filterPanel={
-              <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{tCommon('filters.status')}</span>
-                <select
-                  value={statusFilter}
-                  onChange={(event) => {
-                    setStatusFilter(event.target.value as CategoryStatusFilter);
-                    setPage(1);
-                  }}
-                  className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
-                >
-                  <option value="all">{tCommon('status.all')}</option>
-                  <option value="active">{tCommon('status.active')}</option>
-                  <option value="inactive">{tCommon('status.inactive')}</option>
-                </select>
-              </div>
-            }
-          />
+      <div className="flex-1 overflow-auto px-6 pb-6 flex flex-col gap-4">
+        {/* ── Scope Tabs ─────────────────────────────────────────────── */}
+        <div className="flex items-end gap-0 border-b">
+          {TABS.map(({ id, label, count }) => (
+            <button
+              key={id}
+              onClick={() => setScope(id)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                activeScope === id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+              }`}
+            >
+              {label}
+              {count !== undefined && (
+                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+                  activeScope === id
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
-          <EntityTable<Category>
-            columns={columns}
-            data={items}
-            getRowId={(category) => category.id}
-            isLoading={isLoading}
-            isError={isError}
-            sort={sort}
-            onSortChange={handleSort}
-            rowActions={(category) => (
-              <ActionMenu
-                label={`Actions for ${category.name}`}
-                items={[
-                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(category) },
-                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(category) },
-                  {
-                    key: 'delete',
-                    label: tCommon('common.delete'),
-                    icon: Trash2,
-                    variant: 'destructive',
-                    onSelect: () => setDeleting(category),
-                  },
-                ]}
-              />
-            )}
+        {/* ── Toolbar ───────────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            className="h-8 w-56 text-sm"
+            placeholder="Search by code or name…"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value as CategoryStatusFilter); setPage(1); }}
+            className="h-8 w-32 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          {(search || statusFilter !== 'all') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => { setSearch(''); setStatusFilter('all'); setPage(1); }}
+            >
+              Clear
+            </Button>
+          )}
+          <span className="ml-auto text-xs text-muted-foreground">
+            {meta ? `${meta.total} categories` : ''}
+          </span>
+        </div>
 
-          {meta ? (
-            <Pagination
-              meta={{
-                page: meta.current_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={setPage}
-            />
-          ) : null}
-        </CardContent>
-      </Card>
+        {/* ── DataGrid ─────────────────────────────────────────────── */}
+        <div className={`rounded-lg border overflow-hidden transition-opacity ${isFetching ? 'opacity-60' : ''}`}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 border-b">
+                <tr>
+                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">
+                    <SortBtn field="name" label="Name" />
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Type</th>
+                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Parent</th>
+                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">
+                    <SortBtn field="level" label="Level" />
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Used By</th>
+                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">
+                    <SortBtn field="is_active" label="Status" />
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">
+                    <SortBtn field="created_at" label="Updated" />
+                  </th>
+                  <th className="px-3 py-3 w-20" />
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                      Loading categories…
+                    </td>
+                  </tr>
+                ) : isError ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-12 text-center text-sm text-destructive">
+                      Failed to load categories.
+                    </td>
+                  </tr>
+                ) : items.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                      {search
+                        ? `No categories match "${search}".`
+                        : activeScope === 'product'
+                          ? 'No product categories yet.'
+                          : activeScope === 'material'
+                            ? 'No material categories yet.'
+                            : 'No categories yet. Create one to get started.'}
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((cat) => (
+                    <tr
+                      key={cat.id}
+                      className="border-t hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => openEdit(cat)}
+                    >
+                      <td className="px-3 py-2.5">
+                        <div>
+                          <p className="font-medium leading-tight">{cat.name}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">{cat.code}</p>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <ScopeTypeBadge scope={cat.category_scope} />
+                      </td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">
+                        {cat.parent?.name ?? <span className="italic">Root</span>}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="text-xs font-medium bg-secondary text-secondary-foreground rounded px-1.5 py-0.5">
+                          L{cat.level}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">—</td>
+                      <td className="px-3 py-2.5">
+                        <span className={`inline-block w-2 h-2 rounded-full ${cat.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                        <span className="ml-1.5 text-xs text-muted-foreground">{cat.is_active ? 'Active' : 'Inactive'}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{fmtDate(cat.updated_at)}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); openEdit(cat); }}
+                            className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                            title="Edit"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setDeleting(cat); }}
+                            className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-destructive"
+                            title="Delete"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Pagination */}
+        {meta && meta.last_page > 1 && (
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              Showing {(meta.current_page - 1) * meta.per_page + 1}–
+              {Math.min(meta.current_page * meta.per_page, meta.total)} of {meta.total}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                Previous
+              </Button>
+              <span>Page {meta.current_page} of {meta.last_page}</span>
+              <Button size="sm" variant="outline" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <CategoryFormDrawer
         open={drawerOpen}
@@ -213,19 +347,18 @@ export function CategoriesPage() {
           if (!open) setDrawerCategory(null);
         }}
         category={drawerCategory}
+        defaultScope={defaultScope}
       />
 
       <ConfirmDialog
         open={deleting !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleting(null);
-        }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        onOpenChange={(open) => { if (!open) setDeleting(null); }}
+        title="Delete Category"
+        description={`Are you sure you want to delete "${deleting?.name ?? ''}"? This action cannot be undone.`}
+        confirmLabel="Delete"
         variant="destructive"
         loading={deleteCategory.isPending}
-        onConfirm={confirmDelete}
+        onConfirm={() => { if (deleting) handleDelete(deleting); }}
       />
     </div>
   );

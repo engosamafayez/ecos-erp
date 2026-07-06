@@ -15,20 +15,21 @@ use Modules\Organization\Companies\Domain\Models\Company;
 final class EloquentCompanyRepository implements CompanyRepositoryInterface
 {
     /** Columns that may be sorted on (whitelist). */
-    private const SORTABLE = ['code', 'name', 'country', 'is_active', 'created_at'];
+    private const SORTABLE = ['code', 'name', 'currency', 'timezone', 'country', 'is_active', 'created_at', 'updated_at'];
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Company::query();
+        $query = Company::query()->withCount(['brands', 'warehouses', 'teams', 'businessAccounts']);
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
                 $builder
-                    ->where('code', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('country', 'like', "%{$search}%");
+                    ->where('code', 'ilike', "%{$search}%")
+                    ->orWhere('name', 'ilike', "%{$search}%")
+                    ->orWhere('email', 'ilike', "%{$search}%")
+                    ->orWhere('country', 'ilike', "%{$search}%")
+                    ->orWhere('description', 'ilike', "%{$search}%");
             });
         }
 
@@ -45,16 +46,14 @@ final class EloquentCompanyRepository implements CompanyRepositoryInterface
         }
 
         $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
-
-        $perPage = (int) ($filters['per_page'] ?? 10);
-        $perPage = max(1, min($perPage, 100));
+        $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
 
         return $query->orderBy($sortBy, $sortDir)->paginate($perPage);
     }
 
     public function findById(string $id): ?Company
     {
-        return Company::query()->find($id);
+        return Company::query()->withCount(['brands', 'warehouses', 'teams', 'businessAccounts'])->find($id);
     }
 
     public function create(array $attributes): Company

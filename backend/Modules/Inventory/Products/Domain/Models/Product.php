@@ -11,17 +11,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\Products\Domain\Enums\CostSource;
 use Modules\Inventory\Products\Domain\Enums\ProductStockStatus;
 use Modules\Inventory\Products\Infrastructure\Database\Factories\ProductFactory;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Models\Recipe;
 use Modules\MasterData\Categories\Domain\Models\Category;
 use Modules\MasterData\Units\Domain\Models\Unit;
+use Modules\Organization\Brands\Domain\Models\Brand;
 
 /**
  * Product entity (UUID primary key, soft-deletable).
  *
  * @property string $id
+ * @property string|null $brand_id              Direct owner. Immutable after creation. Company derived via brand.
  * @property string $sku
  * @property string|null $barcode
  * @property string $name
@@ -58,8 +61,10 @@ class Product extends Model
 
     public const TYPE_RAW_MATERIAL = 'raw_material';
 
+    public const TYPE_PACKAGING_MATERIAL = 'packaging_material';
+
     /** @var list<string> */
-    public const TYPES = [self::TYPE_FINISHED_GOOD, self::TYPE_RAW_MATERIAL];
+    public const TYPES = [self::TYPE_FINISHED_GOOD, self::TYPE_RAW_MATERIAL, self::TYPE_PACKAGING_MATERIAL];
 
     public $incrementing = false;
 
@@ -69,6 +74,7 @@ class Product extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'brand_id',
         'sku',
         'barcode',
         'name',
@@ -95,6 +101,10 @@ class Product extends Model
         'material_cost',
         'product_cost',
         'unit_cost',
+        'pricing_mode',
+        'custom_target_margin',
+        'custom_markup',
+        'custom_discount_pct',
     ];
 
     /**
@@ -112,6 +122,9 @@ class Product extends Model
             'material_cost'        => 'float',
             'product_cost'         => 'float',
             'unit_cost'            => 'float',
+            'custom_target_margin'  => 'float',
+            'custom_markup'         => 'float',
+            'custom_discount_pct'   => 'float',
             'last_purchase_date'   => 'date:Y-m-d',
             'stock_status'         => ProductStockStatus::class,
             'cost_source'          => CostSource::class,
@@ -119,6 +132,61 @@ class Product extends Model
             'can_disassemble'      => 'boolean',
             'allow_negative_stock' => 'boolean',
         ];
+    }
+
+    /**
+     * Brand owner. Immutable after creation. Company is derived via brand → company.
+     *
+     * @return BelongsTo<Brand, $this>
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    /**
+     * Effective target margin for pricing decisions.
+     * Custom policy overrides brand default; fallback is 30%.
+     */
+    public function effectiveTargetMargin(): float
+    {
+        if ($this->pricing_mode === 'custom' && $this->custom_target_margin !== null) {
+            return (float) $this->custom_target_margin;
+        }
+
+        if ($this->relationLoaded('brand') && $this->brand?->default_target_margin !== null) {
+            return (float) $this->brand->default_target_margin;
+        }
+
+        return 30.0;
+    }
+
+    /**
+     * Effective markup percentage.
+     * Derived from effective target margin: markup = margin / (100 - margin) * 100
+     */
+    public function effectiveMarkup(): float
+    {
+        $margin = $this->effectiveTargetMargin();
+
+        return $margin < 100 ? round($margin / (100 - $margin) * 100, 4) : 0.0;
+    }
+
+    /**
+     * Effective discount percentage for sale price calculation.
+     * Custom policy overrides brand default; fallback is 0% (no discount).
+     */
+    public function effectiveDiscountPct(): float
+    {
+        if ($this->pricing_mode === 'custom' && $this->custom_discount_pct !== null) {
+            return (float) $this->custom_discount_pct;
+        }
+
+        if ($this->relationLoaded('brand') && $this->brand?->default_discount_pct !== null) {
+            return (float) $this->brand->default_discount_pct;
+        }
+
+        return 0.0;
     }
 
     /**
@@ -135,6 +203,26 @@ class Product extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * Inventory items across all warehouses for this product.
+     *
+     * @return HasMany<InventoryItem, $this>
+     */
+    public function inventoryItems(): HasMany
+    {
+        return $this->hasMany(InventoryItem::class);
+    }
+
+    /**
+     * Commerce channel mappings for this product (product_channel_mappings table).
+     *
+     * @return HasMany<\Modules\Commerce\ProductMappings\Domain\Models\ProductMapping, $this>
+     */
+    public function channelMappings(): HasMany
+    {
+        return $this->hasMany(\Modules\Commerce\ProductMappings\Domain\Models\ProductMapping::class);
     }
 
     /**
@@ -164,6 +252,16 @@ class Product extends Model
     public function hasRecipe(): bool
     {
         return $this->recipes()->where('is_active', true)->exists();
+    }
+
+    /**
+     * Pricing reviews for this product.
+     *
+     * @return HasMany<\Modules\CostManagement\Domain\Models\PricingReview, $this>
+     */
+    public function pricingReviews(): HasMany
+    {
+        return $this->hasMany(\Modules\CostManagement\Domain\Models\PricingReview::class);
     }
 
     protected static function newFactory(): ProductFactory

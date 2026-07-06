@@ -34,12 +34,14 @@ class RecipeLine extends Model
         'bom_id',
         'raw_material_id',
         'quantity',
+        'waste_percentage',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity' => 'decimal:4',
+            'quantity'        => 'decimal:4',
+            'waste_percentage' => 'float',
         ];
     }
 
