@@ -20,12 +20,47 @@ final class PreparationWaveResource extends JsonResource
             ? round(($this->total_units_prepared / $this->total_units_required) * 100, 1)
             : 0.0;
 
+        // Phase 10 — geography summary grouped by governorate → zone → count
+        $geographySummary = $this->whenLoaded('waveOrders', function () {
+            return $this->waveOrders
+                ->groupBy(fn ($o) => $o->governorate_snapshot ?? 'Unknown')
+                ->map(fn ($govOrders, $gov) => [
+                    'governorate'  => $gov,
+                    'order_count'  => $govOrders->count(),
+                    'zones'        => $govOrders
+                        ->groupBy(fn ($o) => $o->zone_code_snapshot ?? 'Unknown')
+                        ->map(fn ($zoneOrders, $zone) => [
+                            'zone_code'   => $zone,
+                            'order_count' => $zoneOrders->count(),
+                        ])
+                        ->values(),
+                ])
+                ->values();
+        });
+
+        // Phase 4 — summary of key policy settings applied at wave creation
+        $policyApplied = $this->policy_snapshot ? [
+            'wave_priority'            => $this->policy_snapshot['wave_priority'] ?? 'fifo',
+            'batch_size'               => $this->policy_snapshot['batch_size'] ?? 50,
+            'partial_preparation'      => $this->policy_snapshot['partial_preparation'] ?? false,
+            'negative_stock_handling'  => $this->policy_snapshot['negative_stock_handling'] ?? 'block',
+            'merge_orders'             => $this->policy_snapshot['merge_orders'] ?? true,
+        ] : null;
+
         return [
             'id'                     => $this->id,
             'wave_number'            => $this->wave_number,
             'status'                 => $this->status?->value,
             'planning_date'          => $this->planning_date?->toDateString(),
             'warehouse_id'           => $this->warehouse_id,
+            // Phase 1 — brand + channel context
+            'brand_id'               => $this->brand_id,
+            'channel_id'             => $this->channel_id,
+            'delivery_window_id'     => $this->delivery_window_id,
+            'delivery_window_label'  => $this->delivery_window_label,
+            'wave_type'              => $this->wave_type,
+            'priority_score'         => $this->priority_score,
+            'policy_applied'         => $policyApplied,
             'orders_count'           => $this->orders_count,
             'products_count'         => $this->products_count,
             'lines_count'            => $this->lines_count,
@@ -46,13 +81,26 @@ final class PreparationWaveResource extends JsonResource
             'cancellation_reason'    => $this->cancellation_reason,
             'created_at'             => $this->created_at?->toIso8601String(),
             'created_by'             => $this->created_by,
+            // Phase 10 — geography grouping for wave cards
+            'geography_summary'      => $geographySummary,
 
             'orders' => $this->whenLoaded('waveOrders', fn () =>
                 $this->waveOrders->map(fn ($o) => [
-                    'id'           => $o->id,
-                    'order_id'     => $o->order_id,
-                    'order_number' => $o->order_number,
-                    'added_at'     => $o->added_at?->toIso8601String(),
+                    'id'                        => $o->id,
+                    'order_id'                  => $o->order_id,
+                    'order_number'              => $o->order_number,
+                    // Phase 3 & 7 — delivery intelligence per order
+                    'delivery_zone_snapshot'    => $o->delivery_zone_snapshot,
+                    'delivery_window_id'        => $o->delivery_window_id,
+                    'delivery_window_label'     => $o->delivery_window_label,
+                    'delivery_window_starts_at' => $o->delivery_window_starts_at,
+                    'delivery_window_ends_at'   => $o->delivery_window_ends_at,
+                    'governorate_snapshot'      => $o->governorate_snapshot,
+                    'zone_code_snapshot'        => $o->zone_code_snapshot,
+                    'shipping_cost_snapshot'    => $o->shipping_cost_snapshot,
+                    'preparation_priority'      => $o->preparation_priority,
+                    'is_paid'                   => $o->is_paid,
+                    'added_at'                  => $o->added_at?->toIso8601String(),
                 ])
             ),
 

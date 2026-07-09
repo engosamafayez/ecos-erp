@@ -55,6 +55,9 @@ class PreparedProductsPool extends Model
         'quality_status',
         'quality_checked_by',
         'quality_checked_at',
+        'shipping_gate_opened',
+        'gate_opened_by',
+        'gate_opened_at',
         'prepared_at',
         'reserved_for_wave_id',
         'notes',
@@ -66,17 +69,25 @@ class PreparedProductsPool extends Model
     protected function casts(): array
     {
         return [
-            'quality_status'     => QualityStatus::class,
-            'quantity_available' => 'float',
-            'quantity_reserved'  => 'float',
-            'quantity_loaded'    => 'float',
-            'quality_checked_at' => 'datetime',
-            'prepared_at'        => 'datetime',
+            'quality_status'       => QualityStatus::class,
+            'quantity_available'   => 'float',
+            'quantity_reserved'    => 'float',
+            'quantity_loaded'      => 'float',
+            'quality_checked_at'   => 'datetime',
+            'shipping_gate_opened' => 'boolean',
+            'gate_opened_at'       => 'datetime',
+            'prepared_at'          => 'datetime',
         ];
     }
 
     public function canBeReserved(): bool
     {
+        // Shipping gate must be open (set by ApproveSessionAction).
+        // Legacy pool entries (pre-gate feature) have shipping_gate_opened = true by default.
+        if (! $this->shipping_gate_opened) {
+            return false;
+        }
+
         return $this->quality_status->canBeReserved()
             && $this->quantity_available > 0;
     }

@@ -8,38 +8,47 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
 
 /**
- * @property string          $id
- * @property string          $company_id
- * @property string          $warehouse_id
- * @property string          $wave_number
- * @property \Carbon\Carbon  $planning_date
- * @property WaveStatus      $status
- * @property int             $orders_count
- * @property int             $products_count
- * @property int             $lines_count
- * @property float           $total_units_required
- * @property float           $total_units_prepared
- * @property bool            $shortage_detected
- * @property string|null     $shortage_resolved_by
+ * @property string              $id
+ * @property string              $company_id
+ * @property string              $warehouse_id
+ * @property string|null         $preparation_session_id
+ * @property string              $wave_number
+ * @property \Carbon\Carbon      $planning_date
+ * @property WaveStatus          $status
+ * @property int                 $orders_count
+ * @property int                 $products_count
+ * @property int                 $lines_count
+ * @property float               $total_units_required
+ * @property float               $total_units_prepared
+ * @property bool                $shortage_detected
+ * @property string|null         $shortage_resolved_by
  * @property \Carbon\Carbon|null $shortage_resolved_at
- * @property string|null     $approved_by
+ * @property string|null         $approved_by
  * @property \Carbon\Carbon|null $approved_at
- * @property string|null     $started_by
+ * @property string|null         $started_by
  * @property \Carbon\Carbon|null $started_at
- * @property string|null     $completed_by
+ * @property string|null         $completed_by
  * @property \Carbon\Carbon|null $completed_at
- * @property string|null     $cancelled_by
+ * @property string|null         $cancelled_by
  * @property \Carbon\Carbon|null $cancelled_at
- * @property string|null     $cancellation_reason
- * @property string|null     $config_version_id
- * @property string|null     $notes
- * @property string          $created_by
- * @property string          $updated_by
- * @property \Carbon\Carbon  $created_at
- * @property \Carbon\Carbon  $updated_at
+ * @property string|null         $cancellation_reason
+ * @property string|null         $brand_id
+ * @property string|null         $channel_id
+ * @property string|null         $delivery_window_id
+ * @property string|null         $delivery_window_label
+ * @property array|null          $policy_snapshot
+ * @property string              $wave_type
+ * @property int|null            $priority_score
+ * @property string|null         $config_version_id
+ * @property string|null         $notes
+ * @property string              $created_by
+ * @property string              $updated_by
+ * @property \Carbon\Carbon      $created_at
+ * @property \Carbon\Carbon      $updated_at
  */
 class PreparationWave extends Model
 {
@@ -55,6 +64,7 @@ class PreparationWave extends Model
     protected $fillable = [
         'company_id',
         'warehouse_id',
+        'preparation_session_id',
         'wave_number',
         'planning_date',
         'status',
@@ -75,6 +85,13 @@ class PreparationWave extends Model
         'cancelled_at',
         'cancelled_by',
         'cancellation_reason',
+        'brand_id',
+        'channel_id',
+        'delivery_window_id',
+        'delivery_window_label',
+        'policy_snapshot',
+        'wave_type',
+        'priority_score',
         'config_version_id',
         'notes',
         'created_by',
@@ -98,6 +115,8 @@ class PreparationWave extends Model
             'started_at'           => 'datetime',
             'completed_at'         => 'datetime',
             'cancelled_at'         => 'datetime',
+            'policy_snapshot'      => 'array',
+            'priority_score'       => 'integer',
         ];
     }
 
@@ -108,6 +127,12 @@ class PreparationWave extends Model
         }
 
         return round(($this->total_units_prepared / $this->total_units_required) * 100, 1);
+    }
+
+    /** @return BelongsTo<PreparationSession, $this> */
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(PreparationSession::class, 'preparation_session_id');
     }
 
     /** @return HasMany<PreparationWaveOrder, $this> */

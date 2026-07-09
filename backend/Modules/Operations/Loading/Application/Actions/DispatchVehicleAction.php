@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Operations\Loading\Application\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Operations\Fulfillment\Application\Workflows\LoadVehicleWorkflow;
 use Modules\Operations\Loading\Domain\Enums\DriverAssignmentStatus;
 use Modules\Operations\Loading\Domain\Enums\VehicleAssignmentStatus;
 use Modules\Operations\Loading\Domain\Events\VehicleReleased;
@@ -13,6 +14,10 @@ use RuntimeException;
 
 final class DispatchVehicleAction
 {
+    public function __construct(
+        private readonly LoadVehicleWorkflow $loadVehicleWorkflow,
+    ) {}
+
     public function execute(VehicleAssignment $assignment, string $actorId): VehicleAssignment
     {
         $status = $assignment->status instanceof VehicleAssignmentStatus
@@ -48,6 +53,10 @@ final class DispatchVehicleAction
                 'departure_time_actual' => now(),
                 'updated_by'            => $actorId,
             ]);
+
+            // Ship inventory for all orders on this vehicle and advance their status to out_for_delivery.
+            // Runs as a savepoint inside this transaction — failure rolls back both dispatch + shipping.
+            $this->loadVehicleWorkflow->execute($assignment, $actorId);
 
             event(new VehicleReleased(
                 companyId:    $assignment->company_id,

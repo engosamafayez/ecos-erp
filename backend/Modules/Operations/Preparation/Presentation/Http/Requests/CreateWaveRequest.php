@@ -18,11 +18,14 @@ final class CreateWaveRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'planning_date'  => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
-            'warehouse_id'   => ['required', 'uuid', 'exists:warehouses,id'],
-            'order_ids'      => ['required', 'array', 'min:1'],
-            'order_ids.*'    => ['required', 'uuid'],
-            'notes'          => ['nullable', 'string', 'max:1000'],
+            'planning_date'      => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'warehouse_id'       => ['required', 'uuid', 'exists:warehouses,id'],
+            'order_ids'          => ['required', 'array', 'min:1'],
+            'order_ids.*'        => ['required', 'uuid'],
+            'brand_id'           => ['nullable', 'uuid', 'exists:brands,id'],
+            'channel_id'         => ['nullable', 'uuid', 'exists:sales_channels,id'],
+            'delivery_window_id' => ['nullable', 'uuid'],
+            'notes'              => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

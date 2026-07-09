@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Operations\Preparation\Application\DTOs\RecalculateWaveDTO;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
 use Modules\Operations\Preparation\Domain\Exceptions\InvalidWaveStatusTransitionException;
+use Modules\Operations\Preparation\Domain\Exceptions\OrderAlreadyInWaveException;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 use Modules\Operations\Preparation\Domain\Models\PreparationWaveOrder;
 
@@ -28,6 +29,20 @@ final class RecalculateWaveAction
         }
 
         return DB::transaction(function () use ($wave, $dto): PreparationWave {
+            // P1C — Order Exclusivity: check any newly-added orders aren't already in another wave.
+            if (! empty($dto->addOrderLines)) {
+                $newOrderIds = array_column($dto->addOrderLines, 'order_id');
+                $conflicts   = PreparationWaveOrder::where('company_id', $wave->company_id)
+                    ->where('preparation_wave_id', '!=', $wave->id)
+                    ->whereIn('order_id', $newOrderIds)
+                    ->pluck('order_id')
+                    ->all();
+
+                if (! empty($conflicts)) {
+                    throw new OrderAlreadyInWaveException($conflicts);
+                }
+            }
+
             foreach ($dto->removeOrderIds as $orderId) {
                 PreparationWaveOrder::where('preparation_wave_id', $wave->id)
                     ->where('order_id', $orderId)

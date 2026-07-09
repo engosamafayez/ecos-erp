@@ -8,6 +8,7 @@ use App\Core\Audit\AuditService;
 use App\Core\FeatureFlags\FeatureFlagService;
 use App\Core\Timeline\TimelineService;
 use Illuminate\Support\Facades\DB;
+use Modules\Operations\Preparation\Application\Services\SoftReservationService;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
 use Modules\Operations\Preparation\Domain\Events\WaveCancelled;
 use Modules\Operations\Preparation\Domain\Exceptions\InvalidWaveStatusTransitionException;
@@ -16,9 +17,10 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 final class CancelWaveAction
 {
     public function __construct(
-        private readonly AuditService       $audit,
-        private readonly TimelineService    $timeline,
-        private readonly FeatureFlagService $flags,
+        private readonly AuditService           $audit,
+        private readonly TimelineService        $timeline,
+        private readonly FeatureFlagService     $flags,
+        private readonly SoftReservationService $softReservation,
     ) {}
 
     public function execute(PreparationWave $wave, string $actorId, string $reason): PreparationWave
@@ -52,6 +54,9 @@ final class CancelWaveAction
                     'released_at' => $now,
                     'released_by' => $actorId,
                 ]);
+
+            // Release any soft reservations so the stock becomes available to other waves.
+            $this->softReservation->release($wave, $actorId);
 
             event(new WaveCancelled(
                 waveId:             $wave->id,

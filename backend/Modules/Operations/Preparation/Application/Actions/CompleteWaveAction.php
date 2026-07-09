@@ -17,6 +17,7 @@ use Modules\Operations\Preparation\Domain\Enums\WaveItemStatus;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
 use Modules\Operations\Preparation\Domain\Events\PoolUpdated;
 use Modules\Operations\Preparation\Domain\Events\WaveCompleted;
+use Modules\Operations\Preparation\Application\Services\SoftReservationService;
 use Modules\Operations\Preparation\Domain\Exceptions\InvalidWaveStatusTransitionException;
 use Modules\Operations\Preparation\Domain\Models\PreparedPoolMovement;
 use Modules\Operations\Preparation\Domain\Models\PreparedProductsPool;
@@ -25,9 +26,10 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 final class CompleteWaveAction
 {
     public function __construct(
-        private readonly AuditService       $audit,
-        private readonly TimelineService    $timeline,
-        private readonly FeatureFlagService $flags,
+        private readonly AuditService         $audit,
+        private readonly TimelineService      $timeline,
+        private readonly FeatureFlagService   $flags,
+        private readonly SoftReservationService $softReservation,
     ) {}
 
     public function execute(PreparationWave $wave, string $actorId): PreparationWave
@@ -52,6 +54,10 @@ final class CompleteWaveAction
             $now         = now();
             $poolEntries = 0;
             $shortItems  = [];
+            // Determine whether this wave belongs to a session.
+            // Pool entries for session-owned waves have gate closed until session approval.
+            $hasSession     = ! is_null($wave->preparation_session_id);
+            $gateOpenNow    = ! $hasSession; // standalone waves open gate immediately
 
             foreach ($wave->waveItems as $item) {
                 if ($item->quantity_prepared <= 0) {
@@ -69,19 +75,20 @@ final class CompleteWaveAction
                     $pool->update(['updated_by' => $actorId]);
                 } else {
                     $pool = PreparedProductsPool::create([
-                        'company_id'          => $wave->company_id,
-                        'warehouse_id'        => $wave->warehouse_id,
-                        'product_id'          => $item->product_id,
-                        'sku_snapshot'        => $item->sku_snapshot,
-                        'name_snapshot'       => $item->name_snapshot,
-                        'preparation_wave_id' => $wave->id,
-                        'quantity_available'  => $item->quantity_prepared,
-                        'quantity_reserved'   => 0,
-                        'quantity_loaded'     => 0,
-                        'quality_status'      => QualityStatus::PendingReview->value,
-                        'prepared_at'         => $now,
-                        'created_by'          => $actorId,
-                        'updated_by'          => $actorId,
+                        'company_id'           => $wave->company_id,
+                        'warehouse_id'         => $wave->warehouse_id,
+                        'product_id'           => $item->product_id,
+                        'sku_snapshot'         => $item->sku_snapshot,
+                        'name_snapshot'        => $item->name_snapshot,
+                        'preparation_wave_id'  => $wave->id,
+                        'quantity_available'   => $item->quantity_prepared,
+                        'quantity_reserved'    => 0,
+                        'quantity_loaded'      => 0,
+                        'quality_status'       => QualityStatus::PendingReview->value,
+                        'shipping_gate_opened' => $gateOpenNow,
+                        'prepared_at'          => $now,
+                        'created_by'           => $actorId,
+                        'updated_by'           => $actorId,
                     ]);
                     $poolEntries++;
                 }
@@ -191,6 +198,9 @@ final class CompleteWaveAction
                     'duration_minutes' => $durationMinutes,
                 ],
             );
+
+            // Mark soft reservations as consumed — stock has been physically used.
+            $this->softReservation->consume($wave, $actorId);
 
             return $wave->fresh() ?? $wave;
         });

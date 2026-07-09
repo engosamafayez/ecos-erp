@@ -22,6 +22,7 @@ use Modules\Operations\Preparation\Domain\Models\PreparationPickList;
 use Modules\Operations\Preparation\Domain\Models\PreparationPickListItem;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 use Modules\Operations\Preparation\Domain\Models\PreparationWaveWorker;
+use Modules\Operations\Preparation\Application\Services\SoftReservationService;
 use Modules\Operations\Preparation\Domain\Services\FulfillmentPolicyService;
 
 final class StartPreparationAction
@@ -31,6 +32,7 @@ final class StartPreparationAction
         private readonly TimelineService          $timeline,
         private readonly FulfillmentPolicyService $fulfillmentPolicy,
         private readonly FeatureFlagService       $flags,
+        private readonly SoftReservationService   $softReservation,
     ) {}
 
     public function execute(PreparationWave $wave, StartPreparationDTO $dto): PreparationWave
@@ -153,6 +155,10 @@ final class StartPreparationAction
                 oldValues:  ['status' => WaveStatus::Planning->value],
                 newValues:  ['status' => WaveStatus::Preparing->value, 'workers_assigned' => count($workersAssigned)],
             );
+
+            // Soft-reserve inventory for this wave now that preparation has started.
+            $wave->loadMissing(['materialRequirements', 'productionRequirements']);
+            $this->softReservation->reserve($wave, $dto->actorId);
 
             return $wave->fresh(['pickList', 'workers']) ?? $wave;
         });
