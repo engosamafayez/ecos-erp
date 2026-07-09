@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\WarehouseLiabilities\Presentation\Http\Controllers;
 
+use App\Core\Company\CurrentCompanyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -15,6 +16,7 @@ class WarehouseLiabilityController extends Controller
 {
     public function __construct(
         private readonly ApproveWarehouseLiabilityAction $approveAction,
+        private readonly CurrentCompanyService $currentCompany,
     ) {}
 
     // ─── List / Show ─────────────────────────────────────────────────────────
@@ -31,6 +33,10 @@ class WarehouseLiabilityController extends Controller
             ->with(['product:id,name,sku,image_url', 'warehouse:id,name', 'countSession:id,count_number'])
             ->latest();
 
+        if ($companyId = $this->currentCompany->id()) {
+            $query->where('company_id', $companyId);
+        }
+
         if ($status)      { $query->where('status', $status); }
         if ($warehouseId) { $query->where('warehouse_id', $warehouseId); }
         if ($month)       { $query->where('month', $month); }
@@ -38,12 +44,13 @@ class WarehouseLiabilityController extends Controller
 
         $results = $query->paginate($perPage);
 
+        $companyScope = fn ($q) => $companyId ? $q->where('company_id', $companyId) : $q;
         $summary = [
-            'pending'              => WarehouseLiability::query()->where('status', 'pending')->count(),
-            'approved'             => WarehouseLiability::query()->where('status', 'approved')->count(),
-            'rejected'             => WarehouseLiability::query()->where('status', 'rejected')->count(),
-            'total_pending_value'  => WarehouseLiability::query()->where('status', 'pending')->sum('total_cost'),
-            'total_approved_value' => WarehouseLiability::query()->where('status', 'approved')->sum('cost_snapshot_total_value'),
+            'pending'              => WarehouseLiability::query()->tap($companyScope)->where('status', 'pending')->count(),
+            'approved'             => WarehouseLiability::query()->tap($companyScope)->where('status', 'approved')->count(),
+            'rejected'             => WarehouseLiability::query()->tap($companyScope)->where('status', 'rejected')->count(),
+            'total_pending_value'  => WarehouseLiability::query()->tap($companyScope)->where('status', 'pending')->sum('total_cost'),
+            'total_approved_value' => WarehouseLiability::query()->tap($companyScope)->where('status', 'approved')->sum('cost_snapshot_total_value'),
         ];
 
         return response()->json([

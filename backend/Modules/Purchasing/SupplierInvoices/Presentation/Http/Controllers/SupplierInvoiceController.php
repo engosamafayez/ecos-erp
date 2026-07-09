@@ -184,14 +184,21 @@ final class SupplierInvoiceController extends Controller
 
     public function stats(): JsonResponse
     {
+        $companyId = $this->currentCompany->id();
+        $scope = function ($q) use ($companyId): void {
+            if ($companyId) {
+                $q->whereHas('warehouse', fn ($wq) => $wq->where('company_id', $companyId));
+            }
+        };
+
         $stats = [
-            'total'       => SupplierInvoice::query()->count(),
-            'draft'       => SupplierInvoice::query()->where('status', 'draft')->count(),
-            'validated'   => SupplierInvoice::query()->where('status', 'validated')->count(),
-            'posted'      => SupplierInvoice::query()->where('status', 'posted')->count(),
-            'failed'      => SupplierInvoice::query()->where('status', 'failed')->count(),
-            'total_value' => (float) SupplierInvoice::query()->where('status', 'posted')->sum('grand_total'),
-            'pending_value' => (float) SupplierInvoice::query()->whereIn('status', ['draft', 'validated'])->sum('grand_total'),
+            'total'         => SupplierInvoice::query()->tap($scope)->count(),
+            'draft'         => SupplierInvoice::query()->tap($scope)->where('status', 'draft')->count(),
+            'validated'     => SupplierInvoice::query()->tap($scope)->where('status', 'validated')->count(),
+            'posted'        => SupplierInvoice::query()->tap($scope)->where('status', 'posted')->count(),
+            'failed'        => SupplierInvoice::query()->tap($scope)->where('status', 'failed')->count(),
+            'total_value'   => (float) SupplierInvoice::query()->tap($scope)->where('status', 'posted')->sum('grand_total'),
+            'pending_value' => (float) SupplierInvoice::query()->tap($scope)->whereIn('status', ['draft', 'validated'])->sum('grand_total'),
         ];
 
         return $this->success($stats);

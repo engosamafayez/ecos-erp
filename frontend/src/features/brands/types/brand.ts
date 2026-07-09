@@ -67,3 +67,36 @@ export type BrandsResult = {
   meta: PaginationMeta;
   summary: BrandsSummary;
 };
+
+// ── Brand delivery configuration ──────────────────────────────────────────────
+export type BrandDeliveryZone = {
+  id: string;
+  name: string;
+  shipping_cost: number | null;
+};
+
+export type BrandDeliveryGovernorate = {
+  id: string;
+  name: string;
+  zones: BrandDeliveryZone[];
+};
+
+export type BrandDeliveryGeography = {
+  governorates: BrandDeliveryGovernorate[];
+};
+
+export type BrandDeliveryWindow = {
+  id: string;
+  label: string;
+};
+
+export type BrandConfigHealth = {
+  is_ready: boolean;
+  checks: {
+    channels: boolean;
+    delivery_geography: boolean;
+    delivery_zones: boolean;
+    delivery_windows: boolean;
+    shipping_rules: boolean;
+  };
+};

@@ -13,13 +13,18 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
 {
     private const SORTABLE = ['order_number', 'order_date', 'status', 'total', 'created_at'];
 
-    private const WITH = ['channel', 'customer', 'lines.product'];
+    private const WITH = ['channel', 'customer', 'lines.product.unit'];
 
-    private const WITH_DETAIL = ['channel', 'customer', 'lines.product', 'fees', 'coupons'];
+    private const WITH_DETAIL = ['channel', 'customer', 'lines.product.unit', 'fees', 'coupons'];
 
     public function paginate(array $filters): LengthAwarePaginator
     {
         $query = Order::query()->with(self::WITH);
+
+        $companyId = trim((string) ($filters['company_id'] ?? ''));
+        if ($companyId !== '') {
+            $query->where('company_id', $companyId);
+        }
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {

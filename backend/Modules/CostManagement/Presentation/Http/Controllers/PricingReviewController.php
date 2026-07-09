@@ -44,8 +44,8 @@ class PricingReviewController extends Controller
 
         if ($search) {
             $query->whereHas('product', function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('sku', 'ilike', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
             });
         }
 
@@ -133,6 +133,7 @@ class PricingReviewController extends Controller
             reason:      $request->validated('reason'),
             managerName: $request->validated('manager_name'),
             channels:    (array) ($request->validated('channels') ?? []),
+            approverId:  $request->user()?->id,
         );
 
         return response()->json([
@@ -312,6 +313,7 @@ class PricingReviewController extends Controller
                 reason:      $request->validated('reason'),
                 managerName: $request->validated('manager_name'),
                 channels:    (array) ($request->validated('channels') ?? []),
+                approverId:  $request->user()?->id,
             );
 
             $resolved++;
@@ -413,6 +415,57 @@ class PricingReviewController extends Controller
         return response()->json([
             'message'   => "Bulk policy applied: {$processed} reviews updated.",
             'processed' => $processed,
+        ]);
+    }
+
+    /**
+     * GET /cost-management/pricing-reviews/badge
+     *
+     * Lightweight endpoint for the nav badge and dashboard widget.
+     */
+    public function badge(Request $request): JsonResponse
+    {
+        $companyId = $request->query('company_id');
+
+        $base = PricingReview::query()
+            ->where('status', PricingReviewStatus::Pending->value);
+
+        if ($companyId) {
+            $base->where('company_id', $companyId);
+        }
+
+        $pending = (clone $base)->count();
+
+        $increases = (clone $base)
+            ->selectRaw('COALESCE(SUM(CASE WHEN cost_difference > 0 THEN cost_difference ELSE 0 END), 0) AS total')
+            ->value('total') ?? 0;
+
+        $decreases = (clone $base)
+            ->selectRaw('COALESCE(SUM(CASE WHEN cost_difference < 0 THEN ABS(cost_difference) ELSE 0 END), 0) AS total')
+            ->value('total') ?? 0;
+
+        $productsIncreased = (clone $base)->where('cost_difference', '>', 0)->count();
+        $productsDecreased = (clone $base)->where('cost_difference', '<', 0)->count();
+
+        $largestIncrease = (clone $base)
+            ->where('cost_difference', '>', 0)
+            ->max('cost_difference') ?? 0;
+
+        $largestDecrease = (clone $base)
+            ->where('cost_difference', '<', 0)
+            ->selectRaw('MAX(ABS(cost_difference)) AS val')
+            ->value('val') ?? 0;
+
+        return response()->json([
+            'data' => [
+                'pending'             => $pending,
+                'total_cost_increase' => round((float) $increases, 4),
+                'total_cost_decrease' => round((float) $decreases, 4),
+                'products_increased'  => $productsIncreased,
+                'products_decreased'  => $productsDecreased,
+                'largest_increase'    => round((float) $largestIncrease, 4),
+                'largest_decrease'    => round((float) $largestDecrease, 4),
+            ],
         ]);
     }
 }

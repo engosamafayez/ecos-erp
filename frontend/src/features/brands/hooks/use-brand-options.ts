@@ -1,14 +1,17 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 
 import { brandsService } from '@/features/brands/services/brands-service';
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
 /**
  * Returns brand ComboboxOptions for a specific company.
  * Query is disabled (returns []) until companyId is non-empty.
  */
 export function useBrandOptions(companyId?: string | null) {
+  const { activeCompanyId } = useOrganizationContext();
+  const scopeId = activeCompanyId ?? 'global';
   return useQuery({
-    queryKey: ['brand-options', companyId ?? ''],
+    queryKey: ['company', scopeId, 'brand-options', companyId ?? ''],
     queryFn: () =>
       brandsService.list({
         company_id: companyId ?? undefined,

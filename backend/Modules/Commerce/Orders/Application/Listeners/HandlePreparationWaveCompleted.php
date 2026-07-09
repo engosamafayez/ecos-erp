@@ -5,22 +5,52 @@ declare(strict_types=1);
 namespace Modules\Commerce\Orders\Application\Listeners;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Operations\Preparation\Domain\Events\WaveCompleted;
 
 /**
- * Updates order status after a preparation wave completes.
+ * Advances orders from 'preparing' → 'ready_for_loading' when a wave completes.
  *
- * Orders stay in 'preparing' at this point — they become 'completed'
- * only after loading and delivery. This listener is a placeholder that
- * could update to a 'ready_for_loading' status when that status is added.
+ * Only transitions orders that are still in 'preparing' — orders that have
+ * already been cancelled or completed are left untouched.
  */
 final class HandlePreparationWaveCompleted
 {
     public function handle(WaveCompleted $event): void
     {
-        // Orders remain in 'preparing' until loaded and dispatched.
-        // When a 'ready_for_loading' status is introduced in Commerce module,
-        // update this listener to set that status.
-        // Currently a no-op that confirms the integration wire is in place.
+        $orderIds = DB::table('preparation_wave_orders')
+            ->where('preparation_wave_id', $event->waveId)
+            ->pluck('order_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($orderIds->isEmpty()) {
+            Log::info('[HandlePreparationWaveCompleted] Wave completed but no linked orders found', [
+                'wave_id'      => $event->waveId,
+                'wave_number'  => $event->waveNumber,
+                'completed_at' => $event->completedAt,
+            ]);
+
+            return;
+        }
+
+        // Transition preparing orders → ready_for_loading in one query.
+        $updated = DB::table('orders')
+            ->whereIn('id', $orderIds->all())
+            ->where('status', OrderStatus::Preparing->value)
+            ->update([
+                'status'                 => OrderStatus::ReadyForLoading->value,
+                'preparation_completed_at' => now(),
+                'updated_at'             => now(),
+            ]);
+
+        Log::info('[HandlePreparationWaveCompleted] Orders transitioned to ready_for_loading', [
+            'wave_id'      => $event->waveId,
+            'wave_number'  => $event->waveNumber,
+            'order_count'  => $updated,
+            'completed_by' => $event->completedBy,
+        ]);
     }
 }

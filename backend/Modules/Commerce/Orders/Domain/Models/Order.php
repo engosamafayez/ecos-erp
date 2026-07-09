@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
@@ -63,6 +64,23 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property float|null $actual_cogs_amount
  * @property float|null $actual_margin_amount
  * @property float|null $actual_margin_percent
+ * @property string|null $requested_delivery_date
+ * @property string|null $preferred_delivery_time
+ * @property string|null $delivery_window_id
+ * @property string|null $delivery_window
+ * @property string|null $delivery_zone_id
+ * @property string|null $delivery_zone
+ * @property string|null $company_id
+ * @property string|null $payment_method_manual
+ * @property string|null $payment_proof_path
+ * @property string|null $governorate
+ * @property string|null $area
+ * @property float|null $shipping_cost
+ * @property string|null $shipping_cost_source
+ * @property float $discount_amount
+ * @property string|null $discount_type
+ * @property float $deposit_amount
+ * @property float $remaining_balance
  */
 class Order extends Model
 {
@@ -121,6 +139,28 @@ class Order extends Model
         'actual_cogs_amount',
         'actual_margin_amount',
         'actual_margin_percent',
+        'requested_delivery_date',
+        'preferred_delivery_time',
+        'delivery_window_id',
+        'delivery_window',
+        'delivery_zone_id',
+        'delivery_zone',
+        'company_id',
+        'payment_method_manual',
+        'payment_proof_path',
+        'governorate',
+        'area',
+        'shipping_cost',
+        'shipping_cost_source',
+        'discount_amount',
+        'discount_type',
+        'deposit_amount',
+        'remaining_balance',
+        'google_maps_lat',
+        'google_maps_lng',
+        'warehouse_assigned_at',
+        'warehouse_assignment_source',
+        'preparation_completed_at',
     ];
 
     /**
@@ -143,6 +183,15 @@ class Order extends Model
             'actual_cogs_amount'     => 'float',
             'actual_margin_amount'   => 'float',
             'actual_margin_percent'  => 'float',
+            'requested_delivery_date' => 'date:Y-m-d',
+            'shipping_cost'          => 'float',
+            'discount_amount'        => 'float',
+            'deposit_amount'         => 'float',
+            'remaining_balance'      => 'float',
+            'google_maps_lat'        => 'float',
+            'google_maps_lng'        => 'float',
+            'warehouse_assigned_at'       => 'datetime',
+            'preparation_completed_at'    => 'datetime',
         ];
     }
 
@@ -192,5 +241,19 @@ class Order extends Model
     public function coupons(): HasMany
     {
         return $this->hasMany(OrderCoupon::class);
+    }
+
+    /**
+     * The active (non-detached) session order record for this order.
+     * Used by DailyPreparationSessionManager to check if order is already attached.
+     *
+     * @return HasOne<\Modules\Operations\Preparation\Domain\Models\PreparationSessionOrder, $this>
+     */
+    public function activeSessionOrder(): HasOne
+    {
+        return $this->hasOne(
+            \Modules\Operations\Preparation\Domain\Models\PreparationSessionOrder::class,
+            'order_id',
+        )->whereNull('detached_at');
     }
 }

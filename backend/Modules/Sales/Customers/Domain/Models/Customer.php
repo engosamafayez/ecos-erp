@@ -7,6 +7,7 @@ namespace Modules\Sales\Customers\Domain\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Sales\Customers\Infrastructure\Database\Factories\CustomerFactory;
 
@@ -22,6 +23,8 @@ use Modules\Sales\Customers\Infrastructure\Database\Factories\CustomerFactory;
  * @property string|null $mobile
  * @property string|null $country
  * @property string|null $city
+ * @property string|null $governorate
+ * @property string|null $area
  * @property string|null $address
  * @property string|null $notes
  * @property bool $is_active
@@ -47,6 +50,8 @@ class Customer extends Model
         'mobile',
         'country',
         'city',
+        'governorate',
+        'area',
         'address',
         'notes',
         'is_active',
@@ -60,6 +65,12 @@ class Customer extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    /** @return HasMany<CustomerAddress, $this> */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(CustomerAddress::class);
     }
 
     protected static function newFactory(): CustomerFactory

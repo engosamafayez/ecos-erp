@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Purchasing\SupplierReturns\Application\Actions\ReverseSupplierReturnInventoryAction;
 use Modules\Purchasing\SupplierReturns\Domain\Enums\SupplierReturnStatus;
 use Modules\Purchasing\SupplierReturns\Domain\Models\SupplierReturn;
 use Modules\Purchasing\SupplierReturns\Presentation\Http\Requests\StoreSupplierReturnRequest;
@@ -20,6 +21,7 @@ final class SupplierReturnController extends Controller
 
     public function __construct(
         private readonly CurrentCompanyService $currentCompany,
+        private readonly ReverseSupplierReturnInventoryAction $reverseInventory,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -146,6 +148,10 @@ final class SupplierReturnController extends Controller
             'approved_at' => now(),
         ]);
 
+        // Reverse inventory: decrement on_hand_qty for each returned line
+        $supplierReturn->load('lines.product', 'warehouse');
+        $this->reverseInventory->execute($supplierReturn);
+
         return $this->success(new SupplierReturnResource($supplierReturn->fresh(['supplier', 'warehouse'])));
     }
 
@@ -231,14 +237,21 @@ final class SupplierReturnController extends Controller
 
     public function stats(): JsonResponse
     {
+        $companyId = $this->currentCompany->id();
+        $scope = function ($q) use ($companyId): void {
+            if ($companyId) {
+                $q->whereHas('warehouse', fn ($wq) => $wq->where('company_id', $companyId));
+            }
+        };
+
         $stats = [
-            'total'          => SupplierReturn::query()->count(),
-            'draft'          => SupplierReturn::query()->where('status', 'draft')->count(),
-            'waiting'        => SupplierReturn::query()->where('status', 'waiting_approval')->count(),
-            'approved'       => SupplierReturn::query()->where('status', 'approved')->count(),
-            'credit_pending' => SupplierReturn::query()->where('status', 'credit_pending')->count(),
-            'completed'      => SupplierReturn::query()->where('status', 'completed')->count(),
-            'total_value'    => (float) SupplierReturn::query()->whereIn('status', ['approved', 'sent', 'credit_pending', 'completed'])->sum('total_return_value'),
+            'total'          => SupplierReturn::query()->tap($scope)->count(),
+            'draft'          => SupplierReturn::query()->tap($scope)->where('status', 'draft')->count(),
+            'waiting'        => SupplierReturn::query()->tap($scope)->where('status', 'waiting_approval')->count(),
+            'approved'       => SupplierReturn::query()->tap($scope)->where('status', 'approved')->count(),
+            'credit_pending' => SupplierReturn::query()->tap($scope)->where('status', 'credit_pending')->count(),
+            'completed'      => SupplierReturn::query()->tap($scope)->where('status', 'completed')->count(),
+            'total_value'    => (float) SupplierReturn::query()->tap($scope)->whereIn('status', ['approved', 'sent', 'credit_pending', 'completed'])->sum('total_return_value'),
         ];
 
         return $this->success($stats);

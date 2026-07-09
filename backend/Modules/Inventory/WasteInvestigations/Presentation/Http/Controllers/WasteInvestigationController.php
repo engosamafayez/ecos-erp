@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\WasteInvestigations\Presentation\Http\Controllers;
 
+use App\Core\Company\CurrentCompanyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -21,6 +22,7 @@ class WasteInvestigationController extends Controller
 
     public function __construct(
         private readonly ResolveWasteInvestigationAction $resolveAction,
+        private readonly CurrentCompanyService $currentCompany,
     ) {}
 
     // ─── List / Show ─────────────────────────────────────────────────────────
@@ -37,6 +39,10 @@ class WasteInvestigationController extends Controller
         $query = WasteInvestigation::query()
             ->with(['product:id,name,sku,image_url', 'warehouse:id,name', 'countSession:id,count_number'])
             ->latest();
+
+        if ($companyId = $this->currentCompany->id()) {
+            $query->where('company_id', $companyId);
+        }
 
         if ($status)      { $query->where('status', $status); }
         if ($warehouseId) { $query->where('warehouse_id', $warehouseId); }
@@ -62,11 +68,16 @@ class WasteInvestigationController extends Controller
         });
 
         $pending = WasteInvestigation::query()->where('status', 'pending_investigation');
+        $resolved = WasteInvestigation::query()->where('status', 'resolved');
+        if ($companyId = $this->currentCompany->id()) {
+            $pending->where('company_id', $companyId);
+            $resolved->where('company_id', $companyId);
+        }
         $summary = [
             'pending'        => (clone $pending)->count(),
             'pending_over_3' => (clone $pending)->where('created_at', '<', now()->subDays(3))->count(),
             'pending_over_7' => (clone $pending)->where('created_at', '<', now()->subDays(7))->count(),
-            'resolved'       => WasteInvestigation::query()->where('status', 'resolved')->count(),
+            'resolved'       => $resolved->count(),
         ];
 
         return response()->json([

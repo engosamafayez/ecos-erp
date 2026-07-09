@@ -6,7 +6,10 @@ namespace Modules\Manufacturing\BillsOfMaterials\Infrastructure\Repositories;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Modules\CostManagement\Domain\Services\ProductCostCalculator;
+use Modules\CostManagement\Application\Services\CostCalculationEngine;
+use Modules\CostManagement\Domain\Enums\PricingTriggerReason;
+use Modules\CostManagement\Domain\Events\FinishedProductCostChanged;
+use Modules\CostManagement\Domain\Services\PricingReviewService;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Contracts\BomRepositoryInterface;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
 
@@ -14,7 +17,10 @@ final class EloquentBomRepository implements BomRepositoryInterface
 {
     private const PER_PAGE = 20;
 
-    public function __construct(private readonly ProductCostCalculator $productCostCalculator) {}
+    public function __construct(
+        private readonly CostCalculationEngine $costCalculationEngine,
+        private readonly PricingReviewService  $pricingReviewService,
+    ) {}
 
     /**
      * Relations for list endpoints — no lines, but includes withTrashed on category
@@ -193,35 +199,72 @@ final class EloquentBomRepository implements BomRepositoryInterface
     }
 
     /**
-     * Recompute and persist recipe_cost for a BOM from its current lines,
-     * then cascade to product_cost so the product grid never shows a stale cost.
+     * Recompute and persist the full cost breakdown for a BOM using CostCalculationEngine,
+     * then cascade to product_cost when this BOM is the active recipe.
      *
-     * recipe_cost = SUM(quantity × (1 + waste_pct/100) × material_cost) across all lines.
+     * Separates raw material cost from packaging cost and stores the full
+     * RecipeCostSummaryDTO as cost_summary JSON (TASK-COST-ARCH-002 Part 1).
      */
     private function recomputeRecipeCost(BillOfMaterial $bom): void
     {
-        $cost = DB::table('bill_of_material_lines as l')
-            ->join('products as p', 'p.id', '=', 'l.raw_material_id')
-            ->where('l.bom_id', $bom->id)
-            ->selectRaw(
-                'COALESCE(SUM(l.quantity * (1 + l.waste_percentage / 100) * COALESCE(p.material_cost, 0)), 0) AS recipe_cost'
-            )
-            ->value('recipe_cost') ?? 0;
+        // Reload lines with raw material data needed by the engine
+        $bom->load(['lines.rawMaterial', 'product.brand']);
 
-        $bom->recipe_cost = (float) $cost;
-        $bom->saveQuietly();
+        $summary = $this->costCalculationEngine->calculateAndPersist($bom);
 
         // Cascade to product_cost only when this recipe is the active one.
-        // Inactive/draft BOMs should not affect the product's published cost.
-        if ($bom->is_active) {
-            $bom->loadMissing('product');
-            if ($bom->product !== null) {
-                // Pass the just-saved BOM as activeRecipe so ProductCostCalculator
-                // uses the updated recipe_cost instead of a stale eager-loaded copy.
-                $bom->product->setRelation('activeRecipe', $bom);
-                $this->productCostCalculator->recalculate($bom->product);
-            }
+        // Inactive/draft BOMs must not affect the product's published cost.
+        if (! $bom->is_active) {
+            return;
         }
+
+        $product = $bom->product;
+        if ($product === null) {
+            return;
+        }
+
+        $previousCost = (float) ($product->product_cost ?? 0.0);
+        $newCost      = $summary->finishedProductCost;
+        $yieldQty     = max((float) ($bom->yield_quantity ?? 1.0), 0.0001);
+
+        $product->update([
+            'product_cost' => $newCost,
+            'unit_cost'    => round($newCost / $yieldQty, 4),
+        ]);
+
+        $companyId = $product->brand?->company_id;
+        if ($companyId === null || abs($newCost - $previousCost) < 0.0001) {
+            return;
+        }
+
+        $difference = round($newCost - $previousCost, 4);
+        $diffPct    = $previousCost > 0
+            ? round(($difference / $previousCost) * 100, 4)
+            : 0.0;
+
+        $this->pricingReviewService->upsertForProduct(
+            product:             $product,
+            newProductCost:      $newCost,
+            previousProductCost: $previousCost,
+            companyId:           (string) $companyId,
+            historyId:           null,
+            triggerReason:       PricingTriggerReason::RecipeUpdated->value,
+            triggerSource:       $bom->bom_number,
+            costSnapshot:        $summary->toArray(),
+        );
+
+        FinishedProductCostChanged::dispatch(
+            productId:         $product->id,
+            companyId:         (string) $companyId,
+            oldCost:           $previousCost,
+            newCost:           $newCost,
+            difference:        $difference,
+            differencePercent: $diffPct,
+            triggerReason:     PricingTriggerReason::RecipeUpdated,
+            triggerSource:     $bom->bom_number,
+            occurredAt:        now()->toIso8601String(),
+            costSnapshot:      $summary->toArray(),
+        );
     }
 
     private function deactivateOthers(string $productId, ?string $excludeId): void

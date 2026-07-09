@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\CountSessions\Presentation\Http\Controllers;
 
+use App\Core\Company\CurrentCompanyService;
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +27,8 @@ final class InventoryCountController extends Controller
 
     private const MAX_ATTACHMENT_MB = 20;
 
+    public function __construct(private readonly CurrentCompanyService $currentCompany) {}
+
     /**
      * GET /inventory-counts
      */
@@ -34,6 +37,10 @@ final class InventoryCountController extends Controller
         $query = InventoryCountSession::query()
             ->with(['warehouse', 'company'])
             ->latest();
+
+        if ($companyId = $this->currentCompany->id()) {
+            $query->where('company_id', $companyId);
+        }
 
         if ($warehouseId = $request->query('warehouse_id')) {
             $query->where('warehouse_id', $warehouseId);
@@ -211,7 +218,7 @@ final class InventoryCountController extends Controller
 
     public function approve(Request $request, InventoryCountSession $inventoryCount, ApproveCountSessionAction $action): JsonResponse
     {
-        $approvedBy = $request->input('approved_by');
+        $approvedBy = $request->user()->id;
         $session    = $action->execute($inventoryCount, $approvedBy);
         return $this->updated($this->formatSession($session->load('lines.product', 'lines.attachments', 'warehouse'), true, false));
     }

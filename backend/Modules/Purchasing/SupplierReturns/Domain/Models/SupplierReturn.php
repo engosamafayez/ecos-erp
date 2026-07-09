@@ -28,6 +28,7 @@ class SupplierReturn extends Model
         'return_number',
         'supplier_id',
         'warehouse_id',
+        'company_id',
         'purchase_order_id',
         'goods_receipt_id',
         'status',

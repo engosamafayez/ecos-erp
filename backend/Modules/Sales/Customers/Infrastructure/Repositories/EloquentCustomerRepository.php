@@ -17,6 +17,11 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
     {
         $query = Customer::query();
 
+        $companyId = trim((string) ($filters['company_id'] ?? ''));
+        if ($companyId !== '') {
+            $query->where('company_id', $companyId);
+        }
+
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {

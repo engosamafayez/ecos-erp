@@ -28,6 +28,8 @@ final class BillOfMaterial extends Model
         'other_costs',
         'execution_instructions',
         'recipe_cost',
+        'packaging_cost',
+        'cost_summary',
     ];
 
     protected function casts(): array
@@ -38,6 +40,8 @@ final class BillOfMaterial extends Model
             'manufacturing_cost' => 'float',
             'other_costs'        => 'float',
             'recipe_cost'        => 'float',
+            'packaging_cost'     => 'float',
+            'cost_summary'       => 'array',
         ];
     }
 

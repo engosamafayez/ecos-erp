@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers;
 
+use App\Core\Company\CurrentCompanyService;
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +27,8 @@ final class GoodsReceiptController extends Controller
 {
     use HasApiResponse;
 
+    public function __construct(private readonly CurrentCompanyService $currentCompany) {}
+
     public function index(Request $request, ListGoodsReceiptsAction $action): JsonResponse
     {
         $filters = [
@@ -38,6 +41,7 @@ final class GoodsReceiptController extends Controller
             'sort_by'           => $request->query('sort_by', 'created_at'),
             'sort_dir'          => $request->query('sort_dir', 'desc'),
             'per_page'          => $request->query('per_page', 10),
+            'company_id'        => $this->currentCompany->id(),
         ];
 
         $paginator = $action->execute($filters)->data();

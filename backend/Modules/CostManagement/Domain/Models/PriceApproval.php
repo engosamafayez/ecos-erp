@@ -47,6 +47,11 @@ class PriceApproval extends Model
         'reason',
         'manager_name',
         'approved_channels',
+        'old_sale_price',
+        'new_sale_price',
+        'margin_pct',
+        'discount_pct',
+        'approved_by',
         'approved_at',
         'created_at',
     ];
@@ -60,6 +65,10 @@ class PriceApproval extends Model
             'new_selling_price' => 'float',
             'custom_price'      => 'float',
             'approved_channels' => 'array',
+            'old_sale_price'    => 'float',
+            'new_sale_price'    => 'float',
+            'margin_pct'        => 'float',
+            'discount_pct'      => 'float',
             'approved_at'       => 'datetime',
             'created_at'        => 'datetime',
         ];

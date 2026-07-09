@@ -29,6 +29,7 @@ class SupplierInvoice extends Model
         'supplier_invoice_ref',
         'supplier_id',
         'warehouse_id',
+        'company_id',
         'auto_purchase_id',
         'auto_receipt_id',
         'status',

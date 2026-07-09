@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\Inventory\CountSessions\Application\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Modules\CostManagement\Domain\Enums\PricingTriggerReason;
+use Modules\CostManagement\Domain\Events\FinishedProductCostChanged;
 use Modules\Inventory\CountSessions\Domain\Enums\CountSessionStatus;
 use Modules\Inventory\CountSessions\Domain\Models\InventoryCountLine;
 use Modules\Inventory\CountSessions\Domain\Models\InventoryCountSession;
@@ -77,13 +79,14 @@ final class ApproveCountSessionAction
             }
         }
 
-        $linesAdjusted      = 0;
-        $liabilitiesCreated = 0;
+        $linesAdjusted         = 0;
+        $liabilitiesCreated    = 0;
         $investigationsCreated = 0;
+        $fifoCostChanges       = [];
 
         $result = DB::transaction(function () use (
             $session, $approvedBy, $companyId, $warehouseId, $month,
-            &$linesAdjusted, &$liabilitiesCreated, &$investigationsCreated
+            &$linesAdjusted, &$liabilitiesCreated, &$investigationsCreated, &$fifoCostChanges
         ): InventoryCountSession {
 
             foreach ($session->lines as $line) {
@@ -136,7 +139,15 @@ final class ApproveCountSessionAction
                         'receipt_date'          => now()->toDateString(),
                     ]);
 
-                    $this->refreshFifoCost($line->product_id);
+                    [$oldFifo, $newFifo] = $this->refreshFifoCost($line->product_id);
+                    if ($oldFifo !== $newFifo) {
+                        $fifoCostChanges[] = [
+                            'product_id' => $line->product_id,
+                            'company_id' => $companyId,
+                            'old_cost'   => $oldFifo,
+                            'new_cost'   => $newFifo,
+                        ];
+                    }
                     $linesAdjusted++;
                 }
 
@@ -202,11 +213,35 @@ final class ApproveCountSessionAction
             approvedBy:     $approvedBy,
         ));
 
+        foreach ($fifoCostChanges as $change) {
+            $old  = (float) $change['old_cost'];
+            $new  = (float) $change['new_cost'];
+            $diff = round($new - $old, 4);
+            $pct  = $old > 0 ? round(($diff / $old) * 100, 4) : 0.0;
+
+            FinishedProductCostChanged::dispatch(
+                productId:         $change['product_id'],
+                companyId:         $change['company_id'],
+                oldCost:           $old,
+                newCost:           $new,
+                difference:        $diff,
+                differencePercent: $pct,
+                triggerReason:     PricingTriggerReason::Other,
+                triggerSource:     'inventory_count',
+                occurredAt:        now()->toIso8601String(),
+            );
+        }
+
         return $result;
     }
 
-    private function refreshFifoCost(string $productId): void
+    /**
+     * @return array{float, float} [oldFifoCost, newFifoCost]
+     */
+    private function refreshFifoCost(string $productId): array
     {
+        $oldCost = (float) (Product::query()->where('id', $productId)->value('current_fifo_cost') ?? 0);
+
         $oldestLayer = InventoryReceiptLayer::query()
             ->where('product_id', $productId)
             ->where('remaining_qty', '>', 0)
@@ -214,8 +249,12 @@ final class ApproveCountSessionAction
             ->orderBy('id')
             ->first();
 
+        $newCost = (float) ($oldestLayer?->landed_unit_cost ?? 0);
+
         Product::query()
             ->where('id', $productId)
             ->update(['current_fifo_cost' => $oldestLayer?->landed_unit_cost]);
+
+        return [$oldCost, $newCost];
     }
 }

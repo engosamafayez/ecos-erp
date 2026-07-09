@@ -6,6 +6,8 @@ namespace Modules\CostManagement\Domain\Services;
 
 use Illuminate\Support\Facades\DB;
 use Modules\CostManagement\Domain\Enums\CostUpdateSource;
+use Modules\CostManagement\Domain\Enums\PricingTriggerReason;
+use Modules\CostManagement\Domain\Events\FinishedProductCostChanged;
 use Modules\CostManagement\Domain\Models\MaterialCostHistory;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Organization\Companies\Domain\Models\Company;
@@ -85,6 +87,26 @@ final class MaterialCostService
                         previousProductCost: $entry['previous_cost'],
                         companyId:           (string) $companyId,
                         historyId:           $history->id,
+                        triggerReason:       'material_cost_changed',
+                        triggerSource:       $material->sku ?? $material->id,
+                    );
+
+                    $entryDiff    = round($entry['new_cost'] - $entry['previous_cost'], 4);
+                    $entryDiffPct = $entry['previous_cost'] > 0
+                        ? round(($entryDiff / $entry['previous_cost']) * 100, 4)
+                        : 0.0;
+
+                    FinishedProductCostChanged::dispatch(
+                        productId:         $entry['product']->id,
+                        companyId:         (string) $companyId,
+                        oldCost:           $entry['previous_cost'],
+                        newCost:           $entry['new_cost'],
+                        difference:        $entryDiff,
+                        differencePercent: $entryDiffPct,
+                        triggerReason:     PricingTriggerReason::MaterialCostChanged,
+                        triggerSource:     $material->sku ?? $material->id,
+                        occurredAt:        now()->toIso8601String(),
+                        costHistoryId:     $history->id,
                     );
                 }
             }
