@@ -193,8 +193,8 @@ export function UniversalDataGrid<T>({
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ── Mobile (< md) ── */}
-      <div className="block md:hidden overflow-hidden rounded-lg border bg-card">
+      {/* ── Card layout (< lg, i.e. tablet + mobile) ── */}
+      <div className="block lg:hidden overflow-hidden rounded-lg border bg-card">
         {loading ? (
           <div className="divide-y">
             {Array.from({ length: 5 }, (_, i) => (
@@ -220,7 +220,7 @@ export function UniversalDataGrid<T>({
       </div>
 
       {/* ── Desktop (md+) ── */}
-      <div className="hidden md:block overflow-hidden rounded-lg border bg-card">
+      <div className="hidden lg:block overflow-hidden rounded-lg border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full caption-bottom text-sm">
             {/* Sticky header */}

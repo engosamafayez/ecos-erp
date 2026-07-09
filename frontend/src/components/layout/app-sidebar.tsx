@@ -4,6 +4,18 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { AppModule } from '@/config/module-navigation';
+import { usePriceReviewBadge } from '@/features/cost-management/hooks/use-pricing-reviews';
+
+function PriceReviewBadge() {
+  const { data } = usePriceReviewBadge();
+  const count = data?.pending ?? 0;
+  if (count === 0) return null;
+  return (
+    <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold leading-none text-white tabular-nums">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
 
 type AppSidebarProps = {
   activeModule: AppModule | undefined;
@@ -90,6 +102,7 @@ export function AppSidebar({
             >
               <Icon className="size-4 shrink-0" aria-hidden />
               <span className="truncate">{item.label}</span>
+              {item.key === 'price-review' && <PriceReviewBadge />}
             </NavLink>
           );
         })}

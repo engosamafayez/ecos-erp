@@ -6,15 +6,21 @@ import type {
   CreateSupplierReturnPayload,
   SupplierReturnsQuery,
 } from '@/features/supplier-returns/types/supplier-return';
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
-const KEYS = {
-  all:   ['supplier-returns'] as const,
-  list:  (q: SupplierReturnsQuery) => ['supplier-returns', 'list', q] as const,
-  detail:(id: string) => ['supplier-returns', id] as const,
-  stats: ['supplier-returns', 'stats'] as const,
-};
+function useKeys() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  return {
+    all:   ['company', companyId, 'supplier-returns'] as const,
+    list:  (q: SupplierReturnsQuery) => ['company', companyId, 'supplier-returns', 'list', q] as const,
+    detail:(id: string) => ['company', companyId, 'supplier-returns', id] as const,
+    stats: ['company', companyId, 'supplier-returns', 'stats'] as const,
+  };
+}
 
 export function useSupplierReturnsQuery(params: SupplierReturnsQuery) {
+  const KEYS = useKeys();
   return useQuery({
     queryKey: KEYS.list(params),
     queryFn:  () => supplierReturnsService.list(params),
@@ -23,6 +29,7 @@ export function useSupplierReturnsQuery(params: SupplierReturnsQuery) {
 }
 
 export function useSupplierReturn(id: string | null) {
+  const KEYS = useKeys();
   return useQuery({
     queryKey: KEYS.detail(id ?? ''),
     queryFn:  () => supplierReturnsService.get(id!),
@@ -31,6 +38,7 @@ export function useSupplierReturn(id: string | null) {
 }
 
 export function useSupplierReturnStats() {
+  const KEYS = useKeys();
   return useQuery({
     queryKey: KEYS.stats,
     queryFn:  () => supplierReturnsService.stats(),
@@ -38,6 +46,7 @@ export function useSupplierReturnStats() {
 }
 
 export function useCreateSupplierReturn() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -51,6 +60,7 @@ export function useCreateSupplierReturn() {
 }
 
 export function useUpdateSupplierReturn(id: string) {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -64,6 +74,7 @@ export function useUpdateSupplierReturn(id: string) {
 }
 
 export function useDeleteSupplierReturn() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -77,6 +88,7 @@ export function useDeleteSupplierReturn() {
 }
 
 export function useSubmitSupplierReturn() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -90,6 +102,7 @@ export function useSubmitSupplierReturn() {
 }
 
 export function useApproveSupplierReturn() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -103,6 +116,7 @@ export function useApproveSupplierReturn() {
 }
 
 export function useCancelSupplierReturn() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({

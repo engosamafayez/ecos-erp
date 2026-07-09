@@ -57,17 +57,48 @@ import { WasteInvestigationsPage } from '@/features/inventory-count/pages/waste-
 import { WarehouseLiabilityPage } from '@/features/inventory-count/pages/warehouse-liability-page';
 import { StockTransfersPage } from '@/features/stock-transfers/pages/stock-transfers-page';
 import { DemandAnalysisPage } from '@/features/operations/pages/demand-analysis-page';
+import { TodayPreparationPage } from '@/features/operations/pages/today-preparation-page';
 import { PreparationDashboardPage } from '@/features/operations/pages/preparation-dashboard-page';
 import { PreparationWavesPage } from '@/features/operations/pages/preparation-waves-page';
+import PreparationSessionsPage from '@/features/operations/pages/preparation-sessions-page';
 import { PreparedPoolPage } from '@/features/operations/pages/prepared-pool-page';
 import { PreparationStationsPage } from '@/features/operations/pages/preparation-stations-page';
 import { PreparationAnalyticsPage } from '@/features/operations/pages/preparation-analytics-page';
+import { PreparationSessionDetailPage } from '@/features/operations/pages/preparation-session-detail-page';
 import { PosPage } from '@/features/pos/pages/pos-page';
+import { ShippingPricingPage } from '@/features/orders/pages/shipping-pricing-page';
+import { ConfigurationOsPage } from '@/features/admin/configuration/pages/configuration-os-page';
+import { BrandConfigurationPage } from '@/features/admin/configuration/pages/brand-configuration-page';
+import { EgyptGeographyPage } from '@/features/admin/configuration/pages/egypt-geography-page';
+import { MarketingDashboardPage } from '@/features/marketing/pages/marketing-dashboard-page';
+import { MarketingAssetsPage } from '@/features/marketing/pages/marketing-assets-page';
+import { MetaConnectPage } from '@/features/marketing/pages/meta-connect-page';
+import { CampaignsWorkspacePage } from '@/features/marketing/pages/campaigns-workspace-page';
+import { CampaignExecutiveDashboardPage } from '@/features/marketing/pages/campaign-executive-dashboard-page';
+import { InitiativesWorkspacePage } from '@/features/marketing/pages/initiatives-workspace-page';
+import { InitiativeExecutiveViewPage } from '@/features/marketing/pages/initiative-executive-view-page';
+import { CampaignStudioPage } from '@/features/marketing/campaign-studio/pages/campaign-studio-page';
+import { CampaignGovernancePage } from '@/features/marketing/campaign-studio/pages/campaign-governance-page';
+import { StudioExecutiveDashboardPage } from '@/features/marketing/campaign-studio/pages/studio-executive-dashboard-page';
+import { AutomationWorkspacePage } from '@/features/marketing/automation/pages/automation-workspace-page';
+import { WorkflowBuilderPage } from '@/features/marketing/automation/pages/workflow-builder-page';
+import { AudienceSegmentsPage } from '@/features/marketing/automation/pages/audience-segments-page';
+import { AutomationDashboardPage } from '@/features/marketing/automation/pages/automation-dashboard-page';
+import { AutomationGovernancePage } from '@/features/marketing/automation/pages/automation-governance-page';
+import { JourneyExplorerPage } from '@/features/core/business-attribution/pages/journey-explorer-page';
+import { BaeTimelinePage } from '@/features/core/business-attribution/pages/bae-timeline-page';
+import { UnifiedInboxPage } from '@/features/customer-engagement/pages/unified-inbox-page';
+import { CepDashboardPage } from '@/features/customer-engagement/pages/cep-dashboard-page';
+import { CepLeadsPage } from '@/features/customer-engagement/pages/cep-leads-page';
+import { OmnichannelInboxPage } from '@/features/conversational-commerce/pages/omnichannel-inbox-page';
+import { MacrosPage } from '@/features/conversational-commerce/pages/macros-page';
+import { RoutingRulesPage } from '@/features/conversational-commerce/pages/routing-rules-page';
+import { ChannelProvidersPage } from '@/features/conversational-commerce/pages/channel-providers-page';
+import { ConversationsDashboardPage } from '@/features/conversational-commerce/pages/conversations-dashboard-page';
 import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
 import { ROUTES } from '@/router/routes';
-
 const moduleRoutes = [
   ROUTES.sales,
   ROUTES.accounting,
@@ -162,6 +193,43 @@ export const router = createBrowserRouter(
             { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
             { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
             { path: ROUTES.customers, Component: CustomersPage },
+            { path: ROUTES.shippingPricing, Component: ShippingPricingPage },
+            // Configuration OS
+            { path: ROUTES.configurationOs,      Component: ConfigurationOsPage },
+            { path: ROUTES.configurationBrand,   Component: BrandConfigurationPage },
+            // Administration Master Data
+            { path: ROUTES.egyptGeography,       Component: EgyptGeographyPage },
+            // Marketing OS
+            { path: ROUTES.marketing,               Component: MarketingDashboardPage },
+            { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },
+            { path: ROUTES.marketingConnectMeta,    Component: MetaConnectPage },
+            { path: ROUTES.marketingCampaigns,      Component: CampaignsWorkspacePage },
+            { path: ROUTES.marketingCampaignDash,    Component: CampaignExecutiveDashboardPage },
+            { path: ROUTES.marketingInitiatives,    Component: InitiativesWorkspacePage },
+            { path: ROUTES.marketingInitiativeDash, Component: InitiativeExecutiveViewPage },
+            // Campaign Studio
+            { path: ROUTES.campaignStudio,          Component: CampaignStudioPage },
+            { path: ROUTES.campaignGovernance,      Component: CampaignGovernancePage },
+            { path: ROUTES.campaignStudioDashboard, Component: StudioExecutiveDashboardPage },
+            // Core Platform — Business Attribution Engine
+            { path: ROUTES.businessAttribution, Component: JourneyExplorerPage },
+            { path: ROUTES.baeTimeline,          Component: BaeTimelinePage },
+            // Customer Engagement Platform
+            { path: ROUTES.customerEngagement,  Component: UnifiedInboxPage },
+            { path: ROUTES.cepDashboard,        Component: CepDashboardPage },
+            { path: ROUTES.cepLeads,            Component: CepLeadsPage },
+            // Omnichannel Commerce (MKT-007)
+            { path: ROUTES.omnichannelInbox,      Component: OmnichannelInboxPage },
+            { path: ROUTES.omnichannelDashboard,  Component: ConversationsDashboardPage },
+            { path: ROUTES.omnichannelMacros,     Component: MacrosPage },
+            { path: ROUTES.omnichannelRouting,    Component: RoutingRulesPage },
+            { path: ROUTES.omnichannelProviders,  Component: ChannelProvidersPage },
+            // Marketing Automation Platform
+            { path: ROUTES.automationWorkspace,  Component: AutomationWorkspacePage },
+            { path: ROUTES.workflowBuilder,      Component: WorkflowBuilderPage },
+            { path: ROUTES.audienceSegments,     Component: AudienceSegmentsPage },
+            { path: ROUTES.automationDashboard,  Component: AutomationDashboardPage },
+            { path: ROUTES.automationGovernance, Component: AutomationGovernancePage },
             // Commerce
             { path: ROUTES.productMappings, Component: ProductMappingsPage },
             { path: ROUTES.syncLogs, Component: SyncLogsPage },
@@ -185,10 +253,13 @@ export const router = createBrowserRouter(
             { path: ROUTES.costManagementCostHistory, Component: CostHistoryPage },
             // Operations
             { path: ROUTES.operationsDemandAnalysis, Component: DemandAnalysisPage },
-            // Preparation OS
-            { path: ROUTES.preparationDashboard, Component: PreparationDashboardPage },
-            { path: ROUTES.preparationWaves,     Component: PreparationWavesPage },
-            { path: ROUTES.preparedPool,          Component: PreparedPoolPage },
+            // Preparation OS — CR-PREP-001: Today is the new primary entry point
+            { path: ROUTES.preparationToday,      Component: TodayPreparationPage },
+            { path: ROUTES.preparationDashboard,  Component: PreparationDashboardPage },
+            { path: ROUTES.preparationWaves,      Component: PreparationWavesPage },
+            { path: ROUTES.preparationSessions,      Component: PreparationSessionsPage },
+            { path: ROUTES.preparationSessionDetail, Component: PreparationSessionDetailPage },
+            { path: ROUTES.preparedPool,             Component: PreparedPoolPage },
             { path: ROUTES.preparationStations,  Component: PreparationStationsPage },
             { path: ROUTES.preparationAnalytics, Component: PreparationAnalyticsPage },
             ...moduleRoutes,

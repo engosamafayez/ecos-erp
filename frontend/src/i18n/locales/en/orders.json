@@ -243,7 +243,16 @@
     "coupons": "Coupons",
     "couponCode": "Code",
     "couponDiscount": "Discount",
-    "financialSummary": "Financial Summary"
+    "financialSummary": "Financial Summary",
+    "depositPaid": "Deposit Paid",
+    "remainingBalance": "Remaining Balance",
+    "deliveryPreferences": "Delivery Preferences",
+    "requestedDeliveryDate": "Requested Delivery Date",
+    "preferredDeliveryTime": "Preferred Delivery Time",
+    "manualPayment": "Manual Payment",
+    "onlinePayment": "Online Payment",
+    "paymentProof": "Payment Proof",
+    "discount": "Discount"
   },
   "workspace": {
     "newTitle": "New Order",

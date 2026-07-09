@@ -67,11 +67,14 @@ export const ROUTES = {
   settings: '/settings',
   operationsDemandAnalysis: '/operations/demand-analysis',
   // Preparation OS
-  preparationDashboard: '/operations/preparation',
-  preparationWaves:     '/operations/preparation/waves',
-  preparedPool:         '/operations/preparation/pool',
-  preparationStations:  '/operations/preparation/stations',
-  preparationAnalytics: '/operations/preparation/analytics',
+  preparationToday:         '/operations/preparation/today',
+  preparationDashboard:     '/operations/preparation',
+  preparationWaves:         '/operations/preparation/waves',
+  preparationSessions:      '/operations/preparation/sessions',
+  preparationSessionDetail: '/operations/preparation/sessions/:id',
+  preparedPool:             '/operations/preparation/pool',
+  preparationStations:      '/operations/preparation/stations',
+  preparationAnalytics:     '/operations/preparation/analytics',
   pos: '/pos',
   // Inventory Master Data
   inventoryCategories: '/inventory/master-data/categories',
@@ -94,6 +97,46 @@ export const ROUTES = {
   userInvitations: '/admin/users/invitations',
   roles: '/admin/roles',
   orgSearch: '/organization/search',
+  // Shipping Pricing admin workspace
+  shippingPricing: '/admin/shipping-pricing',
+  // Configuration OS
+  configurationOs:      '/admin/configuration',
+  configurationCompany: '/admin/configuration/company',
+  configurationBrand:   '/admin/configuration/brands/:brandId',
+  // Administration Master Data
+  egyptGeography: '/admin/egypt-geography',
+  // Marketing OS
+  marketing:              '/marketing',
+  marketingAssets:        '/marketing/assets',
+  marketingConnectMeta:   '/marketing/connect/meta',
+  marketingCampaigns:      '/marketing/campaigns',
+  marketingCampaignDash:   '/marketing/campaigns/dashboard',
+  marketingInitiatives:    '/marketing/initiatives',
+  marketingInitiativeDash: '/marketing/initiatives/executive',
+  // Campaign Studio
+  campaignStudio:          '/marketing/studio',
+  campaignStudioDraft:     '/marketing/studio/drafts/:draftId',
+  campaignGovernance:      '/marketing/studio/governance',
+  campaignStudioDashboard: '/marketing/studio/dashboard',
+  // Core Platform — Business Attribution Engine
+  businessAttribution: '/core/business-attribution',
+  baeTimeline:         '/core/business-attribution/timeline',
+  // Customer Engagement Platform
+  customerEngagement:  '/customer-engagement',
+  cepDashboard:        '/customer-engagement/dashboard',
+  cepLeads:            '/customer-engagement/leads',
+  // Omnichannel Commerce (MKT-007)
+  omnichannelInbox:       '/omnichannel',
+  omnichannelDashboard:   '/omnichannel/dashboard',
+  omnichannelMacros:      '/omnichannel/macros',
+  omnichannelRouting:     '/omnichannel/routing',
+  omnichannelProviders:   '/omnichannel/providers',
+  // Marketing Automation Platform
+  automationWorkspace:    '/marketing/automation',
+  workflowBuilder:        '/marketing/automation/workflows/:workflowId',
+  audienceSegments:       '/marketing/automation/segments',
+  automationDashboard:    '/marketing/automation/dashboard',
+  automationGovernance:   '/marketing/automation/governance',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

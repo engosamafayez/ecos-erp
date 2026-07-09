@@ -2,56 +2,69 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { recipesService } from '@/features/recipes/services/recipes-service';
 import type { Recipe, RecipePayload, RecipesQuery } from '@/features/recipes/types/recipe';
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
 const RECIPES_KEY = 'recipes';
 
 export function useRecipesQuery(params: RecipesQuery) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   return useQuery({
-    queryKey: [RECIPES_KEY, params],
+    queryKey: ['company', companyId, RECIPES_KEY, params],
     queryFn: () => recipesService.list(params),
     placeholderData: keepPreviousData,
   });
 }
 
 export function useRecipeQuery(id: string) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   return useQuery({
-    queryKey: [RECIPES_KEY, id],
+    queryKey: ['company', companyId, RECIPES_KEY, id],
     queryFn: () => recipesService.get(id),
     enabled: Boolean(id),
   });
 }
 
 export function useCreateRecipe() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: RecipePayload) => recipesService.create(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [RECIPES_KEY] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, RECIPES_KEY] }),
   });
 }
 
 export function useUpdateRecipe(id: string) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: RecipePayload) => recipesService.update(id, payload),
     onSuccess: (updatedRecipe) => {
-      queryClient.setQueryData([RECIPES_KEY, id], updatedRecipe);
-      queryClient.invalidateQueries({ queryKey: [RECIPES_KEY] });
+      queryClient.setQueryData(['company', companyId, RECIPES_KEY, id], updatedRecipe);
+      queryClient.invalidateQueries({ queryKey: ['company', companyId, RECIPES_KEY] });
     },
   });
 }
 
 export function useDeleteRecipe() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => recipesService.remove(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [RECIPES_KEY] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, RECIPES_KEY] }),
   });
 }
 
 export function useToggleRecipeStatus() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (recipe: Recipe) => recipesService.toggleStatus(recipe),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [RECIPES_KEY] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, RECIPES_KEY] }),
   });
 }

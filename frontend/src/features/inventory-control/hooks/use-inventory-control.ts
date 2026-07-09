@@ -7,6 +7,7 @@ import type {
   VarianceAnalyticsQuery,
   WarehousePerformanceQuery,
 } from '@/features/inventory-control/types/inventory-control';
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
 const DASHBOARD_KEY       = 'inventory-dashboard';
 const ABC_KEY             = 'inventory-abc-classifications';
@@ -15,49 +16,61 @@ const WAREHOUSE_PERF_KEY  = 'inventory-warehouse-performance';
 const CYCLE_PLANS_KEY     = 'inventory-cycle-count-plans';
 
 export function useInventoryDashboard() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   return useQuery({
-    queryKey: [DASHBOARD_KEY],
+    queryKey: ['company', companyId, DASHBOARD_KEY],
     queryFn:  () => inventoryControlService.getDashboard(),
   });
 }
 
 export function useAbcClassifications(params: AbcClassificationsQuery) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   return useQuery({
-    queryKey: [ABC_KEY, params],
+    queryKey: ['company', companyId, ABC_KEY, params],
     queryFn:  () => inventoryControlService.getAbcClassifications(params),
     placeholderData: keepPreviousData,
   });
 }
 
 export function useRecalculateAbc() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => inventoryControlService.recalculateAbc(),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [ABC_KEY] });
-      void queryClient.invalidateQueries({ queryKey: [CYCLE_PLANS_KEY] });
-      void queryClient.invalidateQueries({ queryKey: [DASHBOARD_KEY] });
+      void queryClient.invalidateQueries({ queryKey: ['company', companyId, ABC_KEY] });
+      void queryClient.invalidateQueries({ queryKey: ['company', companyId, CYCLE_PLANS_KEY] });
+      void queryClient.invalidateQueries({ queryKey: ['company', companyId, DASHBOARD_KEY] });
     },
   });
 }
 
 export function useVarianceAnalytics(params: VarianceAnalyticsQuery = {}) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   return useQuery({
-    queryKey: [VARIANCE_KEY, params],
+    queryKey: ['company', companyId, VARIANCE_KEY, params],
     queryFn:  () => inventoryControlService.getVarianceAnalytics(params),
   });
 }
 
 export function useWarehousePerformance(params: WarehousePerformanceQuery = {}) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   return useQuery({
-    queryKey: [WAREHOUSE_PERF_KEY, params],
+    queryKey: ['company', companyId, WAREHOUSE_PERF_KEY, params],
     queryFn:  () => inventoryControlService.getWarehousePerformance(params),
   });
 }
 
 export function useCycleCountPlans(params: CycleCountPlansQuery) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   return useQuery({
-    queryKey: [CYCLE_PLANS_KEY, params],
+    queryKey: ['company', companyId, CYCLE_PLANS_KEY, params],
     queryFn:  () => inventoryControlService.getCycleCountPlans(params),
     placeholderData: keepPreviousData,
   });

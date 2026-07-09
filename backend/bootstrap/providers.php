@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     App\Providers\AppServiceProvider::class,
+    Modules\Common\Snapshots\Providers\SnapshotServiceProvider::class,
     Modules\IAM\Infrastructure\Providers\IamServiceProvider::class,
     Modules\Organization\Companies\Infrastructure\Providers\OrganizationServiceProvider::class,
     Modules\Organization\Branches\Infrastructure\Providers\BranchServiceProvider::class,
@@ -24,6 +25,7 @@ return [
     Modules\Inventory\InventoryItems\Infrastructure\Providers\InventoryItemServiceProvider::class,
     Modules\Inventory\DomainEvents\Infrastructure\Providers\DomainEventServiceProvider::class,
     Modules\Sales\Customers\Infrastructure\Providers\CustomerServiceProvider::class,
+    Modules\Sales\ShippingPricing\Infrastructure\Providers\ShippingPricingServiceProvider::class,
     Modules\Commerce\Channels\Infrastructure\Providers\ChannelServiceProvider::class,
     Modules\Commerce\ProductMappings\Infrastructure\Providers\ProductMappingServiceProvider::class,
     Modules\Commerce\Connectors\Infrastructure\Providers\ConnectorServiceProvider::class,
@@ -51,6 +53,7 @@ return [
     Modules\Inventory\InventoryControl\Infrastructure\Providers\InventoryControlServiceProvider::class,
     Modules\Core\UserPreferences\Infrastructure\Providers\UserPreferenceServiceProvider::class,
     Modules\Core\DemandAnalysis\Infrastructure\Providers\DemandAnalysisServiceProvider::class,
+    Modules\Core\BusinessAttribution\Infrastructure\Providers\BusinessAttributionServiceProvider::class,
     Modules\Operations\DemandAnalysis\Infrastructure\Providers\DemandAnalysisServiceProvider::class,
     Modules\POS\Shared\Infrastructure\Providers\POSServiceProvider::class,
     Modules\POS\Terminal\Infrastructure\Providers\TerminalServiceProvider::class,
@@ -72,4 +75,18 @@ return [
     Modules\CostManagement\Providers\CostManagementServiceProvider::class,
     Modules\Operations\Preparation\Infrastructure\Providers\PreparationServiceProvider::class,
     Modules\Operations\Loading\Infrastructure\Providers\LoadingServiceProvider::class,
+    Modules\Operations\Fulfillment\Infrastructure\Providers\FulfillmentServiceProvider::class,
+    Modules\Admin\Configuration\Infrastructure\Providers\ConfigurationServiceProvider::class,
+    // Marketing OS — connector order matters: Registry must boot before MetaConnector registers into it
+    Modules\Marketing\Connections\Infrastructure\Providers\ConnectionServiceProvider::class,
+    Modules\Marketing\Assets\Infrastructure\Providers\MarketingAssetServiceProvider::class,
+    Modules\Marketing\Synchronization\Infrastructure\Providers\SynchronizationServiceProvider::class,
+    Modules\Marketing\MappingEngine\Infrastructure\Providers\MappingEngineServiceProvider::class,
+    Modules\Marketing\Dashboard\Infrastructure\Providers\MarketingDashboardServiceProvider::class,
+    Modules\Marketing\MetaConnector\Infrastructure\Providers\MetaConnectorServiceProvider::class,
+    Modules\Marketing\Campaigns\Infrastructure\Providers\CampaignServiceProvider::class,
+    Modules\Marketing\Initiatives\Infrastructure\Providers\InitiativeServiceProvider::class,
+    Modules\Marketing\CampaignStudio\Infrastructure\Providers\CampaignStudioServiceProvider::class,
+    Modules\Marketing\Automation\Infrastructure\Providers\AutomationServiceProvider::class,
+    Modules\CustomerEngagement\Infrastructure\Providers\CustomerEngagementServiceProvider::class,
 ];

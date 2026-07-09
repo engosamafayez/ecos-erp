@@ -18,15 +18,26 @@ final class MediaController extends Controller
 {
     use HasApiResponse;
 
+    /** Contexts that allow document uploads (images + PDF). */
+    private const DOCUMENT_CONTEXTS = ['order-proof'];
+
     public function upload(Request $request): JsonResponse
     {
-        $request->validate([
-            'file'    => ['required', 'file', 'image', 'max:5120', 'mimes:jpeg,jpg,png,webp,gif'],
-            'context' => ['nullable', 'string', 'in:raw-materials,products,packaging-materials,brands,companies,business-accounts'],
-        ]);
+        $context = $request->input('context', 'raw-materials');
+
+        if (in_array($context, self::DOCUMENT_CONTEXTS, true)) {
+            $request->validate([
+                'file'    => ['required', 'file', 'max:10240', 'mimes:jpeg,jpg,png,webp,gif,pdf'],
+                'context' => ['nullable', 'string'],
+            ]);
+        } else {
+            $request->validate([
+                'file'    => ['required', 'file', 'image', 'max:5120', 'mimes:jpeg,jpg,png,webp,gif'],
+                'context' => ['nullable', 'string', 'in:raw-materials,products,packaging-materials,brands,companies,business-accounts'],
+            ]);
+        }
 
         $file    = $request->file('file');
-        $context = $request->input('context', 'raw-materials');
         $ext     = strtolower($file->getClientOriginalExtension() ?: 'webp');
         $path    = $context . '/' . Str::ulid() . '.' . $ext;
 

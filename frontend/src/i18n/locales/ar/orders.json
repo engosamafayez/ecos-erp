@@ -243,7 +243,16 @@
     "coupons": "كوبونات الخصم",
     "couponCode": "الكود",
     "couponDiscount": "الخصم",
-    "financialSummary": "الملخص المالي"
+    "financialSummary": "الملخص المالي",
+    "depositPaid": "العربون المدفوع",
+    "remainingBalance": "الرصيد المتبقي",
+    "deliveryPreferences": "تفضيلات التسليم",
+    "requestedDeliveryDate": "تاريخ التسليم المطلوب",
+    "preferredDeliveryTime": "وقت التسليم المفضل",
+    "manualPayment": "الدفع اليدوي",
+    "onlinePayment": "الدفع الإلكتروني",
+    "paymentProof": "إثبات الدفع",
+    "discount": "الخصم"
   },
   "workspace": {
     "newTitle": "طلب جديد",

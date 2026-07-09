@@ -2,10 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 
 import type { ComboboxOption } from '@/components/crud/combobox';
 import { ordersService } from '@/features/orders/services/orders-service';
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
 export function useOrderOptions() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
   return useQuery({
-    queryKey: ['orders-all'],
+    queryKey: ['company', companyId, 'orders-all'],
     queryFn: async (): Promise<ComboboxOption[]> => {
       const result = await ordersService.list({ per_page: 200 });
       return result.items.map((o) => ({

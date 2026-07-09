@@ -6,15 +6,21 @@ import type {
   CreateSupplierInvoicePayload,
   SupplierInvoicesQuery,
 } from '@/features/supplier-invoices/types/supplier-invoice';
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
-const KEYS = {
-  all:   ['supplier-invoices'] as const,
-  list:  (q: SupplierInvoicesQuery) => ['supplier-invoices', 'list', q] as const,
-  detail:(id: string) => ['supplier-invoices', id] as const,
-  stats: ['supplier-invoices', 'stats'] as const,
-};
+function useKeys() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  return {
+    all:   ['company', companyId, 'supplier-invoices'] as const,
+    list:  (q: SupplierInvoicesQuery) => ['company', companyId, 'supplier-invoices', 'list', q] as const,
+    detail:(id: string) => ['company', companyId, 'supplier-invoices', id] as const,
+    stats: ['company', companyId, 'supplier-invoices', 'stats'] as const,
+  };
+}
 
 export function useSupplierInvoicesQuery(params: SupplierInvoicesQuery) {
+  const KEYS = useKeys();
   return useQuery({
     queryKey: KEYS.list(params),
     queryFn:  () => supplierInvoicesService.list(params),
@@ -23,6 +29,7 @@ export function useSupplierInvoicesQuery(params: SupplierInvoicesQuery) {
 }
 
 export function useSupplierInvoice(id: string | null) {
+  const KEYS = useKeys();
   return useQuery({
     queryKey: KEYS.detail(id ?? ''),
     queryFn:  () => supplierInvoicesService.get(id!),
@@ -31,6 +38,7 @@ export function useSupplierInvoice(id: string | null) {
 }
 
 export function useSupplierInvoiceStats() {
+  const KEYS = useKeys();
   return useQuery({
     queryKey: KEYS.stats,
     queryFn:  () => supplierInvoicesService.stats(),
@@ -38,6 +46,7 @@ export function useSupplierInvoiceStats() {
 }
 
 export function useCreateSupplierInvoice() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -52,6 +61,7 @@ export function useCreateSupplierInvoice() {
 }
 
 export function useUpdateSupplierInvoice(id: string) {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -66,6 +76,7 @@ export function useUpdateSupplierInvoice(id: string) {
 }
 
 export function useDeleteSupplierInvoice() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -79,6 +90,7 @@ export function useDeleteSupplierInvoice() {
 }
 
 export function useValidateSupplierInvoice() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -92,6 +104,7 @@ export function useValidateSupplierInvoice() {
 }
 
 export function usePostSupplierInvoice() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({
@@ -105,6 +118,7 @@ export function usePostSupplierInvoice() {
 }
 
 export function useCancelSupplierInvoice() {
+  const KEYS = useKeys();
   const qc = useQueryClient();
 
   return useMutation({

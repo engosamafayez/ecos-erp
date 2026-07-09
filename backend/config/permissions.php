@@ -52,7 +52,7 @@ return [
         ],
 
         'sales' => [
-            'orders'       => ['view', 'create', 'update', 'delete', 'fulfill'],
+            'orders'       => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price'],
             'channels'     => ['view', 'create', 'update', 'delete', 'sync'],
             'fulfillments' => ['view', 'create', 'update', 'delete'],
         ],
@@ -102,7 +102,7 @@ return [
             'purchasing.materials'       => ['view', 'create', 'update', 'delete', 'submit', 'review', 'select_supplier', 'approve', 'cancel'],
             'crm.customers'              => ['view', 'create', 'update', 'delete'],
             'sales.channels'             => ['view', 'create', 'update', 'delete', 'sync'],
-            'sales.orders'               => ['view', 'create', 'update', 'delete', 'fulfill'],
+            'sales.orders'               => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price'],
             'sales.fulfillments'         => ['view', 'create', 'update', 'delete'],
         ],
 
@@ -133,7 +133,7 @@ return [
             'inventory.products'   => ['view'],
             'crm.customers'        => ['view', 'create', 'update', 'delete'],
             'sales.channels'       => ['view'],
-            'sales.orders'         => ['view', 'create', 'update', 'fulfill'],
+            'sales.orders'         => ['view', 'create', 'update', 'fulfill', 'override_price'],
             'sales.fulfillments'   => ['view', 'create', 'update'],
         ],
 

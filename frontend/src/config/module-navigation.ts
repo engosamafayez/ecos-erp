@@ -1,11 +1,14 @@
 import {
+  Activity,
   AlertTriangle,
   ArrowLeftRight,
   BarChart3,
   BookOpen,
   Briefcase,
   Building2,
+  CalendarDays,
   ClipboardList,
+  Cpu,
   DollarSign,
   Factory,
   FlaskConical,
@@ -14,6 +17,10 @@ import {
   Layers,
   Link2,
   ListTree,
+  Map,
+  Megaphone,
+  MessageSquare,
+  MessageCircle,
   Monitor,
   Package,
   PackageCheck,
@@ -28,10 +35,14 @@ import {
   TrendingDown,
   TrendingUp,
   Truck,
+  UserPlus,
   Users as UsersIcon,
   Warehouse,
   Waves,
   SearchCheck,
+  GitBranch,
+  Wifi,
+  Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -45,8 +56,12 @@ export type ModuleId =
   | 'purchasing'
   | 'finance'
   | 'crm'
+  | 'customerEngagement'
+  | 'omnichannel'
   | 'manufacturing'
   | 'operations'
+  | 'marketing'
+  | 'core'
   | 'reports'
   | 'administration';
 
@@ -178,16 +193,82 @@ export const APP_MODULES: AppModule[] = [
     label: 'Operations',
     railLabel: 'Ops.',
     icon: TrendingUp,
-    defaultPath: ROUTES.preparationDashboard,
+    defaultPath: ROUTES.preparationToday,
     items: [
-      { key: 'prep-section',       label: 'Preparation OS',   isSection: true },
-      { key: 'prep-dashboard',     label: 'Dashboard',        path: ROUTES.preparationDashboard, icon: LayoutDashboard },
-      { key: 'prep-waves',         label: 'Waves',            path: ROUTES.preparationWaves,     icon: Waves },
-      { key: 'prep-pool',          label: 'Prepared Pool',    path: ROUTES.preparedPool,          icon: PackageCheck },
-      { key: 'prep-stations',      label: 'Stations',         path: ROUTES.preparationStations,  icon: Warehouse },
-      { key: 'prep-analytics',     label: 'Analytics',        path: ROUTES.preparationAnalytics, icon: BarChart3 },
-      { key: 'analysis-section',   label: 'Analysis',         isSection: true },
-      { key: 'demand-analysis',    label: 'Demand Analysis',  path: ROUTES.operationsDemandAnalysis, icon: TrendingDown },
+      { key: 'prep-section',       label: 'Preparation OS',       isSection: true },
+      { key: 'prep-today',         label: "Today's Preparation",  path: ROUTES.preparationToday,        icon: CalendarDays },
+      { key: 'prep-dashboard',     label: 'Dashboard',            path: ROUTES.preparationDashboard,    icon: LayoutDashboard },
+      { key: 'mgmt-section',       label: 'Management',           isSection: true },
+      { key: 'prep-sessions',      label: 'Sessions',             path: ROUTES.preparationSessions,     icon: ClipboardList },
+      { key: 'prep-waves',         label: 'Waves',                path: ROUTES.preparationWaves,        icon: Waves },
+      { key: 'prep-pool',          label: 'Prepared Pool',        path: ROUTES.preparedPool,            icon: PackageCheck },
+      { key: 'prep-stations',      label: 'Stations',             path: ROUTES.preparationStations,     icon: Warehouse },
+      { key: 'prep-analytics',     label: 'Analytics',            path: ROUTES.preparationAnalytics,    icon: BarChart3 },
+      { key: 'analysis-section',   label: 'Analysis',             isSection: true },
+      { key: 'demand-analysis',    label: 'Demand Analysis',      path: ROUTES.operationsDemandAnalysis, icon: TrendingDown },
+    ],
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing OS',
+    railLabel: 'Mktg.',
+    icon: Megaphone,
+    defaultPath: ROUTES.marketing,
+    items: [
+      { key: 'mkt-dashboard',    label: 'Dashboard',            path: ROUTES.marketing,                icon: LayoutDashboard },
+      { key: 'mkt-initiatives',  label: 'Initiatives',          path: ROUTES.marketingInitiatives,     icon: Briefcase },
+      { key: 'mkt-init-exec',    label: 'Initiative Dashboard', path: ROUTES.marketingInitiativeDash,  icon: BarChart3 },
+      { key: 'mkt-campaigns',    label: 'Campaigns',            path: ROUTES.marketingCampaigns,       icon: TrendingUp },
+      { key: 'mkt-camp-dash',    label: 'Campaign Dashboard',   path: ROUTES.marketingCampaignDash,    icon: TrendingUp },
+      { key: 'mkt-assets',       label: 'Assets',               path: ROUTES.marketingAssets,          icon: Zap },
+      { key: 'mkt-connect',      label: 'Connect Meta',         path: ROUTES.marketingConnectMeta,     icon: Link2 },
+      { key: 'studio',           label: 'Campaign Studio',      path: ROUTES.campaignStudio,            icon: Layers },
+      { key: 'studio-dash',      label: 'Studio Dashboard',     path: ROUTES.campaignStudioDashboard,  icon: BarChart3 },
+      { key: 'studio-gov',       label: 'Governance',           path: ROUTES.campaignGovernance,       icon: Shield },
+      // Marketing Automation Platform
+      { key: 'automation',       label: 'Automation',           path: ROUTES.automationWorkspace,      icon: GitBranch },
+      { key: 'automation-segs',  label: 'Audience Segments',    path: ROUTES.audienceSegments,         icon: UsersIcon },
+      { key: 'automation-dash',  label: 'Automation Dashboard', path: ROUTES.automationDashboard,      icon: Activity },
+      { key: 'automation-gov',   label: 'Auto Governance',      path: ROUTES.automationGovernance,     icon: Shield },
+    ],
+  },
+  {
+    id: 'customerEngagement',
+    label: 'Customer Engagement',
+    railLabel: 'Engage',
+    icon: MessageSquare,
+    defaultPath: ROUTES.customerEngagement,
+    items: [
+      { key: 'cep-inbox',     label: 'Unified Inbox',  path: ROUTES.customerEngagement, icon: MessageSquare },
+      { key: 'cep-dashboard', label: 'Dashboard',      path: ROUTES.cepDashboard,       icon: LayoutDashboard },
+      { key: 'cep-leads',     label: 'Leads',          path: ROUTES.cepLeads,           icon: UserPlus },
+    ],
+  },
+  {
+    id: 'omnichannel',
+    label: 'Omnichannel',
+    railLabel: 'Omni',
+    icon: MessageCircle,
+    defaultPath: ROUTES.omnichannelInbox,
+    items: [
+      { key: 'omni-inbox',      label: 'Inbox',            path: ROUTES.omnichannelInbox,      icon: MessageCircle },
+      { key: 'omni-dashboard',  label: 'Dashboard',        path: ROUTES.omnichannelDashboard,  icon: LayoutDashboard },
+      { key: 'omni-config',     label: 'Configuration',    isSection: true },
+      { key: 'omni-providers',  label: 'Channel Providers', path: ROUTES.omnichannelProviders, icon: Wifi },
+      { key: 'omni-macros',     label: 'Macros',           path: ROUTES.omnichannelMacros,     icon: Zap },
+      { key: 'omni-routing',    label: 'Routing Rules',    path: ROUTES.omnichannelRouting,    icon: GitBranch },
+    ],
+  },
+  {
+    id: 'core',
+    label: 'Core Platform',
+    railLabel: 'Core',
+    icon: Cpu,
+    defaultPath: ROUTES.businessAttribution,
+    items: [
+      { key: 'bae-section',  label: 'Business Attribution', isSection: true },
+      { key: 'bae-journey',  label: 'Journey Explorer',     path: ROUTES.businessAttribution, icon: Activity },
+      { key: 'bae-timeline', label: 'Business Timeline',    path: ROUTES.baeTimeline,         icon: BarChart3 },
     ],
   },
   {
@@ -217,6 +298,10 @@ export const APP_MODULES: AppModule[] = [
       { key: 'users', label: 'Users', path: ROUTES.users, icon: UsersIcon },
       { key: 'roles', label: 'Roles & Permissions', path: ROUTES.roles, icon: Shield },
       { key: 'settings', label: 'Settings', path: ROUTES.settings, icon: Settings },
+      { key: 'config-section', label: 'Configuration',   isSection: true },
+      { key: 'configuration-os', label: 'Configuration OS', path: ROUTES.configurationOs, icon: Cpu },
+      { key: 'master-data-section', label: 'Master Data', isSection: true },
+      { key: 'egypt-geography', label: 'Egypt Geography', path: ROUTES.egyptGeography, icon: Map },
     ],
   },
 ];
