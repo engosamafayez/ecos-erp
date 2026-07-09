@@ -43,3 +43,24 @@ frontend/*.local
 
 # Node (root, if any)
 /node_modules/
+
+# Test coverage output
+coverage/
+.nyc_output/
+frontend/coverage/
+backend/coverage/
+
+# Backup / temp files
+*.bak
+*.backup
+*.orig
+*.tmp
+
+# Laravel debug helpers (never commit generated helpers)
+backend/_ide_helper_models.php
+
+# Docker runtime state
+.docker/
+
+# Scratchpad / one-off scripts (dev-only, never tracked)
+backend/*.sh
