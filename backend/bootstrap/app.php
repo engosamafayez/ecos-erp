@@ -23,6 +23,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Trust reverse proxies: Docker Nginx, Cloudflare, load balancers.
+        // TRUSTED_PROXIES=* is safe in Docker because PHP-FPM (port 9000) is
+        // only reachable from the internal bridge network, not the public internet.
+        // For bare-metal or mixed deployments use CIDRs: TRUSTED_PROXIES=10.0.0.0/8
+        $proxies = (string) env('TRUSTED_PROXIES', '*');
+        $middleware->trustProxies(
+            at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)),
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+                | Request::HEADER_X_FORWARDED_PREFIX,
+        );
+
         // Replace the framework Authenticate with our subclass that returns null
         // from redirectTo() for api/* requests. Without this, the framework calls
         // route('login') as a constructor argument to AuthenticationException —

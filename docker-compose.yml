@@ -130,8 +130,8 @@ services:
     environment:
       MYSQL_DATABASE:      ecos_erp
       MYSQL_USER:          ecos
-      MYSQL_PASSWORD:      secret
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD:      Staging2026Ecos!
+      MYSQL_ROOT_PASSWORD: Staging2026Root!
       TZ:                  Africa/Cairo
     ports:
       - "127.0.0.1:3306:3306"   # localhost-only; not publicly exposed
@@ -142,7 +142,7 @@ services:
     networks:
       - ecos-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "ecos", "-psecret"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "ecos", "-pStaging2026Ecos!"]
       interval: 10s
       timeout: 5s
       retries: 10
