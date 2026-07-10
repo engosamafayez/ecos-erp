@@ -16,7 +16,6 @@ import {
   ASSET_TYPE_LABELS,
   type AssetHealth,
   type AssetType,
-  type ConnectorType,
 } from '../types/marketing';
 
 const ASSET_TYPES: Array<{ value: AssetType; label: string }> = (

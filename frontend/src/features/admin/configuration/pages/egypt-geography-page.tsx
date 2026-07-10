@@ -370,13 +370,12 @@ function ConfirmDialog({
 
 function ZoneRow({
   zone,
-  govId,
   onEdit,
   onArchive,
   onDelete,
 }: {
   zone: MasterZoneDetail;
-  govId: string;
+  govId?: string;
   onEdit: () => void;
   onArchive: () => void;
   onDelete: () => void;

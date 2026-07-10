@@ -83,7 +83,7 @@ export function CreateSessionDialog({ open, onClose, onCreated }: Props) {
               </SelectTrigger>
               <SelectContent>
                 {warehouseOptions.map((w) => (
-                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                  <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

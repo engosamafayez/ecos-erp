@@ -294,7 +294,7 @@ export function InitiativesWorkspacePage() {
       {meta && meta.last_page > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            Page {meta.current_page} of {meta.last_page}
+            Page {meta.page} of {meta.last_page}
           </span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>

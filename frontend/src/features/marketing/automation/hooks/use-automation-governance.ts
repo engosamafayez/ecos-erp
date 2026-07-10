@@ -26,7 +26,7 @@ export function useCreateGovernancePolicy() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<AutomationGovernancePolicy> & { name: string }) => {
-      const { data } = await axios.post<AutomationGovernancePolicy>(
+      const { data } = await axios.post<{ data: AutomationGovernancePolicy }>(
         '/api/marketing/automation/governance',
         payload,
       );
@@ -40,7 +40,7 @@ export function useUpdateGovernancePolicy(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<AutomationGovernancePolicy>) => {
-      const { data } = await axios.put<AutomationGovernancePolicy>(
+      const { data } = await axios.put<{ data: AutomationGovernancePolicy }>(
         `/api/marketing/automation/governance/${id}`,
         payload,
       );

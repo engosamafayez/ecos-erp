@@ -8,7 +8,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Settings,
   Users,
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react';
 import type { CampaignDraft } from '../types/campaign-studio';
 import { useCreateCampaignDraft, useUpdateCampaignDraft } from '../hooks/use-campaign-studio';
-import { useCampaignAudience, useUpdateCampaignAudience } from '../hooks/use-campaign-audience';
+import { useCampaignAudience } from '../hooks/use-campaign-audience';
 import { useCampaignVersions } from '../hooks/use-campaign-versions';
 import { useValidateCampaign, useValidationResults } from '../hooks/use-campaign-validation';
 import { useSubmitForApproval } from '../hooks/use-campaign-approval';
@@ -127,20 +126,20 @@ export function CampaignDraftDrawer({ open, onClose, draft, creating = false }: 
               {activeTab === 'creatives' && <PlaceholderTab label="Creative Builder" description="Add images, videos, carousels, and story creatives." />}
               {activeTab === 'placements' && <PlaceholderTab label="Placement Builder" description="Configure placement mode (auto or manual) and select specific placements." />}
               {activeTab === 'versions'   && <VersionsTab versions={versions ?? []} />}
-              {activeTab === 'validation' && <ValidationTab result={validation} onValidate={() => validate.mutate()} validating={validate.isPending} />}
-              {activeTab === 'approval'   && <ApprovalTab draft={draft} onSubmit={() => submitApproval.mutate()} submitting={submitApproval.isPending} />}
+              {activeTab === 'validation' && <ValidationTab result={validation} onValidate={() => validate.mutate(undefined)} validating={validate.isPending} />}
+              {activeTab === 'approval'   && <ApprovalTab draft={draft} onSubmit={() => submitApproval.mutate(undefined)} submitting={submitApproval.isPending} />}
             </div>
 
             {/* Footer actions */}
             {draft.is_editable && activeTab === 'settings' && (
               <div className="border-t px-6 py-3 flex items-center gap-2 shrink-0">
                 {draft.internal_status === 'approved' && (
-                  <Button size="sm" onClick={() => publish.mutate()} disabled={publish.isPending}>
+                  <Button size="sm" onClick={() => publish.mutate(undefined)} disabled={publish.isPending}>
                     {publish.isPending ? 'Publishing…' : 'Publish Now'}
                   </Button>
                 )}
                 {draft.internal_status === 'draft' && (
-                  <Button size="sm" variant="outline" onClick={() => submitApproval.mutate()} disabled={submitApproval.isPending}>
+                  <Button size="sm" variant="outline" onClick={() => submitApproval.mutate(undefined)} disabled={submitApproval.isPending}>
                     Submit for Approval
                   </Button>
                 )}

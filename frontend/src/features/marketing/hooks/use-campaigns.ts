@@ -4,7 +4,6 @@ import type {
   Campaign,
   CampaignAdSet,
   CampaignAd,
-  CampaignCreative,
   CampaignInsight,
   CampaignListResponse,
   CampaignInsightListResponse,
@@ -26,6 +25,7 @@ export function useCampaigns(params?: {
   company_id?: string;
   per_page?: number;
   page?: number;
+  unassigned?: boolean;
 }) {
   return useQuery({
     queryKey: ['campaigns', params],

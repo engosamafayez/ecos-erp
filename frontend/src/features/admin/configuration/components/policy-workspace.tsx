@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardList,
-  Clock,
   Cog,
   History,
   Loader2,

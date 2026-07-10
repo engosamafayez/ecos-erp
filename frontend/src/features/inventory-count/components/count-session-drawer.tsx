@@ -1,15 +1,15 @@
 import { useRef, useState } from 'react';
 import {
-  AlertTriangle, Camera, Check, CheckCircle, CheckCircle2, ChevronDown, ChevronUp,
-  Clock, Eye, FileText, Loader2, PackageSearch, PlayCircle, RotateCcw, Trash2,
-  TrendingDown, TrendingUp, X, XCircle,
+  Camera, Check, CheckCircle, CheckCircle2,
+  FileText, Loader2, PackageSearch, PlayCircle, RotateCcw,
+  X, XCircle,
 } from 'lucide-react';
 
 import { ErrorState, LoadingState } from '@/components/crud';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+
 import {
   Sheet,
   SheetContent,

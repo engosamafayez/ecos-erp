@@ -22,6 +22,25 @@ import type {
   AssignWorkerPayload,
   ResolveShortagePayload,
   UpdatePoolQualityPayload,
+  PreparationSession,
+  SessionsQuery,
+  SessionsResult,
+  CreateSessionPayload,
+  CancelSessionPayload,
+  AddWaveToSessionPayload,
+  ReportIssuePayload,
+  CreateAssignmentPolicyPayload,
+  OverrideWarehousePayload,
+  TodaySessionsResponse,
+  SessionProduct,
+  SessionConsolidation,
+  SessionOrdersResult,
+  AssignmentPolicy,
+  ProductWorkspace,
+  EnterpriseQueueResult,
+  CapacityPlanningResult,
+  OptimizationSuggestion,
+  EnterpriseDashboardResult,
 } from '../types/preparation';
 
 const BASE = '/preparation';
@@ -102,11 +121,6 @@ export const preparationService = {
     return data.data;
   },
 
-  async getProductQueue(id: string): Promise<{ items: unknown[] }> {
-    const { data } = await api.get<ApiResponse<{ items: unknown[] }>>(`${BASE}/waves/${id}/product-queue`);
-    return data.data;
-  },
-
   // ── Wave enterprise actions ──────────────────────────────────────────────────
 
   async approveWave(id: string, payload: ApproveWavePayload = {}): Promise<PreparationWave> {
@@ -164,6 +178,151 @@ export const preparationService = {
 
   async listStations(params: { warehouse_id: string; status?: string }): Promise<PreparationStation[]> {
     const { data } = await api.get<ApiResponse<PreparationStation[]>>(`${BASE}/stations`, { params: clean(params) });
+    return data.data;
+  },
+
+  // ── Product Workspace ────────────────────────────────────────────────────────
+
+  async getProductQueue(waveId: string, params: { status?: string } = {}): Promise<{ items: unknown[] }> {
+    const { data } = await api.get<ApiResponse<{ items: unknown[] }>>(`${BASE}/waves/${waveId}/product-queue`, { params: clean(params) });
+    return data.data;
+  },
+
+  async getProductWorkspace(waveId: string, itemId: string): Promise<ProductWorkspace> {
+    const { data } = await api.get<ApiResponse<ProductWorkspace>>(`${BASE}/waves/${waveId}/items/${itemId}/workspace`);
+    return data.data;
+  },
+
+  async reportIssue(waveId: string, payload: ReportIssuePayload): Promise<void> {
+    await api.post(`${BASE}/waves/${waveId}/issues`, payload);
+  },
+
+  // ── Sessions (CR-PREP-001) ───────────────────────────────────────────────────
+
+  async listSessions(params: SessionsQuery = {}): Promise<SessionsResult> {
+    const { data } = await api.get<ApiResponse<SessionsResult>>(`${BASE}/sessions`, { params: clean(params) });
+    return data.data;
+  },
+
+  async getSession(id: string): Promise<PreparationSession> {
+    const { data } = await api.get<ApiResponse<PreparationSession>>(`${BASE}/sessions/${id}`);
+    return data.data;
+  },
+
+  async createSession(payload: CreateSessionPayload): Promise<PreparationSession> {
+    const { data } = await api.post<ApiResponse<PreparationSession>>(`${BASE}/sessions`, payload);
+    return data.data;
+  },
+
+  async startSession(id: string): Promise<PreparationSession> {
+    const { data } = await api.post<ApiResponse<PreparationSession>>(`${BASE}/sessions/${id}/start`);
+    return data.data;
+  },
+
+  async planSession(id: string): Promise<PreparationSession> {
+    const { data } = await api.post<ApiResponse<PreparationSession>>(`${BASE}/sessions/${id}/plan`);
+    return data.data;
+  },
+
+  async completeSession(id: string): Promise<PreparationSession> {
+    const { data } = await api.post<ApiResponse<PreparationSession>>(`${BASE}/sessions/${id}/complete`);
+    return data.data;
+  },
+
+  async approveSession(id: string): Promise<PreparationSession> {
+    const { data } = await api.post<ApiResponse<PreparationSession>>(`${BASE}/sessions/${id}/approve`);
+    return data.data;
+  },
+
+  async closeSession(id: string): Promise<PreparationSession> {
+    const { data } = await api.post<ApiResponse<PreparationSession>>(`${BASE}/sessions/${id}/close`);
+    return data.data;
+  },
+
+  async cancelSession(id: string, payload: CancelSessionPayload): Promise<PreparationSession> {
+    const { data } = await api.post<ApiResponse<PreparationSession>>(`${BASE}/sessions/${id}/cancel`, payload);
+    return data.data;
+  },
+
+  async freezeSession(id: string): Promise<PreparationSession> {
+    const { data } = await api.post<ApiResponse<PreparationSession>>(`${BASE}/sessions/${id}/freeze`);
+    return data.data;
+  },
+
+  async addWaveToSession(sessionId: string, payload: AddWaveToSessionPayload): Promise<PreparationSession> {
+    const { data } = await api.post<ApiResponse<PreparationSession>>(`${BASE}/sessions/${sessionId}/waves`, payload);
+    return data.data;
+  },
+
+  async getConsolidation(sessionId: string): Promise<SessionConsolidation> {
+    const { data } = await api.get<ApiResponse<SessionConsolidation>>(`${BASE}/sessions/${sessionId}/consolidation`);
+    return data.data;
+  },
+
+  async getSessionProducts(sessionId: string): Promise<SessionProduct[]> {
+    const { data } = await api.get<ApiResponse<SessionProduct[]>>(`${BASE}/sessions/${sessionId}/products`);
+    return data.data;
+  },
+
+  async getSessionOrders(sessionId: string, params: { per_page?: number; page?: number } = {}): Promise<SessionOrdersResult> {
+    const { data } = await api.get<ApiResponse<SessionOrdersResult>>(`${BASE}/sessions/${sessionId}/orders`, { params: clean(params) });
+    return data.data;
+  },
+
+  async attachOrderToSession(sessionId: string, orderId: string): Promise<void> {
+    await api.post(`${BASE}/sessions/${sessionId}/orders`, { order_id: orderId });
+  },
+
+  async detachOrderFromSession(sessionId: string, sessionOrderId: string, reason: string): Promise<void> {
+    await api.delete(`${BASE}/sessions/${sessionId}/orders/${sessionOrderId}`, { data: { reason } });
+  },
+
+  // ── Today Sessions ───────────────────────────────────────────────────────────
+
+  async getTodaySessions(params: { date?: string } = {}): Promise<TodaySessionsResponse> {
+    const { data } = await api.get<ApiResponse<TodaySessionsResponse>>(`${BASE}/today`, { params: clean(params) });
+    return data.data;
+  },
+
+  // ── Assignment Policies ──────────────────────────────────────────────────────
+
+  async listAssignmentPolicies(params: { warehouse_id?: string; is_active?: boolean } = {}): Promise<AssignmentPolicy[]> {
+    const { data } = await api.get<ApiResponse<AssignmentPolicy[]>>(`${BASE}/assignment-policies`, { params: clean(params) });
+    return data.data;
+  },
+
+  async createAssignmentPolicy(payload: CreateAssignmentPolicyPayload): Promise<AssignmentPolicy> {
+    const { data } = await api.post<ApiResponse<AssignmentPolicy>>(`${BASE}/assignment-policies`, payload);
+    return data.data;
+  },
+
+  async deleteAssignmentPolicy(id: string): Promise<void> {
+    await api.delete(`${BASE}/assignment-policies/${id}`);
+  },
+
+  async overrideWarehouse(orderId: string, payload: OverrideWarehousePayload): Promise<void> {
+    await api.post(`${BASE}/orders/${orderId}/override-warehouse`, payload);
+  },
+
+  // ── Enterprise (Phases 6, 8, 9, 13) ─────────────────────────────────────────
+
+  async getEnterpriseQueue(params: { planning_date?: string; warehouse_id?: string; wave_id?: string } = {}): Promise<EnterpriseQueueResult> {
+    const { data } = await api.get<ApiResponse<EnterpriseQueueResult>>(`${BASE}/enterprise/queue`, { params: clean(params) });
+    return data.data;
+  },
+
+  async getCapacityPlanning(params: { planning_date?: string; warehouse_id?: string } = {}): Promise<CapacityPlanningResult> {
+    const { data } = await api.get<ApiResponse<CapacityPlanningResult>>(`${BASE}/enterprise/capacity`, { params: clean(params) });
+    return data.data;
+  },
+
+  async getOptimizationSuggestions(params: { planning_date?: string; warehouse_id?: string } = {}): Promise<OptimizationSuggestion[]> {
+    const { data } = await api.get<ApiResponse<OptimizationSuggestion[]>>(`${BASE}/enterprise/optimization`, { params: clean(params) });
+    return data.data;
+  },
+
+  async getEnterpriseDashboard(params: { planning_date?: string; warehouse_id?: string } = {}): Promise<EnterpriseDashboardResult> {
+    const { data } = await api.get<ApiResponse<EnterpriseDashboardResult>>(`${BASE}/enterprise/dashboard`, { params: clean(params) });
     return data.data;
   },
 };

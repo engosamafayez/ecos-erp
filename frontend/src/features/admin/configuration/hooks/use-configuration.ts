@@ -4,7 +4,6 @@ import type {
   BrandPolicyPayload,
   BrandShippingRulePayload,
   CloneConfigOptions,
-  CoverageGovernorate,
   DeliveryGeography,
   DeliveryGeographyPayload,
   DeliveryWindowPayload,

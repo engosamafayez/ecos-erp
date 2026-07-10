@@ -10,9 +10,17 @@ export type Toast = {
   durationMs?: number;
 };
 
+// Accepts both the ECOS format ({ type, title }) and the legacy shadcn/ui format
+// ({ title, variant }) so that existing call sites don't need to be migrated en-masse.
+type ToastInput = Omit<Toast, 'id' | 'type'> & {
+  type?: ToastType;
+  /** @deprecated Use `type: 'error'` instead of `variant: 'destructive'` */
+  variant?: 'default' | 'destructive';
+};
+
 type ToastStore = {
   toasts: Toast[];
-  toast: (t: Omit<Toast, 'id'>) => string;
+  toast: (t: ToastInput) => string;
   dismiss: (id: string) => void;
   dismissAll: () => void;
 };
@@ -27,7 +35,9 @@ export const useToastStore = create<ToastStore>((set) => ({
 
   toast(t) {
     const id = uid();
-    set((s) => ({ toasts: [...s.toasts, { ...t, id }] }));
+    const { variant, type, ...rest } = t;
+    const resolvedType: ToastType = type ?? (variant === 'destructive' ? 'error' : 'info');
+    set((s) => ({ toasts: [...s.toasts, { ...rest, type: resolvedType, id }] }));
     return id;
   },
 

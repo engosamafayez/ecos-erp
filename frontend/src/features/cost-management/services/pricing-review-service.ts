@@ -92,6 +92,13 @@ export const pricingReviewService = {
   async bulkPolicy(payload: BulkPolicyPayload): Promise<void> {
     await api.post(`${BASE}/bulk-policy`, payload);
   },
+
+  async getBadge(companyId?: string): Promise<{ pending: number }> {
+    return safeFetch(async () => {
+      const { data } = await api.get<{ pending: number }>(`${BASE}/badge`, { params: companyId ? { company_id: companyId } : undefined });
+      return data;
+    }, { pending: 0 });
+  },
 };
 
 export const costDashboardService = {

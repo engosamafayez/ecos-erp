@@ -26,7 +26,7 @@ export function useAudienceSegment(id: string) {
   return useQuery({
     queryKey: segmentKeys.one(id),
     queryFn:  async () => {
-      const { data } = await axios.get<AudienceSegment>(`/api/marketing/automation/segments/${id}`);
+      const { data } = await axios.get<{ data: AudienceSegment }>(`/api/marketing/automation/segments/${id}`);
       return data.data ?? data;
     },
     enabled: !!id,
@@ -37,7 +37,7 @@ export function useCreateSegment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<AudienceSegment> & { name: string; segment_type: SegmentType; rules: Record<string, unknown> }) => {
-      const { data } = await axios.post<AudienceSegment>('/api/marketing/automation/segments', payload);
+      const { data } = await axios.post<{ data: AudienceSegment }>('/api/marketing/automation/segments', payload);
       return data.data ?? data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: segmentKeys.all() }),
@@ -48,7 +48,7 @@ export function useUpdateSegment(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<AudienceSegment>) => {
-      const { data } = await axios.put<AudienceSegment>(`/api/marketing/automation/segments/${id}`, payload);
+      const { data } = await axios.put<{ data: AudienceSegment }>(`/api/marketing/automation/segments/${id}`, payload);
       return data.data ?? data;
     },
     onSuccess: () => {

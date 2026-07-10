@@ -34,7 +34,7 @@ export function useAutomationWorkflow(id: string) {
   return useQuery({
     queryKey: automationKeys.workflow(id),
     queryFn:  async () => {
-      const { data } = await axios.get<AutomationWorkflow>(
+      const { data } = await axios.get<{ data: AutomationWorkflow }>(
         `/api/marketing/automation/workflows/${id}`,
       );
       return data.data ?? data;
@@ -61,8 +61,8 @@ export function useWorkflowKpis(companyId?: string) {
 export function useCreateWorkflow() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Partial<AutomationWorkflow> & { name: string; trigger_type: string }) => {
-      const { data } = await axios.post<AutomationWorkflow>('/api/marketing/automation/workflows', payload);
+    mutationFn: async (payload: Partial<AutomationWorkflow> & { name: string; trigger_type: string; event_type?: string }) => {
+      const { data } = await axios.post<{ data: AutomationWorkflow }>('/api/marketing/automation/workflows', payload);
       return data.data ?? data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: automationKeys.workflows() }),
@@ -73,7 +73,7 @@ export function useUpdateWorkflow(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<AutomationWorkflow>) => {
-      const { data } = await axios.patch<AutomationWorkflow>(
+      const { data } = await axios.patch<{ data: AutomationWorkflow }>(
         `/api/marketing/automation/workflows/${id}`,
         payload,
       );
@@ -100,7 +100,7 @@ export function useDuplicateWorkflow() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await axios.post<AutomationWorkflow>(
+      const { data } = await axios.post<{ data: AutomationWorkflow }>(
         `/api/marketing/automation/workflows/${id}/duplicate`,
       );
       return data.data ?? data;
@@ -113,7 +113,7 @@ export function useActivateWorkflow() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await axios.post<AutomationWorkflow>(
+      const { data } = await axios.post<{ data: AutomationWorkflow }>(
         `/api/marketing/automation/workflows/${id}/activate`,
       );
       return data.data ?? data;
@@ -130,7 +130,7 @@ export function usePauseWorkflow() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await axios.post<AutomationWorkflow>(
+      const { data } = await axios.post<{ data: AutomationWorkflow }>(
         `/api/marketing/automation/workflows/${id}/pause`,
       );
       return data.data ?? data;
@@ -146,7 +146,7 @@ export function useArchiveWorkflow() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await axios.post<AutomationWorkflow>(
+      const { data } = await axios.post<{ data: AutomationWorkflow }>(
         `/api/marketing/automation/workflows/${id}/archive`,
       );
       return data.data ?? data;
@@ -162,7 +162,7 @@ export function useSaveCanvas() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, nodes_graph }: { id: string; nodes_graph: AutomationWorkflow['nodes_graph'] }) => {
-      const { data } = await axios.put<AutomationWorkflow>(
+      const { data } = await axios.put<{ data: AutomationWorkflow }>(
         `/api/marketing/automation/workflows/${id}/canvas`,
         { nodes_graph },
       );

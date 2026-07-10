@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   ChevronRight,
-  Clock,
   Loader2,
   Package,
   PackageCheck,

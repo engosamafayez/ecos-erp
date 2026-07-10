@@ -30,7 +30,7 @@ export function useWorkflowExecution(workflowId: string, executionId: string) {
   return useQuery({
     queryKey: executionKeys.one(workflowId, executionId),
     queryFn:  async () => {
-      const { data } = await axios.get<WorkflowExecution>(
+      const { data } = await axios.get<{ data: WorkflowExecution }>(
         `/api/marketing/automation/workflows/${workflowId}/executions/${executionId}`,
       );
       return data.data ?? data;

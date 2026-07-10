@@ -331,6 +331,238 @@ export type PoolResult = {
   meta: WavesMeta;
 };
 
+// ── Session types (CR-PREP-001) ───────────────────────────────────────────────
+
+export type SessionStatus =
+  | 'draft'
+  | 'planning'
+  | 'in_progress'
+  | 'paused'
+  | 'frozen'
+  | 'completed'
+  | 'approved'
+  | 'closed'
+  | 'cancelled';
+
+export type PreparationIssueType =
+  | 'missing_material'
+  | 'damaged_material'
+  | 'quality_issue'
+  | 'recipe_mismatch'
+  | 'negative_stock'
+  | 'manual_adjustment';
+
+export type PreparationSession = {
+  id: string;
+  company_id: string;
+  warehouse_id: string;
+  session_number: string;
+  status: SessionStatus;
+  planning_date: string;
+  operator_id: string | null;
+  supervisor_id: string | null;
+  auto_created: boolean;
+  notes: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  frozen_at: string | null;
+  approved_at: string | null;
+  closed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // computed / enriched
+  orders_count: number;
+  products_count: number;
+  waves_count: number;
+  completion_pct: number;
+  total_units_required: number;
+  total_units_prepared: number;
+};
+
+export type TodaySessionKpis = {
+  orders: number;
+  products: number;
+  prepared: number;
+  blocked: number;
+  remaining: number;
+  prepared_pct: number;
+};
+
+export type TodaySessionWarehouse = {
+  warehouse_id: string;
+  warehouse_name: string;
+  session: PreparationSession | null;
+  kpis: TodaySessionKpis;
+};
+
+export type TodaySessionsResponse = {
+  date: string;
+  data: TodaySessionWarehouse[];
+};
+
+export type SessionsQuery = {
+  warehouse_id?: string;
+  status?: SessionStatus | 'all';
+  planning_date?: string;
+  search?: string;
+  page?: number;
+  per_page?: number;
+};
+
+export type SessionsResult = {
+  data: PreparationSession[];
+  meta: WavesMeta;
+};
+
+export type CreateSessionPayload = {
+  warehouse_id: string;
+  planning_date: string;
+  operator_id?: string;
+  supervisor_id?: string;
+  notes?: string;
+};
+
+export type CancelSessionPayload = {
+  reason: string;
+};
+
+export type AddWaveToSessionPayload = {
+  wave_id: string;
+};
+
+export type ReportIssuePayload = {
+  issue_type: PreparationIssueType;
+  description: string;
+  entity_type?: string;
+  entity_id?: string;
+};
+
+export type CreateAssignmentPolicyPayload = {
+  warehouse_id: string;
+  name: string;
+  priority?: number;
+  rules: Record<string, unknown>;
+  is_active?: boolean;
+};
+
+export type OverrideWarehousePayload = {
+  warehouse_id: string;
+  reason: string;
+};
+
+// ── Enterprise types (Phases 6, 8, 9, 13) ────────────────────────────────────
+
+export type EnterpriseQueueItem = {
+  order_id: string;
+  order_number: string;
+  wave_id: string | null;
+  priority: number;
+  status: string;
+};
+
+export type EnterpriseQueueResult = {
+  items: EnterpriseQueueItem[];
+  meta: WavesMeta;
+};
+
+export type CapacityPlanningResult = {
+  warehouse_id: string;
+  planning_date: string;
+  capacity: Record<string, unknown>;
+};
+
+export type OptimizationSuggestion = {
+  id: string;
+  type: string;
+  priority: number;
+  message: string;
+  metadata: Record<string, unknown> | null;
+};
+
+export type EnterpriseDashboardResult = {
+  planning_date: string;
+  warehouses: Record<string, unknown>[];
+  kpis: Record<string, number>;
+};
+
+export type ProductWorkspace = {
+  item: PreparationWaveItem & { sku: string; product_id: string };
+  product: { id: string; name: string; sku: string; unit_symbol: string; image_url: string | null } | null;
+  recipe: {
+    id: string;
+    recipe_cost: number | null;
+    material_lines: Array<{
+      id: string;
+      material_name: string;
+      material_sku: string;
+      unit_symbol: string;
+      quantity: number;
+      waste_percentage: number;
+    }>;
+  } | null;
+  materials: Array<{
+    id: string;
+    raw_material_id: string;
+    quantity_needed: number;
+    quantity_on_hand: number;
+    shortage_flag: boolean;
+    shortage_qty: number;
+  }>;
+  orders: Array<{
+    order_id: string;
+    order_number: string;
+    customer_name: string | null;
+    quantity: number;
+    delivery_zone: string | null;
+  }>;
+};
+
+export type SessionProduct = {
+  product_id: string;
+  sku: string;
+  name: string;
+  product_name: string;
+  quantity_required: number;
+  quantity_prepared: number;
+  total_quantity_needed: number;
+  unit: string;
+  orders_count: number;
+  status: WaveItemStatus;
+};
+
+export type SessionOrder = {
+  id: string;
+  order_number: string;
+  customer_name: string | null;
+  area: string | null;
+  governorate: string | null;
+  attachment_source: 'auto' | 'manual_supervisor' | string;
+  attached_at: string;
+};
+
+export type SessionOrdersResult = {
+  data: SessionOrder[];
+  meta: WavesMeta;
+};
+
+export type SessionConsolidation = {
+  session_id: string;
+  products: SessionProduct[];
+  total_orders: number;
+  total_units: number;
+};
+
+export type AssignmentPolicy = {
+  id: string;
+  warehouse_id: string;
+  name: string;
+  priority: number;
+  rules: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+};
+
 // ── Timeline / Documents / new payloads ───────────────────────────────────────
 
 export type TimelineEntry = {

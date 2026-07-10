@@ -1,5 +1,4 @@
-﻿import { AlertCircle, CheckCircle2, Clock, RefreshCw, WifiOff } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+﻿import { AlertCircle, CheckCircle2, RefreshCw, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useConnectorHealth } from '../hooks/use-marketing-connections';
 

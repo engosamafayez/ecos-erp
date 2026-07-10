@@ -113,7 +113,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
               )}
               <div>
                 <SheetTitle className="text-base leading-tight">
-                  {item?.name ?? 'Loading…'}
+                  {item?.name_snapshot ?? 'Loading…'}
                 </SheetTitle>
                 <p className="text-xs text-muted-foreground font-mono mt-0.5">{item?.sku}</p>
               </div>
@@ -173,10 +173,10 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                 </div>
               </div>
 
-              {item?.quantity_short > 0 && (
+              {(item?.quantity_short ?? 0) > 0 && (
                 <div className="flex items-center gap-2 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
-                  <span>{item.quantity_short} {product?.unit_symbol} short</span>
+                  <span>{item?.quantity_short} {product?.unit_symbol} short</span>
                 </div>
               )}
 
@@ -207,7 +207,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Materials</h4>
                   <div className="divide-y rounded border text-sm">
-                    {workspace.materials.map((m) => (
+                    {workspace.materials.map((m: (typeof workspace.materials)[0]) => (
                       <div key={m.id} className="flex items-center justify-between px-3 py-2">
                         <span className="text-xs font-mono text-muted-foreground">{m.raw_material_id.slice(0, 8)}…</span>
                         <div className="flex items-center gap-2">
@@ -239,7 +239,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                     </div>
                   )}
                   <div className="divide-y rounded border text-sm">
-                    {recipe.material_lines.map((line) => (
+                    {recipe.material_lines.map((line: (typeof recipe.material_lines)[0]) => (
                       <div key={line.id} className="flex items-center gap-3 px-3 py-2">
                         <Box className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         <div className="flex-1 min-w-0">
@@ -268,7 +268,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                 </div>
               ) : (
                 <div className="divide-y rounded border text-sm">
-                  {workspace.orders.map((o) => (
+                  {workspace.orders.map((o: (typeof workspace.orders)[0]) => (
                     <div key={o.order_id} className="flex items-center justify-between px-3 py-2">
                       <div>
                         <p className="text-xs font-mono font-medium">{o.order_number}</p>

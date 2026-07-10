@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 
 // Radix UI uses ResizeObserver for popover/tooltip positioning
-global.ResizeObserver = class ResizeObserver {
+globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}

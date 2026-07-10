@@ -41,7 +41,7 @@ export const EcosCheckbox = forwardRef<HTMLInputElement, EcosCheckboxProps>(
           'shrink-0 cursor-pointer rounded border-input accent-primary',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
           'disabled:cursor-not-allowed disabled:opacity-50',
-          sizeClass[size],
+          sizeClass[size as keyof typeof sizeClass],
           className,
         )}
         {...props}

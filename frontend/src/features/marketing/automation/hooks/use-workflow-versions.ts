@@ -13,7 +13,7 @@ export function useWorkflowVersions(workflowId: string) {
   return useQuery({
     queryKey: versionKeys.list(workflowId),
     queryFn:  async () => {
-      const { data } = await axios.get<WorkflowVersion[]>(
+      const { data } = await axios.get<{ data: WorkflowVersion[] }>(
         `/api/marketing/automation/workflows/${workflowId}/versions`,
       );
       return data.data ?? data;

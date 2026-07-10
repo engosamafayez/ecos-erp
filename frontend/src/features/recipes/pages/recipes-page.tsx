@@ -891,7 +891,6 @@ function MaterialsPreviewPopover({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function RecipesPage() {
-  const { currency, locale } = useCompany();
   const navigate = useNavigate();
 
   // ── Column preferences ────────────────────────────────────────────────────

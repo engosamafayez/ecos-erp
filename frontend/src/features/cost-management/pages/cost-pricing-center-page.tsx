@@ -1025,18 +1025,6 @@ export function CostPricingCenterPage() {
     );
   }
 
-  function handleIgnore(review: PricingReview) {
-    approveReview.mutate(
-      { id: review.id, payload: { action: 'keep_current', reason: 'Dismissed' } },
-      {
-        onSuccess: () => {
-          toast.success('Dismissed', review.product.name);
-          removeFromCurrentList(review.id);
-        },
-      },
-    );
-  }
-
   function handleReject(review: PricingReview, reason: string) {
     approveReview.mutate(
       { id: review.id, payload: { action: 'reject', reason } },

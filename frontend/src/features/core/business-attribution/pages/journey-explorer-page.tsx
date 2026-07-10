@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react';
-import { useJourneySearch, useJourney } from '../hooks/use-bae';
+import { useJourneySearch } from '../hooks/use-bae';
 import { BusinessDnaDrawer } from '../drawers/business-dna-drawer';
 import { ReplayDrawerPlaceholder } from '../drawers/replay-drawer-placeholder';
 import { Button } from '@/components/ui/button';

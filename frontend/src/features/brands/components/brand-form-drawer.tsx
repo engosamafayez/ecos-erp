@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { type Resolver, useForm } from 'react-hook-form';
 
 import { EntityDrawer, EntityForm } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -43,12 +43,12 @@ export function BrandFormDrawer({ open, onOpenChange, brand }: BrandFormDrawerPr
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const createForm = useForm<BrandCreateFormValues>({
-    resolver: zodResolver(brandCreateSchema),
+    resolver: zodResolver(brandCreateSchema) as unknown as Resolver<BrandCreateFormValues>,
     defaultValues: toCreateFormValues(),
   });
 
   const updateForm = useForm<BrandUpdateFormValues>({
-    resolver: zodResolver(brandUpdateSchema),
+    resolver: zodResolver(brandUpdateSchema) as unknown as Resolver<BrandUpdateFormValues>,
     defaultValues: brand ? toUpdateFormValues(brand) : { name: '', is_active: true },
   });
 

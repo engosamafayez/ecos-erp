@@ -26,7 +26,7 @@ export function useCreateWorkflowTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<AutomationWorkflowTemplate> & { name: string; category: string; trigger_type: string; nodes_graph: unknown }) => {
-      const { data } = await axios.post<AutomationWorkflowTemplate>('/api/marketing/automation/templates', payload);
+      const { data } = await axios.post<{ data: AutomationWorkflowTemplate }>('/api/marketing/automation/templates', payload);
       return data.data ?? data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: templateKeys.all() }),
@@ -37,7 +37,7 @@ export function useCreateWorkflowFromTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ templateId, overrides }: { templateId: string; overrides: { name?: string; company_id?: string; brand_id?: string } }) => {
-      const { data } = await axios.post<AutomationWorkflow>(
+      const { data } = await axios.post<{ data: AutomationWorkflow }>(
         `/api/marketing/automation/templates/${templateId}/create-workflow`,
         overrides,
       );

@@ -17,7 +17,7 @@ import { Button }   from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useToastStore } from '@/components/ds/use-toast';
 import { useTodaySessions, useStartSession } from '../hooks/use-preparation';
-import type { SessionStatus, TodaySessionWarehouse } from '../types/preparation';
+import type { TodaySessionWarehouse } from '../types/preparation';
 import { ROUTES } from '@/router/routes';
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
@@ -80,7 +80,7 @@ function FreezeStatusContent({ status }: { status: string }) {
 
 function WarehouseCard({ item }: { item: TodaySessionWarehouse }) {
   const navigate  = useNavigate();
-  const toast     = useToastStore();
+  const toast     = useToastStore((s) => s.toast);
   const startMut  = useStartSession();
 
   const { session, kpis, warehouse_name } = item;
@@ -90,9 +90,9 @@ function WarehouseCard({ item }: { item: TodaySessionWarehouse }) {
     if (!session) return;
     try {
       await startMut.mutateAsync(session.id);
-      toast.success(`Preparation started for ${warehouse_name}.`);
+      toast({ title: `Preparation started for ${warehouse_name}.`, type: 'success' });
     } catch {
-      toast.error('Failed to start preparation.');
+      toast({ title: 'Failed to start preparation.', type: 'error' });
     }
   }
 

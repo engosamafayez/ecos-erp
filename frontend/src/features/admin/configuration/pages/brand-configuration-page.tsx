@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -23,8 +23,6 @@ import {
 } from 'lucide-react';
 
 import { Badge }    from '@/components/ui/badge';
-import { Button }   from '@/components/ui/button';
-import { useToast } from '@/components/ds/use-toast';
 import { useBrandQuery } from '@/features/brands/hooks/use-brands';
 
 import { POLICY_GROUP_LABELS, type PolicyGroup } from '../types/configuration';

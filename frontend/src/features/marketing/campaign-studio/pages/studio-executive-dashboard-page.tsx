@@ -1,7 +1,6 @@
 ﻿import { RefreshCw, TrendingUp, Clock, AlertTriangle, CheckCircle, PauseCircle, Archive, XCircle, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStudioDashboard } from '../hooks/use-campaign-studio';
-import { usePublishingQueueStats } from '../hooks/use-publishing-jobs';
 import { usePendingApprovals } from '../hooks/use-campaign-approval';
 
 export function StudioExecutiveDashboardPage() {

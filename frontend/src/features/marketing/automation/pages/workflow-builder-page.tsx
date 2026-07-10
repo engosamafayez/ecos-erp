@@ -6,6 +6,7 @@ import { useAutomationWorkflow, useActivateWorkflow, usePauseWorkflow } from '..
 import { useWorkflowVersions } from '../hooks/use-workflow-versions';
 import { useWorkflowExecutions } from '../hooks/use-workflow-executions';
 import { useSimulateWorkflow } from '../hooks/use-workflow-simulation';
+import type { WorkflowVersion } from '../types/automation';
 import { ROUTES } from '@/router/routes';
 
 type PanelTab = 'executions' | 'versions' | 'simulation';
@@ -31,11 +32,11 @@ export function WorkflowBuilderPage() {
     return <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Workflow not found.</div>;
   }
 
-  const versions   = Array.isArray(versionsData) ? versionsData : versionsData?.data ?? [];
+  const versions   = versionsData ?? [];
   const executions = executionsData?.data ?? [];
 
   async function handleSimulate() {
-    const result = await simulate.mutateAsync();
+    const result = await simulate.mutateAsync({});
     setSimulationResult(result);
     setPanelTab('simulation');
   }
@@ -150,7 +151,7 @@ export function WorkflowBuilderPage() {
                 {versions.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">No versions yet</p>
                 ) : (
-                  versions.map(v => (
+                  versions.map((v: WorkflowVersion) => (
                     <div key={v.id} className="p-2 bg-muted/40 rounded text-xs">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">v{v.version_number}</span>

@@ -21,7 +21,7 @@ type ListEnvelope = { data: CountSession[]; meta: CountSessionsResult['meta'] };
 type WasteListEnvelope = {
   data: WasteInvestigation[];
   pagination: { total: number; per_page: number; current_page: number; last_page: number };
-  summary: { pending: number; resolved: number };
+  summary: { pending: number; resolved: number; pending_over_3?: number; pending_over_7?: number };
 };
 
 type LiabilityListEnvelope = {

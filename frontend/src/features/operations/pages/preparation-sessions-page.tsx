@@ -1,21 +1,18 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Ban, Calendar, Plus } from 'lucide-react';
+import { Calendar, Plus } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
 import { ColumnVisibilityMenu } from '@/components/data-grid/column-visibility-menu';
 import { useColumnVisibility } from '@/components/data-grid/use-column-visibility';
 import { useRowSelection } from '@/components/data-grid/use-row-selection';
 import type { DataGridColumnDef } from '@/components/data-grid/types';
-import { useToastStore } from '@/components/ds/use-toast';
 import {
   usePreparationSessions,
-  useCancelSession,
 } from '../hooks/use-preparation';
 import { CreateSessionDialog } from '../components/create-session-dialog';
 import type { PreparationSession, SessionStatus } from '../types/preparation';
@@ -123,9 +120,6 @@ export default function PreparationSessionsPage() {
     per_page: 25,
   });
 
-  const cancelMut = useCancelSession();
-  const toast     = useToastStore();
-
   const sessions = data?.data ?? [];
   const meta     = data?.meta;
 
@@ -140,17 +134,6 @@ export default function PreparationSessionsPage() {
   function handleStatusTab(val: SessionStatus | 'all') {
     setSearchParams((p) => { p.set('status', val); p.set('page', '1'); return p; });
     clearSelection();
-  }
-
-  async function handleCancel(session: PreparationSession) {
-    const reason = window.prompt('Cancellation reason (min 10 chars):');
-    if (!reason || reason.length < 10) return;
-    try {
-      await cancelMut.mutateAsync({ id: session.id, payload: { reason } });
-      toast.success('Session cancelled.');
-    } catch {
-      toast.error('Failed to cancel session.');
-    }
   }
 
   return (
@@ -174,53 +157,37 @@ export default function PreparationSessionsPage() {
       </div>
 
       {/* Toolbar */}
-      <SmartToolbar
-        title="Preparation Sessions"
-        subtitle={meta ? `${meta.total} sessions` : undefined}
-        filterPanel={
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Search by session number…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 w-56"
-            />
-          </div>
-        }
-        actions={
-          <div className="flex items-center gap-2">
-            <ColumnVisibilityMenu
-              columns={COLUMN_DEFS}
-              visibility={visibility}
-              onToggle={toggleColumn}
-              onReset={resetColumns}
-            />
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              New Session
-            </Button>
-          </div>
-        }
-      />
+      <div className="flex items-center gap-2 border-b bg-background px-4 py-2">
+        <Input
+          placeholder="Search by session number…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-8 w-56"
+        />
+        {meta && (
+          <span className="text-xs text-muted-foreground">{meta.total} sessions</span>
+        )}
+        <div className="flex-1" />
+        <ColumnVisibilityMenu
+          columns={COLUMN_DEFS}
+          visibility={visibility}
+          onToggle={toggleColumn}
+          onReset={resetColumns}
+        />
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
+          New Session
+        </Button>
+      </div>
 
       {/* Grid */}
       <div className="flex-1 overflow-auto px-4 pb-4">
         <UniversalDataGrid<PreparationSession>
           data={sessions}
           columns={visibleDefs}
-          isLoading={isLoading}
-          selectedIds={selectedIds}
-          onRowSelect={selectRow}
-          getRowId={(r) => r.id}
-          rowActions={(row) => [
-            {
-              label: 'Cancel Session',
-              icon: <Ban className="h-3.5 w-3.5" />,
-              onClick: () => handleCancel(row),
-              disabled: ['frozen', 'completed', 'approved', 'closed', 'cancelled'].includes(row.status),
-              variant: 'destructive' as const,
-            },
-          ]}
+          loading={isLoading}
+          rowId={(r: PreparationSession) => r.id}
+          selection={selectedIds ? { selectedIds, selectedCount: selectedIds.size, isSelected: (id) => selectedIds.has(id), allSelected: false, someSelected: selectedIds.size > 0, selectRow, selectAll: () => {} } : undefined}
           emptyState={
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
               <Calendar className="h-8 w-8 opacity-40" />

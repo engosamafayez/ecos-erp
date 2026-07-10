@@ -327,6 +327,7 @@ export function RecipeDetailDrawer({
   recipe, open, onOpenChange, onEdit, initialTab,
 }: RecipeDetailDrawerProps) {
   const navigate   = useNavigate();
+  const { currency, locale } = useCompany();
   const [activeTab, setActiveTab] = useState(initialTab ?? 'overview');
 
   useEffect(() => {

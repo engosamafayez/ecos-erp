@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Play, Pause, Archive, Copy, MoreHorizontal, Zap, Activity, Clock, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAutomationWorkflows, useWorkflowKpis, useActivateWorkflow, usePauseWorkflow, useArchiveWorkflow, useDuplicateWorkflow } from '../hooks/use-automation-workflows';
 import { WorkflowDrawer } from '../drawers/workflow-drawer';

@@ -450,13 +450,12 @@ function GovernorateBand({
   brandId,
   geo,
   search,
-  windows,
   onEditZone,
 }: {
   brandId:    string;
   geo:        DeliveryGeography;
   search:     string;
-  windows:    { id: string; label: string }[];
+  windows?:   { id: string; label: string }[];
   onEditZone: (zone: DeliveryZone) => void;
 }) {
   const [expanded, setExpanded] = useState(!!search);

@@ -221,6 +221,7 @@ export type BrandPolicyDetail = {
   settings: Record<string, unknown>;
   version: number;
   is_active: boolean;
+  configured?: boolean;
   updated_at: string | null;
   updated_by: string | null;
 };
