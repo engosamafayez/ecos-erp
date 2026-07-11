@@ -31,7 +31,7 @@ class OutboundMessageController extends Controller
             'language_code'       => 'nullable|string|size:2',
         ]);
 
-        $message = $this->sendAction->execute($conversation, $request->user()->id, $validated);
+        $message = $this->sendAction->execute($conversation, (string) $request->user()->id, $validated);
 
         return response()->json(new MessageResource($message), 201);
     }
@@ -39,7 +39,7 @@ class OutboundMessageController extends Controller
     public function applyMacro(Request $request, Conversation $conversation, ConversationMacro $macro): JsonResponse
     {
         $context = $request->input('context', []);
-        $message = $this->macroAction->execute($conversation, $macro, $request->user()->id, $context);
+        $message = $this->macroAction->execute($conversation, $macro, (string) $request->user()->id, $context);
 
         return response()->json(new MessageResource($message), 201);
     }

@@ -44,7 +44,7 @@ class CampaignCreativeController extends Controller
 
         $creative = $this->draftService->upsertCreative($draft, $validated);
 
-        $this->versioningService->snapshot($draft->fresh(), VersionChangeType::CREATIVE_CHANGE, $request->user()->id, 'Creative added');
+        $this->versioningService->snapshot($draft->fresh(), VersionChangeType::CREATIVE_CHANGE, (string) $request->user()->id, 'Creative added');
 
         return response()->json(['data' => $creative], 201);
     }
@@ -75,7 +75,7 @@ class CampaignCreativeController extends Controller
     public function destroy(Request $request, CampaignDraft $draft, string $creative): JsonResponse
     {
         $this->draftService->deleteCreative($draft, $creative);
-        $this->versioningService->snapshot($draft->fresh(), VersionChangeType::CREATIVE_CHANGE, $request->user()->id, 'Creative removed');
+        $this->versioningService->snapshot($draft->fresh(), VersionChangeType::CREATIVE_CHANGE, (string) $request->user()->id, 'Creative removed');
         return response()->json(null, 204);
     }
 }

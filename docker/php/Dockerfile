@@ -12,8 +12,9 @@
 #   The runtime container never runs:
 #     composer install / dump-autoload
 #     artisan package:discover
-#     artisan optimize / config:cache / route:cache / event:cache / view:cache
-#   config:cache is intentionally excluded — it bakes env values into the image.
+#     artisan optimize / route:cache / event:cache / view:cache
+#   config:cache is intentionally deferred to entrypoint.sh (step 6) —
+#     real env values are only available at container start via env_file.
 #   view:cache is intentionally excluded — storage/ is a runtime named volume.
 #
 # BUILD VERIFICATION (TASK-INFRA-003):
@@ -199,10 +200,11 @@ COPY --from=frontend /backend/public/app /var/www/html/public/app
 #   route:cache       → bootstrap/cache/routes-v7.php  (serialised route collection)
 #   event:cache       → bootstrap/cache/events.scoped.php
 #
-# config:cache is deliberately excluded:
-#   It would bake the placeholder .env values into the image. At runtime, when
-#   the real .env is loaded, Laravel would still read the stale baked-in config.
-#   Config must be resolved from the live env_file at boot time.
+# config:cache is deliberately deferred to entrypoint.sh (step 6):
+#   Running it here would bake placeholder .env values into the image layer.
+#   Real credentials (DB_HOST, MAIL_*, REDIS_HOST, etc.) are only available
+#   at container start via docker-compose env_file, so config:cache must run
+#   there — after APP_KEY is verified and the process env is fully populated.
 #
 # view:cache is deliberately excluded:
 #   Compiled views go into storage/framework/views/, which is a named volume at

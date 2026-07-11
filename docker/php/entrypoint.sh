@@ -6,18 +6,25 @@
 #   This script NEVER runs:
 #     composer install / dump-autoload
 #     artisan package:discover
-#     artisan optimize / config:cache / route:cache / event:cache / view:cache
-#   All cache files were baked into the image during docker build.
+#     artisan optimize / route:cache / event:cache / view:cache
+#   Those cache files were baked into the image during docker build.
 #
-# 8-step startup sequence:
+#   config:cache IS run here (step 6) — not at build time.
+#   Reason: config cache must encode real runtime values (DB_HOST, MAIL_*, etc.)
+#   which are only available from env_file at container start, not at build time.
+#   Once generated, configurationIsCached() returns true and all subsequent
+#   artisan commands skip .env file reads entirely.
+#
+# 9-step startup sequence:
 #   1. Wait for MySQL
 #   2. Ensure storage directory tree
 #   3. Fix storage permissions
 #   4. Create storage symlink (if missing)
 #   5. Verify APP_KEY is present in the process environment
-#   6. [Optional] Run migrations        — controlled by MIGRATE_ON_START=true
-#   7. [Optional] Seed AdminUserSeeder  — controlled by SEED_ADMIN_ON_START=true
-#   8. exec supervisord (PHP-FPM + queue:work + schedule:work)
+#   6. Generate config cache with live env values
+#   7. [Optional] Run migrations        — controlled by MIGRATE_ON_START=true
+#   8. [Optional] Seed AdminUserSeeder  — controlled by SEED_ADMIN_ON_START=true
+#   9. exec supervisord (PHP-FPM + queue:work + schedule:work)
 #
 # Configuration source:
 #   All values come from env_file (docker-compose.yml) → process environment.
@@ -126,7 +133,24 @@ fi
 ok "APP_KEY is set."
 
 # =============================================================================
-# 6. Database migrations [opt-in]
+# 6. Generate config cache with live env values
+#
+#    config:cache cannot run at build time because real credentials (DB_HOST,
+#    MAIL_*, REDIS_HOST, etc.) are not available in the image layer — only the
+#    placeholder build-time .env was present. At runtime those values are
+#    injected as process env via docker-compose env_file.
+#
+#    Once bootstrap/cache/config.php exists, configurationIsCached() returns
+#    true and LoadEnvironmentVariables::bootstrap() returns early on every
+#    subsequent artisan call — no .env file read is ever attempted, which is
+#    the correct behaviour when the container has no physical .env file.
+# =============================================================================
+log "Generating config cache with runtime environment..."
+php artisan config:cache --ansi
+ok "Config cache generated."
+
+# =============================================================================
+# 7. Database migrations [opt-in]
 #
 #    Set MIGRATE_ON_START=true to run migrations at container startup.
 #    Default: false — migrations are an explicit operator decision that should
@@ -145,7 +169,7 @@ else
 fi
 
 # =============================================================================
-# 7. Admin user seeder [opt-in]
+# 8. Admin user seeder [opt-in]
 #
 #    Set SEED_ADMIN_ON_START=true to seed the initial admin user.
 #    Default: false — only needed on first deployment.
@@ -159,7 +183,7 @@ if [ "${SEED_ADMIN_ON_START:-false}" = "true" ]; then
 fi
 
 # =============================================================================
-# 8. Start supervisord
+# 9. Start supervisord
 #    Manages: php-fpm, artisan queue:work, artisan schedule:work
 #    exec replaces this shell — PID 1 is supervisord.
 # =============================================================================

@@ -69,7 +69,7 @@ final class MappingProfileController extends Controller
             'connector_type' => $data['connector_type'] ?? null,
             'is_active'      => $data['is_active'] ?? true,
             'auto_apply'     => $data['auto_apply'] ?? false,
-            'created_by'     => (string) $request->user()->id,
+            'created_by'     => (string) (string) $request->user()->id,
         ]);
 
         foreach ($data['rules'] ?? [] as $i => $rule) {

@@ -48,7 +48,7 @@ final class AssetRelationshipController extends Controller
             assetId:         $marketingAsset->id,
             relatedType:     $data['related_type'],
             relatedId:       $data['related_id'],
-            actorId:         (string) $request->user()->id,
+            actorId:         (string) (string) $request->user()->id,
             confidence:      $data['confidence'] ?? 100,
             isAutoSuggested: false,
         );
@@ -71,7 +71,7 @@ final class AssetRelationshipController extends Controller
      */
     public function accept(Request $request, MarketingAssetRelationship $relationship): JsonResponse
     {
-        $rel = $this->mapAsset->accept($relationship->id, (string) $request->user()->id);
+        $rel = $this->mapAsset->accept($relationship->id, (string) (string) $request->user()->id);
 
         return response()->json(['data' => $rel]);
     }
@@ -81,7 +81,7 @@ final class AssetRelationshipController extends Controller
      */
     public function reject(Request $request, MarketingAssetRelationship $relationship): JsonResponse
     {
-        $rel = $this->mapAsset->reject($relationship->id, (string) $request->user()->id);
+        $rel = $this->mapAsset->reject($relationship->id, (string) (string) $request->user()->id);
 
         return response()->json(['data' => $rel]);
     }

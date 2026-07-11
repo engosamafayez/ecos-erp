@@ -54,7 +54,7 @@ final class LoadingExceptionController extends Controller
             exceptionType:        $validated['exception_type'],
             severity:             $validated['severity'],
             description:          $validated['description'],
-            actorId:              $request->user()->id,
+            actorId:              (string) $request->user()->id,
             vehicleAssignmentId:  $validated['vehicle_assignment_id'] ?? null,
             entityType:           $validated['entity_type'] ?? null,
             entityId:             $validated['entity_id'] ?? null,
@@ -82,7 +82,7 @@ final class LoadingExceptionController extends Controller
 
         $result = $action->execute(
             exception:        $exception,
-            actorId:          $request->user()->id,
+            actorId:          (string) $request->user()->id,
             resolutionNotes:  $request->validated('resolution_notes'),
         );
 

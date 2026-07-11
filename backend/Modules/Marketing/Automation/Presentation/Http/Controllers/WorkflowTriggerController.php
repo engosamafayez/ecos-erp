@@ -30,7 +30,7 @@ class WorkflowTriggerController extends Controller
             entityId:    $validated['entity_id'],
             triggerType: 'manual',
             payload:     $validated['payload'] ?? [],
-            triggeredBy: $request->user()->id,
+            triggeredBy: (string) $request->user()->id,
         );
 
         return response()->json(new WorkflowExecutionResource($execution), 201);

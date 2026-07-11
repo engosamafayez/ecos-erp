@@ -33,7 +33,7 @@ class BulkOperationController extends Controller
         $job = $this->bulkService->queue(
             $operationType,
             $validated['draft_ids'],
-            $request->user()->id,
+            (string) $request->user()->id,
             $request->input('company_id'),
             $validated['payload'] ?? [],
         );

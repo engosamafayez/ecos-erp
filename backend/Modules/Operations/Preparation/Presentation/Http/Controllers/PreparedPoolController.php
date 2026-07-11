@@ -92,7 +92,7 @@ final class PreparedPoolController extends Controller
         $result    = $action->execute(
             $pool,
             $validated['quality_result'],
-            (string) $request->user()->id,
+            (string) (string) $request->user()->id,
             $validated['notes'] ?? null,
         );
 

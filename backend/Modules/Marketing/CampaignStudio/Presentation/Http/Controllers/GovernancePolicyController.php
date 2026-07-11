@@ -57,7 +57,7 @@ class GovernancePolicyController extends Controller
             'is_default'              => ['sometimes', 'boolean'],
         ]);
 
-        $policy = $this->policyService->create($validated, $request->user()->id);
+        $policy = $this->policyService->create($validated, (string) $request->user()->id);
         return response()->json(['data' => new GovernancePolicyResource($policy)], 201);
     }
 
@@ -82,7 +82,7 @@ class GovernancePolicyController extends Controller
             'is_active'        => ['sometimes', 'boolean'],
         ]);
 
-        $updated = $this->policyService->update($policy, $validated, $request->user()->id);
+        $updated = $this->policyService->update($policy, $validated, (string) $request->user()->id);
         return response()->json(['data' => new GovernancePolicyResource($updated)]);
     }
 

@@ -43,7 +43,7 @@ class CampaignPlacementController extends Controller
 
         $placement = $this->draftService->updatePlacements($draft, $validated);
 
-        $this->versioningService->snapshot($draft->fresh(), VersionChangeType::PLACEMENT_CHANGE, $request->user()->id, 'Placements updated');
+        $this->versioningService->snapshot($draft->fresh(), VersionChangeType::PLACEMENT_CHANGE, (string) $request->user()->id, 'Placements updated');
 
         return response()->json(['data' => $placement]);
     }

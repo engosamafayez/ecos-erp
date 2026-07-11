@@ -69,7 +69,7 @@ final class LoadingSessionController extends Controller
             companyId:       $request->user()->company_id,
             warehouseId:     $validated['warehouse_id'],
             operationalDate: $validated['operational_date'],
-            actorId:         $request->user()->id,
+            actorId:         (string) $request->user()->id,
             sessionType:     $validated['session_type'] ?? 'standard',
             notes:           $validated['notes'] ?? null,
         );
@@ -92,7 +92,7 @@ final class LoadingSessionController extends Controller
         $session = $this->findSession($sessionId, $request->user()->company_id);
         $this->authorize('operate', $session);
 
-        $result = $action->execute($session, $request->user()->id);
+        $result = $action->execute($session, (string) $request->user()->id);
 
         return $this->success(new LoadingSessionResource($result));
     }
@@ -102,7 +102,7 @@ final class LoadingSessionController extends Controller
         $session = $this->findSession($sessionId, $request->user()->company_id);
         $this->authorize('operate', $session);
 
-        $result = $action->execute($session, $request->user()->id);
+        $result = $action->execute($session, (string) $request->user()->id);
 
         return $this->success(new LoadingSessionResource($result));
     }
@@ -112,7 +112,7 @@ final class LoadingSessionController extends Controller
         $session = $this->findSession($sessionId, $request->user()->company_id);
         $this->authorize('operate', $session);
 
-        $result = $action->execute($session, $request->user()->id);
+        $result = $action->execute($session, (string) $request->user()->id);
 
         return $this->success(new LoadingSessionResource($result));
     }
@@ -122,7 +122,7 @@ final class LoadingSessionController extends Controller
         $session = $this->findSession($sessionId, $request->user()->company_id);
         $this->authorize('cancel', $session);
 
-        $result = $action->execute($session, $request->user()->id, $request->validated('reason'));
+        $result = $action->execute($session, (string) $request->user()->id, $request->validated('reason'));
 
         return $this->success([
             'id'                  => $result->id,
@@ -137,7 +137,7 @@ final class LoadingSessionController extends Controller
         $session = $this->findSession($sessionId, $request->user()->company_id);
         $this->authorize('dispatch', $session);
 
-        $result = $action->execute($session, $request->user()->id);
+        $result = $action->execute($session, (string) $request->user()->id);
 
         return $this->success(new LoadingSessionResource($result));
     }

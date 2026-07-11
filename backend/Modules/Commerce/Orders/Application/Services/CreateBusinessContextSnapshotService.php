@@ -33,7 +33,7 @@ final class CreateBusinessContextSnapshotService
 
         $order->loadMissing(['channel.brand', 'customer', 'lines.product.activeRecipe']);
 
-        $actorId = Auth::id();
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $now     = now();
 
         // ── PART 1: Policy versions (static until policy versioning module ships) ─

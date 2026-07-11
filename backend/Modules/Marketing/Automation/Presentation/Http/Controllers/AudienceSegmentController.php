@@ -18,7 +18,12 @@ class AudienceSegmentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $segments = $this->service->list($request->only(['company_id', 'segment_type', 'search']));
+        $filters = array_merge(
+            $request->only(['segment_type', 'search']),
+            ['company_id' => $request->user()?->company_id],
+        );
+
+        $segments = $this->service->list($filters);
 
         return response()->json(AudienceSegmentResource::collection($segments)->response()->getData(true));
     }
@@ -28,14 +33,15 @@ class AudienceSegmentController extends Controller
         $validated = $request->validate([
             'name'         => 'required|string|max:255',
             'description'  => 'nullable|string',
-            'company_id'   => 'nullable|uuid',
             'segment_type' => 'required|string',
             'rules'        => 'required|array',
             'entity_type'  => 'nullable|string',
             'is_dynamic'   => 'boolean',
         ]);
 
-        $segment = $this->service->create($validated, $request->user()->id);
+        $validated['company_id'] = $request->user()?->company_id;
+
+        $segment = $this->service->create($validated, (string) $request->user()->id);
 
         return response()->json(new AudienceSegmentResource($segment), 201);
     }
@@ -54,7 +60,7 @@ class AudienceSegmentController extends Controller
             'is_dynamic'  => 'boolean',
         ]);
 
-        $segment = $this->service->update($segment, $validated, $request->user()->id);
+        $segment = $this->service->update($segment, $validated, (string) $request->user()->id);
 
         return response()->json(new AudienceSegmentResource($segment));
     }

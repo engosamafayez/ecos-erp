@@ -50,7 +50,7 @@ final class AllocationController extends Controller
         $session = $this->findSession($sessionId, $request->user()->company_id);
         $this->authorize('allocate', $session);
 
-        $result = $action->execute($session, $request->user()->id);
+        $result = $action->execute($session, (string) $request->user()->id);
 
         return $this->success([
             'id'                     => $result->id,
@@ -67,7 +67,7 @@ final class AllocationController extends Controller
         $session = $this->findSession($sessionId, $request->user()->company_id);
         $this->authorize('allocate', $session);
 
-        $result = $action->execute($session, $request->user()->id);
+        $result = $action->execute($session, (string) $request->user()->id);
 
         return $this->success([
             'id'                       => $result->id,
@@ -100,13 +100,13 @@ final class AllocationController extends Controller
             'dispatcher' => $chainService->recordDispatcherOverride(
                 $record,
                 (float) $validated['new_quantity'],
-                $request->user()->id,
+                (string) $request->user()->id,
                 $validated['reason'],
             ),
             'driver' => $chainService->recordDriverOverride(
                 $record,
                 (float) $validated['new_quantity'],
-                $request->user()->id,
+                (string) $request->user()->id,
                 $validated['reason'],
             ),
             default => abort(422, "Unknown actor_type: {$actorType}"),

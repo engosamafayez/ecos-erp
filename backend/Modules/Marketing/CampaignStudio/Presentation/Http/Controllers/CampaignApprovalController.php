@@ -29,7 +29,7 @@ class CampaignApprovalController extends Controller
             'workflow_id' => ['nullable', 'uuid'],
         ]);
 
-        $approval = $this->submitAction->execute($draft, $request->user()->id, $validated['workflow_id'] ?? null);
+        $approval = $this->submitAction->execute($draft, (string) $request->user()->id, $validated['workflow_id'] ?? null);
 
         return response()->json(['data' => new CampaignApprovalResource($approval->load('workflowTemplate.steps'))]);
     }
@@ -52,7 +52,7 @@ class CampaignApprovalController extends Controller
         $decision = $this->decisionAction->execute(
             $approval,
             $validated['decision'],
-            $request->user()->id,
+            (string) $request->user()->id,
             $validated['notes'] ?? null,
         );
 
@@ -62,7 +62,7 @@ class CampaignApprovalController extends Controller
     /** DELETE /mkt/studio/approvals/{approval}/cancel */
     public function cancel(Request $request, CampaignApproval $approval): JsonResponse
     {
-        $this->approvalService->cancel($approval, $request->user()->id);
+        $this->approvalService->cancel($approval, (string) $request->user()->id);
         return response()->json(['message' => 'Approval cancelled.']);
     }
 
@@ -70,7 +70,7 @@ class CampaignApprovalController extends Controller
     public function pending(Request $request): JsonResponse
     {
         $approvals = $this->approvalService->getPendingForUser(
-            $request->user()->id,
+            (string) $request->user()->id,
             $request->user()->role ?? '',
         );
 

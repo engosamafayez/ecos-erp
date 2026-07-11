@@ -47,7 +47,7 @@ class CampaignAudienceController extends Controller
 
         $audience = $this->draftService->updateAudience($draft, $validated);
 
-        $this->versioningService->snapshot($draft->fresh(), VersionChangeType::AUDIENCE_CHANGE, $request->user()->id, 'Audience updated');
+        $this->versioningService->snapshot($draft->fresh(), VersionChangeType::AUDIENCE_CHANGE, (string) $request->user()->id, 'Audience updated');
 
         return response()->json(['data' => $audience]);
     }

@@ -48,7 +48,9 @@ final class PatchOrderAction extends BaseAction
         $data = (array)  $arguments[1];
 
         /** @var Order $order */
-        $order  = Order::findOrFail($id);
+        $order = Order::where('id', $id)
+            ->where('company_id', Auth::user()?->company_id)
+            ->firstOrFail();
         $update = array_intersect_key($data, array_flip(self::ALLOWED));
 
         // Validate status transition before applying any update.
@@ -76,7 +78,7 @@ final class PatchOrderAction extends BaseAction
             $order->update($update);
         }
 
-        $actorId = Auth::id();
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         foreach ($update as $field => $newValue) {
             $oldValue = $oldValues[$field] ?? null;
             $oldStr   = $oldValue instanceof \BackedEnum ? $oldValue->value : $oldValue;

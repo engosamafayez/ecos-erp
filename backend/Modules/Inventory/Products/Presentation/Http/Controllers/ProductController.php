@@ -217,7 +217,11 @@ final class ProductController extends Controller
 
     public function stats(Request $request): JsonResponse
     {
-        $query = Product::query()->whereNull('deleted_at');
+        $companyId = $request->user()?->company_id;
+
+        $query = Product::query()
+            ->whereNull('deleted_at')
+            ->whereHas('brand', fn ($q) => $q->where('company_id', $companyId));
 
         // ── Product type scope ────────────────────────────────────────────────
         $productTypes = trim((string) ($request->query('product_types') ?? ''));
@@ -273,9 +277,11 @@ final class ProductController extends Controller
 
     public function nextSku(Request $request): JsonResponse
     {
-        $prefix = strtoupper(trim((string) $request->query('prefix', 'RM')));
+        $prefix    = strtoupper(trim((string) $request->query('prefix', 'RM')));
+        $companyId = $request->user()?->company_id;
 
         $last = Product::query()
+            ->whereHas('brand', fn ($q) => $q->where('company_id', $companyId))
             ->where('sku', 'like', "{$prefix}-%")
             ->orderByRaw("CAST(SUBSTRING(sku, " . (strlen($prefix) + 2) . ") AS UNSIGNED) DESC")
             ->value('sku');

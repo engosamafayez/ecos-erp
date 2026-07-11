@@ -19,7 +19,10 @@ final class HandlePreparationWaveStarted
             return;
         }
 
+        // company_id guard prevents a wave from one tenant updating orders that
+        // happen to share the same UUID with another tenant's orders.
         DB::table('orders')
+            ->where('company_id', $event->companyId)
             ->whereIn('id', $event->orderIds)
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->update([

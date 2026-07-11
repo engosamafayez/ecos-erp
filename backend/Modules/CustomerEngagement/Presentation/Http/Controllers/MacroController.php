@@ -31,7 +31,7 @@ class MacroController extends Controller
             'is_shared'           => 'boolean',
             'company_id'          => 'required|uuid',
         ]);
-        $data['created_by'] = $request->user()->id;
+        $data['created_by'] = (string) $request->user()->id;
         $macro = $this->macroService->create($data);
         return response()->json(new ConversationMacroResource($macro), 201);
     }

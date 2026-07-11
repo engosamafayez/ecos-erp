@@ -24,7 +24,7 @@ class WorkflowNodeController extends Controller
             'nodes_graph.edges'  => 'required|array',
         ]);
 
-        $workflow = $this->service->updateNodesGraph($workflow, $validated['nodes_graph'], $request->user()->id);
+        $workflow = $this->service->updateNodesGraph($workflow, $validated['nodes_graph'], (string) $request->user()->id);
 
         return response()->json(new WorkflowResource($workflow));
     }

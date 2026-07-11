@@ -29,8 +29,8 @@ class CampaignScheduleController extends Controller
         $timezone = $validated['timezone'] ?? 'UTC';
 
         $task = match ($validated['action']) {
-            'publish' => $this->schedulingService->schedulePublish($draft, $at, $timezone, $request->user()->id),
-            'pause'   => $this->schedulingService->schedulePause($draft, $at, $timezone, $request->user()->id),
+            'publish' => $this->schedulingService->schedulePublish($draft, $at, $timezone, (string) $request->user()->id),
+            'pause'   => $this->schedulingService->schedulePause($draft, $at, $timezone, (string) $request->user()->id),
         };
 
         return response()->json(['data' => $task], 201);

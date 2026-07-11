@@ -42,7 +42,7 @@ final class DriverAssignmentController extends Controller
             assignment:     $assignment,
             driverId:       $validated['driver_id'],
             driverName:     $validated['driver_name'],
-            assignedBy:     $request->user()->id,
+            assignedBy:     (string) $request->user()->id,
             driverPhone:    $validated['driver_phone'] ?? null,
             assignmentType: $validated['assignment_type'] ?? 'primary',
         );

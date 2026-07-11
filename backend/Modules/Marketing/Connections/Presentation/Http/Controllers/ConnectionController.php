@@ -73,7 +73,7 @@ final class ConnectionController extends Controller
      */
     public function disconnect(Request $request, MarketingConnection $connection): JsonResponse
     {
-        $updated = $this->disconnect->execute($connection, (string) $request->user()->id);
+        $updated = $this->disconnect->execute($connection, (string) (string) $request->user()->id);
 
         return response()->json([
             'message' => 'Connection disconnected.',

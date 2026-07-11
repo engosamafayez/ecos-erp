@@ -16,7 +16,7 @@ final class VehicleAssignmentNumberGenerator
         $max = DB::table('vehicle_assignments')
             ->where('company_id', $companyId)
             ->where('assignment_number', 'like', $prefix . '%')
-            ->max(DB::raw("CAST(SUBSTR(assignment_number, " . ($prefixLen + 1) . ") AS INTEGER)"));
+            ->max(DB::raw("CAST(SUBSTR(assignment_number, " . ($prefixLen + 1) . ") AS UNSIGNED)"));
 
         $next = ($max ?? 0) + 1;
 

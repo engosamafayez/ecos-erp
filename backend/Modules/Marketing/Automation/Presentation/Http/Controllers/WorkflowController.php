@@ -25,7 +25,12 @@ class WorkflowController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $workflows = $this->service->list($request->only(['company_id', 'status', 'trigger_type', 'search']), (int) $request->get('per_page', 25));
+        $filters = array_merge(
+            $request->only(['status', 'trigger_type', 'search']),
+            ['company_id' => $request->user()?->company_id],
+        );
+
+        $workflows = $this->service->list($filters, (int) $request->get('per_page', 25));
 
         return response()->json(WorkflowResource::collection($workflows)->response()->getData(true));
     }
@@ -35,7 +40,6 @@ class WorkflowController extends Controller
         $validated = $request->validate([
             'name'                 => 'required|string|max:255',
             'description'          => 'nullable|string',
-            'company_id'           => 'nullable|uuid',
             'brand_id'             => 'nullable|uuid',
             'trigger_type'         => 'required|string',
             'nodes_graph'          => 'nullable|array',
@@ -45,7 +49,9 @@ class WorkflowController extends Controller
             'entity_type'          => 'nullable|string',
         ]);
 
-        $workflow = $this->service->create($validated, $request->user()->id);
+        $validated['company_id'] = $request->user()?->company_id;
+
+        $workflow = $this->service->create($validated, (string) $request->user()->id);
 
         return response()->json(new WorkflowResource($workflow), 201);
     }
@@ -66,7 +72,7 @@ class WorkflowController extends Controller
             'governance_policy_id' => 'nullable|uuid',
         ]);
 
-        $workflow = $this->service->update($workflow, $validated, $request->user()->id);
+        $workflow = $this->service->update($workflow, $validated, (string) $request->user()->id);
 
         return response()->json(new WorkflowResource($workflow));
     }
@@ -80,35 +86,35 @@ class WorkflowController extends Controller
 
     public function duplicate(Request $request, AutomationWorkflow $workflow): JsonResponse
     {
-        $copy = $this->service->duplicate($workflow, $request->user()->id);
+        $copy = $this->service->duplicate($workflow, (string) $request->user()->id);
 
         return response()->json(new WorkflowResource($copy), 201);
     }
 
     public function activate(Request $request, AutomationWorkflow $workflow): JsonResponse
     {
-        $workflow = $this->activateAction->execute($workflow, $request->user()->id);
+        $workflow = $this->activateAction->execute($workflow, (string) $request->user()->id);
 
         return response()->json(new WorkflowResource($workflow));
     }
 
     public function pause(Request $request, AutomationWorkflow $workflow): JsonResponse
     {
-        $workflow = $this->pauseAction->execute($workflow, $request->user()->id);
+        $workflow = $this->pauseAction->execute($workflow, (string) $request->user()->id);
 
         return response()->json(new WorkflowResource($workflow));
     }
 
     public function archive(Request $request, AutomationWorkflow $workflow): JsonResponse
     {
-        $workflow = $this->archiveAction->execute($workflow, $request->user()->id);
+        $workflow = $this->archiveAction->execute($workflow, (string) $request->user()->id);
 
         return response()->json(new WorkflowResource($workflow));
     }
 
     public function kpis(Request $request): JsonResponse
     {
-        $kpis = $this->service->getKpis($request->only(['company_id']));
+        $kpis = $this->service->getKpis(['company_id' => $request->user()?->company_id]);
 
         return response()->json($kpis);
     }

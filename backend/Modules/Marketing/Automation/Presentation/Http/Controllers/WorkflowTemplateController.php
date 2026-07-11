@@ -39,7 +39,7 @@ class WorkflowTemplateController extends Controller
             'is_global'    => 'boolean',
         ]);
 
-        $template = $this->service->create($validated, $request->user()->id);
+        $template = $this->service->create($validated, (string) $request->user()->id);
 
         return response()->json(new WorkflowTemplateResource($template), 201);
     }
@@ -58,7 +58,7 @@ class WorkflowTemplateController extends Controller
             'is_active'   => 'boolean',
         ]);
 
-        $template = $this->service->update($template, $validated, $request->user()->id);
+        $template = $this->service->update($template, $validated, (string) $request->user()->id);
 
         return response()->json(new WorkflowTemplateResource($template));
     }
@@ -78,7 +78,7 @@ class WorkflowTemplateController extends Controller
             'brand_id'   => 'nullable|uuid',
         ]);
 
-        $workflow = $this->createAction->execute($template, $validated, $request->user()->id);
+        $workflow = $this->createAction->execute($template, $validated, (string) $request->user()->id);
 
         return response()->json(new WorkflowResource($workflow), 201);
     }

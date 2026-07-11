@@ -81,7 +81,7 @@ final class PreparationSessionController extends Controller
 
         $validated = $request->validated();
         $companyId = $request->user()->company_id;
-        $actorId   = $request->user()->id;
+        $actorId   = (string) $request->user()->id;
 
         $dto = new CreateSessionDTO(
             companyId:    $companyId,
@@ -112,7 +112,7 @@ final class PreparationSessionController extends Controller
         $this->guardModuleEnabled($request->user()?->company_id);
 
         $session = $this->findSession($sessionId, $request->user()->company_id);
-        $result  = $action->execute($session, $request->user()->id);
+        $result  = $action->execute($session, (string) $request->user()->id);
 
         return $this->success(new PreparationSessionResource($result));
     }
@@ -122,7 +122,7 @@ final class PreparationSessionController extends Controller
         $this->guardModuleEnabled($request->user()?->company_id);
 
         $session = $this->findSession($sessionId, $request->user()->company_id);
-        $result  = $action->execute($session, $request->user()->id);
+        $result  = $action->execute($session, (string) $request->user()->id);
 
         return $this->success(new PreparationSessionResource($result));
     }
@@ -132,7 +132,7 @@ final class PreparationSessionController extends Controller
         $this->guardModuleEnabled($request->user()?->company_id);
 
         $session = $this->findSession($sessionId, $request->user()->company_id);
-        $result  = $action->execute($session, $request->user()->id, $request->validated()['reason']);
+        $result  = $action->execute($session, (string) $request->user()->id, $request->validated()['reason']);
 
         return $this->success(new PreparationSessionResource($result));
     }
@@ -142,7 +142,7 @@ final class PreparationSessionController extends Controller
         $this->guardModuleEnabled($request->user()?->company_id);
 
         $session = $this->findSession($sessionId, $request->user()->company_id);
-        $result  = $action->execute($session, $request->user()->id);
+        $result  = $action->execute($session, (string) $request->user()->id);
 
         return $this->success(new PreparationSessionResource($result));
     }
@@ -152,7 +152,7 @@ final class PreparationSessionController extends Controller
         $this->guardModuleEnabled($request->user()?->company_id);
 
         $session = $this->findSession($sessionId, $request->user()->company_id);
-        $result  = $action->execute($session, $request->user()->id);
+        $result  = $action->execute($session, (string) $request->user()->id);
 
         return $this->success(new PreparationSessionResource($result));
     }
@@ -162,7 +162,7 @@ final class PreparationSessionController extends Controller
         $this->guardModuleEnabled($request->user()?->company_id);
 
         $session = $this->findSession($sessionId, $request->user()->company_id);
-        $result  = $action->execute($session, $request->user()->id);
+        $result  = $action->execute($session, (string) $request->user()->id);
 
         return $this->success(new PreparationSessionResource($result));
     }
@@ -215,7 +215,7 @@ final class PreparationSessionController extends Controller
             ->where('company_id', $companyId)
             ->firstOrFail();
 
-        $result = $action->execute($session, $wave, $request->user()->id);
+        $result = $action->execute($session, $wave, (string) $request->user()->id);
 
         return $this->success(new PreparationSessionResource($result->load('waves')));
     }
@@ -266,7 +266,7 @@ final class PreparationSessionController extends Controller
         $this->guardModuleEnabled($request->user()?->company_id);
 
         $session = $this->findSession($sessionId, $request->user()->company_id);
-        $this->sessionManager->freezeSession($session, $request->user()->id);
+        $this->sessionManager->freezeSession($session, (string) $request->user()->id);
 
         return $this->success(new PreparationSessionResource($session->fresh()));
     }
@@ -333,7 +333,7 @@ final class PreparationSessionController extends Controller
             session:    $session,
             order:      $order,
             source:     'manual_supervisor',
-            attachedBy: $request->user()->id,
+            attachedBy: (string) $request->user()->id,
         );
 
         if ($record === null) {
@@ -359,7 +359,7 @@ final class PreparationSessionController extends Controller
             ->where('preparation_session_id', $session->id)
             ->firstOrFail();
 
-        $this->sessionManager->detachOrder($sessionOrder, $validated['reason'], $request->user()->id);
+        $this->sessionManager->detachOrder($sessionOrder, $validated['reason'], (string) $request->user()->id);
 
         return $this->success(null, 'Order detached.', 204);
     }

@@ -16,7 +16,7 @@ final class LoadingSessionNumberGenerator
         $max = DB::table('loading_sessions')
             ->where('company_id', $companyId)
             ->where('session_number', 'like', $prefix . '%')
-            ->max(DB::raw("CAST(SUBSTR(session_number, " . ($prefixLen + 1) . ") AS INTEGER)"));
+            ->max(DB::raw("CAST(SUBSTR(session_number, " . ($prefixLen + 1) . ") AS UNSIGNED)"));
 
         $next = ($max ?? 0) + 1;
 

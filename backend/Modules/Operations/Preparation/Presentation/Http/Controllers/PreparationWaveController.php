@@ -106,7 +106,7 @@ final class PreparationWaveController extends Controller
 
         $validated  = $request->validated();
         $companyId  = $request->user()->company_id;
-        $actorId    = $request->user()->id;
+        $actorId    = (string) $request->user()->id;
         $orderIds   = $validated['order_ids'];
 
         $this->guardOrdersReservable($companyId, $orderIds);
@@ -166,7 +166,7 @@ final class PreparationWaveController extends Controller
         $wave = $this->findWave($waveId, $request->user()->company_id);
         $this->authorize('generateDemand', $wave);
 
-        $result = $action->execute($wave, $request->user()->id);
+        $result = $action->execute($wave, (string) $request->user()->id);
 
         return $this->success(new PreparationWaveResource($result->load('waveItems')));
     }
@@ -177,7 +177,7 @@ final class PreparationWaveController extends Controller
         $wave = $this->findWave($waveId, $request->user()->company_id);
         $this->authorize('analyzeMaterials', $wave);
 
-        $result = $action->execute($wave, $request->user()->id);
+        $result = $action->execute($wave, (string) $request->user()->id);
 
         return $this->success(new PreparationWaveResource($result->load('materialRequirements')));
     }
@@ -188,7 +188,7 @@ final class PreparationWaveController extends Controller
         $wave = $this->findWave($waveId, $request->user()->company_id);
         $this->authorize('approve', $wave);
 
-        $result = $action->execute($wave, $request->user()->id, $request->validated('notes'));
+        $result = $action->execute($wave, (string) $request->user()->id, $request->validated('notes'));
 
         return $this->success(new PreparationWaveResource($result));
     }
@@ -212,7 +212,7 @@ final class PreparationWaveController extends Controller
         }
 
         $dto    = new StartPreparationDTO(
-            actorId:          $request->user()->id,
+            actorId:          (string) $request->user()->id,
             workers:          $workers,
             stationIds:       $validated['station_ids'] ?? [],
             overrideShortage: (bool) ($validated['override_shortage'] ?? false),
@@ -245,7 +245,7 @@ final class PreparationWaveController extends Controller
             $wave,
             $item,
             (float) $validated['quantity_prepared'],
-            $request->user()->id,
+            (string) $request->user()->id,
             $validated['notes'] ?? null,
         );
 
@@ -268,7 +268,7 @@ final class PreparationWaveController extends Controller
         $wave = $this->findWave($waveId, $request->user()->company_id, ['waveItems']);
         $this->authorize('complete', $wave);
 
-        $result = $action->execute($wave, $request->user()->id);
+        $result = $action->execute($wave, (string) $request->user()->id);
 
         return $this->success(new PreparationWaveResource($result));
     }
@@ -279,7 +279,7 @@ final class PreparationWaveController extends Controller
         $wave = $this->findWave($waveId, $request->user()->company_id);
         $this->authorize('cancel', $wave);
 
-        $result = $action->execute($wave, $request->user()->id, $request->validated('reason'));
+        $result = $action->execute($wave, (string) $request->user()->id, $request->validated('reason'));
 
         return $this->success([
             'id'                  => $result->id,
@@ -296,7 +296,7 @@ final class PreparationWaveController extends Controller
         $this->authorize('recalculate', $wave);
 
         $validated = $request->validated();
-        $actorId   = $request->user()->id;
+        $actorId   = (string) $request->user()->id;
 
         $addOrderLines = [];
         if (! empty($validated['add_order_ids'])) {
@@ -517,7 +517,7 @@ final class PreparationWaveController extends Controller
         $dto = new ReportIssueDTO(
             waveId:      $wave->id,
             companyId:   $request->user()->company_id,
-            actorId:     $request->user()->id,
+            actorId:     (string) $request->user()->id,
             issueType:   PreparationIssueType::from($validated['issue_type']),
             description: $validated['description'],
             entityType:  $validated['entity_type'] ?? null,
@@ -551,7 +551,7 @@ final class PreparationWaveController extends Controller
             $wave,
             (string) $validated['user_id'],
             $validated['role'],
-            (string) $request->user()->id,
+            (string) (string) $request->user()->id,
         );
 
         return $this->created([
@@ -572,7 +572,7 @@ final class PreparationWaveController extends Controller
         $wave = $this->findWave($waveId, $request->user()->company_id);
         $this->authorize('releaseWorker', $wave);
 
-        $action->execute($wave, $userId, (string) $request->user()->id);
+        $action->execute($wave, $userId, (string) (string) $request->user()->id);
 
         return $this->success(['message' => 'Worker released successfully.']);
     }
@@ -589,7 +589,7 @@ final class PreparationWaveController extends Controller
         $validated = $request->validated();
         $result    = $action->execute(
             $wave,
-            (string) $request->user()->id,
+            (string) (string) $request->user()->id,
             $validated['requirement_ids'] ?? [],
             $validated['resolution_notes'] ?? null,
         );

@@ -90,8 +90,8 @@ final class WarehouseAssignmentController extends Controller
             'priority'     => $validated['priority'] ?? 100,
             'is_active'    => true,
             'notes'        => $validated['notes'] ?? null,
-            'created_by'   => $request->user()->id,
-            'updated_by'   => $request->user()->id,
+            'created_by'   => (string) $request->user()->id,
+            'updated_by'   => (string) $request->user()->id,
         ]);
 
         $policy->load(['channel', 'warehouse']);
@@ -121,7 +121,7 @@ final class WarehouseAssignmentController extends Controller
                 ->firstOrFail();
         }
 
-        $policy->update(array_merge($validated, ['updated_by' => $request->user()->id]));
+        $policy->update(array_merge($validated, ['updated_by' => (string) $request->user()->id]));
         $policy->load(['channel', 'warehouse']);
 
         return $this->success($this->formatPolicy($policy));
@@ -133,7 +133,7 @@ final class WarehouseAssignmentController extends Controller
             ->where('company_id', $request->user()->company_id)
             ->firstOrFail();
 
-        $policy->update(['is_active' => false, 'updated_by' => $request->user()->id]);
+        $policy->update(['is_active' => false, 'updated_by' => (string) $request->user()->id]);
 
         return $this->success(null, 'Policy deactivated.', 204);
     }
@@ -177,7 +177,7 @@ final class WarehouseAssignmentController extends Controller
             order:          $order,
             newWarehouseId: $validated['warehouse_id'],
             reason:         $validated['reason'],
-            supervisorId:   $request->user()->id,
+            supervisorId:   (string) $request->user()->id,
         );
 
         $order->refresh();

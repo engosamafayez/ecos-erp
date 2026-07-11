@@ -57,7 +57,7 @@ final class CreateOrderSnapshotService
         $order->loadMissing(['lines.product.brand', 'lines.product.activeRecipe', 'channel.brand', 'customer']);
 
         $companyId = Auth::user()?->company_id;
-        $actorId   = Auth::id();
+        $actorId   = Auth::id() !== null ? (string) Auth::id() : null;
 
         $lineData = $this->buildLineData($order, $companyId);
 

@@ -70,7 +70,7 @@ final class StockMovementController extends Controller
             ],
         )->data();
 
-        return $this->success(new StockMovementResource($movement), 201);
+        return $this->success(new StockMovementResource($movement), 'Created', 201);
     }
 
     public function show(string $stockMovement, GetStockMovementAction $action): JsonResponse

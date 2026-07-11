@@ -218,7 +218,7 @@ final class InventoryCountController extends Controller
 
     public function approve(Request $request, InventoryCountSession $inventoryCount, ApproveCountSessionAction $action): JsonResponse
     {
-        $approvedBy = $request->user()->id;
+        $approvedBy = (string) $request->user()->id;
         $session    = $action->execute($inventoryCount, $approvedBy);
         return $this->updated($this->formatSession($session->load('lines.product', 'lines.attachments', 'warehouse'), true, false));
     }

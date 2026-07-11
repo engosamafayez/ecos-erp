@@ -9,6 +9,10 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Operations\Loading\Domain\Models\AllocationRecord;
 use Modules\Operations\Loading\Domain\Models\LoadingSession;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
+use App\Core\FeatureFlags\FeatureFlagService;
+use Modules\Operations\Loading\Application\Actions\AllocatePoolToSessionAction;
+use Modules\Operations\Loading\Application\Services\AllocationPolicyService;
+use Modules\Operations\Loading\Application\Services\AutoAllocationService;
 use Modules\Operations\Loading\Domain\Services\AllocationDecisionChainService;
 use Modules\Operations\Loading\Domain\Services\LoadingSessionNumberGenerator;
 use Modules\Operations\Loading\Domain\Services\RoutePlanNumberGenerator;
@@ -29,6 +33,14 @@ final class LoadingServiceProvider extends ServiceProvider
         $this->app->singleton(VehicleInventoryService::class);
         $this->app->singleton(AllocationDecisionChainService::class);
         $this->app->singleton(VehicleCapacityValidatorService::class);
+
+        $this->app->singleton(
+            AllocationPolicyService::class,
+            fn ($app) => new AllocationPolicyService($app->make(FeatureFlagService::class)),
+        );
+
+        $this->app->singleton(AutoAllocationService::class);
+        $this->app->singleton(AllocatePoolToSessionAction::class);
     }
 
     public function boot(): void

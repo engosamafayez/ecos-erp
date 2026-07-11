@@ -36,7 +36,7 @@ class CampaignVersionController extends Controller
     public function restore(Request $request, CampaignDraft $draft, string $version): JsonResponse
     {
         $v       = CampaignVersion::where('campaign_draft_id', $draft->id)->findOrFail($version);
-        $updated = $this->versioningService->restoreToVersion($draft, $v, $request->user()->id);
+        $updated = $this->versioningService->restoreToVersion($draft, $v, (string) $request->user()->id);
 
         return response()->json(['data' => $updated, 'message' => "Restored to version {$v->version_number}"]);
     }

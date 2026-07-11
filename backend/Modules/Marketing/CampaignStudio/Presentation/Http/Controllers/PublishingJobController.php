@@ -31,7 +31,7 @@ class PublishingJobController extends Controller
 
         $scheduledAt = isset($validated['scheduled_at']) ? Carbon::parse($validated['scheduled_at']) : null;
 
-        $job = $this->publishAction->execute($draft, $request->user()->id, $scheduledAt);
+        $job = $this->publishAction->execute($draft, (string) $request->user()->id, $scheduledAt);
 
         return response()->json(['data' => new PublishingJobResource($job)], 202);
     }
@@ -39,21 +39,21 @@ class PublishingJobController extends Controller
     /** POST /mkt/studio/drafts/{draft}/pause */
     public function pause(Request $request, CampaignDraft $draft): JsonResponse
     {
-        $job = $this->publishingEngine->queueOperation($draft, PublishingOperation::PAUSE, $request->user()->id);
+        $job = $this->publishingEngine->queueOperation($draft, PublishingOperation::PAUSE, (string) $request->user()->id);
         return response()->json(['data' => new PublishingJobResource($job)], 202);
     }
 
     /** POST /mkt/studio/drafts/{draft}/resume */
     public function resume(Request $request, CampaignDraft $draft): JsonResponse
     {
-        $job = $this->publishingEngine->queueOperation($draft, PublishingOperation::RESUME, $request->user()->id);
+        $job = $this->publishingEngine->queueOperation($draft, PublishingOperation::RESUME, (string) $request->user()->id);
         return response()->json(['data' => new PublishingJobResource($job)], 202);
     }
 
     /** POST /mkt/studio/drafts/{draft}/archive */
     public function archive(Request $request, CampaignDraft $draft): JsonResponse
     {
-        $job = $this->publishingEngine->queueOperation($draft, PublishingOperation::ARCHIVE, $request->user()->id);
+        $job = $this->publishingEngine->queueOperation($draft, PublishingOperation::ARCHIVE, (string) $request->user()->id);
         return response()->json(['data' => new PublishingJobResource($job)], 202);
     }
 
@@ -64,7 +64,7 @@ class PublishingJobController extends Controller
             return response()->json(['message' => 'This job cannot be retried.'], 422);
         }
 
-        $retried = $this->publishingEngine->retry($job, $request->user()->id);
+        $retried = $this->publishingEngine->retry($job, (string) $request->user()->id);
         return response()->json(['data' => new PublishingJobResource($retried)]);
     }
 

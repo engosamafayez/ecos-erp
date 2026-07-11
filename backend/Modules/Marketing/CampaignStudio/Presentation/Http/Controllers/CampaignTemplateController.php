@@ -62,7 +62,7 @@ class CampaignTemplateController extends Controller
             'is_global'              => ['sometimes', 'boolean'],
         ]);
 
-        $template = $this->templateService->create($validated, $request->user()->id);
+        $template = $this->templateService->create($validated, (string) $request->user()->id);
         return response()->json(['data' => new CampaignTemplateResource($template)], 201);
     }
 
@@ -83,7 +83,7 @@ class CampaignTemplateController extends Controller
             'is_active'   => ['sometimes', 'boolean'],
         ]);
 
-        $updated = $this->templateService->update($template, $validated, $request->user()->id);
+        $updated = $this->templateService->update($template, $validated, (string) $request->user()->id);
         return response()->json(['data' => new CampaignTemplateResource($updated)]);
     }
 
@@ -103,7 +103,7 @@ class CampaignTemplateController extends Controller
             'brand_id'   => ['nullable', 'string'],
         ]);
 
-        $draft = $this->createFromTemplateAction->execute($template, $validated, $request->user()->id);
+        $draft = $this->createFromTemplateAction->execute($template, $validated, (string) $request->user()->id);
         return response()->json(['data' => new CampaignDraftResource($draft)], 201);
     }
 }

@@ -54,7 +54,7 @@ class WorkflowExecutionController extends Controller
             abort(404);
         }
 
-        $execution = $this->engine->retry($execution, $request->user()->id);
+        $execution = $this->engine->retry($execution, (string) $request->user()->id);
 
         return response()->json(new WorkflowExecutionResource($execution));
     }

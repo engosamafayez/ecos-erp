@@ -38,7 +38,7 @@ class WorkflowVersionController extends Controller
             abort(404);
         }
 
-        $workflow = $this->versioning->restoreToVersion($workflow, $version, $request->user()->id);
+        $workflow = $this->versioning->restoreToVersion($workflow, $version, (string) $request->user()->id);
 
         return response()->json(new WorkflowResource($workflow));
     }

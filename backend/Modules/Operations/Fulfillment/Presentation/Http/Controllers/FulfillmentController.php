@@ -34,7 +34,8 @@ final class FulfillmentController extends Controller
     /** POST /api/fulfillment/orders/{order}/confirm */
     public function confirm(Order $order): JsonResponse
     {
-        $result = $this->engine->run($this->confirmWorkflow, $order, [], Auth::id());
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
+        $result = $this->engine->run($this->confirmWorkflow, $order, [], $actorId);
 
         return response()->json([
             'message'  => $result->message,
@@ -51,11 +52,12 @@ final class FulfillmentController extends Controller
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $result = $this->engine->run(
             $this->cancelWorkflow,
             $order,
             ['reason' => $data['reason'] ?? null],
-            Auth::id(),
+            $actorId,
         );
 
         return response()->json([
@@ -68,7 +70,8 @@ final class FulfillmentController extends Controller
     /** POST /api/fulfillment/orders/{order}/move-to-preparation */
     public function moveToPreparation(Order $order): JsonResponse
     {
-        $result = $this->engine->run($this->prepWorkflow, $order, [], Auth::id());
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
+        $result = $this->engine->run($this->prepWorkflow, $order, [], $actorId);
 
         return response()->json([
             'message'  => $result->message,
@@ -80,7 +83,8 @@ final class FulfillmentController extends Controller
     /** POST /api/fulfillment/orders/{order}/complete-delivery */
     public function completeDelivery(Order $order): JsonResponse
     {
-        $result = $this->engine->run($this->deliveryWorkflow, $order, [], Auth::id());
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
+        $result = $this->engine->run($this->deliveryWorkflow, $order, [], $actorId);
 
         return response()->json([
             'message'  => $result->message,
@@ -104,11 +108,12 @@ final class FulfillmentController extends Controller
             'lines.*.inspection_notes'  => ['nullable', 'string', 'max:500'],
         ]);
 
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $result = $this->engine->run(
             $this->returnWorkflow,
             $order,
             $data,
-            Auth::id(),
+            $actorId,
         );
 
         return response()->json([

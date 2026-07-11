@@ -16,7 +16,7 @@ final class RoutePlanNumberGenerator
         $max = DB::table('route_plans')
             ->where('company_id', $companyId)
             ->where('route_number', 'like', $prefix . '%')
-            ->max(DB::raw("CAST(SUBSTR(route_number, " . ($prefixLen + 1) . ") AS INTEGER)"));
+            ->max(DB::raw("CAST(SUBSTR(route_number, " . ($prefixLen + 1) . ") AS UNSIGNED)"));
 
         $next = ($max ?? 0) + 1;
 

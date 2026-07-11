@@ -38,11 +38,12 @@ final class BulkFulfillmentController extends Controller
             'order_ids.*' => ['required', 'string'],
         ]);
 
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $result = $this->bulk->run(
             $this->confirmWorkflow,
             $data['order_ids'],
             [],
-            Auth::id(),
+            $actorId,
         );
 
         return response()->json($result->toArray());
@@ -57,11 +58,12 @@ final class BulkFulfillmentController extends Controller
             'reason'      => ['nullable', 'string', 'max:500'],
         ]);
 
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $result = $this->bulk->run(
             $this->cancelWorkflow,
             $data['order_ids'],
             ['reason' => $data['reason'] ?? null],
-            Auth::id(),
+            $actorId,
         );
 
         return response()->json($result->toArray());
@@ -75,11 +77,12 @@ final class BulkFulfillmentController extends Controller
             'order_ids.*' => ['required', 'string'],
         ]);
 
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $result = $this->bulk->run(
             $this->prepWorkflow,
             $data['order_ids'],
             [],
-            Auth::id(),
+            $actorId,
         );
 
         return response()->json($result->toArray());
@@ -93,11 +96,12 @@ final class BulkFulfillmentController extends Controller
             'order_ids.*' => ['required', 'string'],
         ]);
 
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $result = $this->bulk->run(
             $this->deliveryWorkflow,
             $data['order_ids'],
             [],
-            Auth::id(),
+            $actorId,
         );
 
         return response()->json($result->toArray());

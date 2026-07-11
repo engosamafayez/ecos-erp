@@ -61,8 +61,12 @@ final class CreateManualOrderAction extends BaseAction
             $grandTotal     = $subtotal - $discountAmount + $shippingCost;
             $remaining      = max(0, $grandTotal - $depositAmount);
 
+            // Always derive company from the authenticated actor — never trust the
+            // request body. This closes the cross-tenant order-creation vector.
+            $actorCompanyId  = Auth::user()?->company_id;
+
             $orderAttributes = [
-                'company_id'               => $data['company_id'] ?? null,
+                'company_id'               => $actorCompanyId,
                 'channel_id'               => $data['channel_id'] ?? null,
                 'customer_id'              => $customerId,
                 'order_number'             => $this->orders->nextOrderNumber(),
@@ -102,7 +106,7 @@ final class CreateManualOrderAction extends BaseAction
         $order->load(['customer', 'lines.product.unit', 'fees', 'coupons', 'channel']);
 
         // CR-PREP-001: Auto-assign warehouse immediately after order creation.
-        $this->warehouseAssignment->assign($order, $data['company_id'] ?? $order->channel?->brand?->company_id);
+        $this->warehouseAssignment->assign($order, Auth::user()?->company_id ?? $order->channel?->brand?->company_id);
 
         $this->logAuditEvents($order->id, $data);
 
@@ -162,7 +166,7 @@ final class CreateManualOrderAction extends BaseAction
 
     private function logAuditEvents(string $orderId, array $data): void
     {
-        $actorId = Auth::id();
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
 
         OrderEvent::log($orderId, 'order_created', 'Manual order created.', [], $actorId);
 

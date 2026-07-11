@@ -52,7 +52,7 @@ final class VehicleAssignmentController extends Controller
             capacityWeightKg:     (float) $validated['capacity_weight_kg'],
             capacityVolumeM3:     (float) $validated['capacity_volume_m3'],
             refrigerated:         (bool) ($validated['refrigerated'] ?? false),
-            actorId:              $request->user()->id,
+            actorId:              (string) $request->user()->id,
             vehiclePlanSlotId:    $validated['vehicle_plan_slot_id'] ?? null,
             notes:                $validated['notes'] ?? null,
         );
@@ -104,7 +104,7 @@ final class VehicleAssignmentController extends Controller
             preparationWaveId:    $validated['preparation_wave_id'],
             quantityPlanned:      (float) $validated['quantity_planned'],
             quantityLoaded:       (float) $validated['quantity_loaded'],
-            loadedBy:             $request->user()->id,
+            loadedBy:             (string) $request->user()->id,
             requiresRefrigeration: (bool) ($validated['requires_refrigeration'] ?? false),
             shortReason:          $validated['short_reason'] ?? null,
             notes:                $validated['notes'] ?? null,
@@ -139,7 +139,7 @@ final class VehicleAssignmentController extends Controller
             abort(404, "Vehicle assignment [{$assignmentId}] not found.");
         }
 
-        $result = $action->execute($assignment, $request->user()->id);
+        $result = $action->execute($assignment, (string) $request->user()->id);
 
         return $this->success(new VehicleAssignmentResource($result));
     }

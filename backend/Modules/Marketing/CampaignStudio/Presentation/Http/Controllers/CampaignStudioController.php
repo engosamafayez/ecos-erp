@@ -71,7 +71,7 @@ class CampaignStudioController extends Controller
             'marketing_team'    => ['nullable', 'string', 'max:255'],
         ]);
 
-        $draft = $this->createAction->execute($validated, $request->user()->id);
+        $draft = $this->createAction->execute($validated, (string) $request->user()->id);
 
         return response()->json(['data' => new CampaignDraftResource($draft)], 201);
     }
@@ -124,12 +124,12 @@ class CampaignStudioController extends Controller
             'connector_type'     => ['sometimes', 'nullable', 'string', 'max:30'],
         ]);
 
-        $updated = $this->draftService->update($draft, $validated, $request->user()->id);
+        $updated = $this->draftService->update($draft, $validated, (string) $request->user()->id);
 
         // Track version for significant field changes
         $trackFields = array_intersect_key($validated, array_flip(['daily_budget', 'lifetime_budget', 'budget_type', 'start_date', 'end_date', 'objective']));
         if (!empty($trackFields)) {
-            $this->versioningService->snapshot($updated, VersionChangeType::SETTINGS_CHANGE, $request->user()->id, 'Campaign settings updated', array_keys($trackFields));
+            $this->versioningService->snapshot($updated, VersionChangeType::SETTINGS_CHANGE, (string) $request->user()->id, 'Campaign settings updated', array_keys($trackFields));
         }
 
         return response()->json(['data' => new CampaignDraftResource($updated->fresh())]);
@@ -145,7 +145,7 @@ class CampaignStudioController extends Controller
     /** POST /mkt/studio/drafts/{draft}/duplicate */
     public function duplicate(Request $request, CampaignDraft $draft): JsonResponse
     {
-        $copy = $this->duplicateAction->execute($draft, $request->user()->id);
+        $copy = $this->duplicateAction->execute($draft, (string) $request->user()->id);
         return response()->json(['data' => new CampaignDraftResource($copy)], 201);
     }
 }

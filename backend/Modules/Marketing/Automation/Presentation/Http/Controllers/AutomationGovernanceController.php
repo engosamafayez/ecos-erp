@@ -41,7 +41,7 @@ class AutomationGovernanceController extends Controller
             'is_default'                               => 'boolean',
         ]);
 
-        $policy = $this->service->create($validated, $request->user()->id);
+        $policy = $this->service->create($validated, (string) $request->user()->id);
 
         return response()->json(new GovernancePolicyResource($policy), 201);
     }
@@ -67,7 +67,7 @@ class AutomationGovernanceController extends Controller
             'is_default'                               => 'boolean',
         ]);
 
-        $policy = $this->service->update($policy, $validated, $request->user()->id);
+        $policy = $this->service->update($policy, $validated, (string) $request->user()->id);
 
         return response()->json(new GovernancePolicyResource($policy));
     }

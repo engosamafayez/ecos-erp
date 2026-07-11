@@ -50,11 +50,11 @@ final class MetaAuthController extends Controller
         $connection = $this->oauthService->handleCallback(
             code:    $request->string('code')->toString(),
             state:   $request->string('state')->toString(),
-            actorId: (string) $request->user()->id,
+            actorId: (string) (string) $request->user()->id,
         );
 
         // Kick off initial discovery in the background
-        $syncLog = $this->runSync->execute($connection, SyncType::Full, (string) $request->user()->id);
+        $syncLog = $this->runSync->execute($connection, SyncType::Full, (string) (string) $request->user()->id);
 
         return response()->json([
             'message'    => 'Meta connection established successfully.',

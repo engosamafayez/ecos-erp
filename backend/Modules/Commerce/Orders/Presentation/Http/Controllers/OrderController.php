@@ -123,8 +123,11 @@ final class OrderController extends Controller
      */
     public function financialSnapshot(string $order, CreateOrderSnapshotService $snapshotService): JsonResponse
     {
+        $companyId = $this->currentCompany->id();
+
         $snapshot = OrderFinancialSnapshot::with('lines')
             ->where('order_id', $order)
+            ->where('company_id', $companyId)
             ->first();
 
         if ($snapshot === null) {
@@ -135,7 +138,9 @@ final class OrderController extends Controller
         $snapshot->setAttribute('hash_verified', $snapshotService->verifyIntegrityHash($snapshot));
 
         // Attach business context snapshot as a transient attribute (PART 10).
-        $businessContext = OrderBusinessContextSnapshot::where('order_id', $order)->first();
+        $businessContext = OrderBusinessContextSnapshot::where('order_id', $order)
+            ->where('company_id', $companyId)
+            ->first();
         $snapshot->setAttribute('business_context', $businessContext);
 
         return $this->success(new OrderFinancialSnapshotResource($snapshot));

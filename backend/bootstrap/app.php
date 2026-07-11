@@ -9,6 +9,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
+use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 use Modules\POS\Cart\Domain\Exceptions\InvalidCartTransitionException;
 use Modules\POS\Receipt\Domain\Exceptions\ReceiptAlreadyVoidedException;
 use Modules\POS\Receipt\Domain\Exceptions\ReprintNotAllowedException;
@@ -97,6 +99,22 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (ReprintNotAllowedException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
+            return null;
+        });
+
+        // Fulfillment domain exceptions — workflow guard failures.
+        $exceptions->render(function (WorkflowPreconditionException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
+            return null;
+        });
+
+        // Inventory domain exceptions — stock reservation failures.
+        $exceptions->render(function (InsufficientStockException $e, Request $request) {
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
             }

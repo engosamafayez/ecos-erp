@@ -56,8 +56,8 @@ class ApprovalWorkflowController extends Controller
             'name'        => $validated['name'],
             'description' => $validated['description'] ?? null,
             'is_default'  => $validated['is_default'] ?? false,
-            'created_by'  => $request->user()->id,
-            'updated_by'  => $request->user()->id,
+            'created_by'  => (string) $request->user()->id,
+            'updated_by'  => (string) $request->user()->id,
         ]);
 
         foreach ($validated['steps'] as $step) {
@@ -83,7 +83,7 @@ class ApprovalWorkflowController extends Controller
             'is_active'   => ['sometimes', 'boolean'],
         ]);
 
-        $workflow->update(array_merge($validated, ['updated_by' => $request->user()->id]));
+        $workflow->update(array_merge($validated, ['updated_by' => (string) $request->user()->id]));
         return response()->json(['data' => new ApprovalWorkflowResource($workflow->fresh()->load('steps'))]);
     }
 

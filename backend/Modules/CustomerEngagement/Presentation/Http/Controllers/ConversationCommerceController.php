@@ -31,7 +31,7 @@ class ConversationCommerceController extends Controller
     public function prepareOrder(Request $request, Conversation $conversation): JsonResponse
     {
         $orderData = $request->input('order_data', []);
-        $prepared  = $this->createOrderAction->execute($conversation, $orderData, $request->user()->id);
+        $prepared  = $this->createOrderAction->execute($conversation, $orderData, (string) $request->user()->id);
         return response()->json($prepared);
     }
 
@@ -50,7 +50,7 @@ class ConversationCommerceController extends Controller
             $conversation,
             $data['entity_id'],
             $data['entity_code'],
-            $request->user()->id,
+            (string) $request->user()->id,
         );
 
         return response()->json(['ok' => true]);

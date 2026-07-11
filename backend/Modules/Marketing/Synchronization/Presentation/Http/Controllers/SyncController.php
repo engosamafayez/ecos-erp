@@ -26,7 +26,7 @@ final class SyncController extends Controller
     public function triggerSync(Request $request, MarketingConnection $connection): JsonResponse
     {
         $async   = $request->boolean('async', false);
-        $actorId = (string) $request->user()->id;
+        $actorId = (string) (string) $request->user()->id;
 
         if ($async) {
             SyncMarketingAssetsJob::dispatch($connection, SyncType::Manual, $actorId);

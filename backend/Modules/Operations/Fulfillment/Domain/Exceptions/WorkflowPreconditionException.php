@@ -12,8 +12,8 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
  */
 final class WorkflowPreconditionException extends UnprocessableEntityHttpException
 {
-    public function __construct(string $workflowName, string $reason)
+    public function __construct(string $message, ?string $reason = null)
     {
-        parent::__construct("[{$workflowName}] Precondition not met: {$reason}");
+        parent::__construct($reason !== null ? "[{$message}] Precondition not met: {$reason}" : $message);
     }
 }
