@@ -12,6 +12,7 @@ import {
   Layers2,
   LineChart,
   Link2,
+  ListOrdered,
   ListTree,
   Map,
   Network,
@@ -110,8 +111,9 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Logistics OS',
     items: [
-      { key: 'logistics-geography',          label: 'Egypt Geography',      path: ROUTES.logisticsGeography,          icon: Map     },
-      { key: 'logistics-distribution-zones', label: 'Distribution Zones',   path: ROUTES.logisticsDistributionZones,  icon: Network },
+      { key: 'logistics-geography',               label: 'Egypt Geography',       path: ROUTES.logisticsGeography,            icon: Map          },
+      { key: 'logistics-distribution-zones',      label: 'Distribution Zones',    path: ROUTES.logisticsDistributionZones,    icon: Network      },
+      { key: 'logistics-distribution-planning',   label: 'Distribution Planning', path: ROUTES.logisticsDistributionPlanning, icon: ListOrdered  },
     ],
   },
   {
