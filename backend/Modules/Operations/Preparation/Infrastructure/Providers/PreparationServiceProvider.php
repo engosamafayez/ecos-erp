@@ -38,8 +38,14 @@ use Modules\Operations\Preparation\Domain\Services\BrandConfigurationResolverSer
 use Modules\Operations\Preparation\Domain\Services\EnterpriseQueueSorterService;
 use Modules\Operations\Preparation\Domain\Services\FulfillmentPolicyService;
 use Modules\Operations\Preparation\Domain\Services\PreparationPolicyService;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\DemandRefreshDispatcher;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveLifecycleService;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveManager;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveMembershipService;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
 use Modules\Operations\Preparation\Infrastructure\Console\Commands\CreateDailyPreparationSessionsCommand;
 use Modules\Operations\Preparation\Infrastructure\Console\Commands\FreezePreparationSessionsCommand;
+use Modules\Operations\Preparation\Infrastructure\Console\Commands\RunWaveSchedulerCommand;
 use Modules\Operations\Preparation\Policies\PreparedPoolPolicy;
 use Modules\Operations\Preparation\Policies\PreparationSessionPolicy;
 use Modules\Operations\Preparation\Policies\PreparationStationPolicy;
@@ -72,6 +78,13 @@ final class PreparationServiceProvider extends ServiceProvider
         $this->app->singleton(WarehouseAssignmentEngine::class);
         $this->app->singleton(PreparationReleaseEngine::class);
         $this->app->singleton(DailyPreparationSessionManager::class);
+
+        // TASK-WAVE-ENGINE-001 — Wave Engine services
+        $this->app->singleton(DemandRefreshDispatcher::class);
+        $this->app->singleton(WaveManager::class);
+        $this->app->singleton(WaveLifecycleService::class);
+        $this->app->singleton(WaveMembershipService::class);
+        $this->app->singleton(WavePreparationService::class);
     }
 
     public function boot(): void
@@ -81,6 +94,7 @@ final class PreparationServiceProvider extends ServiceProvider
         $this->commands([
             CreateDailyPreparationSessionsCommand::class,
             FreezePreparationSessionsCommand::class,
+            RunWaveSchedulerCommand::class,
         ]);
 
         Gate::policy(PreparationWave::class, PreparationWavePolicy::class);

@@ -23,3 +23,12 @@ Schedule::command('preparation:freeze-sessions')
     ->everyMinute()
     ->withoutOverlapping()
     ->runInBackground();
+
+// TASK-WAVE-ENGINE-001 — Wave Engine lifecycle scheduler.
+// Runs every minute; processes all active WaveEngineConfiguration records and
+// triggers: collection-window open → order sync → preparation start → wave rotation.
+// withoutOverlapping() ensures a slow warehouse does not spawn duplicate runs.
+Schedule::command('wave:run-scheduler')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground();
