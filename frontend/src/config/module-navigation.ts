@@ -6,7 +6,6 @@ import {
   BookOpen,
   Briefcase,
   Building2,
-  CalendarDays,
   ClipboardList,
   Cpu,
   DollarSign,
@@ -15,6 +14,7 @@ import {
   Globe,
   LayoutDashboard,
   Layers,
+  Layers2,
   Link2,
   ListTree,
   Map,
@@ -32,13 +32,11 @@ import {
   ShoppingBag,
   ShoppingCart,
   Tag,
-  TrendingDown,
   TrendingUp,
   Truck,
   UserPlus,
   Users as UsersIcon,
   Warehouse,
-  Waves,
   SearchCheck,
   GitBranch,
   Wifi,
@@ -62,6 +60,7 @@ export type ModuleId =
   | 'operations'
   | 'marketing'
   | 'core'
+  | 'logistics'
   | 'reports'
   | 'administration';
 
@@ -193,19 +192,9 @@ export const APP_MODULES: AppModule[] = [
     label: 'Operations',
     railLabel: 'Ops.',
     icon: TrendingUp,
-    defaultPath: ROUTES.preparationToday,
+    defaultPath: ROUTES.waveWorkspace,
     items: [
-      { key: 'prep-section',       label: 'Preparation OS',       isSection: true },
-      { key: 'prep-today',         label: "Today's Preparation",  path: ROUTES.preparationToday,        icon: CalendarDays },
-      { key: 'prep-dashboard',     label: 'Dashboard',            path: ROUTES.preparationDashboard,    icon: LayoutDashboard },
-      { key: 'mgmt-section',       label: 'Management',           isSection: true },
-      { key: 'prep-sessions',      label: 'Sessions',             path: ROUTES.preparationSessions,     icon: ClipboardList },
-      { key: 'prep-waves',         label: 'Waves',                path: ROUTES.preparationWaves,        icon: Waves },
-      { key: 'prep-pool',          label: 'Prepared Pool',        path: ROUTES.preparedPool,            icon: PackageCheck },
-      { key: 'prep-stations',      label: 'Stations',             path: ROUTES.preparationStations,     icon: Warehouse },
-      { key: 'prep-analytics',     label: 'Analytics',            path: ROUTES.preparationAnalytics,    icon: BarChart3 },
-      { key: 'analysis-section',   label: 'Analysis',             isSection: true },
-      { key: 'demand-analysis',    label: 'Demand Analysis',      path: ROUTES.operationsDemandAnalysis, icon: TrendingDown },
+      { key: 'wave-workspace', label: 'Fulfillment Wave Workspace', path: ROUTES.waveWorkspace, icon: Layers2 },
     ],
   },
   {
@@ -272,6 +261,17 @@ export const APP_MODULES: AppModule[] = [
     ],
   },
   {
+    id: 'logistics',
+    label: 'Logistics OS',
+    railLabel: 'Logistics',
+    icon: Truck,
+    defaultPath: ROUTES.logisticsGeography,
+    items: [
+      { key: 'geo-section',      label: 'Geography',      isSection: true },
+      { key: 'egypt-geography',  label: 'Egypt Geography', path: ROUTES.logisticsGeography, icon: Map },
+    ],
+  },
+  {
     id: 'reports',
     label: 'Reports',
     railLabel: 'Reports',
@@ -300,8 +300,6 @@ export const APP_MODULES: AppModule[] = [
       { key: 'settings', label: 'Settings', path: ROUTES.settings, icon: Settings },
       { key: 'config-section', label: 'Configuration',   isSection: true },
       { key: 'configuration-os', label: 'Configuration OS', path: ROUTES.configurationOs, icon: Cpu },
-      { key: 'master-data-section', label: 'Master Data', isSection: true },
-      { key: 'egypt-geography', label: 'Egypt Geography', path: ROUTES.egyptGeography, icon: Map },
     ],
   },
 ];

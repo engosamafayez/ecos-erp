@@ -65,16 +65,13 @@ export const ROUTES = {
   hr: '/hr',
   reports: '/reports',
   settings: '/settings',
-  operationsDemandAnalysis: '/operations/demand-analysis',
-  // Preparation OS
-  preparationToday:         '/operations/preparation/today',
-  preparationDashboard:     '/operations/preparation',
-  preparationWaves:         '/operations/preparation/waves',
-  preparationSessions:      '/operations/preparation/sessions',
-  preparationSessionDetail: '/operations/preparation/sessions/:id',
-  preparedPool:             '/operations/preparation/pool',
-  preparationStations:      '/operations/preparation/stations',
-  preparationAnalytics:     '/operations/preparation/analytics',
+  // Fulfillment Wave Workspace (TASK-PREP-UI-003)
+  waveWorkspace:        '/operations/preparation/wave-workspace',
+  waveProductDemand:    '/operations/preparation/wave-workspace/products',
+  waveRawMaterials:     '/operations/preparation/wave-workspace/materials',
+  waveMissingMaterials: '/operations/preparation/wave-workspace/missing',
+  waveOrders:           '/operations/preparation/wave-workspace/wave-orders',
+  waveSettings:         '/operations/preparation/wave-workspace/settings',
   pos: '/pos',
   // Inventory Master Data
   inventoryCategories: '/inventory/master-data/categories',
@@ -97,14 +94,15 @@ export const ROUTES = {
   userInvitations: '/admin/users/invitations',
   roles: '/admin/roles',
   orgSearch: '/organization/search',
-  // Shipping Pricing admin workspace
-  shippingPricing: '/admin/shipping-pricing',
   // Configuration OS
   configurationOs:      '/admin/configuration',
   configurationCompany: '/admin/configuration/company',
   configurationBrand:   '/admin/configuration/brands/:brandId',
-  // Administration Master Data
-  egyptGeography: '/admin/egypt-geography',
+  // Logistics OS
+  logisticsGeography:       '/logistics/geography',
+  logisticsDistributionZones: '/logistics/distribution/zones',
+  // Administration Master Data (legacy alias kept for redirect safety)
+  egyptGeography: '/logistics/geography',
   // Marketing OS
   marketing:              '/marketing',
   marketingAssets:        '/marketing/assets',

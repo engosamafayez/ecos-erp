@@ -56,20 +56,18 @@ import { InventoryCountPage } from '@/features/inventory-count/pages/inventory-c
 import { WasteInvestigationsPage } from '@/features/inventory-count/pages/waste-investigations-page';
 import { WarehouseLiabilityPage } from '@/features/inventory-count/pages/warehouse-liability-page';
 import { StockTransfersPage } from '@/features/stock-transfers/pages/stock-transfers-page';
-import { DemandAnalysisPage } from '@/features/operations/pages/demand-analysis-page';
-import { TodayPreparationPage } from '@/features/operations/pages/today-preparation-page';
-import { PreparationDashboardPage } from '@/features/operations/pages/preparation-dashboard-page';
-import { PreparationWavesPage } from '@/features/operations/pages/preparation-waves-page';
-import PreparationSessionsPage from '@/features/operations/pages/preparation-sessions-page';
-import { PreparedPoolPage } from '@/features/operations/pages/prepared-pool-page';
-import { PreparationStationsPage } from '@/features/operations/pages/preparation-stations-page';
-import { PreparationAnalyticsPage } from '@/features/operations/pages/preparation-analytics-page';
-import { PreparationSessionDetailPage } from '@/features/operations/pages/preparation-session-detail-page';
+import { FulfillmentWaveWorkspacePage } from '@/features/operations/pages/fulfillment-wave-workspace-page';
+import { WaveProductDemandPage } from '@/features/operations/pages/wave-product-demand-page';
+import { WaveRawMaterialsPage } from '@/features/operations/pages/wave-raw-materials-page';
+import { WaveMissingMaterialsPage } from '@/features/operations/pages/wave-missing-materials-page';
+import { WaveOrdersPage } from '@/features/operations/pages/wave-orders-page';
+import { WaveSettingsPage } from '@/features/operations/pages/wave-settings-page';
+import { WaveWorkspaceLayout } from '@/features/operations/components/wave-workspace-layout';
 import { PosPage } from '@/features/pos/pages/pos-page';
-import { ShippingPricingPage } from '@/features/orders/pages/shipping-pricing-page';
 import { ConfigurationOsPage } from '@/features/admin/configuration/pages/configuration-os-page';
 import { BrandConfigurationPage } from '@/features/admin/configuration/pages/brand-configuration-page';
-import { EgyptGeographyPage } from '@/features/admin/configuration/pages/egypt-geography-page';
+import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-geography-page';
+import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
 import { MarketingDashboardPage } from '@/features/marketing/pages/marketing-dashboard-page';
 import { MarketingAssetsPage } from '@/features/marketing/pages/marketing-assets-page';
 import { MetaConnectPage } from '@/features/marketing/pages/meta-connect-page';
@@ -193,12 +191,12 @@ export const router = createBrowserRouter(
             { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
             { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
             { path: ROUTES.customers, Component: CustomersPage },
-            { path: ROUTES.shippingPricing, Component: ShippingPricingPage },
             // Configuration OS
             { path: ROUTES.configurationOs,      Component: ConfigurationOsPage },
             { path: ROUTES.configurationBrand,   Component: BrandConfigurationPage },
-            // Administration Master Data
-            { path: ROUTES.egyptGeography,       Component: EgyptGeographyPage },
+            // Logistics OS
+            { path: ROUTES.logisticsGeography,         Component: EgyptGeographyPage },
+            { path: ROUTES.logisticsDistributionZones, Component: DistributionZonesPage },
             // Marketing OS
             { path: ROUTES.marketing,               Component: MarketingDashboardPage },
             { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },
@@ -251,17 +249,19 @@ export const router = createBrowserRouter(
             { path: ROUTES.costManagement, Component: CostManagementDashboardPage },
             { path: ROUTES.costManagementPriceReview, Component: CostPricingCenterPage },
             { path: ROUTES.costManagementCostHistory, Component: CostHistoryPage },
-            // Operations
-            { path: ROUTES.operationsDemandAnalysis, Component: DemandAnalysisPage },
-            // Preparation OS — CR-PREP-001: Today is the new primary entry point
-            { path: ROUTES.preparationToday,      Component: TodayPreparationPage },
-            { path: ROUTES.preparationDashboard,  Component: PreparationDashboardPage },
-            { path: ROUTES.preparationWaves,      Component: PreparationWavesPage },
-            { path: ROUTES.preparationSessions,      Component: PreparationSessionsPage },
-            { path: ROUTES.preparationSessionDetail, Component: PreparationSessionDetailPage },
-            { path: ROUTES.preparedPool,             Component: PreparedPoolPage },
-            { path: ROUTES.preparationStations,  Component: PreparationStationsPage },
-            { path: ROUTES.preparationAnalytics, Component: PreparationAnalyticsPage },
+            // Fulfillment Wave Workspace (TASK-PREP-UI-003 + TASK-PREP-UI-004)
+            {
+              path: ROUTES.waveWorkspace,
+              Component: WaveWorkspaceLayout,
+              children: [
+                { index: true,             Component: FulfillmentWaveWorkspacePage },
+                { path: 'products',        Component: WaveProductDemandPage },
+                { path: 'materials',       Component: WaveRawMaterialsPage },
+                { path: 'missing',         Component: WaveMissingMaterialsPage },
+                { path: 'wave-orders',     Component: WaveOrdersPage },
+                { path: 'settings',        Component: WaveSettingsPage },
+              ],
+            },
             ...moduleRoutes,
           ],
         },
