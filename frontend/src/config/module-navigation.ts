@@ -16,12 +16,14 @@ import {
   Layers,
   Layers2,
   Link2,
+  ListOrdered,
   ListTree,
   Map,
   Megaphone,
   MessageSquare,
   MessageCircle,
   Monitor,
+  Network,
   Package,
   PackageCheck,
   PackageOpen,
@@ -267,8 +269,11 @@ export const APP_MODULES: AppModule[] = [
     icon: Truck,
     defaultPath: ROUTES.logisticsGeography,
     items: [
-      { key: 'geo-section',      label: 'Geography',      isSection: true },
-      { key: 'egypt-geography',  label: 'Egypt Geography', path: ROUTES.logisticsGeography, icon: Map },
+      { key: 'geo-section',                  label: 'Geography',             isSection: true },
+      { key: 'egypt-geography',              label: 'Egypt Geography',       path: ROUTES.logisticsGeography,            icon: Map          },
+      { key: 'dist-section',                 label: 'Distribution',          isSection: true },
+      { key: 'logistics-distribution-zones', label: 'Distribution Zones',   path: ROUTES.logisticsDistributionZones,    icon: Network      },
+      { key: 'logistics-distribution-plan',  label: 'Distribution Planning', path: ROUTES.logisticsDistributionPlanning, icon: ListOrdered  },
     ],
   },
   {
@@ -312,4 +317,28 @@ export function findModuleByPath(pathname: string): AppModule | undefined {
       (item) => !item.isSection && (pathname === item.path || pathname.startsWith(item.path + '/')),
     );
   });
+}
+
+/**
+ * Look up the nav item label for a given pathname.
+ *
+ * Single source of truth for label lookups — replaces the removed navigation.ts.
+ * Used by AppBreadcrumbs and ComingSoonPage.
+ *
+ * Search order:
+ *   1. Exact path match inside each module's sidebar items.
+ *   2. Module defaultPath (covers modules with empty items[], e.g. Dashboard, Finance).
+ */
+export function findNavItemByPath(pathname: string): ModuleNavLink | undefined {
+  for (const mod of APP_MODULES) {
+    const item = mod.items.find(
+      (i): i is ModuleNavLink => !i.isSection && i.path === pathname,
+    );
+    if (item) return item;
+
+    if (mod.defaultPath === pathname) {
+      return { key: mod.id, label: mod.label, path: mod.defaultPath, icon: mod.icon };
+    }
+  }
+  return undefined;
 }

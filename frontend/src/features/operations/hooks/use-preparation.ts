@@ -10,6 +10,8 @@ import type {
 } from '../types/preparation';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
+
+
 function useScope() {
   const { activeCompanyId } = useOrganizationContext();
   return activeCompanyId ?? 'global';
@@ -17,6 +19,7 @@ function useScope() {
 
 const K = {
   waves:            'preparation-waves',
+  waveDemand:       'wave-demand',
   productWorkspace: 'preparation-product-workspace',
 };
 
@@ -139,5 +142,75 @@ export function useReportIssue() {
     onSuccess: (_data, { waveId }) => {
       qc.invalidateQueries({ queryKey: ['company', c, K.waves, 'detail', waveId] });
     },
+  });
+}
+
+// ── Demand Engine read model hooks (TASK-PREP-INTEGRATION-001) ────────────────
+// Each hook owns its own React Query key so widgets refresh independently.
+// WebSocket integration: when demand events arrive, invalidate only the affected key.
+
+export function useWaveKpis(waveId: string | null) {
+  const c = useScope();
+  return useQuery({
+    queryKey: ['company', c, K.waveDemand, 'kpis', waveId],
+    queryFn: () => preparationService.getWaveKpis(waveId!),
+    enabled: !!waveId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useWaveProductDemand(waveId: string | null) {
+  const c = useScope();
+  return useQuery({
+    queryKey: ['company', c, K.waveDemand, 'product-demand', waveId],
+    queryFn: () => preparationService.getWaveProductDemand(waveId!),
+    enabled: !!waveId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useWaveMaterialDemand(waveId: string | null) {
+  const c = useScope();
+  return useQuery({
+    queryKey: ['company', c, K.waveDemand, 'material-demand', waveId],
+    queryFn: () => preparationService.getWaveMaterialDemand(waveId!),
+    enabled: !!waveId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useWaveMissingMaterials(waveId: string | null) {
+  const c = useScope();
+  return useQuery({
+    queryKey: ['company', c, K.waveDemand, 'missing-materials', waveId],
+    queryFn: () => preparationService.getWaveMissingMaterials(waveId!),
+    enabled: !!waveId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useWaveManufacturingDemand(waveId: string | null) {
+  const c = useScope();
+  return useQuery({
+    queryKey: ['company', c, K.waveDemand, 'manufacturing-demand', waveId],
+    queryFn: () => preparationService.getWaveManufacturingDemand(waveId!),
+    enabled: !!waveId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useWaveOrders(waveId: string | null) {
+  const c = useScope();
+  return useQuery({
+    queryKey: ['company', c, K.waveDemand, 'orders', waveId],
+    queryFn: () => preparationService.getWaveOrders(waveId!),
+    enabled: !!waveId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 }

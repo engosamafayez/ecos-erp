@@ -32,6 +32,7 @@ import { BomWorkspacePage } from '@/features/boms/pages/bom-workspace-page';
 import { RecipesPage } from '@/features/recipes/pages/recipes-page';
 import { RecipeWorkspacePage } from '@/features/recipes/pages/recipe-workspace-page';
 import { CustomersPage } from '@/features/customers/pages/customers-page';
+import { CustomerProfilePage } from '@/features/customers/pages/customer-profile-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
 import { InventoryDashboardPage } from '@/features/inventory-control/pages/inventory-dashboard-page';
 import { AbcClassificationPage } from '@/features/inventory-control/pages/abc-classification-page';
@@ -68,6 +69,7 @@ import { ConfigurationOsPage } from '@/features/admin/configuration/pages/config
 import { BrandConfigurationPage } from '@/features/admin/configuration/pages/brand-configuration-page';
 import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-geography-page';
 import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
+import { DistributionPlanningPage } from '@/features/logistics/distribution-planning/pages/distribution-planning-page';
 import { MarketingDashboardPage } from '@/features/marketing/pages/marketing-dashboard-page';
 import { MarketingAssetsPage } from '@/features/marketing/pages/marketing-assets-page';
 import { MetaConnectPage } from '@/features/marketing/pages/meta-connect-page';
@@ -191,12 +193,14 @@ export const router = createBrowserRouter(
             { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
             { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
             { path: ROUTES.customers, Component: CustomersPage },
+            { path: ROUTES.customerDetail, Component: CustomerProfilePage },
             // Configuration OS
             { path: ROUTES.configurationOs,      Component: ConfigurationOsPage },
             { path: ROUTES.configurationBrand,   Component: BrandConfigurationPage },
             // Logistics OS
-            { path: ROUTES.logisticsGeography,         Component: EgyptGeographyPage },
-            { path: ROUTES.logisticsDistributionZones, Component: DistributionZonesPage },
+            { path: ROUTES.logisticsGeography,            Component: EgyptGeographyPage },
+            { path: ROUTES.logisticsDistributionZones,    Component: DistributionZonesPage },
+            { path: ROUTES.logisticsDistributionPlanning, Component: DistributionPlanningPage },
             // Marketing OS
             { path: ROUTES.marketing,               Component: MarketingDashboardPage },
             { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },

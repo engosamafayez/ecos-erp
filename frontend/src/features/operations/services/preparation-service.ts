@@ -41,6 +41,12 @@ import type {
   CapacityPlanningResult,
   OptimizationSuggestion,
   EnterpriseDashboardResult,
+  WaveKpiReadModel,
+  WaveProductDemandItem,
+  WaveMaterialDemandItem,
+  WaveMissingMaterialItem,
+  WaveManufacturingDemandItem,
+  WaveOrderEntry,
 } from '../types/preparation';
 
 const BASE = '/preparation';
@@ -323,6 +329,38 @@ export const preparationService = {
 
   async getEnterpriseDashboard(params: { planning_date?: string; warehouse_id?: string } = {}): Promise<EnterpriseDashboardResult> {
     const { data } = await api.get<ApiResponse<EnterpriseDashboardResult>>(`${BASE}/enterprise/dashboard`, { params: clean(params) });
+    return data.data;
+  },
+
+  // ── Demand Engine read models (TASK-PREP-INTEGRATION-001) ────────────────────
+
+  async getWaveKpis(waveId: string): Promise<WaveKpiReadModel> {
+    const { data } = await api.get<ApiResponse<WaveKpiReadModel>>(`${BASE}/waves/${waveId}/kpis`);
+    return data.data;
+  },
+
+  async getWaveProductDemand(waveId: string): Promise<WaveProductDemandItem[]> {
+    const { data } = await api.get<ApiResponse<WaveProductDemandItem[]>>(`${BASE}/waves/${waveId}/product-demand`);
+    return data.data;
+  },
+
+  async getWaveMaterialDemand(waveId: string): Promise<WaveMaterialDemandItem[]> {
+    const { data } = await api.get<ApiResponse<WaveMaterialDemandItem[]>>(`${BASE}/waves/${waveId}/material-demand`);
+    return data.data;
+  },
+
+  async getWaveMissingMaterials(waveId: string): Promise<WaveMissingMaterialItem[]> {
+    const { data } = await api.get<ApiResponse<WaveMissingMaterialItem[]>>(`${BASE}/waves/${waveId}/missing-materials`);
+    return data.data;
+  },
+
+  async getWaveManufacturingDemand(waveId: string): Promise<WaveManufacturingDemandItem[]> {
+    const { data } = await api.get<ApiResponse<WaveManufacturingDemandItem[]>>(`${BASE}/waves/${waveId}/manufacturing-demand`);
+    return data.data;
+  },
+
+  async getWaveOrders(waveId: string): Promise<WaveOrderEntry[]> {
+    const { data } = await api.get<ApiResponse<WaveOrderEntry[]>>(`${BASE}/waves/${waveId}/orders`);
     return data.data;
   },
 };

@@ -23,6 +23,7 @@ export const ROUTES = {
   goodsReceiptsNew: '/goods-receipts/new',
   stockLedger: '/stock-ledger',
   customers: '/customers',
+  customerDetail: '/customers/:customerId',
   channels: '/channels',
   productMappings: '/product-mappings',
   orders: '/orders',
@@ -99,8 +100,9 @@ export const ROUTES = {
   configurationCompany: '/admin/configuration/company',
   configurationBrand:   '/admin/configuration/brands/:brandId',
   // Logistics OS
-  logisticsGeography:       '/logistics/geography',
-  logisticsDistributionZones: '/logistics/distribution/zones',
+  logisticsGeography:            '/logistics/geography',
+  logisticsDistributionZones:    '/logistics/distribution/zones',
+  logisticsDistributionPlanning: '/logistics/distribution/planning',
   // Administration Master Data (legacy alias kept for redirect safety)
   egyptGeography: '/logistics/geography',
   // Marketing OS

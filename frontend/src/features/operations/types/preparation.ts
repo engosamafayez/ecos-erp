@@ -563,6 +563,84 @@ export type AssignmentPolicy = {
   created_at: string;
 };
 
+// ── Demand Engine Read Models (TASK-PREP-INTEGRATION-001) ────────────────────
+
+export type WaveKpiReadModel = {
+  preparation_wave_id: string;
+  orders_count: number;
+  products_count: number;
+  materials_count: number;
+  missing_materials_count: number;
+  prepared_count: number;
+  remaining_count: number;
+  completion_pct: number;
+  last_calculated_at: string | null;
+};
+
+export type WaveProductDemandItem = {
+  id: string;
+  product_id: string;
+  product_name: string;
+  product_sku: string | null;
+  required_qty: number;
+  prepared_qty: number;
+  remaining_qty: number;
+  orders_count: number;
+  completion_pct: number;
+  last_calculated_at: string | null;
+};
+
+export type WaveMaterialDemandItem = {
+  id: string;
+  material_id: string;
+  material_name: string;
+  material_sku: string | null;
+  required_qty: number;
+  available_qty: number;
+  reserved_qty: number;
+  expected_today: number;
+  in_transit_qty: number;
+  missing_qty: number;
+  coverage_pct: number;
+  last_calculated_at: string | null;
+};
+
+export type WaveMissingMaterialItem = {
+  id: string;
+  material_id: string;
+  material_name: string;
+  missing_qty: number;
+  affected_orders_count: number;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  procurement_status: string | null;
+  last_calculated_at: string | null;
+};
+
+export type WaveManufacturingDemandItem = {
+  id: string;
+  product_id: string;
+  product_name: string;
+  required_qty: number;
+  planned_qty: number;
+  manufacturing_qty: number;
+  completed_qty: number;
+  remaining_qty: number;
+  last_calculated_at: string | null;
+};
+
+export type WaveOrderEntry = {
+  id: string;
+  order_id: string;
+  order_number: string;
+  customer_name_snapshot: string | null;
+  delivery_zone_snapshot: string | null;
+  governorate_snapshot: string | null;
+  zone_code_snapshot: string | null;
+  preparation_priority: number;
+  is_paid: boolean;
+  added_at: string;
+};
+
 // ── Timeline / Documents / new payloads ───────────────────────────────────────
 
 export type TimelineEntry = {
