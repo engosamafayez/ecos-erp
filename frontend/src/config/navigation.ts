@@ -1,23 +1,32 @@
 import {
   Activity,
+  AlertTriangle,
   ArrowLeftRight,
   BarChart3,
   BookOpen,
   Building2,
   CalendarClock,
   ClipboardList,
+  FlaskConical,
   LayoutDashboard,
+  Layers2,
   LineChart,
   Link2,
+  ListOrdered,
   ListTree,
+  Map,
+  Network,
   Package,
   PackageCheck,
   PackageOpen,
+  Route,
   Settings,
+  Settings2,
+  ShieldCheck,
   ShoppingBag,
   ShoppingCart,
+  Smartphone,
   Tag,
-  TrendingDown,
   Truck,
   Warehouse,
 } from 'lucide-react';
@@ -92,9 +101,41 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Operations',
+    label: 'Preparation OS',
     items: [
-      { key: 'demand-analysis', label: 'Demand Analysis', path: ROUTES.operationsDemandAnalysis, icon: TrendingDown },
+      { key: 'wave-workspace',        label: 'Wave Workspace',    path: ROUTES.waveWorkspace,        icon: Layers2      },
+      { key: 'wave-product-demand',   label: 'Product Demand',    path: ROUTES.waveProductDemand,    icon: Package      },
+      { key: 'wave-raw-materials',    label: 'Raw Materials',     path: ROUTES.waveRawMaterials,     icon: FlaskConical },
+      { key: 'wave-missing',          label: 'Missing Materials', path: ROUTES.waveMissingMaterials, icon: AlertTriangle },
+      { key: 'wave-orders',           label: 'Wave Orders',       path: ROUTES.waveOrders,           icon: ShoppingCart },
+      { key: 'wave-settings',         label: 'Wave Settings',     path: ROUTES.waveSettings,         icon: Settings2    },
+    ],
+  },
+  {
+    label: 'Distribution OS',
+    items: [
+      { key: 'distribution-board', label: 'Distribution Board', path: ROUTES.distributionBoard, icon: Route },
+    ],
+  },
+  {
+    label: 'Loading OS',
+    items: [
+      { key: 'loading-os-dashboard', label: 'Loading Dashboard', path: ROUTES.loadingOsDashboard, icon: Truck },
+      { key: 'dispatch-gate',        label: 'Dispatch Gate',     path: ROUTES.dispatchGate,       icon: ShieldCheck },
+    ],
+  },
+  {
+    label: 'Logistics OS',
+    items: [
+      { key: 'logistics-geography',               label: 'Egypt Geography',       path: ROUTES.logisticsGeography,            icon: Map          },
+      { key: 'logistics-distribution-zones',      label: 'Distribution Zones',    path: ROUTES.logisticsDistributionZones,    icon: Network      },
+      { key: 'logistics-distribution-planning',   label: 'Distribution Planning', path: ROUTES.logisticsDistributionPlanning, icon: ListOrdered  },
+    ],
+  },
+  {
+    label: 'Driver Mobile',
+    items: [
+      { key: 'driver-home', label: 'Driver Home', path: ROUTES.driverHome, icon: Smartphone },
     ],
   },
   {

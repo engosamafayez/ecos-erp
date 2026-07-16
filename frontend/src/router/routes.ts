@@ -23,6 +23,7 @@ export const ROUTES = {
   goodsReceiptsNew: '/goods-receipts/new',
   stockLedger: '/stock-ledger',
   customers: '/customers',
+  customerDetail: '/customers/:customerId',
   channels: '/channels',
   productMappings: '/product-mappings',
   orders: '/orders',
@@ -65,16 +66,19 @@ export const ROUTES = {
   hr: '/hr',
   reports: '/reports',
   settings: '/settings',
-  operationsDemandAnalysis: '/operations/demand-analysis',
-  // Preparation OS
-  preparationToday:         '/operations/preparation/today',
-  preparationDashboard:     '/operations/preparation',
-  preparationWaves:         '/operations/preparation/waves',
-  preparationSessions:      '/operations/preparation/sessions',
-  preparationSessionDetail: '/operations/preparation/sessions/:id',
-  preparedPool:             '/operations/preparation/pool',
-  preparationStations:      '/operations/preparation/stations',
-  preparationAnalytics:     '/operations/preparation/analytics',
+  // Distribution OS
+  distributionBoard:      '/operations/distribution/board',
+  loadingWorkspace:       '/operations/distribution/loading',
+  loadingOsDashboard:     '/operations/loading/dashboard',
+  dispatchGate:           '/operations/dispatch-gate',
+  dispatchGateWorkspace:  '/operations/dispatch-gate/:tripId',
+  // Fulfillment Wave Workspace (TASK-PREP-UI-003)
+  waveWorkspace:        '/operations/preparation/wave-workspace',
+  waveProductDemand:    '/operations/preparation/wave-workspace/products',
+  waveRawMaterials:     '/operations/preparation/wave-workspace/materials',
+  waveMissingMaterials: '/operations/preparation/wave-workspace/missing',
+  waveOrders:           '/operations/preparation/wave-workspace/wave-orders',
+  waveSettings:         '/operations/preparation/wave-workspace/settings',
   pos: '/pos',
   // Inventory Master Data
   inventoryCategories: '/inventory/master-data/categories',
@@ -97,14 +101,16 @@ export const ROUTES = {
   userInvitations: '/admin/users/invitations',
   roles: '/admin/roles',
   orgSearch: '/organization/search',
-  // Shipping Pricing admin workspace
-  shippingPricing: '/admin/shipping-pricing',
   // Configuration OS
   configurationOs:      '/admin/configuration',
   configurationCompany: '/admin/configuration/company',
   configurationBrand:   '/admin/configuration/brands/:brandId',
-  // Administration Master Data
-  egyptGeography: '/admin/egypt-geography',
+  // Logistics OS
+  logisticsGeography:            '/logistics/geography',
+  logisticsDistributionZones:    '/logistics/distribution/zones',
+  logisticsDistributionPlanning: '/logistics/distribution/planning',
+  // Administration Master Data (legacy alias kept for redirect safety)
+  egyptGeography: '/logistics/geography',
   // Marketing OS
   marketing:              '/marketing',
   marketingAssets:        '/marketing/assets',
@@ -137,6 +143,18 @@ export const ROUTES = {
   audienceSegments:       '/marketing/automation/segments',
   automationDashboard:    '/marketing/automation/dashboard',
   automationGovernance:   '/marketing/automation/governance',
+  // Driver Mobile OS (TASK-DIST-005)
+  driverHome:             '/driver/home',
+  driverTrip:             '/driver/trips/:tripId',
+  driverTripStops:        '/driver/trips/:tripId/stops',
+  driverTripStop:         '/driver/trips/:tripId/stops/:stopId',
+  driverTripCollections:  '/driver/trips/:tripId/collections',
+  driverTripExceptions:   '/driver/trips/:tripId/exceptions',
+  driverTripReturns:      '/driver/trips/:tripId/returns',
+  driverTripSettlement:   '/driver/trips/:tripId/settlement',
+  driverTripCustody:      '/driver/trips/:tripId/custody',
+  driverTripTimeline:     '/driver/trips/:tripId/timeline',
+  driverTripMap:          '/driver/trips/:tripId/map',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

@@ -32,6 +32,7 @@ import { BomWorkspacePage } from '@/features/boms/pages/bom-workspace-page';
 import { RecipesPage } from '@/features/recipes/pages/recipes-page';
 import { RecipeWorkspacePage } from '@/features/recipes/pages/recipe-workspace-page';
 import { CustomersPage } from '@/features/customers/pages/customers-page';
+import { CustomerProfilePage } from '@/features/customers/pages/customer-profile-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
 import { InventoryDashboardPage } from '@/features/inventory-control/pages/inventory-dashboard-page';
 import { AbcClassificationPage } from '@/features/inventory-control/pages/abc-classification-page';
@@ -56,20 +57,24 @@ import { InventoryCountPage } from '@/features/inventory-count/pages/inventory-c
 import { WasteInvestigationsPage } from '@/features/inventory-count/pages/waste-investigations-page';
 import { WarehouseLiabilityPage } from '@/features/inventory-count/pages/warehouse-liability-page';
 import { StockTransfersPage } from '@/features/stock-transfers/pages/stock-transfers-page';
-import { DemandAnalysisPage } from '@/features/operations/pages/demand-analysis-page';
-import { TodayPreparationPage } from '@/features/operations/pages/today-preparation-page';
-import { PreparationDashboardPage } from '@/features/operations/pages/preparation-dashboard-page';
-import { PreparationWavesPage } from '@/features/operations/pages/preparation-waves-page';
-import PreparationSessionsPage from '@/features/operations/pages/preparation-sessions-page';
-import { PreparedPoolPage } from '@/features/operations/pages/prepared-pool-page';
-import { PreparationStationsPage } from '@/features/operations/pages/preparation-stations-page';
-import { PreparationAnalyticsPage } from '@/features/operations/pages/preparation-analytics-page';
-import { PreparationSessionDetailPage } from '@/features/operations/pages/preparation-session-detail-page';
+import { FulfillmentWaveWorkspacePage } from '@/features/operations/pages/fulfillment-wave-workspace-page';
+import { WaveProductDemandPage } from '@/features/operations/pages/wave-product-demand-page';
+import { WaveRawMaterialsPage } from '@/features/operations/pages/wave-raw-materials-page';
+import { WaveMissingMaterialsPage } from '@/features/operations/pages/wave-missing-materials-page';
+import { WaveOrdersPage } from '@/features/operations/pages/wave-orders-page';
+import { WaveSettingsPage } from '@/features/operations/pages/wave-settings-page';
+import { WaveWorkspaceLayout } from '@/features/operations/components/wave-workspace-layout';
 import { PosPage } from '@/features/pos/pages/pos-page';
-import { ShippingPricingPage } from '@/features/orders/pages/shipping-pricing-page';
 import { ConfigurationOsPage } from '@/features/admin/configuration/pages/configuration-os-page';
 import { BrandConfigurationPage } from '@/features/admin/configuration/pages/brand-configuration-page';
-import { EgyptGeographyPage } from '@/features/admin/configuration/pages/egypt-geography-page';
+import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-geography-page';
+import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
+import { DistributionPlanningPage } from '@/features/logistics/distribution-planning/pages/distribution-planning-page';
+import { DistributionBoardPage } from '@/features/operations/distribution-board/pages/distribution-board-page';
+import { LoadingDashboardPage } from '@/features/operations/distribution-board/pages/loading-dashboard-page';
+import { LoadingWorkspacePage } from '@/features/operations/distribution-board/pages/loading-workspace-page';
+import { DispatchGatePage } from '@/features/operations/distribution-board/pages/dispatch-gate-page';
+import { DispatchGateWorkspacePage } from '@/features/operations/distribution-board/pages/dispatch-gate-workspace-page';
 import { MarketingDashboardPage } from '@/features/marketing/pages/marketing-dashboard-page';
 import { MarketingAssetsPage } from '@/features/marketing/pages/marketing-assets-page';
 import { MetaConnectPage } from '@/features/marketing/pages/meta-connect-page';
@@ -85,6 +90,17 @@ import { WorkflowBuilderPage } from '@/features/marketing/automation/pages/workf
 import { AudienceSegmentsPage } from '@/features/marketing/automation/pages/audience-segments-page';
 import { AutomationDashboardPage } from '@/features/marketing/automation/pages/automation-dashboard-page';
 import { AutomationGovernancePage } from '@/features/marketing/automation/pages/automation-governance-page';
+import { DriverHomePage } from '@/features/operations/driver-mobile/pages/driver-home-page';
+import { DriverTripDashboardPage } from '@/features/operations/driver-mobile/pages/driver-trip-dashboard-page';
+import { DriverStopListPage } from '@/features/operations/driver-mobile/pages/driver-stop-list-page';
+import { DriverStopDetailPage } from '@/features/operations/driver-mobile/pages/driver-stop-detail-page';
+import { DriverCollectionsPage } from '@/features/operations/driver-mobile/pages/driver-collections-page';
+import { DriverExceptionsPage } from '@/features/operations/driver-mobile/pages/driver-exceptions-page';
+import { DriverReturnsPage } from '@/features/operations/driver-mobile/pages/driver-returns-page';
+import { DriverSettlementPage } from '@/features/operations/driver-mobile/pages/driver-settlement-page';
+import { DriverCustodyReturnPage } from '@/features/operations/driver-mobile/pages/driver-custody-return-page';
+import { DriverTripTimelinePage } from '@/features/operations/driver-mobile/pages/driver-trip-timeline-page';
+import { DriverMapPage } from '@/features/operations/driver-mobile/pages/driver-map-page';
 import { JourneyExplorerPage } from '@/features/core/business-attribution/pages/journey-explorer-page';
 import { BaeTimelinePage } from '@/features/core/business-attribution/pages/bae-timeline-page';
 import { UnifiedInboxPage } from '@/features/customer-engagement/pages/unified-inbox-page';
@@ -193,12 +209,22 @@ export const router = createBrowserRouter(
             { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
             { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
             { path: ROUTES.customers, Component: CustomersPage },
-            { path: ROUTES.shippingPricing, Component: ShippingPricingPage },
+            { path: ROUTES.customerDetail, Component: CustomerProfilePage },
             // Configuration OS
             { path: ROUTES.configurationOs,      Component: ConfigurationOsPage },
             { path: ROUTES.configurationBrand,   Component: BrandConfigurationPage },
-            // Administration Master Data
-            { path: ROUTES.egyptGeography,       Component: EgyptGeographyPage },
+            // Distribution OS
+            { path: ROUTES.distributionBoard,                       Component: DistributionBoardPage },
+            { path: `${ROUTES.loadingWorkspace}/:tripId/loading`,   Component: LoadingWorkspacePage },
+            // Loading OS
+            { path: ROUTES.loadingOsDashboard,                      Component: LoadingDashboardPage },
+            // Dispatch Gate OS
+            { path: ROUTES.dispatchGate,                            Component: DispatchGatePage },
+            { path: `${ROUTES.dispatchGate}/:tripId`,               Component: DispatchGateWorkspacePage },
+            // Logistics OS
+            { path: ROUTES.logisticsGeography,            Component: EgyptGeographyPage },
+            { path: ROUTES.logisticsDistributionZones,    Component: DistributionZonesPage },
+            { path: ROUTES.logisticsDistributionPlanning, Component: DistributionPlanningPage },
             // Marketing OS
             { path: ROUTES.marketing,               Component: MarketingDashboardPage },
             { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },
@@ -251,17 +277,31 @@ export const router = createBrowserRouter(
             { path: ROUTES.costManagement, Component: CostManagementDashboardPage },
             { path: ROUTES.costManagementPriceReview, Component: CostPricingCenterPage },
             { path: ROUTES.costManagementCostHistory, Component: CostHistoryPage },
-            // Operations
-            { path: ROUTES.operationsDemandAnalysis, Component: DemandAnalysisPage },
-            // Preparation OS — CR-PREP-001: Today is the new primary entry point
-            { path: ROUTES.preparationToday,      Component: TodayPreparationPage },
-            { path: ROUTES.preparationDashboard,  Component: PreparationDashboardPage },
-            { path: ROUTES.preparationWaves,      Component: PreparationWavesPage },
-            { path: ROUTES.preparationSessions,      Component: PreparationSessionsPage },
-            { path: ROUTES.preparationSessionDetail, Component: PreparationSessionDetailPage },
-            { path: ROUTES.preparedPool,             Component: PreparedPoolPage },
-            { path: ROUTES.preparationStations,  Component: PreparationStationsPage },
-            { path: ROUTES.preparationAnalytics, Component: PreparationAnalyticsPage },
+            // Fulfillment Wave Workspace (TASK-PREP-UI-003 + TASK-PREP-UI-004)
+            {
+              path: ROUTES.waveWorkspace,
+              Component: WaveWorkspaceLayout,
+              children: [
+                { index: true,             Component: FulfillmentWaveWorkspacePage },
+                { path: 'products',        Component: WaveProductDemandPage },
+                { path: 'materials',       Component: WaveRawMaterialsPage },
+                { path: 'missing',         Component: WaveMissingMaterialsPage },
+                { path: 'wave-orders',     Component: WaveOrdersPage },
+                { path: 'settings',        Component: WaveSettingsPage },
+              ],
+            },
+            // Driver Mobile OS (TASK-DIST-005)
+            { path: ROUTES.driverHome,            Component: DriverHomePage },
+            { path: ROUTES.driverTrip,            Component: DriverTripDashboardPage },
+            { path: ROUTES.driverTripStops,       Component: DriverStopListPage },
+            { path: ROUTES.driverTripStop,        Component: DriverStopDetailPage },
+            { path: ROUTES.driverTripCollections, Component: DriverCollectionsPage },
+            { path: ROUTES.driverTripExceptions,  Component: DriverExceptionsPage },
+            { path: ROUTES.driverTripReturns,     Component: DriverReturnsPage },
+            { path: ROUTES.driverTripSettlement,  Component: DriverSettlementPage },
+            { path: ROUTES.driverTripCustody,     Component: DriverCustodyReturnPage },
+            { path: ROUTES.driverTripTimeline,    Component: DriverTripTimelinePage },
+            { path: ROUTES.driverTripMap,         Component: DriverMapPage },
             ...moduleRoutes,
           ],
         },

@@ -18,7 +18,6 @@ use Modules\Commerce\ProductImport\Presentation\Http\Controllers\ProductImportCo
 use Modules\Commerce\ProductMappings\Presentation\Http\Controllers\ProductMappingController;
 use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerController;
 use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerAddressController;
-use Modules\Sales\ShippingPricing\Presentation\Http\Controllers\ShippingPricingController;
 use Modules\MasterData\Categories\Presentation\Http\Controllers\CategoryController;
 use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
 use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
@@ -50,6 +49,7 @@ use Modules\Inventory\WasteInvestigations\Presentation\Http\Controllers\WasteInv
 use Modules\Inventory\WarehouseLiabilities\Presentation\Http\Controllers\WarehouseLiabilityController;
 use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
 use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController;
+use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\WaveDemandController;
 use Modules\Core\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController as ProductDemandAnalysisController;
 use Modules\POS\Presentation\Http\Controllers\SessionController as PosSessionController;
 use Modules\POS\Presentation\Http\Controllers\ShiftController as PosShiftController;
@@ -84,15 +84,31 @@ use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleInventoryCon
 use Modules\Operations\Fulfillment\Presentation\Http\Controllers\FulfillmentController as OrderFulfillmentController;
 use Modules\Operations\Fulfillment\Presentation\Http\Controllers\BulkFulfillmentController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\BrandConfigurationController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\BrandCoverageController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\CompanyConfigurationController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\DeliveryGeographyController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\DeliveryZoneController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\BrandShippingRuleController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\DeliveryWindowController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\PreparationPolicyController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterGeographyController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterZoneController;
+use Modules\Logistics\Geography\Presentation\Http\Controllers\GovernorateController;
+use Modules\Logistics\Geography\Presentation\Http\Controllers\CityController;
+use Modules\Logistics\Geography\Presentation\Http\Controllers\CityAliasController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionZoneController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionPlanningController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionBoardController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionLoadingDashboardController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionTripController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DispatchGateController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverHandoverController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\OrderDistributionSyncController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\FleetResourceController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\LoadingManifestController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverMobileController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverStopController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverPaymentController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\TripSettlementController;
+use Modules\Organization\Brands\Presentation\Http\Controllers\BrandShippingController;
+use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryTimeSlotController;
+use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -132,12 +148,40 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::apiResource('branches', BranchController::class);
     Route::apiResource('brands', BrandController::class);
     Route::prefix('brands/{brand}')->group(function (): void {
-        Route::get('delivery-geography', [BrandDeliveryController::class, 'geography']);
-        Route::get('delivery-windows', [BrandDeliveryController::class, 'windows']);
+        Route::get('delivery-geography',   [BrandDeliveryController::class, 'geography']);
+        Route::get('delivery-windows',     [BrandDeliveryController::class, 'windows']);
         Route::get('configuration-health', [BrandDeliveryController::class, 'health']);
+        Route::post('transfer/analyze',    [BrandController::class, 'analyze']);
+        Route::post('transfer',            [BrandController::class, 'transfer']);
+
+        // Brand Delivery Time Slots (customer checkout time windows)
+        Route::post('delivery-time-slots/seed-defaults', [BrandDeliveryTimeSlotController::class, 'seedDefaults']);
+        Route::patch('delivery-time-slots/reorder',      [BrandDeliveryTimeSlotController::class, 'reorder']);
+        Route::get('delivery-time-slots',                [BrandDeliveryTimeSlotController::class, 'index']);
+        Route::post('delivery-time-slots',               [BrandDeliveryTimeSlotController::class, 'store']);
+        Route::put('delivery-time-slots/{slot}',         [BrandDeliveryTimeSlotController::class, 'update']);
+        Route::delete('delivery-time-slots/{slot}',      [BrandDeliveryTimeSlotController::class, 'destroy']);
+
+        // Brand Shipping Configuration (Geography-aware, policy-driven)
+        Route::get('shipping-settings',           [BrandShippingController::class, 'getSettings']);
+        Route::put('shipping-settings',           [BrandShippingController::class, 'updateSettings']);
+        Route::get('shipping/governorates',       [BrandShippingController::class, 'listGovernorates']);
+        Route::put('shipping/governorates/{governorate}', [BrandShippingController::class, 'updateGovernorate']);
+        Route::get('shipping/cities',             [BrandShippingController::class, 'listCities']);
+        Route::put('shipping/cities/{city}',      [BrandShippingController::class, 'updateCity']);
+        Route::get('shipping/calculate',          [BrandShippingController::class, 'calculatePrice']);
     });
     Route::apiResource('business-accounts', BusinessAccountController::class);
     Route::apiResource('teams', TeamController::class);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Shipping Engine — Quote / Validation (protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
+    Route::post('shipping/quote', [ShippingQuoteController::class, 'quote']);
 });
 
 /*
@@ -238,16 +282,6 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 
 /*
 |--------------------------------------------------------------------------
-| Sales — Shipping Pricing (protected)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::post('shipping-pricing/calculate', [ShippingPricingController::class, 'calculate']);
-    Route::apiResource('shipping-pricing', ShippingPricingController::class);
-});
-
-/*
-|--------------------------------------------------------------------------
 | Commerce — Channels (protected)
 |--------------------------------------------------------------------------
 */
@@ -259,12 +293,25 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         Route::post('channels/{channel}/import-orders', [OrderImportController::class, 'importOrders']);
     });
     Route::apiResource('product-mappings', ProductMappingController::class);
-    Route::post('orders/manual', [OrderController::class, 'storeManual']);
-    Route::get('orders/pricing/product/{productId}', [OrderController::class, 'productPricing']);
-    Route::patch('orders/{order}/quick-update', [OrderController::class, 'quickUpdate']);
-    Route::get('orders/{order}/snapshot', [OrderController::class, 'financialSnapshot']);
+    Route::get('orders/statuses',                      [OrderController::class, 'orderStatuses']);
+    Route::get('orders/filter/payment-methods',        [OrderController::class, 'paymentMethods']);
+    Route::get('orders/filter/shipping-companies',     [OrderController::class, 'shippingCompanies']);
+    Route::post('orders/manual',                       [OrderController::class, 'storeManual']);
+    Route::post('orders/maps/resolve-url',             [OrderController::class, 'resolveMapsUrl']);
+    Route::get('orders/pricing/product/{productId}',   [OrderController::class, 'productPricing']);
+    Route::patch('orders/{order}/quick-update',        [OrderController::class, 'quickUpdate']);
+    Route::patch('orders/{order}/zone',                [OrderController::class, 'updateZone']);
+    Route::post('orders/{order}/confirm-customer',     [OrderController::class, 'confirmCustomer']);
+    Route::get('orders/{order}/activities',            [OrderController::class, 'activities']);
+    Route::post('orders/{order}/notes',                [OrderController::class, 'addNote']);
+    Route::patch('orders/{order}/notes/{note}',        [OrderController::class, 'updateNote']);
+    Route::delete('orders/{order}/notes/{note}',       [OrderController::class, 'deleteNote']);
+    Route::get('orders/{order}/snapshot',              [OrderController::class, 'financialSnapshot']);
+    Route::get('orders/{order}/distribution-stage',    [OrderDistributionSyncController::class, 'getOrderStage']);
+    Route::get('orders/{order}/distribution-sync-history', [OrderDistributionSyncController::class, 'getSyncHistory']);
     Route::apiResource('orders', OrderController::class);
-    Route::post('orders/{order}/prepare', [OrderController::class, 'prepare']);
+    Route::post('orders/{order}/prepare',              [OrderController::class, 'prepare']);
+    Route::post('orders/{order}/verify-payment',       [OrderController::class, 'verifyPayment']);
     // CR-PREP-001: Warehouse assignment
     Route::post('orders/{order}/assign-warehouse',   [WarehouseAssignmentController::class, 'assignWarehouse']);
     Route::post('orders/{order}/override-warehouse', [WarehouseAssignmentController::class, 'overrideWarehouse']);
@@ -368,6 +415,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::apiResource('boms', BomController::class);
+    Route::get('boms/{bom}/cost-history', [BomController::class, 'costHistory']);
 });
 
 /*
@@ -490,6 +538,7 @@ Route::middleware('auth:sanctum')->prefix('cost-management')->group(function ():
     Route::post('pricing-reviews/{id}/approve',                [PricingReviewController::class, 'approve']);
     Route::post('pricing-reviews/{id}/snooze',                 [PricingReviewController::class, 'snooze']);
     Route::post('pricing-reviews/{id}/assign',                 [PricingReviewController::class, 'assign']);
+    Route::post('pricing-reviews/{id}/publish',                [PricingReviewController::class, 'publish']);
     Route::post('pricing-reviews/bulk-approve',                [PricingReviewController::class, 'bulkApprove']);
     Route::patch('pricing-reviews/{id}/inline',                [PricingReviewController::class, 'inline']);
     Route::post('pricing-reviews/bulk-policy',                 [PricingReviewController::class, 'bulkPolicy']);
@@ -528,6 +577,14 @@ Route::middleware('auth:sanctum')->prefix('preparation')->group(function (): voi
     Route::post('waves/{waveId}/resolve-shortage',                   [PreparationWaveController::class, 'resolveShortage']);
     Route::get('waves/{waveId}/timeline',                            [PreparationWaveController::class, 'timeline']);
     Route::get('waves/{waveId}/documents',                           [PreparationWaveController::class, 'documents']);
+
+    // Demand Engine read models (TASK-PREP-INTEGRATION-001)
+    Route::get('waves/{waveId}/kpis',                 [WaveDemandController::class, 'kpis']);
+    Route::get('waves/{waveId}/product-demand',       [WaveDemandController::class, 'productDemand']);
+    Route::get('waves/{waveId}/material-demand',      [WaveDemandController::class, 'materialDemand']);
+    Route::get('waves/{waveId}/missing-materials',    [WaveDemandController::class, 'missingMaterials']);
+    Route::get('waves/{waveId}/manufacturing-demand', [WaveDemandController::class, 'manufacturingDemand']);
+    Route::get('waves/{waveId}/orders',               [WaveDemandController::class, 'waveOrders']);
 
     // Enterprise Preparation — Phases 6, 8, 9, 13, 14 (TASK-PREPARATION-INTEGRATION-001)
     Route::get('enterprise/queue',         [PreparationEnterpriseController::class, 'queue']);
@@ -616,6 +673,73 @@ Route::middleware('auth:sanctum')->prefix('loading')->group(function (): void {
 
 /*
 |--------------------------------------------------------------------------
+| Operations — Distribution Board OS (protected)
+| ADR-DIST-004: Wave is the single operational container
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('distribution')->group(function (): void {
+    // Board — active wave state
+    Route::get('board',                                            [DistributionBoardController::class, 'show']);
+    Route::get('board/zones/{zoneId}/orders',                     [DistributionBoardController::class, 'zoneOrders']);
+    Route::get('board/trips/{tripId}/orders',                     [DistributionBoardController::class, 'tripOrders']);
+    Route::post('board/validate',                                  [DistributionBoardController::class, 'validate']);
+    Route::post('board/finalize',                                  [DistributionBoardController::class, 'finalize']);
+    Route::get('board/exceptions',                                 [DistributionBoardController::class, 'waveExceptions']);
+
+    // Trips — full lifecycle
+    Route::post('trips',                                           [DistributionTripController::class, 'store']);
+    Route::put('trips/{id}',                                       [DistributionTripController::class, 'update']);
+    Route::delete('trips/{id}',                                    [DistributionTripController::class, 'destroy']);
+    Route::post('trips/{id}/auto-fill',                            [DistributionTripController::class, 'autoFill']);
+    Route::post('trips/{id}/orders',                               [DistributionTripController::class, 'addOrder']);
+    Route::delete('trips/{id}/orders/{orderId}',                   [DistributionTripController::class, 'removeOrder']);
+    Route::post('trips/{id}/orders/move',                          [DistributionTripController::class, 'moveOrder']);
+    Route::patch('trips/{id}/driver',                              [DistributionTripController::class, 'assignDriver']);
+    Route::patch('trips/{id}/vehicle',                             [DistributionTripController::class, 'assignVehicle']);
+    Route::patch('trips/{id}/carrier',                             [DistributionTripController::class, 'assignCarrier']);
+    Route::post('trips/{id}/custody',                              [DistributionTripController::class, 'addCustody']);
+    Route::delete('trips/{id}/custody/{custodyId}',                [DistributionTripController::class, 'removeCustody']);
+    Route::post('trips/{id}/approve',                              [DistributionTripController::class, 'approve']);
+    Route::post('trips/{id}/orders/{orderId}/return-to-wave',      [DistributionTripController::class, 'returnToWave']);
+    Route::get('trips/{id}/coverage',                              [DistributionTripController::class, 'coverageMap']);
+    Route::get('trips/{id}/manifest',                              [DistributionTripController::class, 'manifest']);
+
+    // Loading Manifests — warehouse workspace
+    Route::get('manifests/{id}',                                   [LoadingManifestController::class, 'show']);
+    Route::post('manifests/{id}/start',                            [LoadingManifestController::class, 'start']);
+    Route::post('manifests/{id}/complete',                         [LoadingManifestController::class, 'complete']);
+    Route::post('manifests/{id}/items/{itemId}/confirm',           [LoadingManifestController::class, 'confirmItem']);
+    Route::post('manifests/{id}/items/{itemId}/resolve-shortage',  [LoadingManifestController::class, 'resolveShortage']);
+    Route::get('manifests/{id}/items/{itemId}/breakdown',          [LoadingManifestController::class, 'productBreakdown']);
+
+    // Loading OS Dashboard — all active loading trips
+    Route::get('loading-trips',                                                [DistributionLoadingDashboardController::class, 'index']);
+
+    // Driver Handover — ADR-DIST-006
+    Route::get('trips/{id}/handover-status',                                   [DriverHandoverController::class, 'handoverStatus']);
+    Route::post('trips/{id}/dispatch',                                         [DriverHandoverController::class, 'dispatch']);
+    Route::post('trips/{id}/custody/{custodyId}/driver-confirm',               [DriverHandoverController::class, 'confirmCustody']);
+    Route::post('manifests/{id}/items/{itemId}/driver-confirm',                [DriverHandoverController::class, 'confirmProductReceipt']);
+    Route::post('manifests/{id}/items/{itemId}/accept-discrepancy',            [DriverHandoverController::class, 'acceptDiscrepancy']);
+
+    // Dispatch Gate — ADR-DIST-007
+    Route::get('dispatch-gate',                                                [DispatchGateController::class, 'index']);
+    Route::get('dispatch-gate/{id}',                                           [DispatchGateController::class, 'tripReview']);
+    Route::post('trips/{id}/driver-accept',                                    [DriverHandoverController::class, 'driverAccept']);
+    Route::post('trips/{id}/dispatch-vehicle',                                 [DispatchGateController::class, 'dispatchVehicle']);
+    Route::get('trips/{id}/audit-trail',                                       [DispatchGateController::class, 'auditTrail']);
+
+    // Order SSOT & Distribution Sync — ADR-DIST-008
+    Route::post('trips/{tripId}/regenerate-manifest',                          [OrderDistributionSyncController::class, 'regenerateManifest']);
+
+    // Fleet resource lookups
+    Route::get('fleet/vehicles',                                   [FleetResourceController::class, 'vehicles']);
+    Route::get('fleet/drivers',                                    [FleetResourceController::class, 'drivers']);
+    Route::get('fleet/carriers',                                   [FleetResourceController::class, 'carriers']);
+});
+
+/*
+|--------------------------------------------------------------------------
 | Admin — Configuration OS (protected)
 |--------------------------------------------------------------------------
 */
@@ -632,42 +756,12 @@ Route::middleware('auth:sanctum')->prefix('configuration')->group(function (): v
     Route::put('brands/{brandId}/policies/{group}',       [BrandConfigurationController::class, 'update']);
     Route::get('brands/{brandId}/audit',                  [BrandConfigurationController::class, 'audit']);
 
-    // Delivery Geography (Governorates)
-    Route::get('brands/{brandId}/geographies',            [DeliveryGeographyController::class, 'index']);
-    Route::post('brands/{brandId}/geographies',           [DeliveryGeographyController::class, 'store']);
-    Route::put('brands/{brandId}/geographies/{id}',       [DeliveryGeographyController::class, 'update']);
-    Route::delete('brands/{brandId}/geographies/{id}',    [DeliveryGeographyController::class, 'destroy']);
-
-    // Delivery Zones within Governorates
-    Route::get('brands/{brandId}/geographies/{geoId}/zones',          [DeliveryZoneController::class, 'index']);
-    Route::post('brands/{brandId}/geographies/{geoId}/zones',         [DeliveryZoneController::class, 'store']);
-    Route::put('brands/{brandId}/geographies/{geoId}/zones/{id}',     [DeliveryZoneController::class, 'update']);
-    Route::delete('brands/{brandId}/geographies/{geoId}/zones/{id}',  [DeliveryZoneController::class, 'destroy']);
-
-    // Brand Shipping Rules (per delivery zone)
-    Route::get('brands/{brandId}/shipping-rules',         [BrandShippingRuleController::class, 'index']);
-    Route::post('brands/{brandId}/shipping-rules',        [BrandShippingRuleController::class, 'store']);
-    Route::put('brands/{brandId}/shipping-rules/{id}',    [BrandShippingRuleController::class, 'update']);
-    Route::delete('brands/{brandId}/shipping-rules/{id}', [BrandShippingRuleController::class, 'destroy']);
-
-    // Delivery Windows
-    Route::get('brands/{brandId}/delivery-windows',                   [DeliveryWindowController::class, 'index']);
-    Route::post('brands/{brandId}/delivery-windows',                  [DeliveryWindowController::class, 'store']);
-    Route::put('brands/{brandId}/delivery-windows/{id}',              [DeliveryWindowController::class, 'update']);
-    Route::delete('brands/{brandId}/delivery-windows/{id}',           [DeliveryWindowController::class, 'destroy']);
-    Route::post('brands/{brandId}/delivery-windows/seed-defaults',    [DeliveryWindowController::class, 'seedDefaults']);
-    Route::patch('brands/{brandId}/delivery-windows/reorder',         [DeliveryWindowController::class, 'reorder']);
+    // Delivery Windows — REMOVED (moved to Brand OS: /brands/{brand}/delivery-time-slots)
 
     // Preparation Policies (Configuration OS facade over Preparation OS)
     Route::get('brands/{brandId}/preparation-policies',           [PreparationPolicyController::class, 'index']);
     Route::post('brands/{brandId}/preparation-policies',          [PreparationPolicyController::class, 'store']);
     Route::put('brands/{brandId}/preparation-policies/{id}',      [PreparationPolicyController::class, 'update']);
-
-    // Brand Coverage
-    Route::get('brands/{brandId}/coverage',                        [BrandCoverageController::class, 'coverage']);
-    Route::get('brands/{brandId}/coverage-stats',                  [BrandCoverageController::class, 'stats']);
-    Route::get('brands/{brandId}/health-score',                    [BrandCoverageController::class, 'healthScore']);
-    Route::post('brands/{brandId}/clone-from/{sourceBrandId}',     [BrandCoverageController::class, 'cloneFrom']);
 
     // Master Geography — governorates
     Route::prefix('master-geography')->group(function (): void {
@@ -693,12 +787,23 @@ Route::middleware('auth:sanctum')->prefix('configuration')->group(function (): v
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->prefix('fulfillment')->group(function (): void {
-    // Single-order workflow transitions
+    // Single-order workflow transitions (ADR TASK-ORDER-LIFECYCLE-001)
     Route::post('orders/{order}/confirm',              [OrderFulfillmentController::class, 'confirm']);
     Route::post('orders/{order}/cancel',               [OrderFulfillmentController::class, 'cancel']);
     Route::post('orders/{order}/move-to-preparation',  [OrderFulfillmentController::class, 'moveToPreparation']);
     Route::post('orders/{order}/complete-delivery',    [OrderFulfillmentController::class, 'completeDelivery']);
+    Route::post('orders/{order}/complete',             [OrderFulfillmentController::class, 'complete']);
+    Route::post('orders/{order}/awaiting-stock',       [OrderFulfillmentController::class, 'markAwaitingStock']);
     Route::post('orders/{order}/return',               [OrderFulfillmentController::class, 'returnOrder']);
+    Route::post('orders/{order}/reschedule',           [OrderFulfillmentController::class, 'reschedule']);
+    Route::post('orders/{order}/resume',               [OrderFulfillmentController::class, 'resume']);
+    Route::post('orders/{order}/review',               [OrderFulfillmentController::class, 'moveToReview']);
+    Route::post('orders/{order}/dispatch',             [OrderFulfillmentController::class, 'dispatch']);
+    Route::post('orders/{order}/return-to-pending',   [OrderFulfillmentController::class, 'returnToPending']);
+    Route::post('orders/{order}/revert-to-confirmed', [OrderFulfillmentController::class, 'revertToConfirmed']);
+    Route::post('orders/{order}/return-to-processing',[OrderFulfillmentController::class, 'returnToProcessing']);
+    // Generic business-state transition — frontend sends target_status, backend resolves workflow
+    Route::post('orders/{order}/transition',           [OrderFulfillmentController::class, 'transition']);
 
     // Return receiving
     Route::post('returns/{customerReturn}/receive',    [OrderFulfillmentController::class, 'receiveReturn']);
@@ -708,6 +813,15 @@ Route::middleware('auth:sanctum')->prefix('fulfillment')->group(function (): voi
     Route::post('bulk/cancel',                [BulkFulfillmentController::class, 'cancelBulk']);
     Route::post('bulk/move-to-preparation',   [BulkFulfillmentController::class, 'moveToPreparationBulk']);
     Route::post('bulk/complete-delivery',     [BulkFulfillmentController::class, 'completeDeliveryBulk']);
+    Route::post('bulk/complete',              [BulkFulfillmentController::class, 'completeBulk']);
+    Route::post('bulk/dispatch',              [BulkFulfillmentController::class, 'dispatchBulk']);
+    Route::post('bulk/awaiting-stock',        [BulkFulfillmentController::class, 'markAwaitingStockBulk']);
+    Route::post('bulk/resume',                  [BulkFulfillmentController::class, 'resumeBulk']);
+    Route::post('bulk/review',                  [BulkFulfillmentController::class, 'moveToReviewBulk']);
+    Route::post('bulk/reschedule',              [BulkFulfillmentController::class, 'rescheduleBulk']);
+    Route::post('bulk/return',                  [BulkFulfillmentController::class, 'returnBulk']);
+    Route::post('bulk/return-to-confirmed',     [BulkFulfillmentController::class, 'returnToConfirmedBulk']);
+    Route::post('bulk/resume-to-confirmed',     [BulkFulfillmentController::class, 'resumeToConfirmedBulk']);
 });
 
 /*
@@ -1166,3 +1280,91 @@ Route::middleware(['throttle:60,1'])->group(function (): void {
     Route::post('webhooks/woocommerce/{channel}/products',  [WooCommerceWebhookController::class, 'handleProduct']);
     Route::post('webhooks/woocommerce/{channel}/customers', [WooCommerceWebhookController::class, 'handleCustomer']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Logistics OS — Egypt Geography (protected)
+|--------------------------------------------------------------------------
+*/
+// ── Distribution OS — Master Data ────────────────────────────────────────────
+Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(function (): void {
+    Route::get('/stats',                        [DistributionZoneController::class, 'stats']);
+    Route::get('/next-code',                    [DistributionZoneController::class, 'nextCode']);
+    Route::get('/areas',                        [DistributionZoneController::class, 'areas']);
+    Route::get('/zones',                        [DistributionZoneController::class, 'index']);
+    Route::post('/zones',                       [DistributionZoneController::class, 'store']);
+    Route::get('/zones/{id}',                   [DistributionZoneController::class, 'show']);
+    Route::put('/zones/{id}',                   [DistributionZoneController::class, 'update']);
+    Route::delete('/zones/{id}',                [DistributionZoneController::class, 'destroy']);
+    Route::patch('/zones/{id}/status',          [DistributionZoneController::class, 'toggleStatus']);
+});
+
+// ── Distribution OS — Planning ────────────────────────────────────────────────
+Route::middleware('auth:sanctum')->prefix('logistics/distribution/planning')->group(function (): void {
+    Route::get('/stats',                        [DistributionPlanningController::class, 'stats']);
+    Route::get('/zones',                        [DistributionPlanningController::class, 'zones']);
+    Route::get('/unassigned',                   [DistributionPlanningController::class, 'unassigned']);
+    Route::get('/zones/{zoneId}/detail',        [DistributionPlanningController::class, 'zoneDetail']);
+    Route::patch('/zones/{zoneId}/start',       [DistributionPlanningController::class, 'startPlanning']);
+    Route::patch('/zones/{zoneId}/planned',     [DistributionPlanningController::class, 'markPlanned']);
+});
+
+Route::middleware('auth:sanctum')->prefix('logistics/geography')->group(function (): void {
+    // KPI stats
+    Route::get('/stats', [GovernorateController::class, 'stats']);
+
+    // Governorates
+    Route::get('/governorates',                [GovernorateController::class, 'index']);
+    Route::post('/governorates',               [GovernorateController::class, 'store']);
+    Route::patch('/governorates/reorder',      [GovernorateController::class, 'reorder']);
+    Route::get('/governorates/{id}',           [GovernorateController::class, 'show']);
+    Route::put('/governorates/{id}',           [GovernorateController::class, 'update']);
+    Route::delete('/governorates/{id}',        [GovernorateController::class, 'destroy']);
+    Route::patch('/governorates/{id}/status',  [GovernorateController::class, 'toggleStatus']);
+
+    // Cities nested under governorate
+    Route::get('/governorates/{govId}/cities',                [CityController::class, 'index']);
+    Route::post('/governorates/{govId}/cities',               [CityController::class, 'store']);
+    Route::get('/governorates/{govId}/cities/{id}',           [CityController::class, 'show']);
+    Route::put('/governorates/{govId}/cities/{id}',           [CityController::class, 'update']);
+    Route::delete('/governorates/{govId}/cities/{id}',        [CityController::class, 'destroy']);
+    Route::patch('/governorates/{govId}/cities/{id}/status',  [CityController::class, 'toggleStatus']);
+
+    // Aliases nested under city
+    Route::get('/cities/{cityId}/aliases',          [CityAliasController::class, 'index']);
+    Route::post('/cities/{cityId}/aliases',         [CityAliasController::class, 'store']);
+    Route::put('/cities/{cityId}/aliases/{id}',     [CityAliasController::class, 'update']);
+    Route::delete('/cities/{cityId}/aliases/{id}',  [CityAliasController::class, 'destroy']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Driver Mobile OS — ADR-DIST-009
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('driver')->group(function (): void {
+    Route::get('trips',                                 [DriverMobileController::class, 'index']);
+    Route::get('trips/{id}',                            [DriverMobileController::class, 'dashboard']);
+    Route::post('trips/{id}/start',                     [DriverMobileController::class, 'startTrip']);
+    Route::post('trips/{id}/finish',                    [DriverMobileController::class, 'finishTrip']);
+    Route::get('trips/{id}/timeline',                   [DriverMobileController::class, 'timeline']);
+    Route::post('trips/{id}/gps',                       [DriverMobileController::class, 'recordGps']);
+    Route::get('trips/{id}/stops',                      [DriverMobileController::class, 'stops']);
+    Route::get('trips/{id}/stops/{stopId}',             [DriverMobileController::class, 'stopDetail']);
+    Route::get('trips/{id}/exceptions',                 [DriverMobileController::class, 'exceptions']);
+    Route::get('trips/{id}/returns',                    [DriverMobileController::class, 'returns']);
+    Route::get('trips/{id}/collections',                [DriverPaymentController::class, 'tripCollections']);
+    Route::get('trips/{id}/settlement',                 [TripSettlementController::class, 'settlement']);
+    Route::post('trips/{id}/settlement/submit',         [TripSettlementController::class, 'submitSettlement']);
+    Route::post('trips/{id}/returns',                   [TripSettlementController::class, 'addReturn']);
+    Route::post('trips/{id}/close',                     [TripSettlementController::class, 'closeTrip']);
+    Route::get('trips/{id}/custody-returns',            [TripSettlementController::class, 'custodyReturns']);
+    Route::post('trips/{id}/custody-returns',           [TripSettlementController::class, 'recordCustodyReturn']);
+    Route::post('stops/{stopId}/action',                [DriverStopController::class, 'action']);
+    Route::post('stops/{stopId}/proof',                 [DriverStopController::class, 'proof']);
+    Route::post('stops/{stopId}/exception',             [DriverStopController::class, 'exception']);
+    Route::get('stops/{stopId}/collections',            [DriverStopController::class, 'collections']);
+    Route::post('stops/{stopId}/payment',               [DriverPaymentController::class, 'collect']);
+    Route::post('returns/{returnId}/confirm',           [TripSettlementController::class, 'confirmReturn']);
+});
+
