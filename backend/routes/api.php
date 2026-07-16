@@ -102,6 +102,10 @@ use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverHandover
 use Modules\Operations\Distribution\Presentation\Http\Controllers\OrderDistributionSyncController;
 use Modules\Operations\Distribution\Presentation\Http\Controllers\FleetResourceController;
 use Modules\Operations\Distribution\Presentation\Http\Controllers\LoadingManifestController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverMobileController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverStopController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverPaymentController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\TripSettlementController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandShippingController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryTimeSlotController;
 use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
@@ -1333,3 +1337,36 @@ Route::middleware('auth:sanctum')->prefix('logistics/geography')->group(function
     Route::put('/cities/{cityId}/aliases/{id}',     [CityAliasController::class, 'update']);
     Route::delete('/cities/{cityId}/aliases/{id}',  [CityAliasController::class, 'destroy']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Driver Mobile OS — ADR-DIST-009
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('driver')->group(function (): void {
+    Route::get('trips',                                 [DriverMobileController::class, 'index']);
+    Route::get('trips/{id}',                            [DriverMobileController::class, 'dashboard']);
+    Route::post('trips/{id}/start',                     [DriverMobileController::class, 'startTrip']);
+    Route::post('trips/{id}/finish',                    [DriverMobileController::class, 'finishTrip']);
+    Route::get('trips/{id}/timeline',                   [DriverMobileController::class, 'timeline']);
+    Route::post('trips/{id}/gps',                       [DriverMobileController::class, 'recordGps']);
+    Route::get('trips/{id}/stops',                      [DriverMobileController::class, 'stops']);
+    Route::get('trips/{id}/stops/{stopId}',             [DriverMobileController::class, 'stopDetail']);
+    Route::get('trips/{id}/exceptions',                 [DriverMobileController::class, 'exceptions']);
+    Route::get('trips/{id}/returns',                    [DriverMobileController::class, 'returns']);
+    Route::get('trips/{id}/collections',                [DriverPaymentController::class, 'tripCollections']);
+    Route::get('trips/{id}/settlement',                 [TripSettlementController::class, 'settlement']);
+    Route::post('trips/{id}/settlement/submit',         [TripSettlementController::class, 'submitSettlement']);
+    Route::post('trips/{id}/returns',                   [TripSettlementController::class, 'addReturn']);
+    Route::post('trips/{id}/close',                     [TripSettlementController::class, 'closeTrip']);
+    Route::get('trips/{id}/custody-returns',            [TripSettlementController::class, 'custodyReturns']);
+    Route::post('trips/{id}/custody-returns',           [TripSettlementController::class, 'recordCustodyReturn']);
+    Route::post('stops/{stopId}/action',                [DriverStopController::class, 'action']);
+    Route::post('stops/{stopId}/proof',                 [DriverStopController::class, 'proof']);
+    Route::post('stops/{stopId}/exception',             [DriverStopController::class, 'exception']);
+    Route::get('stops/{stopId}/collections',            [DriverStopController::class, 'collections']);
+    Route::post('stops/{stopId}/payment',               [DriverPaymentController::class, 'collect']);
+    Route::post('returns/{returnId}/confirm',           [TripSettlementController::class, 'confirmReturn']);
+});
+
+

@@ -90,6 +90,17 @@ import { WorkflowBuilderPage } from '@/features/marketing/automation/pages/workf
 import { AudienceSegmentsPage } from '@/features/marketing/automation/pages/audience-segments-page';
 import { AutomationDashboardPage } from '@/features/marketing/automation/pages/automation-dashboard-page';
 import { AutomationGovernancePage } from '@/features/marketing/automation/pages/automation-governance-page';
+import { DriverHomePage } from '@/features/operations/driver-mobile/pages/driver-home-page';
+import { DriverTripDashboardPage } from '@/features/operations/driver-mobile/pages/driver-trip-dashboard-page';
+import { DriverStopListPage } from '@/features/operations/driver-mobile/pages/driver-stop-list-page';
+import { DriverStopDetailPage } from '@/features/operations/driver-mobile/pages/driver-stop-detail-page';
+import { DriverCollectionsPage } from '@/features/operations/driver-mobile/pages/driver-collections-page';
+import { DriverExceptionsPage } from '@/features/operations/driver-mobile/pages/driver-exceptions-page';
+import { DriverReturnsPage } from '@/features/operations/driver-mobile/pages/driver-returns-page';
+import { DriverSettlementPage } from '@/features/operations/driver-mobile/pages/driver-settlement-page';
+import { DriverCustodyReturnPage } from '@/features/operations/driver-mobile/pages/driver-custody-return-page';
+import { DriverTripTimelinePage } from '@/features/operations/driver-mobile/pages/driver-trip-timeline-page';
+import { DriverMapPage } from '@/features/operations/driver-mobile/pages/driver-map-page';
 import { JourneyExplorerPage } from '@/features/core/business-attribution/pages/journey-explorer-page';
 import { BaeTimelinePage } from '@/features/core/business-attribution/pages/bae-timeline-page';
 import { UnifiedInboxPage } from '@/features/customer-engagement/pages/unified-inbox-page';
@@ -279,6 +290,18 @@ export const router = createBrowserRouter(
                 { path: 'settings',        Component: WaveSettingsPage },
               ],
             },
+            // Driver Mobile OS (TASK-DIST-005)
+            { path: ROUTES.driverHome,            Component: DriverHomePage },
+            { path: ROUTES.driverTrip,            Component: DriverTripDashboardPage },
+            { path: ROUTES.driverTripStops,       Component: DriverStopListPage },
+            { path: ROUTES.driverTripStop,        Component: DriverStopDetailPage },
+            { path: ROUTES.driverTripCollections, Component: DriverCollectionsPage },
+            { path: ROUTES.driverTripExceptions,  Component: DriverExceptionsPage },
+            { path: ROUTES.driverTripReturns,     Component: DriverReturnsPage },
+            { path: ROUTES.driverTripSettlement,  Component: DriverSettlementPage },
+            { path: ROUTES.driverTripCustody,     Component: DriverCustodyReturnPage },
+            { path: ROUTES.driverTripTimeline,    Component: DriverTripTimelinePage },
+            { path: ROUTES.driverTripMap,         Component: DriverMapPage },
             ...moduleRoutes,
           ],
         },

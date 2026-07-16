@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class DistributionTrip extends Model
 {
@@ -22,15 +23,15 @@ class DistributionTrip extends Model
         'driver_name', 'driver_phone',
         'status', 'orders_count', 'collection_amount', 'notes',
         'finalized_at', 'finalized_by', 'created_by',
-        // DIST-004 dispatch fields
         'dispatched_at', 'dispatched_by', 'driver_notified_at',
-        // DIST-004A driver acceptance fields
         'driver_accepted_products', 'driver_accepted_custody', 'driver_accepted_equipment',
         'driver_acceptance_at', 'driver_acceptance_by',
         'has_discrepancy', 'discrepancy_notes',
-        // DIST-004A departure / vehicle dispatch fields
         'departure_at', 'departure_by', 'odometer_start', 'fuel_level',
         'gps_tracking_started', 'gps_tracking_started_at',
+        'trip_started_at', 'trip_start_lat', 'trip_start_lng',
+        'trip_finished_at', 'trip_finish_lat', 'trip_finish_lng',
+        'odometer_end', 'total_cash_collected', 'total_bank_transfers', 'total_already_paid',
     ];
 
     protected $casts = [
@@ -49,6 +50,16 @@ class DistributionTrip extends Model
         'fuel_level'                => 'float',
         'gps_tracking_started'      => 'boolean',
         'gps_tracking_started_at'   => 'datetime',
+        'trip_started_at'           => 'datetime',
+        'trip_start_lat'            => 'decimal:7',
+        'trip_start_lng'            => 'decimal:7',
+        'trip_finished_at'          => 'datetime',
+        'trip_finish_lat'           => 'decimal:7',
+        'trip_finish_lng'           => 'decimal:7',
+        'odometer_end'              => 'integer',
+        'total_cash_collected'      => 'decimal:2',
+        'total_bank_transfers'      => 'decimal:2',
+        'total_already_paid'        => 'decimal:2',
     ];
 
     public function vehicle(): BelongsTo
@@ -74,6 +85,16 @@ class DistributionTrip extends Model
     public function custodyItems(): HasMany
     {
         return $this->hasMany(DistributionTripCustody::class, 'distribution_trip_id');
+    }
+
+    public function deliveryStops(): HasMany
+    {
+        return $this->hasMany(DriverDeliveryStop::class, 'distribution_trip_id');
+    }
+
+    public function settlement(): HasOne
+    {
+        return $this->hasOne(DriverTripSettlement::class, 'distribution_trip_id');
     }
 
     public function getCapacityUsagePercentAttribute(): float

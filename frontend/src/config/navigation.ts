@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   ShoppingCart,
+  Smartphone,
   Tag,
   Truck,
   Warehouse,
@@ -129,6 +130,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'logistics-geography',               label: 'Egypt Geography',       path: ROUTES.logisticsGeography,            icon: Map          },
       { key: 'logistics-distribution-zones',      label: 'Distribution Zones',    path: ROUTES.logisticsDistributionZones,    icon: Network      },
       { key: 'logistics-distribution-planning',   label: 'Distribution Planning', path: ROUTES.logisticsDistributionPlanning, icon: ListOrdered  },
+    ],
+  },
+  {
+    label: 'Driver Mobile',
+    items: [
+      { key: 'driver-home', label: 'Driver Home', path: ROUTES.driverHome, icon: Smartphone },
     ],
   },
   {

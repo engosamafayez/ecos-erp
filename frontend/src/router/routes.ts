@@ -143,6 +143,18 @@ export const ROUTES = {
   audienceSegments:       '/marketing/automation/segments',
   automationDashboard:    '/marketing/automation/dashboard',
   automationGovernance:   '/marketing/automation/governance',
+  // Driver Mobile OS (TASK-DIST-005)
+  driverHome:             '/driver/home',
+  driverTrip:             '/driver/trips/:tripId',
+  driverTripStops:        '/driver/trips/:tripId/stops',
+  driverTripStop:         '/driver/trips/:tripId/stops/:stopId',
+  driverTripCollections:  '/driver/trips/:tripId/collections',
+  driverTripExceptions:   '/driver/trips/:tripId/exceptions',
+  driverTripReturns:      '/driver/trips/:tripId/returns',
+  driverTripSettlement:   '/driver/trips/:tripId/settlement',
+  driverTripCustody:      '/driver/trips/:tripId/custody',
+  driverTripTimeline:     '/driver/trips/:tripId/timeline',
+  driverTripMap:          '/driver/trips/:tripId/map',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
