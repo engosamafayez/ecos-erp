@@ -6,15 +6,7 @@ namespace Modules\Operations\DemandAnalysis\Infrastructure\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Modules\Operations\DemandAnalysis\Application\Listeners\DemandRefreshRequestedListener;
-use Modules\Operations\DemandAnalysis\Application\Listeners\GoodsReceiptCompletedListener;
-use Modules\Operations\DemandAnalysis\Application\Listeners\InventoryReturnedListener;
 use Modules\Operations\DemandAnalysis\Application\Listeners\ManufacturingCompletedListener;
-use Modules\Operations\DemandAnalysis\Application\Listeners\OrderAddedToWaveListener;
-use Modules\Operations\DemandAnalysis\Application\Listeners\OrderMovedToPreparingListener;
-use Modules\Operations\DemandAnalysis\Application\Listeners\OrderRemovedFromWaveListener;
-use Modules\Operations\DemandAnalysis\Application\Listeners\WaveClosedListener;
-use Modules\Operations\DemandAnalysis\Application\Listeners\WaveCreatedListener;
 use Modules\Operations\DemandAnalysis\Application\Services\DemandCalculationService;
 use Modules\Operations\DemandAnalysis\Application\Services\DemandProjectionBuilder;
 use Modules\Operations\DemandAnalysis\Application\Services\DemandReadRepository;
@@ -23,12 +15,6 @@ use Modules\Operations\DemandAnalysis\Application\Services\MissingMaterialCalcul
 use Modules\Operations\DemandAnalysis\Application\Services\ProductDemandCalculator;
 use Modules\Operations\DemandAnalysis\Application\Services\WaveKpiCalculator;
 use Modules\Operations\Preparation\Application\Events\Inbound\ManufacturingJobCompletedEvent;
-use Modules\Operations\Preparation\Domain\Events\DemandRefreshRequested;
-use Modules\Operations\Preparation\Domain\Events\OrderAddedToWave;
-use Modules\Operations\Preparation\Domain\Events\OrderMovedToPreparing;
-use Modules\Operations\Preparation\Domain\Events\OrderRemovedFromWave;
-use Modules\Operations\Preparation\Domain\Events\WaveClosed;
-use Modules\Operations\Preparation\Domain\Events\WaveCreated;
 
 final class DemandAnalysisServiceProvider extends ServiceProvider
 {
@@ -46,19 +32,12 @@ final class DemandAnalysisServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // ── Wave lifecycle ────────────────────────────────────────────────────
-        Event::listen(WaveCreated::class, WaveCreatedListener::class);
-        Event::listen(WaveClosed::class,  WaveClosedListener::class);
+        // Wave lifecycle and order membership events are now routed through the
+        // Enterprise Event Platform (EventPlatformServiceProvider).
+        // Subscribers (WaveCreatedListener, etc.) are registered there via EnterpriseEventBus.
 
-        // ── Order membership ──────────────────────────────────────────────────
-        Event::listen(DemandRefreshRequested::class, DemandRefreshRequestedListener::class);
-        Event::listen(OrderAddedToWave::class,       OrderAddedToWaveListener::class);
-        Event::listen(OrderRemovedFromWave::class,   OrderRemovedFromWaveListener::class);
-        Event::listen(OrderMovedToPreparing::class,  OrderMovedToPreparingListener::class);
-
-        // ── External triggers (stock changes) ────────────────────────────────
+        // ManufacturingJobCompletedEvent does not implement DomainEvent and is not yet
+        // migrated to the Enterprise Event Platform — keep legacy listener for now.
         Event::listen(ManufacturingJobCompletedEvent::class, ManufacturingCompletedListener::class);
-        // GoodsReceiptCompleted and InventoryReturned: wire here once Procurement/
-        // Inventory modules expose those events. Listeners are ready.
     }
 }
