@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Organization\Brands\Domain\Models\BrandShippingSettings;
 use Modules\Organization\Brands\Infrastructure\Database\Factories\BrandFactory;
 use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
 use Modules\Organization\Companies\Domain\Models\Company;
@@ -85,6 +86,12 @@ class Brand extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Relations\HasOne<BrandShippingSettings, $this> */
+    public function shippingSettings(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(BrandShippingSettings::class);
     }
 
     protected static function newFactory(): BrandFactory

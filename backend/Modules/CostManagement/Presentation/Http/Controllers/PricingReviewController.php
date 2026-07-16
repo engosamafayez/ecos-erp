@@ -7,6 +7,8 @@ namespace Modules\CostManagement\Presentation\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\Commerce\ProductMappings\Domain\Enums\SyncStatus;
+use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
 use Modules\CostManagement\Domain\Enums\PricingReviewStatus;
 use Modules\CostManagement\Domain\Models\PricingReview;
 use Modules\CostManagement\Domain\Services\PricingReviewService;
@@ -66,6 +68,7 @@ class PricingReviewController extends Controller
             'snoozed'            => PricingReview::query()->where('status', PricingReviewStatus::Snoozed->value)->count(),
             'rejected'           => PricingReview::query()->where('status', PricingReviewStatus::Rejected->value)->count(),
             'below_brand_margin' => 0, // computed client-side from brand.default_target_margin vs current_margin
+            'pending_publish'    => PricingReview::query()->where('publish_status', 'pending_publish')->count(),
         ];
 
         return response()->json([
@@ -416,6 +419,47 @@ class PricingReviewController extends Controller
             'message'   => "Bulk policy applied: {$processed} reviews updated.",
             'processed' => $processed,
         ]);
+    }
+
+    /**
+     * POST /cost-management/pricing-reviews/{id}/publish
+     *
+     * Manually publish staged prices for an approval_only review.
+     * Only valid when publish_status = 'pending_publish'.
+     */
+    public function publish(string $id): JsonResponse
+    {
+        $review = PricingReview::query()
+            ->with(['product'])
+            ->findOrFail($id);
+
+        if ($review->publish_status !== 'pending_publish') {
+            return response()->json(['message' => 'This review is not pending publish.'], 422);
+        }
+
+        if ($review->approved_price === null) {
+            return response()->json(['message' => 'No approved price stored for this review.'], 422);
+        }
+
+        $product = $review->product;
+
+        $product->update([
+            'regular_price' => $review->approved_price,
+            'sale_price'    => ($review->approved_sale_price !== null && $review->approved_sale_price > 0.0)
+                ? $review->approved_sale_price
+                : null,
+        ]);
+
+        ProductMapping::query()
+            ->where('product_id', $product->id)
+            ->update(['sync_status' => SyncStatus::Pending->value]);
+
+        $review->update([
+            'publish_status' => 'published',
+            'published_at'   => now(),
+        ]);
+
+        return response()->json(['message' => 'Prices published successfully.']);
     }
 
     /**

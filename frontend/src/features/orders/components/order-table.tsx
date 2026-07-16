@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { EmptyState, ErrorState } from '@/components/crud';
@@ -26,12 +27,17 @@ export type OrderTableProps = {
   onView: (order: Order) => void;
   onEdit?: (order: Order) => void;
   onDelete?: (order: Order) => void;
-  onStatusChange?: (order: Order) => void;
+  onStatusUpdated?: () => void;
   onEditLocation?: (order: Order) => void;
   onDeleteLocation?: (order: Order) => void;
+  onConfirmCustomer?: (order: Order) => void;
+  onTimeline?: (order: Order) => void;
+  onVerifyPayment?: (order: Order) => void;
+  onPrint?: (order: Order) => void;
   focusedRowId?: string | null;
   columnVisibility?: ColumnVisibilityState;
   pagination?: GridPaginationConfig;
+  emptyState?: ReactNode;
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -46,23 +52,39 @@ export function OrderTable({
   onView,
   onEdit,
   onDelete,
-  onStatusChange,
+  onStatusUpdated,
   onEditLocation,
   onDeleteLocation,
+  onConfirmCustomer,
+  onTimeline,
+  onVerifyPayment,
+  onPrint,
   focusedRowId,
   columnVisibility,
   pagination,
+  emptyState,
 }: OrderTableProps) {
   const { t } = useTranslation('orders');
 
   const columns = useMemo(
     () =>
       createOrderColumns(
-        { onView, onEdit, onDelete, onStatusChange, onEditLocation, onDeleteLocation },
+        {
+          onView,
+          onEdit,
+          onDelete,
+          onStatusUpdated,
+          onEditLocation,
+          onDeleteLocation,
+          onConfirmCustomer,
+          onTimeline,
+          onVerifyPayment,
+          onPrint,
+        },
         t,
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onView, onEdit, onDelete, onStatusChange, onEditLocation, onDeleteLocation],
+    [onView, onEdit, onDelete, onStatusUpdated, onEditLocation, onDeleteLocation, onConfirmCustomer, onTimeline, onVerifyPayment, onPrint],
   );
 
   return (
@@ -79,7 +101,8 @@ export function OrderTable({
       columnVisibility={columnVisibility}
       pagination={pagination}
       skeletonRows={8}
-      emptyState={<EmptyState title={t('table.empty')} />}
+      onRowClick={onView}
+      emptyState={emptyState ?? <EmptyState title={t('table.empty')} />}
       errorState={<ErrorState />}
       renderMobileCard={(order, sel) => (
         <OrderMobileCard
@@ -88,7 +111,7 @@ export function OrderTable({
           isFocused={focusedRowId === order.id}
           onView={onView}
           onSelect={sel?.selectRow ?? (() => {})}
-          onStatusChange={onStatusChange}
+          onStatusChange={() => {}}
         />
       )}
     />

@@ -1,52 +1,101 @@
+// ── Date presets ─────────────────────────────────────────────────────────────
+export type DatePreset =
+  | 'today'
+  | 'yesterday'
+  | 'last_7_days'
+  | 'last_30_days'
+  | 'this_month'
+  | 'last_month'
+  | 'custom';
+
 // ── Status ────────────────────────────────────────────────────────────────────
-// Active backend values (OrderStatus PHP enum)
-// Legacy values kept for backward compat with older records still in the DB.
+// V2 lifecycle (TASK-ORDER-WORKFLOW-V2-001).
+// Cancelled is no longer terminal — orders may be reopened.
+// Completed is the only true terminal state (financial closure).
 export type OrderStatus =
   | 'pending'
-  | 'in_progress'
+  | 'awaiting_payment'   // V2 label: "Payment"
   | 'processing'
-  | 'preparing'
-  | 'ready_for_loading'
-  | 'awaiting_payment'
-  | 'confirm_order'
-  | 'out_for_delivery'
-  | 'returned'
-  | 'completed'
-  | 'cancelled'
-  // ── legacy (pre-refactor records) ──────────────────────────────────────────
-  | 'waiting_for_payment'
-  | 'review_confirmation'
-  | 'review'
   | 'confirmed'
-  | 'shipping'
+  | 'preparing'
+  | 'out_for_delivery'
   | 'delivered'
-  | 'delivery_delayed'
-  | 'rejected'
-  | 'waiting_for_stock'
-  | 'postponed';
+  | 'returned'
+  | 'awaiting_stock'
+  | 'rescheduled'
+  | 'review'
+  | 'cancelled'
+  | 'completed';
 
-/** DD-011 — tab order must not be changed */
+/**
+ * Official V2 status display order — applies everywhere in the UI:
+ * filters, selector, dashboard, analytics, timeline, toolbar, badges, exports.
+ * Do NOT reorder.
+ */
 export const STATUS_TAB_ORDER: Array<OrderStatus | 'all'> = [
   'all',
   'pending',
-  'in_progress',
-  'processing',
   'awaiting_payment',
-  'confirm_order',
+  'processing',
+  'confirmed',
   'preparing',
-  'ready_for_loading',
   'out_for_delivery',
+  'delivered',
   'returned',
-  'completed',
+  'awaiting_stock',
+  'rescheduled',
+  'review',
   'cancelled',
+  'completed',
 ];
 
 // ── Sub-types ─────────────────────────────────────────────────────────────────
-export type OrderChannel  = { id: string; name: string };
-export type OrderCustomer = { id: string; code: string; name: string };
+export type OrderChannel  = { id: string; name: string; type: string | null; brand_id: string | null };
+export type CustomerStats = {
+  total_orders: number;
+  lifetime_value: number;
+  first_order_date: string | null;
+  last_order_date: string | null;
+};
+
+export type OrderCustomer = {
+  id: string;
+  code: string;
+  name: string;
+  phone: string | null;
+  mobile: string | null;
+  // Extended — present on GET /orders/{id} (detail endpoint only)
+  email?: string | null;
+  city?: string | null;
+  governorate?: string | null;
+  area?: string | null;
+  address?: string | null;
+  notes?: string | null;
+  is_active?: boolean;
+  created_at?: string | null;
+  stats?: CustomerStats | null;
+};
 export type OrderProduct  = { id: string; sku: string; name: string; image_url: string | null; unit_name?: string | null };
 export type OrderFee      = { id: string; name: string; total: number };
 export type OrderCoupon   = { id: string; code: string; discount: number };
+
+export type OrderNoteType = 'internal' | 'customer' | 'system';
+
+export type OrderNote = {
+  id: string;
+  order_id: string;
+  type: OrderNoteType;
+  content: string;
+  user_id: string | null;
+  user_name: string | null;
+  user_role: string | null;
+  is_edited: boolean;
+  edited_by_id: string | null;
+  edited_by_name: string | null;
+  edited_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export type OrderLine = {
   id: string;
@@ -55,6 +104,22 @@ export type OrderLine = {
   quantity: number;
   unit_price: number;
   line_total: number;
+  // Fulfillment quantities (PART 2)
+  reserved_qty: number;
+  available_qty: number;
+  prepared_qty: number;
+  packed_qty: number;
+  loaded_qty: number;
+  delivered_qty: number;
+  returned_qty: number;
+  cancelled_qty: number;
+  warehouse_name: string | null;
+  batch_number: string | null;
+  // Manufacturing state
+  manufacturing_state?: string | null;
+  manufacturing_state_label?: string | null;
+  manufacturing_started_at?: string | null;
+  manufacturing_completed_at?: string | null;
 };
 
 export type OrderLocation = {
@@ -76,13 +141,33 @@ export type Order = {
   order_date: string;
   status: OrderStatus;
   status_label: string;
+  source: string | null;
+  assigned_warehouse_id: string | null;
+  inventory_reserved_at: string | null;
+  inventory_released_at: string | null;
+  inventory_shipped_at: string | null;
   subtotal: number;
   shipping_total: number;
   discount_total: number;
   tax_total: number;
   total: number;
+
+  // Canonical financial summary — resolved by API (TASK-007).
+  // These unify the WooCommerce and enterprise field families.
+  // All display screens read these; never the raw WC fields above.
+  products_total: number;
+  shipping_amount: number;
+  discount_value: number;
+  discount_percentage: number | null;
+  tax_amount: number;
+  grand_total: number;
+  deposit_paid: number;
   notes: string | null;
   customer_note: string | null;
+  internal_notes: string | null;
+  created_by_id: string | null;
+  created_by_name: string | null;
+  order_notes_list: OrderNote[];
 
   // Billing
   billing_first_name: string | null;
@@ -120,13 +205,63 @@ export type Order = {
   shipping_attempts: number;             // 0 = never attempted
   tracking_number: string | null;
 
+  // Enterprise address fields
+  governorate: string | null;
+  city: string | null;
+  shipping_address: string | null;
+  building: string | null;
+  floor: string | null;
+  apartment: string | null;
+  landmark: string | null;
+  address_notes: string | null;
+  area: string | null;
+  google_maps_url: string | null;
+  location_source: string | null;
+
+  // Enterprise payment / financial fields
+  payment_method_manual: string | null;
+  payment_proof_path: string | null;
+  shipping_cost: number | null;
+  shipping_cost_source: string | null;
+  discount_amount: number;
+  discount_type: string | null;
+  deposit_amount: number;
+  remaining_balance: number;
+
+  // Delivery scheduling
+  requested_delivery_date: string | null;
+  preferred_delivery_time: string | null;
+  delivery_window_id: string | null;
+  delivery_window: string | null;
+  delivery_zone_id: string | null;
+  delivery_zone: string | null;
+
   // Location (single location, either from customer or set by employee)
   location: OrderLocation | null;
+
+  // Status tracking (optional — populated when backend supports it)
+  customer_confirmed_at?: string | null;
+  customer_confirmed_by?: string | null;
+  confirmation_result?: 'confirmed' | 'not_answered' | 'rejected' | 'postponed' | null;
+  status_entered_at?: string | null;
+  status_entered_by?: string | null;
+  previous_status?: OrderStatus | null;
 
   // Line items
   fees: OrderFee[];
   coupons: OrderCoupon[];
   lines: OrderLine[];
+
+  // Workflow contract — backend is the single source of truth (TASK-ORDER-WORKFLOW-STATUS-API-REFINEMENT-001)
+  // Frontend must never hardcode transitions, workflow names, or action keys.
+  current_status: string;
+  current_status_label: string;
+  allowed_status_transitions: Array<{
+    target_status: string;  // business state — use as Select value
+    label: string;          // human-readable — display to user
+    requires_reason: boolean;
+    action: string;         // opaque audit field — frontend must NOT route on this
+  }>;
 
   created_at: string | null;
   updated_at: string | null;
@@ -160,24 +295,38 @@ export type CustomerIntelligenceFilter =
   | 'more_than_5'
   | 'more_than_10'
   | 'has_cancelled'
+  | 'has_returned'
   | 'has_rejected'
   | 'incomplete';
 
 export type OrdersQuery = {
   search?: string;
   status?: OrderStatus | 'all';
-  channel_id?: string;        // DD-023
-  product_id?: string;        // DD-024
-  payment_method?: string;    // DD-026
-  shipping_company?: string;  // DD-026
-  date_from?: string;         // DD-026
-  date_to?: string;           // DD-026
-  city?: string;              // DD-028 Same Governorate
-  has_location?: boolean;     // DD-028 Orders without Location
-  min_shipping_attempts?: number; // DD-028 Multiple Attempts
-  min_products?: number;      // DD-028 3+ Products
-  customer_filter?: CustomerIntelligenceFilter; // DD-025
+  channel_id?: string;
+  product_id?: string;
+  customer_code?: string;
+  phone?: string;
+  external_number?: string;
+  brand_id?: string;
+  sku?: string;
+  payment_method?: string;
+  payment_status?: 'paid' | 'partial' | 'unpaid';
+  has_payment_proof?: boolean;
+  reservation_status?: 'reserved' | 'not_reserved';
+  shipping_company?: string;
+  date_from?: string;
+  date_to?: string;
+  governorate?: string;
+  city?: string;
+  zone?: string;
+  has_location?: boolean;
+  min_amount?: number;
+  max_amount?: number;
+  min_shipping_attempts?: number;
+  min_products?: number;
+  customer_filter?: string;   // comma-separated CustomerIntelligenceFilter values
   customer_id?: string;
+  created_by?: string;
   page?: number;
   per_page?: number;
   sort_by?: OrderSortField;
@@ -190,6 +339,7 @@ export type PaginationMeta = {
   per_page: number;
   total: number;
   last_page: number;
+  total_amount?: number;
 };
 
 export type OrdersResult = {
@@ -221,7 +371,11 @@ export type ShippingCalcResult = {
 // ── Product pricing (approved price for manual orders) ────────────────────────
 export type ProductPricingResult = {
   product_id: string;
-  approved_price: number | null;
+  regular_price: number | null;
+  sale_price: number | null;
+  resolved_price: number | null;
+  approved_price: number | null; // alias for resolved_price set by ResolveProductPricingAction
+  source: string | null;
   has_pending_review: boolean;
 };
 
@@ -317,26 +471,42 @@ export type OrderFinancialSnapshot = {
 export type CustomerLookupStats = {
   total_orders: number;
   delivered: number;
+  completed: number;
   cancelled: number;
+  returned: number;
   success_rate: number;
   lifetime_value: number;
+  avg_order_value: number;
+  first_order_date: string | null;
   last_order_date: string | null;
 };
 
 export type CustomerAddress = {
   id: string;
   is_default: boolean;
+  governorate: string | null;
   city: string | null;
   area: string | null;
   address_line: string | null;
+  building: string | null;
+  floor: string | null;
+  apartment: string | null;
+  landmark: string | null;
+  address_notes: string | null;
   google_maps_lat: number | null;
   google_maps_lng: number | null;
+  google_maps_url: string | null;
 };
 
 export type CustomerLookupCustomer = {
   id: string;
   name: string;
   phone: string | null;
+  mobile: string | null;
+  governorate: string | null;
+  city: string | null;
+  area: string | null;
+  notes: string | null;
 };
 
 export type CustomerLookupResult = {
@@ -344,6 +514,83 @@ export type CustomerLookupResult = {
   addresses: CustomerAddress[];
   stats: CustomerLookupStats;
 } | null;
+
+// ── Brand Order Policy (from GET /configuration/brands/{id}/policies/order) ───
+export type BrandOrderPolicy = {
+  source_entry_policies: {
+    manual: string | string[];
+    pos: string | string[];
+    woocommerce: string;
+    public_api: string;
+  };
+  payment_proof_policy: Record<string, 'none' | 'required' | 'optional'>;
+  auto_reserve_inventory: boolean;
+  customer_matching_policy: 'reuse_existing' | 'warn_only' | 'block_duplicate' | 'always_create_new';
+  require_phone: boolean;
+  require_address: boolean;
+  customer_lookup_enabled: boolean;
+  discount_policy: string;
+  deposit_policy: string;
+};
+
+// ── Shipping quote (POST /shipping/quote) ─────────────────────────────────────
+export type ShippingQuotePayload = {
+  brand_id: string;
+  governorate_id: number;
+  city_id?: number | null;
+};
+
+/** coverage_status: 'covered' | 'needs_review' | 'unavailable' | 'walk_in' */
+export type ShippingQuoteResult = {
+  available: boolean;
+  decision: string;
+  coverage_status: string;
+  validation_message: string | null;
+  shipping_price: number | null;
+  delivery_days: number | null;
+  same_day: boolean;
+  cod_allowed: boolean;
+  preferred_provider: string | null;
+  governorate_id: number | null;
+  city_id: number | null;
+};
+
+// ── Activity timeline ─────────────────────────────────────────────────────────
+export type OrderActivityActionType =
+  | 'created' | 'updated' | 'deleted'
+  | 'workflow' | 'payment' | 'inventory'
+  | 'customer' | 'shipping' | 'system'
+  | 'automation' | 'note';
+
+export type OrderActivitySource =
+  | 'dashboard' | 'mobile_app' | 'api'
+  | 'woocommerce' | 'automation' | 'cron' | 'webhook';
+
+export type OrderActivityActorType =
+  | 'user' | 'system' | 'api' | 'automation' | 'woocommerce' | 'webhook';
+
+export type OrderActivity = {
+  id: string;
+  event_type: string;
+  description: string;
+  actor_id: string | null;
+  actor_name: string | null;
+  actor_role: string | null;
+  actor_email: string | null;
+  actor_type: OrderActivityActorType | null;
+  source: OrderActivitySource | null;
+  action_type: OrderActivityActionType | null;
+  previous_value: Record<string, unknown> | null;
+  new_value: Record<string, unknown> | null;
+  changed_fields: string[] | null;
+  reason: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  module: string;
+  payload: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
 
 // ── Manual order payload for POST /orders/manual ──────────────────────────────
 export type ManualOrderPayload = {
@@ -363,10 +610,19 @@ export type ManualOrderPayload = {
   city?: string | null;
   area?: string | null;
   shipping_address?: string | null;
+  building?: string | null;
+  floor?: string | null;
+  apartment?: string | null;
+  landmark?: string | null;
+  address_notes?: string | null;
   delivery_zone_id?: string | null;
   delivery_zone?: string | null;
   google_maps_lat?: number | null;
   google_maps_lng?: number | null;
+  google_maps_url?: string | null;
+  location_source?: string | null;
+  governorate_id?: number | null;
+  city_id?: number | null;
   payment_method_manual?: string | null;
   shipping_cost?: number | null;
   shipping_cost_source?: string | null;

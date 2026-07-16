@@ -9,6 +9,12 @@ use App\Core\Responses\OperationResult;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
+use Modules\Commerce\Channels\Domain\Models\Channel;
+use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
+use Modules\Commerce\Shipping\Domain\ValueObjects\ShippingValidationResult;
+use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Application\Actions\ResolveProductPricingAction;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
@@ -32,6 +38,9 @@ final class CreateManualOrderAction extends BaseAction
         private readonly ResolveProductPricingAction $pricingAction,
         private readonly PermissionServiceInterface $permissions,
         private readonly WarehouseAssignmentEngine $warehouseAssignment,
+        private readonly ConfigurationManager $config,
+        private readonly ReserveOrderInventoryAction $reserveInventory,
+        private readonly ShippingValidationService $shippingEngine,
     ) {}
 
     /**
@@ -42,11 +51,36 @@ final class CreateManualOrderAction extends BaseAction
         /** @var array<string, mixed> $data */
         $data = $arguments[0];
 
-        // Enforce approved pricing before entering the transaction.
-        $this->enforceApprovedPricing($data);
+        // Resolve brand and order policy once — reused throughout this action.
+        $brandId     = $this->resolveBrandId($data['channel_id'] ?? null);
+        $orderPolicy = $brandId !== null ? $this->config->getBrandPolicy($brandId, 'order') : [];
 
-        $order = DB::transaction(function () use ($data) {
-            $customerId = $this->resolveCustomer($data);
+        // Enforce pricing constraints and discount limits.
+        $this->enforceApprovedPricing($data);
+        $this->enforceDiscountPolicy($data);
+
+        // Validate shipping area through the Shipping Engine.
+        // Walk-in POS (no governorate_id) returns walkIn() — no validation.
+        $shippingResult = $this->validateAndResolveShipping($data, $brandId);
+        /** @var ShippingValidationResult $shippingVO */
+        $shippingVO = $shippingResult['result'];
+
+        if ($shippingVO->isRejected()) {
+            return OperationResult::failure(
+                'Shipping area rejected: ' . $shippingVO->reason .
+                ' The destination is not supported by the brand shipping policy.'
+            );
+        }
+
+        $customerWasReused = false;
+        $order = DB::transaction(function () use ($data, $orderPolicy, $shippingResult, &$customerWasReused) {
+            [$customerId, $customerWasReused] = $this->resolveCustomer($data, $orderPolicy);
+
+            // Load the resolved customer to supply fallback values for snapshot fields.
+            // When an existing customer is matched by phone the form may not pre-fill
+            // secondary_phone or notes, so we fall back to the customer record's current
+            // values to ensure the snapshot is complete at creation time.
+            $customerRecord = Customer::find($customerId);
 
             $subtotal = array_sum(
                 array_map(
@@ -55,11 +89,17 @@ final class CreateManualOrderAction extends BaseAction
                 )
             );
 
-            $discountAmount = (float) ($data['discount_amount'] ?? 0);
+            // discount_amount in the request is the raw input (10 for "10%", or 150 for "EGP 150 fixed").
+            // Convert to monetary amount before computing grand_total — same logic as OrderResource.
+            $rawDiscount      = (float) ($data['discount_amount'] ?? 0);
+            $discountType     = (string) ($data['discount_type'] ?? '');
+            $monetaryDiscount = $discountType === 'percentage'
+                ? round($subtotal * $rawDiscount / 100, 2)
+                : $rawDiscount;
             $shippingCost   = (float) ($data['shipping_cost'] ?? 0);
             $depositAmount  = (float) ($data['deposit_amount'] ?? 0);
-            $grandTotal     = $subtotal - $discountAmount + $shippingCost;
-            $remaining      = max(0, $grandTotal - $depositAmount);
+            $grandTotal     = round($subtotal - $monetaryDiscount + $shippingCost, 2);
+            $remaining      = max(0.0, round($grandTotal - $depositAmount, 2));
 
             // Always derive company from the authenticated actor — never trust the
             // request body. This closes the cross-tenant order-creation vector.
@@ -71,7 +111,7 @@ final class CreateManualOrderAction extends BaseAction
                 'customer_id'              => $customerId,
                 'order_number'             => $this->orders->nextOrderNumber(),
                 'order_date'               => $data['order_date'] ?? now()->toDateString(),
-                'status'                   => $data['status'] ?? OrderStatus::InProgress->value,
+                'status'                   => $shippingResult['status_override'] ?? $this->resolveManualOrderStatus($data, $orderPolicy),
                 'subtotal'                 => $subtotal,
                 'total'                    => $grandTotal,
                 'notes'                    => $data['notes'] ?? null,
@@ -84,10 +124,31 @@ final class CreateManualOrderAction extends BaseAction
                 'payment_method_manual'    => $data['payment_method_manual'] ?? null,
                 'payment_proof_path'       => $data['payment_proof_path'] ?? null,
                 'governorate'              => $data['governorate'] ?? null,
+                'city'                     => $data['city'] ?? null,
+                'shipping_address'         => $data['shipping_address'] ?? null,
+                'building'                 => $data['building'] ?? null,
+                'floor'                    => $data['floor'] ?? null,
+                'apartment'                => $data['apartment'] ?? null,
+                'landmark'                 => $data['landmark'] ?? null,
+                'address_notes'            => $data['address_notes'] ?? null,
                 'area'                     => $data['area'] ?? null,
+                'google_maps_lat'          => $data['google_maps_lat'] ?? null,
+                'google_maps_lng'          => $data['google_maps_lng'] ?? null,
+                'google_maps_url'          => $data['google_maps_url'] ?? null,
+                'location_source'          => $data['location_source'] ?? null,
+                // Customer snapshot — historically immutable once written.
+                // Form data takes precedence; customer record provides fallback for
+                // fields not pre-filled when an existing customer is matched by phone.
+                'created_by_id'            => Auth::id() !== null ? (string) Auth::id() : null,
+                'created_by_name'          => Auth::user()?->name ?? null,
+                'status_entered_at'        => now(),
+                'customer_name'            => $data['customer_name'] ?? $customerRecord?->name,
+                'customer_secondary_phone' => ($data['customer_secondary_phone'] ?? null) ?: $customerRecord?->mobile,
+                'customer_notes'           => ($data['customer_notes'] ?? null) ?: $customerRecord?->notes,
+                'billing_phone'            => $data['customer_phone'] ?? null,
                 'shipping_cost'            => $shippingCost ?: null,
                 'shipping_cost_source'     => $data['shipping_cost_source'] ?? null,
-                'discount_amount'          => $discountAmount,
+                'discount_amount'          => $rawDiscount,
                 'discount_type'            => $data['discount_type'] ?? null,
                 'deposit_amount'           => $depositAmount,
                 'remaining_balance'        => $remaining,
@@ -108,9 +169,110 @@ final class CreateManualOrderAction extends BaseAction
         // CR-PREP-001: Auto-assign warehouse immediately after order creation.
         $this->warehouseAssignment->assign($order, Auth::user()?->company_id ?? $order->channel?->brand?->company_id);
 
-        $this->logAuditEvents($order->id, $data);
+        // Auto-reserve inventory if the brand policy enables it and a warehouse is assigned.
+        if ((bool) ($orderPolicy['auto_reserve_inventory'] ?? false) && $order->assigned_warehouse_id !== null) {
+            try {
+                $this->reserveInventory->execute($order->fresh());
+            } catch (\Throwable $e) {
+                Log::channel('daily')->warning('[Order] Auto-reserve inventory failed after creation', [
+                    'order_id' => $order->id,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $this->logAuditEvents($order->id, $data, $order->status->value, $customerWasReused, $order, [
+            'subtotal'          => $subtotal,
+            'monetary_discount' => $monetaryDiscount,
+            'grand_total'       => $grandTotal,
+            'remaining'         => $remaining,
+        ]);
 
         return OperationResult::success($order, 'Order created successfully.');
+    }
+
+    /** Resolves the brand_id from the sales channel, or null if no channel is set. */
+    private function resolveBrandId(?string $channelId): ?string
+    {
+        if (! $channelId) {
+            return null;
+        }
+
+        return Channel::query()->where('id', $channelId)->value('brand_id');
+    }
+
+    /**
+     * Statuses preferred when payment is confirmed — ordered by business priority.
+     * Cash / paid orders skip the pending queue and enter a higher-confidence status
+     * if one is enabled in the brand policy.
+     * Extend this list to change priority rules without touching UI or policy config.
+     */
+    private const PAYMENT_CLEAR_STATUS_PREFERENCE = ['processing', 'confirmed', 'preparing'];
+
+    /**
+     * Determines the entry status for a manually created order.
+     *
+     * Priority:
+     *   1. Proof required but not supplied → AwaitingPayment
+     *   2. Payment method present + multi-select policy → prefer highest-confidence
+     *      enabled status (processing > confirmed > preparing > first valid)
+     *   3. No payment method + multi-select policy → first valid enabled status
+     *   4. Single-string policy (legacy) → that status
+     *   5. Default → Pending
+     *
+     * The frontend-submitted status field is intentionally ignored — policy always wins.
+     */
+    private function resolveManualOrderStatus(array $data, array $orderPolicy): string
+    {
+        $method = (string) ($data['payment_method_manual'] ?? '');
+
+        // Proof required but not supplied → Awaiting Payment regardless of enabled statuses.
+        if ($method !== '') {
+            $proofPolicy = $orderPolicy['payment_proof_policy'] ?? [];
+            $requirement = (string) ($proofPolicy[$method] ?? 'none');
+            if ($requirement === 'required' && empty($data['payment_proof_path'])) {
+                return OrderStatus::AwaitingPayment->value;
+            }
+        }
+
+        $configured = $orderPolicy['source_entry_policies']['manual'] ?? null;
+
+        if (is_array($configured)) {
+            // Build the set of enabled, valid statuses (preserving config order).
+            $enabled = [];
+            foreach ($configured as $status) {
+                try {
+                    $enabled[] = OrderStatus::from((string) $status)->value;
+                } catch (\ValueError) { /* skip invalid */ }
+            }
+
+            if (empty($enabled)) {
+                return OrderStatus::Pending->value;
+            }
+
+            // Payment-clear path: prefer higher-confidence statuses so cash/paid orders
+            // skip the pending queue and enter processing/confirmed immediately.
+            if ($method !== '') {
+                $enabledSet = array_flip($enabled);
+                foreach (self::PAYMENT_CLEAR_STATUS_PREFERENCE as $preferred) {
+                    if (isset($enabledSet[$preferred])) {
+                        return $preferred;
+                    }
+                }
+            }
+
+            // No payment method or no preferred status is enabled — use first valid.
+            return $enabled[0];
+        }
+
+        // Single string (legacy).
+        if (is_string($configured) && $configured !== '') {
+            try {
+                return OrderStatus::from($configured)->value;
+            } catch (\ValueError) { /* fall through */ }
+        }
+
+        return OrderStatus::Pending->value;
     }
 
     /**
@@ -164,30 +326,184 @@ final class CreateManualOrderAction extends BaseAction
         }
     }
 
-    private function logAuditEvents(string $orderId, array $data): void
+    /**
+     * Validates that the submitted discount_amount does not exceed the brand's
+     * configured discount limit. Requires `sales.orders.override_discount` permission
+     * to bypass, or system role.
+     *
+     * @param  array<string, mixed>  $data
+     * @throws AuthorizationException
+     */
+    private function enforceDiscountPolicy(array $data): void
     {
-        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
+        $discountAmount = (float) ($data['discount_amount'] ?? 0);
+        if ($discountAmount <= 0.0) {
+            return;
+        }
 
-        OrderEvent::log($orderId, 'order_created', 'Manual order created.', [], $actorId);
+        $channelId = $data['channel_id'] ?? null;
+        if (! $channelId) {
+            return;
+        }
 
-        if (!empty($data['customer_name']) && empty($data['customer_id'])) {
-            OrderEvent::log($orderId, 'customer_created', 'New customer created during order.', [
-                'name'  => $data['customer_name'],
-                'phone' => $data['customer_phone'] ?? null,
+        $channel = Channel::find($channelId);
+        if (! $channel) {
+            return;
+        }
+
+        $policy        = $this->config->getBrandPolicy((string) $channel->brand_id, 'pricing');
+        $discountType  = (string) ($policy['discount_type']  ?? 'percentage');
+        $discountValue = (float) ($policy['discount_value'] ?? 0);
+
+        if ($discountValue <= 0) {
+            return; // No limit configured — skip enforcement
+        }
+
+        $subtotal = array_sum(
+            array_map(
+                static fn (array $l): float => (float) $l['quantity'] * (float) $l['unit_price'],
+                $data['lines'] ?? [],
+            )
+        );
+
+        $maxDiscount = $discountType === 'percentage'
+            ? $subtotal * ($discountValue / 100)
+            : $discountValue;
+
+        if ($discountAmount <= $maxDiscount + 0.005) {
+            return; // Within limit
+        }
+
+        $user = Auth::user();
+        $isSystemUser = $user !== null && $this->permissions->userHasSystemRole($user);
+        $canOverride  = $isSystemUser
+            || ($user !== null && $this->permissions->userHasPermission($user, 'sales.orders.override_discount'));
+
+        if (! $canOverride) {
+            $limit = $discountType === 'percentage'
+                ? "{$discountValue}% of subtotal (max " . number_format($maxDiscount, 2) . ' EGP)'
+                : number_format($discountValue, 2) . ' EGP';
+
+            throw new AuthorizationException(
+                "Discount of {$discountAmount} EGP exceeds the configured limit of {$limit}. " .
+                'The `sales.orders.override_discount` permission is required to proceed.'
+            );
+        }
+    }
+
+    private function logAuditEvents(
+        string $orderId,
+        array $data,
+        string $orderStatus = '',
+        bool $customerWasReused = false,
+        ?\Modules\Commerce\Orders\Domain\Models\Order $order = null,
+        array $financials = [],
+    ): void {
+        $actorId   = Auth::id() !== null ? (string) Auth::id() : null;
+        $actorName = Auth::user()?->name;
+        $actorRole = Auth::user()?->roles()->value('name');
+
+        OrderEvent::log(
+            $orderId,
+            'order_created',
+            'Manual order created.',
+            [],
+            $actorId,
+            $actorName,
+            null,
+            null,
+            'orders',
+            'user',
+            'dashboard',
+            'created',
+            null,
+            null,
+            null,
+            null,
+            [
+                'channel'       => $order?->channel?->name,
+                'customer_name' => $data['customer_name'] ?? null,
+                'order_total'   => $order?->total,
+            ],
+            $actorRole,
+        );
+
+        if ($orderStatus === OrderStatus::AwaitingPayment->value) {
+            OrderEvent::log($orderId, 'awaiting_payment', 'Order created with payment proof pending.', [
+                'payment_method' => $data['payment_method_manual'] ?? null,
             ], $actorId);
+        }
+
+        if (empty($data['customer_id'])) {
+            if ($customerWasReused) {
+                OrderEvent::log($orderId, 'customer_reused', 'Existing customer matched by phone.', [
+                    'phone' => $data['customer_phone'] ?? null,
+                ], $actorId);
+            } elseif (!empty($data['customer_name'])) {
+                OrderEvent::log($orderId, 'customer_created', 'New customer created during order.', [
+                    'name'  => $data['customer_name'],
+                    'phone' => $data['customer_phone'] ?? null,
+                ], $actorId);
+            }
         }
 
         if (!empty($data['discount_amount']) && (float) $data['discount_amount'] > 0) {
-            OrderEvent::log($orderId, 'discount_applied', 'Discount applied to order.', [
-                'amount' => $data['discount_amount'],
-                'type'   => $data['discount_type'] ?? 'fixed',
-            ], $actorId);
+            OrderEvent::log(
+                $orderId,
+                'discount_applied',
+                'Discount applied to order.',
+                [],
+                $actorId,
+                $actorName,
+                null,
+                null,
+                'orders',
+                'user',
+                'dashboard',
+                'payment',
+                null,
+                null,
+                null,
+                null,
+                [
+                    'amount'           => $data['discount_amount'],
+                    'type'             => $data['discount_type'] ?? 'fixed',
+                    'calculated_value' => $financials['monetary_discount'] ?? null,
+                    'subtotal'         => $financials['subtotal'] ?? null,
+                ],
+                $actorRole,
+                Auth::user()?->email,
+            );
         }
 
         if (!empty($data['deposit_amount']) && (float) $data['deposit_amount'] > 0) {
-            OrderEvent::log($orderId, 'deposit_recorded', 'Deposit recorded on order.', [
-                'amount' => $data['deposit_amount'],
-            ], $actorId);
+            $depositAmt     = (float) $data['deposit_amount'];
+            $grandTotal     = (float) ($financials['grand_total'] ?? 0);
+            $remaining      = (float) ($financials['remaining'] ?? max(0, $grandTotal - $depositAmt));
+
+            OrderEvent::log(
+                $orderId,
+                'deposit_recorded',
+                'Deposit recorded on order.',
+                [],
+                $actorId,
+                $actorName,
+                ['deposit_amount' => 0, 'remaining_balance' => $grandTotal],
+                ['deposit_amount' => $depositAmt, 'remaining_balance' => $remaining],
+                'orders',
+                'user',
+                'dashboard',
+                'payment',
+                null,
+                null,
+                null,
+                null,
+                [
+                    'grand_total' => $grandTotal,
+                ],
+                $actorRole,
+                Auth::user()?->email,
+            );
         }
 
         if (!empty($data['payment_proof_path'])) {
@@ -202,37 +518,74 @@ final class CreateManualOrderAction extends BaseAction
                 'cost' => $data['shipping_cost'] ?? null,
             ], $actorId);
         }
+
+        if (!empty($data['requested_delivery_date'])) {
+            OrderEvent::log($orderId, 'delivery_date_set', 'Requested delivery date recorded.', [
+                'date' => $data['requested_delivery_date'],
+            ], $actorId);
+        }
+
+        if (!empty($data['google_maps_lat']) && !empty($data['google_maps_lng'])) {
+            OrderEvent::log($orderId, 'location_set', 'Customer location coordinates recorded.', [
+                'lat'    => $data['google_maps_lat'],
+                'lng'    => $data['google_maps_lng'],
+                'source' => $data['location_source'] ?? null,
+            ], $actorId);
+        }
     }
 
     /**
-     * Returns an existing customer ID or creates a new customer + address.
+     * Returns [customerId, wasReused] — the customer ID to attach to the order and whether
+     * an existing customer was matched by phone (vs. a new one being created).
+     *
+     * Customer Matching Policy values (Phase 4):
+     *   reuse_existing    — phone match → silently reuse (recommended default)
+     *   warn_only         — phone match → reuse; frontend may show a warning
+     *   block_new_customer — phone match → must reuse (same backend behaviour as reuse_existing)
+     *   always_create_new — skip phone lookup; always create a new customer record
+     *
+     * Orders must NEVER be rejected because a customer already exists.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $orderPolicy
+     * @return array{string, bool}
      */
-    private function resolveCustomer(array &$data): string
+    private function resolveCustomer(array $data, array $orderPolicy = []): array
     {
         if (!empty($data['customer_id'])) {
-            return (string) $data['customer_id'];
+            return [(string) $data['customer_id'], false];
         }
 
-        // Auto-generate a sequential customer code
+        $phone  = (string) ($data['customer_phone'] ?? '');
+        $policy = (string) ($orderPolicy['customer_matching_policy'] ?? 'reuse_existing');
+
+        // Phone-based matching applies for all policies except always_create_new.
+        if ($policy !== 'always_create_new' && $phone !== '') {
+            $existing = Customer::where('phone', $phone)->orWhere('mobile', $phone)->first();
+            if ($existing !== null) {
+                return [$existing->id, true];
+            }
+        }
+
+        // Create a new customer record.
         $lastCode = Customer::orderByDesc('created_at')->value('code') ?? 'CUS-00000';
         preg_match('/(\d+)$/', $lastCode, $m);
         $next = isset($m[1]) ? (int) $m[1] + 1 : 1;
         $code = 'CUS-' . str_pad((string) $next, 5, '0', STR_PAD_LEFT);
 
         $customer = Customer::create([
-            'code'    => $code,
-            'name'    => (string) $data['customer_name'],
-            'phone'   => $data['customer_phone'] ?? null,
-            'mobile'  => $data['customer_secondary_phone'] ?? null,
-            'city'    => $data['city'] ?? null,
-            'governorate' => $data['governorate'] ?? null,
-            'area'    => $data['area'] ?? null,
-            'address' => $data['shipping_address'] ?? null,
-            'notes'   => $data['customer_notes'] ?? null,
-            'is_active' => true,
+            'code'       => $code,
+            'name'       => (string) $data['customer_name'],
+            'phone'      => $data['customer_phone'] ?? null,
+            'mobile'     => $data['customer_secondary_phone'] ?? null,
+            'city'       => $data['city'] ?? null,
+            'governorate'=> $data['governorate'] ?? null,
+            'area'       => $data['area'] ?? null,
+            'address'    => $data['shipping_address'] ?? null,
+            'notes'      => $data['customer_notes'] ?? null,
+            'is_active'  => true,
         ]);
 
-        // Create default address record
         if (!empty($data['governorate'])) {
             CustomerAddress::create([
                 'customer_id'    => $customer->id,
@@ -241,12 +594,55 @@ final class CreateManualOrderAction extends BaseAction
                 'city'           => $data['city'] ?? null,
                 'area'           => $data['area'] ?? null,
                 'address_line'   => $data['shipping_address'] ?? null,
-                'google_maps_lat' => $data['google_maps_lat'] ?? null,
-                'google_maps_lng' => $data['google_maps_lng'] ?? null,
+                'building'       => $data['building'] ?? null,
+                'floor'          => $data['floor'] ?? null,
+                'apartment'      => $data['apartment'] ?? null,
+                'landmark'       => $data['landmark'] ?? null,
+                'address_notes'  => $data['address_notes'] ?? null,
+                'google_maps_lat'=> $data['google_maps_lat'] ?? null,
+                'google_maps_lng'=> $data['google_maps_lng'] ?? null,
+                'google_maps_url'=> $data['google_maps_url'] ?? null,
+                'location_source'=> $data['location_source'] ?? null,
                 'is_default'     => true,
             ]);
         }
 
-        return $customer->id;
+        return [$customer->id, false];
+    }
+
+    /**
+     * Runs the Shipping Engine and converts the result into order-creation overrides.
+     *
+     * No exceptions. Walk-in (no governorate_id) returns an empty override array.
+     * Rejected orders return a structured failure so the caller can surface a
+     * human-readable API error rather than a 500.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{result: ShippingValidationResult, status_override?: string}
+     */
+    private function validateAndResolveShipping(array $data, ?string $brandId): array
+    {
+        $governorateId = isset($data['governorate_id']) ? (int) $data['governorate_id'] : null;
+        $cityId        = isset($data['city_id'])        ? (int) $data['city_id']        : null;
+        $isDelivery    = $governorateId !== null;
+
+        if ($brandId === null || ! $isDelivery) {
+            return ['result' => ShippingValidationResult::walkIn()];
+        }
+
+        $result = $this->shippingEngine->evaluate(
+            brandId:         $brandId,
+            governorateId:   $governorateId,
+            cityId:          $cityId,
+            isDeliveryOrder: true,
+        );
+
+        $override = ['result' => $result];
+
+        if ($result->requiresReview()) {
+            $override['status_override'] = OrderStatus::Review->value;
+        }
+
+        return $override;
     }
 }

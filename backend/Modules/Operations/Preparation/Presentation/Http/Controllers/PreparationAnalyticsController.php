@@ -71,11 +71,11 @@ final class PreparationAnalyticsController extends Controller
             : 0.0;
 
         $daily = (clone $baseQuery)->selectRaw('
-            planning_date::date as date,
+            DATE(planning_date) as date,
             COUNT(*) as waves,
             SUM(total_units_prepared) as units_prepared,
             AVG(CASE WHEN started_at IS NOT NULL AND completed_at IS NOT NULL
-                THEN EXTRACT(EPOCH FROM (completed_at - started_at)) / 60
+                THEN TIMESTAMPDIFF(SECOND, started_at, completed_at) / 60
                 ELSE NULL END) as avg_minutes
         ')
             ->groupBy('planning_date')

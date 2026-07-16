@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Bot,
   Brain,
@@ -8,6 +8,7 @@ import {
   Cog,
   History,
   Loader2,
+  Lock,
   Package,
   RotateCcw,
   Save,
@@ -24,12 +25,14 @@ import { Input }    from '@/components/ui/input';
 import { Label }    from '@/components/ui/label';
 import { Switch }   from '@/components/ui/switch';
 import { useToast } from '@/components/ds/use-toast';
+import { cn }       from '@/lib/utils';
 
 import {
   useBrandAudit,
   useBrandPolicy,
   useUpdateBrandPolicy,
 } from '../hooks/use-configuration';
+import { useOrderStatuses } from '@/features/orders/hooks/use-order-statuses';
 import {
   POLICY_GROUP_LABELS,
   type ConfigAuditEntry,
@@ -63,27 +66,54 @@ const POLICY_META: Record<PolicyGroup, PolicyMeta> = {
 
 // ── Field definitions per group ───────────────────────────────────────────────
 
-type FieldType = 'boolean' | 'number' | 'text' | 'select' | 'nullable-number';
+type FieldType = 'boolean' | 'number' | 'text' | 'select' | 'nullable-number' | 'radio' | 'row-matrix' | 'placeholder-role';
+
+type FieldOption = { value: string; label: string; hint?: string };
+
+type MatrixOption = { value: string; label: string };
+
+type MatrixRow = {
+  value:        string;
+  label:        string;
+  locked?:      boolean;
+  lockLabel?:   string;
+  options?:     MatrixOption[];
+  multiSelect?: boolean;
+};
 
 type FieldDef = {
   key:         string;
   label:       string;
   hint?:       string;
   type:        FieldType;
-  options?:    { value: string; label: string }[];
+  options?:    FieldOption[];
+  rows?:       MatrixRow[];
   min?:        number;
   max?:        number;
+  span?:       'full';
+  visibleWhen?: (form: Record<string, unknown>) => boolean;
 };
 
 const GROUP_FIELDS: Partial<Record<PolicyGroup, FieldDef[]>> = {
   pricing: [
-    { key: 'auto_price_review',        label: 'Auto Price Review',         type: 'boolean', hint: 'Automatically trigger review when cost or recipe changes.' },
-    { key: 'minimum_margin_pct',       label: 'Minimum Margin %',          type: 'number',  min: 0, max: 100 },
-    { key: 'maximum_discount_pct',     label: 'Maximum Discount %',        type: 'number',  min: 0, max: 100 },
-    { key: 'required_approval_above',  label: 'Approval Threshold (EGP)',  type: 'nullable-number', hint: 'Require manager approval when price change exceeds this value.' },
-    { key: 'auto_publish',             label: 'Auto Publish Prices',       type: 'boolean', hint: 'Publish approved prices automatically without manual confirmation.' },
-    { key: 'pending_review_threshold', label: 'Pending Review Alert',      type: 'number',  hint: 'Show dashboard alert when pending reviews exceed this count.', min: 1 },
-    { key: 'price_lock_enabled',       label: 'Enable Price Lock',         type: 'boolean', hint: 'Prevent price changes for products currently in active orders.' },
+    { key: 'auto_price_review',        label: 'Auto Price Review',         type: 'boolean',  hint: 'Automatically trigger review when cost or recipe changes.' },
+    { key: 'minimum_margin_pct',       label: 'Minimum Margin %',          type: 'number',   min: 0, max: 100 },
+    {
+      key: 'publishing_strategy', label: 'Publishing Strategy', type: 'radio', span: 'full',
+      hint: 'Controls when approved prices are pushed to the product catalog, WooCommerce, and POS.',
+      options: [
+        { value: 'automatic',      label: 'Publish Automatically',   hint: 'Approved prices go live instantly.' },
+        { value: 'approval_only',  label: 'Publish After Approval',  hint: 'Prices are staged and must be manually published.' },
+      ],
+    },
+    { key: 'discount_type',            label: 'Discount Limit Type',       type: 'select',
+      options: [{ value: 'percentage', label: 'Percentage (%)' }, { value: 'fixed_amount', label: 'Fixed Amount (EGP)' }],
+      hint: 'How the maximum discount limit is expressed.',
+    },
+    { key: 'discount_value',           label: 'Maximum Discount Value',    type: 'number',   min: 0, hint: 'Maximum allowed discount per order. 0 = no limit.' },
+    { key: 'required_approval_above',  label: 'Approval Threshold (EGP)',  type: 'nullable-number', hint: 'Require manager approval when price change exceeds this value.', visibleWhen: (form) => String(form['publishing_strategy'] ?? '') === 'approval_only' },
+    { key: '_approval_role',           label: 'Approval Role',             type: 'placeholder-role', hint: 'The role required to approve price changes. Coming in a future update.', visibleWhen: (form) => String(form['publishing_strategy'] ?? '') === 'approval_only' },
+    { key: 'pending_review_threshold', label: 'Pending Review Alert',      type: 'number',   hint: 'Show dashboard alert when pending reviews exceed this count.', min: 1 },
     { key: 'price_expiration_days',    label: 'Price Expiry (days)',       type: 'nullable-number', hint: 'Auto-expire prices after this many days. Leave blank for no expiry.' },
   ],
   preparation: [
@@ -114,13 +144,57 @@ const GROUP_FIELDS: Partial<Record<PolicyGroup, FieldDef[]>> = {
     { key: 'cost_refresh_on_production',  label: 'Refresh Cost After Production',type: 'boolean', hint: 'Update finished product cost immediately after each production run.' },
   ],
   order: [
-    { key: 'default_status',          label: 'Default Order Status',         type: 'select',   options: [{ value: 'pending', label: 'Pending' }, { value: 'confirmed', label: 'Confirmed' }, { value: 'processing', label: 'Processing' }] },
-    { key: 'require_phone',           label: 'Require Phone Number',         type: 'boolean' },
-    { key: 'require_address',         label: 'Require Delivery Address',     type: 'boolean' },
-    { key: 'customer_lookup_enabled', label: 'Customer Lookup Enabled',      type: 'boolean', hint: 'Enable phone-based customer lookup when creating orders.' },
-    { key: 'deposit_policy',          label: 'Deposit Policy',               type: 'select',   options: [{ value: 'none', label: 'None' }, { value: 'optional', label: 'Optional' }, { value: 'required', label: 'Required' }] },
-    { key: 'discount_policy',         label: 'Discount Policy',              type: 'select',   options: [{ value: 'none', label: 'No Discounts' }, { value: 'open', label: 'Open Discounts' }, { value: 'manager_approval', label: 'Manager Approval' }] },
-    { key: 'payment_proof_required',  label: 'Payment Proof Required',       type: 'boolean' },
+    {
+      key: 'source_entry_policies', label: 'Source Order Entry Policy', type: 'row-matrix', span: 'full',
+      hint: 'Entry status per order source. Options are loaded from the Order Status registry. External sources preserve their incoming status.',
+      rows: [
+        {
+          value: 'manual', label: 'Manual Orders',
+          multiSelect: true,
+          options: [
+            { value: 'pending',          label: 'Pending' },
+            { value: 'awaiting_payment', label: 'Awaiting Payment' },
+            { value: 'processing',       label: 'Processing' },
+            { value: 'confirmed',        label: 'Confirmed' },
+          ],
+        },
+        {
+          value: 'pos', label: 'POS Sales',
+          options: [
+            { value: 'processing',    label: 'Processing' },
+            { value: 'confirm_order', label: 'Confirmed' },
+          ],
+        },
+        { value: 'woocommerce', label: 'WooCommerce', locked: true, lockLabel: 'Preserve Incoming Status' },
+        { value: 'public_api',  label: 'Public API',  locked: true, lockLabel: 'Preserve Incoming Status' },
+      ],
+    },
+    {
+      key: 'payment_proof_policy', label: 'Payment Proof Policy', type: 'row-matrix', span: 'full',
+      hint: 'When a payment receipt or screenshot is required per payment method.',
+      rows: [
+        { value: 'cod',           label: 'Cash on Delivery', options: [{ value: 'none', label: 'None' }, { value: 'optional', label: 'Optional' }, { value: 'required', label: 'Required' }] },
+        { value: 'instapay',      label: 'InstaPay',         options: [{ value: 'none', label: 'None' }, { value: 'optional', label: 'Optional' }, { value: 'required', label: 'Required' }] },
+        { value: 'bank_transfer', label: 'Bank Transfer',    options: [{ value: 'none', label: 'None' }, { value: 'optional', label: 'Optional' }, { value: 'required', label: 'Required' }] },
+        { value: 'mobile_wallet', label: 'Mobile Wallet',    options: [{ value: 'none', label: 'None' }, { value: 'optional', label: 'Optional' }, { value: 'required', label: 'Required' }] },
+        { value: 'credit_card',   label: 'Credit Card',      options: [{ value: 'none', label: 'None' }, { value: 'optional', label: 'Optional' }, { value: 'required', label: 'Required' }] },
+      ],
+    },
+    { key: 'auto_reserve_inventory',   label: 'Auto Reserve Inventory',   type: 'boolean', hint: 'Automatically reserve stock after a new order is created.' },
+    { key: 'customer_matching_policy', label: 'Customer Matching Policy', type: 'select',
+      hint: 'Controls how an order handles a phone number that already belongs to an existing customer. Orders are never rejected — only the customer resolution behaviour changes.',
+      options: [
+        { value: 'reuse_existing',    label: 'Reuse Existing Customer (Recommended)' },
+        { value: 'warn_only',         label: 'Reuse + Warn (frontend shows a notice)' },
+        { value: 'block_new_customer', label: 'Force Reuse (prevent creating a new profile)' },
+        { value: 'always_create_new', label: 'Always Create New Customer' },
+      ],
+    },
+    { key: 'require_phone',           label: 'Require Phone Number',        type: 'boolean' },
+    { key: 'require_address',         label: 'Require Delivery Address',    type: 'boolean' },
+    { key: 'customer_lookup_enabled', label: 'Customer Lookup Enabled',     type: 'boolean', hint: 'Enable phone-based customer lookup when creating orders.' },
+    { key: 'deposit_policy',          label: 'Deposit Policy',              type: 'select',  options: [{ value: 'none', label: 'None' }, { value: 'optional', label: 'Optional' }, { value: 'required', label: 'Required' }] },
+    { key: 'discount_policy',         label: 'Discount Policy',             type: 'select',  options: [{ value: 'none', label: 'No Discounts' }, { value: 'open', label: 'Open Discounts' }, { value: 'manager_approval', label: 'Manager Approval' }] },
   ],
   logistics: [
     { key: 'vehicle_assignment',   label: 'Vehicle Assignment',       type: 'select',  options: [{ value: 'manual', label: 'Manual' }, { value: 'auto', label: 'Automatic' }] },
@@ -213,14 +287,55 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
   }
 
   async function handleSave() {
-    await mutateAsync({ settings: form, reason: reason || undefined });
-    setReason('');
-    setIsDirty(false);
-    toast({ title: `${POLICY_GROUP_LABELS[group]} policy saved`, type: 'success' });
+    if (
+      group === 'pricing' &&
+      String(form['publishing_strategy'] ?? '') === 'approval_only' &&
+      (form['required_approval_above'] === null || form['required_approval_above'] === undefined || form['required_approval_above'] === '')
+    ) {
+      toast({
+        title:       'Approval Threshold required',
+        description: 'Set a threshold value when using "Publish After Approval" strategy.',
+        type:        'error',
+      });
+      return;
+    }
+    try {
+      await mutateAsync({ settings: form, reason: reason || undefined });
+      setReason('');
+      setIsDirty(false);
+      toast({ title: `${POLICY_GROUP_LABELS[group]} policy saved`, type: 'success' });
+    } catch {
+      toast({
+        title:       'Save failed',
+        description: 'Changes could not be saved. Please try again.',
+        type:        'error',
+      });
+    }
   }
 
-  const meta   = POLICY_META[group];
-  const fields = GROUP_FIELDS[group] ?? [];
+  const { data: orderStatuses } = useOrderStatuses();
+
+  const meta = POLICY_META[group];
+
+  // Phase 3: override source_entry_policies row options from the canonical OrderStatus enum (via API).
+  const fields = useMemo(() => {
+    const base = GROUP_FIELDS[group] ?? [];
+    if (group !== 'order' || !orderStatuses) return base;
+
+    return base.map((f) => {
+      if (f.key !== 'source_entry_policies') return f;
+      return {
+        ...f,
+        rows: f.rows?.map((row) => {
+          if (row.locked) return row;
+          const dynamicOptions = orderStatuses.entry_options[row.value];
+          return dynamicOptions && dynamicOptions.length > 0
+            ? { ...row, options: dynamicOptions }
+            : row;
+        }),
+      };
+    });
+  }, [group, orderStatuses]);
 
   // Filter audit to only this group
   const groupAudit = audit.filter((e) => e.category === group).slice(0, 5);
@@ -236,6 +351,27 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
 
   return (
     <div className="p-6 max-w-3xl space-y-6">
+      {/* Order Price Protection — immutable accounting rule, shown only in pricing group */}
+      {group === 'pricing' && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30 px-4 py-3 flex items-start gap-3">
+          <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+              Order Price Protection — Always Enabled
+            </p>
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1 leading-relaxed">
+              Prices are permanently frozen at the moment each order is created. Product catalog prices
+              may change freely — existing orders are never recalculated or affected.
+              This is a core accounting principle built into the platform and cannot be disabled.
+            </p>
+          </div>
+          <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+            <CheckCircle2 className="h-2.5 w-2.5" />
+            Enforced
+          </span>
+        </div>
+      )}
+
       {/* Policy info */}
       <div className="rounded-lg border border-border/60 bg-muted/10 px-4 py-3 flex items-start gap-3">
         <span className="mt-0.5 text-muted-foreground shrink-0">{meta.icon}</span>
@@ -263,14 +399,17 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
       {fields.length > 0 ? (
         <div className="space-y-1">
           <div className="grid sm:grid-cols-2 gap-4">
-            {fields.map((field) => (
-              <PolicyField
-                key={field.key}
-                field={field}
-                value={form[field.key]}
-                onChange={(v) => setField(field.key, v)}
-              />
-            ))}
+            {fields
+              .filter((field) => !field.visibleWhen || field.visibleWhen(form))
+              .map((field) => (
+                <div key={field.key} className={field.span === 'full' ? 'sm:col-span-2' : ''}>
+                  <PolicyField
+                    field={field}
+                    value={form[field.key]}
+                    onChange={(v) => setField(field.key, v)}
+                  />
+                </div>
+              ))}
           </div>
         </div>
       ) : (
@@ -349,6 +488,131 @@ function PolicyField({
           </Label>
           {field.hint && <p className="text-[11px] text-muted-foreground mt-0.5">{field.hint}</p>}
         </div>
+      </div>
+    );
+  }
+
+  if (field.type === 'radio' && field.options) {
+    return (
+      <div className="space-y-2">
+        <Label className="text-xs">{field.label}</Label>
+        <div className="flex gap-2">
+          {field.options.map((opt) => {
+            const active = String(value ?? '') === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onChange(opt.value)}
+                className={cn(
+                  'flex-1 rounded-lg border px-3 py-2.5 text-left transition-colors',
+                  active
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                    : 'border-border bg-card hover:border-input',
+                )}
+              >
+                <div className="flex items-start gap-2">
+                  <span className={cn(
+                    'mt-0.5 h-3.5 w-3.5 rounded-full border-2 flex-shrink-0',
+                    active ? 'border-primary bg-primary' : 'border-muted-foreground',
+                  )} />
+                  <div>
+                    <p className={cn('text-sm font-medium leading-none', active ? 'text-foreground' : 'text-muted-foreground')}>
+                      {opt.label}
+                    </p>
+                    {opt.hint && (
+                      <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{opt.hint}</p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {field.hint && <p className="text-[11px] text-muted-foreground">{field.hint}</p>}
+      </div>
+    );
+  }
+
+  if (field.type === 'row-matrix' && field.rows) {
+    const matrix = (value as Record<string, string | string[]> | null | undefined) ?? {};
+    return (
+      <div className="space-y-2">
+        <Label className="text-xs">{field.label}</Label>
+        {field.hint && <p className="text-[11px] text-muted-foreground">{field.hint}</p>}
+        <div className="rounded-lg border border-border/60 overflow-hidden divide-y divide-border/40">
+          {field.rows.map((row) => {
+            const rowVal = matrix[row.value];
+            return (
+              <div key={row.value} className={cn('flex gap-3 px-3 bg-card', row.multiSelect ? 'items-start py-3' : 'items-center py-2.5')}>
+                <span className="text-sm font-medium w-36 shrink-0 mt-0.5">{row.label}</span>
+                {row.locked ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 rounded-md px-2 py-1">
+                    <Lock className="h-3 w-3 shrink-0" />
+                    {row.lockLabel ?? 'Locked'}
+                  </span>
+                ) : row.multiSelect ? (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                    {(row.options ?? []).map((opt) => {
+                      const selected: string[] = Array.isArray(rowVal)
+                        ? (rowVal as string[])
+                        : rowVal ? [rowVal as string] : [];
+                      const checked = selected.includes(opt.value);
+                      return (
+                        <label key={opt.value} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...selected, opt.value]
+                                : selected.filter((v) => v !== opt.value);
+                              onChange({ ...matrix, [row.value]: next });
+                            }}
+                            className="h-3 w-3 rounded border-input accent-primary"
+                          />
+                          {opt.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <select
+                    value={String(Array.isArray(rowVal) ? (rowVal[0] ?? '') : (rowVal ?? (row.options?.[0]?.value ?? '')))}
+                    onChange={(e) => onChange({ ...matrix, [row.value]: e.target.value })}
+                    className="h-7 text-xs rounded border border-input bg-background px-2 focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    {(row.options ?? []).map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (field.type === 'placeholder-role') {
+    return (
+      <div className="space-y-1 opacity-60">
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">{field.label}</Label>
+          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground border">
+            Coming Soon
+          </span>
+        </div>
+        <select
+          disabled
+          className="w-full h-8 text-sm rounded-md border border-input bg-muted/40 px-2 cursor-not-allowed text-muted-foreground"
+        >
+          <option>Pricing Manager</option>
+          <option>Commercial Manager</option>
+          <option>General Manager</option>
+        </select>
+        {field.hint && <p className="text-[11px] text-muted-foreground">{field.hint}</p>}
       </div>
     );
   }

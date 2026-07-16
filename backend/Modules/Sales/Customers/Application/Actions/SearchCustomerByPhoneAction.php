@@ -33,8 +33,32 @@ final class SearchCustomerByPhoneAction extends BaseAction
         $stats = $this->buildStats($customer->id);
 
         return OperationResult::success([
-            'customer' => $customer,
-            'addresses' => $customer->addresses,
+            'customer' => [
+                'id'          => $customer->id,
+                'name'        => $customer->name,
+                'phone'       => $customer->phone,
+                'mobile'      => $customer->mobile,
+                'governorate' => $customer->governorate,
+                'city'        => $customer->city,
+                'area'        => $customer->area,
+                'notes'       => $customer->notes,
+            ],
+            'addresses' => $customer->addresses->map(fn($a) => [
+                'id'            => $a->id,
+                'is_default'    => $a->is_default,
+                'governorate'   => $a->governorate,
+                'city'          => $a->city,
+                'area'          => $a->area,
+                'address_line'  => $a->address_line,
+                'building'      => $a->building,
+                'floor'         => $a->floor,
+                'apartment'     => $a->apartment,
+                'landmark'      => $a->landmark,
+                'address_notes' => $a->address_notes,
+                'google_maps_lat' => $a->google_maps_lat,
+                'google_maps_lng' => $a->google_maps_lng,
+                'google_maps_url' => $a->google_maps_url,
+            ])->values(),
             'stats' => $stats,
         ], 'Customer found.');
     }
@@ -50,26 +74,44 @@ final class SearchCustomerByPhoneAction extends BaseAction
             ->groupBy('status')
             ->get();
 
-        $totalOrders = (int) $orders->sum('cnt');
+        $totalOrders  = (int)   $orders->sum('cnt');
         $totalRevenue = (float) $orders->sum('revenue');
-        $deliveredCount = (int) $orders->where('status', 'completed')->sum('cnt');
-        $cancelledCount = (int) $orders->where('status', 'cancelled')->sum('cnt');
+
+        // "Delivered" = both delivered + completed (order reached the customer)
+        $deliveredCount  = (int) ($orders->whereIn('status', ['delivered', 'completed'])->sum('cnt'));
+        $completedCount  = (int) $orders->where('status', 'completed')->sum('cnt');
+        $cancelledCount  = (int) $orders->where('status', 'cancelled')->sum('cnt');
+        $returnedCount   = (int) $orders->where('status', 'returned')->sum('cnt');
+
         $successRate = $totalOrders > 0
             ? round(($deliveredCount / $totalOrders) * 100, 1)
             : 0.0;
 
-        $lastOrder = \Modules\Commerce\Orders\Domain\Models\Order::where('customer_id', $customerId)
+        $avgOrderValue = $totalOrders > 0
+            ? round($totalRevenue / $totalOrders, 2)
+            : 0.0;
+
+        $firstOrderDate = \Modules\Commerce\Orders\Domain\Models\Order::where('customer_id', $customerId)
+            ->whereNull('deleted_at')
+            ->orderBy('order_date')
+            ->value('order_date');
+
+        $lastOrderDate = \Modules\Commerce\Orders\Domain\Models\Order::where('customer_id', $customerId)
             ->whereNull('deleted_at')
             ->orderByDesc('order_date')
             ->value('order_date');
 
         return [
-            'total_orders'    => $totalOrders,
-            'delivered'       => $deliveredCount,
-            'cancelled'       => $cancelledCount,
-            'success_rate'    => $successRate,
-            'lifetime_value'  => $totalRevenue,
-            'last_order_date' => $lastOrder,
+            'total_orders'     => $totalOrders,
+            'delivered'        => $deliveredCount,
+            'completed'        => $completedCount,
+            'cancelled'        => $cancelledCount,
+            'returned'         => $returnedCount,
+            'success_rate'     => $successRate,
+            'lifetime_value'   => $totalRevenue,
+            'avg_order_value'  => $avgOrderValue,
+            'first_order_date' => $firstOrderDate,
+            'last_order_date'  => $lastOrderDate,
         ];
     }
 }

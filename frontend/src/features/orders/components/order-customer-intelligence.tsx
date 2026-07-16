@@ -4,30 +4,33 @@ import type { CustomerIntelligenceFilter } from '@/features/orders/types/order';
 import { cn } from '@/lib/utils';
 
 type Props = {
-  value: CustomerIntelligenceFilter | null;
-  onChange: (next: CustomerIntelligenceFilter | null) => void;
+  value: CustomerIntelligenceFilter[];
+  onChange: (next: CustomerIntelligenceFilter[]) => void;
 };
 
 const FILTERS: Array<{ key: CustomerIntelligenceFilter; emoji: string }> = [
-  { key: 'first_order',  emoji: '🆕' },
-  { key: 'repeated',     emoji: '🔁' },
-  { key: 'more_than_5',  emoji: '📦' },
-  { key: 'more_than_10', emoji: '⭐' },
-  { key: 'has_cancelled',emoji: '❌' },
-  { key: 'has_rejected', emoji: '🚫' },
-  { key: 'incomplete',   emoji: '⏳' },
+  { key: 'first_order',   emoji: '🆕' },
+  { key: 'repeated',      emoji: '🔁' },
+  { key: 'more_than_5',   emoji: '📦' },
+  { key: 'more_than_10',  emoji: '⭐' },
+  { key: 'has_cancelled', emoji: '❌' },
+  { key: 'has_returned',  emoji: '↩️' },
+  { key: 'has_rejected',  emoji: '🚫' },
+  { key: 'incomplete',    emoji: '⏳' },
 ];
 
-/**
- * DD-025 — Customer Intelligence smart filter chips.
- * Selecting a chip narrows the order list to matching customer profiles.
- * Clicking the active chip again clears the filter.
- */
 export function OrderCustomerIntelligence({ value, onChange }: Props) {
   const { t } = useTranslation('orders');
+  const selected = new Set(value);
 
   function toggle(key: CustomerIntelligenceFilter) {
-    onChange(value === key ? null : key);
+    const next = new Set(selected);
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    onChange(Array.from(next));
   }
 
   return (
@@ -37,7 +40,7 @@ export function OrderCustomerIntelligence({ value, onChange }: Props) {
       </p>
       <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('customerIntelligence.title')}>
         {FILTERS.map(({ key, emoji }) => {
-          const active = value === key;
+          const active = selected.has(key);
           return (
             <button
               key={key}
@@ -57,6 +60,15 @@ export function OrderCustomerIntelligence({ value, onChange }: Props) {
             </button>
           );
         })}
+        {selected.size > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground px-2.5 py-1 text-xs text-muted-foreground hover:border-destructive hover:text-destructive transition-colors"
+          >
+            {t('filters.clearAll')}
+          </button>
+        )}
       </div>
     </div>
   );

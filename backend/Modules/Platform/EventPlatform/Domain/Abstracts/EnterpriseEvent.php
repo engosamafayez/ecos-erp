@@ -159,7 +159,7 @@ abstract class EnterpriseEvent implements DomainEvent
     ): void {
         $this->eventId       = Str::uuid()->toString();
         $this->version       = $this->getVersion();
-        $this->occurredAt    = now()->toIso8601String();
+        $this->occurredAt    = now()->format('Y-m-d H:i:s');
         $this->correlationId = $correlationId ?? Str::uuid()->toString();
         $this->causationId   = $causationId;
         $this->companyId     = $companyId;

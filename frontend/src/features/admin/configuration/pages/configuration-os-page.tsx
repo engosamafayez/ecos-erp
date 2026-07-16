@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { generatePath, useNavigate } from 'react-router-dom';
 import {
-  BarChart3,
   Box,
   Brain,
   Building2,
@@ -15,8 +14,6 @@ import {
   Package,
   Settings,
   Shield,
-  ShoppingCart,
-  Truck,
   Users,
   Zap,
   Loader2,
@@ -41,13 +38,6 @@ type ConfigCategory = {
 
 const CATEGORIES: ConfigCategory[] = [
   {
-    key:         'delivery-shipping',
-    label:       'Delivery & Shipping',
-    description: 'Governorates, delivery zones, and shipping costs per brand',
-    icon:        Truck,
-    color:       'text-blue-600 bg-blue-50',
-  },
-  {
     key:         'windows',
     label:       'Delivery Windows',
     description: 'Available time slots for delivery',
@@ -61,14 +51,6 @@ const CATEGORIES: ConfigCategory[] = [
     icon:        Package,
     color:       'text-orange-600 bg-orange-50',
     policyGroup: 'preparation',
-  },
-  {
-    key:         'pricing',
-    label:       'Pricing',
-    description: 'Margin, discount, and review policies',
-    icon:        BarChart3,
-    color:       'text-green-600 bg-green-50',
-    policyGroup: 'pricing',
   },
   {
     key:         'inventory',
@@ -85,14 +67,6 @@ const CATEGORIES: ConfigCategory[] = [
     icon:        Cpu,
     color:       'text-cyan-600 bg-cyan-50',
     policyGroup: 'manufacturing',
-  },
-  {
-    key:         'order',
-    label:       'Orders',
-    description: 'Order creation and payment rules',
-    icon:        ShoppingCart,
-    color:       'text-emerald-600 bg-emerald-50',
-    policyGroup: 'order',
   },
   {
     key:         'logistics',

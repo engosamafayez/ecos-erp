@@ -10,20 +10,30 @@ import {
 } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   ArrowLeft,
+  BookOpen,
   Building2,
+  CalendarDays,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  Copy,
+  ExternalLink,
+  Info,
   Loader2,
   Lock,
+  MapPin,
   Plus,
+  Shield,
   Trash2,
+  TrendingUp,
+  Truck,
   Unlock,
+  X,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -37,24 +47,31 @@ import { Input } from '@/components/ui/input';
 import { OrderCustomerAlerts } from '@/features/orders/components/order-customer-alerts';
 import { OrderCustomerIntelligencePanel } from '@/features/orders/components/order-customer-intelligence-panel';
 import { OrderCustomerLookupField } from '@/features/orders/components/order-customer-lookup-field';
+import { OrderInventoryStatusCard } from '@/features/orders/components/order-inventory-status-card';
 import { OrderPaymentSection } from '@/features/orders/components/order-payment-section';
 import { BrandConfigHealthCard } from '@/features/orders/components/brand-config-health-card';
 import { ProductBrowser } from '@/features/orders/components/product-browser';
 import {
   manualOrderSchema,
   toManualPayload,
-  toEditPayload,
   type ManualOrderFormValues,
   type ManualOrderLineFormValues,
 } from '@/features/orders/components/order-form-schema';
-import { useCreateManualOrder, useUpdateOrder } from '@/features/orders/hooks/use-orders';
+import { useCreateManualOrder, useUpdateManualOrder, useBrandOrderPolicy, useShippingQuote } from '@/features/orders/hooks/use-orders';
+import { useOrderDistributionStage } from '@/features/orders/hooks/use-order-distribution-stage';
+import { ImpactAnalysisDialog } from '@/features/orders/components/impact-analysis-dialog';
+import { OrderDistributionStageBanner } from '@/features/orders/components/order-distribution-stage-banner';
+import { SmartStatusSelector } from '@/features/orders/components/smart-status-selector';
+import { ordersService } from '@/features/orders/services/orders-service';
 import { useProductPricing } from '@/features/orders/hooks/use-product-pricing';
 import { useBrandOptions } from '@/features/brands/hooks/use-brand-options';
 import {
   useBrandConfigHealth,
   useBrandDeliveryGeography,
-  useBrandDeliveryWindows,
+  useBrandShippingGovernorates,
+  useDeliveryTimeSlots,
 } from '@/features/brands/hooks/use-brand-delivery';
+import { useBrandShippingCities } from '@/features/brands/hooks/use-brand-shipping';
 import { channelsService } from '@/features/channels/services/channels-service';
 import { productsService } from '@/features/products/services/products-service';
 import { useCompaniesQuery } from '@/features/companies/hooks/use-companies';
@@ -65,12 +82,76 @@ import { ROUTES } from '@/router/routes';
 
 const FORM_ID = 'manual-order-form';
 
-const STATUS_OPTIONS = [
-  { value: 'in_progress',      label: 'In Progress' },
-  { value: 'pending',          label: 'Pending' },
-  { value: 'awaiting_payment', label: 'Awaiting Payment' },
-  { value: 'confirm_order',    label: 'Confirm Order' },
-] as const;
+const STATUS_LABELS: Record<string, string> = {
+  pending:          'Pending',
+  awaiting_payment: 'Awaiting Payment',
+  processing:       'Processing',
+  awaiting_stock:   'Awaiting Stock',
+  confirmed:        'Confirmed',
+  preparing:        'Preparing',
+  rescheduled:      'Rescheduled',
+  out_for_delivery: 'Out for Delivery',
+  delivered:        'Delivered',
+  completed:        'Completed',
+  cancelled:        'Cancelled',
+  review:           'Under Review',
+  returned:         'Returned',
+};
+
+// Operational statuses that exist for workflow automation — not selectable on manual order creation
+const INTERNAL_STATUSES = new Set([
+  'in_progress',
+  'confirm_order',
+  'needs_shipping_review',
+  'awaiting_stock',
+  'ready_for_loading',
+]);
+
+const MATCHING_POLICY_LABELS: Record<string, string> = {
+  reuse_existing:   'Reuse Existing Customer',
+  warn_only:        'Warn on Duplicate',
+  block_duplicate:  'Block Duplicate',
+  always_create_new:'Always Create New',
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cod:           'Cash on Delivery',
+  instapay:      'Instapay',
+  mobile_wallet: 'Mobile Wallet',
+  bank_transfer: 'Bank Transfer',
+  credit_card:   'Credit Card',
+};
+
+function parseGoogleMapsUrl(url: string): { lat: number; lng: number } | null {
+  if (!url) return null;
+  // @lat,lng (standard Maps share URL and Place URLs)
+  const atMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+  if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+  // ?q=lat,lng or ?ll=lat,lng
+  const qMatch = url.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+  if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
+  const llMatch = url.match(/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+  if (llMatch) return { lat: parseFloat(llMatch[1]), lng: parseFloat(llMatch[2]) };
+  // Direct coordinate string: "30.0444, 31.2357"
+  const coordMatch = url.trim().match(/^(-?\d{1,3}\.?\d*),\s*(-?\d{1,3}\.?\d*)$/);
+  if (coordMatch) {
+    const lat = parseFloat(coordMatch[1]);
+    const lng = parseFloat(coordMatch[2]);
+    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      return { lat, lng };
+    }
+  }
+  return null;
+}
+
+function isGoogleMapsUrl(url: string): boolean {
+  if (!url) return false;
+  // Accept Google Maps URLs (short and long)
+  if (/maps\.app\.goo\.gl|google\.com\/maps|maps\.google\.com|goo\.gl\/maps/.test(url)) return true;
+  // Accept direct coordinate pairs: "30.0444, 31.2357"
+  if (/^-?\d{1,3}\.?\d*,\s*-?\d{1,3}\.?\d*$/.test(url.trim())) return true;
+  return false;
+}
 
 // ── Inline hooks ──────────────────────────────────────────────────────────────
 
@@ -114,9 +195,26 @@ function fmt(n: number) {
 }
 
 function extractMessage(error: unknown): string {
-  return axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
-    ? error.response.data.message
-    : 'Something went wrong. Please try again.';
+  if (!axios.isAxiosError(error)) {
+    return 'Unexpected server error. Please contact your administrator.';
+  }
+  const data = error.response?.data as Record<string, unknown> | undefined;
+  if (!data) {
+    return 'Unexpected server error. Please contact your administrator.';
+  }
+  // Laravel validation errors — collect up to 3 field messages
+  if (data.errors && typeof data.errors === 'object') {
+    const msgs = Object.values(data.errors as Record<string, string[]>)
+      .flat()
+      .filter(Boolean)
+      .slice(0, 3);
+    if (msgs.length > 0) return msgs.join(' ');
+  }
+  // Backend message (business logic failures, auth errors, etc.)
+  if (typeof data.message === 'string' && data.message) {
+    return data.message;
+  }
+  return 'Unexpected server error. Please contact your administrator.';
 }
 
 function resolvedProductPrice(p: Product): number | null {
@@ -164,22 +262,27 @@ function ProgressIndicator({ steps }: { steps: { label: string; done: boolean }[
 // ── Live Financial Summary ─────────────────────────────────────────────────────
 
 function LiveFinancialSummary() {
-  const lines = useWatch<ManualOrderFormValues, 'lines'>({ name: 'lines' });
+  const lines             = useWatch<ManualOrderFormValues, 'lines'>({ name: 'lines' });
   const discountAmountStr = useWatch<ManualOrderFormValues, 'discount_amount'>({ name: 'discount_amount' });
-  const discountType = useWatch<ManualOrderFormValues, 'discount_type'>({ name: 'discount_type' });
-  const shippingCostStr = useWatch<ManualOrderFormValues, 'shipping_cost'>({ name: 'shipping_cost' });
-  const depositAmountStr = useWatch<ManualOrderFormValues, 'deposit_amount'>({ name: 'deposit_amount' });
+  const discountType      = useWatch<ManualOrderFormValues, 'discount_type'>({ name: 'discount_type' });
+  const shippingCostStr   = useWatch<ManualOrderFormValues, 'shipping_cost'>({ name: 'shipping_cost' });
+  const shippingSource    = useWatch<ManualOrderFormValues, 'shipping_cost_source'>({ name: 'shipping_cost_source' });
+  const depositAmountStr  = useWatch<ManualOrderFormValues, 'deposit_amount'>({ name: 'deposit_amount' });
+  const paymentMethod     = useWatch<ManualOrderFormValues, 'payment_method_manual'>({ name: 'payment_method_manual' });
+  const proofPath         = useWatch<ManualOrderFormValues, 'payment_proof_path'>({ name: 'payment_proof_path' });
 
-  const subtotal = (lines ?? []).reduce(
+  const productsTotal = (lines ?? []).reduce(
     (sum, l) => sum + Number(l.quantity || 0) * Number(l.unit_price || 0),
     0,
   );
-  const discountRaw = Number(discountAmountStr || 0);
-  const discount = discountType === 'percentage' ? (subtotal * discountRaw) / 100 : discountRaw;
-  const shipping = Number(shippingCostStr || 0);
-  const deposit = Number(depositAmountStr || 0);
-  const grandTotal = Math.max(0, subtotal - discount + shipping);
-  const remaining = Math.max(0, grandTotal - deposit);
+  const discountRaw  = Number(discountAmountStr || 0);
+  const discount     = discountType === 'percentage' ? (productsTotal * discountRaw) / 100 : discountRaw;
+  const shipping     = Number(shippingCostStr || 0);
+  const deposit      = Number(depositAmountStr || 0);
+  const tax          = 0; // Placeholder — tax module not yet active
+  const grandTotal   = Math.max(0, productsTotal - discount + shipping + tax);
+  const remaining    = Math.max(0, grandTotal - deposit);
+  const showShipping = Boolean(shippingSource);
 
   return (
     <Card className="sticky top-4">
@@ -190,21 +293,29 @@ function LiveFinancialSummary() {
       </CardHeader>
       <CardContent className="flex flex-col gap-2 text-sm">
         <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground">Subtotal</span>
-          <span className="font-medium tabular-nums">{fmt(subtotal)}</span>
+          <span className="text-muted-foreground">Products Total</span>
+          <span className="font-medium tabular-nums">{fmt(productsTotal)}</span>
         </div>
-        {discount > 0 && (
+        {discountType ? (
           <div className="flex justify-between gap-3">
-            <span className="text-muted-foreground">Discount</span>
-            <span className="font-medium tabular-nums text-emerald-600">−{fmt(discount)}</span>
+            <span className="text-muted-foreground">
+              Discount{discountType === 'percentage' && discountRaw > 0 ? ` (${discountRaw}%)` : ''}
+            </span>
+            <span className={cn('font-medium tabular-nums', discount > 0 ? 'text-emerald-600' : 'text-muted-foreground/60')}>
+              {discount > 0 ? `−${fmt(discount)}` : fmt(0)}
+            </span>
           </div>
-        )}
-        {shipping > 0 && (
+        ) : null}
+        {showShipping ? (
           <div className="flex justify-between gap-3">
             <span className="text-muted-foreground">Shipping</span>
             <span className="font-medium tabular-nums">{fmt(shipping)}</span>
           </div>
-        )}
+        ) : null}
+        <div className="flex justify-between gap-3">
+          <span className="text-muted-foreground/60 text-xs">Tax</span>
+          <span className="tabular-nums text-muted-foreground/60 text-xs">Not applicable</span>
+        </div>
         <div className="border-t pt-2">
           <div className="flex justify-between gap-3 text-base font-semibold">
             <span>Grand Total</span>
@@ -226,6 +337,24 @@ function LiveFinancialSummary() {
               </div>
             </div>
           </>
+        )}
+        {(paymentMethod || proofPath) && (
+          <div className="border-t pt-2 flex flex-col gap-1.5">
+            {paymentMethod && (
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground text-xs">Payment</span>
+                <span className="text-xs font-medium">
+                  {PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod.replace(/_/g, ' ')}
+                </span>
+              </div>
+            )}
+            {proofPath && (
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground text-xs">Proof</span>
+                <span className="text-xs font-medium text-emerald-600">Uploaded</span>
+              </div>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -269,22 +398,25 @@ function ManualLineRow({
 
   const { data: pricing } = useProductPricing(productId || null);
 
-  const prevProductIdRef = useRef<string>('');
+  // Initialized to current productId so that the initial mount does NOT trigger a price reset.
+  // Effect below only resets when the user actively switches to a different product.
+  const prevProductIdRef = useRef<string>(productId);
 
   useEffect(() => {
-    if (productId !== prevProductIdRef.current) {
-      prevProductIdRef.current = productId;
-      if (!productId) return;
-      setValue(`lines.${index}.unit_price`, '', { shouldValidate: false });
-    }
+    const prev = prevProductIdRef.current;
+    prevProductIdRef.current = productId;
+    // No-op on first mount (prev === productId) or when cleared
+    if (!productId || productId === prev) return;
+    setValue(`lines.${index}.unit_price`, '', { shouldValidate: false });
   }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-fill approved price when pricing resolves
+  // Pricing Engine is authoritative — always overrides the catalog fallback price.
   useEffect(() => {
     if (!productId || pricing?.approved_price == null) return;
-    const current = line?.unit_price ?? '';
-    if (current === '' || Number(current) === 0) {
-      setValue(`lines.${index}.unit_price`, String(pricing.approved_price), { shouldValidate: false });
+    setValue(`lines.${index}.unit_price`, String(pricing.approved_price), { shouldValidate: false });
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.log('[Pricing]', { productId, approved: pricing.approved_price, source: pricing.source });
     }
   }, [pricing?.approved_price, productId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -358,11 +490,13 @@ function ManualOrderProductsSection({
   rawMaterials,
   channelSelected,
   loadingProducts,
+  locked = false,
 }: {
   finishedProducts: Product[];
   rawMaterials: Product[];
   channelSelected: boolean;
   loadingProducts: boolean;
+  locked?: boolean;
 }) {
   const {
     control,
@@ -417,6 +551,48 @@ function ManualOrderProductsSection({
     // Collapse browser after adding if there are already products
     if (filledFgIndices.length >= 2) setShowBrowser(false);
   };
+
+  // Locked read-only view — shows existing lines without any editing controls.
+  if (locked) {
+    const allFilled = (lines ?? []).filter((l) => Boolean(l.product_id));
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/20 dark:text-amber-400">
+          <Lock className="size-3.5 shrink-0" />
+          Products are locked after order is confirmed. Use workflow actions to manage this order.
+        </div>
+        {allFilled.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th className="pb-1.5 pr-3 font-medium">Product</th>
+                  <th className="w-24 pb-1.5 pr-3 font-medium text-right">Qty</th>
+                  <th className="w-28 pb-1.5 pr-3 font-medium text-right">Unit Price</th>
+                  <th className="w-24 pb-1.5 text-right font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {allFilled.map((l, idx) => {
+                  const product = allProductMap.get(l.product_id);
+                  const qty = Number(l.quantity || 0);
+                  const price = Number(l.unit_price || 0);
+                  return (
+                    <tr key={idx} className="text-sm">
+                      <td className="py-2 pr-3 font-medium">{product?.name ?? l.product_id}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">{qty}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">{fmt(price)}</td>
+                      <td className="py-2 text-right tabular-nums font-medium">{fmt(qty * price)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -580,16 +756,42 @@ type Props = {
 
 export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   const navigate = useNavigate();
-  const createManual = useCreateManualOrder();
-  const updateOrder  = useUpdateOrder();
+  const createManual  = useCreateManualOrder();
+  const updateManual  = useUpdateManualOrder();
   const isEdit = mode === 'edit';
+  // Structural lock: products/price/shipping/discount are read-only once an order leaves Pending/AwaitingPayment.
+  const isStructurallyLocked = isEdit && order != null && !['pending', 'awaiting_payment'].includes(order.status);
+  // Terminal: only Completed is fully read-only. Cancelled orders remain editable (V2 workflow).
+  const isTerminal = isEdit && order != null && order.status === 'completed';
 
   const [serverError, setServerError] = useState<string | null>(null);
+  const [pendingSubmitValues, setPendingSubmitValues] = useState<ManualOrderFormValues | null>(null);
+
+  // Distribution SSOT: detect if this order is in an active trip before allowing save.
+  const { data: distributionStage } = useOrderDistributionStage(isEdit ? (order?.id ?? null) : null, isEdit);
   const [lookupResult, setLookupResult] = useState<CustomerLookupResult>(null);
   const [isNewCustomer, setIsNewCustomer] = useState(isEdit); // edit starts with customer known
-  const [brandId, setBrandId] = useState<string | null>(null);
+  const [brandId, setBrandId] = useState<string | null>(
+    isEdit && order?.channel?.brand_id ? order.channel.brand_id : null,
+  );
   const [brandName, setBrandName] = useState<string | undefined>(undefined);
-  const [overrideUnlocked, setOverrideUnlocked] = useState(false);
+  const [overrideUnlocked, setOverrideUnlocked] = useState(
+    isEdit && order?.shipping_cost_source === 'override',
+  );
+  const [shippingGovernorateId, setShippingGovernorateId] = useState<number | null>(null);
+  const [shippingCityId, setShippingCityId] = useState<number | null>(null);
+  const [showPolicyPanel, setShowPolicyPanel] = useState(false);
+  const [locResolving, setLocResolving] = useState(false);
+  const [locImported, setLocImported] = useState(
+    isEdit && order?.location?.lat != null,
+  );
+  const [govComboValue, setGovComboValue] = useState<string | null>(null);
+  // Tracks the last customer ID for which gov/city auto-select ran — prevents re-firing on list reload
+  const customerAutoGovRef = useRef<string | null>(null);
+  const [depositEnabled, setDepositEnabled] = useState(
+    isEdit && order ? (order.deposit_amount ?? 0) > 0 : false,
+  );
+  const queryClient = useQueryClient();
 
   // PART 1 — Companies
   const { data: companiesResult } = useCompaniesQuery({ per_page: 100, status: 'active' });
@@ -602,13 +804,40 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     resolver: zodResolver(manualOrderSchema),
     defaultValues: isEdit && order
       ? {
-          channel_id:   order.channel_id ?? undefined,
-          status:       order.status,
-          order_date:   order.order_date,
-          customer_id:  order.customer_id,
-          customer_name: order.customer?.name ?? undefined,
-          customer_phone: order.billing_phone ?? undefined,
-          notes:        order.notes ?? undefined,
+          channel_id:               order.channel_id ?? undefined,
+          status:                   order.status,
+          order_date:               order.order_date,
+          customer_id:              order.customer_id,
+          customer_name:            order.customer?.name ?? undefined,
+          customer_phone:           order.billing_phone ?? order.customer?.phone ?? undefined,
+          customer_secondary_phone: order.customer?.mobile ?? undefined,
+          customer_notes:           order.customer_note ?? undefined,
+          governorate:              order.governorate ?? undefined,
+          city:                     order.city ?? undefined,
+          area:                     order.area ?? undefined,
+          shipping_address:         order.shipping_address ?? undefined,
+          building:                 order.building ?? undefined,
+          floor:                    order.floor ?? undefined,
+          apartment:                order.apartment ?? undefined,
+          landmark:                 order.landmark ?? undefined,
+          address_notes:            order.address_notes ?? undefined,
+          delivery_zone_id:         order.delivery_zone_id ?? undefined,
+          delivery_zone:            order.delivery_zone ?? undefined,
+          delivery_window_id:       order.delivery_window_id ?? undefined,
+          delivery_window:          order.delivery_window ?? undefined,
+          requested_delivery_date:  order.requested_delivery_date ?? undefined,
+          google_maps_lat:          order.location?.lat ?? undefined,
+          google_maps_lng:          order.location?.lng ?? undefined,
+          google_maps_url:          order.google_maps_url ?? undefined,
+          location_source:          order.location_source ?? undefined,
+          payment_method_manual:    order.payment_method_manual ?? undefined,
+          payment_proof_path:       order.payment_proof_path ?? undefined,
+          shipping_cost:            order.shipping_cost != null ? String(order.shipping_cost) : undefined,
+          shipping_cost_source:     order.shipping_cost_source ?? undefined,
+          discount_type:            order.discount_type ?? undefined,
+          discount_amount:          (order.discount_value ?? 0) > 0 ? String(order.discount_value) : undefined,
+          deposit_amount:           (order.deposit_amount ?? 0) > 0 ? String(order.deposit_amount) : undefined,
+          notes:                    order.notes ?? undefined,
           lines: order.lines.length > 0
             ? order.lines.map((l) => ({
                 product_id: l.product_id,
@@ -618,35 +847,99 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
             : [{ product_id: '', quantity: '1', unit_price: '' }],
         }
       : {
-          status:     'in_progress',
-          order_date: new Date().toISOString().slice(0, 10),
-          lines:      [{ product_id: '', quantity: '', unit_price: '' }],
+          status:                   'pending',
+          order_date:               new Date().toISOString().slice(0, 10),
+          requested_delivery_date:  new Date().toISOString().slice(0, 10),
+          payment_method_manual:    'cod',
+          lines:                    [{ product_id: '', quantity: '', unit_price: '' }],
         },
   });
 
-  const watchedCompanyId   = form.watch('company_id') ?? '';
-  const watchedChannelId   = form.watch('channel_id') ?? '';
-  const watchedGovernorate = form.watch('governorate') ?? '';
-  const watchedLines       = form.watch('lines');
-  const watchedPayment     = form.watch('payment_method_manual');
-  const watchedZoneId      = form.watch('delivery_zone_id') ?? '';
-  const watchedShipSrc     = form.watch('shipping_cost_source');
+  const watchedCompanyId      = form.watch('company_id') ?? '';
+  const watchedChannelId      = form.watch('channel_id') ?? '';
+  const watchedGovernorate    = form.watch('governorate') ?? '';
+  const watchedLines          = form.watch('lines');
+  const watchedPayment        = form.watch('payment_method_manual');
+  const watchedZoneId         = form.watch('delivery_zone_id') ?? '';
+  const watchedShipSrc        = form.watch('shipping_cost_source');
+  const watchedDeliveryDate   = form.watch('requested_delivery_date') ?? '';
+  const watchedDiscountType   = form.watch('discount_type') ?? '';
+  const watchedGoogleMapsUrl  = form.watch('google_maps_url') ?? '';
+
+  const today = new Date().toISOString().slice(0, 10);
+  const isDeliveryFuture = Boolean(watchedDeliveryDate && watchedDeliveryDate > today);
 
   // Data loading
   const { data: brandOptions = [], isLoading: loadingBrands } = useBrandOptions(watchedCompanyId || null);
   const { data: channelOptions = [], isLoading: loadingChannels } = useChannelsByBrand(brandId);
   const { data: fgProducts = [], isFetching: loadingProducts } = useFinishedProducts(watchedChannelId || null);
   const { data: rawMaterials = [] } = useRawMaterials();
+  const allProductMap = useMemo(
+    () => new Map([...fgProducts, ...rawMaterials].map((p) => [p.id, p])),
+    [fgProducts, rawMaterials],
+  );
   const { data: geography, isFetching: loadingGeo } = useBrandDeliveryGeography(brandId);
-  const { data: deliveryWindows = [], isFetching: loadingWindows } = useBrandDeliveryWindows(brandId);
+  const { data: allTimeSlots = [], isFetching: loadingWindows, refetch: refetchTimeSlots } = useDeliveryTimeSlots(brandId);
+
+  // Phase 1 — Brand order policy (auto-derives status, proof requirements, matching rules)
+  const { data: orderPolicy } = useBrandOrderPolicy(brandId);
+
+  // Part 3 — Derive available payment methods from brand policy proof keys.
+  // 'cash' is a legacy alias for 'cod' — filtered out to avoid duplicate "Cash / Cash on Delivery".
+  const policyPaymentMethods = useMemo(() => {
+    if (!orderPolicy?.payment_proof_policy) return undefined;
+    return Object.keys(orderPolicy.payment_proof_policy)
+      .filter((key) => key !== 'cash')
+      .map((key) => ({
+        value: key,
+        label: PAYMENT_METHOD_LABELS[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      }));
+  }, [orderPolicy]);
+
+  // Phase 7 — Brand shipping engine governorates
+  const { data: shippingGovernorates = [] } = useBrandShippingGovernorates(brandId);
+
+  // Active delivery time slots only, ordered by display_order (backend already orders)
+  const activeTimeSlots = useMemo(
+    () => allTimeSlots.filter((s) => s.is_active),
+    [allTimeSlots],
+  );
+
+  // Cities within the selected governorate (new shipping engine only)
+  const { data: shippingCities = [], isFetching: loadingCities } = useBrandShippingCities(
+    shippingGovernorateId ? brandId : null,
+    shippingGovernorateId,
+  );
+
+  // Phase 7 — Shipping engine quote (runs after governorate + optional city selected)
+  const { data: shippingQuote, isFetching: quoteFetching } = useShippingQuote(
+    brandId && shippingGovernorateId
+      ? { brand_id: brandId, governorate_id: shippingGovernorateId, city_id: shippingCityId }
+      : null,
+  );
 
   // PART 1 — Brand configuration health check
   const { data: configHealth, isFetching: loadingHealth } = useBrandConfigHealth(brandId);
 
-  const governorateOptions = useMemo(
-    () => (geography?.governorates ?? []).map((g) => ({ value: g.id, label: g.name })),
-    [geography],
-  );
+  // Phase 7 — Use brand shipping governorates (new system) when available, fall back to legacy
+  const governorateOptions = useMemo(() => {
+    if (shippingGovernorates.length > 0) {
+      return shippingGovernorates
+        .filter((g) => g.is_enabled)
+        .map((g) => ({
+          value: String(g.governorate_id),
+          label: g.governorate?.name_en ?? g.governorate?.name_ar ?? String(g.governorate_id),
+          governorate_id: g.governorate_id,
+          shipping_price: g.shipping_price,
+        }));
+    }
+    return (geography?.governorates ?? []).map((g) => ({
+      value: g.id,
+      label: g.name,
+      governorate_id: null as number | null,
+      shipping_price: null as number | null,
+    }));
+  }, [shippingGovernorates, geography]);
 
   const zoneOptions = useMemo(() => {
     if (!watchedGovernorate || !geography) return [];
@@ -655,11 +948,21 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   }, [geography, watchedGovernorate]);
 
   const windowOptions = useMemo(
-    () => deliveryWindows.map((w) => ({ value: w.id, label: w.label })),
-    [deliveryWindows],
+    () => activeTimeSlots.map((s) => ({ value: s.id, label: s.name })),
+    [activeTimeSlots],
   );
 
-  // PART 8 — Auto-populate shipping cost when zone changes
+  const cityOptions = useMemo(
+    () => shippingCities
+      .filter((c) => c.is_enabled !== false)
+      .map((c) => ({
+        value: String(c.city_id),
+        label: c.city?.name_en ?? c.city?.name_ar ?? String(c.city_id),
+      })),
+    [shippingCities],
+  );
+
+  // Auto-populate shipping cost when legacy zone changes
   useEffect(() => {
     if (!watchedZoneId || overrideUnlocked) return;
     const zone = zoneOptions.find((z) => z.value === watchedZoneId);
@@ -668,6 +971,111 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
       form.setValue('shipping_cost_source', 'auto');
     }
   }, [watchedZoneId, zoneOptions]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Coverage-driven shipping sync — coverage_status from backend is the single source of truth.
+  // 'covered' → use the quoted price. Any other status → cost must be 0.
+  useEffect(() => {
+    if (overrideUnlocked || !shippingQuote) return;
+    // eslint-disable-next-line no-console
+    if (import.meta.env.DEV) console.log('[Shipping][STEP 3] coverage effect fired:', { coverage_status: shippingQuote.coverage_status, shipping_price: shippingQuote.shipping_price, available: shippingQuote.available });
+    if (shippingQuote.coverage_status === 'covered' && shippingQuote.shipping_price != null) {
+      form.setValue('shipping_cost', String(shippingQuote.shipping_price));
+      form.setValue('shipping_cost_source', 'auto');
+    } else {
+      form.setValue('shipping_cost', '0', { shouldValidate: false });
+      form.setValue('shipping_cost_source', undefined, { shouldValidate: false });
+    }
+    // eslint-disable-next-line no-console
+    if (import.meta.env.DEV) console.log('[Shipping][STEP 4] shipping_cost set to:', shippingQuote.coverage_status === 'covered' ? shippingQuote.shipping_price : 0);
+  }, [shippingQuote?.coverage_status, shippingQuote?.shipping_price, overrideUnlocked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Edit mode — initialize governorate combo once shipping governorates load (new shipping engine)
+  useEffect(() => {
+    if (!isEdit || !order?.governorate || shippingGovernorates.length === 0 || govComboValue !== null) return;
+    const match = shippingGovernorates.find(
+      (g) => g.governorate?.name_en === order.governorate || g.governorate?.name_ar === order.governorate,
+    );
+    if (match) {
+      setGovComboValue(String(match.governorate_id));
+      setShippingGovernorateId(match.governorate_id);
+    }
+  }, [shippingGovernorates, isEdit, order?.governorate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Edit mode — initialize governorate combo from legacy geography (fallback when new engine has no data)
+  useEffect(() => {
+    if (!isEdit || !order?.governorate || shippingGovernorates.length > 0 || govComboValue !== null) return;
+    if (!geography?.governorates?.length) return;
+    const match = geography.governorates.find((g) => g.name === order.governorate || g.id === order.governorate);
+    if (match) setGovComboValue(match.id);
+  }, [geography?.governorates, isEdit, order?.governorate, shippingGovernorates.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Edit mode — initialize city ID once cities load.
+  // Prefers delivery_zone (canonical) over city (WC legacy) so the combo reflects
+  // whatever the last zone-editor or edit-form save committed.
+  useEffect(() => {
+    if (!isEdit || shippingCities.length === 0 || shippingCityId !== null) return;
+    const target = order?.delivery_zone ?? order?.city;
+    if (!target) return;
+    const match = shippingCities.find(
+      (c) => c.city?.name_en === target || c.city?.name_ar === target,
+    );
+    if (match) setShippingCityId(match.city_id);
+  }, [shippingCities, isEdit, order?.delivery_zone, order?.city]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Create mode — auto-select governorate from customer profile once shipping govs load
+  useEffect(() => {
+    if (isEdit || !lookupResult || shippingGovernorates.length === 0) return;
+    // Run only once per customer (avoids re-firing when gov list refreshes)
+    if (customerAutoGovRef.current === lookupResult.customer.id) return;
+    customerAutoGovRef.current = lookupResult.customer.id;
+
+    const defaultAddr = lookupResult.addresses.find((a) => a.is_default) ?? lookupResult.addresses[0];
+    const govName = (defaultAddr?.governorate ?? lookupResult.customer.governorate ?? '').trim();
+    if (!govName) return;
+
+    const match = shippingGovernorates.find(
+      (g) =>
+        g.is_enabled &&
+        ((g.governorate?.name_en ?? '').toLowerCase() === govName.toLowerCase() ||
+          (g.governorate?.name_ar ?? '') === govName),
+    );
+    if (match) handleGovernorateChange(String(match.governorate_id));
+  }, [lookupResult, shippingGovernorates]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Create mode — auto-select city from customer profile once cities load (after gov cascade)
+  useEffect(() => {
+    if (isEdit || !lookupResult || shippingCities.length === 0 || shippingCityId !== null) return;
+
+    const defaultAddr = lookupResult.addresses.find((a) => a.is_default) ?? lookupResult.addresses[0];
+    const cityName = (defaultAddr?.city ?? lookupResult.customer.city ?? '').trim();
+    if (!cityName) return;
+
+    const match = shippingCities.find(
+      (c) =>
+        c.is_enabled !== false &&
+        ((c.city?.name_en ?? '').toLowerCase() === cityName.toLowerCase() ||
+          (c.city?.name_ar ?? '') === cityName),
+    );
+    if (match) {
+      setShippingCityId(match.city_id);
+      const name = match.city?.name_en ?? match.city?.name_ar ?? cityName;
+      form.setValue('city', name);
+      form.setValue('delivery_zone', name);
+    }
+  }, [lookupResult, shippingCities]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Part 2 — Auto-set initial status from brand entry policy when policy loads
+  useEffect(() => {
+    if (isEdit || !orderPolicy) return;
+    const mp = orderPolicy.source_entry_policies.manual;
+    const all = Array.isArray(mp) ? mp : [mp];
+    const allowed = all.filter((s) => !INTERNAL_STATUSES.has(s));
+    const first = allowed[0] ?? all[0] ?? 'pending';
+    const current = form.getValues('status');
+    if (!current || INTERNAL_STATUSES.has(current) || !allowed.includes(current)) {
+      form.setValue('status', first);
+    }
+  }, [orderPolicy, isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Cascade handlers ────────────────────────────────────────────────────────
 
@@ -682,6 +1090,9 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     form.setValue('shipping_cost_source', undefined);
     form.setValue('lines', [{ product_id: '', quantity: '', unit_price: '' }]);
     setOverrideUnlocked(false);
+    setShippingGovernorateId(null);
+    setShippingCityId(null);
+    setGovComboValue(null);
   };
 
   const handleCompanyChange = (value: string | null) => {
@@ -704,24 +1115,52 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   };
 
   const handleGovernorateChange = (value: string | null) => {
-    form.setValue('governorate', value ?? undefined);
+    const governorateChanged = value !== govComboValue;
+    setGovComboValue(value);
+    const opt = governorateOptions.find((g) => g.value === value);
+    const govName = opt?.label ?? value ?? undefined;
+    form.setValue('governorate', govName);
     form.setValue('delivery_zone_id', undefined);
     form.setValue('delivery_zone', undefined);
-    form.setValue('shipping_cost', undefined);
     form.setValue('shipping_cost_source', undefined);
+    // Only clear city when the user actually selects a DIFFERENT governorate.
+    // Re-selecting the same one must not wipe out an already-saved city value.
+    if (governorateChanged) {
+      form.setValue('city', '');
+      setShippingCityId(null);
+    }
     setOverrideUnlocked(false);
+    if (opt?.governorate_id) {
+      setShippingGovernorateId(opt.governorate_id);
+      // Shipping cost is set ONLY after coverage is confirmed by the quote API.
+      // Pre-filling here causes a contradiction when the quote returns needs_review.
+    } else {
+      setShippingGovernorateId(null);
+      form.setValue('shipping_cost', undefined);
+    }
   };
 
   const handleZoneChange = (value: string | null) => {
     form.setValue('delivery_zone_id', value ?? undefined);
     const zone = zoneOptions.find((z) => z.value === value);
-    form.setValue('delivery_zone', zone?.label ?? undefined);
+    const zoneLabel = zone?.label ?? undefined;
+    form.setValue('delivery_zone', zoneLabel);
+    form.setValue('city', zoneLabel ?? '');
   };
 
   const handleWindowChange = (value: string | null) => {
     form.setValue('delivery_window_id', value ?? undefined);
-    const win = deliveryWindows.find((w) => w.id === value);
-    form.setValue('delivery_window', win?.label ?? undefined);
+    const slot = activeTimeSlots.find((s) => s.id === value);
+    form.setValue('delivery_window', slot?.name ?? undefined);
+  };
+
+  const handleCityChange = (value: string | null) => {
+    const numId = value ? Number(value) : null;
+    setShippingCityId(numId);
+    const cityEntry = shippingCities.find((c) => c.city_id === numId);
+    const cityName = cityEntry?.city?.name_en ?? cityEntry?.city?.name_ar ?? '';
+    form.setValue('city', cityName);
+    form.setValue('delivery_zone', cityName || undefined);
   };
 
   // ── Customer handlers ───────────────────────────────────────────────────────
@@ -729,21 +1168,35 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   const handleCustomerFound = (result: CustomerLookupResult) => {
     setLookupResult(result);
     setIsNewCustomer(false);
-    if (result) {
-      form.setValue('customer_id', result.customer.id);
-      form.setValue('customer_name', result.customer.name);
-      form.setValue('customer_phone', result.customer.phone ?? '');
-      const defaultAddr = result.addresses.find((a) => a.is_default) ?? result.addresses[0];
-      if (defaultAddr) {
-        form.setValue('city', defaultAddr.city ?? '');
-        form.setValue('area', defaultAddr.area ?? '');
-        form.setValue('shipping_address', defaultAddr.address_line ?? '');
-        if (defaultAddr.google_maps_lat != null) {
-          form.setValue('google_maps_lat', defaultAddr.google_maps_lat);
-          form.setValue('google_maps_lng', defaultAddr.google_maps_lng ?? undefined);
-        }
+    if (!result) return;
+
+    // Core identity
+    form.setValue('customer_id',              result.customer.id);
+    form.setValue('customer_name',            result.customer.name);
+    form.setValue('customer_phone',           result.customer.phone ?? '');
+    if (result.customer.mobile)               form.setValue('customer_secondary_phone', result.customer.mobile);
+    if (result.customer.notes)                form.setValue('customer_notes', result.customer.notes);
+
+    // Prefer the default address; fall back to first address
+    const addr = result.addresses.find((a) => a.is_default) ?? result.addresses[0];
+    if (addr) {
+      if (addr.city)          form.setValue('city', addr.city);
+      if (addr.area)          form.setValue('area', addr.area);
+      if (addr.address_line)  form.setValue('shipping_address', addr.address_line);
+      if (addr.building)      form.setValue('building', addr.building);
+      if (addr.floor)         form.setValue('floor', addr.floor);
+      if (addr.apartment)     form.setValue('apartment', addr.apartment);
+      if (addr.landmark)      form.setValue('landmark', addr.landmark);
+      if (addr.address_notes) form.setValue('address_notes', addr.address_notes);
+      if (addr.google_maps_url) form.setValue('google_maps_url', addr.google_maps_url);
+      if (addr.google_maps_lat != null) {
+        form.setValue('google_maps_lat', addr.google_maps_lat);
+        form.setValue('google_maps_lng', addr.google_maps_lng ?? undefined);
+        form.setValue('location_source', 'customer');
+        setLocImported(true);
       }
     }
+    // Gov/city cascade will fire via the auto-select effects once shippingGovernorates/cities load
   };
 
   const handleCustomerNotFound = (phone: string) => {
@@ -756,9 +1209,17 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   const handleLookupClear = () => {
     setLookupResult(null);
     setIsNewCustomer(false);
+    customerAutoGovRef.current = null;
+    setLocImported(false);
     form.setValue('customer_id', undefined);
     form.setValue('customer_name', undefined);
     form.setValue('customer_phone', undefined);
+    form.setValue('customer_secondary_phone', undefined);
+    form.setValue('customer_notes', undefined);
+    form.setValue('google_maps_url', '');
+    form.setValue('google_maps_lat', undefined);
+    form.setValue('google_maps_lng', undefined);
+    form.setValue('location_source', undefined);
   };
 
   const handleOverrideToggle = () => {
@@ -775,39 +1236,179 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     }
   };
 
-  const handleSubmit = (values: ManualOrderFormValues) => {
-    setServerError(null);
-    if (isEdit && order) {
-      updateOrder.mutate(
-        { id: order.id, payload: toEditPayload(values) },
-        {
-          onSuccess: () => navigate(`${ROUTES.orders}/${order.id}`),
-          onError: (err) => setServerError(extractMessage(err)),
-        },
-      );
+  // Parts 1+2 — Google Maps URL import handler (supports short URLs via backend resolver)
+  const [mapsUrlError, setMapsUrlError] = useState<string | null>(null);
+
+  const handleImportMapsUrl = async () => {
+    const url = watchedGoogleMapsUrl.trim();
+    if (!url) return;
+    if (!isGoogleMapsUrl(url)) {
+      setMapsUrlError('Enter a Google Maps link (maps.app.goo.gl, google.com/maps) or coordinates (lat, lng).');
       return;
     }
+    setMapsUrlError(null);
+
+    // Try to parse coordinates directly (works for long URLs with embedded coords)
+    const coords = parseGoogleMapsUrl(url);
+    if (coords) {
+      form.setValue('google_maps_lat', coords.lat, { shouldValidate: false });
+      form.setValue('google_maps_lng', coords.lng, { shouldValidate: false });
+      form.setValue('location_source', 'google_maps', { shouldValidate: false });
+      setLocImported(true);
+      return;
+    }
+
+    // Short URL — resolve via backend proxy then parse final URL
+    setLocResolving(true);
+    try {
+      const result = await ordersService.resolveMapsUrl(url);
+      const resolved = parseGoogleMapsUrl(result.resolved_url);
+      if (resolved) {
+        form.setValue('google_maps_lat', resolved.lat, { shouldValidate: false });
+        form.setValue('google_maps_lng', resolved.lng, { shouldValidate: false });
+        form.setValue('location_source', 'google_maps', { shouldValidate: false });
+        form.setValue('google_maps_url', result.resolved_url, { shouldValidate: false });
+        setLocImported(true);
+      } else {
+        setMapsUrlError('Unable to determine customer coordinates from this link.');
+      }
+    } catch {
+      setMapsUrlError('Unable to determine customer coordinates from this link.');
+    } finally {
+      setLocResolving(false);
+    }
+  };
+
+  const handleClearLocation = () => {
+    form.setValue('google_maps_url', '', { shouldValidate: false });
+    form.setValue('google_maps_lat', undefined, { shouldValidate: false });
+    form.setValue('google_maps_lng', undefined, { shouldValidate: false });
+    form.setValue('location_source', undefined, { shouldValidate: false });
+    setMapsUrlError(null);
+    setLocImported(false);
+  };
+
+  const currentLat = form.watch('google_maps_lat');
+  const currentLng = form.watch('google_maps_lng');
+
+  const doEditSave = (values: ManualOrderFormValues) => {
+    if (!order) return;
+    const editPayload = toManualPayload(values);
+    if (shippingGovernorateId) editPayload.governorate_id = shippingGovernorateId;
+    if (shippingCityId) editPayload.city_id = shippingCityId;
+    updateManual.mutate(
+      { id: order.id, payload: editPayload },
+      {
+        onSuccess: () => navigate(`${ROUTES.orders}/${order.id}`),
+        onError: (err) => {
+          if (axios.isAxiosError(err)) {
+            const errors = err.response?.data?.errors as Record<string, unknown> | undefined;
+            if (errors?.delivery_window_id) {
+              form.setValue('delivery_window_id', undefined);
+              form.setValue('delivery_window', undefined);
+              void queryClient.invalidateQueries({ queryKey: ['brand-delivery-time-slots', brandId ?? ''] });
+              void refetchTimeSlots();
+              setServerError('The delivery time slot is no longer available. Please select a new one and save again.');
+              return;
+            }
+          }
+          setServerError(extractMessage(err));
+        },
+      },
+    );
+  };
+
+  const handleSubmit = (values: ManualOrderFormValues) => {
+    // eslint-disable-next-line no-console
+    if (import.meta.env.DEV) console.log('[Submit][STEP 2] Zod PASSED — handleSubmit entered. lines:', values.lines.length, '| status:', values.status);
+    setServerError(null);
+    if (isEdit && order) {
+      // If order is in an active Distribution stage, show Impact Analysis dialog first.
+      if (distributionStage?.is_active) {
+        setPendingSubmitValues(values);
+        return;
+      }
+      doEditSave(values);
+      return;
+    }
+    // eslint-disable-next-line no-console
+    if (import.meta.env.DEV) console.log('[Submit][STEP 3] config check — is_ready:', configHealth?.is_ready);
     if (configHealth && !configHealth.is_ready) {
       setServerError('Brand configuration is incomplete. Please configure the brand before creating orders.');
       return;
     }
-    createManual.mutate(toManualPayload(values), {
-      onSuccess: (created) => navigate(`${ROUTES.orders}/${created.id}`),
-      onError: (err) => setServerError(extractMessage(err)),
+    // Financial consistency validation
+    const filledLines = values.lines.filter((l) => Boolean(l.product_id));
+    // eslint-disable-next-line no-console
+    if (import.meta.env.DEV) console.log('[Submit][STEP 3] financial validation — filledLines:', filledLines.length);
+    if (filledLines.length > 0) {
+      const productsTotal = filledLines.reduce(
+        (s, l) => s + Number(l.quantity || 0) * Number(l.unit_price || 0),
+        0,
+      );
+      if (productsTotal === 0) {
+        setServerError('Products Total is 0 — please wait for the Pricing Engine to resolve product prices before saving.');
+        return;
+      }
+      const hasZeroPrice = filledLines.some((l) => !l.unit_price || Number(l.unit_price) === 0);
+      if (hasZeroPrice) {
+        // eslint-disable-next-line no-console
+        if (import.meta.env.DEV) console.log('[Submit][STEP 3] BLOCKED — zero-price line detected:', filledLines.filter((l) => !l.unit_price || Number(l.unit_price) === 0));
+        setServerError('One or more products have no price. Please wait for the Pricing Engine to resolve all prices before saving.');
+        return;
+      }
+    }
+    const shippingCost = Number(values.shipping_cost || 0);
+    if (shippingCost > 0 && shippingQuote && shippingQuote.coverage_status !== 'covered') {
+      // eslint-disable-next-line no-console
+      if (import.meta.env.DEV) console.log('[Submit][STEP 3] BLOCKED — shipping cost conflict:', { shippingCost, coverage_status: shippingQuote.coverage_status });
+      setServerError('Shipping cost cannot be applied — the delivery area has not been confirmed as covered. Please review the shipping coverage before saving.');
+      return;
+    }
+    // eslint-disable-next-line no-console
+    if (import.meta.env.DEV) console.log('[Submit][STEP 4] all validations passed — building payload');
+    const payload = toManualPayload(values);
+    // pass numeric governorate/city IDs for Shipping Engine validation
+    if (shippingGovernorateId) payload.governorate_id = shippingGovernorateId;
+    if (shippingCityId) payload.city_id = shippingCityId;
+    // eslint-disable-next-line no-console
+    if (import.meta.env.DEV) console.log('[Submit][STEP 5] calling createManual.mutate →', { lines: payload.lines, status: payload.status, shipping_cost: payload.shipping_cost });
+    createManual.mutate(payload, {
+      onSuccess: (created) => {
+        // eslint-disable-next-line no-console
+        if (import.meta.env.DEV) console.log('[Submit][STEP 6] POST /orders/manual SUCCESS — order id:', created.id);
+        navigate(`${ROUTES.orders}/${created.id}`);
+      },
+      onError: (err) => {
+        // eslint-disable-next-line no-console
+        if (import.meta.env.DEV) console.log('[Submit][STEP 6] POST /orders/manual FAILED:', err);
+        // Part 7 — Delivery window slot no longer valid (deleted/deactivated between form load and submit)
+        if (axios.isAxiosError(err)) {
+          const errors = err.response?.data?.errors as Record<string, unknown> | undefined;
+          if (errors?.delivery_window_id) {
+            form.setValue('delivery_window_id', undefined);
+            form.setValue('delivery_window', undefined);
+            void queryClient.invalidateQueries({ queryKey: ['brand-delivery-time-slots', brandId ?? ''] });
+            void refetchTimeSlots();
+            setServerError('The delivery time slot you selected is no longer available. An updated list of time slots has been loaded — please choose one and try again.');
+            return;
+          }
+        }
+        setServerError(extractMessage(err));
+      },
     });
   };
 
-  const isPending = isEdit ? updateOrder.isPending : createManual.isPending;
+  const isPending = isEdit ? updateManual.isPending : createManual.isPending;
   const showContentSections = isEdit || ((!configHealth || configHealth.is_ready) && Boolean(brandId));
   const customerResolved = Boolean(lookupResult) || isNewCustomer;
   const hasProductLine = (watchedLines ?? []).some((l) => Boolean(l.product_id));
   const companyLocked = hasProductLine;
-  const autoShippingCost = zoneOptions.find((z) => z.value === watchedZoneId)?.shipping_cost;
 
   const progressSteps = [
     { label: 'Context',  done: Boolean(watchedCompanyId) && Boolean(brandId) && Boolean(watchedChannelId) },
     { label: 'Customer', done: customerResolved },
-    { label: 'Location', done: Boolean(watchedGovernorate) && Boolean(watchedZoneId) },
+    { label: 'Location', done: Boolean(watchedGovernorate) && (shippingGovernorateId !== null || Boolean(watchedZoneId)) },
     { label: 'Products', done: hasProductLine },
     { label: 'Payment',  done: Boolean(watchedPayment) },
     {
@@ -818,7 +1419,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
         Boolean(watchedChannelId) &&
         customerResolved &&
         Boolean(watchedGovernorate) &&
-        Boolean(watchedZoneId) &&
+        (shippingGovernorateId !== null || Boolean(watchedZoneId)) &&
         hasProductLine &&
         Boolean(watchedPayment) &&
         (configHealth?.is_ready ?? false),
@@ -848,7 +1449,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
               <Button
                 type="submit"
                 form={FORM_ID}
-                disabled={isPending || (!isEdit && configHealth !== undefined && !configHealth.is_ready)}
+                disabled={isPending || isTerminal || (!isEdit && configHealth !== undefined && !configHealth.is_ready)}
               >
                 {isEdit
                   ? (isPending ? 'Saving…' : 'Save Changes')
@@ -860,11 +1461,60 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
 
         {!isEdit && <ProgressIndicator steps={progressSteps} />}
 
-        <form id={FORM_ID} onSubmit={form.handleSubmit(handleSubmit)}>
+        {/* Distribution SSOT banner — visible when editing an order assigned to a trip */}
+        {isEdit && order ? (
+          <OrderDistributionStageBanner orderId={order.id} compact />
+        ) : null}
+
+        {/* Impact Analysis Dialog — intercepts save when order is in active distribution stage */}
+        {isEdit && order && pendingSubmitValues && distributionStage ? (
+          <ImpactAnalysisDialog
+            open={pendingSubmitValues !== null}
+            stage={distributionStage}
+            onConfirm={() => {
+              const values = pendingSubmitValues;
+              setPendingSubmitValues(null);
+              doEditSave(values);
+            }}
+            onCancel={() => setPendingSubmitValues(null)}
+          />
+        ) : null}
+
+        <form
+          id={FORM_ID}
+          onSubmit={(e) => {
+            // eslint-disable-next-line no-console
+            if (import.meta.env.DEV) console.log('[Submit][STEP 1] form onSubmit fired — running RHF + Zod');
+            return form.handleSubmit(
+              handleSubmit,
+              (errs) => {
+                // eslint-disable-next-line no-console
+                if (import.meta.env.DEV) console.log('[Submit][STEP 2] Zod FAILED — validation errors:', errs);
+                // Silent failures are forbidden — surface the first blocking error to the user.
+                const linesMsg = (errs.lines as { message?: string } | undefined)?.message;
+                const firstFieldMsg = Object.entries(errs)
+                  .filter(([k]) => k !== 'lines')
+                  .map(([, v]) => (v as { message?: string })?.message)
+                  .filter(Boolean)[0] as string | undefined;
+                setServerError(linesMsg ?? firstFieldMsg ?? 'Please fix the form errors before submitting.');
+              },
+            )(e);
+          }}
+        >
           {serverError && (
             <Alert variant="destructive" className="mb-4">
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
+          )}
+
+          {isTerminal && (
+            <Alert className="mb-4 border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20">
+              <Lock className="size-4 text-red-600 dark:text-red-400" />
+              <AlertTitle className="text-red-700 dark:text-red-400">Order is {order?.status_label ?? order?.status} — Read Only</AlertTitle>
+              <AlertDescription className="text-red-600/80 dark:text-red-400/80">
+                Terminal orders cannot be modified. Use workflow actions (e.g. reopen, refund) if this order needs to change.
+              </AlertDescription>
             </Alert>
           )}
 
@@ -875,7 +1525,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
               <Card>
                 <CardContent className="pt-4">
                   {isEdit ? (
-                    /* Edit mode: read-only context — channel, status, dates */
+                    /* Edit mode: channel | smart status selector | date */
                     <div className="grid gap-3 sm:grid-cols-3">
                       <FormField name="channel_id_display" label="Sales Channel">
                         <div className="flex h-9 items-center gap-1.5 rounded-md border bg-muted/50 px-3 text-sm">
@@ -886,15 +1536,12 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         </div>
                       </FormField>
 
-                      <FormField name="status" label="Order Status" required>
-                        <select
-                          {...form.register('status')}
-                          className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs"
-                        >
-                          {STATUS_OPTIONS.map((s) => (
-                            <option key={s.value} value={s.value}>{s.label}</option>
-                          ))}
-                        </select>
+                      <FormField name="status" label="Order Status">
+                        {order ? (
+                          <SmartStatusSelector order={order} />
+                        ) : (
+                          <div className="flex h-9 items-center rounded-md border bg-muted/50 px-3 text-sm text-muted-foreground">—</div>
+                        )}
                       </FormField>
 
                       <FormField name="order_date" label="Order Date">
@@ -979,31 +1626,94 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         )}
                       </FormField>
 
-                      {/* Order Status */}
-                      <FormField name="status" label="Order Status" required>
-                        <select
-                          {...form.register('status')}
-                          className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs"
-                        >
-                          {STATUS_OPTIONS.map((s) => (
-                            <option key={s.value} value={s.value}>{s.label}</option>
-                          ))}
-                        </select>
-                      </FormField>
+                      {/* Part 2 + 5 — Entry Status (policy-driven, internal statuses excluded) */}
+                      <div>
+                        <p className="mb-1 text-xs font-medium text-foreground/80">Entry Status</p>
+                        {!orderPolicy && brandId ? (
+                          <div className="flex h-9 items-center px-1"><InlineSpinner label="Loading policy…" /></div>
+                        ) : orderPolicy ? (() => {
+                          const mp = orderPolicy.source_entry_policies.manual;
+                          const all = Array.isArray(mp) ? mp : [mp];
+                          const allowed = all.filter((s) => !INTERNAL_STATUSES.has(s));
+                          const choices = allowed.length > 0 ? allowed : all;
+                          if (choices.length === 1) {
+                            return (
+                              <div className="flex h-9 items-center gap-2">
+                                <Badge variant="secondary" className="gap-1 text-xs">
+                                  <TrendingUp className="size-3" />
+                                  Manual Order
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">→</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {STATUS_LABELS[choices[0]] ?? choices[0]}
+                                </Badge>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="gap-1 text-xs shrink-0">
+                                <TrendingUp className="size-3" />
+                                Manual Order
+                              </Badge>
+                              <span className="text-xs text-muted-foreground shrink-0">→</span>
+                              <select
+                                value={form.watch('status') ?? choices[0]}
+                                onChange={(e) => form.setValue('status', e.target.value)}
+                                className="flex-1 h-9 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
+                              >
+                                {choices.map((s) => (
+                                  <option key={s} value={s}>{STATUS_LABELS[s] ?? s}</option>
+                                ))}
+                              </select>
+                            </div>
+                          );
+                        })() : (
+                          <div className="flex h-9 items-center gap-2">
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <TrendingUp className="size-3" />
+                              Manual Order
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
 
-                      {/* Delivery Date */}
+                      {/* Part 1 — Delivery Date (defaults to today) */}
                       <FormField name="requested_delivery_date" label="Delivery Date">
                         <Input type="date" {...form.register('requested_delivery_date')} />
                       </FormField>
 
-                      {/* PART 2 — Delivery Window */}
-                      <FormField name="delivery_window_id" label="Delivery Window">
+                      {/* Part 1 — Future delivery date info banner */}
+                      {isDeliveryFuture && (
+                        <div className="sm:col-span-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/20 dark:text-amber-400">
+                          <CalendarDays className="size-3.5 shrink-0" />
+                          Future delivery date — this order will enter as{' '}
+                          <span className="font-medium">Rescheduled</span> status based on brand policy.
+                        </div>
+                      )}
+
+                      {/* Delivery Time Slot (from Brand Shipping & Delivery) */}
+                      <FormField name="delivery_window_id" label="Delivery Time Slot">
                         {!brandId ? (
                           <div className="flex h-9 items-center rounded-md border border-dashed px-3 text-sm text-muted-foreground">
                             Select a Brand first
                           </div>
                         ) : loadingWindows ? (
-                          <div className="flex h-9 items-center px-1"><InlineSpinner label="Loading windows…" /></div>
+                          <div className="flex h-9 items-center px-1"><InlineSpinner label="Loading time slots…" /></div>
+                        ) : !loadingWindows && activeTimeSlots.length === 0 ? (
+                          <div className="rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/20 p-2.5 flex flex-col gap-1.5">
+                            <p className="text-xs text-amber-700 dark:text-amber-400">
+                              No active Delivery Time Slots configured for this Brand.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => navigate(ROUTES.brands)}
+                              className="flex items-center gap-1 text-xs text-primary hover:underline w-fit"
+                            >
+                              <ExternalLink className="size-3" />
+                              Manage Delivery Time Slots
+                            </button>
+                          </div>
                         ) : (
                           <Controller
                             control={form.control}
@@ -1013,7 +1723,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                 options={windowOptions}
                                 value={field.value ?? null}
                                 onChange={handleWindowChange}
-                                placeholder={windowOptions.length ? 'Select window' : 'No windows configured'}
+                                placeholder="Select time slot"
                               />
                             )}
                           />
@@ -1062,8 +1772,20 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         <OrderCustomerIntelligencePanel
                           stats={lookupResult.stats}
                           customerName={lookupResult.customer.name}
+                          customerId={lookupResult.customer.id}
                         />
                         <OrderCustomerAlerts stats={lookupResult.stats} />
+                        {/* Phase 5 — Customer matching policy decision */}
+                        {orderPolicy?.customer_matching_policy && (
+                          <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                            <Shield className="size-3.5 shrink-0 text-primary" />
+                            <span>
+                              Policy: <span className="font-medium text-foreground">
+                                {MATCHING_POLICY_LABELS[orderPolicy.customer_matching_policy] ?? orderPolicy.customer_matching_policy}
+                              </span>
+                            </span>
+                          </div>
+                        )}
                       </>
                     )}
 
@@ -1100,10 +1822,10 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                             <Controller
                               control={form.control}
                               name="governorate"
-                              render={({ field }) => (
+                              render={() => (
                                 <Combobox
                                   options={governorateOptions}
-                                  value={field.value ?? null}
+                                  value={govComboValue}
                                   onChange={handleGovernorateChange}
                                   placeholder={governorateOptions.length ? 'Select governorate' : 'No governorates configured'}
                                 />
@@ -1112,29 +1834,241 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                           )}
                         </FormField>
 
-                        {/* Delivery Zone */}
-                        <FormField name="delivery_zone_id" label="Delivery Zone" required>
-                          <Controller
-                            control={form.control}
-                            name="delivery_zone_id"
-                            render={({ field }) => (
+                        {/* City — shipping engine combobox when new engine active */}
+                        {shippingGovernorateId !== null && (
+                          <FormField name="city" label="City">
+                            {loadingCities ? (
+                              <div className="flex h-9 items-center px-1"><InlineSpinner label="Loading cities…" /></div>
+                            ) : cityOptions.length > 0 ? (
                               <Combobox
-                                options={zoneOptions}
-                                value={field.value ?? null}
-                                onChange={handleZoneChange}
-                                placeholder={watchedGovernorate ? 'Select zone' : 'Select governorate first'}
-                                disabled={!watchedGovernorate}
+                                options={cityOptions}
+                                value={shippingCityId ? String(shippingCityId) : null}
+                                onChange={handleCityChange}
+                                placeholder="Select city (optional)"
                               />
+                            ) : (
+                              <div className="flex h-9 items-center rounded-md border border-dashed px-3 text-xs text-muted-foreground">
+                                All cities covered — governorate pricing applies
+                              </div>
                             )}
-                          />
-                        </FormField>
+                          </FormField>
+                        )}
 
-                        <input type="hidden" {...form.register('city')} />
+                        {/* City — free-text fallback when new shipping engine has no data for this governorate
+                            Ensures city is always visible/editable in edit mode and legacy geography mode */}
+                        {shippingGovernorateId === null && (isEdit || govComboValue !== null) && (
+                          <FormField name="city" label="City">
+                            <Input
+                              placeholder="City / District"
+                              {...form.register('city')}
+                            />
+                          </FormField>
+                        )}
+
+                        {/* Delivery Zone (only shown when legacy geography available) */}
+                        {zoneOptions.length > 0 && (
+                          <FormField name="delivery_zone_id" label="Delivery Zone">
+                            <Controller
+                              control={form.control}
+                              name="delivery_zone_id"
+                              render={({ field }) => (
+                                <Combobox
+                                  options={zoneOptions}
+                                  value={field.value ?? null}
+                                  onChange={handleZoneChange}
+                                  placeholder={watchedGovernorate ? 'Select zone' : 'Select governorate first'}
+                                  disabled={!watchedGovernorate}
+                                />
+                              )}
+                            />
+                          </FormField>
+                        )}
+
+                        {/* Phase 7 — Shipping Engine Preview */}
+                        {shippingGovernorateId && (
+                          <div className="sm:col-span-2">
+                            {quoteFetching ? (
+                              <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                                <Loader2 className="size-3 animate-spin" />
+                                Checking shipping coverage…
+                              </div>
+                            ) : shippingQuote ? (() => {
+                              const cs = shippingQuote.coverage_status ?? (shippingQuote.available ? 'covered' : 'needs_review');
+                              const isCovered     = cs === 'covered';
+                              const isUnavailable = cs === 'unavailable';
+                              const borderBg = isCovered
+                                ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800/50 dark:bg-emerald-950/30'
+                                : isUnavailable
+                                ? 'border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/30'
+                                : 'border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/30';
+                              const tc = isCovered
+                                ? 'text-emerald-700 dark:text-emerald-400'
+                                : isUnavailable
+                                ? 'text-red-700 dark:text-red-400'
+                                : 'text-amber-700 dark:text-amber-400';
+                              const coverageLabel = isCovered ? 'Covered' : isUnavailable ? 'Unavailable' : 'Needs Review';
+                              return (
+                                <div className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${borderBg}`}>
+                                  <Truck className={`size-3.5 shrink-0 mt-0.5 ${tc}`} />
+                                  <div className="flex-1 space-y-0.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className={`font-medium ${tc}`}>{coverageLabel}</span>
+                                      {isCovered && shippingQuote.shipping_price != null && (
+                                        <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                                          {shippingQuote.shipping_price.toLocaleString(undefined, { minimumFractionDigits: 2 })} EGP
+                                        </span>
+                                      )}
+                                    </div>
+                                    {shippingQuote.preferred_provider && (
+                                      <div className="text-muted-foreground">via {shippingQuote.preferred_provider}</div>
+                                    )}
+                                    {shippingQuote.delivery_days != null && (
+                                      <div className="text-muted-foreground">
+                                        {shippingQuote.same_day
+                                          ? 'Same-day delivery available'
+                                          : `Est. ${shippingQuote.delivery_days} day${shippingQuote.delivery_days !== 1 ? 's' : ''}`}
+                                      </div>
+                                    )}
+                                    {shippingQuote.validation_message && (
+                                      <div className={tc}>{shippingQuote.validation_message}</div>
+                                    )}
+                                    {!isCovered && !isUnavailable && (
+                                      <div className="text-amber-600 dark:text-amber-400">
+                                        Order will be flagged for review — shipping cost may not apply
+                                      </div>
+                                    )}
+                                    {isUnavailable && (
+                                      <div className="text-red-600 dark:text-red-400">
+                                        This area is not covered by the brand shipping policy
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })() : null}
+                          </div>
+                        )}
+
                         <input type="hidden" {...form.register('area')} />
+                        <input type="hidden" {...form.register('location_source')} />
 
                         <div className="sm:col-span-2">
-                          <FormField name="shipping_address" label="Shipping Address">
-                            <Input placeholder="Full street address" {...form.register('shipping_address')} />
+                          <FormField name="shipping_address" label="Street Address">
+                            <Input placeholder="Street name and number" {...form.register('shipping_address')} />
+                          </FormField>
+                        </div>
+
+                        {/* Address details — Building / Floor / Apartment / Landmark */}
+                        <FormField name="building" label="Building">
+                          <Input placeholder="Building name or number" {...form.register('building')} />
+                        </FormField>
+
+                        <FormField name="floor" label="Floor">
+                          <Input placeholder="e.g. 3" {...form.register('floor')} />
+                        </FormField>
+
+                        <FormField name="apartment" label="Apartment">
+                          <Input placeholder="e.g. Apt 12" {...form.register('apartment')} />
+                        </FormField>
+
+                        <FormField name="landmark" label="Landmark">
+                          <Input placeholder="Nearby landmark for delivery" {...form.register('landmark')} />
+                        </FormField>
+
+                        {/* Parts 1+2 — Google Maps URL import with short-URL resolution */}
+                        <div className="sm:col-span-2">
+                          <FormField name="google_maps_url" label="Customer Location (Google Maps)">
+                            {locImported && currentLat != null && currentLng != null ? (
+                              /* GPS Location Card — location set */
+                              <div className="rounded-md border border-emerald-200 bg-emerald-50 dark:border-emerald-800/50 dark:bg-emerald-950/20 p-3 flex flex-col gap-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <MapPin className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
+                                      GPS Location
+                                    </span>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                                    onClick={handleClearLocation}
+                                  >
+                                    Replace Location
+                                  </Button>
+                                </div>
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <span className="font-mono text-xs text-foreground/80 tabular-nums">
+                                    {currentLat.toFixed(6)}, {currentLng.toFixed(6)}
+                                  </span>
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => void navigator.clipboard.writeText(`${currentLat.toFixed(6)}, ${currentLng.toFixed(6)}`)}
+                                      className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                                      title="Copy coordinates"
+                                    >
+                                      <Copy className="size-3" />
+                                      Copy Coordinates
+                                    </button>
+                                    <a
+                                      href={`https://www.google.com/maps?q=${currentLat},${currentLng}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1 text-[11px] text-primary hover:underline"
+                                    >
+                                      <ExternalLink className="size-3" />
+                                      Open in Maps
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              /* GPS Location Card — no location */
+                              <div className="rounded-md border border-dashed p-3 flex flex-col gap-2">
+                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                  <MapPin className="size-3.5 shrink-0" />
+                                  <span className="text-xs font-medium">No GPS Location Assigned</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    placeholder="Paste Google Maps link or coordinates (30.0444, 31.2357)…"
+                                    {...form.register('google_maps_url')}
+                                    className="flex-1 h-8 text-sm"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 shrink-0"
+                                    onClick={() => void handleImportMapsUrl()}
+                                    disabled={!watchedGoogleMapsUrl || locResolving}
+                                  >
+                                    {locResolving ? (
+                                      <Loader2 className="size-3.5 mr-1 animate-spin" />
+                                    ) : (
+                                      <MapPin className="size-3.5 mr-1" />
+                                    )}
+                                    {locResolving ? 'Resolving…' : 'Import Location'}
+                                  </Button>
+                                  {watchedGoogleMapsUrl && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                                      onClick={handleClearLocation}
+                                    >
+                                      <X className="size-3.5" />
+                                    </Button>
+                                  )}
+                                </div>
+                                {mapsUrlError && (
+                                  <p className="text-xs text-destructive">{mapsUrlError}</p>
+                                )}
+                              </div>
+                            )}
                           </FormField>
                         </div>
 
@@ -1169,11 +2103,22 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                     <ManualOrderProductsSection
                       finishedProducts={fgProducts}
                       rawMaterials={rawMaterials}
-                      channelSelected={Boolean(watchedChannelId)}
+                      channelSelected={Boolean(watchedChannelId) || isStructurallyLocked}
                       loadingProducts={loadingProducts && fgProducts.length === 0}
+                      locked={isStructurallyLocked}
                     />
                   </CardContent>
                 </Card>
+              )}
+
+              {/* § 3.5 — Inventory Status Card (TASK-ORDER-INVENTORY-STATUS-001) */}
+              {showContentSections && !isEdit && (
+                <OrderInventoryStatusCard
+                  orderPolicy={orderPolicy}
+                  lines={watchedLines ?? []}
+                  allProductMap={allProductMap}
+                  onViewPolicy={() => setShowPolicyPanel(true)}
+                />
               )}
 
               {/* § 4 — Payment & Shipping */}
@@ -1183,42 +2128,60 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                     <CardTitle className="text-base">Payment & Shipping</CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-4">
-                    <OrderPaymentSection />
+                    <OrderPaymentSection
+                      paymentProofPolicy={orderPolicy?.payment_proof_policy}
+                      paymentMethods={policyPaymentMethods}
+                    />
 
-                    {/* Shipping cost with Automatic / Manual Override badge */}
+                    {/* Shipping cost — read-only when structurally locked or auto-calculated */}
                     <div className="border-t pt-4">
                       <FormField name="shipping_cost" label="Shipping Cost">
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex-1">
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="0.00"
-                              {...form.register('shipping_cost')}
-                              disabled={!overrideUnlocked && autoShippingCost != null}
-                              className={cn(!overrideUnlocked && autoShippingCost != null ? 'bg-muted' : '')}
-                            />
+                        {isStructurallyLocked ? (
+                          <div className="flex h-9 items-center justify-between rounded-md border bg-muted/50 px-3 text-sm">
+                            <span className="font-medium tabular-nums">
+                              {fmt(Number(form.watch('shipping_cost') || 0))} EGP
+                            </span>
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Lock className="size-3" />
+                              Locked
+                            </span>
                           </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={handleOverrideToggle}
-                            title={overrideUnlocked ? 'Lock to auto rate' : 'Override shipping cost'}
-                          >
-                            {overrideUnlocked ? <Lock className="size-4" /> : <Unlock className="size-4" />}
-                          </Button>
-                        </div>
-                        {watchedShipSrc === 'auto' && !overrideUnlocked && (
-                          <p className="mt-1 flex items-center gap-1.5 text-xs text-emerald-600">
-                            <Badge variant="outline" className="border-emerald-300 px-1.5 py-0 text-[10px] text-emerald-600">
-                              Automatic
-                            </Badge>
-                            Based on selected delivery zone.
-                          </p>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            {!overrideUnlocked && watchedShipSrc === 'auto' ? (
+                              /* Part 5 — Auto display */
+                              <div className="flex h-9 flex-1 items-center justify-between rounded-md border bg-muted/50 px-3 text-sm">
+                                <input type="hidden" {...form.register('shipping_cost')} />
+                                <span className="font-medium tabular-nums">
+                                  {fmt(Number(form.watch('shipping_cost') || 0))} EGP
+                                </span>
+                                <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                                  <CheckCircle2 className="size-3" />
+                                  Calculated Automatically
+                                </span>
+                              </div>
+                            ) : (
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...form.register('shipping_cost')}
+                                className="flex-1"
+                              />
+                            )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={handleOverrideToggle}
+                              title={overrideUnlocked ? 'Lock to auto rate' : 'Override shipping cost'}
+                            >
+                              {overrideUnlocked ? <Lock className="size-4" /> : <Unlock className="size-4" />}
+                            </Button>
+                          </div>
                         )}
-                        {watchedShipSrc === 'override' && (
+                        {!isStructurallyLocked && watchedShipSrc === 'override' && (
                           <p className="mt-1 flex items-center gap-1.5 text-xs text-amber-600">
                             <Badge variant="outline" className="border-amber-300 px-1.5 py-0 text-[10px] text-amber-600">
                               Manual Override
@@ -1229,24 +2192,168 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                       </FormField>
                     </div>
 
-                    {/* Discount + Deposit */}
-                    <div className="grid gap-3 border-t pt-4 sm:grid-cols-3">
-                      <FormField name="discount_type" label="Discount Type">
-                        <select
-                          {...form.register('discount_type')}
-                          className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs"
-                        >
-                          <option value="">No discount</option>
-                          <option value="percentage">Percentage (%)</option>
-                          <option value="fixed">Fixed amount</option>
-                        </select>
-                      </FormField>
-                      <FormField name="discount_amount" label="Discount Value">
-                        <Input type="number" min="0" step="any" placeholder="0.00" {...form.register('discount_amount')} />
-                      </FormField>
-                      <FormField name="deposit_amount" label="Deposit">
-                        <Input type="number" min="0" step="any" placeholder="0.00" {...form.register('deposit_amount')} />
-                      </FormField>
+                    {/* Part 3 — Shipping Summary Card (shows whenever a quote is returned) */}
+                    {shippingGovernorateId && shippingQuote && (
+                      <div className="rounded-md border bg-muted/20 px-3 py-2.5 text-xs">
+                        <p className="mb-1.5 font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Shipping Details</p>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                          {/* Coverage — dynamic */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-muted-foreground">Coverage:</span>
+                            {(() => {
+                              const cs = shippingQuote.coverage_status ?? (shippingQuote.available ? 'covered' : 'needs_review');
+                              if (cs === 'covered') return <span className="font-medium text-emerald-600 dark:text-emerald-400">Covered</span>;
+                              if (cs === 'unavailable') return <span className="font-medium text-red-600 dark:text-red-400">Unavailable</span>;
+                              return <span className="font-medium text-amber-600 dark:text-amber-400">Needs Review</span>;
+                            })()}
+                          </div>
+                          {/* Provider */}
+                          {shippingQuote.preferred_provider && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-muted-foreground">Provider:</span>
+                              <span className="font-medium">{shippingQuote.preferred_provider}</span>
+                            </div>
+                          )}
+                          {/* Delivery Days */}
+                          {shippingQuote.delivery_days != null && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-muted-foreground">ETA:</span>
+                              <span className="font-medium">
+                                {shippingQuote.same_day ? 'Same day' : `${shippingQuote.delivery_days} day${shippingQuote.delivery_days !== 1 ? 's' : ''}`}
+                              </span>
+                            </div>
+                          )}
+                          {/* COD Allowed */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-muted-foreground">COD:</span>
+                            <span className={cn('font-medium', shippingQuote.cod_allowed ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>
+                              {shippingQuote.cod_allowed ? 'Allowed' : 'Not available'}
+                            </span>
+                          </div>
+                          {/* Time Slot */}
+                          {form.watch('delivery_window') && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-muted-foreground">Time Slot:</span>
+                              <span className="font-medium">{form.watch('delivery_window')}</span>
+                            </div>
+                          )}
+                          {/* Requested Delivery Date */}
+                          {watchedDeliveryDate && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-muted-foreground">Delivery:</span>
+                              <span className="font-medium">{watchedDeliveryDate}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Discount + Deposit — checkbox-first UX */}
+                    <div className="grid gap-4 border-t pt-4 sm:grid-cols-3">
+                      {/* Discount */}
+                      <div className="sm:col-span-2">
+                        {isStructurallyLocked ? (
+                          /* Read-only discount display when order is structurally locked */
+                          <div>
+                            <p className="mb-1.5 text-xs font-medium text-foreground/80">Discount</p>
+                            {watchedDiscountType ? (
+                              <div className="flex h-9 items-center gap-2 rounded-md border bg-muted/50 px-3 text-sm">
+                                <span className="font-medium tabular-nums">
+                                  {form.watch('discount_amount') || '0'}
+                                  {watchedDiscountType === 'percentage' ? '%' : ' EGP'}
+                                </span>
+                                <span className="text-xs capitalize text-muted-foreground">({watchedDiscountType})</span>
+                                <Lock className="ml-auto size-3 text-muted-foreground/60" />
+                              </div>
+                            ) : (
+                              <div className="flex h-9 items-center rounded-md border bg-muted/50 px-3 text-sm text-muted-foreground">
+                                No discount
+                                <Lock className="ml-auto size-3 text-muted-foreground/60" />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          /* Editable discount when order is not locked */
+                          <>
+                            <label className="mb-2 flex cursor-pointer items-center gap-2 text-xs font-medium text-foreground/80">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(watchedDiscountType)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    form.setValue('discount_type', 'percentage');
+                                  } else {
+                                    form.setValue('discount_type', '');
+                                    form.setValue('discount_amount', '');
+                                  }
+                                }}
+                                className="size-3.5 accent-primary"
+                              />
+                              Apply Discount
+                            </label>
+                            {watchedDiscountType && (
+                              <div className="flex flex-wrap items-center gap-3 pl-5">
+                                <div className="flex items-center gap-3">
+                                  {(['percentage', 'fixed'] as const).map((val) => (
+                                    <label key={val} className="flex cursor-pointer items-center gap-1.5 text-sm">
+                                      <input
+                                        type="radio"
+                                        value={val}
+                                        {...form.register('discount_type')}
+                                        className="size-3.5 accent-primary"
+                                      />
+                                      {val === 'percentage' ? 'Percentage' : 'Fixed Amount'}
+                                    </label>
+                                  ))}
+                                </div>
+                                <div className="relative max-w-36">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    placeholder="0.00"
+                                    {...form.register('discount_amount')}
+                                    className="pr-8"
+                                  />
+                                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">
+                                    {watchedDiscountType === 'percentage' ? '%' : 'EGP'}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      {/* Deposit */}
+                      <div>
+                        <label className="mb-2 flex cursor-pointer items-center gap-2 text-xs font-medium text-foreground/80">
+                          <input
+                            type="checkbox"
+                            checked={depositEnabled}
+                            onChange={(e) => {
+                              setDepositEnabled(e.target.checked);
+                              if (!e.target.checked) form.setValue('deposit_amount', '');
+                            }}
+                            className="size-3.5 accent-primary"
+                          />
+                          Deposit Received
+                        </label>
+                        {depositEnabled && (
+                          <div className="relative max-w-36">
+                            <Input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="0.00"
+                              {...form.register('deposit_amount')}
+                              className="pr-10"
+                            />
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">
+                              EGP
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="border-t pt-4">
@@ -1261,6 +2368,97 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                     </div>
                   </CardContent>
                 </Card>
+              )}
+              {/* Part 9 — Applied Brand Policies (compact summary always visible) */}
+              {showContentSections && !isEdit && orderPolicy && (
+                <div className="rounded-md border">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-muted/30 transition-colors rounded-md"
+                    onClick={() => setShowPolicyPanel((v) => !v)}
+                  >
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <BookOpen className="size-3.5" />
+                      <span className="font-medium">Applied Brand Policies</span>
+                    </span>
+                    {showPolicyPanel ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
+                  </button>
+
+                  {/* Compact always-visible summary row */}
+                  <div className="flex flex-wrap items-center gap-2 border-t px-4 py-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:ring-emerald-800">
+                      <CheckCircle2 className="size-2.5" />
+                      Entry: {(() => {
+                        const mp = orderPolicy.source_entry_policies.manual;
+                        const ss = Array.isArray(mp) ? mp : [mp];
+                        return ss.length === 1 ? (STATUS_LABELS[ss[0]] ?? ss[0]) : `${ss.length} statuses`;
+                      })()}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:ring-emerald-800">
+                      <CheckCircle2 className="size-2.5" />
+                      Matching: {MATCHING_POLICY_LABELS[orderPolicy.customer_matching_policy]?.split(' ')[0] ?? 'Policy set'}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
+                      orderPolicy.auto_reserve_inventory
+                        ? 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/30 dark:text-sky-400 dark:ring-sky-800'
+                        : 'bg-muted text-muted-foreground ring-border'
+                    }`}>
+                      <CheckCircle2 className="size-2.5" />
+                      {orderPolicy.auto_reserve_inventory ? 'Auto Reserve' : 'Manual Reserve'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:ring-emerald-800">
+                      <CheckCircle2 className="size-2.5" />
+                      {Object.keys(orderPolicy.payment_proof_policy).length} Payment Methods
+                    </span>
+                  </div>
+
+                  {showPolicyPanel && (
+                    <div className="border-t px-4 pb-4 pt-3">
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                        <div>
+                          <dt className="font-medium text-muted-foreground">Entry Status</dt>
+                          <dd className="mt-0.5 font-medium">{(() => {
+                            const mp = orderPolicy.source_entry_policies.manual;
+                            const ss = Array.isArray(mp) ? mp : [mp];
+                            return ss.map((s) => STATUS_LABELS[s] ?? s).join(', ');
+                          })()}</dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-muted-foreground">Customer Matching</dt>
+                          <dd className="mt-0.5 font-medium">{MATCHING_POLICY_LABELS[orderPolicy.customer_matching_policy] ?? orderPolicy.customer_matching_policy}</dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-muted-foreground">Auto Reserve Inventory</dt>
+                          <dd className="mt-0.5 font-medium">{orderPolicy.auto_reserve_inventory ? 'Yes' : 'No'}</dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-muted-foreground">Discount Policy</dt>
+                          <dd className="mt-0.5 font-medium capitalize">{orderPolicy.discount_policy.replace(/_/g, ' ')}</dd>
+                        </div>
+                        <div className="col-span-2">
+                          <dt className="font-medium text-muted-foreground mb-1.5">Payment Proof Requirements</dt>
+                          <dd className="flex flex-wrap gap-1.5">
+                            {Object.entries(orderPolicy.payment_proof_policy).map(([method, req]) => (
+                              <span
+                                key={method}
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
+                                  req === 'required'
+                                    ? 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:ring-amber-800'
+                                    : req === 'optional'
+                                    ? 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:ring-sky-800'
+                                    : 'bg-muted text-muted-foreground ring-border'
+                                }`}
+                              >
+                                <Info className="size-2.5" />
+                                {PAYMENT_METHOD_LABELS[method] ?? method.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}: {req}
+                              </span>
+                            ))}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 

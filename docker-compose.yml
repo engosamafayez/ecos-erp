@@ -100,6 +100,9 @@ services:
       # Vhost config only — allows tuning without a full image rebuild.
       # The SPA and build-info inside the image are NOT affected by this mount.
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # User-uploaded files (logos, product images, etc.).
+      # Mounted read-only; only the app container writes here via PHP-FPM.
+      - app-storage:/var/www/html/storage:ro
     depends_on:
       app:
         condition: service_healthy

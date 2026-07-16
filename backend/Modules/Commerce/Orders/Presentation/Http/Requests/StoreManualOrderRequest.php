@@ -33,16 +33,20 @@ final class StoreManualOrderRequest extends FormRequest
             'delivery_window'           => 'nullable|string|max:100',
 
             // ── Payment ──────────────────────────────────────────────────────
-            'payment_method_manual'     => 'nullable|in:cod,instapay,mobile_wallet,credit_card',
+            'payment_method_manual'     => 'nullable|in:cod,instapay,mobile_wallet,credit_card,bank_transfer',
             'payment_proof_path'        => 'nullable|string|max:500',
 
             // ── Location / shipping ───────────────────────────────────────────
             'governorate'               => 'nullable|string|max:100',
+            'governorate_id'            => 'nullable|integer',
             'city'                      => 'nullable|string|max:100',
+            'city_id'                   => 'nullable|integer',
             'area'                      => 'nullable|string|max:100',
             'shipping_address'          => 'nullable|string|max:500',
             'google_maps_lat'           => 'nullable|numeric|between:-90,90',
             'google_maps_lng'           => 'nullable|numeric|between:-180,180',
+            'google_maps_url'           => 'nullable|string|max:500',
+            'location_source'           => 'nullable|string|in:google_maps,manual',
             'shipping_cost'             => 'nullable|numeric|min:0',
             'shipping_cost_source'      => 'nullable|in:auto,override',
 

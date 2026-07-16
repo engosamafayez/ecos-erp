@@ -19,8 +19,10 @@ import {
   Package,
   PackageCheck,
   PackageOpen,
+  Route,
   Settings,
   Settings2,
+  ShieldCheck,
   ShoppingBag,
   ShoppingCart,
   Tag,
@@ -106,6 +108,19 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'wave-missing',          label: 'Missing Materials', path: ROUTES.waveMissingMaterials, icon: AlertTriangle },
       { key: 'wave-orders',           label: 'Wave Orders',       path: ROUTES.waveOrders,           icon: ShoppingCart },
       { key: 'wave-settings',         label: 'Wave Settings',     path: ROUTES.waveSettings,         icon: Settings2    },
+    ],
+  },
+  {
+    label: 'Distribution OS',
+    items: [
+      { key: 'distribution-board', label: 'Distribution Board', path: ROUTES.distributionBoard, icon: Route },
+    ],
+  },
+  {
+    label: 'Loading OS',
+    items: [
+      { key: 'loading-os-dashboard', label: 'Loading Dashboard', path: ROUTES.loadingOsDashboard, icon: Truck },
+      { key: 'dispatch-gate',        label: 'Dispatch Gate',     path: ROUTES.dispatchGate,       icon: ShieldCheck },
     ],
   },
   {

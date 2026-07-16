@@ -59,8 +59,8 @@ final class MaterialDemandCalculator
                 'boml.raw_material_id          AS material_id',
                 'p.name                        AS material_name',
                 'p.sku                         AS material_sku',
-                DB::raw('CAST(boml.quantity AS NUMERIC)          AS qty_per_unit'),
-                DB::raw('COALESCE(CAST(boml.waste_percentage AS NUMERIC), 0) AS waste_pct'),
+                DB::raw('CAST(boml.quantity AS DECIMAL(15,4))          AS qty_per_unit'),
+                DB::raw('COALESCE(CAST(boml.waste_percentage AS DECIMAL(15,4)), 0) AS waste_pct'),
             ])
             ->get();
 
@@ -110,7 +110,10 @@ final class MaterialDemandCalculator
             $stockRow    = $stockLevels[$agg['material_id']] ?? null;
             $onHand      = $stockRow ? (float) $stockRow->on_hand_qty : 0.0;
             $reserved    = $stockRow ? (float) $stockRow->reserved_qty : 0.0;
-            $available   = max(0.0, $onHand - $reserved);
+            // Use physical on-hand stock for deterministic demand planning.
+            // Order-level soft reservations are volatile (change with order status transitions)
+            // and should not affect manufacturing demand calculations.
+            $available   = max(0.0, $onHand);
             $missing     = max(0.0, $required - $available);
             $coveragePct = $required > 0.0
                 ? min(100.0, round(($available / $required) * 100.0, 2))

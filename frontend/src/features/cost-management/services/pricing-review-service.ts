@@ -93,6 +93,10 @@ export const pricingReviewService = {
     await api.post(`${BASE}/bulk-policy`, payload);
   },
 
+  async publish(id: string): Promise<void> {
+    await api.post(`${BASE}/${id}/publish`);
+  },
+
   async getBadge(companyId?: string): Promise<{ pending: number }> {
     return safeFetch(async () => {
       const { data } = await api.get<{ pending: number }>(`${BASE}/badge`, { params: companyId ? { company_id: companyId } : undefined });

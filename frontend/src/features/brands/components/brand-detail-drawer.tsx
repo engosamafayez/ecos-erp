@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Briefcase, Building2, Globe, History, Package, Pencil, Tag } from 'lucide-react';
+import { Briefcase, Building2, Globe, History, Package, Pencil, ShoppingCart, Tag, Truck } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,9 @@ import {
 } from '@/components/ui/sheet';
 import { getMediaUrl } from '@/lib/media';
 import type { Brand } from '@/features/brands/types/brand';
+import { BrandShippingTab }         from '@/features/brands/components/brand-shipping-tab';
+import { BrandDeliveryWindowsTab } from '@/features/brands/components/brand-delivery-windows-tab';
+import { PolicyWorkspace } from '@/features/admin/configuration/components/policy-workspace';
 import { useBusinessAccountsQuery } from '@/features/business-accounts/hooks/use-business-accounts';
 import { useChannelsQuery } from '@/features/channels/hooks/use-channels';
 import { useProductsQuery } from '@/features/products/hooks/use-products';
@@ -162,7 +165,7 @@ function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: Ove
             {brand.default_target_margin !== null && (
               <div>
                 <p className="text-sm font-semibold">{brand.default_target_margin}%</p>
-                <p className="text-[10px] text-muted-foreground">Target Margin</p>
+                <p className="text-[10px] text-muted-foreground">Min Margin</p>
               </div>
             )}
             {brand.default_markup !== null && (
@@ -233,9 +236,15 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
             <div className="sticky top-0 z-10 bg-background border-b">
               <TabsList className="w-full rounded-none border-0 bg-transparent h-10 gap-0 p-0">
                 <TabsTrigger value="overview"          className={TAB_CLS}>Overview</TabsTrigger>
-                <TabsTrigger value="business-accounts" className={TAB_CLS}>Accounts</TabsTrigger>
+                <TabsTrigger value="pricing"           className={TAB_CLS}>Pricing</TabsTrigger>
+                <TabsTrigger value="orders"            className={TAB_CLS}>
+                  <ShoppingCart className="size-3 mr-1" />Orders
+                </TabsTrigger>
                 <TabsTrigger value="channels"          className={TAB_CLS}>Channels</TabsTrigger>
                 <TabsTrigger value="products"          className={TAB_CLS}>Products</TabsTrigger>
+                <TabsTrigger value="shipping"          className={TAB_CLS}>
+                  <Truck className="size-3 mr-1" />Shipping & Delivery
+                </TabsTrigger>
                 <TabsTrigger value="activity"          className={TAB_CLS}>Activity</TabsTrigger>
               </TabsList>
             </div>
@@ -247,6 +256,14 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
                 channelsCount={channelsResult.data?.meta.total ?? 0}
                 productsCount={productsResult.data?.meta.total ?? 0}
               />
+            </TabsContent>
+
+            <TabsContent value="pricing" className="m-0 p-0">
+              <PolicyWorkspace brandId={brand.id} group="pricing" />
+            </TabsContent>
+
+            <TabsContent value="orders" className="m-0 p-0">
+              <PolicyWorkspace brandId={brand.id} group="order" />
             </TabsContent>
 
             <TabsContent value="business-accounts" className="m-0 px-6 py-5">
@@ -336,6 +353,23 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
                   )}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="shipping" className="m-0 p-0">
+              <Tabs defaultValue="general">
+                <div className="border-b px-6">
+                  <TabsList className="rounded-none border-0 bg-transparent h-9 gap-0 p-0 -mb-px">
+                    <TabsTrigger value="general"    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">General</TabsTrigger>
+                    <TabsTrigger value="time-slots" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">Time Slots</TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value="general" className="m-0 px-6 py-5">
+                  <BrandShippingTab brandId={brand.id} />
+                </TabsContent>
+                <TabsContent value="time-slots" className="m-0 px-6 py-5">
+                  <BrandDeliveryWindowsTab brandId={brand.id} />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
 
             <TabsContent value="activity" className="m-0 px-6 py-5">

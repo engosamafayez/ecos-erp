@@ -8,6 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -52,6 +53,10 @@ function AlertDialogDescription(props: React.ComponentProps<typeof DialogDescrip
   return <DialogDescription {...props} />;
 }
 
+function AlertDialogTrigger(props: React.ComponentProps<typeof DialogTrigger>) {
+  return <DialogTrigger {...props} />;
+}
+
 function AlertDialogCancel({
   onClick,
   children = 'Cancel',
@@ -73,6 +78,7 @@ function AlertDialogAction({
 
 export {
   AlertDialog,
+  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,

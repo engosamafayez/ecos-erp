@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\CostManagement\Domain\Services;
 
 use Illuminate\Support\Collection;
+use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Commerce\ProductMappings\Domain\Enums\SyncStatus;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
 use Modules\CostManagement\Domain\Enums\PricingReviewStatus;
@@ -27,6 +28,10 @@ use Modules\Inventory\Products\Domain\Models\Product;
 final class PricingReviewService
 {
     public const DEFAULT_TARGET_MARGIN = 30.0;
+
+    public function __construct(
+        private readonly ConfigurationManager $config,
+    ) {}
 
     /**
      * Create or update a pending pricing review for a finished product.
@@ -234,7 +239,7 @@ final class PricingReviewService
         $newSalePrice = null;
         $discountPct  = $product->effectiveDiscountPct();
 
-        // Reject never updates prices; other actions always write both regular and sale price.
+        // Reject never updates prices; other actions check publishing strategy.
         if ($action !== 'reject') {
             // For approve_suggested: use the stored suggested_sale_price shown to the user.
             // For keep_current / custom_price: derive sale from the chosen price + live discount.
@@ -242,15 +247,32 @@ final class PricingReviewService
                 ? ($review->suggested_sale_price ?? round($newPrice * (1 - $discountPct / 100), 4))
                 : round($newPrice * (1 - $discountPct / 100), 4);
 
-            $product->update([
-                'regular_price' => $newPrice,
-                'sale_price'    => $newSalePrice > 0.0 ? $newSalePrice : null,
-            ]);
+            // Read brand publishing strategy to decide immediate vs. staged publish.
+            $product->loadMissing('brand');
+            $brandId  = (string) ($product->brand_id ?? '');
+            $policy   = $brandId !== '' ? $this->config->getBrandPolicy($brandId, 'pricing') : [];
+            $strategy = $policy['publishing_strategy'] ?? 'automatic';
 
-            // Mark all channel mappings for re-sync so updated prices propagate.
-            ProductMapping::query()
-                ->where('product_id', $product->id)
-                ->update(['sync_status' => SyncStatus::Pending->value]);
+            if ($strategy === 'approval_only') {
+                // Stage: store approved prices in the review row; do NOT update the product yet.
+                $review->update([
+                    'approved_price'      => $newPrice,
+                    'approved_sale_price' => $newSalePrice > 0.0 ? $newSalePrice : null,
+                    'publish_status'      => 'pending_publish',
+                ]);
+            } else {
+                // Automatic: write prices immediately, mark channel mappings for sync.
+                $product->update([
+                    'regular_price' => $newPrice,
+                    'sale_price'    => $newSalePrice > 0.0 ? $newSalePrice : null,
+                ]);
+
+                ProductMapping::query()
+                    ->where('product_id', $product->id)
+                    ->update(['sync_status' => SyncStatus::Pending->value]);
+
+                $review->update(['publish_status' => 'published']);
+            }
         }
 
         $marginPct = $newPrice > 0

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\MasterData\Warehouses\Domain\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Modules\MasterData\Warehouses\Infrastructure\Database\Factories\WarehouseFactory;
 use Modules\Organization\Companies\Domain\Models\Company;
 
@@ -51,6 +53,20 @@ class Warehouse extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', static function (Builder $query): void {
+            if (! Auth::check()) {
+                return;
+            }
+            $companyId = Auth::user()?->company_id;
+            if ($companyId === null) {
+                return; // super-admin sees all warehouses
+            }
+            $query->where('company_id', $companyId);
+        });
     }
 
     /**

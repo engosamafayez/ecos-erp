@@ -61,6 +61,10 @@ function SheetContent({
             'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t',
           className,
         )}
+        onInteractOutside={(e) => {
+          const target = (e as CustomEvent).detail?.originalEvent?.target as HTMLElement | null;
+          if (target?.closest('[data-radix-popper-content-wrapper]')) e.preventDefault();
+        }}
         {...props}
       >
         {children}
@@ -106,4 +110,14 @@ function SheetDescription({
   );
 }
 
-export { Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetDescription };
+function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="sheet-footer"
+      className={cn('flex shrink-0 flex-wrap justify-end gap-2 border-t p-4', className)}
+      {...props}
+    />
+  );
+}
+
+export { Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter };

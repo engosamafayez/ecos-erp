@@ -75,7 +75,7 @@ export function OrderMobileCard({
             ) : null}
           </div>
           <span className="text-sm font-semibold tabular-nums shrink-0">
-            {formatTotal(order.total)}
+            {formatTotal(order.grand_total)}
           </span>
         </div>
 

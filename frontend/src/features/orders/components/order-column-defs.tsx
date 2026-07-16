@@ -1,8 +1,9 @@
 import type { TFunction } from 'i18next';
-import { Edit, ExternalLink, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Clock, ExternalLink, FileCheck, MessageCircle, MoreVertical, Paperclip, Printer, User } from 'lucide-react';
+import { useState } from 'react';
 
 import type { DataGridColumnDef } from '@/components/data-grid/types';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,12 +11,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 import { OrderAddressCell } from './order-address-cell';
+import { OrderConfirmationBadge } from './order-confirmation-badge';
 import { OrderCustomerBadge } from './order-customer-badge';
+import { OrderItemsPreview } from './order-items-preview';
+import { OrderLocationCell } from './order-location-cell';
+import { OrderPaymentCell } from './order-payment-cell';
 import { OrderPhoneCell } from './order-phone-cell';
-import { OrderStatusBadge } from './order-status-badge';
+import { OrderReservationCell } from './order-reservation-cell';
+import { OrderZoneEditor } from './order-zone-editor';
+import { SmartStatusSelector } from './smart-status-selector';
 import type { Order } from '../types/order';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -29,13 +42,59 @@ function formatDate(d: string | null): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(d));
 }
 
-function AttemptsCell({ count }: { count: number }) {
-  const cls =
-    count === 0 ? 'text-muted-foreground'
-    : count === 1 ? 'text-blue-600 dark:text-blue-400 font-medium'
-    : count === 2 ? 'text-orange-500 dark:text-orange-400 font-medium'
-    : 'text-red-500 dark:text-red-400 font-semibold';
-  return <span className={cn('tabular-nums', cls)}>{count}</span>;
+// ── Payment Proof cell ───────────────────────────────────────────────────────
+
+function PaymentProofCell({ url }: { url: string }) {
+  const [open, setOpen] = useState(false);
+  const ext = url.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen(true); }}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium
+          text-emerald-700 dark:text-emerald-400
+          bg-emerald-50 dark:bg-emerald-900/30
+          ring-1 ring-inset ring-emerald-600/20
+          hover:ring-emerald-500/40 transition-colors"
+      >
+        <FileCheck className="size-3" />
+        Proof Received
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Payment Proof</DialogTitle>
+          </DialogHeader>
+          {isImage ? (
+            <div className="overflow-auto max-h-[70vh] rounded-md border bg-muted/20 flex items-center justify-center p-2">
+              <img src={url} alt="Payment proof" className="max-w-full object-contain rounded" />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <Paperclip className="size-8 text-muted-foreground" />
+              <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">
+                Open attachment ↗
+              </a>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ── Customer Intelligence badge ──────────────────────────────────────────────
+
+type IntelligenceBadge = { label: string; cls: string };
+
+function getIntelligenceBadge(totalOrders: number): IntelligenceBadge {
+  if (totalOrders >= 10) return { label: '🔵 VIP',    cls: 'text-blue-700 dark:text-blue-400' };
+  if (totalOrders >= 2)  return { label: '🟢 Repeat', cls: 'text-emerald-700 dark:text-emerald-400' };
+  return                        { label: '🟠 New',    cls: 'text-orange-600 dark:text-orange-400' };
 }
 
 // ── Callbacks ─────────────────────────────────────────────────────────────────
@@ -44,91 +103,323 @@ export type OrderColumnCallbacks = {
   onView: (order: Order) => void;
   onEdit?: (order: Order) => void;
   onDelete?: (order: Order) => void;
-  onStatusChange?: (order: Order) => void;
+  onStatusUpdated?: () => void;
   onEditLocation?: (order: Order) => void;
   onDeleteLocation?: (order: Order) => void;
+  onNotes?: (order: Order) => void;
+  onConfirmCustomer?: (order: Order) => void;
+  onTimeline?: (order: Order) => void;
+  onVerifyPayment?: (order: Order) => void;
+  onPrint?: (order: Order) => void;
 };
 
-// ── Factory ───────────────────────────────────────────────────────────────────
+// ── Enterprise Actions Dropdown ───────────────────────────────────────────────
 
-/**
- * Returns the 14 DataGrid column definitions for the Orders list.
- * The checkbox selection column is handled automatically by UniversalDataGrid.
- *
- * Call inside useMemo with callbacks as deps to prevent unnecessary re-renders.
- */
+function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: OrderColumnCallbacks }) {
+  const [copied, setCopied] = useState(false);
+  const phone  = order.billing_phone ?? order.customer?.phone ?? order.customer?.mobile;
+  const digits = phone?.replace(/\D/g, '') ?? '';
+
+  function copyOrder() {
+    void navigator.clipboard.writeText(`${window.location.origin}/app/orders/${order.id}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="inline-flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors outline-none"
+          aria-label="Order actions"
+        >
+          <MoreVertical className="size-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onClick={() => callbacks.onView(order)}>
+          <ExternalLink className="size-3.5" />
+          View Order
+        </DropdownMenuItem>
+        {callbacks.onEdit ? (
+          <DropdownMenuItem onClick={() => callbacks.onEdit!(order)}>
+            <User className="size-3.5" />
+            Edit Order
+          </DropdownMenuItem>
+        ) : null}
+        {order.customer?.id ? (
+          <DropdownMenuItem asChild>
+            <a href={`/app/customers/${order.customer.id}`} onClick={(e) => e.stopPropagation()}>
+              <User className="size-3.5" />
+              Customer Profile
+            </a>
+          </DropdownMenuItem>
+        ) : null}
+        {callbacks.onTimeline ? (
+          <DropdownMenuItem onClick={() => callbacks.onTimeline!(order)}>
+            <Clock className="size-3.5" />
+            Timeline
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuSeparator />
+        {callbacks.onPrint ? (
+          <DropdownMenuItem onClick={() => callbacks.onPrint!(order)}>
+            <Printer className="size-3.5" />
+            Invoice / Print
+          </DropdownMenuItem>
+        ) : null}
+        {phone ? (
+          <DropdownMenuItem asChild>
+            <a
+              href={`https://wa.me/${digits}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MessageCircle className="size-3.5" />
+              WhatsApp
+            </a>
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuItem onClick={copyOrder}>
+          <ExternalLink className="size-3.5" />
+          {copied ? 'Copied!' : 'Copy Order Link'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {callbacks.onDelete ? (
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => callbacks.onDelete!(order)}
+          >
+            <MoreVertical className="size-3.5" />
+            Cancel Order
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ── Factory ───────────────────────────────────────────────────────────────────
+// Enterprise column order (ORDER_COLUMN_META is authoritative for display order):
+// ☐ Order | Customer | Status | Address | Zone | Location |
+// Confirmation | Items | Payment | Payment Proof | Total | Customer Notes |
+// Created | Sales Rep | Driver | Store | Attempts | Updated | Actions |
+// [hidden: Delivery Window]
+
 export function createOrderColumns(
   callbacks: OrderColumnCallbacks,
   t: TFunction<'orders'>,
 ): DataGridColumnDef<Order>[] {
-  const { onView, onEdit, onDelete, onStatusChange, onEditLocation, onDeleteLocation } = callbacks;
+  const { onView, onEditLocation, onDeleteLocation, onConfirmCustomer, onStatusUpdated } = callbacks;
 
   return [
+    // ── Order # ───────────────────────────────────────────────────────────────
     {
       key: 'order_number',
       label: t('columns.number'),
       alwaysVisible: true,
       pin: 'left',
-      width: 128,
+      width: 148,
       sortable: true,
       skeletonClassName: 'h-4 w-20',
       cell: (order) => (
-        <button
-          type="button"
-          onClick={() => onView(order)}
-          onAuxClick={(e) => { if (e.button === 1) window.open(`/orders/${order.id}`, '_blank'); }}
-          className="font-mono text-xs font-medium transition-colors hover:text-primary"
-        >
-          {order.order_number}
-        </button>
-      ),
-    },
-    {
-      key: 'store',
-      label: t('columns.store'),
-      defaultVisible: true,
-      skeletonClassName: 'h-4 w-20',
-      cell: (order) => (
-        <span className="text-xs text-muted-foreground">{order.channel?.name ?? '–'}</span>
-      ),
-    },
-    {
-      key: 'customer',
-      label: t('columns.customer'),
-      defaultVisible: true,
-      skeletonClassName: 'h-4 w-28',
-      cell: (order) => (
         <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium">{order.customer?.name ?? '–'}</span>
-            {order.customer ? <OrderCustomerBadge customer={order.customer} /> : null}
-          </div>
-          {order.customer?.code ? (
-            <span className="font-mono text-[10px] text-muted-foreground">{order.customer.code}</span>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onView(order); }}
+            onAuxClick={(e) => { if (e.button === 1) window.open(`/orders/${order.id}`, '_blank'); }}
+            className="font-mono text-xs font-medium transition-colors hover:text-primary text-start"
+          >
+            {order.order_number}
+          </button>
+          {order.external_order_id ? (
+            <span className="font-mono text-[10px] text-muted-foreground leading-none">
+              {order.external_order_id}
+            </span>
+          ) : order.channel?.type?.toLowerCase() === 'manual' ? (
+            <span className="text-[10px] text-muted-foreground/70 leading-none italic">
+              Manual Order
+            </span>
           ) : null}
         </div>
       ),
     },
+
+    // ── Customer ──────────────────────────────────────────────────────────────
     {
-      key: 'phone',
-      label: t('columns.phone'),
+      key: 'customer',
+      label: t('columns.customer'),
       defaultVisible: true,
-      skeletonClassName: 'h-4 w-24',
-      cell: (order) => <OrderPhoneCell phone={order.billing_phone} />,
+      width: 280,
+      skeletonClassName: 'h-4 w-28',
+      cell: (order) => {
+        const phone       = order.billing_phone ?? order.customer?.phone ?? order.customer?.mobile;
+        const totalOrders = order.customer?.stats?.total_orders;
+        const badge       = totalOrders !== undefined ? getIntelligenceBadge(totalOrders) : null;
+        const name        = order.customer?.name ?? '–';
+
+        return (
+          <div className="flex items-start gap-2">
+            {/* Avatar column — fixed width, aligned to first line of name */}
+            {order.customer ? (
+              <div
+                className="shrink-0 pt-px"
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <OrderCustomerBadge order={order} />
+              </div>
+            ) : null}
+            {/* Text column — name, phone, badge all left-aligned with each other */}
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-xs font-medium leading-none">{name}</span>
+              {phone ? (
+                <div
+                  className="mt-1"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <OrderPhoneCell phone={phone} />
+                </div>
+              ) : null}
+              {badge ? (
+                <span className={cn('mt-1.5 text-[10px] font-medium leading-none', badge.cls)}>
+                  {badge.label}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        );
+      },
     },
+
+    // ── Status ────────────────────────────────────────────────────────────────
     {
       key: 'status',
       label: t('columns.status'),
       defaultVisible: true,
       sortable: true,
-      skeletonClassName: 'h-5 w-20 rounded-full',
+      skeletonClassName: 'h-8 w-32 rounded-md',
       cell: (order) => (
-        <OrderStatusBadge
-          status={order.status}
-          onClick={onStatusChange ? () => onStatusChange(order) : undefined}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <SmartStatusSelector order={order} onSuccess={onStatusUpdated} />
+        </div>
       ),
     },
+
+    // ── Delivery Address — full multi-line, no truncation ─────────────────────
+    {
+      key: 'address',
+      label: t('columns.address'),
+      defaultVisible: true,
+      skeletonClassName: 'h-4 w-40',
+      cellClassName: 'min-w-48',
+      cell: (order) => (
+        <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+          <OrderAddressCell order={order} />
+        </div>
+      ),
+    },
+
+    // ── Zone — inline editable governorate/city ───────────────────────────────
+    {
+      key: 'zone',
+      label: t('columns.zone'),
+      defaultVisible: true,
+      skeletonClassName: 'h-4 w-20',
+      cell: (order) => (
+        <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+          <OrderZoneEditor order={order} />
+        </div>
+      ),
+    },
+
+    // ── Location — GPS pin + map / Waze / copy actions ────────────────────────
+    {
+      key: 'location',
+      label: t('columns.location'),
+      defaultVisible: true,
+      skeletonClassName: 'h-5 w-28',
+      cell: (order) => (
+        <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+          <OrderLocationCell
+            order={order}
+            onEdit={onEditLocation}
+            onDelete={onDeleteLocation}
+          />
+        </div>
+      ),
+    },
+
+    // ── Confirmation ──────────────────────────────────────────────────────────
+    {
+      key: 'customer_confirmed',
+      label: t('columns.customerConfirmed'),
+      defaultVisible: true,
+      skeletonClassName: 'h-5 w-20 rounded-full',
+      cell: (order) => (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1">
+            <OrderConfirmationBadge order={order} />
+            {onConfirmCustomer ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onConfirmCustomer(order); }}
+                className="ml-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground ring-1 ring-muted hover:bg-muted hover:text-foreground transition-colors"
+                title={order.confirmation_result ? 'Update confirmation' : 'Record confirmation'}
+              >
+                {order.confirmation_result ? '↻' : '+'}
+              </button>
+            ) : null}
+          </div>
+          <OrderReservationCell order={order} />
+        </div>
+      ),
+    },
+
+    // ── Items — product count with popover preview ────────────────────────────
+    {
+      key: 'products_count',
+      label: t('columns.productsCount'),
+      defaultVisible: true,
+      align: 'center',
+      skeletonClassName: 'h-4 w-6',
+      cell: (order) => (
+        <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+          <OrderItemsPreview lines={order.lines} />
+        </div>
+      ),
+    },
+
+    // ── Payment ───────────────────────────────────────────────────────────────
+    {
+      key: 'payment_method',
+      label: t('columns.paymentMethod'),
+      defaultVisible: true,
+      skeletonClassName: 'h-5 w-16 rounded',
+      cell: (order) => (
+        <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+          <OrderPaymentCell order={order} />
+        </div>
+      ),
+    },
+
+    // ── Payment Proof ─────────────────────────────────────────────────────────
+    {
+      key: 'payment_proof',
+      label: t('columns.paymentProof'),
+      defaultVisible: true,
+      skeletonClassName: 'h-5 w-24',
+      cell: (order) => order.payment_proof_path
+        ? <PaymentProofCell url={order.payment_proof_path} />
+        : <span className="text-xs text-muted-foreground">No Proof</span>,
+    },
+
+    // ── Total (Remaining Balance = Grand Total − Deposit) ─────────────────────
     {
       key: 'total',
       label: t('columns.total'),
@@ -137,75 +428,43 @@ export function createOrderColumns(
       align: 'end',
       skeletonClassName: 'h-4 w-14',
       cellClassName: 'tabular-nums font-medium',
-      cell: (order) => formatMoney(order.total),
+      cell: (order) => {
+        const remaining = order.remaining_balance ?? (order.grand_total - (order.deposit_paid ?? 0));
+        return (
+          <span className={remaining < order.grand_total ? 'text-amber-600 dark:text-amber-400' : ''}>
+            {formatMoney(remaining)}
+          </span>
+        );
+      },
     },
+
+    // ── Customer Notes ────────────────────────────────────────────────────────
     {
-      key: 'payment_method',
-      label: t('columns.paymentMethod'),
+      key: 'customer_note',
+      label: t('columns.customerNote'),
       defaultVisible: true,
-      skeletonClassName: 'h-4 w-20',
-      cell: (order) => (
-        <span className="text-xs text-muted-foreground">
-          {order.payment_method_title ?? order.payment_method ?? '–'}
-        </span>
-      ),
+      skeletonClassName: 'h-4 w-32',
+      cell: (order) => {
+        const note = order.customer_note;
+        if (!note) return <span className="text-muted-foreground">—</span>;
+        return (
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="block max-w-[180px] truncate text-xs text-foreground cursor-default">
+                  {note}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs whitespace-pre-wrap break-words">
+                {note}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
     },
-    {
-      key: 'products_count',
-      label: t('columns.productsCount'),
-      defaultVisible: true,
-      align: 'center',
-      skeletonClassName: 'h-4 w-6',
-      cell: (order) => <span className="tabular-nums font-medium">{order.lines.length}</span>,
-    },
-    {
-      key: 'address',
-      label: t('columns.address'),
-      defaultVisible: true,
-      skeletonClassName: 'h-4 w-40',
-      cellClassName: 'min-w-56',
-      cell: (order) => (
-        <OrderAddressCell
-          order={order}
-          onEditLocation={onEditLocation}
-          onDeleteLocation={onDeleteLocation}
-        />
-      ),
-    },
-    {
-      key: 'shipping_attempts',
-      label: t('columns.shippingAttempts'),
-      defaultVisible: true,
-      align: 'center',
-      skeletonClassName: 'h-4 w-6',
-      cell: (order) => <AttemptsCell count={order.shipping_attempts ?? 0} />,
-    },
-    {
-      key: 'shipping_company',
-      label: t('columns.shippingCompany'),
-      defaultVisible: true,
-      skeletonClassName: 'h-4 w-20',
-      cell: (order) =>
-        order.shipping_company_name ? (
-          order.tracking_number ? (
-            <a
-              href={`https://www.google.com/search?q=${encodeURIComponent(
-                `${order.shipping_company_name} ${order.tracking_number}`,
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-            >
-              {order.shipping_company_name}
-              <ExternalLink className="size-2.5" />
-            </a>
-          ) : (
-            <span className="text-xs text-muted-foreground">{order.shipping_company_name}</span>
-          )
-        ) : (
-          <span className="text-muted-foreground">–</span>
-        ),
-    },
+
+    // ── Created ───────────────────────────────────────────────────────────────
     {
       key: 'created_at',
       label: t('columns.createdAt'),
@@ -216,57 +475,138 @@ export function createOrderColumns(
         <span className="text-xs text-muted-foreground tabular-nums">{formatDate(order.created_at)}</span>
       ),
     },
+
+    // ── Sales Rep — channel-type-aware ───────────────────────────────────────
+    // Manual → creator name | POS → cashier name + chip | WC/API → —
+    {
+      key: 'sales_rep',
+      label: 'Sales Rep',
+      defaultVisible: true,
+      skeletonClassName: 'h-4 w-24',
+      cell: (order) => {
+        const type = order.channel?.type?.toLowerCase() ?? null;
+
+        // Imported orders: no sales rep unless explicitly stamped
+        if (type === 'woocommerce' || type === 'public_api') {
+          return <span className="text-xs text-muted-foreground">—</span>;
+        }
+
+        if (!order.created_by_name) {
+          return <span className="text-xs text-muted-foreground">—</span>;
+        }
+
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium leading-none">{order.created_by_name}</span>
+            {type === 'pos' ? (
+              <span className="text-[10px] font-medium leading-none text-amber-600 dark:text-amber-400">
+                POS
+              </span>
+            ) : null}
+          </div>
+        );
+      },
+    },
+
+    // ── Delivery Driver ───────────────────────────────────────────────────────
+    {
+      key: 'delivery_driver',
+      label: 'Driver',
+      defaultVisible: true,
+      skeletonClassName: 'h-4 w-20',
+      cell: () => (
+        <span className="text-xs text-muted-foreground">—</span>
+      ),
+    },
+
+    // ── Store ─────────────────────────────────────────────────────────────────
+    {
+      key: 'store',
+      label: t('columns.store'),
+      defaultVisible: true,
+      skeletonClassName: 'h-4 w-20',
+      cell: (order) => {
+        const typeMap: Record<string, string> = {
+          woocommerce: 'WooCommerce', pos: 'POS', manual: 'Manual', public_api: 'API',
+        };
+        const src = order.channel?.type
+          ? (typeMap[order.channel.type.toLowerCase()] ?? order.channel.type)
+          : null;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs">{order.channel?.name ?? '–'}</span>
+            {src ? (
+              <span className="text-[10px] text-muted-foreground leading-none">{src}</span>
+            ) : null}
+          </div>
+        );
+      },
+    },
+
+    // ── Delivery Attempts ─────────────────────────────────────────────────────
+    {
+      key: 'shipping_attempts',
+      label: t('columns.shippingAttempts'),
+      defaultVisible: true, // restored
+      align: 'center',
+      skeletonClassName: 'h-4 w-6',
+      cell: (order) => {
+        const count = order.shipping_attempts ?? 0;
+        const cls =
+          count === 0 ? 'text-muted-foreground'
+          : count === 1 ? 'text-blue-600 dark:text-blue-400 font-medium'
+          : count === 2 ? 'text-orange-500 dark:text-orange-400 font-medium'
+          : 'text-red-500 dark:text-red-400 font-semibold';
+        return <span className={cn('tabular-nums', cls)}>{count}</span>;
+      },
+    },
+
+    // ── Updated ───────────────────────────────────────────────────────────────
     {
       key: 'updated_at',
       label: t('columns.updatedAt'),
-      defaultVisible: false,
+      defaultVisible: true, // restored
       skeletonClassName: 'h-4 w-20',
       cell: (order) => (
         <span className="text-xs text-muted-foreground tabular-nums">{formatDate(order.updated_at)}</span>
       ),
     },
+
+    // ── Delivery Window (hidden) ──────────────────────────────────────────────
+    {
+      key: 'delivery_window',
+      label: t('columns.deliveryWindow'),
+      defaultVisible: false,
+      skeletonClassName: 'h-4 w-28',
+      cell: (order) => {
+        const date   = order.requested_delivery_date;
+        const window = order.delivery_window ?? order.preferred_delivery_time;
+        if (!date && !window) return <span className="text-muted-foreground">–</span>;
+        return (
+          <div className="flex flex-col gap-0.5">
+            {date ? <span className="text-xs font-medium">{formatDate(date)}</span> : null}
+            {window ? (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground leading-none">
+                <Clock className="size-2.5" />
+                {window}
+              </span>
+            ) : null}
+          </div>
+        );
+      },
+    },
+
+    // ── Enterprise Actions ⋮ ──────────────────────────────────────────────────
     {
       key: 'actions',
       label: '',
       alwaysVisible: true,
-      pin: 'right',
+      pin: 'right' as const,
       width: 40,
-      skeletonClassName: 'h-7 w-7 rounded',
-      cellClassName: 'text-end',
+      skeletonClassName: 'h-5 w-5',
       cell: (order) => (
-        <div className="flex items-center justify-end opacity-0 transition-opacity group-hover:opacity-100">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                aria-label={`Actions for ${order.order_number}`}
-              >
-                <MoreHorizontal className="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => onView(order)}>
-                {t('actions.view')}
-              </DropdownMenuItem>
-              {onEdit ? (
-                <DropdownMenuItem onClick={() => onEdit(order)}>
-                  <Edit className="size-3.5" />
-                  {t('actions.edit')}
-                </DropdownMenuItem>
-              ) : null}
-              {onDelete ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive" onClick={() => onDelete(order)}>
-                    <Trash2 className="size-3.5" />
-                    {t('actions.delete')}
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+          <OrderActionsMenu order={order} callbacks={callbacks} />
         </div>
       ),
     },

@@ -94,6 +94,14 @@ use Modules\Logistics\Geography\Presentation\Http\Controllers\CityController;
 use Modules\Logistics\Geography\Presentation\Http\Controllers\CityAliasController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionZoneController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionPlanningController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionBoardController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionLoadingDashboardController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionTripController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DispatchGateController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverHandoverController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\OrderDistributionSyncController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\FleetResourceController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\LoadingManifestController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandShippingController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryTimeSlotController;
 use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
@@ -295,6 +303,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::patch('orders/{order}/notes/{note}',        [OrderController::class, 'updateNote']);
     Route::delete('orders/{order}/notes/{note}',       [OrderController::class, 'deleteNote']);
     Route::get('orders/{order}/snapshot',              [OrderController::class, 'financialSnapshot']);
+    Route::get('orders/{order}/distribution-stage',    [OrderDistributionSyncController::class, 'getOrderStage']);
+    Route::get('orders/{order}/distribution-sync-history', [OrderDistributionSyncController::class, 'getSyncHistory']);
     Route::apiResource('orders', OrderController::class);
     Route::post('orders/{order}/prepare',              [OrderController::class, 'prepare']);
     Route::post('orders/{order}/verify-payment',       [OrderController::class, 'verifyPayment']);
@@ -550,6 +560,7 @@ Route::middleware('auth:sanctum')->prefix('preparation')->group(function (): voi
     Route::post('waves/{waveId}/generate-demand',        [PreparationWaveController::class, 'generateDemand']);
     Route::post('waves/{waveId}/analyze-materials',      [PreparationWaveController::class, 'analyzeMaterials']);
     Route::post('waves/{waveId}/start',                  [PreparationWaveController::class, 'start']);
+    Route::post('waves/{waveId}/advance',                [PreparationWaveController::class, 'advance']);
     Route::patch('waves/{waveId}/items/{itemId}/complete', [PreparationWaveController::class, 'completeItem']);
     Route::post('waves/{waveId}/complete',               [PreparationWaveController::class, 'complete']);
     Route::post('waves/{waveId}/cancel',                 [PreparationWaveController::class, 'cancel']);
@@ -655,6 +666,73 @@ Route::middleware('auth:sanctum')->prefix('loading')->group(function (): void {
     Route::get('sessions/{sessionId}/exceptions',                                                [LoadingExceptionController::class, 'index']);
     Route::post('sessions/{sessionId}/exceptions',                                               [LoadingExceptionController::class, 'store']);
     Route::post('sessions/{sessionId}/exceptions/{exceptionId}/resolve',                         [LoadingExceptionController::class, 'resolve']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Operations — Distribution Board OS (protected)
+| ADR-DIST-004: Wave is the single operational container
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('distribution')->group(function (): void {
+    // Board — active wave state
+    Route::get('board',                                            [DistributionBoardController::class, 'show']);
+    Route::get('board/zones/{zoneId}/orders',                     [DistributionBoardController::class, 'zoneOrders']);
+    Route::get('board/trips/{tripId}/orders',                     [DistributionBoardController::class, 'tripOrders']);
+    Route::post('board/validate',                                  [DistributionBoardController::class, 'validate']);
+    Route::post('board/finalize',                                  [DistributionBoardController::class, 'finalize']);
+    Route::get('board/exceptions',                                 [DistributionBoardController::class, 'waveExceptions']);
+
+    // Trips — full lifecycle
+    Route::post('trips',                                           [DistributionTripController::class, 'store']);
+    Route::put('trips/{id}',                                       [DistributionTripController::class, 'update']);
+    Route::delete('trips/{id}',                                    [DistributionTripController::class, 'destroy']);
+    Route::post('trips/{id}/auto-fill',                            [DistributionTripController::class, 'autoFill']);
+    Route::post('trips/{id}/orders',                               [DistributionTripController::class, 'addOrder']);
+    Route::delete('trips/{id}/orders/{orderId}',                   [DistributionTripController::class, 'removeOrder']);
+    Route::post('trips/{id}/orders/move',                          [DistributionTripController::class, 'moveOrder']);
+    Route::patch('trips/{id}/driver',                              [DistributionTripController::class, 'assignDriver']);
+    Route::patch('trips/{id}/vehicle',                             [DistributionTripController::class, 'assignVehicle']);
+    Route::patch('trips/{id}/carrier',                             [DistributionTripController::class, 'assignCarrier']);
+    Route::post('trips/{id}/custody',                              [DistributionTripController::class, 'addCustody']);
+    Route::delete('trips/{id}/custody/{custodyId}',                [DistributionTripController::class, 'removeCustody']);
+    Route::post('trips/{id}/approve',                              [DistributionTripController::class, 'approve']);
+    Route::post('trips/{id}/orders/{orderId}/return-to-wave',      [DistributionTripController::class, 'returnToWave']);
+    Route::get('trips/{id}/coverage',                              [DistributionTripController::class, 'coverageMap']);
+    Route::get('trips/{id}/manifest',                              [DistributionTripController::class, 'manifest']);
+
+    // Loading Manifests — warehouse workspace
+    Route::get('manifests/{id}',                                   [LoadingManifestController::class, 'show']);
+    Route::post('manifests/{id}/start',                            [LoadingManifestController::class, 'start']);
+    Route::post('manifests/{id}/complete',                         [LoadingManifestController::class, 'complete']);
+    Route::post('manifests/{id}/items/{itemId}/confirm',           [LoadingManifestController::class, 'confirmItem']);
+    Route::post('manifests/{id}/items/{itemId}/resolve-shortage',  [LoadingManifestController::class, 'resolveShortage']);
+    Route::get('manifests/{id}/items/{itemId}/breakdown',          [LoadingManifestController::class, 'productBreakdown']);
+
+    // Loading OS Dashboard — all active loading trips
+    Route::get('loading-trips',                                                [DistributionLoadingDashboardController::class, 'index']);
+
+    // Driver Handover — ADR-DIST-006
+    Route::get('trips/{id}/handover-status',                                   [DriverHandoverController::class, 'handoverStatus']);
+    Route::post('trips/{id}/dispatch',                                         [DriverHandoverController::class, 'dispatch']);
+    Route::post('trips/{id}/custody/{custodyId}/driver-confirm',               [DriverHandoverController::class, 'confirmCustody']);
+    Route::post('manifests/{id}/items/{itemId}/driver-confirm',                [DriverHandoverController::class, 'confirmProductReceipt']);
+    Route::post('manifests/{id}/items/{itemId}/accept-discrepancy',            [DriverHandoverController::class, 'acceptDiscrepancy']);
+
+    // Dispatch Gate — ADR-DIST-007
+    Route::get('dispatch-gate',                                                [DispatchGateController::class, 'index']);
+    Route::get('dispatch-gate/{id}',                                           [DispatchGateController::class, 'tripReview']);
+    Route::post('trips/{id}/driver-accept',                                    [DriverHandoverController::class, 'driverAccept']);
+    Route::post('trips/{id}/dispatch-vehicle',                                 [DispatchGateController::class, 'dispatchVehicle']);
+    Route::get('trips/{id}/audit-trail',                                       [DispatchGateController::class, 'auditTrail']);
+
+    // Order SSOT & Distribution Sync — ADR-DIST-008
+    Route::post('trips/{tripId}/regenerate-manifest',                          [OrderDistributionSyncController::class, 'regenerateManifest']);
+
+    // Fleet resource lookups
+    Route::get('fleet/vehicles',                                   [FleetResourceController::class, 'vehicles']);
+    Route::get('fleet/drivers',                                    [FleetResourceController::class, 'drivers']);
+    Route::get('fleet/carriers',                                   [FleetResourceController::class, 'carriers']);
 });
 
 /*

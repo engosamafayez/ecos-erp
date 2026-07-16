@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\POS\Application\Listeners;
 
 use Illuminate\Support\Facades\Log;
+use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
+use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\POS\Application\Contracts\OrderCreationPortInterface;
@@ -39,6 +41,7 @@ final class PosSaleOrderListener
 {
     public function __construct(
         private readonly OrderCreationPortInterface $orderCreation,
+        private readonly ConfigurationManager $config,
     ) {}
 
     public function handle(SaleFinalized $event): void
@@ -66,10 +69,12 @@ final class PosSaleOrderListener
             $event->items,
         );
 
+        $status = $this->resolveEntryStatus($event->channelId);
+
         $dto = new OrderDTO(
             customer_id:       (string) $customerId,
             order_date:        now()->toDateString(),
-            status:            OrderStatus::Completed,
+            status:            $status,
             lines:             $lines,
             channel_id:        $event->channelId,
             external_order_id: $event->saleId,
@@ -94,6 +99,31 @@ final class PosSaleOrderListener
                 'error'          => $e->getMessage(),
                 'trace'          => $e->getTraceAsString(),
             ]);
+        }
+    }
+
+    /**
+     * Reads the brand's source_entry_policies.pos to determine the order entry status.
+     * Falls back to OrderStatus::Completed if channelId is null or policy lookup fails.
+     */
+    private function resolveEntryStatus(?string $channelId): OrderStatus
+    {
+        if ($channelId === null) {
+            return OrderStatus::Completed;
+        }
+
+        try {
+            $channel = Channel::find($channelId);
+            if ($channel === null) {
+                return OrderStatus::Completed;
+            }
+
+            $policy      = $this->config->getBrandPolicy((string) $channel->brand_id, 'order');
+            $statusValue = $policy['source_entry_policies']['pos'] ?? 'completed';
+
+            return OrderStatus::from($statusValue);
+        } catch (\Throwable) {
+            return OrderStatus::Completed;
         }
     }
 }

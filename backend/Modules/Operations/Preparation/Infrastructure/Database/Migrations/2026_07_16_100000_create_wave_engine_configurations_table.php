@@ -27,7 +27,7 @@ return new class extends Migration
             $table->boolean('auto_move_to_preparing')->default(true);
 
             // Configuration
-            $table->json('eligible_order_statuses')->default('["confirmed","in_progress"]');
+            $table->json('eligible_order_statuses');
             $table->string('timezone', 60)->default('UTC');
             $table->boolean('is_active')->default(true);
 

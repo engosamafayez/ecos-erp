@@ -181,10 +181,10 @@ class WorkflowExecutionEngine
             ->where('workflow_id', $workflow->id)
             ->selectRaw("
                 COUNT(*) AS total,
-                COUNT(*) FILTER (WHERE status = 'completed') AS completed,
-                COUNT(*) FILTER (WHERE status = 'failed')    AS failed,
-                COUNT(*) FILTER (WHERE status IN ('pending','running','waiting')) AS active,
-                ROUND(AVG(EXTRACT(EPOCH FROM (completed_at - started_at))), 2) AS avg_duration_seconds
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+                SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END)    AS failed,
+                SUM(CASE WHEN status IN ('pending','running','waiting') THEN 1 ELSE 0 END) AS active,
+                ROUND(AVG(TIMESTAMPDIFF(SECOND, started_at, completed_at)), 2) AS avg_duration_seconds
             ")
             ->first();
     }

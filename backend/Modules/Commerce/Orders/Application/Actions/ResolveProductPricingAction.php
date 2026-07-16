@@ -62,6 +62,7 @@ final class ResolveProductPricingAction
             'regular_price'      => $regularPrice,
             'sale_price'         => $salePrice,
             'resolved_price'     => $resolvedPrice,
+            'approved_price'     => $resolvedPrice, // alias consumed by the manual-order form
             'source'             => $source,
             'has_pending_review' => $hasPendingReview,
         ];

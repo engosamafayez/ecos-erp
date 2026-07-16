@@ -45,6 +45,16 @@ class OrderLine extends Model
         'manufacturing_result',
         'manufacturing_started_at',
         'manufacturing_completed_at',
+        'reserved_qty',
+        'available_qty',
+        'prepared_qty',
+        'packed_qty',
+        'loaded_qty',
+        'delivered_qty',
+        'returned_qty',
+        'cancelled_qty',
+        'warehouse_name',
+        'batch_number',
     ];
 
     /**

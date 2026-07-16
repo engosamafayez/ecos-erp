@@ -28,4 +28,10 @@ interface OrderRepositoryInterface
     public function delete(Order $order): void;
 
     public function nextOrderNumber(): string;
+
+    /** @return list<string> */
+    public function listPaymentMethods(string $companyId): array;
+
+    /** @return list<string> */
+    public function listShippingCompanies(string $companyId): array;
 }

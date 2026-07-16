@@ -27,15 +27,13 @@ import { cn } from '@/lib/utils';
 // Statuses that mean an order is in-flight (not terminal)
 const ACTIVE_ORDER_STATUSES = new Set<OrderStatus>([
   'processing',
-  'waiting_for_payment',
-  'review_confirmation',
+  'awaiting_payment',
   'review',
   'confirmed',
   'preparing',
-  'shipping',
-  'delivery_delayed',
-  'waiting_for_stock',
-  'postponed',
+  'out_for_delivery',
+  'awaiting_stock',
+  'rescheduled',
 ]);
 
 type Props = {

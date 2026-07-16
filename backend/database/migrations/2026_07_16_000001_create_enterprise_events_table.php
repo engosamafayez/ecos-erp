@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('module', 80)->nullable()->index();
             $table->string('aggregate_type', 80)->nullable()->index();
             $table->string('aggregate_id', 36)->nullable()->index();
-            $table->jsonb('payload')->default('{}');
-            $table->jsonb('metadata')->default('{}');
+            $table->jsonb('payload');
+            $table->jsonb('metadata');
             $table->unsignedSmallInteger('retry_count')->default(0);
             $table->boolean('is_replay')->default(false);
             $table->string('trace_id', 36)->nullable();

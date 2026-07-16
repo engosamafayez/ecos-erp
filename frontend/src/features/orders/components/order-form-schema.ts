@@ -2,11 +2,21 @@ import { z } from 'zod';
 
 import type { ManualOrderPayload, Order, OrderPayload, OrderStatus } from '@/features/orders/types/order';
 
+// V2 official status list — must match STATUS_TAB_ORDER in order.ts
 const ORDER_STATUSES: [OrderStatus, ...OrderStatus[]] = [
   'pending',
+  'awaiting_payment',
   'processing',
-  'completed',
+  'confirmed',
+  'preparing',
+  'out_for_delivery',
+  'delivered',
+  'returned',
+  'awaiting_stock',
+  'rescheduled',
+  'review',
   'cancelled',
+  'completed',
 ];
 
 export const orderLineSchema = z.object({
@@ -69,14 +79,25 @@ export function toPayload(values: OrderFormValues): OrderPayload {
 
 // ── Manual order schema (enterprise create + edit form) ───────────────────────
 
-export const manualOrderLineSchema = z.object({
-  product_id: z.string().min(1, 'Product is required.'),
-  quantity: z
-    .string()
-    .min(1, 'Quantity is required.')
-    .refine((v) => Number(v) > 0, 'Quantity must be greater than 0.'),
-  unit_price: z.string(), // May be empty on first render — auto-filled by pricing hook
-});
+// Each line can be a filled line (product selected) or an empty placeholder.
+// Empty placeholders are valid at schema level — they are filtered out in toManualPayload.
+// Only filled lines (product_id !== '') get quantity validation.
+export const manualOrderLineSchema = z
+  .object({
+    product_id: z.string(),
+    quantity:   z.string(),
+    unit_price: z.string(), // auto-filled by Pricing Engine hook
+  })
+  .superRefine((line, ctx) => {
+    if (!line.product_id) return; // placeholder line — skip all validation
+    if (!line.quantity || Number(line.quantity) <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Quantity must be at least 1',
+        path: ['quantity'],
+      });
+    }
+  });
 
 export const manualOrderSchema = z.object({
   company_id:               z.string().optional(),
@@ -95,10 +116,17 @@ export const manualOrderSchema = z.object({
   city:                     z.string().optional(),
   area:                     z.string().optional(),
   shipping_address:         z.string().optional(),
+  building:                 z.string().optional(),
+  floor:                    z.string().optional(),
+  apartment:                z.string().optional(),
+  landmark:                 z.string().optional(),
+  address_notes:            z.string().optional(),
   delivery_zone_id:         z.string().optional(),
   delivery_zone:            z.string().optional(),
   google_maps_lat:          z.number().optional(),
   google_maps_lng:          z.number().optional(),
+  google_maps_url:          z.string().optional(),
+  location_source:          z.string().optional(),
   payment_method_manual:    z.string().optional(),
   shipping_cost:            z.string().optional(),
   shipping_cost_source:     z.string().optional(),
@@ -107,7 +135,17 @@ export const manualOrderSchema = z.object({
   deposit_amount:           z.string().optional(),
   payment_proof_path:       z.string().optional(),
   notes:                    z.string().optional(),
-  lines: z.array(manualOrderLineSchema).min(1, 'At least one line item is required.'),
+  lines: z
+    .array(manualOrderLineSchema)
+    .superRefine((lines, ctx) => {
+      const filled = lines.filter((l) => l.product_id !== '');
+      if (filled.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Add at least one product before saving the order',
+        });
+      }
+    }),
 });
 
 export type ManualOrderFormValues    = z.infer<typeof manualOrderSchema>;
@@ -117,7 +155,7 @@ export function toManualPayload(values: ManualOrderFormValues): ManualOrderPaylo
   return {
     company_id:               values.company_id || null,
     channel_id:               values.channel_id || null,
-    status:                   values.status || 'in_progress',
+    status:                   values.status || 'pending',
     order_date:               values.order_date || null,
     requested_delivery_date:  values.requested_delivery_date || null,
     delivery_window_id:       values.delivery_window_id || null,
@@ -131,10 +169,17 @@ export function toManualPayload(values: ManualOrderFormValues): ManualOrderPaylo
     city:                     values.city || null,
     area:                     values.area || null,
     shipping_address:         values.shipping_address || null,
+    building:                 values.building || null,
+    floor:                    values.floor || null,
+    apartment:                values.apartment || null,
+    landmark:                 values.landmark || null,
+    address_notes:            values.address_notes || null,
     delivery_zone_id:         values.delivery_zone_id || null,
     delivery_zone:            values.delivery_zone || null,
     google_maps_lat:          values.google_maps_lat ?? null,
     google_maps_lng:          values.google_maps_lng ?? null,
+    google_maps_url:          values.google_maps_url || null,
+    location_source:          values.location_source || null,
     payment_method_manual:    values.payment_method_manual || null,
     shipping_cost:            values.shipping_cost ? Number(values.shipping_cost) : null,
     shipping_cost_source:     values.shipping_cost_source || null,

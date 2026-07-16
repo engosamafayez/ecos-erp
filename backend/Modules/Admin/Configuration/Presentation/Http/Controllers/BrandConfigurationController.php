@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Modules\Admin\Configuration\Domain\Models\BrandPolicy;
 use Modules\Admin\Configuration\Domain\Models\ConfigAuditEntry;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
+use Modules\Organization\Brands\Domain\Models\Brand;
 
 /**
  * Manages all brand-level policy groups.
@@ -80,8 +81,14 @@ final class BrandConfigurationController extends Controller
             'reason'   => 'nullable|string|max:500',
         ]);
 
-        $actorId   = Auth::id() ?? '';
-        $companyId = Auth::user()?->company_id ?? '';
+        $actorId   = (string) (Auth::id() ?? '');
+        $companyId = (string) (Auth::user()?->company_id ?? '');
+
+        // System/super-admin users have no company_id on their account row.
+        // Fall back to the brand's own company so the FK is satisfied on INSERT.
+        if (empty($companyId)) {
+            $companyId = (string) (Brand::find($brandId)?->company_id ?? '');
+        }
 
         $policy = $this->manager->updateBrandPolicy(
             brandId:   $brandId,

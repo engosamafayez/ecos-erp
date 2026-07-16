@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, Filter, Search, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Filter, Search, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/crud';
 import { PageHeader } from '@/components/crud';
 import { useColumnVisibility } from '@/components/data-grid/use-column-visibility';
@@ -13,16 +21,31 @@ import type { AdvancedFilterValues } from '@/features/orders/components/order-ad
 import { OrderAdvancedFilters } from '@/features/orders/components/order-advanced-filters';
 import { OrderCustomerIntelligence } from '@/features/orders/components/order-customer-intelligence';
 import { OrderDetailDrawer } from '@/features/orders/components/order-detail-drawer';
-import { OrderFormDrawer } from '@/features/orders/components/order-form-drawer';
+import type { BulkActionKey } from '@/features/orders/components/order-list-toolbar';
 import { OrderListToolbar } from '@/features/orders/components/order-list-toolbar';
 import { OrderSmartToolbar } from '@/features/orders/components/order-smart-toolbar';
 import { OrderStatusTabs } from '@/features/orders/components/order-status-tabs';
 import { ORDER_COLUMN_META } from '@/features/orders/components/order-column-meta';
 import { OrderTable } from '@/features/orders/components/order-table';
+import { OrderConfirmCustomerDialog } from '@/features/orders/components/order-confirm-customer-dialog';
+import { EmptyState } from '@/components/crud';
 import {
   useDeleteOrder,
-  useOrderStatusCounts,
+  useOrderStatusKpis,
   useOrdersQuery,
+  useBulkConfirm,
+  useBulkCancel,
+  useBulkMoveToPreparation,
+  useBulkCompleteDelivery,
+  useBulkComplete,
+  useBulkDispatch,
+  useBulkMarkAwaitingStock,
+  useBulkResume,
+  useBulkMoveToReview,
+  useBulkReschedule,
+  useBulkReturn,
+  useBulkReturnToConfirmed,
+  useBulkResumeToConfirmed,
 } from '@/features/orders/hooks/use-orders';
 import type {
   CustomerIntelligenceFilter,
@@ -41,24 +64,63 @@ type StatusFilter = OrderStatus | 'all';
 const EMPTY_ADVANCED: AdvancedFilterValues = {
   productId: null,
   paymentMethod: null,
+  paymentStatus: null,
+  hasPaymentProof: null,
+  reservationStatus: null,
   shippingCompany: null,
   dateFrom: null,
   dateTo: null,
+  datePreset: null,
+  governorate: null,
+  city: null,
+  zone: null,
+  minAmount: null,
+  maxAmount: null,
 };
+
+// ── Workspace state persistence ───────────────────────────────────────────────
+// Saves active tab, sort, and filter state per user/browser via localStorage.
+
+const WORKSPACE_KEY = 'ecos-orders-workspace-v1';
+
+type PersistedWorkspace = {
+  activeStatus?: StatusFilter;
+  sort?: { field: OrderSortField; direction: 'asc' | 'desc' };
+  channelId?: string | null;
+  advancedFilters?: AdvancedFilterValues;
+};
+
+function loadWorkspace(): PersistedWorkspace {
+  try {
+    const raw = localStorage.getItem(WORKSPACE_KEY);
+    return raw ? (JSON.parse(raw) as PersistedWorkspace) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveWorkspace(state: PersistedWorkspace): void {
+  try {
+    localStorage.setItem(WORKSPACE_KEY, JSON.stringify(state));
+  } catch {}
+}
 
 export function OrdersPage() {
   const { t } = useTranslation('orders');
   const { t: tCommon } = useTranslation('common');
+  const navigate = useNavigate();
+
+  // Load once on mount — initialises state from persisted workspace
+  const [savedWorkspace] = useState(loadWorkspace);
 
   // ── Status tab ────────────────────────────────────────────────────────────────
-  const [activeStatus, setActiveStatus] = useState<StatusFilter>('all');
+  const [activeStatus, setActiveStatus] = useState<StatusFilter>(savedWorkspace.activeStatus ?? 'all');
 
   // ── Pagination + sort ─────────────────────────────────────────────────────────
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<{ field: OrderSortField; direction: 'asc' | 'desc' }>({
-    field: 'created_at',
-    direction: 'desc',
-  });
+  const [sort, setSort] = useState<{ field: OrderSortField; direction: 'asc' | 'desc' }>(
+    savedWorkspace.sort ?? { field: 'created_at', direction: 'desc' },
+  );
 
   // ── Search ────────────────────────────────────────────────────────────────────
   const [searchKey, setSearchKey] = useState(0);
@@ -66,27 +128,32 @@ export function OrdersPage() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   // ── DD-023 Channel filter ─────────────────────────────────────────────────────
-  const [channelId, setChannelId] = useState<string | null>(null);
+  const [channelId, setChannelId] = useState<string | null>(savedWorkspace.channelId ?? null);
   const { data: channelOptions = [] } = useChannelOptions();
 
   // ── DD-026 Advanced filters ───────────────────────────────────────────────────
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterValues>(EMPTY_ADVANCED);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterValues>(
+    savedWorkspace.advancedFilters ?? EMPTY_ADVANCED,
+  );
 
-  // ── DD-025 Customer Intelligence ──────────────────────────────────────────────
+  // ── DD-025 Customer Intelligence — multi-select array ────────────────────────
   const [showCustomerIntelligence, setShowCustomerIntelligence] = useState(false);
-  const [customerFilter, setCustomerFilter] = useState<CustomerIntelligenceFilter | null>(null);
+  const [customerFilters, setCustomerFilters] = useState<CustomerIntelligenceFilter[]>([]);
 
   // ── DD-031 Toolbar ops — direct query param toggles ───────────────────────────
   const [hasLocation, setHasLocation] = useState<boolean | null>(null);
   const [minShippingAttempts, setMinShippingAttempts] = useState<number | null>(null);
 
+  // ── Bulk reschedule dialog ────────────────────────────────────────────────────
+  const [bulkRescheduleOpen, setBulkRescheduleOpen] = useState(false);
+  const [bulkRescheduleDate, setBulkRescheduleDate] = useState('');
+  const [pendingRescheduleIds, setPendingRescheduleIds] = useState<string[]>([]);
+
   // ── Drawer state ──────────────────────────────────────────────────────────────
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
-  const [editOrder, setEditOrder] = useState<Order | null>(null);
-  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
-  const [newOrderOpen, setNewOrderOpen] = useState(false);
+  const [confirmingOrder, setConfirmingOrder] = useState<Order | null>(null);
 
   // ── UI-005: Keyboard navigation ───────────────────────────────────────────────
   const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null);
@@ -103,10 +170,18 @@ export function OrdersPage() {
       channel_id: channelId ?? undefined,
       product_id: advancedFilters.productId ?? undefined,
       payment_method: advancedFilters.paymentMethod ?? undefined,
+      payment_status: advancedFilters.paymentStatus ?? undefined,
+      has_payment_proof: advancedFilters.hasPaymentProof ?? undefined,
+      reservation_status: advancedFilters.reservationStatus ?? undefined,
       shipping_company: advancedFilters.shippingCompany ?? undefined,
       date_from: advancedFilters.dateFrom ?? undefined,
       date_to: advancedFilters.dateTo ?? undefined,
-      customer_filter: customerFilter ?? undefined,
+      governorate: advancedFilters.governorate ?? undefined,
+      city: advancedFilters.city ?? undefined,
+      zone: advancedFilters.zone ?? undefined,
+      min_amount: advancedFilters.minAmount ? Number(advancedFilters.minAmount) : undefined,
+      max_amount: advancedFilters.maxAmount ? Number(advancedFilters.maxAmount) : undefined,
+      customer_filter: customerFilters.length > 0 ? customerFilters.join(',') : undefined,
       has_location: hasLocation ?? undefined,
       min_shipping_attempts: minShippingAttempts ?? undefined,
       page,
@@ -114,12 +189,58 @@ export function OrdersPage() {
       sort_by: sort.field,
       sort_dir: sort.direction,
     }),
-    [search, activeStatus, channelId, advancedFilters, customerFilter, hasLocation, minShippingAttempts, page, sort],
+    [search, activeStatus, channelId, advancedFilters, customerFilters, hasLocation, minShippingAttempts, page, sort],
   );
 
   const { data, isLoading, isError, isFetching, refetch } = useOrdersQuery(params);
-  const statusCounts = useOrderStatusCounts();
+
+  // ── KPI params: same filters as the main query but without status/pagination/sort ──
+  const kpiParams = useMemo(
+    () => ({
+      search: search || undefined,
+      channel_id: channelId ?? undefined,
+      product_id: advancedFilters.productId ?? undefined,
+      payment_method: advancedFilters.paymentMethod ?? undefined,
+      payment_status: advancedFilters.paymentStatus ?? undefined,
+      has_payment_proof: advancedFilters.hasPaymentProof ?? undefined,
+      reservation_status: advancedFilters.reservationStatus ?? undefined,
+      shipping_company: advancedFilters.shippingCompany ?? undefined,
+      date_from: advancedFilters.dateFrom ?? undefined,
+      date_to: advancedFilters.dateTo ?? undefined,
+      governorate: advancedFilters.governorate ?? undefined,
+      city: advancedFilters.city ?? undefined,
+      zone: advancedFilters.zone ?? undefined,
+      min_amount: advancedFilters.minAmount ? Number(advancedFilters.minAmount) : undefined,
+      max_amount: advancedFilters.maxAmount ? Number(advancedFilters.maxAmount) : undefined,
+      customer_filter: customerFilters.length > 0 ? customerFilters.join(',') : undefined,
+      has_location: hasLocation ?? undefined,
+      min_shipping_attempts: minShippingAttempts ?? undefined,
+    }),
+    [search, channelId, advancedFilters, customerFilters, hasLocation, minShippingAttempts],
+  );
+
+  const statusKpis = useOrderStatusKpis(kpiParams);
   const deleteOrder = useDeleteOrder();
+
+  // ── Workspace persistence: save tab + sort + channel + filters on change ──────
+  useEffect(() => {
+    saveWorkspace({ activeStatus, sort, channelId, advancedFilters });
+  }, [activeStatus, sort, channelId, advancedFilters]);
+
+  // ── Bulk workflow hooks ───────────────────────────────────────────────────────
+  const bulkConfirm          = useBulkConfirm();
+  const bulkCancel           = useBulkCancel();
+  const bulkMoveToPrep       = useBulkMoveToPreparation();
+  const bulkCompleteDelivery = useBulkCompleteDelivery();
+  const bulkComplete         = useBulkComplete();
+  const bulkDispatch         = useBulkDispatch();
+  const bulkAwaitingStock    = useBulkMarkAwaitingStock();
+  const bulkResume           = useBulkResume();
+  const bulkReview           = useBulkMoveToReview();
+  const bulkReschedule          = useBulkReschedule();
+  const bulkReturn              = useBulkReturn();
+  const bulkReturnToConfirmed   = useBulkReturnToConfirmed();
+  const bulkResumeToConfirmed   = useBulkResumeToConfirmed();
 
   const orders = data?.items ?? [];
 
@@ -127,13 +248,19 @@ export function OrdersPage() {
   const selectionHook = useRowSelection({ items: orders, getId: (o) => o.id });
   const { selectedIds, selectedCount, clearSelection } = selectionHook;
 
+  // Part 1: selectedOrders drives the dynamic bulk action computation in the toolbar
+  const selectedOrders = useMemo(
+    () => orders.filter((o) => selectedIds.has(o.id)),
+    [orders, selectedIds],
+  );
+
   const meta = data?.meta;
 
   // ── UI-005: stateRef avoids stale closures in the keyboard handler ────────────
-  const stateRef = useRef({ orders, viewOrder, editDrawerOpen, newOrderOpen, focusedRowIndex });
+  const stateRef = useRef({ orders, viewOrder, focusedRowIndex });
   useEffect(() => {
-    stateRef.current = { orders, viewOrder, editDrawerOpen, newOrderOpen, focusedRowIndex };
-  }, [orders, viewOrder, editDrawerOpen, newOrderOpen, focusedRowIndex]);
+    stateRef.current = { orders, viewOrder, focusedRowIndex };
+  }, [orders, viewOrder, focusedRowIndex]);
 
   // Reset row focus when data changes (new page / filter applied)
   useEffect(() => { setFocusedRowIndex(null); }, [data]);
@@ -142,14 +269,13 @@ export function OrdersPage() {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const inInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-      const { orders: ords, viewOrder: vo, editDrawerOpen: eo, newOrderOpen: no, focusedRowIndex: fi } = stateRef.current;
+      const { orders: ords, viewOrder: vo, focusedRowIndex: fi } = stateRef.current;
 
       if ((e.key === 'k' && (e.ctrlKey || e.metaKey)) || (e.key === '/' && !inInput)) {
         e.preventDefault(); searchRef.current?.focus(); searchRef.current?.select(); return;
       }
       if (e.key === 'Escape' && !inInput) {
         if (vo !== null) { setViewOrder(null); return; }
-        if (eo || no) return;
         setSearchKey((k) => k + 1); setSearch(''); setPage(1); clearSelection(); setFocusedRowIndex(null); return;
       }
       if (e.key === 'ArrowDown' && !inInput && ords.length > 0) {
@@ -174,9 +300,18 @@ export function OrdersPage() {
   }, []);
 
   // ── Active filter counts ──────────────────────────────────────────────────────
-  const advancedActiveCount =
-    Object.values(advancedFilters).filter(Boolean).length + (channelId ? 1 : 0);
-  const intelligenceActive = customerFilter !== null;
+  const dateFilterActive = !!(advancedFilters.dateFrom || advancedFilters.dateTo);
+  const advancedNonDateCount =
+    (advancedFilters.productId ? 1 : 0) +
+    (advancedFilters.paymentMethod ? 1 : 0) +
+    (advancedFilters.paymentStatus ? 1 : 0) +
+    (advancedFilters.hasPaymentProof !== null ? 1 : 0) +
+    (advancedFilters.reservationStatus ? 1 : 0) +
+    (advancedFilters.shippingCompany ? 1 : 0) +
+    (advancedFilters.zone ? 1 : 0) +
+    (advancedFilters.minAmount ? 1 : 0) +
+    (advancedFilters.maxAmount ? 1 : 0);
+  const advancedActiveCount = advancedNonDateCount + (dateFilterActive ? 1 : 0) + (channelId ? 1 : 0);
 
   // ── Reset helpers ─────────────────────────────────────────────────────────────
   function resetPage() { setPage(1); clearSelection(); }
@@ -208,8 +343,76 @@ export function OrdersPage() {
   }
 
   function handleEdit(order: Order) {
-    setEditOrder(order);
-    setEditDrawerOpen(true);
+    navigate(`${ROUTES.orders}/${order.id}/edit`);
+  }
+
+  // Part 11: Filter-aware CSV export of current page orders
+  function handleExport() {
+    const header = ['Order #', 'Date', 'Customer', 'Status', 'Total', 'Payment', 'Channel', 'Phone', 'Governorate'];
+    const rows = orders.map((o) => [
+      o.order_number,
+      o.order_date ?? '',
+      o.customer?.name ?? '',
+      o.status,
+      String(o.total),
+      o.payment_method ?? '',
+      o.channel?.name ?? '',
+      o.billing_phone ?? o.customer?.phone ?? '',
+      o.governorate ?? '',
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function buildCsvContent() {
+    const header = ['Order #', 'Date', 'Customer', 'Status', 'Total', 'Payment', 'Channel', 'Phone', 'Governorate'];
+    const rows = orders.map((o) => [
+      o.order_number,
+      o.order_date ?? '',
+      o.customer?.name ?? '',
+      o.status,
+      String(o.total),
+      o.payment_method ?? '',
+      o.channel?.name ?? '',
+      o.billing_phone ?? o.customer?.phone ?? '',
+      o.governorate ?? '',
+    ]);
+    return [header, ...rows]
+      .map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+  }
+
+  function handleCopyToClipboard() {
+    void navigator.clipboard.writeText(buildCsvContent());
+  }
+
+  function handlePrint() {
+    const csv = buildCsvContent();
+    const lines = csv.split('\n');
+    const tableRows = lines
+      .map((line, i) => {
+        const cells = line.split(',').map((c) => c.replace(/^"|"$/g, '').replace(/""/g, '"'));
+        const tag = i === 0 ? 'th' : 'td';
+        return `<tr>${cells.map((c) => `<${tag} style="padding:4px 8px;border:1px solid #ddd">${c}</${tag}>`).join('')}</tr>`;
+      })
+      .join('');
+    const html = `<!doctype html><html><head><title>Orders</title><style>table{border-collapse:collapse;font-size:12px;font-family:sans-serif}th{background:#f5f5f5}</style></head><body><table>${tableRows}</table></body></html>`;
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.print();
+    }
   }
 
   function clearAdvancedFilters() {
@@ -223,19 +426,53 @@ export function OrdersPage() {
     resetPage();
   }
 
-  function handleCustomerFilterChange(next: CustomerIntelligenceFilter | null) {
-    setCustomerFilter(next);
+  // Multi-select handler for the chip panel
+  function handleCustomerFiltersChange(next: CustomerIntelligenceFilter[]) {
+    setCustomerFilters(next);
     resetPage();
   }
 
-  function setDateFrom(val: string | null) {
-    setAdvancedFilters((prev) => ({ ...prev, dateFrom: val }));
+  // Single-value handler for SmartToolbar ops (replaces current selection)
+  function handleSmartToolbarCustomerFilter(f: CustomerIntelligenceFilter | null) {
+    setCustomerFilters(f ? [f] : []);
     resetPage();
   }
 
-  function setDateTo(val: string | null) {
-    setAdvancedFilters((prev) => ({ ...prev, dateTo: val }));
-    resetPage();
+  // ── Bulk action dispatch ──────────────────────────────────────────────────────
+  function handleBulkAction(action: BulkActionKey) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    switch (action) {
+      case 'confirm':              bulkConfirm.mutate(ids); break;
+      case 'verify_payment':       bulkConfirm.mutate(ids); break;
+      case 'cancel':               bulkCancel.mutate({ ids }); break;
+      case 'move_to_preparation':  bulkMoveToPrep.mutate(ids); break;
+      case 'complete_delivery':    bulkCompleteDelivery.mutate(ids); break;
+      case 'complete':             bulkComplete.mutate(ids); break;
+      case 'dispatch':             bulkDispatch.mutate(ids); break;
+      case 'awaiting_stock':       bulkAwaitingStock.mutate({ ids }); break;
+      case 'resume':               bulkResume.mutate(ids); break;
+      case 'resume_confirmed':     bulkResumeToConfirmed.mutate(ids); break;
+      case 'review':               bulkReview.mutate({ ids }); break;
+      case 'return':               bulkReturn.mutate({ ids }); break;
+      case 'return_to_confirmed':  bulkReturnToConfirmed.mutate(ids); break;
+      case 'reschedule':
+        setPendingRescheduleIds(ids);
+        setBulkRescheduleDate('');
+        setBulkRescheduleOpen(true);
+        return; // don't clear selection yet
+      default:
+        break;
+    }
+    clearSelection();
+  }
+
+  function confirmBulkReschedule() {
+    if (!bulkRescheduleDate) return;
+    bulkReschedule.mutate({ ids: pendingRescheduleIds, date: bulkRescheduleDate });
+    setBulkRescheduleOpen(false);
+    clearSelection();
   }
 
   // ── Page header subtitle — total count + active filter summary ────────────────
@@ -243,8 +480,9 @@ export function OrdersPage() {
   const activeFilterCount =
     (search ? 1 : 0) +
     (channelId ? 1 : 0) +
-    Object.values(advancedFilters).filter(Boolean).length +
-    (customerFilter ? 1 : 0) +
+    advancedNonDateCount +
+    (dateFilterActive ? 1 : 0) +
+    (customerFilters.length > 0 ? 1 : 0) +
     (hasLocation !== null ? 1 : 0) +
     (minShippingAttempts !== null ? 1 : 0);
 
@@ -282,21 +520,26 @@ export function OrdersPage() {
 
       {/* ── Standard Actions Toolbar ── */}
       <OrderListToolbar
+        selectedOrders={selectedOrders}
         selectedCount={selectedCount}
         isFetching={isFetching}
         columns={ORDER_COLUMN_META}
         columnVisibility={columnVisibility}
-        onNew={() => setNewOrderOpen(true)}
+        onNew={() => navigate(ROUTES.ordersNew)}
+        onBulkAction={handleBulkAction}
         onRefresh={() => void refetch()}
         onColumnToggle={toggleColumn}
         onColumnReset={resetColumns}
+        onExport={handleExport}
+        onCopyToClipboard={handleCopyToClipboard}
+        onPrint={handlePrint}
       />
 
-      {/* ── Sticky status tabs ── */}
+      {/* ── KPI Cards (replace status tabs) ── */}
       <div className="sticky top-0 z-20 bg-background">
         <OrderStatusTabs
           activeStatus={activeStatus}
-          counts={statusCounts}
+          counts={statusKpis}
           onChange={handleStatusChange}
         />
       </div>
@@ -335,37 +578,6 @@ export function OrdersPage() {
             ))}
           </select>
 
-          {/* Date range — always visible on sm+ */}
-          <div className="hidden items-center gap-1 sm:flex">
-            <CalendarDays className="size-3.5 shrink-0 text-muted-foreground" />
-            <input
-              type="date"
-              value={advancedFilters.dateFrom ?? ''}
-              onChange={(e) => setDateFrom(e.target.value || null)}
-              aria-label={t('filters.dateFrom')}
-              className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-            <span className="text-xs text-muted-foreground">–</span>
-            <input
-              type="date"
-              value={advancedFilters.dateTo ?? ''}
-              onChange={(e) => setDateTo(e.target.value || null)}
-              min={advancedFilters.dateFrom ?? undefined}
-              aria-label={t('filters.dateTo')}
-              className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-            {(advancedFilters.dateFrom || advancedFilters.dateTo) ? (
-              <button
-                type="button"
-                onClick={() => { setDateFrom(null); setDateTo(null); }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Clear dates"
-              >
-                ✕
-              </button>
-            ) : null}
-          </div>
-
           {/* Advanced Filters toggle — DD-026 */}
           <Button
             type="button"
@@ -398,12 +610,12 @@ export function OrdersPage() {
           >
             <Users className="size-3.5" />
             {t('customerIntelligence.title')}
-            {intelligenceActive ? (
+            {customerFilters.length > 0 ? (
               <span className={cn(
                 'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold',
                 showCustomerIntelligence ? 'bg-foreground/20 text-foreground' : 'bg-primary/15 text-primary',
               )}>
-                1
+                {customerFilters.length}
               </span>
             ) : null}
           </Button>
@@ -422,8 +634,8 @@ export function OrdersPage() {
       {/* ── DD-025 Customer Intelligence panel (collapsible) ── */}
       {showCustomerIntelligence ? (
         <OrderCustomerIntelligence
-          value={customerFilter}
-          onChange={handleCustomerFilterChange}
+          value={customerFilters}
+          onChange={handleCustomerFiltersChange}
         />
       ) : null}
 
@@ -434,7 +646,7 @@ export function OrdersPage() {
         orders={orders}
         advancedFilters={advancedFilters}
         setAdvancedFilters={(next) => { setAdvancedFilters(next); resetPage(); }}
-        setCustomerFilter={handleCustomerFilterChange}
+        setCustomerFilter={handleSmartToolbarCustomerFilter}
         setActiveStatus={handleStatusChange}
         showAdvancedFilters={showAdvancedFilters}
         setShowAdvancedFilters={setShowAdvancedFilters}
@@ -446,28 +658,52 @@ export function OrdersPage() {
 
       {/* ── Table ── */}
       <div className="flex-1 overflow-auto px-4 py-3">
-        <OrderTable
-          orders={orders}
-          isLoading={isLoading}
-          isError={isError}
-          sort={sort}
-          onSortChange={handleSortChange}
-          selection={selectionHook}
-          onView={(order) => setViewOrder(order)}
-          onEdit={handleEdit}
-          onDelete={(order) => setDeletingOrder(order)}
-          focusedRowId={focusedRowIndex !== null ? (orders[focusedRowIndex]?.id ?? null) : null}
-          columnVisibility={columnVisibility}
-          pagination={meta ? ({
-            meta: {
-              page: meta.current_page,
-              perPage: meta.per_page,
-              total: meta.total,
-              lastPage: meta.last_page,
-            },
-            onPageChange: (p: number) => { setPage(p); clearSelection(); },
-          } satisfies GridPaginationConfig) : undefined}
-        />
+        {/* Contextual empty state — derives message from active filters */}
+        {(() => {
+          const hasFilters = search || activeStatus !== 'all' || channelId || customerFilters.length > 0
+            || advancedFilters.productId || advancedFilters.paymentMethod || advancedFilters.paymentStatus
+            || advancedFilters.hasPaymentProof !== null || advancedFilters.reservationStatus
+            || advancedFilters.shippingCompany || advancedFilters.zone
+            || advancedFilters.minAmount || advancedFilters.maxAmount
+            || advancedFilters.dateFrom || advancedFilters.dateTo;
+          const contextualEmptyState = search
+            ? <EmptyState title={t('table.empty')} description={`No orders matching "${search}". Try a different search term.`} />
+            : activeStatus !== 'all'
+              ? <EmptyState title={t('table.empty')} description={`No orders with status "${t(`statusTabs.${activeStatus}`)}".`} />
+              : hasFilters
+                ? <EmptyState title={t('table.empty')} description="No orders match the current filters. Try clearing some filters." />
+                : undefined;
+          return (
+            <OrderTable
+              orders={orders}
+              isLoading={isLoading}
+              isError={isError}
+              sort={sort}
+              onSortChange={handleSortChange}
+              selection={selectionHook}
+              onView={(order) => setViewOrder(order)}
+              onEdit={handleEdit}
+              onDelete={(order) => setDeletingOrder(order)}
+              onStatusUpdated={() => void refetch()}
+              onConfirmCustomer={(order) => setConfirmingOrder(order)}
+              onTimeline={(order) => setViewOrder(order)}
+              onVerifyPayment={(order) => setViewOrder(order)}
+              onPrint={(order) => { void navigate(`${ROUTES.orders}/${order.id}`); }}
+              focusedRowId={focusedRowIndex !== null ? (orders[focusedRowIndex]?.id ?? null) : null}
+              columnVisibility={columnVisibility}
+              emptyState={contextualEmptyState}
+              pagination={meta ? ({
+                meta: {
+                  page: meta.current_page,
+                  perPage: meta.per_page,
+                  total: meta.total,
+                  lastPage: meta.last_page,
+                },
+                onPageChange: (p: number) => { setPage(p); clearSelection(); },
+              } satisfies GridPaginationConfig) : undefined}
+            />
+          );
+        })()}
       </div>
 
       {/* ── Detail Drawer ── */}
@@ -476,19 +712,6 @@ export function OrdersPage() {
         open={viewOrder !== null}
         onOpenChange={(open) => { if (!open) setViewOrder(null); }}
         onEdit={handleEdit}
-      />
-
-      {/* ── Form Drawer (edit) ── */}
-      <OrderFormDrawer
-        open={editDrawerOpen}
-        onOpenChange={(open) => { setEditDrawerOpen(open); if (!open) setEditOrder(null); }}
-        order={editOrder}
-      />
-
-      {/* ── Form Drawer (new) ── */}
-      <OrderFormDrawer
-        open={newOrderOpen}
-        onOpenChange={setNewOrderOpen}
       />
 
       {/* ── Delete Confirm ── */}
@@ -506,6 +729,46 @@ export function OrdersPage() {
           }
         }}
       />
+
+      {/* ── Customer Confirmation Dialog ── */}
+      <OrderConfirmCustomerDialog
+        order={confirmingOrder}
+        open={confirmingOrder !== null}
+        onOpenChange={(open) => { if (!open) setConfirmingOrder(null); }}
+      />
+
+      {/* ── Bulk Reschedule Date Dialog ── */}
+      <Dialog open={bulkRescheduleOpen} onOpenChange={setBulkRescheduleOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('bulk.rescheduleTitle', { count: pendingRescheduleIds.length })}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <label className="mb-1 block text-sm font-medium text-foreground">
+              {t('bulk.rescheduleDate')}
+            </label>
+            <input
+              type="date"
+              value={bulkRescheduleDate}
+              min={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setBulkRescheduleDate(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setBulkRescheduleOpen(false)}>
+              {tCommon('cancel')}
+            </Button>
+            <Button
+              size="sm"
+              disabled={!bulkRescheduleDate || bulkReschedule.isPending}
+              onClick={confirmBulkReschedule}
+            >
+              {t('bulk.rescheduleConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

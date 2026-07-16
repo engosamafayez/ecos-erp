@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\CostManagement\Domain\Models\RecipeCostHistory;
 use Modules\Manufacturing\BillsOfMaterials\Application\Actions\CreateBomAction;
 use Modules\Manufacturing\BillsOfMaterials\Application\Actions\DeleteBomAction;
 use Modules\Manufacturing\BillsOfMaterials\Application\Actions\GetBomAction;
@@ -95,5 +96,35 @@ final class BomController extends Controller
         }
 
         return $this->deleted($result->message() ?? 'Bill of Materials deleted successfully.');
+    }
+
+    public function costHistory(Request $request, BillOfMaterial $bom): JsonResponse
+    {
+        $perPage = min((int) $request->query('per_page', 20), 100);
+
+        $paginator = RecipeCostHistory::query()
+            ->where('bom_id', $bom->id)
+            ->orderByDesc('occurred_at')
+            ->paginate($perPage);
+
+        return $this->success([
+            'items' => $paginator->map(fn (RecipeCostHistory $h): array => [
+                'id'                      => $h->id,
+                'previous_materials_cost' => $h->previous_materials_cost,
+                'new_materials_cost'      => $h->new_materials_cost,
+                'difference'              => $h->difference,
+                'trigger_type'            => $h->trigger_type,
+                'trigger_source'          => $h->trigger_source,
+                'triggered_by'            => $h->triggered_by,
+                'has_missing_costs'       => (bool) ($h->cost_snapshot['has_missing_costs'] ?? false),
+                'occurred_at'             => $h->occurred_at?->toIso8601String(),
+            ])->values()->all(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+                'last_page'    => $paginator->lastPage(),
+            ],
+        ]);
     }
 }

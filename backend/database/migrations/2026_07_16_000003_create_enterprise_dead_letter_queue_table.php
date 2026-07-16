@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('subscriber_class', 255);
             $table->text('failure_reason');
             $table->longText('stack_trace')->nullable();
-            $table->jsonb('event_payload')->default('{}');
-            $table->jsonb('event_metadata')->default('{}');
+            $table->jsonb('event_payload');
+            $table->jsonb('event_metadata');
             $table->timestampTz('occurred_at');
             $table->unsignedSmallInteger('retry_count')->default(0);
             $table->string('dlq_status', 30)->default('pending')->index();

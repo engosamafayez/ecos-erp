@@ -34,7 +34,7 @@ final class WaveMembershipService
         }
 
         $orders = Order::where('company_id', $wave->company_id)
-            ->where('warehouse_id', $wave->warehouse_id)
+            ->where('assigned_warehouse_id', $wave->warehouse_id)
             ->whereIn('status', $config->eligible_order_statuses)
             ->whereNotExists(fn ($q) => $q
                 ->select(DB::raw(1))
@@ -70,18 +70,29 @@ final class WaveMembershipService
         try {
             $waveOrder = DB::transaction(function () use ($wave, $order, $actorId): PreparationWaveOrder {
                 return PreparationWaveOrder::create([
-                    'company_id'             => $wave->company_id,
-                    'preparation_wave_id'    => $wave->id,
-                    'order_id'               => $order->id,
-                    'order_number'           => $order->order_number,
-                    'order_confirmed_at'     => $order->confirmed_at ?? now(),
-                    'customer_name_snapshot' => $order->customer_name ?? null,
-                    'delivery_zone_snapshot' => $order->delivery_zone ?? null,
-                    'shipping_cost_snapshot' => $order->shipping_amount ?? null,
-                    'is_paid'                => (bool) ($order->is_paid ?? false),
-                    'preparation_priority'   => 5,
-                    'added_at'               => now(),
-                    'added_by'               => $actorId,
+                    'company_id'               => $wave->company_id,
+                    'preparation_wave_id'      => $wave->id,
+                    'order_id'                 => $order->id,
+                    'order_number'             => $order->order_number,
+                    'order_confirmed_at'       => $order->confirmed_at ?? now(),
+                    'customer_name_snapshot'   => $order->customer_name ?? null,
+                    'delivery_zone_snapshot'   => $order->delivery_zone ?? null,
+                    'governorate_snapshot'     => $order->governorate ?? null,
+                    'zone_code_snapshot'       => $order->zone_code ?? null,
+                    'shipping_cost_snapshot'   => $order->shipping_amount ?? null,
+                    'is_paid'                  => in_array(
+                        $order->payment_status instanceof \BackedEnum
+                            ? $order->payment_status->value
+                            : (string) ($order->payment_status ?? ''),
+                        ['paid', 'partially_paid'],
+                        true,
+                    ),
+                    'payment_status_snapshot'  => $order->payment_status instanceof \BackedEnum
+                        ? $order->payment_status->value
+                        : ($order->payment_status ?? null),
+                    'preparation_priority'     => 5,
+                    'added_at'                 => now(),
+                    'added_by'                 => $actorId,
                 ]);
             });
         } catch (\Illuminate\Database\UniqueConstraintViolationException) {

@@ -69,6 +69,10 @@ class PricingReview extends Model
         'snooze_until',
         'notes',
         'resolved_at',
+        'publish_status',
+        'approved_price',
+        'approved_sale_price',
+        'published_at',
     ];
 
     protected function casts(): array
@@ -87,6 +91,9 @@ class PricingReview extends Model
             'status'                => PricingReviewStatus::class,
             'snooze_until'          => 'date:Y-m-d',
             'resolved_at'           => 'datetime',
+            'approved_price'        => 'float',
+            'approved_sale_price'   => 'float',
+            'published_at'          => 'datetime',
         ];
     }
 

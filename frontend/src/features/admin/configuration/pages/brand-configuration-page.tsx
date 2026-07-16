@@ -7,11 +7,9 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardList,
-  Clock,
   Cog,
   History,
   Loader2,
-  MapPin,
   Package,
   RotateCcw,
   Settings,
@@ -30,15 +28,12 @@ import {
   useBrandAudit,
   useHealthScore,
 } from '../hooks/use-configuration';
-import { DeliveryCoverageWorkspace } from '../components/delivery-coverage-workspace';
-import { DeliveryWindowsWorkspace }  from '../components/delivery-windows-workspace';
 import { PolicyWorkspace }           from '../components/policy-workspace';
 import type { ConfigHealthScore, ConfigAuditEntry } from '../types/configuration';
 
 // ── Dashboard card definitions ─────────────────────────────────────────────────
 
 type WorkspaceId =
-  | 'delivery-shipping' | 'windows'
   | 'preparation' | 'inventory' | 'manufacturing'
   | 'pricing' | 'order' | 'logistics' | 'crm' | 'marketing'
   | 'workflow' | 'notification' | 'security' | 'integration' | 'ai'
@@ -54,20 +49,6 @@ type WorkspaceCard = {
 };
 
 const OPERATIONS_CARDS: WorkspaceCard[] = [
-  {
-    id: 'delivery-shipping',
-    label: 'Delivery & Shipping',
-    description: 'Governorates, zones, shipping costs, and coverage management.',
-    icon: <MapPin className="h-5 w-5" />,
-    checks: ['channels', 'delivery_coverage', 'delivery_zones', 'delivery_windows', 'shipping_prices'],
-  },
-  {
-    id: 'windows',
-    label: 'Delivery Windows',
-    description: 'Available time slots for customer deliveries.',
-    icon: <Clock className="h-5 w-5" />,
-    checks: ['delivery_windows'],
-  },
   {
     id: 'preparation',
     label: 'Preparation',
@@ -92,20 +73,6 @@ const OPERATIONS_CARDS: WorkspaceCard[] = [
 ];
 
 const COMMERCE_CARDS: WorkspaceCard[] = [
-  {
-    id: 'pricing',
-    label: 'Pricing',
-    description: 'Margin thresholds, discount limits, and auto-review settings.',
-    icon: <ChevronRight className="h-5 w-5" />,
-    checks: ['pricing_policy'],
-  },
-  {
-    id: 'order',
-    label: 'Orders',
-    description: 'Required fields, approval rules, and deposit policies.',
-    icon: <Package className="h-5 w-5" />,
-    checks: [],
-  },
   {
     id: 'logistics',
     label: 'Logistics',
@@ -489,8 +456,6 @@ function WorkspaceView({
 
       {/* Workspace content */}
       <div className="flex-1 overflow-auto">
-        {workspace === 'delivery-shipping' && <DeliveryCoverageWorkspace brandId={brandId} />}
-        {workspace === 'windows'           && <DeliveryWindowsWorkspace  brandId={brandId} />}
         {workspace === 'audit'             && <AuditWorkspace            brandId={brandId} />}
         {POLICY_GROUPS_SET.has(workspace)  && (
           <PolicyWorkspace brandId={brandId} group={workspace as PolicyGroup} />
@@ -501,7 +466,6 @@ function WorkspaceView({
 }
 
 function getWorkspaceLabel(id: string): string {
-  if (id === 'delivery-shipping') return 'Delivery & Shipping';
   if (id === 'windows')           return 'Delivery Windows';
   if (id === 'audit')             return 'Audit Log';
   return POLICY_GROUP_LABELS[id as PolicyGroup] ?? id;

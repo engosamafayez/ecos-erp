@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 
@@ -130,6 +130,8 @@ export type UniversalDataGridProps<T> = {
   /** Shown on error. Defaults to a generic error state. */
   errorState?: ReactNode;
   skeletonRows?: number;
+  /** Called when a non-interactive area of a row is clicked. */
+  onRowClick?: (row: T) => void;
 };
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -166,6 +168,7 @@ export function UniversalDataGrid<T>({
   emptyState,
   errorState,
   skeletonRows = 8,
+  onRowClick,
 }: UniversalDataGridProps<T>) {
   // ── Visible columns ────────────────────────────────────────────────────────
   const visibleCols = useMemo(
@@ -189,6 +192,75 @@ export function UniversalDataGrid<T>({
 
   const defaultEmpty = emptyState ?? <EmptyState title="No records found" />;
   const defaultError = errorState ?? <ErrorState />;
+
+  // ── Scroll interactions ───────────────────────────────────────────────────
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  // Grab-to-scroll: click-and-drag scrolls horizontally.
+  // mousemove/mouseup on document so dragging continues outside the element.
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    const node = el;
+
+    let dragging = false;
+    let originX = 0;
+    let originScrollLeft = 0;
+
+    function onMouseDown(e: MouseEvent) {
+      if (e.button !== 0) return;
+      // Let clicks on interactive elements (buttons, checkboxes, links) pass through
+      const target = e.target as HTMLElement;
+      if (target.closest('button, a, input, select, textarea, [role="button"]')) return;
+
+      dragging = true;
+      originX = e.clientX;
+      originScrollLeft = node.scrollLeft;
+      // Apply grabbing cursor and disable selection globally for the drag gesture
+      document.documentElement.style.cursor = 'grabbing';
+      document.documentElement.style.userSelect = 'none';
+    }
+
+    function onMouseMove(e: MouseEvent) {
+      if (!dragging) return;
+      node.scrollLeft = originScrollLeft - (e.clientX - originX);
+    }
+
+    function onMouseUp() {
+      if (!dragging) return;
+      dragging = false;
+      document.documentElement.style.cursor = '';
+      document.documentElement.style.userSelect = '';
+    }
+
+    el.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      el.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      // Safety cleanup if unmounted mid-drag
+      document.documentElement.style.cursor = '';
+      document.documentElement.style.userSelect = '';
+    };
+  }, []);
+
+  // Shift + Mouse Wheel → horizontal scroll (non-passive to allow preventDefault).
+  const handleWheel = useCallback((e: WheelEvent) => {
+    const el = tableScrollRef.current;
+    if (!el || !e.shiftKey) return;
+    e.preventDefault();
+    el.scrollLeft += e.deltaY !== 0 ? e.deltaY : e.deltaX;
+  }, []);
+
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -219,9 +291,13 @@ export function UniversalDataGrid<T>({
         ) : null}
       </div>
 
-      {/* ── Desktop (md+) ── */}
+      {/* ── Desktop (lg+) ── */}
       <div className="hidden lg:block overflow-hidden rounded-lg border bg-card">
-        <div className="overflow-x-auto">
+        {/* scrollbar-none hides the native scrollbar; grab-to-scroll + Shift+Wheel handle horizontal navigation */}
+        <div
+          ref={tableScrollRef}
+          className="overflow-x-auto scrollbar-none cursor-grab"
+        >
           <table className="w-full caption-bottom text-sm">
             {/* Sticky header */}
             <thead className="sticky top-0 z-30 border-b bg-muted/60 backdrop-blur-sm">
@@ -316,8 +392,10 @@ export function UniversalDataGrid<T>({
                     <tr
                       key={id}
                       data-focused={isFocused || undefined}
+                      onClick={onRowClick ? () => onRowClick(row) : undefined}
                       className={cn(
                         'group transition-colors hover:bg-accent/40',
+                        onRowClick && 'cursor-pointer',
                         isSelected && 'bg-primary/5',
                         isFocused && 'outline outline-1 -outline-offset-1 outline-primary/50 bg-accent/30',
                       )}
@@ -328,6 +406,7 @@ export function UniversalDataGrid<T>({
                             type="checkbox"
                             aria-label="Select row"
                             checked={isSelected}
+                            onClick={(e) => e.stopPropagation()}
                             onChange={(e) => selection.selectRow(id, e.target.checked)}
                             className="size-4 cursor-pointer rounded accent-primary"
                           />

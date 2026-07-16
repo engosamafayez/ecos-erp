@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  ExternalLink,
   Factory,
   FlaskConical,
   Loader2,
@@ -13,7 +14,10 @@ import {
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Link } from 'react-router-dom';
+import { ROUTES } from '@/router/routes';
 import {
   usePreparationWave,
   useWaveKpis,
@@ -24,6 +28,17 @@ import {
   useWaveOrders,
 } from '../hooks/use-preparation';
 import { useSelectedWaveId } from '../components/wave-picker';
+
+function safeDate(val: string | null | undefined): Date | null {
+  if (!val) return null;
+  const d = new Date(val.includes(' ') && !val.includes('T') ? val.replace(' ', 'T') : val);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function fmtTime(val: string | null | undefined): string {
+  const d = safeDate(val);
+  return d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+}
 
 function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -306,7 +321,19 @@ export function FulfillmentWaveWorkspacePage() {
             {/* Section C — Missing Materials */}
             {missing.length > 0 && (
               <section>
-                <SectionHeader icon={<PackageX className="h-4 w-4" />} title="Missing Materials" count={missing.length} />
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <span className="text-muted-foreground"><PackageX className="h-4 w-4" /></span>
+                    Missing Materials
+                    <Badge variant="outline" className="text-xs">{missing.length}</Badge>
+                  </h2>
+                  <Link to={`${ROUTES.waveMissingMaterials}?wave_id=${waveId}`}>
+                    <Button variant="outline" size="sm" className="h-6 text-[11px] gap-1">
+                      <ExternalLink className="h-3 w-3" />
+                      Open Procurement Queue
+                    </Button>
+                  </Link>
+                </div>
                 <div className="rounded-lg border border-red-200 overflow-hidden bg-red-50/30">
                   <table className="w-full text-xs">
                     <thead>
@@ -373,7 +400,7 @@ export function FulfillmentWaveWorkspacePage() {
                         <td className="px-3 py-2">{o.customer_name_snapshot ?? <span className="text-muted-foreground">—</span>}</td>
                         <td className="px-3 py-2 text-muted-foreground">{o.delivery_zone_snapshot ?? '—'}</td>
                         <td className="px-3 py-2 text-muted-foreground">
-                          {new Date(o.added_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {fmtTime(o.added_at)}
                         </td>
                       </tr>
                     ))}
@@ -387,7 +414,7 @@ export function FulfillmentWaveWorkspacePage() {
           <div className="flex items-center gap-4 text-[10px] text-muted-foreground border-t border-border/40 pt-3 flex-wrap">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              Last updated {new Date(wave.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              Last updated {fmtTime(wave.updated_at)}
             </span>
             <span>{orderList.length} order{orderList.length !== 1 ? 's' : ''} in wave</span>
             {missingCount > 0 && (

@@ -580,6 +580,68 @@ All Fulfillment domain tables are subject to the full Database Engineering Stand
 
 ---
 
+## Shipping Ownership Rules
+
+**Decision Date:** 2026-07-12  
+**Task:** TASK-SHIPPING-CONSOLIDATION-001
+
+ECOS defines two distinct layers for geography and shipping. Each layer has a single owner with exclusive responsibility.
+
+---
+
+### Layer 1 — Reference Layer: Egypt Geography
+
+**Owner:** `Modules/Logistics/Geography`  
+**Tables:** `logistics_governorates`, `logistics_cities`, `logistics_city_aliases`  
+**Purpose:** Canonical master data — every governorate and city in Egypt with official names, aliases, and codes.
+
+**Rules:**
+- Contains **reference data only**. No commercial rules. No pricing. No brand-specific settings.
+- Every other module that needs geography data reads from this layer.
+- Adding a new city or governorate is an infrastructure operation, not a business configuration.
+- Managed via the Logistics OS → Egypt Geography workspace.
+
+---
+
+### Layer 2 — Commercial Policy Layer: Brand Shipping
+
+**Owner:** `Modules/Organization/Brands` → Brand Drawer → Shipping & Delivery tab  
+**Tables:** `brand_shipping_settings`, `brand_governorate_settings`, `brand_city_settings`  
+**Purpose:** Each brand's commercial delivery policy — which areas it serves, at what price, under what rules.
+
+**Rules:**
+- All shipping business logic lives here: coverage, pricing, COD, free shipping, SLA, unsupported area action.
+- The `ShippingEngine` (`Modules/Organization/Brands/Application/Services/ShippingEngineService`) reads from these tables to evaluate whether an incoming order can be fulfilled and at what shipping cost.
+- No shipping policy is stored in the legacy `config_delivery_geographies` / `config_delivery_zones` tables — those are superseded.
+
+---
+
+### Shipping Engine Contract
+
+All order sources (WooCommerce, Manual Order, POS Delivery, future API/Mobile) **must** call the Shipping Engine before creating or accepting an order. Walk-in POS is the sole exception.
+
+```
+ShippingEngineContract::evaluate(
+    brandId:         string,
+    governorateId:   int,
+    cityId:          ?int,
+    isDeliveryOrder: bool
+): ShippingValidationResult
+```
+
+`ShippingValidationResult` has four outcomes:
+
+| Decision | Meaning | Order Status |
+|---|---|---|
+| `allow` | Area supported, quote attached | Proceeds normally |
+| `pendingReview` | Area unsupported, brand policy = review | `needs_shipping_review` |
+| `reject` | Area unsupported, brand policy = reject | HTTP 422 returned to caller |
+| `walkIn` | No governorate provided (POS walk-in) | Bypasses shipping engine |
+
+> `needs_shipping_review` (`OrderStatus::NeedsShippingReview`) is the dedicated status for shipping validation failures that the brand has elected to review rather than reject. It must **never** be conflated with `pending` (generic holding state).
+
+---
+
 ## Related Documents
 
 - ADR-006: Inventory Domain Events

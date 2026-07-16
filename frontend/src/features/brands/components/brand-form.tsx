@@ -14,36 +14,76 @@ type BrandFormFieldsProps = {
   onImageChange?: (file: File | null) => void;
 };
 
+// Arabic Unicode block (U+0600–U+06FF) → Latin equivalents for slug generation
+const ARABIC_MAP: Record<string, string> = {
+  'ا': 'a', 'أ': 'a', 'إ': 'i', 'آ': 'aa', 'ء': '',
+  'ؤ': 'w', 'ئ': 'y',
+  'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j', 'ح': 'h',
+  'خ': 'kh', 'د': 'd', 'ذ': 'dh', 'ر': 'r', 'ز': 'z',
+  'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't',
+  'ظ': 'z', 'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'q',
+  'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h',
+  'و': 'w', 'ي': 'y', 'ى': 'a', 'ة': 'a',
+  // Tashkeel (diacritics) — strip entirely
+  'ً': '', 'ٌ': '', 'ٍ': '', 'َ': '', 'ُ': '',
+  'ِ': '', 'ّ': '', 'ْ': '', 'ٰ': '', 'ـ': '',
+};
+
 function toSlug(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
+  let text = value.toLowerCase().trim();
+  // Transliterate Arabic characters before the ASCII-only filter
+  text = text.replace(/[؀-ۿ]/g, (ch) => ARABIC_MAP[ch] ?? '');
+  // Strip Latin diacritics (é → e, ü → u, etc.)
+  text = text.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return text
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export function BrandFormFields({ mode, existingLogoUrl, onImageChange }: BrandFormFieldsProps) {
   const { register, control, setValue, getValues } = useFormContext<BrandCreateFormValues & BrandUpdateFormValues>();
 
   const nameValue = useWatch({ control, name: 'name' });
+  const codeValue = useWatch({ control, name: 'code' });
 
-  // Auto-populate slug from name while slug hasn't been manually customised
+  // Auto-populate slug from name while slug hasn't been manually customised.
+  // Falls back to the brand code when the name has no ASCII-translatable characters.
   useEffect(() => {
     if (!nameValue) return;
-    const auto = toSlug(nameValue);
-    // Only auto-fill if slug is empty or matches the previous auto-slug
     const current = getValues('slug') ?? '';
-    if (!current || current === toSlug(getValues('name') ?? '')) {
-      setValue('slug', auto, { shouldValidate: false });
+    // If user manually edited the slug (differs from the auto-slug we'd derive), preserve it
+    if (current && current !== toSlug(getValues('name') ?? '')) return;
+
+    const fromName = toSlug(nameValue);
+    if (fromName) {
+      setValue('slug', fromName, { shouldValidate: false });
+    } else if (codeValue) {
+      const fromCode = toSlug(codeValue);
+      if (fromCode) setValue('slug', fromCode, { shouldValidate: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nameValue]);
+  }, [nameValue, codeValue]);
 
   return (
     <div className="flex flex-col gap-4">
-      {mode === 'create' && (
+      {mode === 'create' ? (
         <FormField name="company_id" label="Company" required>
+          <Controller
+            control={control}
+            name="company_id"
+            render={({ field }) => (
+              <CompanySelect value={field.value || null} onChange={field.onChange} />
+            )}
+          />
+        </FormField>
+      ) : (
+        <FormField
+          name="company_id"
+          label="Company"
+          description="Changing the company initiates an ownership transfer."
+        >
           <Controller
             control={control}
             name="company_id"
@@ -89,8 +129,8 @@ export function BrandFormFields({ mode, existingLogoUrl, onImageChange }: BrandF
         <div className="grid gap-4 sm:grid-cols-3">
           <FormField
             name="default_target_margin"
-            label="Target Margin %"
-            description="Applied to all brand products unless overridden"
+            label="Minimum Margin %"
+            description="Managed in Configuration OS — changes here update the policy immediately"
           >
             <Input
               type="number" min="0" max="99.99" step="0.01"

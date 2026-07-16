@@ -8,6 +8,7 @@ const SIZE_CLASS: Record<PageDrawerSize, string> = {
   md:   'sm:max-w-md',
   lg:   'sm:max-w-lg',
   xl:   'sm:max-w-xl',
+  '2xl': 'w-full sm:w-[80vw] lg:w-[70vw] sm:max-w-none',
   full: 'sm:max-w-none sm:w-full',
 };
 

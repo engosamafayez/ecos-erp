@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReservedException;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderWarehouseNotAssignedException;
 use Modules\Commerce\Orders\Domain\Models\Order;
+use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Inventory\InventoryItems\Application\Actions\ReserveStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 
@@ -44,5 +45,14 @@ final class ReserveOrderInventoryAction
 
             $order->update(['inventory_reserved_at' => now()]);
         });
+
+        OrderEvent::log(
+            orderId:     $order->id,
+            type:        'inventory_reserved',
+            description: "Inventory reserved for order #{$order->order_number} in warehouse.",
+            payload:     ['warehouse_id' => $order->assigned_warehouse_id, 'line_count' => $order->lines->count()],
+            module:      'orders',
+            actionType:  'inventory',
+        );
     }
 }

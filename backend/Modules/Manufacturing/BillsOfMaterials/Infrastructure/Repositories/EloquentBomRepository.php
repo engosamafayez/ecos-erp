@@ -210,7 +210,11 @@ final class EloquentBomRepository implements BomRepositoryInterface
         // Reload lines with raw material data needed by the engine
         $bom->load(['lines.rawMaterial', 'product.brand']);
 
-        $summary = $this->costCalculationEngine->calculateAndPersist($bom);
+        $summary = $this->costCalculationEngine->calculateAndPersist(
+            $bom,
+            triggerType:   'recipe_edit',
+            triggerSource: $bom->bom_number,
+        );
 
         // Cascade to product_cost only when this recipe is the active one.
         // Inactive/draft BOMs must not affect the product's published cost.

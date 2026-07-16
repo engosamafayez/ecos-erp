@@ -20,6 +20,8 @@ final class DemandAnalysisServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+
         $this->app->singleton(ProductDemandCalculator::class);
         $this->app->singleton(MaterialDemandCalculator::class);
         $this->app->singleton(MissingMaterialCalculator::class);

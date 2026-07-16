@@ -104,6 +104,11 @@ export const preparationService = {
     return data.data;
   },
 
+  async advanceWave(id: string): Promise<PreparationWave> {
+    const { data } = await api.post<ApiResponse<PreparationWave>>(`${BASE}/waves/${id}/advance`);
+    return data.data;
+  },
+
   async completeItem(waveId: string, itemId: string, payload: CompleteProductPayload): Promise<PreparationWave> {
     const { data } = await api.patch<ApiResponse<PreparationWave>>(
       `${BASE}/waves/${waveId}/items/${itemId}/complete`,

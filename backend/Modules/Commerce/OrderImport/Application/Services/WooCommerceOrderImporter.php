@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\Commerce\OrderImport\Application\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\OrderImport\Application\DTO\OrderImportResultDTO;
 use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
@@ -13,7 +15,10 @@ use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderFee;
 use Modules\Commerce\Orders\Domain\Models\OrderCoupon;
+use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
 use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Logistics\Geography\Domain\Models\City;
+use Modules\Logistics\Geography\Domain\Models\Governorate;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Throwable;
 
@@ -24,13 +29,13 @@ final class WooCommerceOrderImporter
     private const TIMEOUT = 30;
 
     private const STATUS_MAP = [
-        'pending' => 'pending',
+        'pending'    => 'pending',
         'processing' => 'processing',
-        'completed' => 'completed',
-        'cancelled' => 'cancelled',
-        'on-hold' => 'pending',
-        'refunded' => 'cancelled',
-        'failed' => 'cancelled',
+        'completed'  => 'delivered',
+        'cancelled'  => 'cancelled',
+        'on-hold'    => 'awaiting_payment',
+        'refunded'   => 'returned',
+        'failed'     => 'cancelled',
     ];
 
     /** WooCommerce statuses that require inventory reservation on import. */
@@ -39,6 +44,8 @@ final class WooCommerceOrderImporter
     public function __construct(
         private readonly OrderRepositoryInterface $orders,
         private readonly ReserveOrderInventoryAction $reserveInventory,
+        private readonly ConfigurationManager $config,
+        private readonly ShippingValidationService $shippingEngine,
     ) {}
 
     /**
@@ -54,7 +61,8 @@ final class WooCommerceOrderImporter
             return false;
         }
 
-        [$customer] = $this->resolveCustomer($wooOrder);
+        $policy     = $this->resolveBrandPolicy($channel);
+        [$customer] = $this->resolveCustomer($wooOrder, $policy);
         [$order, $lines, $fees, $coupons] = $this->buildOrder($wooOrder, $channel, $customer);
 
         if ($lines === []) {
@@ -105,7 +113,8 @@ final class WooCommerceOrderImporter
         $failedLines = 0;
         $errors = [];
 
-        $page = 1;
+        $policy  = $this->resolveBrandPolicy($channel);
+        $page    = 1;
         $baseUrl = rtrim($channel->store_url, '/') . '/wp-json/wc/v3/orders';
 
         while (true) {
@@ -137,7 +146,7 @@ final class WooCommerceOrderImporter
                     }
 
                     try {
-                        [$customer, $wasCreated] = $this->resolveCustomer($wooOrder);
+                        [$customer, $wasCreated] = $this->resolveCustomer($wooOrder, $policy);
 
                         if ($wasCreated) {
                             $createdCustomers++;
@@ -214,6 +223,16 @@ final class WooCommerceOrderImporter
         );
     }
 
+    /** @return array<string, mixed> */
+    private function resolveBrandPolicy(Channel $channel): array
+    {
+        if ($channel->brand_id === null) {
+            return [];
+        }
+
+        return $this->config->getBrandPolicy((string) $channel->brand_id, 'order');
+    }
+
     private function orderExists(string $externalId, string $channelId): bool
     {
         return Order::query()
@@ -244,36 +263,45 @@ final class WooCommerceOrderImporter
     /**
      * Find or create a customer from WooCommerce billing data.
      *
+     * Applies customer_matching_policy from the brand's order policy (Phase 5):
+     *   always_create_new — skip phone/email matching; always create a new customer record.
+     *   all other values  — attempt phone then email match first (existing behaviour).
+     *
      * @param  array<string, mixed>  $wooOrder
+     * @param  array<string, mixed>  $policy    Brand order policy settings
      * @return array{Customer, bool}
      */
-    private function resolveCustomer(array $wooOrder): array
+    private function resolveCustomer(array $wooOrder, array $policy = []): array
     {
         /** @var array<string, string> $billing */
         $billing = is_array($wooOrder['billing'] ?? null) ? $wooOrder['billing'] : [];
 
-        $rawPhone = trim((string) ($billing['phone'] ?? ''));
-        $email = trim((string) ($billing['email'] ?? ''));
+        $rawPhone        = trim((string) ($billing['phone'] ?? ''));
+        $email           = trim((string) ($billing['email'] ?? ''));
         $normalizedPhone = $rawPhone !== '' ? $this->normalizePhone($rawPhone) : '';
 
-        // 1. Match by phone
-        if ($normalizedPhone !== '') {
-            $customer = Customer::query()
-                ->where('phone', $normalizedPhone)
-                ->orWhere('mobile', $normalizedPhone)
-                ->first();
+        $matchingPolicy = (string) ($policy['customer_matching_policy'] ?? 'reuse_existing');
 
-            if ($customer !== null) {
-                return [$customer, false];
+        if ($matchingPolicy !== 'always_create_new') {
+            // 1. Match by phone
+            if ($normalizedPhone !== '') {
+                $customer = Customer::query()
+                    ->where('phone', $normalizedPhone)
+                    ->orWhere('mobile', $normalizedPhone)
+                    ->first();
+
+                if ($customer !== null) {
+                    return [$customer, false];
+                }
             }
-        }
 
-        // 2. Match by email
-        if ($email !== '') {
-            $customer = Customer::query()->where('email', $email)->first();
+            // 2. Match by email
+            if ($email !== '') {
+                $customer = Customer::query()->where('email', $email)->first();
 
-            if ($customer !== null) {
-                return [$customer, false];
+                if ($customer !== null) {
+                    return [$customer, false];
+                }
             }
         }
 
@@ -334,10 +362,16 @@ final class WooCommerceOrderImporter
 
         $taxTotal = is_numeric($wooOrder['total_tax'] ?? '') ? (float) $wooOrder['total_tax'] : 0;
 
+        $billingFirstName = trim((string) ($billing['first_name'] ?? ''));
+        $billingLastName  = trim((string) ($billing['last_name']  ?? ''));
+        $billingFullName  = trim("{$billingFirstName} {$billingLastName}");
+
         $orderAttributes = [
             'channel_id' => (string) $channel->id,
             'assigned_warehouse_id' => null,
             'customer_id' => (string) $customer->id,
+            // Customer snapshot — name as provided by WooCommerce at import time
+            'customer_name' => $billingFullName !== '' ? $billingFullName : null,
             'external_order_id' => $externalId,
             'order_number' => $this->orders->nextOrderNumber(),
             'order_date' => $orderDate,
@@ -436,7 +470,88 @@ final class WooCommerceOrderImporter
             }
         }
 
+        // Shipping Engine validation — soft (never blocks import; sets to pending on rejection)
+        if ($channel->brand_id !== null) {
+            $statusOverride = $this->evaluateWooShipping(
+                (string) $channel->brand_id,
+                $shipping['state'] ?? $billing['state'] ?? '',
+                $shipping['city']  ?? $billing['city']  ?? '',
+                $externalId,
+            );
+            if ($statusOverride !== null) {
+                $orderAttributes['status'] = $statusOverride;
+            }
+        }
+
         return [$orderAttributes, $lines, $fees, $coupons, $failedLines, $lineErrors];
+    }
+
+    /**
+     * Attempt to resolve Egypt governorate/city from free-text WooCommerce fields,
+     * then run the Shipping Engine. Returns a status override string or null.
+     *
+     * Import is NEVER blocked — on 'reject' we log and set the order to 'pending'
+     * for human review. WooCommerce orders already exist; we must ingest them.
+     */
+    private function evaluateWooShipping(
+        string $brandId,
+        string $stateRaw,
+        string $cityRaw,
+        string $externalId,
+    ): ?string {
+        if ($stateRaw === '' && $cityRaw === '') {
+            return null;
+        }
+
+        // Resolve governorate by name (English or Arabic)
+        $governorate = Governorate::where('name_en', 'LIKE', "%{$stateRaw}%")
+            ->orWhere('name_ar', 'LIKE', "%{$stateRaw}%")
+            ->first();
+
+        if ($governorate === null) {
+            return null; // Cannot map — skip validation
+        }
+
+        // Resolve city by name or alias
+        $city = null;
+        if ($cityRaw !== '') {
+            $city = City::where('governorate_id', $governorate->id)
+                ->where(function ($q) use ($cityRaw): void {
+                    $q->where('name_en', 'LIKE', "%{$cityRaw}%")
+                        ->orWhere('name_ar', 'LIKE', "%{$cityRaw}%");
+                })
+                ->first();
+
+            if ($city === null) {
+                // Try aliases
+                $city = City::whereHas('aliases', fn ($q) =>
+                    $q->where('alias', 'LIKE', "%{$cityRaw}%")
+                )->where('governorate_id', $governorate->id)->first();
+            }
+        }
+
+        $result = $this->shippingEngine->evaluate(
+            brandId:         $brandId,
+            governorateId:   $governorate->id,
+            cityId:          $city?->id,
+            isDeliveryOrder: true,
+        );
+
+        if ($result->isAllowed()) {
+            return null; // No override needed
+        }
+
+        // pending_review or reject → downgrade to pending for human triage
+        Log::channel('daily')->info('[WooImport] Shipping validation issue', [
+            'external_id'   => $externalId,
+            'brand_id'      => $brandId,
+            'governorate'   => $stateRaw,
+            'city'          => $cityRaw,
+            'decision'      => $result->decision,
+            'reason'        => $result->reason,
+        ]);
+
+        return OrderStatus::NeedsShippingReview->value;
     }
 
     private function nextCustomerCode(): string

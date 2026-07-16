@@ -25,6 +25,7 @@ export const brandCreateSchema = z.object({
 });
 
 export const brandUpdateSchema = z.object({
+  company_id: z.string().min(1).optional(),
   name: z.string().min(1, 'Brand name is required.').max(255),
   code: z.string().max(20).optional(),
   slug: z
@@ -56,6 +57,7 @@ export function toCreateFormValues(defaultCompanyId?: string): BrandCreateFormVa
 
 export function toUpdateFormValues(brand: Brand): BrandUpdateFormValues {
   return {
+    company_id: brand.company_id,
     name: brand.name,
     code: brand.code,
     slug: brand.slug,

@@ -55,15 +55,26 @@ class HandleEnterpriseEventJob implements ShouldQueue
             return;
         }
 
-        $logId = Str::uuid()->toString();
-        $log   = EventProcessingLog::create([
-            'id'               => $logId,
-            'event_id'         => $this->event->eventId(),
-            'subscriber_class' => $this->subscriberClass,
-            'idempotency_key'  => $idempotencyKey,
-            'status'           => ProcessingStatus::Processing->value,
-            'attempt_number'   => $this->attempts(),
-        ]);
+        // On retries a Failed row already exists — reuse it rather than inserting a duplicate key.
+        $log = EventProcessingLog::where('idempotency_key', $idempotencyKey)->first();
+
+        if ($log !== null) {
+            $log->update([
+                'status'         => ProcessingStatus::Processing->value,
+                'attempt_number' => $this->attempts(),
+                'error_message'  => null,
+                'processed_at'   => null,
+            ]);
+        } else {
+            $log = EventProcessingLog::create([
+                'id'               => Str::uuid()->toString(),
+                'event_id'         => $this->event->eventId(),
+                'subscriber_class' => $this->subscriberClass,
+                'idempotency_key'  => $idempotencyKey,
+                'status'           => ProcessingStatus::Processing->value,
+                'attempt_number'   => $this->attempts(),
+            ]);
+        }
 
         try {
             $subscriber = app($this->subscriberClass);

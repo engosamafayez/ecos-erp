@@ -1,179 +1,151 @@
-import { Check, ClipboardCopy, ExternalLink, MapPin, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import type { Order, OrderLocation } from '@/features/orders/types/order';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-function buildAddress(order: Order): string {
-  const parts: string[] = [
-    [order.shipping_first_name, order.shipping_last_name].filter(Boolean).join(' '),
-    order.shipping_address_1,
-    order.shipping_address_2,
-    order.shipping_city,
-    order.shipping_state,
-    order.shipping_postcode,
-    order.shipping_country,
-  ].filter(Boolean) as string[];
+export type AddressData = {
+  line1: string | null;
+  line2: string | null;
+  detail: string | null;
+  full: string;
+  hasGps: boolean;
+};
 
-  if (parts.length === 0) {
-    const billingParts = [
-      order.billing_address_1,
-      order.billing_address_2,
-      order.billing_city,
-      order.billing_state,
-      order.billing_postcode,
-      order.billing_country,
+// ── Helpers — exported for OrderLocationCell ──────────────────────────────────
+
+export function extractAddress(order: Order): AddressData {
+  const hasGps = Boolean(order.location?.lat && order.location?.lng);
+
+  const city        = order.city ?? null;
+  const area        = order.area ?? order.delivery_zone ?? null;
+  const governorate = order.governorate ?? null;
+  const street      = order.shipping_address ?? null;
+  const building    = order.building ?? null;
+  const floor       = order.floor ?? null;
+  const apartment   = order.apartment ?? null;
+  const landmark    = order.landmark ?? null;
+
+  const hasEnterprise = Boolean(city || area || governorate || street);
+
+  if (hasEnterprise) {
+    const line1 = area && city && area !== city ? area : (city ?? area);
+    const line2 = governorate ?? null;
+
+    const detailParts = [
+      street,
+      building  ? `Bld ${building}`   : null,
+      floor     ? `Fl ${floor}`       : null,
+      apartment ? `Apt ${apartment}`  : null,
+      landmark,
     ].filter(Boolean) as string[];
-    return billingParts.join(', ');
+
+    const fullParts = [line1, line2, ...detailParts].filter(Boolean) as string[];
+
+    return {
+      line1,
+      line2,
+      detail: detailParts.length > 0 ? detailParts.join(' · ') : null,
+      full: fullParts.join(', '),
+      hasGps,
+    };
   }
 
-  return parts.join(', ');
+  const legacyCity   = order.shipping_city ?? order.billing_city ?? null;
+  const legacyState  = order.shipping_state ?? order.billing_state ?? null;
+  const legacyAddr   = [order.shipping_address_1, order.shipping_address_2].filter(Boolean).join(', ') || null;
+  const fallbackAddr = [order.billing_address_1,  order.billing_address_2].filter(Boolean).join(', ') || null;
+
+  const line1 = legacyCity ?? legacyAddr ?? fallbackAddr;
+  const line2 = legacyState ?? null;
+
+  if (!line1 && !line2) return { line1: null, line2: null, detail: null, full: '', hasGps };
+
+  const fullParts = [legacyAddr ?? fallbackAddr, legacyCity, legacyState].filter(Boolean) as string[];
+  return {
+    line1,
+    line2: line2 !== line1 ? line2 : null,
+    detail: legacyAddr ?? null,
+    full: fullParts.join(', '),
+    hasGps,
+  };
 }
 
-function mapsUrl(location: OrderLocation | null, address: string): string {
+export function mapsUrl(location: OrderLocation | null, full: string): string {
   if (location?.lat && location?.lng) {
     return `https://www.google.com/maps?q=${location.lat},${location.lng}`;
   }
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  return full ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(full)}` : '#';
 }
 
-function locationLink(location: OrderLocation | null): string | null {
+export function wazeUrl(location: OrderLocation | null): string | null {
   if (!location?.lat || !location?.lng) return null;
-  return `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+  return `https://www.waze.com/ul?ll=${location.lat}%2C${location.lng}&navigate=yes`;
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Component — text-only, no action buttons ──────────────────────────────────
 
-type OrderAddressCellProps = {
-  order: Order;
-  /** Called when user clicks "Add/Edit Location" */
-  onEditLocation?: (order: Order) => void;
-  /** Called when user clicks "Delete Location" */
-  onDeleteLocation?: (order: Order) => void;
-};
+type Props = { order: Order };
 
-/**
- * DD-014 — Full multi-line address, no truncation.
- * DD-015 — 📍 action menu (Google Maps / Add-Edit / Copy Link / Delete) + 📋 copy address.
- */
-export function OrderAddressCell({ order, onEditLocation, onDeleteLocation }: OrderAddressCellProps) {
-  const { t } = useTranslation('orders');
-  const [copiedAddr, setCopiedAddr] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
+export function OrderAddressCell({ order }: Props) {
+  const hasEnterprise = Boolean(
+    order.city || order.area || order.delivery_zone || order.governorate || order.shipping_address,
+  );
 
-  const address = buildAddress(order);
-  const hasAddress = Boolean(address);
-  const hasLocation = Boolean(order.location?.lat && order.location?.lng);
-  const gmapsUrl = mapsUrl(order.location ?? null, address);
-  const locLink = locationLink(order.location ?? null);
+  if (hasEnterprise) {
+    // Line 1: zone (city or area)
+    const zone = order.area && order.city && order.area !== order.city
+      ? order.area
+      : (order.city ?? order.area ?? order.delivery_zone ?? null);
 
-  const copyAddress = () => {
-    if (!address) return;
-    void navigator.clipboard.writeText(address).then(() => {
-      setCopiedAddr(true);
-      setTimeout(() => setCopiedAddr(false), 1500);
-    });
-  };
+    // Line 2: governorate
+    const governorate = order.governorate ?? null;
 
-  const copyLink = () => {
-    if (!locLink) return;
-    void navigator.clipboard.writeText(locLink).then(() => {
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 1500);
-    });
-  };
+    // Line 3: remaining address fields joined with ", "
+    const detailParts = [
+      order.shipping_address                        ?? null,
+      order.building  ? `Building ${order.building}`  : null,
+      order.floor     ? `Floor ${order.floor}`         : null,
+      order.apartment ? `Apartment ${order.apartment}` : null,
+      order.landmark  ? `Landmark ${order.landmark}`   : null,
+    ].filter((v): v is string => Boolean(v));
 
-  if (!hasAddress) {
+    const detailLine = detailParts.length > 0 ? detailParts.join(', ') : null;
+
+    if (!zone && !governorate && !detailLine) {
+      return <span className="text-muted-foreground">—</span>;
+    }
+
+    return (
+      <div className="space-y-0.5">
+        {zone ? (
+          <p className="text-xs font-semibold text-primary leading-tight">📍 {zone}</p>
+        ) : null}
+        {governorate ? (
+          <p className="text-[11px] text-muted-foreground leading-tight">{governorate} Governorate</p>
+        ) : null}
+        {detailLine ? (
+          <p className="text-[11px] text-foreground/60 leading-tight">{detailLine}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  // Legacy path (WooCommerce orders without enterprise address fields)
+  const addr = extractAddress(order);
+  if (!addr.line1 && !addr.line2) {
     return <span className="text-muted-foreground">—</span>;
   }
 
   return (
-    <div className="flex items-start gap-1.5 min-w-48 max-w-xs">
-      {/* Full address — multi-line, no truncation (DD-014) */}
-      <span className="flex-1 text-sm leading-snug whitespace-normal break-words">
-        {address}
-      </span>
-
-      {/* Action buttons — shown always for accessibility */}
-      <div className="flex shrink-0 items-center gap-0.5 mt-0.5">
-        {/* 📍 — Location actions */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-6 text-muted-foreground hover:text-foreground"
-              aria-label={t('address.locationActions')}
-            >
-              <MapPin className="size-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem asChild>
-              <a
-                href={gmapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2"
-              >
-                <ExternalLink className="size-3.5" />
-                {t('address.openMaps')}
-              </a>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEditLocation?.(order)}>
-              <Pencil className="size-3.5" />
-              {hasLocation ? t('address.editLocation') : t('address.addLocation')}
-            </DropdownMenuItem>
-            {hasLocation ? (
-              <DropdownMenuItem onClick={copyLink}>
-                {copiedLink ? (
-                  <Check className="size-3.5 text-emerald-500" />
-                ) : (
-                  <ClipboardCopy className="size-3.5" />
-                )}
-                {copiedLink ? t('address.copied') : t('address.copyLink')}
-              </DropdownMenuItem>
-            ) : null}
-            {hasLocation ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => onDeleteLocation?.(order)}
-                >
-                  <Trash2 className="size-3.5" />
-                  {t('address.deleteLocation')}
-                </DropdownMenuItem>
-              </>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* 📋 — Copy full address */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6 text-muted-foreground hover:text-foreground"
-          aria-label={t('address.copyAddress')}
-          onClick={copyAddress}
-        >
-          {copiedAddr ? (
-            <Check className="size-3 text-emerald-500" />
-          ) : (
-            <ClipboardCopy className="size-3" />
-          )}
-        </Button>
-      </div>
+    <div className="space-y-0.5">
+      {addr.line1 ? (
+        <p className="text-xs font-medium text-foreground leading-tight">📍 {addr.line1}</p>
+      ) : null}
+      {addr.line2 ? (
+        <p className="text-[11px] text-muted-foreground leading-tight">{addr.line2}</p>
+      ) : null}
+      {addr.detail ? (
+        <p className="text-[11px] text-foreground/60 leading-tight">{addr.detail}</p>
+      ) : null}
     </div>
   );
 }

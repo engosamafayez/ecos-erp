@@ -12,10 +12,11 @@ use Modules\Operations\Fulfillment\Domain\Events\OrderDeliveredEvent;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 
 /**
- * Marks an order as delivered.
+ * Records customer delivery: out_for_delivery → delivered.
  *
- * Inventory was already deducted by LoadVehicleWorkflow at vehicle dispatch.
- * This workflow only advances order status and fires the revenue event.
+ * Inventory was already deducted by LoadVehicleWorkflow.
+ * Revenue recognition happens at this stage.
+ * Use CompleteOrderWorkflow to advance delivered → completed.
  */
 final class CompleteDeliveryWorkflow implements FulfillmentWorkflowInterface
 {
@@ -23,17 +24,15 @@ final class CompleteDeliveryWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        $allowed = [OrderStatus::OutForDelivery, OrderStatus::ReadyForLoading];
-
-        if (! in_array($order->status, $allowed, true)) {
+        if ($order->status !== OrderStatus::OutForDelivery) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be completed from status [{$order->status->value}]."
+                "Order [{$order->id}] cannot be delivered from status [{$order->status->value}]. Must be out_for_delivery."
             );
         }
 
         if ($order->inventory_shipped_at === null) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be completed: inventory has not been shipped."
+                "Order [{$order->id}] cannot be delivered: inventory has not been dispatched."
             );
         }
     }
@@ -42,12 +41,12 @@ final class CompleteDeliveryWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        $order->update(['status' => OrderStatus::Completed]);
+        $order->update(['status' => OrderStatus::Delivered]);
         $order->refresh();
 
         return FulfillmentResult::success(
             $order,
-            "Order #{$order->order_number} delivered and completed.",
+            "Order #{$order->order_number} delivered to customer.",
             [
                 'revenue'        => $order->total,
                 'cogs_amount'    => $order->actual_cogs_amount,

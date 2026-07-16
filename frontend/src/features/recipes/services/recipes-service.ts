@@ -1,6 +1,6 @@
 import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types';
-import type { Recipe, RecipePayload, RecipesQuery, RecipesResult } from '@/features/recipes/types/recipe';
+import type { Recipe, RecipeCostHistoryResult, RecipePayload, RecipesQuery, RecipesResult } from '@/features/recipes/types/recipe';
 
 // Recipes share the /boms backend endpoint — no backend changes required.
 export const recipesService = {
@@ -26,6 +26,14 @@ export const recipesService = {
 
   async remove(id: string): Promise<void> {
     await api.delete(`/boms/${id}`);
+  },
+
+  async getCostHistory(id: string, page = 1, perPage = 20): Promise<RecipeCostHistoryResult> {
+    const { data } = await api.get<ApiResponse<RecipeCostHistoryResult>>(
+      `/boms/${id}/cost-history`,
+      { params: { page, per_page: perPage } },
+    );
+    return data.data;
   },
 
   async toggleStatus(recipe: Recipe): Promise<Recipe> {

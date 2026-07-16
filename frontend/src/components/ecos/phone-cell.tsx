@@ -54,6 +54,7 @@ export function PhoneCell({ phone, labels }: PhoneCellProps) {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          onMouseDown={(e) => e.stopPropagation()}
           className="font-mono text-xs transition-colors underline-offset-2 hover:text-primary hover:underline"
         >
           {phone}

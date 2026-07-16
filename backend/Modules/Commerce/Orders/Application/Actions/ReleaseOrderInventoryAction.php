@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReleasedException;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderWarehouseNotAssignedException;
 use Modules\Commerce\Orders\Domain\Models\Order;
+use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Inventory\InventoryItems\Application\Actions\ReleaseStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 
@@ -25,9 +26,17 @@ final class ReleaseOrderInventoryAction
             throw new OrderWarehouseNotAssignedException($order->id);
         }
 
-        // If never reserved, nothing to release from stock — just stamp the timestamp.
+        // Never reserved → just stamp the release timestamp (nothing to un-reserve in stock)
         if ($order->inventory_reserved_at === null) {
             $order->update(['inventory_released_at' => now()]);
+
+            OrderEvent::log(
+                orderId:     $order->id,
+                type:        'inventory_released',
+                description: "Inventory reservation released for order #{$order->order_number} (was not reserved).",
+                payload:     ['warehouse_id' => $order->assigned_warehouse_id],
+                module:      'orders',
+            );
 
             return;
         }
@@ -51,5 +60,13 @@ final class ReleaseOrderInventoryAction
 
             $order->update(['inventory_released_at' => now()]);
         });
+
+        OrderEvent::log(
+            orderId:     $order->id,
+            type:        'inventory_released',
+            description: "Inventory reservation released for order #{$order->order_number}.",
+            payload:     ['warehouse_id' => $order->assigned_warehouse_id, 'line_count' => $order->lines->count()],
+            module:      'orders',
+        );
     }
 }

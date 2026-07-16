@@ -9,10 +9,10 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Modules\Admin\Configuration\Domain\Models\BrandShippingRule;
 use Modules\Admin\Configuration\Domain\Models\DeliveryGeography;
-use Modules\Admin\Configuration\Domain\Models\DeliveryWindow;
 use Modules\Admin\Configuration\Domain\Models\DeliveryZone;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Organization\Brands\Domain\Models\Brand;
+use Modules\Organization\Brands\Domain\Models\BrandDeliveryTimeSlot;
 
 final class BrandDeliveryController extends Controller
 {
@@ -76,7 +76,7 @@ final class BrandDeliveryController extends Controller
         $channelsOk  = Channel::where('brand_id', $brandId)->where('is_active', true)->exists();
         $geoOk       = DeliveryGeography::where('brand_id', $brandId)->where('is_active', true)->exists();
         $zonesOk     = DeliveryZone::where('brand_id', $brandId)->where('is_active', true)->exists();
-        $windowsOk   = DeliveryWindow::where('brand_id', $brandId)->where('is_enabled', true)->exists();
+        $windowsOk   = BrandDeliveryTimeSlot::where('brand_id', $brandId)->where('is_active', true)->exists();
         $shippingOk  = BrandShippingRule::where('brand_id', $brandId)->where('is_enabled', true)->exists();
 
         return $this->success([
@@ -97,18 +97,19 @@ final class BrandDeliveryController extends Controller
      */
     public function windows(string $brandId): JsonResponse
     {
-        $windows = DeliveryWindow::where('brand_id', $brandId)
-            ->where('is_enabled', true)
-            ->orderBy('sort_order')
+        $windows = BrandDeliveryTimeSlot::where('brand_id', $brandId)
+            ->where('is_active', true)
+            ->orderBy('display_order')
+            ->orderBy('start_time')
             ->get()
-            ->map(fn (DeliveryWindow $w) => [
+            ->map(fn (BrandDeliveryTimeSlot $w) => [
                 'id'        => $w->id,
-                'label'     => $w->label,
-                'starts_at' => $w->starts_at,
-                'ends_at'   => $w->ends_at,
+                'label'     => $w->name,
+                'starts_at' => $w->start_time,
+                'ends_at'   => $w->end_time,
             ])
             ->values();
 
-        return $this->success(['windows' => $windows]);
+        return $this->success($windows);
     }
 }

@@ -189,6 +189,7 @@ export function useWaveMissingMaterials(waveId: string | null) {
     queryFn: () => preparationService.getWaveMissingMaterials(waveId!),
     enabled: !!waveId,
     staleTime: 30_000,
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
   });
 }
@@ -212,5 +213,18 @@ export function useWaveOrders(waveId: string | null) {
     enabled: !!waveId,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
+  });
+}
+
+export function useAdvanceWave() {
+  const c = useScope();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => preparationService.advanceWave(id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ['company', c, K.waves, 'detail', id] });
+      qc.invalidateQueries({ queryKey: ['company', c, K.waves, 'list'] });
+      qc.invalidateQueries({ queryKey: ['company', c, K.waveDemand] });
+    },
   });
 }

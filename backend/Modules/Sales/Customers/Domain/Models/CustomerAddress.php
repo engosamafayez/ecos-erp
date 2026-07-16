@@ -16,8 +16,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $city
  * @property string|null $area
  * @property string|null $address_line
+ * @property string|null $building
+ * @property string|null $floor
+ * @property string|null $apartment
+ * @property string|null $landmark
+ * @property string|null $address_notes
  * @property float|null $google_maps_lat
  * @property float|null $google_maps_lng
+ * @property string|null $google_maps_url
+ * @property string|null $location_source
  * @property bool $is_default
  */
 class CustomerAddress extends Model
@@ -36,8 +43,15 @@ class CustomerAddress extends Model
         'city',
         'area',
         'address_line',
+        'building',
+        'floor',
+        'apartment',
+        'landmark',
+        'address_notes',
         'google_maps_lat',
         'google_maps_lng',
+        'google_maps_url',
+        'location_source',
         'is_default',
     ];
 

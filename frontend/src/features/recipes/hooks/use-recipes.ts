@@ -68,3 +68,14 @@ export function useToggleRecipeStatus() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, RECIPES_KEY] }),
   });
 }
+
+export function useRecipeCostHistoryQuery(id: string, page = 1) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  return useQuery({
+    queryKey: ['company', companyId, RECIPES_KEY, id, 'cost-history', page],
+    queryFn: () => recipesService.getCostHistory(id, page),
+    enabled: Boolean(id),
+    placeholderData: keepPreviousData,
+  });
+}

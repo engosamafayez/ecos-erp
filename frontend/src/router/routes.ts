@@ -66,6 +66,12 @@ export const ROUTES = {
   hr: '/hr',
   reports: '/reports',
   settings: '/settings',
+  // Distribution OS
+  distributionBoard:      '/operations/distribution/board',
+  loadingWorkspace:       '/operations/distribution/loading',
+  loadingOsDashboard:     '/operations/loading/dashboard',
+  dispatchGate:           '/operations/dispatch-gate',
+  dispatchGateWorkspace:  '/operations/dispatch-gate/:tripId',
   // Fulfillment Wave Workspace (TASK-PREP-UI-003)
   waveWorkspace:        '/operations/preparation/wave-workspace',
   waveProductDemand:    '/operations/preparation/wave-workspace/products',

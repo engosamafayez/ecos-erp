@@ -30,18 +30,22 @@ final class BillOfMaterial extends Model
         'recipe_cost',
         'packaging_cost',
         'cost_summary',
+        'cost_pending',
+        'recipe_cost_updated_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active'          => 'boolean',
-            'bom_version_number' => 'integer',
-            'manufacturing_cost' => 'float',
-            'other_costs'        => 'float',
-            'recipe_cost'        => 'float',
-            'packaging_cost'     => 'float',
-            'cost_summary'       => 'array',
+            'is_active'              => 'boolean',
+            'bom_version_number'     => 'integer',
+            'manufacturing_cost'     => 'float',
+            'other_costs'            => 'float',
+            'recipe_cost'            => 'float',
+            'packaging_cost'         => 'float',
+            'cost_summary'           => 'array',
+            'cost_pending'           => 'boolean',
+            'recipe_cost_updated_at' => 'datetime',
         ];
     }
 

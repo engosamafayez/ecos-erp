@@ -14,6 +14,13 @@ use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionExcepti
 
 /**
  * Cancels an order and releases any held inventory reservation.
+ *
+ * ADR Part 6 — Unified Cancel Workflow:
+ * - Pending / AwaitingPayment / Processing / AwaitingStock / Confirmed / Preparing:
+ *   cancel preparation, release reservation, audit, cancel.
+ * - OutForDelivery: BLOCKED — must execute Return Workflow first.
+ * - Delivered / Completed: BLOCKED — already fulfilled.
+ * - Returned / Cancelled: already terminal.
  */
 final class CancelOrderWorkflow implements FulfillmentWorkflowInterface
 {
@@ -25,17 +32,22 @@ final class CancelOrderWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        $terminal = [OrderStatus::Cancelled, OrderStatus::Completed];
-
-        if (in_array($order->status, $terminal, true)) {
+        if ($order->status === OrderStatus::OutForDelivery) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] is already in a terminal state [{$order->status->value}]."
+                "Order [{$order->id}] is out for delivery. Execute Return Workflow first before cancelling."
             );
         }
 
-        if ($order->inventory_shipped_at !== null) {
+        // Block permanently: terminal states and already-delivered orders
+        $blocked = [
+            OrderStatus::Cancelled,
+            OrderStatus::Completed,
+            OrderStatus::Delivered,
+        ];
+
+        if (in_array($order->status, $blocked, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be cancelled: inventory has already been shipped."
+                "Order [{$order->id}] is in state [{$order->status->value}] and cannot be cancelled."
             );
         }
     }
@@ -46,7 +58,6 @@ final class CancelOrderWorkflow implements FulfillmentWorkflowInterface
         $reason  = $ctx->get('reason');
         $released = false;
 
-        // ReleaseOrderInventoryAction handles the case where inventory was never reserved
         if ($order->assigned_warehouse_id !== null && $order->inventory_released_at === null) {
             $this->releaseInventory->execute($order);
             $released = true;

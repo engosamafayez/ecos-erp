@@ -15,8 +15,6 @@ import type {
   CoverageStats,
   DeliveryGeography,
   DeliveryGeographyPayload,
-  DeliveryWindow,
-  DeliveryWindowPayload,
   DeliveryZone,
   DeliveryZonePayload,
   MasterGov,
@@ -163,48 +161,6 @@ export const configurationService = {
 
   async deleteShippingRule(brandId: string, id: string): Promise<void> {
     await api.delete(`${BASE}/brands/${brandId}/shipping-rules/${id}`);
-  },
-
-  // ── Delivery Windows ────────────────────────────────────────────────────────
-
-  async listDeliveryWindows(brandId: string): Promise<DeliveryWindow[]> {
-    const { data } = await api.get<ApiResponse<DeliveryWindow[]>>(`${BASE}/brands/${brandId}/delivery-windows`);
-    return data.data;
-  },
-
-  async createDeliveryWindow(brandId: string, payload: DeliveryWindowPayload): Promise<DeliveryWindow> {
-    const { data } = await api.post<ApiResponse<DeliveryWindow>>(
-      `${BASE}/brands/${brandId}/delivery-windows`,
-      payload,
-    );
-    return data.data;
-  },
-
-  async updateDeliveryWindow(brandId: string, id: string, payload: Partial<DeliveryWindowPayload>): Promise<DeliveryWindow> {
-    const { data } = await api.put<ApiResponse<DeliveryWindow>>(
-      `${BASE}/brands/${brandId}/delivery-windows/${id}`,
-      payload,
-    );
-    return data.data;
-  },
-
-  async deleteDeliveryWindow(brandId: string, id: string): Promise<void> {
-    await api.delete(`${BASE}/brands/${brandId}/delivery-windows/${id}`);
-  },
-
-  async seedDefaultWindows(brandId: string): Promise<DeliveryWindow[]> {
-    const { data } = await api.post<ApiResponse<DeliveryWindow[]>>(
-      `${BASE}/brands/${brandId}/delivery-windows/seed-defaults`,
-    );
-    return data.data;
-  },
-
-  async reorderWindows(brandId: string, orderedIds: string[]): Promise<DeliveryWindow[]> {
-    const { data } = await api.patch<ApiResponse<DeliveryWindow[]>>(
-      `${BASE}/brands/${brandId}/delivery-windows/reorder`,
-      { ordered_ids: orderedIds },
-    );
-    return data.data;
   },
 
   // ── Preparation Policies ────────────────────────────────────────────────────

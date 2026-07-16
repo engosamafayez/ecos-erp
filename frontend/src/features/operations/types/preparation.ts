@@ -2,10 +2,12 @@
 
 export type WaveStatus =
   | 'draft'
+  | 'collecting'
   | 'planning'
   | 'shortage_blocked'
   | 'preparing'
   | 'completed'
+  | 'closed'
   | 'cancelled';
 
 export type WaveItemStatus = 'pending' | 'in_progress' | 'prepared' | 'short' | 'blocked';
@@ -636,6 +638,8 @@ export type WaveOrderEntry = {
   delivery_zone_snapshot: string | null;
   governorate_snapshot: string | null;
   zone_code_snapshot: string | null;
+  shipping_cost_snapshot: number | null;
+  payment_status_snapshot: string | null;
   preparation_priority: number;
   is_paid: boolean;
   added_at: string;

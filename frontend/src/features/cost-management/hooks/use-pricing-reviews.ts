@@ -103,6 +103,16 @@ export function useBulkPolicyUpdate() {
   });
 }
 
+export function usePublishReview() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pricingReviewService.publish(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['company', companyId, KEY] }),
+  });
+}
+
 export function usePriceReviewBadge(companyId?: string) {
   const { activeCompanyId } = useOrganizationContext();
   const scopeId = activeCompanyId ?? 'global';

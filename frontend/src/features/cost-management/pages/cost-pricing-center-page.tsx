@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   TrendingDown,
   TrendingUp,
+  Upload,
   UserPlus,
   X,
   XCircle,
@@ -64,6 +65,7 @@ import {
   useBulkPolicyUpdate,
   useInlineUpdateReview,
   usePricingReviews,
+  usePublishReview,
   useSnoozeReview,
 } from '@/features/cost-management/hooks/use-pricing-reviews';
 import type {
@@ -843,6 +845,7 @@ export function CostPricingCenterPage() {
   const { data, isLoading, isError, refetch, isFetching } = usePricingReviews(query);
   const approveReview  = useApproveReview();
   const snoozeReview   = useSnoozeReview();
+  const publishReview  = usePublishReview();
   const assignReview   = useAssignReview();
   const bulkApprove    = useBulkApprove();
   const inlineUpdate   = useInlineUpdateReview();
@@ -1456,6 +1459,12 @@ export function CostPricingCenterPage() {
                       {/* Status */}
                       <td className="px-3 py-3">
                         <StatusBadge status={review.status} />
+                        {review.publish_status === 'pending_publish' && (
+                          <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-0.5 flex items-center gap-0.5">
+                            <Upload className="size-2.5" />
+                            Pending Publish
+                          </p>
+                        )}
                         {review.snooze_until && (
                           <p className="text-[11px] text-muted-foreground mt-0.5">until {review.snooze_until}</p>
                         )}
@@ -1466,7 +1475,7 @@ export function CostPricingCenterPage() {
                         {fmtDate(review.updated_at)}
                       </td>
 
-                      {/* Actions — 4 visible buttons for pending/snoozed, overflow for all */}
+                      {/* Actions — visible buttons for pending/snoozed; Publish button for pending_publish */}
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-0.5">
                           {(review.status === 'pending' || review.status === 'snoozed') && (
@@ -1505,6 +1514,19 @@ export function CostPricingCenterPage() {
                                 <Clock className="size-3.5" />
                               </Button>
                             </>
+                          )}
+                          {review.publish_status === 'pending_publish' && (
+                            <Button
+                              size="icon" variant="ghost"
+                              className="size-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                              title="Publish prices to catalog"
+                              onClick={() => publishReview.mutate(review.id, {
+                                onSuccess: () => toast.success('Prices published', `${review.product.name} is now live.`),
+                              })}
+                              disabled={publishReview.isPending}
+                            >
+                              <Upload className="size-3.5" />
+                            </Button>
                           )}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

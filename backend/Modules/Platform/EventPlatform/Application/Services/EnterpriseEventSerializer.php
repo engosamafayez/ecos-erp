@@ -52,7 +52,7 @@ final class EnterpriseEventSerializer
             'event_id'       => $event->eventId(),
             'event_name'     => $event->eventName(),
             'version'        => (string) $event->eventVersion(),
-            'occurred_at'    => $event->occurredAt()->format(\DateTimeInterface::ISO8601),
+            'occurred_at'    => $event->occurredAt()->format('Y-m-d H:i:s'),
             'correlation_id' => $event->correlationId(),
             'causation_id'   => $raw['causation_id'] ?? null,
             'company_id'     => $raw['company_id'] ?? null,

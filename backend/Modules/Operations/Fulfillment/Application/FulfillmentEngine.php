@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Operations\Fulfillment\Application;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
@@ -42,20 +43,35 @@ final class FulfillmentEngine
         $workflow->guard($ctx);
 
         // 2. Execute inside transaction — single commit covers all mutations
+        $previousStatus = $order->status->value;
         $result = DB::transaction(fn (): FulfillmentResult => $workflow->execute($ctx));
+
+        // Stamp status transition audit fields so the frontend can show "who changed what when"
+        $actorName = Auth::user()?->name ?? null;
+        if ($result->order->status->value !== $previousStatus) {
+            $result->order->update([
+                'previous_status'   => $previousStatus,
+                'status_entered_by' => $actorName,
+                'status_entered_at' => now(),
+            ]);
+        }
 
         // 3. Events — after commit so they are never rolled back
         foreach ($workflow->events($result) as $event) {
             event($event);
         }
 
-        // 4. Audit trail
+        // 4. Audit trail — includes actor name and previous/new status values
         OrderEvent::log(
-            orderId:     $result->order->id,
-            type:        $workflow->name(),
-            description: $result->message,
-            payload:     $result->meta,
-            actorId:     $actorId,
+            orderId:       $result->order->id,
+            type:          $workflow->name(),
+            description:   $result->message,
+            payload:       $result->meta,
+            actorId:       $actorId,
+            actorName:     $actorName,
+            previousValue: $previousStatus !== $result->order->status->value ? ['status' => $previousStatus] : null,
+            newValue:      $previousStatus !== $result->order->status->value ? ['status' => $result->order->status->value] : null,
+            module:        'fulfillment',
         );
 
         return $result;

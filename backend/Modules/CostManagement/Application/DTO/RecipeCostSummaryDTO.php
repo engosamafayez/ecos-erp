@@ -26,6 +26,10 @@ final class RecipeCostSummaryDTO
         public readonly ?float $marginAmount,
         public readonly ?float $marginPercent,
         public readonly string $lastCalculatedAt,
+        /** True when one or more component materials have no material_cost set. */
+        public readonly bool   $hasMissingCosts = false,
+        /** Number of components with null material_cost. */
+        public readonly int    $missingMaterialCount = 0,
     ) {}
 
     /** Serialize to array for JSON storage and API responses. */
@@ -43,6 +47,8 @@ final class RecipeCostSummaryDTO
             'margin_amount'           => $this->marginAmount,
             'margin_percent'          => $this->marginPercent,
             'last_calculated_at'      => $this->lastCalculatedAt,
+            'has_missing_costs'       => $this->hasMissingCosts,
+            'missing_material_count'  => $this->missingMaterialCount,
         ];
     }
 
@@ -60,7 +66,9 @@ final class RecipeCostSummaryDTO
             currentSellingPrice:   isset($data['current_selling_price'])   ? (float) $data['current_selling_price']   : null,
             marginAmount:  isset($data['margin_amount'])  ? (float) $data['margin_amount']  : null,
             marginPercent: isset($data['margin_percent']) ? (float) $data['margin_percent'] : null,
-            lastCalculatedAt: (string) ($data['last_calculated_at'] ?? now()->toIso8601String()),
+            lastCalculatedAt:     (string) ($data['last_calculated_at'] ?? now()->toIso8601String()),
+            hasMissingCosts:      (bool)   ($data['has_missing_costs']     ?? false),
+            missingMaterialCount: (int)    ($data['missing_material_count'] ?? 0),
         );
     }
 }

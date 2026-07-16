@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ImageIcon, Upload, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,14 @@ export function ImageUploadField({ existingUrl, onChange }: ImageUploadFieldProp
   const [preview,  setPreview]  = useState<string | null>(resolvedExisting);
   const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync preview when the existing URL prop changes (e.g. drawer reused for a
+  // different record). Only syncs when the user has not picked a new local file.
+  useEffect(() => {
+    if (!fileName) {
+      setPreview(getMediaUrl(existingUrl));
+    }
+  }, [existingUrl]);
 
   function handleFile(file: File | null) {
     if (!file) {

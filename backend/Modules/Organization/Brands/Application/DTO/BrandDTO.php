@@ -29,7 +29,7 @@ final class BrandDTO extends BaseDTO
     public static function fromArray(array $data): self
     {
         return new self(
-            company_id: (string) $data['company_id'],
+            company_id: isset($data['company_id']) ? (string) $data['company_id'] : '',
             name: (string) $data['name'],
             code: self::nullable($data, 'code'),
             slug: self::nullable($data, 'slug'),

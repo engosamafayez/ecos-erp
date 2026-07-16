@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Orders\Domain\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
@@ -22,6 +24,9 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property string|null $channel_id
  * @property string|null $assigned_warehouse_id
  * @property string $customer_id
+ * @property string|null $customer_name           Order snapshot — name at time of creation/edit
+ * @property string|null $customer_secondary_phone Order snapshot — secondary phone at time of creation/edit
+ * @property string|null $customer_notes          Order snapshot — notes at time of creation/edit
  * @property string|null $external_order_id
  * @property string $order_number
  * @property string $order_date
@@ -74,6 +79,13 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property string|null $payment_method_manual
  * @property string|null $payment_proof_path
  * @property string|null $governorate
+ * @property string|null $city
+ * @property string|null $shipping_address
+ * @property string|null $building
+ * @property string|null $floor
+ * @property string|null $apartment
+ * @property string|null $landmark
+ * @property string|null $address_notes
  * @property string|null $area
  * @property float|null $shipping_cost
  * @property string|null $shipping_cost_source
@@ -81,6 +93,10 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property string|null $discount_type
  * @property float $deposit_amount
  * @property float $remaining_balance
+ * @property float|null $google_maps_lat
+ * @property float|null $google_maps_lng
+ * @property string|null $google_maps_url
+ * @property string|null $location_source
  */
 class Order extends Model
 {
@@ -90,6 +106,20 @@ class Order extends Model
 
     protected $keyType = 'string';
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', static function (Builder $query): void {
+            if (! Auth::check()) {
+                return;
+            }
+            $companyId = Auth::user()?->company_id;
+            if ($companyId === null) {
+                return; // super-admin sees all orders
+            }
+            $query->where('company_id', $companyId);
+        });
+    }
+
     /**
      * @var list<string>
      */
@@ -97,6 +127,7 @@ class Order extends Model
         'channel_id',
         'assigned_warehouse_id',
         'customer_id',
+        'customer_name',
         'external_order_id',
         'order_number',
         'order_date',
@@ -104,6 +135,7 @@ class Order extends Model
         'subtotal',
         'total',
         'notes',
+        'customer_notes',
         'billing_first_name',
         'billing_last_name',
         'billing_company',
@@ -114,6 +146,7 @@ class Order extends Model
         'billing_address_2',
         'billing_postcode',
         'billing_phone',
+        'customer_secondary_phone',
         'billing_email',
         'shipping_first_name',
         'shipping_last_name',
@@ -149,6 +182,13 @@ class Order extends Model
         'payment_method_manual',
         'payment_proof_path',
         'governorate',
+        'city',
+        'shipping_address',
+        'building',
+        'floor',
+        'apartment',
+        'landmark',
+        'address_notes',
         'area',
         'shipping_cost',
         'shipping_cost_source',
@@ -158,9 +198,33 @@ class Order extends Model
         'remaining_balance',
         'google_maps_lat',
         'google_maps_lng',
+        'google_maps_url',
+        'location_source',
         'warehouse_assigned_at',
         'warehouse_assignment_source',
         'preparation_completed_at',
+        'rescheduled_at',
+        'next_delivery_date',
+        'resume_from_status',
+        'reschedule_reason',
+        // Shipping logistics
+        'shipping_company_name',
+        'shipping_attempts',
+        'tracking_number',
+        // GPS provenance
+        'location_set_by',
+        // Customer confirmation
+        'customer_confirmed_at',
+        'customer_confirmed_by',
+        'confirmation_result',
+        // Internal notes (staff-only) + creator audit
+        'internal_notes',
+        'created_by_id',
+        'created_by_name',
+        // Status transition audit
+        'previous_status',
+        'status_entered_by',
+        'status_entered_at',
     ];
 
     /**
@@ -192,6 +256,11 @@ class Order extends Model
             'google_maps_lng'        => 'float',
             'warehouse_assigned_at'       => 'datetime',
             'preparation_completed_at'    => 'datetime',
+            'rescheduled_at'              => 'datetime',
+            'next_delivery_date'          => 'date:Y-m-d',
+            'customer_confirmed_at'       => 'datetime',
+            'shipping_attempts'           => 'integer',
+            'status_entered_at'           => 'datetime',
         ];
     }
 
@@ -255,5 +324,13 @@ class Order extends Model
             \Modules\Operations\Preparation\Domain\Models\PreparationSessionOrder::class,
             'order_id',
         )->whereNull('detached_at');
+    }
+
+    /**
+     * @return HasMany<OrderNote, $this>
+     */
+    public function orderNotes(): HasMany
+    {
+        return $this->hasMany(OrderNote::class)->latest();
     }
 }

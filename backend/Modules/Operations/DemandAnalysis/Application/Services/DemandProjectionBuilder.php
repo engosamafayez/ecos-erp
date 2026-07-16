@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Operations\DemandAnalysis\Application\Services;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Operations\DemandAnalysis\Domain\Events\MaterialDemandUpdated;
 use Modules\Operations\DemandAnalysis\Domain\Events\MissingMaterialsUpdated;
 use Modules\Operations\DemandAnalysis\Domain\Events\ProductDemandUpdated;
@@ -79,6 +80,7 @@ final class DemandProjectionBuilder
         // Layer 4 – KPIs (reads from DB)
         $kpiData = $this->kpiCalc->calculate($wave);
         $this->repository->upsertWaveKpis($kpiData);
+        $this->syncWaveHeader($wave->id, $kpiData);
 
         event(new WaveDemandUpdated(
             $wave->id,
@@ -176,6 +178,7 @@ final class DemandProjectionBuilder
     {
         $kpiData = $this->kpiCalc->calculate($wave);
         $this->repository->upsertWaveKpis($kpiData);
+        $this->syncWaveHeader($wave->id, $kpiData);
 
         event(new WaveDemandUpdated(
             $wave->id,
@@ -188,5 +191,18 @@ final class DemandProjectionBuilder
             $kpiData['completion_pct'],
             $trigger,
         ));
+    }
+
+    private function syncWaveHeader(string $waveId, array $kpiData): void
+    {
+        DB::table('preparation_waves')
+            ->where('id', $waveId)
+            ->update([
+                'products_count'       => $kpiData['products_count'],
+                'total_units_required' => $kpiData['total_units_required'],
+                'total_units_prepared' => $kpiData['total_units_prepared'],
+                'completion_pct'       => $kpiData['completion_pct'],
+                'updated_at'           => now(),
+            ]);
     }
 }

@@ -6,8 +6,10 @@ namespace Modules\Organization\Brands\Application\Actions;
 
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Organization\Brands\Application\DTO\BrandDTO;
 use Modules\Organization\Brands\Domain\Contracts\BrandRepositoryInterface;
 use Modules\Organization\Brands\Domain\Services\BrandCodeGeneratorService;
@@ -17,6 +19,7 @@ final class CreateBrandAction extends BaseAction
     public function __construct(
         private readonly BrandRepositoryInterface $brands,
         private readonly BrandCodeGeneratorService $codeGenerator,
+        private readonly ConfigurationManager $config,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -30,7 +33,6 @@ final class CreateBrandAction extends BaseAction
         $code = $dto->code ?? $this->codeGenerator->next($dto->company_id);
         $slug = $dto->slug ?? Str::slug($dto->name);
 
-        // Ensure slug uniqueness within company
         $baseSlug = $slug;
         $counter = 1;
         while ($this->brands->existsBySlug($dto->company_id, $slug)) {
@@ -49,6 +51,18 @@ final class CreateBrandAction extends BaseAction
             'default_markup'        => $dto->default_markup,
             'default_discount_pct'  => $dto->default_discount_pct,
         ]);
+
+        // Seed the Config OS pricing policy so it is immediately in sync with the brand.
+        if ($dto->default_target_margin !== null) {
+            $this->config->updateBrandPolicy(
+                brandId:   $brand->id,
+                companyId: (string) $dto->company_id,
+                group:     'pricing',
+                settings:  ['minimum_margin_pct' => $dto->default_target_margin],
+                actorId:   (string) (Auth::id() ?? ''),
+                reason:    'Seeded from brand creation',
+            );
+        }
 
         return OperationResult::success($brand, 'Brand created successfully.');
     }

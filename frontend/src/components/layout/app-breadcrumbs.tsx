@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
-import { findNavItemByPath } from '@/config/navigation';
+import { findNavItemByPath } from '@/config/module-navigation';
 import { ROUTES } from '@/router/routes';
 
 /**

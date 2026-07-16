@@ -61,10 +61,10 @@ class AutomationDashboardController extends Controller
             ->whereDate('e.created_at', '>=', now()->subDays(7))
             ->selectRaw("
                 COUNT(*) AS total_7d,
-                COUNT(*) FILTER (WHERE e.status = 'completed') AS completed_7d,
-                COUNT(*) FILTER (WHERE e.status = 'failed') AS failed_7d,
+                SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) AS completed_7d,
+                SUM(CASE WHEN e.status = 'failed' THEN 1 ELSE 0 END) AS failed_7d,
                 ROUND(
-                    100.0 * COUNT(*) FILTER (WHERE e.status = 'completed') / NULLIF(COUNT(*), 0),
+                    100.0 * SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0),
                     1
                 ) AS success_rate
             ")

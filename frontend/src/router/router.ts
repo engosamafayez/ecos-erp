@@ -70,6 +70,11 @@ import { BrandConfigurationPage } from '@/features/admin/configuration/pages/bra
 import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-geography-page';
 import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
 import { DistributionPlanningPage } from '@/features/logistics/distribution-planning/pages/distribution-planning-page';
+import { DistributionBoardPage } from '@/features/operations/distribution-board/pages/distribution-board-page';
+import { LoadingDashboardPage } from '@/features/operations/distribution-board/pages/loading-dashboard-page';
+import { LoadingWorkspacePage } from '@/features/operations/distribution-board/pages/loading-workspace-page';
+import { DispatchGatePage } from '@/features/operations/distribution-board/pages/dispatch-gate-page';
+import { DispatchGateWorkspacePage } from '@/features/operations/distribution-board/pages/dispatch-gate-workspace-page';
 import { MarketingDashboardPage } from '@/features/marketing/pages/marketing-dashboard-page';
 import { MarketingAssetsPage } from '@/features/marketing/pages/marketing-assets-page';
 import { MetaConnectPage } from '@/features/marketing/pages/meta-connect-page';
@@ -197,6 +202,14 @@ export const router = createBrowserRouter(
             // Configuration OS
             { path: ROUTES.configurationOs,      Component: ConfigurationOsPage },
             { path: ROUTES.configurationBrand,   Component: BrandConfigurationPage },
+            // Distribution OS
+            { path: ROUTES.distributionBoard,                       Component: DistributionBoardPage },
+            { path: `${ROUTES.loadingWorkspace}/:tripId/loading`,   Component: LoadingWorkspacePage },
+            // Loading OS
+            { path: ROUTES.loadingOsDashboard,                      Component: LoadingDashboardPage },
+            // Dispatch Gate OS
+            { path: ROUTES.dispatchGate,                            Component: DispatchGatePage },
+            { path: `${ROUTES.dispatchGate}/:tripId`,               Component: DispatchGateWorkspacePage },
             // Logistics OS
             { path: ROUTES.logisticsGeography,            Component: EgyptGeographyPage },
             { path: ROUTES.logisticsDistributionZones,    Component: DistributionZonesPage },

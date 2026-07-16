@@ -181,7 +181,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
         )}
       </div>
 
-      {/* 2. Markup % + Discount % + Suggested Prices */}
+      {/* 2. Markup % + Suggested Price (only when cost is known) */}
       {effectiveCost != null && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 items-end">
           {/* Markup % */}
@@ -214,46 +214,6 @@ export function ProductPricingSection({ existingProduct }: Props) {
             />
           </div>
 
-          {/* Discount % */}
-          <div className="flex flex-col gap-1">
-            <label
-              className={cn('text-xs', locked ? 'text-muted-foreground/60' : 'text-muted-foreground')}
-              htmlFor="form-discount-pct"
-            >
-              Discount %
-            </label>
-            <Controller
-              control={control}
-              name="discount_pct"
-              render={({ field }) => (
-                <Input
-                  id="form-discount-pct"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="1"
-                  placeholder="0"
-                  value={field.value ?? ''}
-                  readOnly={locked}
-                  onChange={(e) => {
-                    const v = e.target.value === '' ? null : parseFloat(e.target.value);
-                    field.onChange(v);
-                    // Auto-update sale price when discount changes in custom mode
-                    if (!locked && regularPrice != null && regularPrice > 0) {
-                      const d = v ?? 0;
-                      const newSale = d > 0
-                        ? parseFloat((regularPrice * (1 - d / 100)).toFixed(2))
-                        : null;
-                      setValue('sale_price', newSale, { shouldValidate: false });
-                    }
-                  }}
-                  className={cn('h-8 text-sm', locked && 'pointer-events-none bg-muted/50 text-muted-foreground')}
-                  aria-readonly={locked}
-                />
-              )}
-            />
-          </div>
-
           <ReadOnlyField label="Suggested Regular" value={fmt(suggestedPrice)} />
 
           {suggestedPrice != null && !locked && (
@@ -261,7 +221,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 text-xs self-end"
+              className="h-8 text-xs self-end sm:col-start-4"
               onClick={() => {
                 const rounded = parseFloat(suggestedPrice.toFixed(2));
                 setValue('regular_price', rounded, { shouldValidate: false });
@@ -277,8 +237,8 @@ export function ProductPricingSection({ existingProduct }: Props) {
         </div>
       )}
 
-      {/* 3. Regular Price + Sale Price */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* 3. Regular Price → Discount % → Sale Price */}
+      <div className="grid gap-3 sm:grid-cols-3">
         {/* Regular Price */}
         <div className="flex flex-col gap-1">
           <label
@@ -302,9 +262,47 @@ export function ProductPricingSection({ existingProduct }: Props) {
                 onChange={(e) => {
                   const v = e.target.value === '' ? null : parseFloat(e.target.value);
                   field.onChange(v);
-                  // Auto-update sale price from discount when regular price changes
                   if (!locked && discountVal > 0 && v != null && v > 0) {
                     const newSale = parseFloat((v * (1 - discountVal / 100)).toFixed(2));
+                    setValue('sale_price', newSale, { shouldValidate: false });
+                  }
+                }}
+                className={cn('h-8 text-sm', locked && 'pointer-events-none bg-muted/50 text-muted-foreground')}
+                aria-readonly={locked}
+              />
+            )}
+          />
+        </div>
+
+        {/* Discount % */}
+        <div className="flex flex-col gap-1">
+          <label
+            className={cn('text-xs', locked ? 'text-muted-foreground/60' : 'text-muted-foreground')}
+            htmlFor="form-discount-pct"
+          >
+            Discount %
+          </label>
+          <Controller
+            control={control}
+            name="discount_pct"
+            render={({ field }) => (
+              <Input
+                id="form-discount-pct"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                placeholder="0"
+                value={field.value ?? ''}
+                readOnly={locked}
+                onChange={(e) => {
+                  const v = e.target.value === '' ? null : parseFloat(e.target.value);
+                  field.onChange(v);
+                  if (!locked && regularPrice != null && regularPrice > 0) {
+                    const d = v ?? 0;
+                    const newSale = d > 0
+                      ? parseFloat((regularPrice * (1 - d / 100)).toFixed(2))
+                      : null;
                     setValue('sale_price', newSale, { shouldValidate: false });
                   }
                 }}
@@ -326,7 +324,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
             </label>
             {suggestedSalePrice != null && !locked && (
               <span className="text-[10px] text-muted-foreground">
-                Suggested: {fmt(suggestedSalePrice)}
+                ≈ {fmt(suggestedSalePrice)}
               </span>
             )}
           </div>

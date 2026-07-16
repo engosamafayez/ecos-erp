@@ -58,6 +58,10 @@ export type PricingReview = {
   final_margin_pct: number | null;
   impacts: ImpactType[];
   status: ReviewStatus;
+  publish_status: 'pending_publish' | 'published' | null;
+  approved_price: number | null;
+  approved_sale_price: number | null;
+  published_at: string | null;
   reviewer: PersonRef | null;
   snooze_until: string | null;
   notes: string | null;
@@ -118,6 +122,7 @@ export type ReviewSummary = {
   snoozed: number;
   rejected: number;
   below_brand_margin?: number;
+  pending_publish?: number;
 };
 
 export type PricingReviewsQuery = {

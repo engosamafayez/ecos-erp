@@ -28,6 +28,8 @@ final class PatchOrderRequest extends FormRequest
             'governorate'      => ['sometimes', 'nullable', 'string', 'max:255'],
             'google_maps_lat'  => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
             'google_maps_lng'  => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
+            'google_maps_url'  => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'reason'           => ['sometimes', 'nullable', 'string', 'max:500'],
         ];
     }
 }

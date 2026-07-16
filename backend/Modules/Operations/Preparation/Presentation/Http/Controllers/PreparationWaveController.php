@@ -34,6 +34,7 @@ use Modules\Operations\Preparation\Domain\Exceptions\WaveNotFoundException;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 use Modules\Operations\Preparation\Domain\Models\PreparationWaveItem;
 use Modules\Operations\Preparation\Application\Actions\ReportIssueAction;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
 use Modules\Operations\Preparation\Application\DTOs\ReportIssueDTO;
 use Modules\Operations\Preparation\Domain\Enums\PreparationIssueType;
 use Modules\Operations\Preparation\Presentation\Http\Requests\ApproveWaveRequest;
@@ -83,7 +84,7 @@ final class PreparationWaveController extends Controller
             ->when($request->query('status'), fn ($q, $v) => $q->where('status', $v))
             ->when($request->query('warehouse_id'), fn ($q, $v) => $q->where('warehouse_id', $v))
             ->when($request->query('planning_date'), fn ($q, $v) => $q->whereDate('planning_date', $v))
-            ->when($request->query('search'), fn ($q, $v) => $q->where('wave_number', 'ilike', "%{$v}%"))
+            ->when($request->query('search'), fn ($q, $v) => $q->where('wave_number', 'like', "%{$v}%"))
             ->orderBy($sortCol, $desc ? 'desc' : 'asc');
 
         $paginator = $query->paginate($perPage);
@@ -220,6 +221,17 @@ final class PreparationWaveController extends Controller
         $result = $action->execute($wave, $dto);
 
         return $this->success(new PreparationWaveResource($result->load(['pickList', 'workers'])));
+    }
+
+    public function advance(Request $request, string $waveId, WavePreparationService $service): JsonResponse
+    {
+        $this->guardModuleEnabled($request->user()?->company_id);
+        $wave = $this->findWave($waveId, $request->user()->company_id);
+        $this->authorize('start', $wave);
+
+        $result = $service->startPreparation($wave, (string) $request->user()->id);
+
+        return $this->success(new PreparationWaveResource($result));
     }
 
     public function completeItem(

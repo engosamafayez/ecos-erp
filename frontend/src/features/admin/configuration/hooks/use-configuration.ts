@@ -6,7 +6,6 @@ import type {
   CloneConfigOptions,
   DeliveryGeography,
   DeliveryGeographyPayload,
-  DeliveryWindowPayload,
   DeliveryZonePayload,
   MasterGovPayload,
   MasterZonePayload,
@@ -21,7 +20,6 @@ const COMPANY_SETTINGS_KEY    = 'config-company-settings';
 const BRAND_POLICIES_KEY      = 'config-brand-policies';
 const DELIVERY_GEO_KEY        = 'config-delivery-geographies';
 const SHIPPING_RULES_KEY      = 'config-shipping-rules';
-const DELIVERY_WINDOWS_KEY    = 'config-delivery-windows';
 const PREP_POLICIES_KEY       = 'config-preparation-policies';
 const CONFIG_AUDIT_KEY        = 'config-audit';
 const BRAND_COVERAGE_KEY      = 'brand-coverage';
@@ -30,7 +28,6 @@ const COVERAGE_STATS_KEY_EARLY = 'config-coverage-stats';
 // This key is owned by use-brand-delivery.ts (order form).
 // We invalidate it whenever config changes so orders see fresh data immediately.
 const ORDER_DELIVERY_GEO_KEY  = 'brand-delivery-geography';
-const ORDER_DELIVERY_WIN_KEY  = 'brand-delivery-windows';
 
 function invalidateDeliveryData(qc: ReturnType<typeof useQueryClient>, brandId: string) {
   qc.invalidateQueries({ queryKey: [DELIVERY_GEO_KEY, brandId] });
@@ -220,63 +217,6 @@ export function useDeleteShippingRule(brandId: string) {
   return useMutation({
     mutationFn: (id: string) => configurationService.deleteShippingRule(brandId, id),
     onSuccess: () => invalidateDeliveryData(qc, brandId),
-  });
-}
-
-// ── Delivery Windows ──────────────────────────────────────────────────────────
-
-export function useDeliveryWindows(brandId: string | null) {
-  return useQuery({
-    queryKey: [DELIVERY_WINDOWS_KEY, brandId],
-    queryFn:  () => configurationService.listDeliveryWindows(brandId!),
-    enabled:  !!brandId,
-    staleTime: 60_000,
-  });
-}
-
-export function useCreateDeliveryWindow(brandId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: DeliveryWindowPayload) =>
-      configurationService.createDeliveryWindow(brandId, payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [DELIVERY_WINDOWS_KEY, brandId] });
-      qc.invalidateQueries({ queryKey: [ORDER_DELIVERY_WIN_KEY, brandId] });
-    },
-  });
-}
-
-export function useUpdateDeliveryWindow(brandId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<DeliveryWindowPayload> }) =>
-      configurationService.updateDeliveryWindow(brandId, id, payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [DELIVERY_WINDOWS_KEY, brandId] });
-      qc.invalidateQueries({ queryKey: [ORDER_DELIVERY_WIN_KEY, brandId] });
-    },
-  });
-}
-
-export function useDeleteDeliveryWindow(brandId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => configurationService.deleteDeliveryWindow(brandId, id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [DELIVERY_WINDOWS_KEY, brandId] });
-      qc.invalidateQueries({ queryKey: [ORDER_DELIVERY_WIN_KEY, brandId] });
-    },
-  });
-}
-
-export function useSeedDefaultWindows(brandId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => configurationService.seedDefaultWindows(brandId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [DELIVERY_WINDOWS_KEY, brandId] });
-      qc.invalidateQueries({ queryKey: [ORDER_DELIVERY_WIN_KEY, brandId] });
-    },
   });
 }
 

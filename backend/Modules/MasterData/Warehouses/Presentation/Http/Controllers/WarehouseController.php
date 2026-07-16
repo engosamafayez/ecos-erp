@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Modules\MasterData\Warehouses\Application\Actions\CreateWarehouseAction;
 use Modules\MasterData\Warehouses\Application\Actions\DeleteWarehouseAction;
 use Modules\MasterData\Warehouses\Application\Actions\GetWarehouseAction;
@@ -30,7 +31,7 @@ final class WarehouseController extends Controller
     {
         $filters = [
             'search'     => $request->query('search'),
-            'company_id' => $request->query('company_id'),
+            'company_id' => (string) (Auth::user()?->company_id ?? ''),
             'status'     => $request->query('status', 'all'),
             'sort_by'    => $request->query('sort_by', 'created_at'),
             'sort_dir'   => $request->query('sort_dir', 'desc'),

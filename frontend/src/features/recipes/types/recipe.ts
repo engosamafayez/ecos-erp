@@ -33,9 +33,16 @@ export type RecipeMaterial = {
   name: string;
   product_type: 'raw_material' | 'packaging_material' | string;
   image_url: string | null;
-  material_cost: number;
+  /** The official cost used by the engine (null = missing, not yet set). */
+  material_cost: number | null;
+  current_fifo_cost: number | null;
+  average_cost: number | null;
+  last_purchase_cost: number | null;
   unit: RecipeUnit | null;
 };
+
+export type CostSource = 'fifo' | 'average' | 'last_purchase' | 'manual' | 'missing';
+export type CostStatus = 'available' | 'missing';
 
 export type RecipeLine = {
   id: string;
@@ -43,6 +50,29 @@ export type RecipeLine = {
   raw_material: RecipeMaterial | null;
   quantity: number;
   waste_percentage: number;
+  /** Engine-computed per-line fields (null when material has no cost). */
+  unit_cost: number | null;
+  effective_qty: number;
+  line_total: number | null;
+  cost_source: CostSource;
+  cost_status: CostStatus;
+};
+
+export type RecipeCostSummary = {
+  raw_material_cost: number;
+  packaging_cost: number;
+  manufacturing_cost: number;
+  other_cost: number;
+  /** Total = raw + packaging + manufacturing + other */
+  recipe_cost: number;
+  finished_product_cost: number;
+  suggested_selling_price: number | null;
+  current_selling_price: number | null;
+  margin_amount: number | null;
+  margin_percent: number | null;
+  last_calculated_at: string;
+  has_missing_costs: boolean;
+  missing_material_count: number;
 };
 
 export type Recipe = {
@@ -55,7 +85,13 @@ export type Recipe = {
   notes: string | null;
   manufacturing_cost: number;
   other_costs: number;
+  /** Materials-only subtotal (raw + packaging). Use cost_summary.recipe_cost for the total. */
   recipe_cost: number;
+  packaging_cost: number;
+  cost_summary: RecipeCostSummary | null;
+  /** True when any component material has no cost set. */
+  cost_pending: boolean;
+  recipe_cost_updated_at: string | null;
   total_waste_pct: number;
   execution_instructions: string | null;
   lines_count: number;
@@ -125,4 +161,21 @@ export type RecipeStats = {
   active: number;
   draft: number;
   avgCost: number;
+};
+
+export type RecipeCostHistoryEntry = {
+  id: string;
+  previous_materials_cost: number | null;
+  new_materials_cost: number;
+  difference: number | null;
+  trigger_type: 'recipe_edit' | 'material_cost_update' | string;
+  trigger_source: string | null;
+  triggered_by: string | null;
+  has_missing_costs: boolean;
+  occurred_at: string;
+};
+
+export type RecipeCostHistoryResult = {
+  items: RecipeCostHistoryEntry[];
+  meta: PaginationMeta;
 };

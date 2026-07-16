@@ -9,4 +9,4 @@ export type QuickFilterChip = {
 
 export type PageLoadingVariant = 'spinner' | 'table' | 'cards' | 'list';
 
-export type PageDrawerSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
+export type PageDrawerSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';

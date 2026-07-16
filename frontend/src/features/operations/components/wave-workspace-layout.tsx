@@ -1,12 +1,14 @@
 import { memo, useEffect, useState } from 'react';
-import { Link, Outlet, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
   CheckCircle2,
   Clock,
   FlaskConical,
   Layers2,
+  Loader2,
   Package,
   PackageX,
+  Play,
   RefreshCw,
   Settings2,
   ShoppingCart,
@@ -14,8 +16,9 @@ import {
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/router/routes';
-import { usePreparationWave } from '../hooks/use-preparation';
+import { usePreparationWave, useAdvanceWave } from '../hooks/use-preparation';
 import { WavePicker, useSelectedWaveId } from '../components/wave-picker';
 import type { PreparationWave, WaveStatus } from '../types/preparation';
 
@@ -23,19 +26,23 @@ import type { PreparationWave, WaveStatus } from '../types/preparation';
 
 const STATUS_COLORS: Record<WaveStatus, string> = {
   draft:            'bg-gray-100 text-gray-700',
+  collecting:       'bg-cyan-100 text-cyan-700',
   planning:         'bg-blue-100 text-blue-700',
   shortage_blocked: 'bg-amber-100 text-amber-700',
   preparing:        'bg-purple-100 text-purple-700',
   completed:        'bg-green-100 text-green-700',
+  closed:           'bg-slate-100 text-slate-600',
   cancelled:        'bg-red-100 text-red-700',
 };
 
 const STAGE_LABELS: Record<WaveStatus, string> = {
-  draft:            'Collecting',
+  draft:            'Draft',
+  collecting:       'Collecting',
   planning:         'Planning',
   shortage_blocked: 'Shortage Review',
   preparing:        'Preparing',
   completed:        'Completed',
+  closed:           'Closed',
   cancelled:        'Cancelled',
 };
 
@@ -150,13 +157,30 @@ function fmtN(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
+function safeDate(val: string | null | undefined): Date | null {
+  if (!val) return null;
+  // Normalize MySQL datetime format (space → T) for cross-browser compatibility
+  const d = new Date(val.includes(' ') && !val.includes('T') ? val.replace(' ', 'T') : val);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function fmtTime(val: string | null | undefined): string {
+  const d = safeDate(val);
+  return d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+}
+
+function fmtLocalDate(val: string | null | undefined): string {
+  const d = safeDate(val);
+  return d ? d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+}
+
 // ── Layout ────────────────────────────────────────────────────────────────────
 
 export function WaveWorkspaceLayout() {
-  const [searchParams] = useSearchParams();
   const { pathname }   = useLocation();
   const waveId         = useSelectedWaveId();
   const { data: wave, isFetching } = usePreparationWave(waveId);
+  const advance        = useAdvanceWave();
 
   const materials     = wave?.material_requirements ?? [];
   const missing       = materials.filter((m) => m.shortage && !m.resolved);
@@ -199,9 +223,7 @@ export function WaveWorkspaceLayout() {
                     )}
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-0.5">
-                    {new Date(wave.planning_date).toLocaleDateString(undefined, {
-                      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
-                    })}
+                    {fmtLocalDate(wave.planning_date)}
                   </div>
                 </>
               ) : (
@@ -212,6 +234,20 @@ export function WaveWorkspaceLayout() {
 
           <div className="flex items-center gap-3 shrink-0">
             {wave && <CountdownTimer wave={wave} />}
+            {wave?.status === 'collecting' && (
+              <Button
+                size="sm"
+                variant="default"
+                className="h-7 text-xs gap-1.5"
+                disabled={advance.isPending}
+                onClick={() => waveId && advance.mutate(waveId)}
+              >
+                {advance.isPending
+                  ? <Loader2 className="h-3 w-3 animate-spin" />
+                  : <Play className="h-3 w-3" />}
+                Start Preparation
+              </Button>
+            )}
             <WavePicker />
           </div>
         </div>
@@ -293,7 +329,7 @@ export function WaveWorkspaceLayout() {
           <SummaryItem label="Stage"     value={STAGE_LABELS[wave.status]} />
           <span className="ml-auto flex items-center gap-1 text-muted-foreground shrink-0">
             <Clock className="h-2.5 w-2.5" />
-            {new Date(wave.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {fmtTime(wave.updated_at)}
           </span>
         </div>
       )}

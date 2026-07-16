@@ -3,7 +3,7 @@ import { Construction } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { findNavItemByPath } from '@/config/navigation';
+import { findNavItemByPath } from '@/config/module-navigation';
 
 /**
  * Generic placeholder page reused by every module route. Derives the module

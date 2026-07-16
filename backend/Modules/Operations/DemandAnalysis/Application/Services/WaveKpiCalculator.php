@@ -66,6 +66,8 @@ final class WaveKpiCalculator
             'prepared_count'          => $preparedCount,
             'remaining_count'         => $remainingCount,
             'completion_pct'          => $completionPct,
+            'total_units_required'    => $totalRequired,
+            'total_units_prepared'    => $totalPrepared,
             'last_calculated_at'      => $now,
             'created_at'              => $now,
             'updated_at'              => $now,

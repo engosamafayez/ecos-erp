@@ -30,7 +30,6 @@ import { useToast } from '@/components/ds/use-toast';
 import { EGYPT_GOVERNORATES, EGYPT_DEFAULT_ZONES } from '../data/egypt-zones';
 import {
   useDeliveryGeographies,
-  useDeliveryWindows,
   useDeleteGeography,
   useDeleteZone,
   useCreateZoneWithRule,
@@ -39,6 +38,7 @@ import {
   type ZoneWithRulePayload,
   type BulkImportProgress,
 } from '../hooks/use-configuration';
+import { useBrandDeliveryWindows } from '@/features/brands/hooks/use-brand-delivery';
 import type { DeliveryGeography, DeliveryZone } from '../types/configuration';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -72,7 +72,7 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
   const { toast } = useToast();
 
   const { data: geos    = [], isLoading: geosLoading } = useDeliveryGeographies(brandId);
-  const { data: windows = []                          } = useDeliveryWindows(brandId);
+  const { data: windows = []                          } = useBrandDeliveryWindows(brandId);
 
   const createZoneWithRule = useCreateZoneWithRule(brandId);
   const editZoneWithRule   = useEditZoneWithRule(brandId);
@@ -580,9 +580,9 @@ function ZoneRowItem({
           </Badge>
         )}
 
-        {zone.shipping_rule?.delivery_window && (
+        {zone.shipping_rule?.delivery_window_id && (
           <Badge className="text-[10px] py-0 h-5 bg-blue-50 text-blue-700 border-blue-200">
-            {zone.shipping_rule.delivery_window.label}
+            {zone.shipping_rule.delivery_window_id}
           </Badge>
         )}
 

@@ -4,35 +4,29 @@ declare(strict_types=1);
 
 namespace Modules\CostManagement\Domain\Services;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Modules\CostManagement\Application\Services\CostCalculationEngine;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Manufacturing\BillsOfMaterials\Domain\Models\Recipe;
-use Modules\Manufacturing\BillsOfMaterials\Domain\Models\RecipeLine;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterialLine;
 
 /**
- * Orchestrates the full cost cascade chain (Part 3):
+ * Orchestrates the full cost cascade chain:
  *
- *   Material Cost → Recipe Cost → Unit Cost → Product Cost
+ *   Material Cost → Recipe Cost (materials only) → Product Cost → Unit Cost
  *
- * Called whenever any material's material_cost changes.
- * Returns arrays of affected recipe IDs and finished-product IDs
- * so callers can record them in material_cost_history and create pricing reviews.
+ * Uses CostCalculationEngine as the single cost engine (TASK-RECIPE-COST-CONSISTENCY-001).
  */
 final class CostCascadeService
 {
     public function __construct(
-        private readonly RecipeCostCalculator $recipeCostCalculator,
+        private readonly CostCalculationEngine $costEngine,
         private readonly ProductCostCalculator $productCostCalculator,
     ) {}
 
     /**
      * Run the cascade for one material product.
-     *
-     * Returns affected recipe IDs, affected product IDs, and a `affected_products`
-     * array of ['product', 'previous_cost', 'new_cost'] entries so callers can
-     * create pricing reviews without a second DB lookup.
      *
      * @return array{
      *   affected_recipe_ids:  list<string>,
@@ -47,42 +41,38 @@ final class CostCascadeService
         $affectedProducts   = [];
 
         DB::transaction(function () use ($material, &$affectedRecipeIds, &$affectedProductIds, &$affectedProducts): void {
-            // Step 1: Find all ACTIVE recipes that use this material as a component
-            $recipeIds = RecipeLine::query()
+            $bomIds = BillOfMaterialLine::query()
                 ->where('raw_material_id', $material->id)
                 ->pluck('bom_id')
                 ->unique()
                 ->values()
                 ->all();
 
-            if (empty($recipeIds)) {
+            if (empty($bomIds)) {
                 return;
             }
 
-            $recipes = Recipe::query()
-                ->whereIn('id', $recipeIds)
+            $boms = BillOfMaterial::query()
+                ->whereIn('id', $bomIds)
                 ->where('is_active', true)
-                ->with(['components.component', 'product.activeRecipe'])
+                ->with(['lines.rawMaterial', 'product.activeRecipe'])
                 ->get();
 
-            // Track products already processed in this cascade run to deduplicate
             $processedProductIds = [];
 
-            foreach ($recipes as $recipe) {
-                /** @var Recipe $recipe */
+            foreach ($boms as $bom) {
+                /** @var BillOfMaterial $bom */
                 try {
-                    // Step 2: Recalculate Recipe Cost
-                    $this->recipeCostCalculator->recalculate($recipe);
-                    $affectedRecipeIds[] = $recipe->id;
+                    $this->costEngine->calculateAndPersist(
+                        $bom,
+                        triggerType:   'material_cost_update',
+                        triggerSource: $material->sku ?? $material->id,
+                    );
+                    $affectedRecipeIds[] = $bom->id;
 
-                    // Step 3: Recalculate Product Cost + Unit Cost for the finished good
-                    $product = $recipe->product;
+                    $product = $bom->product;
                     if ($product !== null && ! in_array($product->id, $processedProductIds, true)) {
                         $previousCost = (float) ($product->product_cost ?? 0.0);
-
-                        // Set the just-recalculated recipe on the product so ProductCostCalculator
-                        // uses the updated recipe_cost rather than the stale eager-loaded copy.
-                        $product->setRelation('activeRecipe', $recipe);
 
                         $result  = $this->productCostCalculator->recalculate($product);
                         $newCost = $result !== null ? $result['product_cost'] : $previousCost;
@@ -97,9 +87,9 @@ final class CostCascadeService
                     }
                 } catch (\Throwable $e) {
                     Log::channel('daily')->error(
-                        'CostCascadeService: failed to cascade recipe',
+                        'CostCascadeService: failed to cascade bom',
                         [
-                            'recipe_id'   => $recipe->id,
+                            'bom_id'      => $bom->id,
                             'material_id' => $material->id,
                             'error'       => $e->getMessage(),
                         ]

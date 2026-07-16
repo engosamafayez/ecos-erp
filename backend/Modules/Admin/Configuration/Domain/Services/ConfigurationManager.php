@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Admin\Configuration\Domain\Services;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Modules\Admin\Configuration\Domain\Events\BrandPolicyUpdated;
 use Modules\Admin\Configuration\Domain\Events\ConfigurationChanged;
 use Modules\Admin\Configuration\Domain\Models\BrandPolicy;
@@ -76,16 +77,25 @@ final class ConfigurationManager
 
         Cache::forget("config:brand:{$brandId}:{$group}");
 
-        $this->audit->record(
-            companyId: $companyId,
-            module:    'brand_policy',
-            category:  $group,
-            action:    $existing ? 'update' : 'create',
-            oldValue:  $oldSettings,
-            newValue:  $policy->settings,
-            brandId:   $brandId,
-            reason:    $reason,
-        );
+        try {
+            $this->audit->record(
+                companyId: $companyId,
+                module:    'brand_policy',
+                category:  $group,
+                action:    $existing ? 'update' : 'create',
+                oldValue:  $oldSettings,
+                newValue:  $policy->settings,
+                brandId:   $brandId,
+                reason:    $reason,
+            );
+        } catch (\Throwable $e) {
+            // Audit is non-fatal — policy is already persisted. Log and continue.
+            Log::channel('daily')->warning('[Config] Audit record failed after policy save', [
+                'brand_id' => $brandId,
+                'group'    => $group,
+                'error'    => $e->getMessage(),
+            ]);
+        }
 
         BrandPolicyUpdated::dispatch($brandId, $companyId, $group, $policy->settings);
 

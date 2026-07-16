@@ -6,6 +6,7 @@ namespace Modules\Purchasing\Suppliers\Application\Actions;
 
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
+use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 use Modules\Purchasing\Suppliers\Application\DTO\SupplierDTO;
 use Modules\Purchasing\Suppliers\Domain\Contracts\SupplierRepositoryInterface;
@@ -28,7 +29,10 @@ final class CreateSupplierAction extends BaseAction
             throw new InvalidArgumentException('CreateSupplierAction::execute expects a SupplierDTO.');
         }
 
-        $supplier = $this->suppliers->create($dto->toArray());
+        $attributes = $dto->toArray();
+        $attributes['company_id'] ??= Auth::user()?->company_id;
+
+        $supplier = $this->suppliers->create($attributes);
 
         return OperationResult::success($supplier, 'Supplier created successfully.');
     }

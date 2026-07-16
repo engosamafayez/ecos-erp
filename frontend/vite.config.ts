@@ -10,7 +10,15 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
-    dedupe: ['react', 'react-dom'],
+    // react-dismissable-layer has two different versions in the tree
+    // (1.1.13 via react-dialog, 1.1.14 via react-popover). Each version
+    // creates its own DismissableLayerContext singleton, so Dialog and
+    // Popover end up in separate contexts: Dialog sets body.pointerEvents=none
+    // but Popover never receives the counter-balancing pointer-events:auto,
+    // making every option click inside a Sheet silently blocked at the CSS
+    // layer. Deduplication forces a single module instance and one shared
+    // context, restoring the pointer-events handshake.
+    dedupe: ['react', 'react-dom', '@radix-ui/react-dismissable-layer'],
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'use-sync-external-store/shim'],
@@ -22,17 +30,21 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
 
-    // Forward /api requests to the local nginx container (port 80),
-    // which in turn proxies to PHP-FPM. Without this, the browser sends
-    // /api/* to Vite itself (port 5173) and gets 404.
+    // Forward /api and /storage requests to the local nginx container.
+    //
+    // BACKEND_URL is set by docker-compose.override.yml when Vite runs inside
+    // Docker: "http://nginx" reaches nginx directly on ecos-network, bypassing
+    // Windows wslrelay entirely. Fallback "http://127.0.0.1:8080" is used when
+    // Vite runs natively on Windows — the loopback-only nginx binding added by
+    // the override avoids the wslrelay "socket hang up" on that path too.
     proxy: {
       '/api': {
-        target: 'http://localhost',
+        target: process.env.BACKEND_URL ?? 'http://127.0.0.1:8080',
         changeOrigin: true,
         secure: false,
       },
       '/storage': {
-        target: 'http://localhost',
+        target: process.env.BACKEND_URL ?? 'http://127.0.0.1:8080',
         changeOrigin: true,
         secure: false,
       },

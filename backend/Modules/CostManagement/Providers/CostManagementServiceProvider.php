@@ -6,6 +6,7 @@ namespace Modules\CostManagement\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\CostManagement\Application\Services\CostCalculationEngine;
 use Modules\CostManagement\Application\Services\CostImpactEngine;
 use Modules\CostManagement\Domain\Events\FinishedProductCostChanged;
@@ -13,25 +14,24 @@ use Modules\CostManagement\Domain\Services\CostCascadeService;
 use Modules\CostManagement\Domain\Services\MaterialCostService;
 use Modules\CostManagement\Domain\Services\PricingReviewService;
 use Modules\CostManagement\Domain\Services\ProductCostCalculator;
-use Modules\CostManagement\Domain\Services\RecipeCostCalculator;
 
 class CostManagementServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Legacy calculators (still used by CostCascadeService / material cascade chain)
-        $this->app->singleton(RecipeCostCalculator::class);
         $this->app->singleton(ProductCostCalculator::class);
 
         // TASK-COST-ARCH-002 — Enterprise Cost Intelligence Platform
         $this->app->singleton(CostCalculationEngine::class);
-        $this->app->singleton(PricingReviewService::class);
+        $this->app->singleton(PricingReviewService::class, fn ($app) => new PricingReviewService(
+            $app->make(ConfigurationManager::class),
+        ));
         $this->app->singleton(CostImpactEngine::class, fn ($app) => new CostImpactEngine(
             $app->make(PricingReviewService::class),
         ));
 
         $this->app->singleton(CostCascadeService::class, fn ($app) => new CostCascadeService(
-            $app->make(RecipeCostCalculator::class),
+            $app->make(CostCalculationEngine::class),
             $app->make(ProductCostCalculator::class),
         ));
 

@@ -7,6 +7,7 @@ namespace Modules\Operations\Fulfillment\Application\Workflows;
 use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Application\Services\CreateOrderSnapshotService;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
+use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
@@ -16,8 +17,14 @@ use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionExcepti
 /**
  * Confirms an order: reserves warehouse inventory and creates the financial snapshot.
  *
- * Closes GAP-01 — manual orders no longer skip inventory reservation.
- * Trigger: PatchOrderAction routes confirm_order transitions here.
+ * Inventory Reservation Contract (TASK-ORDER-RESERVATION-WORKFLOW-INTEGRITY-001):
+ * - Reservation is ALWAYS attempted when confirming.
+ * - If reservation cannot be performed (no warehouse or insufficient stock),
+ *   the order is automatically routed to AwaitingStock instead of Confirmed.
+ * - The state "Confirmed + Not Reserved" is architecturally invalid.
+ *
+ * Idempotent: orders arriving from AwaitingStock/Review/Rescheduled with an
+ * active reservation skip the reservation step and proceed directly to Confirmed.
  */
 final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
 {
@@ -30,23 +37,15 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        if ($order->assigned_warehouse_id === null) {
-            throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be confirmed: no warehouse assigned."
-            );
-        }
-
-        if ($order->inventory_reserved_at !== null) {
-            throw new WorkflowPreconditionException(
-                "Order [{$order->id}] inventory is already reserved."
-            );
-        }
-
         $allowed = [
             OrderStatus::Pending,
-            OrderStatus::InProgress,
-            OrderStatus::Processing,
             OrderStatus::AwaitingPayment,
+            OrderStatus::Processing,
+            OrderStatus::AwaitingStock,
+            OrderStatus::Review,
+            OrderStatus::Rescheduled,
+            OrderStatus::Returned,
+            OrderStatus::Cancelled,
         ];
 
         if (! in_array($order->status, $allowed, true)) {
@@ -60,28 +59,101 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        // Reserve stock — runs in a nested savepoint inside FulfillmentEngine's transaction
-        $this->reserveInventory->execute($order);
+        // For returned orders, inventory was released during return — reset state before re-reserving
+        if ($order->status === OrderStatus::Returned) {
+            $order->update([
+                'inventory_reserved_at' => null,
+                'inventory_released_at' => null,
+                'inventory_shipped_at'  => null,
+            ]);
+            $order->refresh();
+        }
 
-        // Snapshot — idempotent; returns null if one already exists
-        $snapshot = $this->snapshot->createIfAbsent($order);
+        // Clear reschedule / cancel metadata on re-activation
+        if (in_array($order->status, [OrderStatus::Rescheduled, OrderStatus::Cancelled], true)) {
+            $order->update([
+                'rescheduled_at'     => null,
+                'next_delivery_date' => null,
+                'resume_from_status' => null,
+                'reschedule_reason'  => null,
+            ]);
+            $order->refresh();
+        }
 
-        $order->update(['status' => OrderStatus::ConfirmOrder]);
+        // Idempotent: inventory already held — go straight to Confirmed
+        $alreadyReserved = $order->inventory_reserved_at !== null
+            && $order->inventory_released_at === null;
+
+        $snapshotCreated = false;
+
+        if (! $alreadyReserved) {
+            // No warehouse assigned → cannot reserve; route to AwaitingStock
+            if ($order->assigned_warehouse_id === null) {
+                $order->update(['status' => OrderStatus::AwaitingStock]);
+                $order->refresh();
+
+                OrderEvent::log(
+                    orderId:     $order->id,
+                    type:        'inventory_reservation_failed',
+                    description: "Reservation failed for order #{$order->order_number}: no warehouse assigned.",
+                    payload:     ['reason' => 'no_warehouse_assigned'],
+                    module:      'fulfillment',
+                );
+
+                return FulfillmentResult::success(
+                    $order,
+                    "Order #{$order->order_number} awaiting stock — no warehouse assigned.",
+                    ['snapshot_created' => false, 'actor_id' => $ctx->actorId, 'reservation_failed' => true],
+                );
+            }
+
+            // Attempt inventory reservation; insufficient stock → AwaitingStock
+            try {
+                $this->reserveInventory->execute($order);
+                $snapshot        = $this->snapshot->createIfAbsent($order);
+                $snapshotCreated = $snapshot !== null;
+            } catch (\Throwable $e) {
+                $order->update(['status' => OrderStatus::AwaitingStock]);
+                $order->refresh();
+
+                OrderEvent::log(
+                    orderId:     $order->id,
+                    type:        'inventory_reservation_failed',
+                    description: "Reservation failed for order #{$order->order_number}: {$e->getMessage()}",
+                    payload:     ['reason' => 'reservation_error', 'error' => $e->getMessage()],
+                    module:      'fulfillment',
+                );
+
+                return FulfillmentResult::success(
+                    $order,
+                    "Order #{$order->order_number} awaiting stock — insufficient inventory.",
+                    ['snapshot_created' => false, 'actor_id' => $ctx->actorId, 'reservation_failed' => true],
+                );
+            }
+        }
+
+        $order->update(['status' => OrderStatus::Confirmed]);
         $order->refresh();
+
+        $message = $alreadyReserved
+            ? "Order #{$order->order_number} confirmed."
+            : "Order #{$order->order_number} confirmed. Inventory reserved. Ready for preparation.";
 
         return FulfillmentResult::success(
             $order,
-            "Order #{$order->order_number} confirmed. Inventory reserved.",
-            [
-                'snapshot_created' => $snapshot !== null,
-                'actor_id'         => $ctx->actorId,
-            ],
+            $message,
+            ['snapshot_created' => $snapshotCreated, 'actor_id' => $ctx->actorId],
         );
     }
 
     /** @return list<object> */
     public function events(FulfillmentResult $result): array
     {
+        // No OrderConfirmedEvent when reservation failed and order routed to AwaitingStock
+        if ($result->meta['reservation_failed'] ?? false) {
+            return [];
+        }
+
         return [
             new OrderConfirmedEvent(
                 orderId:         $result->order->id,

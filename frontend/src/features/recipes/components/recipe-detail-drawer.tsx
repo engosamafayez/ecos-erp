@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Copy, Loader2, Package, Pencil, TriangleAlert } from 'lucide-react';
+import {
+  AlertTriangle,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Copy,
+  Loader2,
+  Package,
+  Pencil,
+  TriangleAlert,
+} from 'lucide-react';
 
-import { useRecipeQuery } from '@/features/recipes/hooks/use-recipes';
+import { useRecipeCostHistoryQuery, useRecipeQuery } from '@/features/recipes/hooks/use-recipes';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +26,7 @@ import { formatMoney } from '@/lib/format';
 import { calcRecipeCost } from '@/lib/recipe-cost-calculator';
 import { LiveCostBadge } from '@/components/ui/live-cost-badge';
 import { getMediaUrl } from '@/lib/media';
-import type { Recipe } from '@/features/recipes/types/recipe';
+import type { CostSource, Recipe, RecipeCostHistoryEntry, RecipeLine } from '@/features/recipes/types/recipe';
 import { ROUTES } from '@/router/routes';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -53,15 +64,59 @@ function MaterialTypeBadge({ type }: { type: string | undefined }) {
   );
 }
 
+const COST_SOURCE_LABELS: Record<CostSource, string> = {
+  fifo:          'FIFO',
+  average:       'Avg',
+  last_purchase: 'Last PO',
+  manual:        'Manual',
+  missing:       'No Cost',
+};
+
+const COST_SOURCE_CLASSES: Record<CostSource, string> = {
+  fifo:          'border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400',
+  average:       'border-teal-300 text-teal-700 dark:border-teal-700 dark:text-teal-400',
+  last_purchase: 'border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400',
+  manual:        'border-violet-300 text-violet-700 dark:border-violet-700 dark:text-violet-400',
+  missing:       'border-red-300 text-red-600 dark:border-red-700 dark:text-red-400',
+};
+
+function CostSourceBadge({ source }: { source: CostSource }) {
+  return (
+    <Badge variant="outline" className={`text-[10px] px-1 py-0 ${COST_SOURCE_CLASSES[source]}`}>
+      {COST_SOURCE_LABELS[source]}
+    </Badge>
+  );
+}
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({ recipe }: { recipe: Recipe }) {
   const { currency, locale } = useCompany();
-  const { rawMaterialCost, packagingCost, manufacturingCost, otherCosts, recipeCost } =
-    calcRecipeCost(recipe.lines ?? [], recipe.manufacturing_cost ?? 0, recipe.other_costs ?? 0);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
+
+  // Use server summary when available; fall back to live calculator
+  const hasSummary = recipe.cost_summary !== null;
+  const rawMaterialCost  = hasSummary ? recipe.cost_summary!.raw_material_cost  : calcRecipeCost(recipe.lines ?? [], 0, 0).rawMaterialCost;
+  const packagingCost    = hasSummary ? recipe.cost_summary!.packaging_cost      : calcRecipeCost(recipe.lines ?? [], 0, 0).packagingCost;
+  const manufacturingCost = recipe.manufacturing_cost ?? 0;
+  const otherCosts        = recipe.other_costs ?? 0;
+  const totalCost         = hasSummary
+    ? recipe.cost_summary!.recipe_cost
+    : rawMaterialCost + packagingCost + manufacturingCost + otherCosts;
 
   return (
     <div className="flex flex-col gap-5 p-6">
+      {/* Missing cost warning */}
+      {recipe.cost_pending && (
+        <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
+          <AlertTriangle className="size-3.5 mt-0.5 shrink-0" />
+          <span>
+            {recipe.cost_summary?.missing_material_count ?? '?'} material(s) have no cost set.
+            {' '}The total cost below is a partial estimate.
+          </span>
+        </div>
+      )}
+
       {/* Meta */}
       <div className="grid grid-cols-2 gap-4">
         <LabelValue label="Recipe ID" value={<span className="font-mono text-xs">{recipe.bom_number}</span>} />
@@ -84,6 +139,12 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
           label="Last Updated"
           value={recipe.updated_at ? recipe.updated_at.slice(0, 10) : '—'}
         />
+        {recipe.cost_summary?.last_calculated_at && (
+          <LabelValue
+            label="Cost Calculated"
+            value={recipe.cost_summary.last_calculated_at.slice(0, 10)}
+          />
+        )}
         {recipe.product?.channels?.[0] && (
           <LabelValue label="Channel" value={recipe.product.channels[0].name} />
         )}
@@ -91,33 +152,47 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
 
       <Separator />
 
-      {/* Cost breakdown */}
-      <div className="flex flex-col gap-2.5">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Cost Breakdown</p>
+      {/* Cost breakdown — expandable */}
+      <div className="flex flex-col gap-1">
+        <button
+          type="button"
+          onClick={() => setBreakdownOpen((v) => !v)}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cost Breakdown</p>
+          {breakdownOpen
+            ? <ChevronUp className="size-3.5 text-muted-foreground" />
+            : <ChevronDown className="size-3.5 text-muted-foreground" />}
+        </button>
 
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Raw Materials</span>
-          <span className="tabular-nums">{fmtCost(rawMaterialCost, currency, locale)}</span>
-        </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Packaging</span>
-          <span className="tabular-nums">{fmtCost(packagingCost, currency, locale)}</span>
-        </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Manufacturing</span>
-          <span className="tabular-nums">{fmtCost(manufacturingCost, currency, locale)}</span>
-        </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Other Costs</span>
-          <span className="tabular-nums">{fmtCost(otherCosts, currency, locale)}</span>
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between">
+        {breakdownOpen && (
+          <div className="flex flex-col gap-2.5 pt-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Raw Materials</span>
+              <span className="tabular-nums">{fmtCost(rawMaterialCost, currency, locale)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Packaging</span>
+              <span className="tabular-nums">{fmtCost(packagingCost, currency, locale)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Manufacturing</span>
+              <span className="tabular-nums">{fmtCost(manufacturingCost, currency, locale)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Other Costs</span>
+              <span className="tabular-nums">{fmtCost(otherCosts, currency, locale)}</span>
+            </div>
+            <Separator />
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mt-1">
           <span className="flex items-center gap-1.5 text-sm font-semibold">
-            Recipe Cost
+            Total Cost
             <LiveCostBadge />
           </span>
-          <span className="text-sm font-bold tabular-nums">{fmtCost(recipeCost, currency, locale)}</span>
+          <span className="text-sm font-bold tabular-nums">{fmtCost(totalCost, currency, locale)}</span>
         </div>
       </div>
 
@@ -149,17 +224,9 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
 
 function MaterialsTab({ recipe }: { recipe: Recipe }) {
   const { currency, locale } = useCompany();
-  const lineCosts = (recipe.lines ?? []).map((line) => {
-    const unitCost     = line.raw_material?.material_cost ?? 0;
-    const effectiveQty = line.quantity * (1 + (line.waste_percentage || 0) / 100);
-    const lineTotal    = effectiveQty * unitCost;
-    const hasCost      = unitCost > 0;
-    return { ...line, unitCost, effectiveQty, lineTotal, hasCost };
-  });
+  const lines = recipe.lines ?? [];
 
-  const totalCost = lineCosts.reduce((sum, l) => sum + l.lineTotal, 0);
-
-  if ((recipe.lines ?? []).length === 0) {
+  if (lines.length === 0) {
     return (
       <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
         No materials defined for this recipe.
@@ -167,13 +234,21 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
     );
   }
 
-  const rawLines = lineCosts.filter((l) => l.raw_material?.product_type !== 'packaging_material');
-  const pkgLines = lineCosts.filter((l) => l.raw_material?.product_type === 'packaging_material');
-  const rawSubtotal = rawLines.reduce((s, l) => s + l.lineTotal, 0);
-  const pkgSubtotal = pkgLines.reduce((s, l) => s + l.lineTotal, 0);
+  const rawLines = lines.filter((l) => l.raw_material?.product_type !== 'packaging_material');
+  const pkgLines = lines.filter((l) => l.raw_material?.product_type === 'packaging_material');
+  const rawSubtotal = rawLines.reduce((s, l) => s + (l.line_total ?? 0), 0);
+  const pkgSubtotal = pkgLines.reduce((s, l) => s + (l.line_total ?? 0), 0);
+  const totalCost   = rawSubtotal + pkgSubtotal;
+  const hasMissing  = lines.some((l) => l.cost_status === 'missing');
 
   return (
     <div className="flex flex-col gap-4 p-6">
+      {hasMissing && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+          <TriangleAlert className="size-3.5 shrink-0" />
+          Some materials have no cost set — totals are partial estimates.
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -183,11 +258,10 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
               <th className="pb-2 pe-3 text-right font-medium w-16">Qty</th>
               <th className="pb-2 pe-3 text-right font-medium w-14">Waste%</th>
               <th className="pb-2 pe-3 text-right font-medium w-16">Eff. Qty</th>
-              <th className="pb-2 text-right font-medium w-28">Total Cost</th>
+              <th className="pb-2 text-right font-medium w-32">Total Cost</th>
             </tr>
           </thead>
           <tbody className="divide-y">
-            {/* Raw Materials group */}
             {rawLines.length > 0 && (
               <>
                 <tr>
@@ -207,7 +281,6 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
               </>
             )}
 
-            {/* Packaging Materials group */}
             {pkgLines.length > 0 && (
               <>
                 <tr>
@@ -239,20 +312,11 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
   );
 }
 
-type LineCostRow = {
-  id: string;
-  raw_material: Recipe['lines'][0]['raw_material'];
-  quantity: number;
-  waste_percentage: number;
-  unitCost: number;
-  effectiveQty: number;
-  lineTotal: number;
-  hasCost: boolean;
-};
-
-function MaterialRow({ line }: { line: LineCostRow }) {
+function MaterialRow({ line }: { line: RecipeLine }) {
   const { currency, locale } = useCompany();
   const imgUrl = getMediaUrl(line.raw_material?.image_url ?? null);
+  const hasCost = line.cost_status === 'available' && line.line_total !== null;
+
   return (
     <tr>
       <td className="py-2.5 pe-3">
@@ -280,27 +344,132 @@ function MaterialRow({ line }: { line: LineCostRow }) {
         {fmt(line.waste_percentage || 0, 1)}%
       </td>
       <td className="py-2.5 pe-3 text-right tabular-nums text-xs font-medium">
-        {fmt(line.effectiveQty, 3)}
+        {fmt(line.effective_qty, 3)}
       </td>
-      <td className="py-2.5 text-right font-medium tabular-nums">
-        {line.hasCost ? (
-          fmtCost(line.lineTotal, currency, locale)
+      <td className="py-2.5 text-right">
+        {hasCost ? (
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="font-medium tabular-nums">{fmtCost(line.line_total!, currency, locale)}</span>
+            <CostSourceBadge source={line.cost_source} />
+          </div>
         ) : (
-          <span className="text-amber-500 text-xs flex items-center justify-end gap-1">
-            <TriangleAlert className="size-3" />No cost
-          </span>
+          <div className="flex flex-col items-end gap-0.5">
+            <CostSourceBadge source="missing" />
+          </div>
         )}
       </td>
     </tr>
   );
 }
 
-function MetricPill({ label, value, dot = true }: { label: string; value: string; dot?: boolean }) {
+// ─── Cost History Tab ─────────────────────────────────────────────────────────
+
+function CostHistoryTab({ recipeId }: { recipeId: string }) {
+  const { currency, locale } = useCompany();
+  const { data, isLoading } = useRecipeCostHistoryQuery(recipeId);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16 gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" />
+        Loading cost history…
+      </div>
+    );
+  }
+
+  const items = data?.items ?? [];
+
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-2 text-sm text-muted-foreground">
+        <Clock className="size-5 opacity-40" />
+        No cost recalculations recorded yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col divide-y p-0">
+      {items.map((entry) => (
+        <CostHistoryRow key={entry.id} entry={entry} currency={currency} locale={locale} />
+      ))}
+    </div>
+  );
+}
+
+const TRIGGER_LABELS: Record<string, string> = {
+  recipe_edit:          'Recipe Saved',
+  material_cost_update: 'Material Cost Updated',
+};
+
+function CostHistoryRow({
+  entry,
+  currency,
+  locale,
+}: {
+  entry: RecipeCostHistoryEntry;
+  currency: string;
+  locale: string;
+}) {
+  const diff = entry.difference ?? 0;
+  const isIncrease = diff > 0;
+  const isDecrease = diff < 0;
+
+  return (
+    <div className="flex flex-col gap-1.5 px-6 py-3.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium">
+          {TRIGGER_LABELS[entry.trigger_type] ?? entry.trigger_type}
+        </span>
+        <span className="text-[10px] text-muted-foreground tabular-nums">
+          {new Date(entry.occurred_at).toLocaleString('en-EG', { dateStyle: 'medium', timeStyle: 'short' })}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3 text-xs">
+        {entry.previous_materials_cost !== null ? (
+          <span className="text-muted-foreground tabular-nums">
+            {fmtCost(entry.previous_materials_cost, currency, locale)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground italic">—</span>
+        )}
+        <span className="text-muted-foreground/50">→</span>
+        <span className="font-semibold tabular-nums">{fmtCost(entry.new_materials_cost, currency, locale)}</span>
+
+        {diff !== 0 && (
+          <span
+            className={`tabular-nums font-medium ${
+              isIncrease ? 'text-red-600 dark:text-red-400' : isDecrease ? 'text-emerald-600 dark:text-emerald-400' : ''
+            }`}
+          >
+            {isIncrease ? '+' : ''}{fmtCost(diff, currency, locale)}
+          </span>
+        )}
+
+        {entry.has_missing_costs && (
+          <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400">
+            Partial
+          </Badge>
+        )}
+      </div>
+
+      {entry.trigger_source && (
+        <p className="text-[10px] text-muted-foreground font-mono">{entry.trigger_source}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Shared ───────────────────────────────────────────────────────────────────
+
+function MetricPill({ label, value, dot = true, warn = false }: { label: string; value: string; dot?: boolean; warn?: boolean }) {
   return (
     <div className="flex items-center gap-1">
       {dot && <span className="text-[10px] text-muted-foreground/40 select-none">·</span>}
       <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{label}</span>
-      <span className="text-[10px] font-semibold tabular-nums">{value}</span>
+      <span className={`text-[10px] font-semibold tabular-nums ${warn ? 'text-amber-600 dark:text-amber-400' : ''}`}>{value}</span>
+      {warn && <TriangleAlert className="size-3 text-amber-500" />}
     </div>
   );
 }
@@ -334,9 +503,14 @@ export function RecipeDetailDrawer({
     if (open) setActiveTab(initialTab ?? 'overview');
   }, [open, initialTab]);
 
-  // Fetch full detail (with lines) — list response only has lines_count
   const { data: fullRecipe, isFetching: isDetailFetching } = useRecipeQuery(recipe?.id ?? '');
   const display = fullRecipe ?? recipe;
+
+  // Derive total cost for the header metric pill
+  const headerCost = display
+    ? (display.cost_summary?.recipe_cost
+        ?? ((display.recipe_cost ?? 0) + (display.manufacturing_cost ?? 0) + (display.other_costs ?? 0)))
+    : 0;
 
   function handleCreateFrom() {
     if (recipe) {
@@ -349,7 +523,7 @@ export function RecipeDetailDrawer({
     ? [
         { key: 'overview',           label: 'Overview',           content: <OverviewTab recipe={display} /> },
         { key: 'materials',          label: 'Materials',          content: <MaterialsTab recipe={display} />, badge: display.lines?.length ?? display.lines_count },
-        { key: 'cost-history',       label: 'Cost History',       content: <PlaceholderTab message="Cost history is not yet available." /> },
+        { key: 'cost-history',       label: 'Cost History',       content: <CostHistoryTab recipeId={display.id} /> },
         { key: 'production-history', label: 'Production History', content: <PlaceholderTab message="Production history is not yet available." /> },
       ]
     : [];
@@ -366,7 +540,6 @@ export function RecipeDetailDrawer({
           {/* Row 1: Identity + Actions */}
           <div className="flex items-start justify-between gap-3 mb-2.5">
             <div className="flex items-center gap-3 min-w-0">
-              {/* Product image */}
               <div className="size-11 rounded-lg border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                 {getMediaUrl(display?.product?.image_url) ? (
                   <img
@@ -378,7 +551,6 @@ export function RecipeDetailDrawer({
                   <BookOpen className="size-4 text-muted-foreground" />
                 )}
               </div>
-              {/* Name + category + bom# */}
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                   {display?.is_active ? (
@@ -398,7 +570,7 @@ export function RecipeDetailDrawer({
                 )}
               </div>
             </div>
-            {/* Actions */}
+
             {recipe && (
               <div className="flex items-center gap-1.5 shrink-0">
                 {isDetailFetching && (
@@ -434,12 +606,13 @@ export function RecipeDetailDrawer({
               <MetricPill
                 dot={false}
                 label="Cost"
-                value={fmtCost((display.recipe_cost ?? 0) + (display.manufacturing_cost ?? 0) + (display.other_costs ?? 0), currency, locale)}
+                value={fmtCost(headerCost, currency, locale)}
+                warn={display.cost_pending}
               />
-              {(recipe?.total_waste_pct ?? 0) > 0 && (
+              {(display.total_waste_pct ?? 0) > 0 && (
                 <MetricPill
                   label="Waste"
-                  value={`${(recipe?.total_waste_pct ?? 0).toFixed(2)}%`}
+                  value={`${(display.total_waste_pct ?? 0).toFixed(2)}%`}
                 />
               )}
               <MetricPill

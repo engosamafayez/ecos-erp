@@ -34,8 +34,8 @@ final class GetSupplierTimelineQuery
                 'supplier_created'                          AS event_type,
                 'Supplier Created'                          AS title,
                 name                                         AS description,
-                NULL::text                                   AS reference,
-                NULL::text                                   AS actor,
+                CAST(NULL AS CHAR)                           AS reference,
+                CAST(NULL AS CHAR)                           AS actor,
                 created_at                                   AS occurred_at
             ");
 

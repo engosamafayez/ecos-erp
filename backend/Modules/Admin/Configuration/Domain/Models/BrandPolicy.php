@@ -114,11 +114,11 @@ class BrandPolicy extends Model
         return [
             'auto_price_review'         => true,
             'minimum_margin_pct'        => 20,
-            'maximum_discount_pct'      => 15,
+            'discount_type'             => 'percentage',
+            'discount_value'            => 15.0,
             'required_approval_above'   => null,
-            'auto_publish'              => false,
+            'publishing_strategy'       => 'automatic',
             'pending_review_threshold'  => 5,
-            'price_lock_enabled'        => false,
             'price_expiration_days'     => null,
         ];
     }
@@ -150,13 +150,26 @@ class BrandPolicy extends Model
     private static function defaultOrderSettings(): array
     {
         return [
-            'default_status'          => 'pending',
-            'require_phone'           => true,
-            'require_address'         => true,
-            'customer_lookup_enabled' => true,
-            'deposit_policy'          => 'none',
-            'discount_policy'         => 'manager_approval',
-            'payment_proof_required'  => false,
+            'source_entry_policies' => [
+                'manual'      => ['pending'],
+                'pos'         => 'processing',
+                'woocommerce' => 'preserve',
+                'public_api'  => 'preserve',
+            ],
+            'payment_proof_policy' => [
+                'cod'           => 'none',
+                'instapay'      => 'required',
+                'bank_transfer' => 'required',
+                'mobile_wallet' => 'required',
+                'credit_card'   => 'optional',
+            ],
+            'auto_reserve_inventory'   => false,
+            'customer_matching_policy' => 'reuse_existing',
+            'require_phone'            => true,
+            'require_address'          => true,
+            'customer_lookup_enabled'  => true,
+            'deposit_policy'           => 'none',
+            'discount_policy'          => 'manager_approval',
         ];
     }
 
