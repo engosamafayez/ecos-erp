@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList,
-  Loader2,
   Package,
   Truck,
 } from 'lucide-react';

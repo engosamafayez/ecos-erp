@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Modules\Admin\Configuration\Domain\Models\BrandPolicy;
 use Modules\Admin\Configuration\Domain\Models\ConfigAuditEntry;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
+use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Organization\Brands\Domain\Models\Brand;
 
 /**
@@ -57,6 +58,11 @@ final class BrandConfigurationController extends Controller
         abort_if(! in_array($group, BrandPolicy::POLICY_GROUPS, true), 404, 'Unknown policy group.');
 
         $settings = $this->manager->getBrandPolicy($brandId, $group);
+
+        // Normalize manual entry statuses to a validated array of OrderStatus values.
+        if ($group === 'order') {
+            $settings = $this->normalizeOrderSettings($settings);
+        }
 
         $meta = BrandPolicy::where('brand_id', $brandId)
             ->where('policy_group', $group)
@@ -105,6 +111,38 @@ final class BrandConfigurationController extends Controller
             'version'    => $policy->version,
             'updated_at' => $policy->updated_at?->toIso8601String(),
         ], 'Policy updated.');
+    }
+
+    /**
+     * Ensures source_entry_policies.manual is always a non-empty array of valid
+     * OrderStatus values. Handles legacy string format and invalid enum values.
+     *
+     * @param  array<string, mixed>  $settings
+     * @return array<string, mixed>
+     */
+    private function normalizeOrderSettings(array $settings): array
+    {
+        $raw = $settings['source_entry_policies']['manual'] ?? null;
+
+        $items = is_array($raw) ? $raw : [$raw];
+
+        $valid = [];
+        foreach ($items as $item) {
+            try {
+                $valid[] = OrderStatus::from((string) $item)->value;
+            } catch (\ValueError) {
+                // Skip values that do not correspond to a real OrderStatus.
+            }
+        }
+
+        // Fall back to the most conservative default if everything was filtered.
+        if (empty($valid)) {
+            $valid = ['pending'];
+        }
+
+        $settings['source_entry_policies']['manual'] = $valid;
+
+        return $settings;
     }
 
     public function audit(Request $request, string $brandId): JsonResponse

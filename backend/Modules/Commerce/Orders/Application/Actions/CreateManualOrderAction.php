@@ -214,19 +214,19 @@ final class CreateManualOrderAction extends BaseAction
      *
      * Priority:
      *   1. Proof required but not supplied → AwaitingPayment
-     *   2. Payment method present + multi-select policy → prefer highest-confidence
+     *   2. Frontend-submitted status is within the policy-allowed set → use it
+     *   3. Payment method present + multi-select policy → prefer highest-confidence
      *      enabled status (processing > confirmed > preparing > first valid)
-     *   3. No payment method + multi-select policy → first valid enabled status
-     *   4. Single-string policy (legacy) → that status
-     *   5. Default → Pending
-     *
-     * The frontend-submitted status field is intentionally ignored — policy always wins.
+     *   4. No payment method + multi-select policy → first valid enabled status
+     *   5. Single-string policy → that status
+     *   6. Default → Pending
      */
     private function resolveManualOrderStatus(array $data, array $orderPolicy): string
     {
-        $method = (string) ($data['payment_method_manual'] ?? '');
+        $method          = (string) ($data['payment_method_manual'] ?? '');
+        $submittedStatus = (string) ($data['status'] ?? '');
 
-        // Proof required but not supplied → Awaiting Payment regardless of enabled statuses.
+        // Proof required but not supplied → AwaitingPayment regardless of selection.
         if ($method !== '') {
             $proofPolicy = $orderPolicy['payment_proof_policy'] ?? [];
             $requirement = (string) ($proofPolicy[$method] ?? 'none');
@@ -250,8 +250,12 @@ final class CreateManualOrderAction extends BaseAction
                 return OrderStatus::Pending->value;
             }
 
-            // Payment-clear path: prefer higher-confidence statuses so cash/paid orders
-            // skip the pending queue and enter processing/confirmed immediately.
+            // Honor explicit frontend selection when it is within the allowed set.
+            if ($submittedStatus !== '' && in_array($submittedStatus, $enabled, true)) {
+                return $submittedStatus;
+            }
+
+            // Auto-selection fallback: prefer higher-confidence for payment-clear orders.
             if ($method !== '') {
                 $enabledSet = array_flip($enabled);
                 foreach (self::PAYMENT_CLEAR_STATUS_PREFERENCE as $preferred) {
@@ -261,11 +265,10 @@ final class CreateManualOrderAction extends BaseAction
                 }
             }
 
-            // No payment method or no preferred status is enabled — use first valid.
             return $enabled[0];
         }
 
-        // Single string (legacy).
+        // Single string (legacy) — only one valid status exists.
         if (is_string($configured) && $configured !== '') {
             try {
                 return OrderStatus::from($configured)->value;

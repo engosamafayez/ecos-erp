@@ -199,9 +199,8 @@ final class DemandProjectionBuilder
             ->where('id', $waveId)
             ->update([
                 'products_count'       => $kpiData['products_count'],
-                'total_units_required' => $kpiData['total_units_required'],
-                'total_units_prepared' => $kpiData['total_units_prepared'],
-                'completion_pct'       => $kpiData['completion_pct'],
+                'total_units_required' => $kpiData['_total_units_required'] ?? 0,
+                'total_units_prepared' => $kpiData['_total_units_prepared'] ?? 0,
                 'updated_at'           => now(),
             ]);
     }

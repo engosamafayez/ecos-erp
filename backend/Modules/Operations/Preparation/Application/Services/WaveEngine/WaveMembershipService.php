@@ -79,7 +79,7 @@ final class WaveMembershipService
                     'delivery_zone_snapshot'   => $order->delivery_zone ?? null,
                     'governorate_snapshot'     => $order->governorate ?? null,
                     'zone_code_snapshot'       => $order->zone_code ?? null,
-                    'shipping_cost_snapshot'   => $order->shipping_amount ?? null,
+                    'shipping_cost_snapshot'   => $order->shipping_cost ?? null,
                     'is_paid'                  => in_array(
                         $order->payment_status instanceof \BackedEnum
                             ? $order->payment_status->value

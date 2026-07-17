@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Phone } from 'lucide-react';
 import { ROUTES } from '@/router/routes';
 import type { DeliveryStop } from '../types/driver-mobile';

@@ -149,8 +149,11 @@ final class DemandReadRepository
      */
     public function upsertWaveKpis(array $data): void
     {
+        // Strip meta-keys (underscore-prefixed) that are meant for callers but not DB columns.
+        $row = array_filter($data, static fn ($k) => !str_starts_with($k, '_'), ARRAY_FILTER_USE_KEY);
+
         DB::table('wave_kpis')->upsert(
-            [$data],
+            [$row],
             ['preparation_wave_id'],
             ['orders_count', 'products_count', 'materials_count', 'missing_materials_count',
              'prepared_count', 'remaining_count', 'completion_pct',

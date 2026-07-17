@@ -392,7 +392,9 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
 
     public function nextOrderNumber(): string
     {
-        $last = Order::query()
+        // withoutGlobalScopes() bypasses the tenant scope so the sequence is
+        // globally unique across all companies (matching the unique constraint).
+        $last = Order::withoutGlobalScopes()
             ->withTrashed()
             ->orderByRaw("CAST(REPLACE(order_number, 'ORD-', '') AS UNSIGNED) DESC")
             ->value('order_number');

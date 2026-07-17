@@ -151,7 +151,7 @@ class BrandPolicy extends Model
     {
         return [
             'source_entry_policies' => [
-                'manual'      => ['pending'],
+                'manual'      => ['pending', 'awaiting_payment', 'processing', 'confirmed'],
                 'pos'         => 'processing',
                 'woocommerce' => 'preserve',
                 'public_api'  => 'preserve',

@@ -119,6 +119,7 @@ export interface DeliveryReturn {
   photos: string[];
   warehouse_confirmed_qty: number | null;
   warehouse_confirmed_at: string | null;
+  discrepancy_qty: number | null;
   driver_liability: boolean;
   created_at: string;
 }

@@ -30,7 +30,6 @@ import {
   Plus,
   Shield,
   Trash2,
-  TrendingUp,
   Truck,
   Unlock,
   X,
@@ -44,6 +43,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { OrderCustomerAlerts } from '@/features/orders/components/order-customer-alerts';
 import { OrderCustomerIntelligencePanel } from '@/features/orders/components/order-customer-intelligence-panel';
 import { OrderCustomerLookupField } from '@/features/orders/components/order-customer-lookup-field';
@@ -98,12 +104,10 @@ const STATUS_LABELS: Record<string, string> = {
   returned:         'Returned',
 };
 
-// Operational statuses that exist for workflow automation — not selectable on manual order creation
+// Statuses managed exclusively by workflow automation — never selectable as manual entry points
 const INTERNAL_STATUSES = new Set([
-  'in_progress',
   'confirm_order',
   'needs_shipping_review',
-  'awaiting_stock',
   'ready_for_loading',
 ]);
 
@@ -1064,15 +1068,16 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     }
   }, [lookupResult, shippingCities]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Part 2 — Auto-set initial status from brand entry policy when policy loads
+  // Auto-set initial status from brand entry policy when policy loads
   useEffect(() => {
     if (isEdit || !orderPolicy) return;
     const mp = orderPolicy.source_entry_policies.manual;
     const all = Array.isArray(mp) ? mp : [mp];
-    const allowed = all.filter((s) => !INTERNAL_STATUSES.has(s));
-    const first = allowed[0] ?? all[0] ?? 'pending';
+    const choices = all.filter((s) => !INTERNAL_STATUSES.has(s));
+    const validChoices = choices.length > 0 ? choices : all;
+    const first = validChoices[0] ?? 'pending';
     const current = form.getValues('status');
-    if (!current || INTERNAL_STATUSES.has(current) || !allowed.includes(current)) {
+    if (!current || !validChoices.includes(current)) {
       form.setValue('status', first);
     }
   }, [orderPolicy, isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1626,7 +1631,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         )}
                       </FormField>
 
-                      {/* Part 2 + 5 — Entry Status (policy-driven, internal statuses excluded) */}
+                      {/* Entry Status — always a Select, loaded from brand order policy */}
                       <div>
                         <p className="mb-1 text-xs font-medium text-foreground/80">Entry Status</p>
                         {!orderPolicy && brandId ? (
@@ -1634,46 +1639,28 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         ) : orderPolicy ? (() => {
                           const mp = orderPolicy.source_entry_policies.manual;
                           const all = Array.isArray(mp) ? mp : [mp];
-                          const allowed = all.filter((s) => !INTERNAL_STATUSES.has(s));
-                          const choices = allowed.length > 0 ? allowed : all;
-                          if (choices.length === 1) {
-                            return (
-                              <div className="flex h-9 items-center gap-2">
-                                <Badge variant="secondary" className="gap-1 text-xs">
-                                  <TrendingUp className="size-3" />
-                                  Manual Order
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">→</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {STATUS_LABELS[choices[0]] ?? choices[0]}
-                                </Badge>
-                              </div>
-                            );
-                          }
+                          const choices = all.filter((s) => !INTERNAL_STATUSES.has(s));
+                          const validChoices = choices.length > 0 ? choices : all;
                           return (
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="gap-1 text-xs shrink-0">
-                                <TrendingUp className="size-3" />
-                                Manual Order
-                              </Badge>
-                              <span className="text-xs text-muted-foreground shrink-0">→</span>
-                              <select
-                                value={form.watch('status') ?? choices[0]}
-                                onChange={(e) => form.setValue('status', e.target.value)}
-                                className="flex-1 h-9 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
-                              >
-                                {choices.map((s) => (
-                                  <option key={s} value={s}>{STATUS_LABELS[s] ?? s}</option>
+                            <Select
+                              value={form.watch('status') ?? validChoices[0] ?? ''}
+                              onValueChange={(v) => form.setValue('status', v, { shouldDirty: true })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select entry status…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {validChoices.map((s) => (
+                                  <SelectItem key={s} value={s}>
+                                    {STATUS_LABELS[s] ?? s}
+                                  </SelectItem>
                                 ))}
-                              </select>
-                            </div>
+                              </SelectContent>
+                            </Select>
                           );
                         })() : (
-                          <div className="flex h-9 items-center gap-2">
-                            <Badge variant="secondary" className="gap-1 text-xs">
-                              <TrendingUp className="size-3" />
-                              Manual Order
-                            </Badge>
+                          <div className="flex h-9 items-center rounded-md border border-dashed px-3 text-sm text-muted-foreground">
+                            Select a Brand first
                           </div>
                         )}
                       </div>
