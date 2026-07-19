@@ -49,7 +49,7 @@ export function PageToolbar({ left, center, right, className }: PageToolbarProps
         <div
           className={cn(
             'flex shrink-0 items-center gap-2',
-            (left || center) && 'sm:ml-auto',
+            (left || center) && 'sm:ms-auto',
           )}
         >
           {right}

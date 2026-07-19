@@ -119,7 +119,7 @@ export function InitiativesWorkspacePage() {
             {templates.map((tpl) => (
               <button
                 key={tpl.id}
-                className="rounded-md border bg-card p-3 text-left hover:bg-muted/60 transition-colors text-sm"
+                className="rounded-md border bg-card p-3 text-start hover:bg-muted/60 transition-colors text-sm"
                 onClick={() => {
                   createInitiative.mutate(
                     {
@@ -194,14 +194,14 @@ export function InitiativesWorkspacePage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wide">
             <tr>
-              <th className="text-left px-3 py-2 font-medium">Initiative</th>
-              <th className="text-left px-3 py-2 font-medium">Status</th>
-              <th className="text-left px-3 py-2 font-medium">Goal</th>
-              <th className="text-left px-3 py-2 font-medium">Season</th>
-              <th className="text-right px-3 py-2 font-medium">Budget</th>
+              <th className="text-start px-3 py-2 font-medium">Initiative</th>
+              <th className="text-start px-3 py-2 font-medium">Status</th>
+              <th className="text-start px-3 py-2 font-medium">Goal</th>
+              <th className="text-start px-3 py-2 font-medium">Season</th>
+              <th className="text-end px-3 py-2 font-medium">Budget</th>
               <th className="text-center px-3 py-2 font-medium">Campaigns</th>
-              <th className="text-left px-3 py-2 font-medium">Progress</th>
-              <th className="text-right px-3 py-2 font-medium">End Date</th>
+              <th className="text-start px-3 py-2 font-medium">Progress</th>
+              <th className="text-end px-3 py-2 font-medium">End Date</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
@@ -257,7 +257,7 @@ export function InitiativesWorkspacePage() {
                       ? (SEASON_LABELS[initiative.season] ?? initiative.season)
                       : '—'}
                   </td>
-                  <td className="px-3 py-2 text-right text-xs">
+                  <td className="px-3 py-2 text-end text-xs">
                     {initiative.budget != null
                       ? `${initiative.currency} ${initiative.budget.toLocaleString()}`
                       : '—'}
@@ -268,10 +268,10 @@ export function InitiativesWorkspacePage() {
                   <td className="px-3 py-2">
                     <ProgressBar value={initiative.progress_percent} />
                   </td>
-                  <td className="px-3 py-2 text-right text-xs text-muted-foreground">
+                  <td className="px-3 py-2 text-end text-xs text-muted-foreground">
                     {initiative.end_date ?? '—'}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-end">
                     <button
                       className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                       title="Archive"

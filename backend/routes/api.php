@@ -846,9 +846,45 @@ Route::middleware('auth:sanctum')->prefix('marketing')->group(function (): void 
     Route::get('connections/{connection}/sync-logs',                  [\Modules\Marketing\Synchronization\Presentation\Http\Controllers\SyncController::class, 'logs']);
     Route::get('connections/{connection}/health',                     [\Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectorHealthController::class, 'show']);
 
-    // Meta OAuth
-    Route::get('meta/auth/redirect',   [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'redirect']);
-    Route::get('meta/auth/callback',   [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'callback']);
+    // Provider Platform — registry and metrics
+    Route::get('providers',                             [\Modules\Marketing\ProviderPlatform\Presentation\Http\Controllers\ProviderPlatformController::class, 'index']);
+    Route::get('providers/{provider}/metrics',          [\Modules\Marketing\ProviderPlatform\Presentation\Http\Controllers\ProviderPlatformController::class, 'metrics']);
+
+    // Provider Configuration Wizard (Meta, Google Ads, TikTok, etc.)
+    Route::get('providers/{provider}/config',                  [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'show']);
+    Route::post('providers/{provider}/config',                 [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'save']);
+    Route::post('providers/{provider}/config/validate',        [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'validate']);
+    Route::post('providers/{provider}/config/rotate-secret',   [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'rotateSecret']);
+    Route::get('providers/{provider}/health',                  [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'health']);
+    Route::delete('providers/{provider}/config',               [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'destroy']);
+
+    // Meta OAuth + lifecycle
+    Route::get( 'meta/auth/redirect',                       [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'redirect']);
+    Route::get( 'meta/auth/callback',                       [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'callback']);
+    Route::post('meta/connections/{connection}/disconnect', [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'disconnect']);
+
+    // Meta — Incoming Webhook (no auth — Meta does not send auth headers)
+    Route::get('meta/webhook',  [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'verify'])->withoutMiddleware(['auth:sanctum']);
+    Route::post('meta/webhook', [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'receive'])->withoutMiddleware(['auth:sanctum']);
+
+    // Meta — Connection Dashboard & Management
+    Route::get( 'meta/connections/{connection}/dashboard',          [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'dashboard']);
+    Route::get( 'meta/connections/{connection}/businesses',         [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'businesses']);
+    Route::post('meta/connections/{connection}/businesses/select',  [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'selectBusinesses']);
+    Route::get( 'meta/connections/{connection}/assets',             [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'assets']);
+    Route::get( 'meta/connections/{connection}/permissions',        [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'permissions']);
+    Route::get( 'meta/permissions/required',                        [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'requiredPermissions']);
+    Route::get( 'meta/connections/{connection}/sync-status',        [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'syncStatus']);
+    Route::post('meta/connections/{connection}/sync',               [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'sync']);
+    Route::get( 'meta/connections/{connection}/recovery',           [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'recovery']);
+    Route::patch('meta/assets/{asset}/toggle',                      [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'toggleAsset']);
+
+    // Meta — Webhook Management
+    Route::get( 'meta/connections/{connection}/webhooks',               [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'index']);
+    Route::post('meta/connections/{connection}/webhooks',               [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'register']);
+    Route::post('meta/connections/{connection}/webhooks/register-all',  [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'registerAll']);
+    Route::delete('meta/webhooks/{webhook}',                            [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'remove']);
+    Route::post('meta/webhooks/{webhook}/re-register',                  [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'reRegister']);
 
     // Assets
     Route::get('assets',                                                [\Modules\Marketing\Assets\Presentation\Http\Controllers\MarketingAssetController::class, 'index']);
@@ -897,6 +933,8 @@ Route::middleware('auth:sanctum')->prefix('marketing')->group(function (): void 
 
     // Campaigns — trigger sync per connection
     Route::post('connections/{connection}/campaigns/sync',              [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignSyncController::class, 'triggerSync']);
+    // Insights — async sync per connection (dispatches InsightsSyncJob)
+    Route::post('connections/{connection}/insights/sync',               [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignInsightController::class, 'sync']);
 
     // Campaign Workspace (Phase 4)
     Route::get('campaigns',                                             [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignController::class, 'index']);
@@ -923,6 +961,43 @@ Route::middleware('auth:sanctum')->prefix('marketing')->group(function (): void 
     Route::get('campaigns/{campaign}/ad-sets/{adSet}',                  [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdSetController::class, 'show']);
     Route::get('campaigns/{campaign}/ad-sets/{adSet}/ads',              [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdController::class, 'index']);
     Route::get('campaigns/{campaign}/ad-sets/{adSet}/ads/{ad}',         [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdController::class, 'show']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Marketing Intelligence — Analytics, KPI Engine, Reports
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('marketing/intelligence')->group(function (): void {
+    // ─── Executive Dashboard ──────────────────���─────────────────────────────
+    Route::get('dashboard',                     [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\ExecutiveDashboardController::class, 'index']);
+
+    // ─── Campaign Analytics ────────��──────────────────────────────────��─────
+    Route::get('campaigns',                     [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'index']);
+    Route::get('campaigns/export',              [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'export']);
+    Route::get('campaigns/{campaignId}/trend',  [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'trend']);
+
+    // ─── Ad Analytics ───────────��───────────────────────────────────────────
+    Route::get('ads',                           [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\AdAnalyticsController::class, 'index']);
+    Route::get('ads/export',                    [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\AdAnalyticsController::class, 'export']);
+
+    // ─── Creative Analytics ──────��───────────────────────��──────────────────
+    Route::get('creatives',                     [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CreativeAnalyticsController::class, 'index']);
+    Route::get('creatives/export',              [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CreativeAnalyticsController::class, 'export']);
+
+    // ─── Performance Trends ──────��──────────────────────────────────────────
+    Route::get('trends',                        [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\PerformanceTrendsController::class, 'index']);
+    Route::get('trends/compare',                [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\PerformanceTrendsController::class, 'compare']);
+
+    // ─── Budget Analysis ─────────────��─────────────────────────────���────────
+    Route::get('budget',                        [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\BudgetAnalysisController::class, 'index']);
+
+    // ─── Reports (streaming + history) ──────────���──────────────────────────
+    Route::get('reports/export/campaigns',      [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportCampaigns']);
+    Route::get('reports/export/ads',            [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportAds']);
+    Route::get('reports/export/creatives',      [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportCreatives']);
+    Route::get('reports',                       [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'index']);
+    Route::get('reports/{report}',              [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'show']);
 });
 
 /*

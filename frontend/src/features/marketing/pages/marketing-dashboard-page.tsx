@@ -174,7 +174,7 @@ export function MarketingDashboardPage() {
                 <span>{log.assets_discovered} discovered</span>
                 <span className="text-green-600">+{log.assets_created} new</span>
                 {log.started_at && (
-                  <span className="ml-auto text-muted-foreground">
+                  <span className="ms-auto text-muted-foreground">
                     {new Date(log.started_at).toLocaleString()}
                   </span>
                 )}

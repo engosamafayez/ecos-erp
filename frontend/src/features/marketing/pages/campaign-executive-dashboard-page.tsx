@@ -157,21 +157,21 @@ export function CampaignExecutiveDashboardPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-xs text-muted-foreground uppercase tracking-wide">
                     <tr>
-                      <th className="text-left px-3 py-2 font-medium">Date</th>
-                      <th className="text-right px-3 py-2 font-medium">Spend</th>
-                      <th className="text-right px-3 py-2 font-medium">Impressions</th>
-                      <th className="text-right px-3 py-2 font-medium">CTR</th>
-                      <th className="text-right px-3 py-2 font-medium">CPC</th>
+                      <th className="text-start px-3 py-2 font-medium">Date</th>
+                      <th className="text-end px-3 py-2 font-medium">Spend</th>
+                      <th className="text-end px-3 py-2 font-medium">Impressions</th>
+                      <th className="text-end px-3 py-2 font-medium">CTR</th>
+                      <th className="text-end px-3 py-2 font-medium">CPC</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {(data?.daily_trend ?? []).slice(-30).reverse().map((row) => (
                       <tr key={row.date_start} className="hover:bg-muted/30">
                         <td className="px-3 py-1.5 font-mono text-xs">{row.date_start}</td>
-                        <td className="px-3 py-1.5 text-right">{fmt(row.spend, '$')}</td>
-                        <td className="px-3 py-1.5 text-right">{fmtInt(row.impressions)}</td>
-                        <td className="px-3 py-1.5 text-right">{fmtPct(row.ctr)}</td>
-                        <td className="px-3 py-1.5 text-right">{fmt(row.cpc, '$')}</td>
+                        <td className="px-3 py-1.5 text-end">{fmt(row.spend, '$')}</td>
+                        <td className="px-3 py-1.5 text-end">{fmtInt(row.impressions)}</td>
+                        <td className="px-3 py-1.5 text-end">{fmtPct(row.ctr)}</td>
+                        <td className="px-3 py-1.5 text-end">{fmt(row.cpc, '$')}</td>
                       </tr>
                     ))}
                   </tbody>

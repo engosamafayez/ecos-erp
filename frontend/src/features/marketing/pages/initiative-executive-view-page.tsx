@@ -152,11 +152,11 @@ export function InitiativeExecutiveViewPage() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-xs text-muted-foreground uppercase">
                   <tr>
-                    <th className="text-left px-3 py-2 font-medium">Initiative</th>
-                    <th className="text-left px-3 py-2 font-medium">Status</th>
-                    <th className="text-right px-3 py-2 font-medium">End Date</th>
-                    <th className="text-right px-3 py-2 font-medium">Days Left</th>
-                    <th className="text-right px-3 py-2 font-medium">Campaigns</th>
+                    <th className="text-start px-3 py-2 font-medium">Initiative</th>
+                    <th className="text-start px-3 py-2 font-medium">Status</th>
+                    <th className="text-end px-3 py-2 font-medium">End Date</th>
+                    <th className="text-end px-3 py-2 font-medium">Days Left</th>
+                    <th className="text-end px-3 py-2 font-medium">Campaigns</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -171,13 +171,13 @@ export function InitiativeExecutiveViewPage() {
                           {INITIATIVE_STATUS_LABELS[item.status as keyof typeof INITIATIVE_STATUS_LABELS] ?? item.status}
                         </Badge>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-xs">{item.end_date}</td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-end font-mono text-xs">{item.end_date}</td>
+                      <td className="px-3 py-2 text-end">
                         <span className={item.days_remaining <= 7 ? 'text-red-600 font-medium' : ''}>
                           {item.days_remaining}d
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-right">{item.campaigns_count}</td>
+                      <td className="px-3 py-2 text-end">{item.campaigns_count}</td>
                     </tr>
                   ))}
                 </tbody>

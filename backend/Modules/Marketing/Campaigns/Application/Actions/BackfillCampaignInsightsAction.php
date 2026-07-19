@@ -39,7 +39,7 @@ final class BackfillCampaignInsightsAction
         return [
             'total_campaign' => $result['campaign'],
             'total_adset'    => $result['adset'],
-            'total_errors'   => $result['errors'],
+            'total_errors'   => $result['total_errors'],
         ];
     }
 }

@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/providers/language-context';
 
 type PagePaginationProps = {
   page: number;
@@ -59,6 +60,9 @@ export function PagePagination({
   const canPrev = page > 1;
   const canNext = page < lastPage;
   const pages = getPageNumbers(page, Math.max(lastPage, 1));
+  const { dir } = useLanguage();
+  const PrevIcon = dir === 'rtl' ? ChevronRight : ChevronLeft;
+  const NextIcon = dir === 'rtl' ? ChevronLeft  : ChevronRight;
 
   const from = total === 0 ? 0 : (page - 1) * perPage + 1;
   const to = Math.min(page * perPage, total);
@@ -88,7 +92,7 @@ export function PagePagination({
           disabled={!canPrev || isLoading}
           aria-label="Previous page"
         >
-          <ChevronLeft className="size-4" aria-hidden />
+          <PrevIcon className="size-4" aria-hidden />
         </Button>
 
         {/* Desktop: numbered pages */}
@@ -128,7 +132,7 @@ export function PagePagination({
           disabled={!canNext || isLoading}
           aria-label="Next page"
         >
-          <ChevronRight className="size-4" aria-hidden />
+          <NextIcon className="size-4" aria-hidden />
         </Button>
       </div>
 

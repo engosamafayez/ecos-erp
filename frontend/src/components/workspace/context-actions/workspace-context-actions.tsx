@@ -72,7 +72,7 @@ export function WorkspaceContextActions({ primaryAction, secondaryActions = [], 
                     {Icon ? <Icon className="size-4" aria-hidden /> : null}
                     {action.label}
                     {action.soon ? (
-                      <span className="ml-auto text-[10px] text-muted-foreground/60">Soon</span>
+                      <span className="ms-auto text-[10px] text-muted-foreground/60">Soon</span>
                     ) : null}
                   </DropdownMenuItem>
                 );

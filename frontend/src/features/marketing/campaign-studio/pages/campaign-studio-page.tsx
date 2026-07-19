@@ -216,7 +216,7 @@ function DraftCard({ draft, onOpen, onDuplicate, onDelete }: {
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
         <button className="text-xs text-muted-foreground hover:text-foreground" onClick={onDuplicate}>Duplicate</button>
         {draft.is_editable && (
-          <button className="text-xs text-red-500 hover:text-red-700 ml-auto" onClick={onDelete}>Delete</button>
+          <button className="text-xs text-red-500 hover:text-red-700 ms-auto" onClick={onDelete}>Delete</button>
         )}
       </div>
     </div>

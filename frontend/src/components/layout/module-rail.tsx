@@ -13,7 +13,7 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
     <nav
       aria-label="Module navigation"
       className={cn(
-        'w-[72px] shrink-0 flex-col border-r bg-sidebar',
+        'w-[72px] shrink-0 flex-col border-e bg-sidebar',
         className,
       )}
     >

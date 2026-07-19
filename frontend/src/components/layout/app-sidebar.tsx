@@ -5,13 +5,14 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { AppModule } from '@/config/module-navigation';
 import { usePriceReviewBadge } from '@/features/cost-management/hooks/use-pricing-reviews';
+import { useLanguage } from '@/providers/language-context';
 
 function PriceReviewBadge() {
   const { data } = usePriceReviewBadge();
   const count = data?.pending ?? 0;
   if (count === 0) return null;
   return (
-    <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold leading-none text-white tabular-nums">
+    <span className="ms-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold leading-none text-white tabular-nums">
       {count > 99 ? '99+' : count}
     </span>
   );
@@ -32,7 +33,12 @@ export function AppSidebar({
   onNavigate,
   className,
 }: AppSidebarProps) {
+  const { dir } = useLanguage();
   if (!activeModule || activeModule.items.length === 0) return null;
+
+  // In RTL the sidebar is at the inline-end (physical right), so chevron direction flips.
+  const ExpandIcon  = dir === 'rtl' ? ChevronLeft  : ChevronRight;
+  const CollapseIcon = dir === 'rtl' ? ChevronRight : ChevronLeft;
 
   if (collapsed) {
     return (
@@ -44,7 +50,7 @@ export function AppSidebar({
           onClick={onCollapse}
           aria-label="Expand sidebar"
         >
-          <ChevronRight className="size-4" />
+          <ExpandIcon className="size-4" />
         </Button>
       </div>
     );
@@ -65,7 +71,7 @@ export function AppSidebar({
             onClick={onCollapse}
             aria-label="Collapse sidebar"
           >
-            <ChevronLeft className="size-4" />
+            <CollapseIcon className="size-4" />
           </Button>
         )}
       </div>

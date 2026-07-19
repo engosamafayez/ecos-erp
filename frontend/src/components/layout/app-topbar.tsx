@@ -41,7 +41,7 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
         onClick={onOpenSidebar}
         aria-label="Toggle sidebar navigation"
       >
-        <PanelLeft className="size-5" aria-hidden />
+        <PanelLeft className="size-5" aria-hidden data-flip-rtl />
       </Button>
 
       {/* ── Center: Global search (flex-1 so it fills available space) ── */}
@@ -50,7 +50,7 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
       </div>
 
       {/* ── Right section ── */}
-      <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+      <div className="ms-auto flex items-center gap-1 sm:gap-1.5">
 
         {/* Search icon — mobile only (dialog triggered via context) */}
         <div className="sm:hidden">

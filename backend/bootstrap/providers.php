@@ -82,6 +82,10 @@ return [
     Modules\Logistics\Geography\Infrastructure\Providers\LogisticsGeographyServiceProvider::class,
     Modules\Logistics\Distribution\Infrastructure\Providers\LogisticsDistributionServiceProvider::class,
     // Marketing OS — connector order matters: Registry must boot before MetaConnector registers into it
+    // ProviderPlatform must register before ProviderConfig so ProviderEventPublisher is available.
+    // ProviderConfig must register before MetaConnector so credentials are resolvable at boot.
+    Modules\Marketing\ProviderPlatform\Infrastructure\Providers\ProviderPlatformServiceProvider::class,
+    Modules\Marketing\ProviderConfig\Infrastructure\Providers\ProviderConfigServiceProvider::class,
     Modules\Marketing\Connections\Infrastructure\Providers\ConnectionServiceProvider::class,
     Modules\Marketing\Assets\Infrastructure\Providers\MarketingAssetServiceProvider::class,
     Modules\Marketing\Synchronization\Infrastructure\Providers\SynchronizationServiceProvider::class,
@@ -91,6 +95,7 @@ return [
     Modules\Marketing\Campaigns\Infrastructure\Providers\CampaignServiceProvider::class,
     Modules\Marketing\Initiatives\Infrastructure\Providers\InitiativeServiceProvider::class,
     Modules\Marketing\CampaignStudio\Infrastructure\Providers\CampaignStudioServiceProvider::class,
+    Modules\Marketing\Intelligence\Infrastructure\Providers\MarketingIntelligenceServiceProvider::class,
     Modules\Marketing\Automation\Infrastructure\Providers\AutomationServiceProvider::class,
     Modules\CustomerEngagement\Infrastructure\Providers\CustomerEngagementServiceProvider::class,
 ];

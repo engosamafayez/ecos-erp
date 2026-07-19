@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Marketing\MetaConnector\Application\Services;
 
 use Modules\Marketing\Assets\Domain\Enums\AssetType;
-use Modules\Marketing\Assets\Domain\Events\AssetDiscovered;
 use Modules\Marketing\Assets\Domain\Models\MarketingAsset;
 use Modules\Marketing\Campaigns\Domain\Contracts\CampaignConnectorContract;
 use Modules\Marketing\Connections\Application\Abstracts\AbstractMarketingConnector;
@@ -63,6 +62,8 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
             AssetType::SocialAccount->value,
             AssetType::Pixel->value,
             AssetType::Catalog->value,
+            AssetType::Product->value,
+            AssetType::ProductSet->value,
             AssetType::Domain->value,
             AssetType::Dataset->value,
             AssetType::App->value,
@@ -129,7 +130,6 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                 ],
             ];
             $assets[] = $descriptor;
-            event(new AssetDiscovered($descriptor, $connection->id, $connection->connector_type));
 
             // Ad Accounts
             foreach ($this->safeDiscover(fn () => $this->apiClient->getAdAccountsForBusiness($bmId, $token)) as $aa) {
@@ -147,7 +147,6 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                     ],
                 ];
                 $assets[] = $d;
-                event(new AssetDiscovered($d, $connection->id, $connection->connector_type));
             }
 
             // Pages
@@ -166,7 +165,6 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                     ],
                 ];
                 $assets[] = $d;
-                event(new AssetDiscovered($d, $connection->id, $connection->connector_type));
             }
 
             // Instagram / Social Accounts
@@ -186,7 +184,6 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                     ],
                 ];
                 $assets[] = $d;
-                event(new AssetDiscovered($d, $connection->id, $connection->connector_type));
             }
 
             // WhatsApp → SocialAccount with social_type=whatsapp
@@ -204,7 +201,6 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                     ],
                 ];
                 $assets[] = $d;
-                event(new AssetDiscovered($d, $connection->id, $connection->connector_type));
             }
 
             // Pixels
@@ -222,14 +218,15 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                     ],
                 ];
                 $assets[] = $d;
-                event(new AssetDiscovered($d, $connection->id, $connection->connector_type));
             }
 
-            // Product Catalogs
+            // Product Catalogs + nested Products and Product Sets
             foreach ($this->safeDiscover(fn () => $this->apiClient->getCatalogsForBusiness($bmId, $token)) as $catalog) {
+                $catalogId = $catalog['id'];
+
                 $d = [
                     'asset_type'  => AssetType::Catalog->value,
-                    'external_id' => $catalog['id'],
+                    'external_id' => $catalogId,
                     'name'        => $catalog['name'],
                     'status'      => 'active',
                     'metadata'    => [
@@ -239,7 +236,44 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                     ],
                 ];
                 $assets[] = $d;
-                event(new AssetDiscovered($d, $connection->id, $connection->connector_type));
+
+                // Products within this catalog
+                foreach ($this->safeDiscover(fn () => $this->apiClient->getProductsForCatalog($catalogId, $token)) as $product) {
+                    $pd = [
+                        'asset_type'  => AssetType::Product->value,
+                        'external_id' => $product['id'],
+                        'name'        => $product['name'] ?? "Product {$product['id']}",
+                        'status'      => ($product['availability'] ?? '') === 'in stock' ? 'active' : 'inactive',
+                        'metadata'    => [
+                            'price'       => $product['price'] ?? null,
+                            'currency'    => $product['currency'] ?? null,
+                            'brand'       => $product['brand'] ?? null,
+                            'category'    => $product['category'] ?? null,
+                            'url'         => $product['url'] ?? null,
+                            'image_url'   => $product['image_url'] ?? null,
+                            'catalog_id'  => $catalogId,
+                            'business_id' => $bmId,
+                        ],
+                    ];
+                    $assets[] = $pd;
+                }
+
+                // Product Sets (named collections) within this catalog
+                foreach ($this->safeDiscover(fn () => $this->apiClient->getProductSetsForCatalog($catalogId, $token)) as $ps) {
+                    $psd = [
+                        'asset_type'  => AssetType::ProductSet->value,
+                        'external_id' => $ps['id'],
+                        'name'        => $ps['name'],
+                        'status'      => 'active',
+                        'metadata'    => [
+                            'product_count' => $ps['product_count'] ?? null,
+                            'filter'        => $ps['filter'] ?? null,
+                            'catalog_id'    => $catalogId,
+                            'business_id'   => $bmId,
+                        ],
+                    ];
+                    $assets[] = $psd;
+                }
             }
 
             // Domains
@@ -252,7 +286,6 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                     'metadata'    => ['business_id' => $bmId],
                 ];
                 $assets[] = $d;
-                event(new AssetDiscovered($d, $connection->id, $connection->connector_type));
             }
 
             // Datasets
@@ -265,7 +298,6 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                     'metadata'    => ['business_id' => $bmId],
                 ];
                 $assets[] = $d;
-                event(new AssetDiscovered($d, $connection->id, $connection->connector_type));
             }
 
             // Apps
@@ -281,7 +313,6 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
                     ],
                 ];
                 $assets[] = $d;
-                event(new AssetDiscovered($d, $connection->id, $connection->connector_type));
             }
         }
 
@@ -312,21 +343,23 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
         );
 
         return array_map(fn (array $c) => [
-            'external_campaign_id' => $c['id'],
-            'external_account_id'  => $adAccountId,
-            'name'                 => $c['name'] ?? '',
-            'status'               => $c['status'] ?? 'PAUSED',
-            'objective'            => $c['objective'] ?? null,
-            'buying_type'          => $c['buying_type'] ?? null,
-            'bid_strategy'         => $c['bid_strategy'] ?? null,
-            'daily_budget'         => isset($c['daily_budget']) ? (float) $c['daily_budget'] / 100 : null,
-            'lifetime_budget'      => isset($c['lifetime_budget']) ? (float) $c['lifetime_budget'] / 100 : null,
-            'budget_remaining'     => isset($c['budget_remaining']) ? (float) $c['budget_remaining'] / 100 : null,
-            'start_time'           => $c['start_time'] ?? null,
-            'stop_time'            => $c['stop_time'] ?? null,
-            'provider_created_at'  => $c['created_time'] ?? null,
-            'provider_updated_at'  => $c['updated_time'] ?? null,
-            'provider_payload'     => $c,
+            'external_campaign_id'  => $c['id'],
+            'external_account_id'   => $adAccountId,
+            'name'                  => $c['name'] ?? '',
+            'status'                => $c['status'] ?? 'PAUSED',
+            'effective_status'      => $c['effective_status'] ?? null,
+            'objective'             => $c['objective'] ?? null,
+            'buying_type'           => $c['buying_type'] ?? null,
+            'bid_strategy'          => $c['bid_strategy'] ?? null,
+            'daily_budget'          => isset($c['daily_budget']) ? (float) $c['daily_budget'] / 100 : null,
+            'lifetime_budget'       => isset($c['lifetime_budget']) ? (float) $c['lifetime_budget'] / 100 : null,
+            'budget_remaining'      => isset($c['budget_remaining']) ? (float) $c['budget_remaining'] / 100 : null,
+            'special_ad_categories' => $c['special_ad_categories'] ?? [],
+            'start_time'            => $c['start_time'] ?? null,
+            'stop_time'             => $c['stop_time'] ?? null,
+            'provider_created_at'   => $c['created_time'] ?? null,
+            'provider_updated_at'   => $c['updated_time'] ?? null,
+            'provider_payload'      => $c,
         ], $response['data'] ?? []);
     }
 
@@ -335,20 +368,22 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
         $token = $connection->access_token;
 
         return array_map(fn (array $as) => [
-            'external_ad_set_id'  => $as['id'],
+            'external_ad_set_id'   => $as['id'],
             'external_campaign_id' => $campaignId,
-            'name'                => $as['name'] ?? '',
-            'status'              => $as['status'] ?? 'PAUSED',
-            'daily_budget'        => isset($as['daily_budget']) ? (float) $as['daily_budget'] / 100 : null,
-            'lifetime_budget'     => isset($as['lifetime_budget']) ? (float) $as['lifetime_budget'] / 100 : null,
-            'bid_amount'          => isset($as['bid_amount']) ? (float) $as['bid_amount'] / 100 : null,
-            'bid_strategy'        => $as['bid_strategy'] ?? null,
-            'optimization_goal'   => $as['optimization_goal'] ?? null,
-            'billing_event'       => $as['billing_event'] ?? null,
-            'targeting'           => $as['targeting'] ?? null,
-            'start_time'          => $as['start_time'] ?? null,
-            'end_time'            => $as['end_time'] ?? null,
-            'provider_payload'    => $as,
+            'name'                 => $as['name'] ?? '',
+            'status'               => $as['status'] ?? 'PAUSED',
+            'effective_status'     => $as['effective_status'] ?? null,
+            'daily_budget'         => isset($as['daily_budget']) ? (float) $as['daily_budget'] / 100 : null,
+            'lifetime_budget'      => isset($as['lifetime_budget']) ? (float) $as['lifetime_budget'] / 100 : null,
+            'bid_amount'           => isset($as['bid_amount']) ? (float) $as['bid_amount'] / 100 : null,
+            'bid_strategy'         => $as['bid_strategy'] ?? null,
+            'optimization_goal'    => $as['optimization_goal'] ?? null,
+            'billing_event'        => $as['billing_event'] ?? null,
+            'targeting'            => $as['targeting'] ?? null,
+            'schedule'             => $as['schedule'] ?? null,
+            'start_time'           => $as['start_time'] ?? null,
+            'end_time'             => $as['end_time'] ?? null,
+            'provider_payload'     => $as,
         ], $this->safeDiscover(fn () => $this->apiClient->getAdSetsForCampaign($campaignId, $token)));
     }
 
@@ -357,14 +392,16 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
         $token = $connection->access_token;
 
         return array_map(fn (array $ad) => [
-            'external_ad_id'      => $ad['id'],
-            'external_ad_set_id'  => $adSetId,
+            'external_ad_id'       => $ad['id'],
+            'external_ad_set_id'   => $adSetId,
             'external_campaign_id' => $ad['campaign_id'] ?? '',
-            'name'                => $ad['name'] ?? '',
-            'status'              => $ad['status'] ?? 'PAUSED',
-            'creative_id'         => $ad['creative']['id'] ?? null,
-            'tracking_specs'      => $ad['tracking_specs'] ?? null,
-            'provider_payload'    => $ad,
+            'name'                 => $ad['name'] ?? '',
+            'status'               => $ad['status'] ?? 'PAUSED',
+            'effective_status'     => $ad['effective_status'] ?? null,
+            'creative_id'          => $ad['creative']['id'] ?? null,
+            'tracking_specs'       => $ad['tracking_specs'] ?? null,
+            'preview_url'          => $ad['preview_url'] ?? null,
+            'provider_payload'     => $ad,
         ], $this->safeDiscover(fn () => $this->apiClient->getAdsForAdSet($adSetId, $token)));
     }
 
@@ -394,7 +431,9 @@ final class MetaConnector extends AbstractMarketingConnector implements Campaign
             'primary_text'         => $c['body'] ?? null,
             'call_to_action'       => $c['call_to_action_type'] ?? null,
             'image_url'            => $c['image_url'] ?? null,
+            'image_hash'           => $c['image_hash'] ?? null,
             'video_url'            => null,
+            'video_id'             => $c['video_id'] ?? null,
             'thumbnail_url'        => $c['thumbnail_url'] ?? null,
             'link_url'             => $c['link_url'] ?? null,
             'asset_feed'           => $c['asset_feed_spec'] ?? null,

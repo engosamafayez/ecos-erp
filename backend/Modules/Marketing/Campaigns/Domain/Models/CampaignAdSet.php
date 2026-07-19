@@ -40,6 +40,7 @@ class CampaignAdSet extends Model
             'lifetime_budget'     => 'decimal:2',
             'bid_amount'          => 'decimal:2',
             'targeting'           => 'array',
+            'schedule'            => 'array',
             'provider_payload'    => 'array',
             'start_time'          => 'datetime',
             'end_time'            => 'datetime',

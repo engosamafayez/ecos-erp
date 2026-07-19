@@ -7,6 +7,7 @@ import {
   Building2,
   CalendarClock,
   ClipboardList,
+  DollarSign,
   FlaskConical,
   LayoutDashboard,
   Layers2,
@@ -15,6 +16,7 @@ import {
   ListOrdered,
   ListTree,
   Map,
+  Megaphone,
   Network,
   Package,
   PackageCheck,
@@ -27,8 +29,10 @@ import {
   ShoppingCart,
   Smartphone,
   Tag,
+  TrendingUp,
   Truck,
   Warehouse,
+  Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -136,6 +140,20 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Driver Mobile',
     items: [
       { key: 'driver-home', label: 'Driver Home', path: ROUTES.driverHome, icon: Smartphone },
+    ],
+  },
+  {
+    label: 'Marketing OS',
+    items: [
+      { key: 'marketing',                  label: 'Overview',          path: ROUTES.marketing,                 icon: Megaphone   },
+      { key: 'marketing-intelligence',     label: 'Intelligence',      path: ROUTES.marketingIntelligence,     icon: BarChart3   },
+      { key: 'marketing-campaigns-analytics', label: 'Campaigns',     path: ROUTES.marketingCampaignAnalytics, icon: TrendingUp  },
+      { key: 'marketing-ad-analytics',     label: 'Ads',               path: ROUTES.marketingAdAnalytics,      icon: Activity    },
+      { key: 'marketing-creative-analytics', label: 'Creatives',      path: ROUTES.marketingCreativeAnalytics, icon: Zap         },
+      { key: 'marketing-trends',           label: 'Trends',            path: ROUTES.marketingTrends,           icon: LineChart   },
+      { key: 'marketing-budget',           label: 'Budget',            path: ROUTES.marketingBudget,           icon: DollarSign  },
+      { key: 'marketing-reports',          label: 'Reports',           path: ROUTES.marketingReports,          icon: ListTree    },
+      { key: 'marketing-settings',         label: 'Mktg. Settings',    path: ROUTES.marketingSettings,         icon: Settings2   },
     ],
   },
   {

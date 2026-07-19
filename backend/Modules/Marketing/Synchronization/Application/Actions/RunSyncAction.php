@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Marketing\Synchronization\Application\Actions;
 
+use Modules\Marketing\Assets\Application\Services\AssetLifecycleService;
 use Modules\Marketing\Assets\Domain\Enums\AssetHealth;
+use Modules\Marketing\Assets\Domain\Enums\AssetLifecycleStatus;
+use Modules\Marketing\Assets\Domain\Events\AssetDiscovered;
 use Modules\Marketing\Assets\Domain\Models\MarketingAsset;
 use Modules\Marketing\Connections\Application\Services\ConnectorRegistry;
 use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
@@ -20,14 +23,19 @@ use Throwable;
 /**
  * Runs a full or incremental sync for a connection.
  *
- * Discovers all assets from the connector, then upserts them in the
- * marketing_assets table. Auto-applies matching profiles after discovery.
+ * Lifecycle policy (enforced here):
+ *   - Assets are NEVER deleted — only status-transitioned.
+ *   - Full sync: assets not seen in the response → REMOVED_FROM_PROVIDER.
+ *   - Any sync: assets that were non-active and are now seen → ACTIVE (reconnected).
+ *   - Incremental sync: no ghost detection (partial view; full sync owns that).
+ *   - AssetDiscovered events are fired AFTER upsert (model exists at that point).
  */
 final class RunSyncAction
 {
     public function __construct(
         private readonly ConnectorRegistry       $registry,
         private readonly MappingSuggestionService $suggestionService,
+        private readonly AssetLifecycleService   $lifecycleService,
     ) {}
 
     public function execute(
@@ -35,7 +43,6 @@ final class RunSyncAction
         SyncType            $syncType = SyncType::Full,
         ?string             $triggeredBy = null,
     ): MarketingSyncLog {
-        // Create a sync log entry
         $syncLog = MarketingSyncLog::create([
             'marketing_connection_id' => $connection->id,
             'sync_type'               => $syncType->value,
@@ -60,10 +67,10 @@ final class RunSyncAction
             $syncLog->update(['status' => SyncStatus::Running->value]);
 
             event(new SynchronizationStarted(
-                syncLogId:     $syncLog->id,
-                connectionId:  $connection->id,
-                connectorType: $connection->connector_type,
-                syncType:      $syncType->value,
+                syncLog:      $syncLog,
+                connectionId: $connection->id,
+                syncType:     $syncType->value,
+                triggeredBy:  $triggeredBy,
             ));
 
             $discovered = $connector->discoverAssets($connection);
@@ -78,7 +85,6 @@ final class RunSyncAction
 
                     if ($isNew) {
                         $created++;
-                        // Auto-apply mapping profiles for newly discovered assets
                         $this->suggestionService->suggestForAsset($asset, $connection->company_id);
                     } else {
                         $updated++;
@@ -86,6 +92,14 @@ final class RunSyncAction
                 } catch (Throwable) {
                     $failed++;
                 }
+            }
+
+            // Ghost detection: Full sync only.
+            // Assets that were ACTIVE before this sync but absent from the response are
+            // presumed removed at the provider. Mark them REMOVED_FROM_PROVIDER.
+            if ($syncType === SyncType::Full && ! empty($discovered)) {
+                $seenIds = array_column($discovered, 'external_id');
+                $this->lifecycleService->markGhosts($connection->id, $seenIds);
             }
 
             $syncLog->update([
@@ -100,13 +114,11 @@ final class RunSyncAction
             $connection->update(['last_synced_at' => now()]);
 
             event(new SynchronizationCompleted(
-                syncLogId:       $syncLog->id,
-                connectionId:    $connection->id,
-                connectorType:   $connection->connector_type,
+                syncLog:          $syncLog,
                 assetsDiscovered: count($discovered),
-                assetsCreated:   $created,
-                assetsUpdated:   $updated,
-                assetsFailed:    $failed,
+                assetsCreated:    $created,
+                assetsUpdated:    $updated,
+                assetsFailed:     $failed,
             ));
 
         } catch (Throwable $e) {
@@ -117,10 +129,8 @@ final class RunSyncAction
             ]);
 
             event(new SynchronizationFailed(
-                syncLogId:     $syncLog->id,
-                connectionId:  $connection->id,
-                connectorType: $connection->connector_type,
-                errorMessage:  $e->getMessage(),
+                syncLog:      $syncLog,
+                errorMessage: $e->getMessage(),
             ));
         }
 
@@ -129,6 +139,12 @@ final class RunSyncAction
 
     /**
      * Upsert a raw asset descriptor from the connector into marketing_assets.
+     *
+     * Lifecycle rules applied here:
+     *  - Always set status = ACTIVE when an asset is seen.
+     *  - If the asset was previously non-active (removed, revoked, etc.) and is now
+     *    seen again, emit ProviderAssetReconnected via AssetLifecycleService.
+     *  - Fire AssetDiscovered AFTER the DB write so the event carries the real model.
      *
      * @param  array<string, mixed> $rawAsset
      * @return array{0: MarketingAsset, 1: bool}  [asset, isNew]
@@ -139,7 +155,8 @@ final class RunSyncAction
             ->where('external_id', $rawAsset['external_id'])
             ->first();
 
-        $isNew = $existing === null;
+        $previousStatus = $existing?->status?->value;
+        $isNew          = $existing === null;
 
         $asset = MarketingAsset::updateOrCreate(
             [
@@ -151,7 +168,7 @@ final class RunSyncAction
                 'marketing_connection_id' => $connection->id,
                 'asset_type'             => $rawAsset['asset_type'],
                 'name'                   => $rawAsset['name'],
-                'status'                 => $rawAsset['status'] ?? 'active',
+                'status'                 => AssetLifecycleStatus::Active->value,
                 'health_status'          => AssetHealth::Healthy->value,
                 'health_checked_at'      => now(),
                 'asset_metadata'         => $rawAsset['metadata'] ?? null,
@@ -159,6 +176,18 @@ final class RunSyncAction
                 'next_sync_at'           => now()->addHours(6),
             ],
         );
+
+        // Reconnection: asset was previously unreachable, now seen again
+        if (
+            ! $isNew
+            && $previousStatus !== null
+            && $previousStatus !== AssetLifecycleStatus::Active->value
+            && $previousStatus !== AssetLifecycleStatus::Inactive->value
+        ) {
+            $this->lifecycleService->handleReconnected($asset, $previousStatus);
+        }
+
+        event(new AssetDiscovered($asset, $connection->id, $isNew));
 
         return [$asset, $isNew];
     }

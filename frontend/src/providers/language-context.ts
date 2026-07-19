@@ -1,9 +1,11 @@
 import { createContext, useContext } from 'react';
 
 export type Language = 'en' | 'ar';
+export type Dir = 'ltr' | 'rtl';
 
 export type LanguageContextState = {
   language: Language;
+  dir: Dir;
   setLanguage: (lang: Language) => void;
 };
 

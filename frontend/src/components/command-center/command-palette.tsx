@@ -365,7 +365,7 @@ export function GlobalCommandPalette({ open, onClose }: GlobalCommandPaletteProp
               <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">ESC</kbd>
               Close
             </span>
-            <span className="ml-auto flex items-center gap-1 text-primary/70">
+            <span className="ms-auto flex items-center gap-1 text-primary/70">
               <Sparkles className="size-3" aria-hidden />
               AI coming soon
             </span>

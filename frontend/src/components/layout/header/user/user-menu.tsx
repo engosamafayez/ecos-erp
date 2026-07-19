@@ -81,7 +81,7 @@ export function UserMenu() {
         <DropdownMenuItem disabled>
           <User className="size-4" aria-hidden />
           Profile
-          <span className="ml-auto text-[10px] text-muted-foreground/60">Soon</span>
+          <span className="ms-auto text-[10px] text-muted-foreground/60">Soon</span>
         </DropdownMenuItem>
 
         <DropdownMenuItem onClick={() => navigate(ROUTES.settings)}>
@@ -92,13 +92,13 @@ export function UserMenu() {
         <DropdownMenuItem disabled>
           <Keyboard className="size-4" aria-hidden />
           Keyboard Shortcuts
-          <span className="ml-auto text-[10px] text-muted-foreground/60">Soon</span>
+          <span className="ms-auto text-[10px] text-muted-foreground/60">Soon</span>
         </DropdownMenuItem>
 
         <DropdownMenuItem disabled>
           <Activity className="size-4" aria-hidden />
           Activity Log
-          <span className="ml-auto text-[10px] text-muted-foreground/60">Soon</span>
+          <span className="ms-auto text-[10px] text-muted-foreground/60">Soon</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

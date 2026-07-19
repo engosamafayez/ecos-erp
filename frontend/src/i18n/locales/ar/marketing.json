@@ -1,0 +1,79 @@
+{
+  "title": "التسويق",
+  "subtitle": "الحملات وتكامل ميتا وإدارة الجمهور.",
+  "dashboard": {
+    "title": "لوحة التسويق",
+    "kpis": {
+      "activeCampaigns": "الحملات النشطة",
+      "totalSpend": "إجمالي الإنفاق",
+      "totalRevenue": "الإيرادات المنسوبة",
+      "roas": "عائد الإنفاق الإعلاني",
+      "leads": "العملاء المحتملون",
+      "conversions": "التحويلات"
+    }
+  },
+  "campaigns": {
+    "title": "الحملات الإعلانية",
+    "subtitle": "إدارة ومراقبة الحملات الإعلانية.",
+    "search": "بحث في الحملات…",
+    "actions": {
+      "new": "حملة جديدة",
+      "edit": "تعديل الحملة",
+      "pause": "إيقاف مؤقت",
+      "resume": "استئناف",
+      "archive": "أرشفة"
+    },
+    "columns": {
+      "name": "الحملة",
+      "platform": "المنصة",
+      "objective": "الهدف",
+      "budget": "الميزانية اليومية",
+      "spend": "الإنفاق",
+      "impressions": "مرات الظهور",
+      "clicks": "النقرات",
+      "conversions": "التحويلات",
+      "roas": "عائد الإنفاق",
+      "status": "الحالة",
+      "startDate": "تاريخ البدء",
+      "endDate": "تاريخ الانتهاء"
+    },
+    "status": {
+      "active": "نشطة",
+      "paused": "متوقفة مؤقتاً",
+      "completed": "منتهية",
+      "draft": "مسودة",
+      "archived": "مؤرشفة"
+    }
+  },
+  "audiences": {
+    "title": "شرائح الجمهور",
+    "subtitle": "تعريف وإدارة شرائح العملاء للاستهداف.",
+    "search": "بحث في الشرائح…",
+    "columns": {
+      "name": "الشريحة",
+      "size": "حجم الجمهور",
+      "criteria": "معايير الاستهداف",
+      "lastUpdated": "آخر تحديث"
+    }
+  },
+  "meta": {
+    "title": "تكامل ميتا",
+    "subtitle": "إعداد حساب إعلانات فيسبوك وإنستغرام.",
+    "connected": "مرتبط بـ Meta Business Suite",
+    "notConnected": "غير مرتبط",
+    "connect": "ربط حساب ميتا",
+    "disconnect": "فصل الحساب",
+    "adAccounts": "حسابات الإعلانات",
+    "pages": "صفحات فيسبوك",
+    "pixels": "بكسل ميتا"
+  },
+  "automation": {
+    "title": "الأتمتة",
+    "subtitle": "إعداد سير العمل التسويقي الآلي.",
+    "triggers": "المحفّزات",
+    "actions": "الإجراءات",
+    "conditions": "الشروط",
+    "enabled": "مفعّل",
+    "disabled": "معطّل"
+  }
+}

@@ -48,6 +48,12 @@ enum AssetType: string
     /** Mobile or web application registered on the platform. */
     case App             = 'app';
 
+    /** A product within a catalog. */
+    case Product         = 'product';
+
+    /** A named collection (subset) of catalog products. */
+    case ProductSet      = 'product_set';
+
     // ── Legacy values — backward-compat with existing DB rows ────────────────
     // @deprecated  New discovery should use BusinessAccount / SocialAccount.
 
@@ -74,6 +80,8 @@ enum AssetType: string
             self::Domain           => 'Domain',
             self::Dataset          => 'Dataset',
             self::App              => 'App',
+            self::Product          => 'Product',
+            self::ProductSet       => 'Product Set',
             // Legacy
             self::BusinessManager  => 'Business Manager (legacy)',
             self::InstagramAccount => 'Instagram Account (legacy)',
@@ -88,7 +96,7 @@ enum AssetType: string
             self::BusinessManager,
             self::InstagramAccount,
             self::WhatsAppAccount,
-        ], true);
+        ], true); // Product + ProductSet are canonical; legacy types are not
     }
 
     /**
@@ -117,6 +125,8 @@ enum AssetType: string
             self::Domain,
             self::Dataset,
             self::App,
+            self::Product,
+            self::ProductSet,
         ];
     }
 }

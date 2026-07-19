@@ -93,7 +93,7 @@ export function WorkspaceCard({
           <Button
             variant="ghost"
             size="sm"
-            className="ml-auto h-7 gap-1 px-2 text-xs"
+            className="ms-auto h-7 gap-1 px-2 text-xs"
             onClick={(e) => {
               e.stopPropagation();
               navigate(href);

@@ -3,6 +3,17 @@ import axios from 'axios';
 
 const BASE = '/api/marketing';
 
+export interface MetaCallbackResponse {
+  message: string;
+  connection: {
+    id: string;
+    label: string;
+    status: string;
+    connector_type: string;
+    connected_at: string | null;
+  };
+}
+
 export function useMetaAuthUrl() {
   return useMutation({
     mutationFn: async (companyId: string) => {
@@ -19,7 +30,7 @@ export function useMetaCallback() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ code, state }: { code: string; state: string }) => {
-      const { data } = await axios.get(`${BASE}/meta/auth/callback`, {
+      const { data } = await axios.get<MetaCallbackResponse>(`${BASE}/meta/auth/callback`, {
         params: { code, state },
       });
       return data;

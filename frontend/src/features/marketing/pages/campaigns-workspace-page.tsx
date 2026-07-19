@@ -146,16 +146,16 @@ export function CampaignsWorkspacePage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wide">
             <tr>
-              <th className="text-left px-3 py-2 font-medium">Campaign</th>
-              <th className="text-left px-3 py-2 font-medium">Status</th>
-              <th className="text-left px-3 py-2 font-medium">Objective</th>
-              <th className="text-right px-3 py-2 font-medium">Budget</th>
-              <th className="text-right px-3 py-2 font-medium">Spend</th>
-              <th className="text-right px-3 py-2 font-medium">Impressions</th>
-              <th className="text-right px-3 py-2 font-medium">CTR</th>
-              <th className="text-right px-3 py-2 font-medium">CPC</th>
-              <th className="text-right px-3 py-2 font-medium">Purchases</th>
-              <th className="text-right px-3 py-2 font-medium">Ad Sets</th>
+              <th className="text-start px-3 py-2 font-medium">Campaign</th>
+              <th className="text-start px-3 py-2 font-medium">Status</th>
+              <th className="text-start px-3 py-2 font-medium">Objective</th>
+              <th className="text-end px-3 py-2 font-medium">Budget</th>
+              <th className="text-end px-3 py-2 font-medium">Spend</th>
+              <th className="text-end px-3 py-2 font-medium">Impressions</th>
+              <th className="text-end px-3 py-2 font-medium">CTR</th>
+              <th className="text-end px-3 py-2 font-medium">CPC</th>
+              <th className="text-end px-3 py-2 font-medium">Purchases</th>
+              <th className="text-end px-3 py-2 font-medium">Ad Sets</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -201,23 +201,23 @@ export function CampaignsWorkspacePage() {
                   <td className="px-3 py-2 text-muted-foreground text-xs">
                     {CAMPAIGN_OBJECTIVE_LABELS[campaign.objective ?? ''] ?? campaign.objective ?? '—'}
                   </td>
-                  <td className="px-3 py-2 text-right text-xs">{campaign.budget_display}</td>
-                  <td className="px-3 py-2 text-right font-medium">
+                  <td className="px-3 py-2 text-end text-xs">{campaign.budget_display}</td>
+                  <td className="px-3 py-2 text-end font-medium">
                     {campaign.latest_insight ? `$${fmt(campaign.latest_insight.spend)}` : '—'}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-end">
                     {fmtInt(campaign.latest_insight?.impressions)}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-end">
                     {fmtPct(campaign.latest_insight?.ctr)}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-end">
                     {campaign.latest_insight?.cpc != null ? `$${fmt(campaign.latest_insight.cpc)}` : '—'}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-end">
                     {fmtInt(campaign.latest_insight?.purchases)}
                   </td>
-                  <td className="px-3 py-2 text-right text-muted-foreground">
+                  <td className="px-3 py-2 text-end text-muted-foreground">
                     {campaign.ad_sets_count ?? '—'}
                   </td>
                 </tr>

@@ -110,10 +110,10 @@ export function AutomationDashboardPage() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-muted-foreground border-b">
-                  <th className="text-left py-1.5 font-medium">Workflow</th>
-                  <th className="text-left py-1.5 font-medium">Entity</th>
-                  <th className="text-left py-1.5 font-medium">Status</th>
-                  <th className="text-left py-1.5 font-medium">Time</th>
+                  <th className="text-start py-1.5 font-medium">Workflow</th>
+                  <th className="text-start py-1.5 font-medium">Entity</th>
+                  <th className="text-start py-1.5 font-medium">Status</th>
+                  <th className="text-start py-1.5 font-medium">Time</th>
                 </tr>
               </thead>
               <tbody>

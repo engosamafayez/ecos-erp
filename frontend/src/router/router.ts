@@ -90,6 +90,15 @@ import { WorkflowBuilderPage } from '@/features/marketing/automation/pages/workf
 import { AudienceSegmentsPage } from '@/features/marketing/automation/pages/audience-segments-page';
 import { AutomationDashboardPage } from '@/features/marketing/automation/pages/automation-dashboard-page';
 import { AutomationGovernancePage } from '@/features/marketing/automation/pages/automation-governance-page';
+import { MetaConnectionPage } from '@/features/marketing/pages/meta-connection-page';
+import { ExecutiveDashboardPage } from '@/features/marketing/intelligence/pages/executive-dashboard-page';
+import { CampaignAnalyticsPage } from '@/features/marketing/intelligence/pages/campaign-analytics-page';
+import { AdAnalyticsPage } from '@/features/marketing/intelligence/pages/ad-analytics-page';
+import { CreativeAnalyticsPage } from '@/features/marketing/intelligence/pages/creative-analytics-page';
+import { PerformanceTrendsPage } from '@/features/marketing/intelligence/pages/performance-trends-page';
+import { BudgetAnalysisPage } from '@/features/marketing/intelligence/pages/budget-analysis-page';
+import { ReportsPage } from '@/features/marketing/intelligence/pages/reports-page';
+import { MarketingSettingsPage } from '@/features/marketing/pages/marketing-settings-page';
 import { DriverHomePage } from '@/features/operations/driver-mobile/pages/driver-home-page';
 import { DriverTripDashboardPage } from '@/features/operations/driver-mobile/pages/driver-trip-dashboard-page';
 import { DriverStopListPage } from '@/features/operations/driver-mobile/pages/driver-stop-list-page';
@@ -256,6 +265,16 @@ export const router = createBrowserRouter(
             { path: ROUTES.audienceSegments,     Component: AudienceSegmentsPage },
             { path: ROUTES.automationDashboard,  Component: AutomationDashboardPage },
             { path: ROUTES.automationGovernance, Component: AutomationGovernancePage },
+            // Marketing Intelligence + Connection + Settings
+            { path: ROUTES.marketingMetaConnection,    Component: MetaConnectionPage },
+            { path: ROUTES.marketingIntelligence,      Component: ExecutiveDashboardPage },
+            { path: ROUTES.marketingCampaignAnalytics, Component: CampaignAnalyticsPage },
+            { path: ROUTES.marketingAdAnalytics,       Component: AdAnalyticsPage },
+            { path: ROUTES.marketingCreativeAnalytics, Component: CreativeAnalyticsPage },
+            { path: ROUTES.marketingTrends,            Component: PerformanceTrendsPage },
+            { path: ROUTES.marketingBudget,            Component: BudgetAnalysisPage },
+            { path: ROUTES.marketingReports,           Component: ReportsPage },
+            { path: ROUTES.marketingSettings,          Component: MarketingSettingsPage },
             // Commerce
             { path: ROUTES.productMappings, Component: ProductMappingsPage },
             { path: ROUTES.syncLogs, Component: SyncLogsPage },

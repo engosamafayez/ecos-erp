@@ -284,7 +284,7 @@ function CampaignsTab({ initiativeId }: { initiativeId: string }) {
                     }}
                   />
                   {c.name}
-                  <Badge variant="secondary" className="text-xs ml-auto">
+                  <Badge variant="secondary" className="text-xs ms-auto">
                     {CAMPAIGN_STATUS_LABELS[c.status as keyof typeof CAMPAIGN_STATUS_LABELS] ?? c.status}
                   </Badge>
                 </label>

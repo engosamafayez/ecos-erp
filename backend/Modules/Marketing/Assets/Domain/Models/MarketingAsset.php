@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Marketing\Assets\Domain\Enums\AssetHealth;
+use Modules\Marketing\Assets\Domain\Enums\AssetLifecycleStatus;
 use Modules\Marketing\Assets\Domain\Enums\AssetType;
 use Modules\Marketing\Connections\Domain\Enums\ConnectorType;
 use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
@@ -62,20 +63,23 @@ class MarketingAsset extends Model
         'asset_metadata',
         'last_synced_at',
         'next_sync_at',
+        'is_enabled',
     ];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
         return [
-            'connector_type'   => ConnectorType::class,
-            'asset_type'       => AssetType::class,
-            'health_status'    => AssetHealth::class,
+            'connector_type'    => ConnectorType::class,
+            'asset_type'        => AssetType::class,
+            'status'            => AssetLifecycleStatus::class,
+            'health_status'     => AssetHealth::class,
             'health_checked_at' => 'datetime',
-            'last_synced_at'   => 'datetime',
-            'next_sync_at'     => 'datetime',
-            'health_metadata'  => 'array',
-            'asset_metadata'   => 'array',
+            'last_synced_at'    => 'datetime',
+            'next_sync_at'      => 'datetime',
+            'health_metadata'   => 'array',
+            'asset_metadata'    => 'array',
+            'is_enabled'        => 'boolean',
         ];
     }
 
@@ -86,8 +90,22 @@ class MarketingAsset extends Model
         return $this->health_status === AssetHealth::Healthy;
     }
 
+    public function isActiveLifecycle(): bool
+    {
+        return $this->status === AssetLifecycleStatus::Active;
+    }
+
+    public function preventsSync(): bool
+    {
+        return $this->status?->preventsSync() ?? false;
+    }
+
     public function needsSync(): bool
     {
+        if ($this->preventsSync()) {
+            return false;
+        }
+
         return $this->next_sync_at === null || $this->next_sync_at->isPast();
     }
 

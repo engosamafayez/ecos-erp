@@ -56,7 +56,7 @@ function WorkflowCard({ workflow, onOpen }: { workflow: AutomationWorkflow; onOp
         <div className="flex-1 min-w-0">
           <button
             onClick={() => navigate(ROUTES.workflowBuilder.replace(':workflowId', workflow.id))}
-            className="text-sm font-medium hover:underline truncate text-left block"
+            className="text-sm font-medium hover:underline truncate text-start block"
           >
             {workflow.name}
           </button>

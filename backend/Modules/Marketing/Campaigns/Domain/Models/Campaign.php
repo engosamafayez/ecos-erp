@@ -55,19 +55,20 @@ class Campaign extends Model
     protected function casts(): array
     {
         return [
-            'connector_type'      => ConnectorType::class,
-            'status'              => CampaignStatus::class,
-            'objective'           => CampaignObjective::class,
-            'daily_budget'        => 'decimal:2',
-            'lifetime_budget'     => 'decimal:2',
-            'budget_remaining'    => 'decimal:2',
-            'start_time'          => 'datetime',
-            'stop_time'           => 'datetime',
-            'provider_created_at' => 'datetime',
-            'provider_updated_at' => 'datetime',
-            'last_synced_at'      => 'datetime',
-            'next_sync_at'        => 'datetime',
-            'provider_payload'    => 'array',
+            'connector_type'        => ConnectorType::class,
+            'status'                => CampaignStatus::class,
+            'objective'             => CampaignObjective::class,
+            'daily_budget'          => 'decimal:2',
+            'lifetime_budget'       => 'decimal:2',
+            'budget_remaining'      => 'decimal:2',
+            'special_ad_categories' => 'array',
+            'start_time'            => 'datetime',
+            'stop_time'             => 'datetime',
+            'provider_created_at'   => 'datetime',
+            'provider_updated_at'   => 'datetime',
+            'last_synced_at'        => 'datetime',
+            'next_sync_at'          => 'datetime',
+            'provider_payload'      => 'array',
         ];
     }
 

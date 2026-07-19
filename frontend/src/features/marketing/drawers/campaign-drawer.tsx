@@ -62,7 +62,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between py-1.5 border-b last:border-0 text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-right ml-4">{value ?? '—'}</span>
+      <span className="font-medium text-end ml-4">{value ?? '—'}</span>
     </div>
   );
 }
@@ -216,19 +216,19 @@ export function CampaignDrawer({ campaignId, open, onClose }: CampaignDrawerProp
                           <table className="w-full text-xs">
                             <thead className="bg-muted/50">
                               <tr>
-                                <th className="text-left px-2 py-1.5 font-medium">Date</th>
-                                <th className="text-right px-2 py-1.5 font-medium">Spend</th>
-                                <th className="text-right px-2 py-1.5 font-medium">CTR</th>
-                                <th className="text-right px-2 py-1.5 font-medium">CPC</th>
+                                <th className="text-start px-2 py-1.5 font-medium">Date</th>
+                                <th className="text-end px-2 py-1.5 font-medium">Spend</th>
+                                <th className="text-end px-2 py-1.5 font-medium">CTR</th>
+                                <th className="text-end px-2 py-1.5 font-medium">CPC</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y">
                               {trend.slice(0, 14).map((row) => (
                                 <tr key={row.id} className="hover:bg-muted/20">
                                   <td className="px-2 py-1 font-mono">{row.date_start}</td>
-                                  <td className="px-2 py-1 text-right">{fmt(row.spend, '$')}</td>
-                                  <td className="px-2 py-1 text-right">{fmtPct(row.ctr)}</td>
-                                  <td className="px-2 py-1 text-right">{fmt(row.cpc, '$')}</td>
+                                  <td className="px-2 py-1 text-end">{fmt(row.spend, '$')}</td>
+                                  <td className="px-2 py-1 text-end">{fmtPct(row.ctr)}</td>
+                                  <td className="px-2 py-1 text-end">{fmt(row.cpc, '$')}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -379,23 +379,23 @@ export function CampaignDrawer({ campaignId, open, onClose }: CampaignDrawerProp
                     <table className="w-full text-xs">
                       <thead className="bg-muted/50 text-muted-foreground">
                         <tr>
-                          <th className="text-left px-2 py-1.5 font-medium">Date</th>
-                          <th className="text-right px-2 py-1.5 font-medium">Spend</th>
-                          <th className="text-right px-2 py-1.5 font-medium">Impr.</th>
-                          <th className="text-right px-2 py-1.5 font-medium">Clicks</th>
-                          <th className="text-right px-2 py-1.5 font-medium">CTR</th>
-                          <th className="text-right px-2 py-1.5 font-medium">CPC</th>
+                          <th className="text-start px-2 py-1.5 font-medium">Date</th>
+                          <th className="text-end px-2 py-1.5 font-medium">Spend</th>
+                          <th className="text-end px-2 py-1.5 font-medium">Impr.</th>
+                          <th className="text-end px-2 py-1.5 font-medium">Clicks</th>
+                          <th className="text-end px-2 py-1.5 font-medium">CTR</th>
+                          <th className="text-end px-2 py-1.5 font-medium">CPC</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
                         {insights.map((row) => (
                           <tr key={row.id} className="hover:bg-muted/20">
                             <td className="px-2 py-1 font-mono">{row.date_start}</td>
-                            <td className="px-2 py-1 text-right">{fmt(row.spend, '$')}</td>
-                            <td className="px-2 py-1 text-right">{fmtInt(row.impressions)}</td>
-                            <td className="px-2 py-1 text-right">{fmtInt(row.clicks)}</td>
-                            <td className="px-2 py-1 text-right">{fmtPct(row.ctr)}</td>
-                            <td className="px-2 py-1 text-right">{fmt(row.cpc, '$')}</td>
+                            <td className="px-2 py-1 text-end">{fmt(row.spend, '$')}</td>
+                            <td className="px-2 py-1 text-end">{fmtInt(row.impressions)}</td>
+                            <td className="px-2 py-1 text-end">{fmtInt(row.clicks)}</td>
+                            <td className="px-2 py-1 text-end">{fmtPct(row.ctr)}</td>
+                            <td className="px-2 py-1 text-end">{fmt(row.cpc, '$')}</td>
                           </tr>
                         ))}
                       </tbody>

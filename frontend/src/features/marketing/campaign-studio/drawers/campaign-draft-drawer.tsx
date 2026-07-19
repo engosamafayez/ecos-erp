@@ -211,7 +211,7 @@ function VersionsTab({ versions }: { versions: Array<{ id: string; version_numbe
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs bg-muted px-1 rounded">v{v.version_number}</span>
             <span className="capitalize text-muted-foreground text-xs">{v.change_type.replace(/_/g, ' ')}</span>
-            <span className="text-xs text-muted-foreground ml-auto">{new Date(v.created_at).toLocaleDateString()}</span>
+            <span className="text-xs text-muted-foreground ms-auto">{new Date(v.created_at).toLocaleDateString()}</span>
           </div>
           {v.change_note && <p className="text-xs text-muted-foreground mt-1">{v.change_note}</p>}
         </div>
@@ -277,7 +277,7 @@ function InlineEdit({ value, onSave }: { value: string; onSave: (v: string) => v
   const [val, setVal]         = useState(value);
   if (!editing) {
     return (
-      <button className="text-sm text-left hover:underline" onClick={() => setEditing(true)}>{value}</button>
+      <button className="text-sm text-start hover:underline" onClick={() => setEditing(true)}>{value}</button>
     );
   }
   return (

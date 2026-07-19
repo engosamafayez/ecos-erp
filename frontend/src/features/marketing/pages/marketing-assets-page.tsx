@@ -118,12 +118,12 @@ export function MarketingAssetsPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Asset</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Type</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Platform</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Health</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Mappings</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Synced</th>
+                <th className="px-4 py-3 text-start font-medium text-muted-foreground">Asset</th>
+                <th className="px-4 py-3 text-start font-medium text-muted-foreground">Type</th>
+                <th className="px-4 py-3 text-start font-medium text-muted-foreground">Platform</th>
+                <th className="px-4 py-3 text-start font-medium text-muted-foreground">Health</th>
+                <th className="px-4 py-3 text-start font-medium text-muted-foreground">Mappings</th>
+                <th className="px-4 py-3 text-start font-medium text-muted-foreground">Synced</th>
               </tr>
             </thead>
             <tbody className="divide-y">

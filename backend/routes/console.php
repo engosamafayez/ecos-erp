@@ -24,6 +24,25 @@ Schedule::command('preparation:freeze-sessions')
     ->withoutOverlapping()
     ->runInBackground();
 
+// TASK-META-HARDENING-001 — Provider health checks at three frequencies.
+// Hourly: connection validation (credentials still accepted by provider API).
+// Every 6 hours: permission depth check.
+// Daily: full check including app availability.
+Schedule::command('marketing:provider:health-check')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('marketing:provider:health-check --level=permissions')
+    ->everySixHours()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('marketing:provider:health-check --level=full')
+    ->daily()
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // TASK-WAVE-ENGINE-001 — Wave Engine lifecycle scheduler.
 // Runs every minute; processes all active WaveEngineConfiguration records and
 // triggers: collection-window open → order sync → preparation start → wave rotation.

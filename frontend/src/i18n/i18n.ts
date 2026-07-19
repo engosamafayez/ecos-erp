@@ -1,110 +1,82 @@
+/**
+ * ECOS i18n Bootstrap
+ *
+ * Loading strategy
+ * ────────────────
+ * • `common` is bundled eagerly — zero flash for navigation labels, buttons,
+ *   and form controls that appear on every screen.
+ * • Every other namespace is lazy-loaded on demand via Vite code splitting.
+ *   When a component calls useTranslation('orders') for the first time,
+ *   Vite fetches only the orders chunk for the active language.
+ *
+ * Adding a new namespace
+ * ──────────────────────
+ * 1. Add its name to src/i18n/namespaces.ts.
+ * 2. Create src/i18n/locales/en/<ns>.json and src/i18n/locales/ar/<ns>.json.
+ * No changes here — the glob pattern picks them up automatically.
+ */
+
 import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
-import arInventoryControl from '@/i18n/locales/ar/inventory-control.json';
-import arOperations from '@/i18n/locales/ar/operations.json';
-import arBoms from '@/i18n/locales/ar/boms.json';
-import arSyncLogs from '@/i18n/locales/ar/sync-logs.json';
-import arAuth from '@/i18n/locales/ar/auth.json';
-import arBranches from '@/i18n/locales/ar/branches.json';
-import arCategories from '@/i18n/locales/ar/categories.json';
-import arChannels from '@/i18n/locales/ar/channels.json';
-import arCommon from '@/i18n/locales/ar/common.json';
-import arCustomers from '@/i18n/locales/ar/customers.json';
-import arDashboard from '@/i18n/locales/ar/dashboard.json';
-import arCompanies from '@/i18n/locales/ar/companies.json';
-import arFulfillments from '@/i18n/locales/ar/fulfillments.json';
-import arGoodsReceipts from '@/i18n/locales/ar/goods-receipts.json';
-import arOrders from '@/i18n/locales/ar/orders.json';
-import arProducts from '@/i18n/locales/ar/products.json';
-import arPurchaseOrders from '@/i18n/locales/ar/purchase-orders.json';
-import arSettings from '@/i18n/locales/ar/settings.json';
-import arStockLedger from '@/i18n/locales/ar/stock-ledger.json';
-import arStockSync from '@/i18n/locales/ar/stock-sync.json';
-import arSuppliers from '@/i18n/locales/ar/suppliers.json';
-import arUnits from '@/i18n/locales/ar/units.json';
-import arWarehouses from '@/i18n/locales/ar/warehouses.json';
-import enInventoryControl from '@/i18n/locales/en/inventory-control.json';
-import enOperations from '@/i18n/locales/en/operations.json';
-import enBoms from '@/i18n/locales/en/boms.json';
-import enSyncLogs from '@/i18n/locales/en/sync-logs.json';
-import enAuth from '@/i18n/locales/en/auth.json';
-import enBranches from '@/i18n/locales/en/branches.json';
-import enCategories from '@/i18n/locales/en/categories.json';
-import enChannels from '@/i18n/locales/en/channels.json';
-import enCommon from '@/i18n/locales/en/common.json';
-import enCustomers from '@/i18n/locales/en/customers.json';
-import enDashboard from '@/i18n/locales/en/dashboard.json';
-import enCompanies from '@/i18n/locales/en/companies.json';
-import enFulfillments from '@/i18n/locales/en/fulfillments.json';
-import enGoodsReceipts from '@/i18n/locales/en/goods-receipts.json';
-import enOrders from '@/i18n/locales/en/orders.json';
-import enProducts from '@/i18n/locales/en/products.json';
-import enPurchaseOrders from '@/i18n/locales/en/purchase-orders.json';
-import enSettings from '@/i18n/locales/en/settings.json';
-import enStockLedger from '@/i18n/locales/en/stock-ledger.json';
-import enStockSync from '@/i18n/locales/en/stock-sync.json';
-import enSuppliers from '@/i18n/locales/en/suppliers.json';
-import enUnits from '@/i18n/locales/en/units.json';
-import enWarehouses from '@/i18n/locales/en/warehouses.json';
+import { NAMESPACES } from '@/i18n/namespaces';
 
+// ── Eager bundle — common only ─────────────────────────────────────────────
+import enCommon from '@/i18n/locales/en/common.json';
+import arCommon from '@/i18n/locales/ar/common.json';
+
+// ── Lazy bundles — all namespaces, all languages ──────────────────────────
+// Single glob that matches every locale file in every language directory.
+// Vite emits each matched file as a separate chunk, fetched only on demand.
+//
+// Adding a new language: create src/i18n/locales/<lang>/*.json files,
+// add the lang code to supportedLngs below and SUPPORTED in language-provider.
+// No changes to this backend are needed.
+const localeModules = import.meta.glob<{ default: Record<string, unknown> }>(
+  './locales/*/*.json',
+  { eager: false },
+);
+
+type BackendReadCallback = (
+  err: Error | null,
+  data: Record<string, unknown> | null,
+) => void;
+
+// ── Custom Vite backend ────────────────────────────────────────────────────
+const viteBackend = {
+  type: 'backend' as const,
+  read(language: string, namespace: string, callback: BackendReadCallback): void {
+    // common is pre-bundled in resources below; i18next won't call read() for it.
+    const path = `./locales/${language}/${namespace}.json`;
+    const loader = localeModules[path];
+    if (loader === undefined) {
+      // Namespace file doesn't exist yet — return empty object so the app
+      // degrades gracefully (keys display as-is) instead of throwing.
+      callback(null, {});
+      return;
+    }
+    void loader()
+      .then(mod => callback(null, mod.default))
+      .catch((err: unknown) =>
+        callback(err instanceof Error ? err : new Error(String(err)), null),
+      );
+  },
+};
+
+// ── Init ───────────────────────────────────────────────────────────────────
 void i18n
+  .use(viteBackend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
+    // common is bundled; all other namespaces are loaded by the backend.
+    partialBundledLanguages: true,
     resources: {
-      en: {
-        common: enCommon,
-        auth: enAuth,
-        dashboard: enDashboard,
-        companies: enCompanies,
-        branches: enBranches,
-        warehouses: enWarehouses,
-        categories: enCategories,
-        units: enUnits,
-        products: enProducts,
-        customers: enCustomers,
-        suppliers: enSuppliers,
-        'purchase-orders': enPurchaseOrders,
-        'goods-receipts': enGoodsReceipts,
-        channels: enChannels,
-        orders: enOrders,
-        fulfillments: enFulfillments,
-        'stock-ledger': enStockLedger,
-        'stock-sync': enStockSync,
-        boms: enBoms,
-        'sync-logs': enSyncLogs,
-        'inventory-control': enInventoryControl,
-        operations: enOperations,
-        settings: enSettings,
-      },
-      ar: {
-        common: arCommon,
-        auth: arAuth,
-        dashboard: arDashboard,
-        companies: arCompanies,
-        branches: arBranches,
-        warehouses: arWarehouses,
-        categories: arCategories,
-        units: arUnits,
-        products: arProducts,
-        customers: arCustomers,
-        suppliers: arSuppliers,
-        'purchase-orders': arPurchaseOrders,
-        'goods-receipts': arGoodsReceipts,
-        channels: arChannels,
-        orders: arOrders,
-        fulfillments: arFulfillments,
-        'stock-ledger': arStockLedger,
-        'stock-sync': arStockSync,
-        boms: arBoms,
-        'sync-logs': arSyncLogs,
-        'inventory-control': arInventoryControl,
-        operations: arOperations,
-        settings: arSettings,
-      },
+      en: { common: enCommon },
+      ar: { common: arCommon },
     },
+    ns: [...NAMESPACES],
     defaultNS: 'common',
     fallbackLng: 'en',
     supportedLngs: ['en', 'ar'],
@@ -113,7 +85,15 @@ void i18n
       lookupLocalStorage: 'language',
       caches: ['localStorage'],
     },
-    interpolation: { escapeValue: false },
+    interpolation: {
+      escapeValue: false, // React already escapes
+    },
+    react: {
+      // false: components render immediately with key-as-fallback, then
+      // re-render once the namespace loads. Avoids adding Suspense boundaries
+      // to every lazy-namespace consumer during the migration period.
+      useSuspense: false,
+    },
   });
 
 export default i18n;

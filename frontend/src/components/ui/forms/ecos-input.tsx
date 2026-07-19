@@ -25,15 +25,15 @@ const iconSizeClass: Record<EcosInputSize, string> = {
 };
 
 const paddingWithLeading: Record<EcosInputSize, string> = {
-  sm: 'pl-7',
-  md: 'pl-9',
-  lg: 'pl-10',
+  sm: 'ps-7',
+  md: 'ps-9',
+  lg: 'ps-10',
 };
 
 const paddingWithTrailing: Record<EcosInputSize, string> = {
-  sm: 'pr-7',
-  md: 'pr-9',
-  lg: 'pr-10',
+  sm: 'pe-7',
+  md: 'pe-9',
+  lg: 'pe-10',
 };
 
 export const EcosInput = forwardRef<HTMLInputElement, EcosInputProps>(
@@ -45,7 +45,7 @@ export const EcosInput = forwardRef<HTMLInputElement, EcosInputProps>(
       <div className="relative flex w-full items-center">
         {hasLeading && (
           <span className={cn(
-            'pointer-events-none absolute left-3 flex items-center text-muted-foreground',
+            'pointer-events-none absolute start-3 flex items-center text-muted-foreground',
             iconSizeClass[size],
           )}>
             {leading}
@@ -71,7 +71,7 @@ export const EcosInput = forwardRef<HTMLInputElement, EcosInputProps>(
         />
 
         {(loading || hasTrailing) && (
-          <span className="pointer-events-none absolute right-3 flex items-center text-muted-foreground">
+          <span className="pointer-events-none absolute end-3 flex items-center text-muted-foreground">
             {loading
               ? <Loader2 className={cn('animate-spin', iconSizeClass[size])} />
               : <span className={iconSizeClass[size]}>{trailing}</span>

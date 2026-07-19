@@ -36,7 +36,7 @@ export function AppShell() {
 
           {/* Context Sidebar — laptop+ (lg+), persistent + collapsible */}
           {hasSidebarItems && (
-            <aside className="hidden lg:block border-r">
+            <aside className="hidden lg:block border-e">
               <AppSidebar
                 activeModule={activeModule}
                 collapsed={sidebarCollapsed}

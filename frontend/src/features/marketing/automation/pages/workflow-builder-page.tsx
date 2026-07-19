@@ -88,7 +88,7 @@ export function WorkflowBuilderPage() {
             <p className="text-xs text-muted-foreground mt-1">
               Visual canvas editor coming soon.
             </p>
-            <div className="mt-4 p-3 bg-card border rounded-lg text-left max-w-sm">
+            <div className="mt-4 p-3 bg-card border rounded-lg text-start max-w-sm">
               <p className="text-xs font-medium mb-1">Current Graph</p>
               <p className="text-xs text-muted-foreground">
                 {workflow.nodes_graph?.nodes?.length ?? 0} nodes ·{' '}

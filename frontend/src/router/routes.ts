@@ -114,7 +114,8 @@ export const ROUTES = {
   // Marketing OS
   marketing:              '/marketing',
   marketingAssets:        '/marketing/assets',
-  marketingConnectMeta:   '/marketing/connect/meta',
+  marketingConnectMeta:       '/marketing/connect/meta',
+  marketingMetaConnection:    '/marketing/meta/connection/:id',
   marketingCampaigns:      '/marketing/campaigns',
   marketingCampaignDash:   '/marketing/campaigns/dashboard',
   marketingInitiatives:    '/marketing/initiatives',
@@ -143,6 +144,16 @@ export const ROUTES = {
   audienceSegments:       '/marketing/automation/segments',
   automationDashboard:    '/marketing/automation/dashboard',
   automationGovernance:   '/marketing/automation/governance',
+  // Marketing Intelligence
+  marketingIntelligence:       '/marketing/intelligence',
+  marketingCampaignAnalytics:  '/marketing/intelligence/campaigns',
+  marketingAdAnalytics:        '/marketing/intelligence/ads',
+  marketingCreativeAnalytics:  '/marketing/intelligence/creatives',
+  marketingTrends:             '/marketing/intelligence/trends',
+  marketingBudget:             '/marketing/intelligence/budget',
+  marketingReports:            '/marketing/intelligence/reports',
+  // Marketing Settings
+  marketingSettings:           '/marketing/settings',
   // Driver Mobile OS (TASK-DIST-005)
   driverHome:             '/driver/home',
   driverTrip:             '/driver/trips/:tripId',

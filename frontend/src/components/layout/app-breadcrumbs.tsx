@@ -19,7 +19,7 @@ export function AppBreadcrumbs() {
       </Link>
       {!isDashboard && current ? (
         <>
-          <ChevronRight className="size-3.5" />
+          <ChevronRight className="size-3.5" data-flip-rtl aria-hidden />
           <span className="text-foreground font-medium">{current.label}</span>
         </>
       ) : null}

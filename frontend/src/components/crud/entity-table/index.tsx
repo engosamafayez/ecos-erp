@@ -33,9 +33,9 @@ type EntityTableProps<T> = {
 };
 
 const ALIGN_CLASS = {
-  left: 'text-left',
+  left: 'text-start',
   center: 'text-center',
-  right: 'text-right',
+  right: 'text-end',
 } as const;
 
 /**
@@ -92,7 +92,7 @@ export function EntityTable<T>({
                 </TableHead>
               );
             })}
-            {rowActions ? <TableHead className="w-12 text-right">Actions</TableHead> : null}
+            {rowActions ? <TableHead className="w-12 text-end">Actions</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -135,7 +135,7 @@ export function EntityTable<T>({
                   </TableCell>
                 ))}
                 {rowActions ? (
-                  <TableCell className="text-right">{rowActions(row)}</TableCell>
+                  <TableCell className="text-end">{rowActions(row)}</TableCell>
                 ) : null}
               </TableRow>
             ))

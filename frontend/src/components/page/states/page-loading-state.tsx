@@ -30,7 +30,7 @@ function TableLoading({ rows = 8, className }: { rows?: number; className?: stri
         <Skeleton className="size-4 rounded" />
         <Skeleton className="h-3 w-28" />
         <Skeleton className="h-3 w-20" />
-        <Skeleton className="ml-auto h-3 w-16" />
+        <Skeleton className="ms-auto h-3 w-16" />
         <Skeleton className="h-3 w-14" />
       </div>
       {/* Data rows */}
@@ -45,7 +45,7 @@ function TableLoading({ rows = 8, className }: { rows?: number; className?: stri
             </div>
           </div>
           <Skeleton className="h-3.5 w-20" />
-          <Skeleton className="ml-auto h-5 w-14 rounded-full" />
+          <Skeleton className="ms-auto h-5 w-14 rounded-full" />
           <Skeleton className="size-6 rounded" />
         </div>
       ))}

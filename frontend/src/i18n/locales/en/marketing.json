@@ -1,0 +1,79 @@
+{
+  "title": "Marketing",
+  "subtitle": "Campaigns, Meta integration, and audience management.",
+  "dashboard": {
+    "title": "Marketing Dashboard",
+    "kpis": {
+      "activeCampaigns": "Active Campaigns",
+      "totalSpend": "Total Spend",
+      "totalRevenue": "Attributed Revenue",
+      "roas": "ROAS",
+      "leads": "Leads",
+      "conversions": "Conversions"
+    }
+  },
+  "campaigns": {
+    "title": "Campaigns",
+    "subtitle": "Manage and monitor advertising campaigns.",
+    "search": "Search campaigns…",
+    "actions": {
+      "new": "New Campaign",
+      "edit": "Edit Campaign",
+      "pause": "Pause",
+      "resume": "Resume",
+      "archive": "Archive"
+    },
+    "columns": {
+      "name": "Campaign",
+      "platform": "Platform",
+      "objective": "Objective",
+      "budget": "Daily Budget",
+      "spend": "Spend",
+      "impressions": "Impressions",
+      "clicks": "Clicks",
+      "conversions": "Conversions",
+      "roas": "ROAS",
+      "status": "Status",
+      "startDate": "Start Date",
+      "endDate": "End Date"
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "completed": "Completed",
+      "draft": "Draft",
+      "archived": "Archived"
+    }
+  },
+  "audiences": {
+    "title": "Audience Segments",
+    "subtitle": "Define and manage customer segments for targeting.",
+    "search": "Search segments…",
+    "columns": {
+      "name": "Segment",
+      "size": "Audience Size",
+      "criteria": "Criteria",
+      "lastUpdated": "Last Updated"
+    }
+  },
+  "meta": {
+    "title": "Meta Integration",
+    "subtitle": "Facebook & Instagram ad account configuration.",
+    "connected": "Connected to Meta Business Suite",
+    "notConnected": "Not connected",
+    "connect": "Connect Meta Account",
+    "disconnect": "Disconnect",
+    "adAccounts": "Ad Accounts",
+    "pages": "Facebook Pages",
+    "pixels": "Meta Pixels"
+  },
+  "automation": {
+    "title": "Automation",
+    "subtitle": "Set up automated marketing workflows.",
+    "triggers": "Triggers",
+    "actions": "Actions",
+    "conditions": "Conditions",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  }
+}

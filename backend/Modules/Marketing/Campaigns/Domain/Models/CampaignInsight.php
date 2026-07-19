@@ -33,18 +33,26 @@ use Modules\Marketing\Campaigns\Domain\Enums\CampaignLevel;
  * @property float|null        $cpm
  * @property float|null        $cpc
  * @property float|null        $ctr
+ * @property float|null        $unique_ctr
  * @property int|null          $clicks
+ * @property int|null          $unique_clicks
  * @property int|null          $outbound_clicks
  * @property int|null          $landing_page_views
  * @property int|null          $video_views
  * @property int|null          $messages
  * @property int|null          $leads
  * @property int|null          $purchases
+ * @property float|null        $purchase_value
+ * @property int|null          $engagement
  * @property int|null          $add_to_cart
  * @property int|null          $initiate_checkout
  * @property int|null          $conversions
  * @property float|null        $cost_per_result
+ * @property float|null        $cpa
+ * @property float|null        $roas
+ * @property float|null        $roas_website
  * @property array|null        $actions
+ * @property array|null        $breakdowns
  * @property \Carbon\Carbon    $synced_at
  */
 class CampaignInsight extends Model
@@ -65,9 +73,15 @@ class CampaignInsight extends Model
             'frequency'   => 'decimal:6',
             'cpm'         => 'decimal:4',
             'cpc'         => 'decimal:4',
-            'ctr'         => 'decimal:6',
+            'ctr'             => 'decimal:6',
+            'unique_ctr'      => 'decimal:6',
+            'purchase_value'  => 'decimal:4',
             'cost_per_result' => 'decimal:4',
-            'actions'     => 'array',
+            'cpa'             => 'decimal:4',
+            'roas'            => 'decimal:4',
+            'roas_website'    => 'decimal:4',
+            'actions'         => 'array',
+            'breakdowns'      => 'array',
             'synced_at'   => 'datetime',
             'created_at'  => 'datetime',
         ];

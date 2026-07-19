@@ -6,6 +6,7 @@ namespace Modules\Marketing\MetaConnector\Application\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Modules\Marketing\Connections\Application\Actions\DisconnectConnectionAction;
 use Modules\Marketing\Connections\Domain\Contracts\MarketingOAuthContract;
 use Modules\Marketing\Connections\Domain\Enums\ConnectionStatus;
 use Modules\Marketing\Connections\Domain\Enums\ConnectorType;
@@ -13,6 +14,8 @@ use Modules\Marketing\Connections\Domain\Events\ConnectionCreated;
 use Modules\Marketing\Connections\Domain\Events\PermissionChanged;
 use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
 use Modules\Marketing\MetaConnector\Domain\Services\MetaApiClient;
+use Modules\Marketing\ProviderConfig\Application\Services\ProviderCredentialService;
+use Modules\Marketing\ProviderPlatform\Application\Services\ProviderEventPublisher;
 use RuntimeException;
 
 /**
@@ -35,8 +38,11 @@ final class MetaOAuthService implements MarketingOAuthContract
     ];
 
     public function __construct(
-        private readonly MetaApiClient $apiClient,
-        private readonly string        $redirectUri,
+        private readonly MetaApiClient              $apiClient,
+        private readonly string                     $redirectUri,
+        private readonly ProviderEventPublisher     $events,
+        private readonly ProviderCredentialService  $providerCredentials,
+        private readonly DisconnectConnectionAction $disconnectAction,
     ) {}
 
     /**
@@ -100,6 +106,27 @@ final class MetaOAuthService implements MarketingOAuthContract
             actorId:       $actorId,
             metadata:      ['external_account_id' => $me['id'] ?? null],
         ));
+
+        // Publish ProviderPlatform event so ProviderHealthMonitor and metrics are updated
+        $this->events->providerConnected($companyId, 'meta', $actorId, $connection->id);
+
+        // Mark provider credential as connected
+        $this->providerCredentials->auditOAuthConnected($companyId, 'meta', $actorId);
+
+        return $connection;
+    }
+
+    /**
+     * Disconnect a Meta connection — revoke tokens and emit events.
+     */
+    public function disconnect(MarketingConnection $connection, string $actorId): MarketingConnection
+    {
+        $companyId = (string) $connection->company_id;
+
+        $connection = $this->disconnectAction->execute($connection, $actorId, 'User-initiated disconnect');
+
+        $this->events->providerDisconnected($companyId, 'meta', $actorId, $connection->id);
+        $this->providerCredentials->auditOAuthDisconnected($companyId, 'meta', $actorId);
 
         return $connection;
     }

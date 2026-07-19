@@ -12,7 +12,7 @@ type Props = {
 
 export function WorkspaceBreadcrumbs({ crumbs, className }: Props) {
   const all: WorkspaceBreadcrumb[] = [
-    { label: 'Home', to: ROUTES.dashboard, icon: Home },
+    { label: 'الرئيسية', to: ROUTES.dashboard, icon: Home },
     ...crumbs,
   ];
 
