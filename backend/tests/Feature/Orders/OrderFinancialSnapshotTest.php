@@ -68,7 +68,7 @@ class OrderFinancialSnapshotTest extends TestCase
             'customer_id'       => $this->customer->id,
             'order_number'      => 'ORD-' . uniqid(),
             'order_date'        => now()->toDateString(),
-            'status'            => 'confirm_order',
+            'status'            => 'confirmed',
             'subtotal'          => 200.0,
             'total'             => 200.0,
             'shipping_total'    => 0,

@@ -228,7 +228,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
                 <span className="col-span-2 text-xs text-gray-400">Qty</span>
                 <span className="col-span-2 text-xs text-gray-400">Unit Price</span>
                 <span className="col-span-2 text-xs text-gray-400">VAT %</span>
-                <span className="col-span-1 text-xs text-gray-400 text-right">Total</span>
+                <span className="col-span-1 text-xs text-gray-400 text-end">Total</span>
                 <span className="col-span-1" />
               </div>
 
@@ -274,7 +274,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
                       className="h-9 text-sm text-right"
                     />
                   </div>
-                  <div className="col-span-1 text-right">
+                  <div className="col-span-1 text-end">
                     <span className="text-sm font-medium text-gray-700">
                       {lineTotal(line).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>

@@ -531,7 +531,7 @@ export function EgyptGeographyPage() {
               return (
                 <button
                   key={gov.id}
-                  className={`w-full text-left px-4 py-3 border-b flex items-center gap-3 hover:bg-muted/40 transition-colors ${isSelected ? 'bg-muted border-l-2 border-l-primary' : ''} ${gov.is_archived ? 'opacity-50' : ''}`}
+                  className={`w-full text-start px-4 py-3 border-b flex items-center gap-3 hover:bg-muted/40 transition-colors ${isSelected ? 'bg-muted border-s-2 border-s-primary' : ''} ${gov.is_archived ? 'opacity-50' : ''}`}
                   onClick={() => setSelectedGov(gov)}
                 >
                   <div className="flex-1 min-w-0">

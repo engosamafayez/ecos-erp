@@ -58,7 +58,7 @@ export function FulfillmentLinesEditor({ readOnly }: Props) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-muted-foreground border-b text-left">
+            <tr className="text-muted-foreground border-b text-start">
               <th className="pb-2 pr-3 font-medium">Product</th>
               <th className="w-32 pb-2 pr-3 font-medium">Quantity</th>
               {!readOnly && <th className="w-10 pb-2" />}

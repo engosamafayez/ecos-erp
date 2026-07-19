@@ -1,9 +1,10 @@
+// @refresh reset
 import type { TFunction } from 'i18next';
-import { Clock, ExternalLink, FileCheck, MessageCircle, MoreVertical, Paperclip, Printer, User } from 'lucide-react';
+import { Clock, ExternalLink, FileCheck, MessageCircle, MoreVertical, Printer, User } from 'lucide-react';
 import { useState } from 'react';
 
 import type { DataGridColumnDef } from '@/components/data-grid/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { MediaViewer } from '@/components/ui/media-viewer';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,7 @@ import { OrderItemsPreview } from './order-items-preview';
 import { OrderLocationCell } from './order-location-cell';
 import { OrderPaymentCell } from './order-payment-cell';
 import { OrderPhoneCell } from './order-phone-cell';
-import { OrderReservationCell } from './order-reservation-cell';
+import { OrderInventoryExecutionCell } from './order-inventory-execution-cell';
 import { OrderZoneEditor } from './order-zone-editor';
 import { SmartStatusSelector } from './smart-status-selector';
 import type { Order } from '../types/order';
@@ -44,46 +45,27 @@ function formatDate(d: string | null): string {
 
 // ── Payment Proof cell ───────────────────────────────────────────────────────
 
-function PaymentProofCell({ url }: { url: string }) {
-  const [open, setOpen] = useState(false);
-  const ext = url.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
-  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
-
+function PaymentProofCell({ rawPath }: { rawPath: string }) {
   return (
-    <>
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); setOpen(true); }}
-        onMouseDown={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium
-          text-emerald-700 dark:text-emerald-400
-          bg-emerald-50 dark:bg-emerald-900/30
-          ring-1 ring-inset ring-emerald-600/20
-          hover:ring-emerald-500/40 transition-colors"
-      >
-        <FileCheck className="size-3" />
-        Proof Received
-      </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Payment Proof</DialogTitle>
-          </DialogHeader>
-          {isImage ? (
-            <div className="overflow-auto max-h-[70vh] rounded-md border bg-muted/20 flex items-center justify-center p-2">
-              <img src={url} alt="Payment proof" className="max-w-full object-contain rounded" />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <Paperclip className="size-8 text-muted-foreground" />
-              <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">
-                Open attachment ↗
-              </a>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+    <MediaViewer
+      path={rawPath}
+      title="إثبات الدفع"
+      trigger={
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium
+            text-emerald-700 dark:text-emerald-400
+            bg-emerald-50 dark:bg-emerald-900/30
+            ring-1 ring-inset ring-emerald-600/20
+            hover:ring-emerald-500/40 transition-colors"
+        >
+          <FileCheck className="size-3" />
+          تم استلام الإثبات
+        </button>
+      }
+    />
   );
 }
 
@@ -93,8 +75,8 @@ type IntelligenceBadge = { label: string; cls: string };
 
 function getIntelligenceBadge(totalOrders: number): IntelligenceBadge {
   if (totalOrders >= 10) return { label: '🔵 VIP',    cls: 'text-blue-700 dark:text-blue-400' };
-  if (totalOrders >= 2)  return { label: '🟢 Repeat', cls: 'text-emerald-700 dark:text-emerald-400' };
-  return                        { label: '🟠 New',    cls: 'text-orange-600 dark:text-orange-400' };
+  if (totalOrders >= 2)  return { label: '🟢 متكرر', cls: 'text-emerald-700 dark:text-emerald-400' };
+  return                        { label: '🟠 جديد',    cls: 'text-orange-600 dark:text-orange-400' };
 }
 
 // ── Callbacks ─────────────────────────────────────────────────────────────────
@@ -355,10 +337,10 @@ export function createOrderColumns(
       ),
     },
 
-    // ── Confirmation ──────────────────────────────────────────────────────────
+    // ── Inventory Execution ───────────────────────────────────────────────────
     {
-      key: 'customer_confirmed',
-      label: t('columns.customerConfirmed'),
+      key: 'inventory_execution',
+      label: t('columns.inventoryExecution'),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-20 rounded-full',
       cell: (order) => (
@@ -376,7 +358,10 @@ export function createOrderColumns(
               </button>
             ) : null}
           </div>
-          <OrderReservationCell order={order} />
+          <OrderInventoryExecutionCell
+            reservationStatus={order.reservation_status}
+            failureReason={order.reservation_failure_reason}
+          />
         </div>
       ),
     },
@@ -415,7 +400,7 @@ export function createOrderColumns(
       defaultVisible: true,
       skeletonClassName: 'h-5 w-24',
       cell: (order) => order.payment_proof_path
-        ? <PaymentProofCell url={order.payment_proof_path} />
+        ? <PaymentProofCell rawPath={order.payment_proof_path} />
         : <span className="text-xs text-muted-foreground">No Proof</span>,
     },
 
@@ -445,7 +430,9 @@ export function createOrderColumns(
       defaultVisible: true,
       skeletonClassName: 'h-4 w-32',
       cell: (order) => {
-        const note = order.customer_note;
+        // Prefer the manual-order snapshot (customer_notes → customer.notes).
+        // Fall back to the WooCommerce customer_note for imported orders.
+        const note = order.customer?.notes ?? order.customer_note;
         if (!note) return <span className="text-muted-foreground">—</span>;
         return (
           <TooltipProvider delayDuration={300}>
@@ -480,7 +467,7 @@ export function createOrderColumns(
     // Manual → creator name | POS → cashier name + chip | WC/API → —
     {
       key: 'sales_rep',
-      label: 'Sales Rep',
+      label: 'مندوب المبيعات',
       defaultVisible: true,
       skeletonClassName: 'h-4 w-24',
       cell: (order) => {
@@ -511,7 +498,7 @@ export function createOrderColumns(
     // ── Delivery Driver ───────────────────────────────────────────────────────
     {
       key: 'delivery_driver',
-      label: 'Driver',
+      label: 'السائق',
       defaultVisible: true,
       skeletonClassName: 'h-4 w-20',
       cell: () => (
@@ -527,7 +514,7 @@ export function createOrderColumns(
       skeletonClassName: 'h-4 w-20',
       cell: (order) => {
         const typeMap: Record<string, string> = {
-          woocommerce: 'WooCommerce', pos: 'POS', manual: 'Manual', public_api: 'API',
+          woocommerce: 'WooCommerce', pos: 'POS', manual: 'يدوي', public_api: 'API',
         };
         const src = order.channel?.type
           ? (typeMap[order.channel.type.toLowerCase()] ?? order.channel.type)

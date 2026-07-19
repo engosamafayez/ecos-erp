@@ -155,7 +155,7 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
       <div className="flex items-center justify-between px-3 py-2 shrink-0">
         <div className="flex items-center gap-2">
           <ShoppingCart className="size-4 text-muted-foreground" />
-          <span className="text-sm font-semibold">Cart</span>
+          <span className="text-sm font-semibold">السلة</span>
           {lines.length > 0 && (
             <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
               {lines.length}
@@ -176,7 +176,7 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
                 {heldCount}
               </span>
             ) : (
-              <span className="text-[10px]">Held</span>
+              <span className="text-[10px]">محفوظ</span>
             )}
           </Button>
 
@@ -218,7 +218,7 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
       >
         {lines.length === 0 ? (
           <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
-            Scan a product or search above
+            امسح باركود أو ابحث عن منتج
           </div>
         ) : (
           lines.map((line: CartLine) => (
@@ -245,17 +245,17 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
       {cart && (
         <div className="px-3 py-2 space-y-1 shrink-0 text-sm">
           <div className="flex justify-between text-muted-foreground">
-            <span>Subtotal</span>
+            <span>المجموع الجزئي</span>
             <span className="tabular-nums">{cart.subtotal.amount}</span>
           </div>
           {parseFloat(cart.discount_total.amount) > 0 && (
             <div className="flex justify-between text-emerald-600">
-              <span>Discount</span>
+              <span>الخصم</span>
               <span className="tabular-nums">−{cart.discount_total.amount}</span>
             </div>
           )}
           <div className="flex justify-between text-base font-bold">
-            <span>Total</span>
+            <span>الإجمالي</span>
             <span className="tabular-nums">{currencyCode} {total}</span>
           </div>
         </div>
@@ -265,7 +265,7 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
       <div className="px-3 pb-3 shrink-0">
         {lines.length > 0 && (
           <p className="mb-1.5 text-[10px] text-muted-foreground text-center">
-            ↑↓ navigate · Enter edit qty · +/- adjust · Del remove
+            ↑↓ تنقل · Enter تعديل الكمية · +/- ضبط · Del حذف
           </p>
         )}
         <Button
@@ -276,8 +276,8 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
           aria-label={`Proceed to payment. Total: ${currencyCode} ${total}`}
         >
           <CreditCard className="size-4" />
-          Pay {currencyCode} {total}
-          <span className="ml-auto text-xs opacity-70">F8</span>
+          دفع {currencyCode} {total}
+          <span className="ms-auto text-xs opacity-70">F8</span>
         </Button>
       </div>
     </div>

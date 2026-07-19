@@ -117,7 +117,7 @@ export function ViewFulfillmentPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-muted-foreground border-b text-left">
+                <tr className="text-muted-foreground border-b text-start">
                   <th className="pb-2 pr-3 font-medium">{t('detail.product')}</th>
                   <th className="w-32 pb-2 font-medium">{t('detail.quantity')}</th>
                 </tr>

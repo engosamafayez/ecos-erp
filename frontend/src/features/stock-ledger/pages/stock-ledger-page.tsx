@@ -200,7 +200,7 @@ export function StockLedgerPage() {
               />
             </div>
 
-            <div className="flex gap-2 ml-auto">
+            <div className="flex gap-2 ms-auto">
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
@@ -229,28 +229,28 @@ export function StockLedgerPage() {
               <thead>
                 <tr className="border-b bg-muted/40">
                   <th
-                    className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                    className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
                     onClick={() => handleSort('movement_date')}
                   >
                     Date <SortIcon field="movement_date" />
                   </th>
                   <th
-                    className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                    className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
                     onClick={() => handleSort('movement_type')}
                   >
                     Type <SortIcon field="movement_type" />
                   </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Product / Material</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Warehouse</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground text-emerald-700">In</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground text-red-600">Out</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Product / Material</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Warehouse</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-emerald-700">In</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-red-600">Out</th>
                   <th
-                    className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                    className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
                     onClick={() => handleSort('quantity')}
                   >
                     Balance <SortIcon field="quantity" />
                   </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Reference</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Reference</th>
                 </tr>
               </thead>
               <tbody>
@@ -286,21 +286,21 @@ export function StockLedgerPage() {
                           )}
                         </td>
                         <td className="px-4 py-2.5 text-sm">{m.warehouse?.name ?? '—'}</td>
-                        <td className="px-4 py-2.5 text-right font-mono text-sm tabular-nums">
+                        <td className="px-4 py-2.5 text-end font-mono text-sm tabular-nums">
                           {isIn ? (
                             <span className="text-emerald-600 font-medium">+{fmtQty(qty)}</span>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-right font-mono text-sm tabular-nums">
+                        <td className="px-4 py-2.5 text-end font-mono text-sm tabular-nums">
                           {isOut ? (
                             <span className="text-red-600 font-medium">−{fmtQty(qty)}</span>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-right font-mono text-sm tabular-nums">
+                        <td className="px-4 py-2.5 text-end font-mono text-sm tabular-nums">
                           {fmtBalance(m.balance_after)}
                         </td>
                         <td className="px-4 py-2.5">

@@ -1,0 +1,75 @@
+{
+  "title": "Logistics",
+  "subtitle": "Manage delivery zones, governorates, and coverage areas.",
+  "governorates": {
+    "title": "Governorates",
+    "subtitle": "Manage Egypt's governorates and their delivery settings.",
+    "search": "Search governorates…",
+    "actions": {
+      "new": "New Governorate",
+      "edit": "Edit Governorate"
+    },
+    "columns": {
+      "nameAr": "Name (Arabic)",
+      "nameEn": "Name (English)",
+      "code": "Code",
+      "cities": "Cities",
+      "zones": "Zones",
+      "status": "Status"
+    },
+    "form": {
+      "nameAr": { "label": "Name (Arabic)", "placeholder": "القاهرة" },
+      "nameEn": { "label": "Name (English)", "placeholder": "Cairo" },
+      "code": { "label": "Code", "placeholder": "CAI" },
+      "active": "Active"
+    }
+  },
+  "cities": {
+    "title": "Cities",
+    "subtitle": "Manage cities and their delivery zones.",
+    "search": "Search cities…",
+    "actions": {
+      "new": "New City",
+      "edit": "Edit City"
+    },
+    "columns": {
+      "nameAr": "Name (Arabic)",
+      "nameEn": "Name (English)",
+      "governorate": "Governorate",
+      "zones": "Zones",
+      "status": "Status"
+    },
+    "form": {
+      "nameAr": { "label": "Name (Arabic)", "placeholder": "مدينة نصر" },
+      "nameEn": { "label": "Name (English)", "placeholder": "Nasr City" },
+      "governorate": { "label": "Governorate", "placeholder": "Select governorate…" },
+      "active": "Active"
+    }
+  },
+  "zones": {
+    "title": "Delivery Zones",
+    "subtitle": "Define delivery zones and their shipping costs.",
+    "search": "Search zones…",
+    "actions": {
+      "new": "New Zone",
+      "edit": "Edit Zone"
+    },
+    "columns": {
+      "name": "Zone Name",
+      "city": "City",
+      "governorate": "Governorate",
+      "baseShipping": "Base Shipping",
+      "status": "Status"
+    },
+    "form": {
+      "name": { "label": "Zone Name", "placeholder": "Zone A — Downtown" },
+      "city": { "label": "City", "placeholder": "Select city…" },
+      "baseShipping": { "label": "Base Shipping Cost" },
+      "active": "Active"
+    }
+  },
+  "delete": {
+    "title": "Delete",
+    "confirm": "Delete"
+  }
+}

@@ -141,8 +141,8 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
                 <table className="w-full text-xs">
                   <thead className="border-b bg-muted/40">
                     <tr>
-                      <th className="px-3 py-2 text-left font-medium">Row</th>
-                      <th className="px-3 py-2 text-left font-medium">Error</th>
+                      <th className="px-3 py-2 text-start font-medium">Row</th>
+                      <th className="px-3 py-2 text-start font-medium">Error</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">

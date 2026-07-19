@@ -75,6 +75,7 @@
     "empty": "—"
   },
   "home": "Home",
+  "loading": "Loading…",
   "dialogs": {
     "softDeleteMessage": "This will soft-delete {{name}}. It can be restored later."
   }

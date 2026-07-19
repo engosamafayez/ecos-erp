@@ -278,7 +278,7 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
       <span className="text-muted-foreground shrink-0">{label}</span>
-      <span className="font-medium text-right break-words">{value}</span>
+      <span className="font-medium text-end break-words">{value}</span>
     </div>
   );
 }

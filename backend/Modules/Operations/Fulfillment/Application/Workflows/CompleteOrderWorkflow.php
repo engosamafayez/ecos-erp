@@ -8,6 +8,7 @@ use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
+use Modules\Operations\Fulfillment\Domain\Events\OrderCompletedEvent;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 
 /**
@@ -40,10 +41,11 @@ final class CompleteOrderWorkflow implements FulfillmentWorkflowInterface
             $order,
             "Order #{$order->order_number} completed and permanently closed.",
             [
-                'revenue'        => $order->total,
-                'cogs_amount'    => $order->actual_cogs_amount,
-                'margin_amount'  => $order->actual_margin_amount,
-                'margin_percent' => $order->actual_margin_percent,
+                'revenue'        => (float) ($order->total ?? 0),
+                'cogs_amount'    => (float) ($order->actual_cogs_amount ?? 0),
+                'margin_amount'  => (float) ($order->actual_margin_amount ?? 0),
+                'margin_percent' => $order->actual_margin_percent !== null ? (float) $order->actual_margin_percent : null,
+                'completed_at'   => now()->toIso8601String(),
                 'actor_id'       => $ctx->actorId,
             ],
         );
@@ -52,7 +54,21 @@ final class CompleteOrderWorkflow implements FulfillmentWorkflowInterface
     /** @return list<object> */
     public function events(FulfillmentResult $result): array
     {
-        return [];
+        $order = $result->order;
+
+        return [
+            new OrderCompletedEvent(
+                orderId:       $order->id,
+                orderNumber:   $order->order_number,
+                companyId:     $order->company_id ?? '',
+                revenue:       (float) ($result->meta['revenue'] ?? 0),
+                cogsAmount:    (float) ($result->meta['cogs_amount'] ?? 0),
+                marginAmount:  (float) ($result->meta['margin_amount'] ?? 0),
+                marginPercent: $result->meta['margin_percent'] !== null ? (float) $result->meta['margin_percent'] : null,
+                completedAt:   $result->meta['completed_at'] ?? now()->toIso8601String(),
+                actorId:       $result->meta['actor_id'] ?? null,
+            ),
+        ];
     }
 
     public function name(): string

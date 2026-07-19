@@ -418,7 +418,7 @@ function GovernoratesGrid({ brandId }: { brandId: string }) {
                   </div>
                 ) : (
                   <button
-                    className="text-xs tabular-nums text-right hover:text-primary transition-colors"
+                    className="text-xs tabular-nums text-end hover:text-primary transition-colors"
                     onClick={() => {
                       setEditingPriceId(gov.id);
                       setPriceInput(govSetting.shipping_price !== null ? String(govSetting.shipping_price) : '');

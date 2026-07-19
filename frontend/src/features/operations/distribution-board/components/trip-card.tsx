@@ -53,12 +53,12 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  planning:           'Planning',
-  loading:            'Loading',
-  ready_for_dispatch: 'Ready for Dispatch',
-  dispatched:         'Dispatched',
-  completed:          'Completed',
-  cancelled:          'Cancelled',
+  planning:           'تخطيط',
+  loading:            'جارٍ التحميل',
+  ready_for_dispatch: 'جاهز للإرسال',
+  dispatched:         'تم الإرسال',
+  completed:          'مكتمل',
+  cancelled:          'ملغى',
 };
 
 export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
@@ -129,10 +129,10 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
                 className="h-7 text-xs gap-1 px-2"
                 onClick={() => autoFill.mutate(trip.id)}
                 disabled={autoFill.isPending || trip.orders_count >= trip.capacity}
-                title="Auto-fill from zone orders"
+                title="تعبئة تلقائية من طلبات المنطقة"
               >
                 <Sparkles className="h-3 w-3" />
-                Auto Fill
+                تعبئة تلقائية
               </Button>
             )}
 
@@ -142,19 +142,19 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
                 size="sm"
                 className="h-7 text-xs gap-1 px-2 bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => {
-                  if (confirm(`Approve trip "${trip.name}" for loading? A loading manifest will be generated.`)) {
+                  if (confirm(`اعتماد الرحلة "${trip.name}" للتحميل؟ سيتم إنشاء بيان تحميل تلقائياً.`)) {
                     approveTrip.mutate(trip.id);
                   }
                 }}
                 disabled={approveTrip.isPending}
-                title="Approve trip — generate loading manifest"
+                title="اعتماد الرحلة — إنشاء بيان التحميل"
               >
                 {approveTrip.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   <CheckCircle2 className="h-3 w-3" />
                 )}
-                Approve
+                اعتماد
               </Button>
             )}
 
@@ -170,10 +170,10 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
                 variant="outline"
                 className="h-7 text-xs gap-1 px-2"
                 onClick={() => navigate(`${ROUTES.loadingWorkspace}/${trip.id}/loading`)}
-                title="Open Loading Workspace"
+                title="فتح مساحة عمل التحميل"
               >
                 <ClipboardList className="h-3 w-3" />
-                Workspace
+                مساحة العمل
               </Button>
             )}
 
@@ -186,7 +186,7 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
               <DropdownMenuContent align="end">
                 {isPlanning && (
                   <DropdownMenuItem onClick={() => onEdit(trip)}>
-                    <Pencil className="mr-2 h-3.5 w-3.5" /> Edit Trip
+                    <Pencil className="mr-2 h-3.5 w-3.5" /> تعديل الرحلة
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -194,12 +194,12 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={() => {
-                      if (confirm(`Delete trip "${trip.name}"? This will unassign all orders.`)) {
+                      if (confirm(`حذف الرحلة "${trip.name}"؟ سيتم إلغاء تعيين جميع الطلبات.`)) {
                         deleteTrip.mutate(trip.id);
                       }
                     }}
                   >
-                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete Trip
+                    <Trash2 className="mr-2 h-3.5 w-3.5" /> حذف الرحلة
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -218,14 +218,14 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
 
         {/* Collection amount */}
         <div className="px-3 pb-2 flex items-center gap-3 text-xs text-muted-foreground">
-          <span>Collection:</span>
+          <span>التحصيل:</span>
           <span className="font-semibold tabular-nums text-foreground">
-            EGP {trip.collection_amount.toLocaleString('en-EG', { minimumFractionDigits: 0 })}
+            EGP {trip.collection_amount.toLocaleString('ar-EG', { minimumFractionDigits: 0 })}
           </span>
           {isReadyForDispatch && (
-            <span className="ml-auto flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+            <span className="ms-auto flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
               <CheckCircle2 className="h-3 w-3" />
-              Ready for Dispatch
+              جاهز للإرسال
             </span>
           )}
         </div>
@@ -254,13 +254,13 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
                     onClick={() => setShowOrders((v) => !v)}
                   >
                     {showOrders ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    {trip.orders_count} assigned order{trip.orders_count !== 1 ? 's' : ''}
+                    {trip.orders_count} طلب مُعيَّن
                   </button>
 
                   {showOrders && (
                     <div className="mt-2">
                       {tripOrders.isLoading ? (
-                        <p className="text-xs text-muted-foreground">Loading…</p>
+                        <p className="text-xs text-muted-foreground">جارٍ التحميل…</p>
                       ) : (
                         <div className="max-h-48 overflow-y-auto">
                           <div className="space-y-1 pr-2">
@@ -275,7 +275,7 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
                                   <span className="text-xs tabular-nums">
-                                    EGP {Number(order.grand_total).toLocaleString('en-EG', { minimumFractionDigits: 0 })}
+                                    EGP {Number(order.grand_total).toLocaleString('ar-EG', { minimumFractionDigits: 0 })}
                                   </span>
                                   {isPlanning && (
                                     <>
@@ -284,7 +284,7 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
                                         size="icon"
                                         className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
                                         onClick={() => setMoveOrder(order)}
-                                        title="Move / Return to Wave"
+                                        title="نقل / إرجاع إلى الموجة"
                                       >
                                         <ArrowRightLeft className="h-3 w-3" />
                                       </Button>
@@ -294,7 +294,7 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
                                         className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                                         onClick={() => removeOrder.mutate({ tripId: trip.id, orderId: order.order_id })}
                                         disabled={removeOrder.isPending}
-                                        title="Unassign from trip"
+                                        title="إلغاء التعيين من الرحلة"
                                       >
                                         <X className="h-3 w-3" />
                                       </Button>

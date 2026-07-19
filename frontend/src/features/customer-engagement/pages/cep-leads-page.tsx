@@ -71,13 +71,13 @@ export function CepLeadsPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wide">
             <tr>
-              <th className="text-left px-3 py-2 font-medium">Customer</th>
-              <th className="text-left px-3 py-2 font-medium">Status</th>
-              <th className="text-left px-3 py-2 font-medium">Priority</th>
-              <th className="text-left px-3 py-2 font-medium">Score</th>
-              <th className="text-left px-3 py-2 font-medium">Source</th>
-              <th className="text-left px-3 py-2 font-medium">Created</th>
-              <th className="text-right px-3 py-2 font-medium">Actions</th>
+              <th className="text-start px-3 py-2 font-medium">Customer</th>
+              <th className="text-start px-3 py-2 font-medium">Status</th>
+              <th className="text-start px-3 py-2 font-medium">Priority</th>
+              <th className="text-start px-3 py-2 font-medium">Score</th>
+              <th className="text-start px-3 py-2 font-medium">Source</th>
+              <th className="text-start px-3 py-2 font-medium">Created</th>
+              <th className="text-end px-3 py-2 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -113,7 +113,7 @@ export function CepLeadsPage() {
                   <td className="px-3 py-2 text-xs text-muted-foreground tabular-nums">
                     {new Date(lead.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-end">
                     <div className="flex gap-1 justify-end">
                       {lead.status === 'new' || lead.status === 'contacted' ? (
                         <>

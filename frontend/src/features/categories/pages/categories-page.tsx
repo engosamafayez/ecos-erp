@@ -208,7 +208,7 @@ export function CategoriesPage() {
               Clear
             </Button>
           )}
-          <span className="ml-auto text-xs text-muted-foreground">
+          <span className="ms-auto text-xs text-muted-foreground">
             {meta ? `${meta.total} categories` : ''}
           </span>
         </div>
@@ -219,19 +219,19 @@ export function CategoriesPage() {
             <table className="w-full text-sm">
               <thead className="bg-muted/40 border-b">
                 <tr>
-                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">
                     <SortBtn field="name" label="Name" />
                   </th>
-                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Type</th>
-                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Parent</th>
-                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Type</th>
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Parent</th>
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">
                     <SortBtn field="level" label="Level" />
                   </th>
-                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Used By</th>
-                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Used By</th>
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">
                     <SortBtn field="is_active" label="Status" />
                   </th>
-                  <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">
                     <SortBtn field="created_at" label="Updated" />
                   </th>
                   <th className="px-3 py-3 w-20" />

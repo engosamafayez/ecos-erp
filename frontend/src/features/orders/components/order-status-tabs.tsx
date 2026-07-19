@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { OrderStatus } from '@/features/orders/types/order';
 import { STATUS_TAB_ORDER } from '@/features/orders/types/order';
 import type { OrderStatusKpis } from '@/features/orders/hooks/use-orders';
+import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 type StatusTab = OrderStatus | 'all';
@@ -69,9 +70,7 @@ function fmtCount(n: number): string {
 }
 
 function fmtAmount(n: number): string {
-  if (n >= 1_000_000) return `EGP ${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `EGP ${(n / 1_000).toFixed(0)}K`;
-  return `EGP ${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return formatMoney(n);
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -145,7 +144,7 @@ export function OrderStatusTabs({ activeStatus, counts, onChange }: OrderStatusT
               aria-selected={isActive}
               onClick={() => onChange(tab as StatusTab)}
               className={cn(
-                'flex shrink-0 flex-col items-start gap-1.5 rounded-lg border px-3 py-2.5 text-left',
+                'flex shrink-0 flex-col items-start gap-1.5 rounded-lg border px-3 py-2.5 text-start',
                 'min-w-[120px] transition-all outline-none select-none',
                 'hover:border-primary/40 hover:bg-accent/60',
                 isActive

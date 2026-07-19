@@ -10,13 +10,13 @@ import type { MaterialType, RawMaterialsQuery } from '@/features/raw-materials/t
 function fmtQty(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString('en-EG', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+  return n.toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
 
 function materialsLabel(materialType: MaterialType | undefined): string {
-  if (materialType === 'raw_material')       return 'Raw Materials';
-  if (materialType === 'packaging_material') return 'Packaging Materials';
-  return 'All Materials';
+  if (materialType === 'raw_material')       return 'مواد خام';
+  if (materialType === 'packaging_material') return 'مواد تغليف';
+  return 'جميع المواد';
 }
 
 type StatsQuery = Pick<RawMaterialsQuery, 'material_type' | 'category_id' | 'supplier_id' | 'warehouse_id'>;
@@ -46,25 +46,25 @@ export function RawMaterialStats({ query = {} }: { query?: StatsQuery }) {
       />
       <QuickStatCard
         icon={Warehouse}
-        title="Total On Hand"
+        title="إجمالي الرصيد الفعلي"
         value={fmtQty(data?.total_on_hand ?? 0)}
         colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30"
       />
       <QuickStatCard
         icon={PackageMinus}
-        title="Total Reserved"
+        title="إجمالي المحجوز"
         value={fmtQty(data?.total_reserved ?? 0)}
         colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30"
       />
       <QuickStatCard
         icon={PackagePlus}
-        title="Total Available"
+        title="إجمالي المتاح"
         value={fmtQty(data?.total_available ?? 0)}
         colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30"
       />
       <QuickStatCard
         icon={DollarSign}
-        title="Total Inv. Value"
+        title="إجمالي قيمة المخزون"
         value={formatMoneyCompact(data?.total_inventory_value ?? 0, currency, locale)}
         colorClassName="text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-900/30"
       />

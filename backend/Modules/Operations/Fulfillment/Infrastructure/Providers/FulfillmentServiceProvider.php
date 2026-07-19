@@ -11,6 +11,7 @@ use Modules\Operations\Fulfillment\Application\Listeners\HandleOrderConfirmed;
 use Modules\Operations\Fulfillment\Application\Listeners\HandleOrderDelivered;
 use Modules\Operations\Fulfillment\Application\Listeners\HandleOrderDispatched;
 use Modules\Operations\Fulfillment\Application\Services\BulkWorkflowEngine;
+use Modules\Operations\Fulfillment\Application\Workflows\ApprovePartialReservationWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\CancelOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\CompleteDeliveryWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\CompleteOrderWorkflow;
@@ -53,6 +54,7 @@ final class FulfillmentServiceProvider extends ServiceProvider
         $this->app->bind(ResumeToConfirmedWorkflow::class);
         $this->app->bind(ReturnToConfirmedWorkflow::class);
         $this->app->bind(MoveToReviewWorkflow::class);
+        $this->app->bind(ApprovePartialReservationWorkflow::class);
     }
 
     public function boot(): void

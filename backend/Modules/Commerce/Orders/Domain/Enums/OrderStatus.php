@@ -8,6 +8,7 @@ enum OrderStatus: string
 {
     // ── Main lifecycle ──────────────────────────────────────────────────
     case Pending         = 'pending';
+    case Scheduled       = 'scheduled';
     case AwaitingPayment = 'awaiting_payment';
     case Processing      = 'processing';
     case AwaitingStock   = 'awaiting_stock';
@@ -27,6 +28,7 @@ enum OrderStatus: string
     {
         return match ($this) {
             self::Pending         => 'Pending',
+            self::Scheduled       => 'Scheduled',
             self::AwaitingPayment => 'Payment',         // V2: renamed from "Awaiting Payment"
             self::Processing      => 'Processing',
             self::AwaitingStock   => 'Awaiting Stock',
@@ -57,7 +59,13 @@ enum OrderStatus: string
      */
     public function isLocked(): bool
     {
-        return ! in_array($this, [self::Pending, self::AwaitingPayment], true);
+        return ! in_array($this, [self::Pending, self::Scheduled, self::AwaitingPayment], true);
+    }
+
+    /** Returns true if the order is pre-activation (not yet in the operational queue). */
+    public function isPreActivation(): bool
+    {
+        return $this === self::Scheduled;
     }
 
     /**
@@ -68,6 +76,7 @@ enum OrderStatus: string
     public static function displayOrder(): array
     {
         return [
+            self::Scheduled,
             self::Pending,
             self::AwaitingPayment,
             self::Processing,

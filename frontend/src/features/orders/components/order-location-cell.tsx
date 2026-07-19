@@ -27,46 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 
 import type { Order } from '../types/order';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function isValidMapsUrl(raw: string): boolean {
-  const s = raw.trim();
-  if (!s) return false;
-  try {
-    const url = new URL(s);
-    const host = url.hostname.replace(/^www\./, '');
-    return (
-      host === 'maps.app.goo.gl' ||
-      host === 'maps.google.com' ||
-      (host === 'google.com' && url.pathname.startsWith('/maps'))
-    );
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Extract lat/lng from a full Google Maps URL.
- * Returns null for short links (maps.app.goo.gl) — those are resolved server-side.
- */
-function extractCoords(raw: string): { lat: number; lng: number } | null {
-  const s = raw.trim();
-
-  // /@lat,lng,zoom (most common full-URL pattern)
-  const atMatch = s.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-  if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
-
-  // ?q=lat,lng
-  const qMatch = s.match(/[?&]q=(-?\d+\.?\d*)[,+](-?\d+\.?\d*)/);
-  if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
-
-  // ?ll=lat,lng
-  const llMatch = s.match(/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-  if (llMatch) return { lat: parseFloat(llMatch[1]), lng: parseFloat(llMatch[2]) };
-
-  return null;
-}
+import { parseGoogleMapsUrl, isGoogleMapsUrl } from '@/features/orders/utils/google-maps-parser';
 
 // ── Assign / Edit dialog ──────────────────────────────────────────────────────
 
@@ -95,18 +56,20 @@ function AssignLocationDialog({
 
   function handleSave() {
     const trimmed = value.trim();
-    if (!isValidMapsUrl(trimmed)) {
-      setError('Please enter a valid Google Maps link.');
+    if (!isGoogleMapsUrl(trimmed)) {
+      setError('Please enter a valid Google Maps link (or paste coordinates as "lat, lng").');
       return;
     }
     setError('');
 
-    const coords = extractCoords(trimmed);
+    const coords = parseGoogleMapsUrl(trimmed);
     const payload: Record<string, unknown> = { google_maps_url: trimmed };
     if (coords) {
       payload.google_maps_lat = coords.lat;
       payload.google_maps_lng = coords.lng;
     }
+    // For short links (maps.app.goo.gl), coords will be null here.
+    // PatchOrderAction resolves them server-side when google_maps_lat is absent.
 
     patchOrder({ id: orderId, data: payload }, { onSettled: onClose });
   }

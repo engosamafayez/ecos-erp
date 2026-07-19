@@ -16,7 +16,7 @@ export function CustodyReturnList({ returns, onConfirm, isConfirming }: CustodyR
   if (returns.length === 0) {
     return (
       <p className="text-center text-sm text-muted-foreground py-8">
-        No custody items recorded yet.
+        لا توجد عهدة مسجّلة بعد.
       </p>
     );
   }
@@ -31,7 +31,7 @@ export function CustodyReturnList({ returns, onConfirm, isConfirming }: CustodyR
               <div>
                 <p className="font-medium text-sm">{item.custody_type}</p>
                 <p className="text-xs text-muted-foreground">
-                  Dispatched: {item.dispatched_qty} · Returned: {item.returned_qty ?? '—'}
+                  مُرسَل: {item.dispatched_qty} · مُعاد: {item.returned_qty ?? '—'}
                 </p>
               </div>
               {confirmed ? (
@@ -46,7 +46,7 @@ export function CustodyReturnList({ returns, onConfirm, isConfirming }: CustodyR
                 <Input
                   type="number"
                   min="0"
-                  placeholder="Confirmed qty"
+                  placeholder="الكمية المؤكدة"
                   value={qtys[item.id] ?? ''}
                   onChange={(e) => setQtys((prev) => ({ ...prev, [item.id]: e.target.value }))}
                   className="h-8 text-sm"
@@ -59,13 +59,13 @@ export function CustodyReturnList({ returns, onConfirm, isConfirming }: CustodyR
                     if (!isNaN(q)) onConfirm(item.id, q);
                   }}
                 >
-                  Confirm
+                  تأكيد
                 </Button>
               </div>
             )}
 
             {item.driver_liable && (
-              <p className="text-xs text-red-600 font-medium">Driver liable for shortage</p>
+              <p className="text-xs text-red-600 font-medium">السائق مسؤول عن النقص</p>
             )}
           </div>
         );

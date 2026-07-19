@@ -32,14 +32,14 @@ function ColumnManagerPanel({ visibleColumns, onToggleColumn, onRestoreDefaults,
   return (
     <PopoverContent align="end" className="w-56 p-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium">Columns</p>
+        <p className="text-sm font-medium">الأعمدة</p>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onShowAll}>
-            Show All
+            إظهار الكل
           </Button>
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onRestoreDefaults}>
             <RotateCcw className="size-3 mr-1" />
-            Reset
+            إعادة التعيين
           </Button>
         </div>
       </div>
@@ -58,7 +58,7 @@ function ColumnManagerPanel({ visibleColumns, onToggleColumn, onRestoreDefaults,
             />
             <span>{col.label}</span>
             {col.locked && (
-              <span className="ml-auto text-[10px] text-muted-foreground">locked</span>
+              <span className="ms-auto text-[10px] text-muted-foreground">locked</span>
             )}
           </label>
         ))}
@@ -109,16 +109,16 @@ export function RawMaterialFilterBar({
   const suppliers  = suppliersResult?.items  ?? [];
   const warehouses = warehousesResult?.items ?? [];
 
-  const newLabel = materialType === 'packaging_material' ? 'New Packaging Material'
-    : materialType === 'raw_material' ? 'New Raw Material'
-    : 'New Material';
+  const newLabel = materialType === 'packaging_material' ? 'مادة تغليف جديدة'
+    : materialType === 'raw_material' ? 'مادة خام جديدة'
+    : 'مادة جديدة';
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Search */}
       <div className="relative flex-1 min-w-52 max-w-80">
         <Input
-          placeholder="Search by name, SKU…"
+          placeholder="بحث بالاسم، SKU…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           className="h-9"
@@ -131,9 +131,9 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="All Materials" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">All Materials</SelectItem>
-          <SelectItem value="raw_material">Raw Materials</SelectItem>
-          <SelectItem value="packaging_material">Packaging Materials</SelectItem>
+          <SelectItem value="_all">جميع المواد</SelectItem>
+          <SelectItem value="raw_material">مواد خام</SelectItem>
+          <SelectItem value="packaging_material">مواد تغليف</SelectItem>
         </SelectContent>
       </Select>
 
@@ -143,7 +143,7 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="All Categories" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">All Categories</SelectItem>
+          <SelectItem value="_all">جميع الفئات</SelectItem>
           {categories.map((c) => (
             <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
           ))}
@@ -156,7 +156,7 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="All Suppliers" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">All Suppliers</SelectItem>
+          <SelectItem value="_all">جميع الموردين</SelectItem>
           {suppliers.map((s) => (
             <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
           ))}
@@ -169,7 +169,7 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="All Warehouses" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">All Warehouses</SelectItem>
+          <SelectItem value="_all">جميع المستودعات</SelectItem>
           {warehouses.map((w) => (
             <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
           ))}
@@ -182,9 +182,9 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="Stock Status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">All</SelectItem>
-          <SelectItem value="available">In Stock</SelectItem>
-          <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+          <SelectItem value="_all">الكل</SelectItem>
+          <SelectItem value="available">متوفر</SelectItem>
+          <SelectItem value="out_of_stock">نفد المخزون</SelectItem>
         </SelectContent>
       </Select>
 
@@ -194,14 +194,14 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="Neg. Stock" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">All</SelectItem>
-          <SelectItem value="allowed">Negative Allowed</SelectItem>
-          <SelectItem value="blocked">Negative Blocked</SelectItem>
+          <SelectItem value="_all">الكل</SelectItem>
+          <SelectItem value="allowed">السالب مسموح</SelectItem>
+          <SelectItem value="blocked">السالب محظور</SelectItem>
         </SelectContent>
       </Select>
 
       {/* Action buttons — order: New | Columns | Refresh | Export */}
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ms-auto flex items-center gap-2">
         <Button size="sm" onClick={onNew} className="gap-1.5">
           <Plus className="size-4" />
           {newLabel}
@@ -211,7 +211,7 @@ export function RawMaterialFilterBar({
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
               <Columns3 className="size-4" />
-              Columns
+              الأعمدة
             </Button>
           </PopoverTrigger>
           <ColumnManagerPanel
@@ -230,12 +230,12 @@ export function RawMaterialFilterBar({
           className="gap-1.5"
         >
           <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
+          تحديث
         </Button>
 
         <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5">
           <Download className="size-4" />
-          Export
+          تصدير
         </Button>
       </div>
     </div>

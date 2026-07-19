@@ -63,7 +63,7 @@ function SortTh({
 }) {
   const isActive = sort.field === field;
   return (
-    <th className="px-4 py-3 text-left">
+    <th className="px-4 py-3 text-start">
       <button
         type="button"
         onClick={() => onSort(field)}
@@ -381,16 +381,16 @@ export function CustomersPage() {
                   />
                 </th>
                 <SortTh field="name" label={t('columns.customer')} sort={sort} onSort={handleSortChange} />
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t('columns.phones')}
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t('columns.defaultAddress')}
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t('columns.previousOrders')}
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t('columns.intelligence')}
                 </th>
                 <th className="w-12 px-4 py-3" />

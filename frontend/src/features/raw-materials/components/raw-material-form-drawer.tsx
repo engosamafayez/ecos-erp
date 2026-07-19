@@ -51,7 +51,7 @@ import { cn } from '@/lib/utils';
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const supplierRowSchema = z.object({
-  supplier_id:        z.string().min(1, 'Select a supplier'),
+  supplier_id:        z.string().min(1, 'اختر موردًا'),
   supplier_sku:       z.string().optional(),
   lead_time_days:     z.number().int().min(0).nullable().optional(),
   minimum_order_qty:  z.number().min(0).nullable().optional(),
@@ -63,10 +63,10 @@ const supplierRowSchema = z.object({
 const schema = z.object({
   // S1 Basic
   material_type: z.enum(['raw_material', 'packaging_material']),
-  name:        z.string().min(1, 'Name is required'),
-  sku:         z.string().min(1, 'SKU is required'),
-  category_id: z.string().min(1, 'Category is required'),
-  unit_id:     z.string().min(1, 'Unit is required'),
+  name:        z.string().min(1, 'الاسم مطلوب'),
+  sku:         z.string().min(1, 'SKU مطلوب'),
+  category_id: z.string().min(1, 'الفئة مطلوبة'),
+  unit_id:     z.string().min(1, 'وحدة القياس مطلوبة'),
   description: z.string().optional(),
   // S2 Inventory
   allow_negative_stock:   z.boolean(),
@@ -94,7 +94,7 @@ const numVal = (v: unknown) =>
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmtPrice(n: number | null | undefined, currency = 'EGP', locale = 'en-EG') {
+function fmtPrice(n: number | null | undefined, currency = 'EGP', locale = 'ar-EG') {
   if (n == null) return '—';
   return formatMoney(n, currency, locale);
 }
@@ -102,15 +102,15 @@ function fmtPrice(n: number | null | undefined, currency = 'EGP', locale = 'en-E
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('en-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+    return new Date(iso).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
   } catch {
     return '—';
   }
 }
 
 function costSourceLabel(source: string | null | undefined): string {
-  if (source === 'manual') return 'Manual';
-  if (source === 'purchase') return 'Purchase Invoice';
+  if (source === 'manual') return 'يدوي';
+  if (source === 'purchase') return 'فاتورة شراء';
   return '—';
 }
 
@@ -121,7 +121,7 @@ function extractError(err: unknown): string {
     const errors = data?.errors as Record<string, string[]> | undefined;
     if (errors) return Object.values(errors).flat().join(' ');
   }
-  return 'Something went wrong. Please try again.';
+  return 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
 }
 
 function toFormValues(m?: RawMaterial | null): FormValues {
@@ -204,15 +204,15 @@ type AttachmentEntry = {
 };
 
 const ATTACH_TYPES = [
-  { type: 'technical_sheet' as const, label: 'Technical Sheet',  accept: '.pdf',    multiple: false },
-  { type: 'safety_sheet'    as const, label: 'Safety Sheet',     accept: '.pdf',    multiple: false },
-  { type: 'image'           as const, label: 'Image',            accept: 'image/*', multiple: true  },
+  { type: 'technical_sheet' as const, label: 'الورقة التقنية',  accept: '.pdf',    multiple: false },
+  { type: 'safety_sheet'    as const, label: 'ورقة السلامة',    accept: '.pdf',    multiple: false },
+  { type: 'image'           as const, label: 'صورة',            accept: 'image/*', multiple: true  },
 ];
 
 const TYPE_LABEL: Record<AttachmentEntry['type'], string> = {
-  technical_sheet: 'Tech Sheet',
-  safety_sheet:    'Safety Sheet',
-  image:           'Image',
+  technical_sheet: 'ورقة تقنية',
+  safety_sheet:    'ورقة سلامة',
+  image:           'صورة',
 };
 
 function AttachmentSection({
@@ -248,7 +248,7 @@ function AttachmentSection({
               onClick={() => refs.current[type]?.click()}
             >
               <FileText className="size-3.5" />
-              Add {label}
+              إضافة {label}
             </Button>
             <input
               ref={(el) => { refs.current[type] = el; }}
@@ -280,7 +280,7 @@ function AttachmentSection({
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">No attachments added yet.</p>
+        <p className="text-sm text-muted-foreground">لا توجد مرفقات بعد.</p>
       )}
     </div>
   );
@@ -320,7 +320,7 @@ function CreateCategoryDialog({
 
   async function handleCreate() {
     if (!name.trim() || !code.trim()) {
-      setErr('Name and code are required.');
+      setErr('الاسم والكود مطلوبان.');
       return;
     }
     try {
@@ -343,7 +343,7 @@ function CreateCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>New Raw Material Category</DialogTitle>
+          <DialogTitle>فئة مادة خام جديدة</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
@@ -353,16 +353,16 @@ function CreateCategoryDialog({
             </Alert>
           )}
           <div className="space-y-1.5">
-            <Label>Name</Label>
+            <Label>الاسم</Label>
             <Input
-              placeholder="e.g. Flour & Starches"
+              placeholder="مثال: دقيق القمح والنشا"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Code</Label>
+            <Label>الكود</Label>
             <Input
               placeholder="FLOUR-STARCHES"
               value={code}
@@ -373,9 +373,9 @@ function CreateCategoryDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
           <Button onClick={handleCreate} disabled={createCategory.isPending}>
-            {createCategory.isPending ? 'Creating…' : 'Create Category'}
+            {createCategory.isPending ? 'جارٍ الإنشاء…' : 'إنشاء الفئة'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -420,17 +420,17 @@ function SupplierTableSection({
   return (
     <div className="space-y-3">
       {fields.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No suppliers added yet.</p>
+        <p className="text-sm text-muted-foreground">لا يوجد موردون بعد.</p>
       ) : (
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full text-sm min-w-[460px]">
             <thead className="bg-muted/50 border-b">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide w-14">Def.</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Supplier</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide w-24">Min. Qty</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide w-28">Last Cost</th>
-                <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-16">Active</th>
+                <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide w-14">افتراضي</th>
+                <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide">المورد</th>
+                <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide w-24">أدنى كمية</th>
+                <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide w-28">آخر تكلفة</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-16">نشط</th>
                 <th className="w-9 px-2 py-2" />
               </tr>
             </thead>
@@ -444,7 +444,7 @@ function SupplierTableSection({
                     <td className="px-3 py-2 text-center">
                       <button
                         type="button"
-                        title="Set as default supplier"
+                        title="تعيين كمورد افتراضي"
                         onClick={() => setDefault(i)}
                         className={cn(
                           'inline-flex items-center justify-center size-7 rounded-md transition-colors',
@@ -465,7 +465,7 @@ function SupplierTableSection({
                               options={supplierOptions}
                               value={f.value || null}
                               onChange={f.onChange}
-                              placeholder="Select…"
+                              placeholder="اختر…"
                             />
                             {fieldState.error?.message && (
                               <p className="text-destructive text-xs mt-0.5">{fieldState.error.message}</p>
@@ -504,7 +504,7 @@ function SupplierTableSection({
                         type="button"
                         onClick={() => remove(i)}
                         className="text-muted-foreground hover:text-destructive transition-colors"
-                        title="Remove"
+                        title="حذف"
                       >
                         <Trash2 className="size-4" />
                       </button>
@@ -521,7 +521,7 @@ function SupplierTableSection({
 
       <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addRow}>
         <Plus className="size-4" />
-        Add Supplier
+        إضافة مورد
       </Button>
     </div>
   );
@@ -576,8 +576,8 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
   function validateSuppliers(suppliers: SupplierRow[]): string | null {
     if (suppliers.length === 0) return null;
     const n = suppliers.filter((s) => s.is_default).length;
-    if (n === 0) return 'At least one supplier must be set as the default (click the ★ star).';
-    if (n > 1)   return 'Only one supplier can be the default.';
+    if (n === 0) return 'يجب تعيين مورد واحد على الأقل كافتراضي (انقر على ★ النجمة).';
+    if (n > 1)   return 'لا يمكن تعيين أكثر من مورد واحد كافتراضي.';
     return null;
   }
 
@@ -593,7 +593,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
         const uploaded = await uploadMaterialImage(imageFile, context);
         imageUrl = uploaded.path;
       } catch {
-        setErr('Failed to upload image. Please try again.');
+        setErr('فشل رفع الصورة. يرجى المحاولة مرة أخرى.');
         return;
       }
     }
@@ -652,22 +652,22 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
       <EntityDrawer
         open={open}
         onOpenChange={onOpenChange}
-        title={isEdit ? 'Edit Raw Material' : 'New Raw Material'}
+        title={isEdit ? 'تعديل مادة خام' : 'مادة خام جديدة'}
         description={
           isEdit
-            ? 'Update procurement, inventory, and cost details.'
-            : 'Add a new raw material for manufacturing and procurement.'
+            ? 'تحديث تفاصيل المشتريات والمخزون والتكلفة.'
+            : 'إضافة مادة خام جديدة للتصنيع والمشتريات.'
         }
         className="sm:max-w-2xl"
         footer={
           <>
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-              Cancel
+              إلغاء
             </Button>
             <Button type="submit" form={FORM_ID} disabled={isPending}>
               {isPending
-                ? (isEdit ? 'Saving…' : 'Creating…')
-                : (isEdit ? 'Save Changes' : 'Create Raw Material')}
+                ? (isEdit ? 'جارٍ الحفظ…' : 'جارٍ الإنشاء…')
+                : (isEdit ? 'حفظ التغييرات' : 'إنشاء مادة خام')}
             </Button>
           </>
         }
@@ -681,20 +681,20 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           )}
 
           {/* ── Section 1: Basic Information ─────────────────────────────────── */}
-          <SectionBlock title="Basic Information" defaultOpen>
+          <SectionBlock title="المعلومات الأساسية" defaultOpen>
             <ImageUploadField existingUrl={material?.image_url} onChange={setImageFile} />
 
             <Separator />
 
-            <FormField name="material_type" label="Material Type" required>
+            <FormField name="material_type" label="نوع المادة" required>
               <Controller
                 control={form.control}
                 name="material_type"
                 render={({ field }) => (
                   <div className="flex gap-4">
                     {([
-                      { value: 'raw_material',       label: 'Raw Material' },
-                      { value: 'packaging_material', label: 'Packaging Material' },
+                      { value: 'raw_material',       label: 'مادة خام' },
+                      { value: 'packaging_material', label: 'مادة تغليف' },
                     ] as const).map(({ value, label }) => (
                       <label key={value} className="flex items-center gap-2 cursor-pointer select-none">
                         <input
@@ -714,16 +714,16 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <FormField name="name" label="Material Name" required>
-                  <Input placeholder="e.g. Wheat Flour Type 55" {...form.register('name')} />
+                <FormField name="name" label="اسم المادة" required>
+                  <Input placeholder="مثال: دقيق قمح نوع 55" {...form.register('name')} />
                 </FormField>
               </div>
 
-              <FormField name="sku" label="SKU" required>
+              <FormField name="sku" label="رمز SKU" required>
                 <Input placeholder="RM-000001" {...form.register('sku')} />
               </FormField>
 
-              <FormField name="category_id" label="Category" required>
+              <FormField name="category_id" label="الفئة" required>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 min-w-0">
                     <Controller
@@ -742,7 +742,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
                     variant="outline"
                     size="sm"
                     className="shrink-0 h-9 w-9 p-0"
-                    title="Create new category"
+                    title="إنشاء فئة جديدة"
                     onClick={() => setCreateCategoryOpen(true)}
                   >
                     <Plus className="size-4" />
@@ -750,7 +750,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
                 </div>
               </FormField>
 
-              <FormField name="unit_id" label="Unit of Measure" required>
+              <FormField name="unit_id" label="وحدة القياس" required>
                 <Controller
                   control={form.control}
                   name="unit_id"
@@ -761,10 +761,10 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
               </FormField>
 
               <div className="sm:col-span-2">
-                <FormField name="description" label="Description">
+                <FormField name="description" label="الوصف">
                   <Textarea
                     rows={3}
-                    placeholder="Internal description for procurement and manufacturing…"
+                    placeholder="وصف داخلي للمشتريات والتصنيع…"
                     {...form.register('description')}
                   />
                 </FormField>
@@ -773,12 +773,12 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           </SectionBlock>
 
           {/* ── Section 2: Inventory ──────────────────────────────────────────── */}
-          <SectionBlock title="Inventory">
+          <SectionBlock title="المخزون">
             <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
               <div>
-                <p className="text-sm font-medium">Allow Negative Stock</p>
+                <p className="text-sm font-medium">السماح بالمخزون السالب</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Allow stock to go below zero (useful when back-ordering raw materials).
+                  السماح للمخزون بالنزول تحت الصفر (مفيد عند الطلب المسبق للمواد الخام).
                 </p>
               </div>
               <Controller
@@ -791,7 +791,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField name="minimum_stock" label="Minimum Stock">
+              <FormField name="minimum_stock" label="الحد الأدنى للمخزون">
                 <Input
                   type="number" min="0" step="0.01" placeholder="0"
                   {...form.register('minimum_stock', { setValueAs: numVal })}
@@ -800,8 +800,8 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
 
               <FormField
                 name="reorder_point"
-                label="Minimum Available Before Purchase"
-                description="When Available quantity reaches this value, ECOS recommends creating a Purchase Order."
+                label="الحد الأدنى المتاح قبل الشراء"
+                description="عندما تصل الكمية المتاحة إلى هذه القيمة، يوصي ECOS بإنشاء أمر شراء."
               >
                 <Input
                   type="number" min="0" step="0.01" placeholder="0"
@@ -810,7 +810,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
               </FormField>
 
               <div className="sm:col-span-2">
-                <FormField name="preferred_warehouse_id" label="Preferred Warehouse">
+                <FormField name="preferred_warehouse_id" label="المستودع المفضّل">
                   <Controller
                     control={form.control}
                     name="preferred_warehouse_id"
@@ -819,7 +819,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
                         options={warehouseOptions}
                         value={field.value || null}
                         onChange={field.onChange}
-                        placeholder="Select warehouse…"
+                        placeholder="اختر مستودعًا…"
                       />
                     )}
                   />
@@ -829,19 +829,19 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           </SectionBlock>
 
           {/* ── Section 3: Suppliers ──────────────────────────────────────────── */}
-          <SectionBlock title="Suppliers" count={supplierCount}>
+          <SectionBlock title="الموردون" count={supplierCount}>
             <SupplierTableSection form={form} supplierOptions={supplierOptions} />
           </SectionBlock>
 
           {/* ── Section 4: Material Cost ──────────────────────────────────────── */}
-          <SectionBlock title="Material Cost">
+          <SectionBlock title="تكلفة المادة">
             <div className="rounded-md border bg-muted/30 px-3 py-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Current Cost</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">التكلفة الحالية</p>
               <p className="mt-1 text-lg font-semibold">{fmtPrice(material?.material_cost, currency, locale)}</p>
               <div className="flex flex-wrap items-center gap-x-2 mt-1 text-xs text-muted-foreground">
-                <span>Updated {fmtDate(material?.updated_at)}</span>
+                <span>آخر تحديث: {fmtDate(material?.updated_at)}</span>
                 <span aria-hidden>·</span>
-                <span>Source: {costSourceLabel(material?.cost_source)}</span>
+                <span>المصدر: {costSourceLabel(material?.cost_source)}</span>
               </div>
             </div>
 
@@ -849,8 +849,8 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
 
             <FormField
               name="manual_cost"
-              label="Manual Cost Override"
-              description="Manually override the material cost. Cascade to Recipe Cost → Finished Product Cost → Pricing Review fires automatically on save."
+              label="تعديل التكلفة يدويًا"
+              description="تجاوز تكلفة المادة يدويًا. تتسلسل إلى تكلفة الوصفة ← تكلفة المنتج النهائي ← مراجعة التسعير تلقائيًا عند الحفظ."
             >
               <div className="relative max-w-48">
                 <Input
@@ -863,10 +863,10 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           </SectionBlock>
 
           {/* ── Section 5: Purchasing ─────────────────────────────────────────── */}
-          <SectionBlock title="Purchasing">
+          <SectionBlock title="المشتريات">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <FormField name="purchasing_supplier_id" label="Preferred Supplier">
+                <FormField name="purchasing_supplier_id" label="المورد المفضّل">
                   <Controller
                     control={form.control}
                     name="purchasing_supplier_id"
@@ -875,21 +875,21 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
                         options={supplierOptions}
                         value={field.value || null}
                         onChange={field.onChange}
-                        placeholder="Select preferred supplier…"
+                        placeholder="اختر المورد المفضّل…"
                       />
                     )}
                   />
                 </FormField>
               </div>
 
-              <FormField name="purchasing_lead_time_days" label="Lead Time (days)">
+              <FormField name="purchasing_lead_time_days" label="مدة التوريد (أيام)">
                 <Input
                   type="number" min="0" placeholder="0"
                   {...form.register('purchasing_lead_time_days', { setValueAs: numVal })}
                 />
               </FormField>
 
-              <FormField name="purchasing_minimum_order_qty" label="Minimum Order Quantity">
+              <FormField name="purchasing_minimum_order_qty" label="الحد الأدنى لكمية الطلب">
                 <Input
                   type="number" min="0" step="0.01" placeholder="0"
                   {...form.register('purchasing_minimum_order_qty', { setValueAs: numVal })}
@@ -900,20 +900,20 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           </SectionBlock>
 
           {/* ── Section 6: Attachments ────────────────────────────────────────── */}
-          <SectionBlock title="Attachments" count={attachments.length || undefined}>
+          <SectionBlock title="المرفقات" count={attachments.length || undefined}>
             <AttachmentSection entries={attachments} onChange={setAttachments} />
           </SectionBlock>
 
           {/* ── Section 7: Notes ──────────────────────────────────────────────── */}
-          <SectionBlock title="Notes">
+          <SectionBlock title="ملاحظات">
             <FormField
               name="internal_notes"
-              label="Internal Notes"
-              description="Not synchronized to any sales or commerce channel."
+              label="ملاحظات داخلية"
+              description="لا تُزامَن مع أي قناة مبيعات أو تجارة."
             >
               <Textarea
                 rows={4}
-                placeholder="Quality notes, handling requirements, certifications, sourcing comments…"
+                placeholder="ملاحظات الجودة، متطلبات التعامل، الشهادات، تعليقات التوريد…"
                 {...form.register('internal_notes')}
               />
             </FormField>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Operations\Fulfillment\Application\Workflows;
 
+use Modules\Commerce\Orders\Application\Actions\UpdateReservationStatusAction;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
@@ -18,6 +19,10 @@ use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionExcepti
  */
 final class ReturnToConfirmedWorkflow implements FulfillmentWorkflowInterface
 {
+    public function __construct(
+        private readonly UpdateReservationStatusAction $updateReservationStatus,
+    ) {}
+
     public function guard(FulfillmentContext $ctx): void
     {
         if ($ctx->order->status !== OrderStatus::Returned) {
@@ -31,16 +36,27 @@ final class ReturnToConfirmedWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
+        // BUG-004 fix: clear all inventory lifecycle timestamps so the Reservation
+        // Engine can execute normally on re-entry. Without this reset,
+        // ReserveOrderInventoryAction skips idempotently (Reserved / Released in
+        // skipStates) and the order proceeds to Preparing with zero held stock.
         $order->update([
-            'status' => OrderStatus::Confirmed,
+            'status'                 => OrderStatus::Confirmed,
+            'inventory_reserved_at'  => null,
+            'inventory_released_at'  => null,
+            'inventory_shipped_at'   => null,
+            'inventory_completed_at' => null,
         ]);
+
+        // Clear reservation_status to null (structural reset — no audit entry needed).
+        $this->updateReservationStatus->execute($order, null, null);
 
         $order->refresh();
 
         return FulfillmentResult::success(
             $order,
-            "Order #{$order->order_number} returned to Confirmed.",
-            ['actor_id' => $ctx->actorId],
+            "Order #{$order->order_number} returned to Confirmed. Inventory lifecycle reset — reservation will be re-attempted.",
+            ['actor_id' => $ctx->actorId, 'inventory_reset' => true],
         );
     }
 

@@ -355,7 +355,7 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-muted-foreground border-b text-left">
+                        <tr className="text-muted-foreground border-b text-start">
                           <th className="pb-2 pe-3 font-medium">Material</th>
                           <th className="w-28 pb-2 pe-3 font-medium">{t('workspace.quantity')}</th>
                           <th className="w-24 pb-2 pe-3 font-medium">{t('workspace.wastePercentage')}</th>

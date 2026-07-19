@@ -16,12 +16,12 @@ import type { CountSession, CountSessionStatus } from '../types/inventory-count'
 import { toast } from '@/components/ds/use-toast';
 
 const STATUSES: { value: CountSessionStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'all', label: 'الكل' },
+  { value: 'draft', label: 'مسودة' },
+  { value: 'in_progress', label: 'قيد التنفيذ' },
+  { value: 'completed', label: 'مكتمل' },
+  { value: 'approved', label: 'معتمد' },
+  { value: 'cancelled', label: 'ملغى' },
 ];
 
 const PER_PAGE = 15;
@@ -92,23 +92,23 @@ export function InventoryCountPage() {
 
   async function handleDelete(session: CountSession, e: React.MouseEvent) {
     e.stopPropagation();
-    if (!confirm(`Delete count session ${session.count_number}?`)) return;
+    if (!confirm(`حذف جلسة الجرد ${session.count_number}?`)) return;
     try {
       await deleteMutation.mutateAsync(session.id);
-      toast.success('Session deleted.');
+      toast.success('تم حذف الجلسة.');
     } catch {
-      toast.error('Failed to delete session.');
+      toast.error('فشل حذف الجلسة.');
     }
   }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Inventory Count"
-        subtitle="Manage physical inventory count sessions."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Inventory Count' }]}
+        title="جرد المخزون"
+        subtitle="إدارة جلسات الجرد الفعلية للمخزون."
+        breadcrumbs={[{ label: 'الرئيسية', to: ROUTES.dashboard }, { label: 'جرد المخزون' }]}
         actions={
-          <Button onClick={() => setNewDialogOpen(true)}>+ New Count</Button>
+          <Button onClick={() => setNewDialogOpen(true)}>+ جلسة جديدة</Button>
         }
       />
 
@@ -135,7 +135,7 @@ export function InventoryCountPage() {
           {/* Toolbar */}
           <div className="flex items-center gap-3 flex-wrap">
             <Input
-              placeholder="Search by session # or warehouse…"
+              placeholder="بحث برقم الجلسة أو المستودع…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 w-56 text-sm"
@@ -147,10 +147,10 @@ export function InventoryCountPage() {
               disabled={isFetching}
               className="h-8"
             >
-              Refresh
+              تحديث
             </Button>
-            <span className="ml-auto text-xs text-muted-foreground">
-              {meta ? `${meta.total} session${meta.total !== 1 ? 's' : ''}` : ''}
+            <span className="ms-auto text-xs text-muted-foreground">
+              {meta ? `${meta.total} جلسة` : ''}
             </span>
           </div>
 
@@ -159,15 +159,15 @@ export function InventoryCountPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Session #</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Warehouse</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Status</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Started At</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Completed At</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground">Accuracy</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground">Shortage Value</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground">Waste Value</th>
-                  <th className="px-4 py-2.5 text-center text-xs font-medium text-muted-foreground">Attachments</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">رقم الجلسة</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">المستودع</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">الحالة</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">تاريخ البدء</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">تاريخ الاكتمال</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">الدقة</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">قيمة العجز</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">قيمة الهدر</th>
+                  <th className="px-4 py-2.5 text-center text-xs font-medium text-muted-foreground">المرفقات</th>
                   <th className="px-4 py-2.5" />
                 </tr>
               </thead>
@@ -175,13 +175,13 @@ export function InventoryCountPage() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                      Loading…
+                      جارٍ التحميل…
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                      {search ? 'No matching sessions.' : 'No count sessions yet. Create one to get started.'}
+                      {search ? 'لا توجد جلسات مطابقة.' : 'لا توجد جلسات جرد بعد. أنشئ جلسة للبدء.'}
                     </td>
                   </tr>
                 ) : (
@@ -198,11 +198,11 @@ export function InventoryCountPage() {
                       </td>
                       <td className="px-4 py-2.5 text-xs">{fmtDateTime(session.started_at)}</td>
                       <td className="px-4 py-2.5 text-xs">{fmtDateTime(session.completed_at)}</td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-4 py-2.5 text-end">
                         <AccuracyBadge pct={session.variance_summary?.inventory_accuracy_pct} />
                       </td>
-                      <td className="px-4 py-2.5 text-right">{fmtMoney(session.shortage_value)}</td>
-                      <td className="px-4 py-2.5 text-right">{fmtMoney(session.waste_value)}</td>
+                      <td className="px-4 py-2.5 text-end">{fmtMoney(session.shortage_value)}</td>
+                      <td className="px-4 py-2.5 text-end">{fmtMoney(session.waste_value)}</td>
                       <td className="px-4 py-2.5 text-center">
                         {session.attachment_count > 0 ? (
                           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -213,13 +213,13 @@ export function InventoryCountPage() {
                           <span className="text-muted-foreground text-xs">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-4 py-2.5 text-end">
                         {session.status === 'draft' && (
                           <button
                             onClick={(e) => void handleDelete(session, e)}
                             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                           >
-                            Delete
+                            حذف
                           </button>
                         )}
                       </td>
@@ -234,7 +234,7 @@ export function InventoryCountPage() {
           {meta && meta.last_page > 1 && (
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                Page {meta.current_page} of {meta.last_page} — {meta.total} total
+                صفحة {meta.current_page} من {meta.last_page} — {meta.total} إجمالاً
               </span>
               <div className="flex gap-2">
                 <Button
@@ -244,7 +244,7 @@ export function InventoryCountPage() {
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                 >
-                  Previous
+                  السابق
                 </Button>
                 <Button
                   variant="outline"
@@ -253,7 +253,7 @@ export function InventoryCountPage() {
                   disabled={page >= meta.last_page}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Next
+                  التالي
                 </Button>
               </div>
             </div>

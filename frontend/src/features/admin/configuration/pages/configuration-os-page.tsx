@@ -245,7 +245,7 @@ export function ConfigurationOsPage() {
           </h2>
           <button
             onClick={() => navigate(ROUTES.configurationCompany)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/60 bg-card hover:bg-muted/30 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border/60 bg-card hover:bg-muted/30 transition-colors text-start"
           >
             <span className={`p-2 rounded-lg text-blue-600 bg-blue-50`}>
               <Building2 className="h-4 w-4" />
@@ -264,13 +264,13 @@ export function ConfigurationOsPage() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Settings className="h-4 w-4 text-muted-foreground" />
-                Brand Configuration
+                إعدادات العلامة التجارية
                 <Badge className="text-xs bg-primary/10 text-primary border-0">
                   {brands.find((b) => b.id === selectedBrandId)?.name}
                 </Badge>
               </h2>
               <Input
-                placeholder="Search categories…"
+                placeholder="ابحث في التصنيفات…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-8 w-48 text-xs"
@@ -303,7 +303,7 @@ function CategoryCard({ cat, onClick }: { cat: ConfigCategory; onClick: () => vo
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/60 bg-card hover:bg-muted/30 hover:border-border transition-colors text-left w-full"
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/60 bg-card hover:bg-muted/30 hover:border-border transition-colors text-start w-full"
     >
       <span className={`p-2 rounded-lg shrink-0 ${cat.color}`}>
         <cat.icon className="h-4 w-4" />

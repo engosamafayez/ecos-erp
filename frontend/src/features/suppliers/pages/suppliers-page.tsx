@@ -61,7 +61,7 @@ const COLUMN_META = [
   { key: 'name',             label: 'Supplier Name',            alwaysVisible: true },
   { key: 'category',         label: 'Category',                 defaultVisible: false },
   { key: 'contact_person',   label: 'Contact Person',           defaultVisible: true },
-  { key: 'phone',            label: 'Phone',                    defaultVisible: true },
+  { key: 'phone',            label: 'الهاتف',                    defaultVisible: true },
   { key: 'total_purchases',  label: 'Total Purchases',          defaultVisible: true },
   { key: 'total_payments',   label: 'Total Payments',           defaultVisible: false },
   { key: 'outstanding',      label: 'Outstanding Balance',      defaultVisible: true },
@@ -69,7 +69,7 @@ const COLUMN_META = [
   { key: 'stock_coverage',   label: 'Stock Coverage',           defaultVisible: false },
   { key: 'active_pos',       label: 'Active POs',               defaultVisible: false },
   { key: 'last_purchase',    label: 'Last Purchase',            defaultVisible: true },
-  { key: 'health',           label: 'Procurement Health',       defaultVisible: false },
+  { key: 'health',           label: 'صحة الشراء',       defaultVisible: false },
   { key: 'status',           label: 'Status',                   alwaysVisible: true },
   { key: 'actions',          label: 'Actions',                  alwaysVisible: true },
 ];
@@ -151,7 +151,7 @@ export function SuppliersPage() {
     {
       id: 'total',
       icon: Building2,
-      label: 'Total Suppliers',
+      label: 'إجمالي الموردين',
       value: stats?.total_suppliers ?? '—',
       colorClass: 'bg-primary/10 text-primary',
       isLoading: statsLoading,
@@ -161,7 +161,7 @@ export function SuppliersPage() {
     {
       id: 'active',
       icon: CheckCircle,
-      label: 'Active Suppliers',
+      label: 'الموردون النشطون',
       value: stats?.active_suppliers ?? '—',
       colorClass: 'bg-emerald-500/10 text-emerald-600',
       isLoading: statsLoading,
@@ -171,7 +171,7 @@ export function SuppliersPage() {
     {
       id: 'new',
       icon: Users,
-      label: 'New This Month',
+      label: 'جديد هذا الشهر',
       value: stats?.new_this_month ?? '—',
       colorClass: 'bg-blue-500/10 text-blue-600',
       isLoading: statsLoading,
@@ -179,7 +179,7 @@ export function SuppliersPage() {
     {
       id: 'open_pos',
       icon: ShoppingCart,
-      label: 'Open Purchase Orders',
+      label: 'أوامر الشراء المفتوحة',
       value: stats?.open_pos_total ?? '—',
       colorClass: 'bg-amber-500/10 text-amber-600',
       isLoading: statsLoading,
@@ -187,7 +187,7 @@ export function SuppliersPage() {
     {
       id: 'outstanding',
       icon: CreditCard,
-      label: 'Outstanding Payables',
+      label: 'المستحقات القائمة',
       value: stats ? `$${fmt(stats.total_outstanding)}` : '—',
       colorClass: 'bg-red-500/10 text-red-600',
       isLoading: statsLoading,
@@ -195,7 +195,7 @@ export function SuppliersPage() {
     {
       id: 'inventory_value',
       icon: Package,
-      label: 'Supplier Inventory Value',
+      label: 'قيمة مخزون الموردين',
       value: stats ? `$${fmt(stats.total_inventory_value)}` : '—',
       colorClass: 'bg-purple-500/10 text-purple-600',
       isLoading: statsLoading,
@@ -203,7 +203,7 @@ export function SuppliersPage() {
     {
       id: 'delayed',
       icon: Clock,
-      label: 'Delayed Orders',
+      label: 'الطلبات المتأخرة',
       value: stats?.delayed_pos ?? '—',
       colorClass: 'bg-orange-500/10 text-orange-600',
       isLoading: statsLoading,
@@ -211,7 +211,7 @@ export function SuppliersPage() {
     {
       id: 'review',
       icon: AlertCircle,
-      label: 'Needs Review',
+      label: 'تحتاج مراجعة',
       value: stats?.needs_review_count ?? '—',
       colorClass: 'bg-rose-500/10 text-rose-600',
       isLoading: statsLoading,
@@ -223,7 +223,7 @@ export function SuppliersPage() {
     () => [
       {
         key: 'code',
-        label: 'Supplier Code',
+        label: 'كود المورد',
         alwaysVisible: true,
         pin: 'left',
         width: 120,
@@ -233,14 +233,14 @@ export function SuppliersPage() {
       },
       {
         key: 'name',
-        label: 'Supplier Name',
+        label: 'اسم المورد',
         alwaysVisible: true,
         width: 200,
         sortable: true,
         skeletonClassName: 'w-40 h-4',
         cell: (s) => (
           <button
-            className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors"
+            className="font-medium text-start hover:text-primary hover:underline underline-offset-2 transition-colors"
             onClick={() => setViewSupplier(s)}
           >
             {s.name}
@@ -249,27 +249,27 @@ export function SuppliersPage() {
       },
       {
         key: 'category',
-        label: 'Category',
+        label: 'التصنيف',
         defaultVisible: false,
         cell: () => <span className="text-muted-foreground text-xs">—</span>,
       },
       {
         key: 'contact_person',
-        label: 'Contact Person',
+        label: 'شخص التواصل',
         skeletonClassName: 'w-28 h-4',
         cell: (s) => <span className="text-sm text-muted-foreground">{s.contact_person ?? '—'}</span>,
       },
       {
         key: 'phone',
-        label: 'Phone',
+        label: 'الهاتف',
         skeletonClassName: 'w-28 h-4',
         cell: (s) => <span className="text-sm text-muted-foreground tabular-nums">{s.phone ?? '—'}</span>,
       },
       {
         key: 'total_purchases',
-        label: 'Total Purchases',
+        label: 'إجمالي المشتريات',
         align: 'end',
-        skeletonClassName: 'w-20 h-4 ml-auto',
+        skeletonClassName: 'w-20 h-4 ms-auto',
         cell: (s) => (
           <span className="text-sm tabular-nums">
             {s.total_invoiced != null ? `$${fmt(s.total_invoiced)}` : '—'}
@@ -278,7 +278,7 @@ export function SuppliersPage() {
       },
       {
         key: 'total_payments',
-        label: 'Total Payments',
+        label: 'إجمالي المدفوعات',
         defaultVisible: false,
         align: 'end',
         cell: (s) => (
@@ -289,9 +289,9 @@ export function SuppliersPage() {
       },
       {
         key: 'outstanding',
-        label: 'Outstanding Balance',
+        label: 'الرصيد المتبقي',
         align: 'end',
-        skeletonClassName: 'w-20 h-4 ml-auto',
+        skeletonClassName: 'w-20 h-4 ms-auto',
         cell: (s) => (
           s.outstanding_balance != null
             ? <span className={`text-sm tabular-nums font-medium ${s.outstanding_balance > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
@@ -302,7 +302,7 @@ export function SuppliersPage() {
       },
       {
         key: 'inventory_value',
-        label: 'Supplier Inventory Value',
+        label: 'قيمة مخزون المورد',
         defaultVisible: false,
         align: 'end',
         cell: (s) => (
@@ -313,13 +313,13 @@ export function SuppliersPage() {
       },
       {
         key: 'stock_coverage',
-        label: 'Stock Coverage',
+        label: 'تغطية المخزون',
         defaultVisible: false,
         cell: () => <span className="text-xs text-muted-foreground">—</span>,
       },
       {
         key: 'active_pos',
-        label: 'Active POs',
+        label: 'PO النشطة',
         defaultVisible: false,
         align: 'center',
         cell: (s) => (
@@ -330,7 +330,7 @@ export function SuppliersPage() {
       },
       {
         key: 'last_purchase',
-        label: 'Last Purchase',
+        label: 'آخر شراء',
         skeletonClassName: 'w-24 h-4',
         cell: (s) => (
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -340,14 +340,14 @@ export function SuppliersPage() {
       },
       {
         key: 'health',
-        label: 'Procurement Health',
+        label: 'صحة الشراء',
         defaultVisible: false,
         skeletonClassName: 'w-16 h-5 rounded-full',
         cell: (s) => <SupplierHealthCell supplierId={s.id} />,
       },
       {
         key: 'status',
-        label: 'Status',
+        label: 'الحالة',
         alwaysVisible: true,
         sortable: true,
         skeletonClassName: 'w-14 h-5 rounded-full',
@@ -355,7 +355,7 @@ export function SuppliersPage() {
       },
       {
         key: 'actions',
-        label: 'Actions',
+        label: 'الإجراءات',
         alwaysVisible: true,
         pin: 'right',
         width: 80,
@@ -364,7 +364,7 @@ export function SuppliersPage() {
           <div className="flex items-center gap-1 justify-end">
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs"
               onClick={(e) => { e.stopPropagation(); openEdit(s); }}>
-              Edit
+              تعديل
             </Button>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive"
               onClick={(e) => { e.stopPropagation(); setDeleting(s); }}>
@@ -390,31 +390,31 @@ export function SuppliersPage() {
     deleteSupplier.mutate(deleting.id, {
       onSuccess: () => {
         setDeleting(null);
-        toast.success('Supplier deleted.');
+        toast.success('تم حذف المورد.');
         selection.clearSelection();
       },
     });
   }
 
   const statusChips = [
-    { key: 'all',      label: 'All',      active: statusFilter === 'all',      onClick: () => { setStatusFilter('all');      setPage(1); } },
-    { key: 'active',   label: 'Active',   active: statusFilter === 'active',   onClick: () => { setStatusFilter('active');   setPage(1); } },
-    { key: 'inactive', label: 'Inactive', active: statusFilter === 'inactive', onClick: () => { setStatusFilter('inactive'); setPage(1); } },
+    { key: 'all',      label: 'الكل',      active: statusFilter === 'all',      onClick: () => { setStatusFilter('all');      setPage(1); } },
+    { key: 'active',   label: 'نشط',   active: statusFilter === 'active',   onClick: () => { setStatusFilter('active');   setPage(1); } },
+    { key: 'inactive', label: 'غير نشط', active: statusFilter === 'inactive', onClick: () => { setStatusFilter('inactive'); setPage(1); } },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Purchasing' }, { label: 'Suppliers' }]}
-        title="Suppliers"
-        description="Manage your procurement supplier network."
-        primaryAction={{ key: 'new', label: 'New Supplier', icon: Plus, onClick: () => setWizardOpen(true) }}
+        breadcrumbs={[{ label: 'المشتريات' }, { label: 'الموردون' }]}
+        title="الموردون"
+        description="إدارة شبكة موردي المشتريات."
+        primaryAction={{ key: 'new', label: 'مورد جديد', icon: Plus, onClick: () => setWizardOpen(true) }}
         metrics={metrics}
         savedViews={{
           views: [
-            { id: 'default',   label: 'All Suppliers', isDefault: true },
-            { id: 'active',    label: 'Active' },
-            { id: 'preferred', label: 'Preferred' },
+            { id: 'default',   label: 'جميع الموردين', isDefault: true },
+            { id: 'active',    label: 'نشط' },
+            { id: 'preferred', label: 'مفضّل' },
           ],
           activeId: statusFilter === 'active' ? 'active' : 'default',
           onViewChange: (id) => {
@@ -427,13 +427,13 @@ export function SuppliersPage() {
       <WorkspacePage
         toolbar={
           <SmartToolbar
-            primaryAction={{ label: 'New Supplier', icon: Plus, onClick: () => setWizardOpen(true) }}
+            primaryAction={{ label: 'مورد جديد', icon: Plus, onClick: () => setWizardOpen(true) }}
             secondaryActions={[
-              { key: 'export', label: 'Export CSV', icon: Download, onClick: () => exportCsv(items), hideOnMobile: true },
+              { key: 'export', label: 'تصدير CSV', icon: Download, onClick: () => exportCsv(items), hideOnMobile: true },
             ]}
             bulkActions={
               selection.selectedCount > 0
-                ? [{ key: 'delete-bulk', label: `Delete ${selection.selectedCount} selected`, onClick: () => {}, destructive: true }]
+                ? [{ key: 'delete-bulk', label: `حذف ${selection.selectedCount} محدد`, onClick: () => {}, destructive: true }]
                 : undefined
             }
             selectedCount={selection.selectedCount}
@@ -445,7 +445,7 @@ export function SuppliersPage() {
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     ref={searchRef}
-                    placeholder="Search suppliers…"
+                    placeholder="ابحث عن مورد…"
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                     className="h-8 w-[200px] pl-8 sm:w-[240px] text-sm"
@@ -461,18 +461,18 @@ export function SuppliersPage() {
           meta ? (
             <div className="flex items-center justify-between px-4 pb-2 sm:px-6 text-xs text-muted-foreground">
               <span>
-                {meta.total} supplier{meta.total !== 1 ? 's' : ''}
-                {selection.selectedCount > 0 && ` · ${selection.selectedCount} selected`}
+                {meta.total} مورد
+                {selection.selectedCount > 0 && ` · ${selection.selectedCount} محدد`}
               </span>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="h-7 px-2 text-xs"
                   disabled={meta.current_page <= 1 || isFetching} onClick={() => setPage((p) => p - 1)}>
-                  Previous
+                  السابق
                 </Button>
-                <span>Page {meta.current_page} of {meta.last_page}</span>
+                <span>صفحة {meta.current_page} من {meta.last_page}</span>
                 <Button variant="ghost" size="sm" className="h-7 px-2 text-xs"
                   disabled={meta.current_page >= meta.last_page || isFetching} onClick={() => setPage((p) => p + 1)}>
-                  Next
+                  التالي
                 </Button>
               </div>
             </div>
@@ -484,9 +484,9 @@ export function SuppliersPage() {
         ) : items.length === 0 && !isLoading && !isError ? (
           <PageEmptyState
             icon={Building2}
-            title="No suppliers yet"
-            description="Add your first supplier to start managing your procurement network."
-            action={{ label: 'New Supplier', icon: Plus, onClick: () => setWizardOpen(true) }}
+            title="لا يوجد موردون بعد"
+            description="أضف أول مورد لبدء إدارة شبكة مشترياتك."
+            action={{ label: 'مورد جديد', icon: Plus, onClick: () => setWizardOpen(true) }}
           />
         ) : (
           <UniversalDataGrid
@@ -532,9 +532,9 @@ export function SuppliersPage() {
       <PageConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete Supplier"
-        description={`Are you sure you want to delete "${deleting?.name ?? ''}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title="حذف المورد"
+        description={`هل أنت متأكد من حذف "${deleting?.name ?? ''}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف"
         variant="destructive"
         loading={deleteSupplier.isPending}
         onConfirm={confirmDelete}

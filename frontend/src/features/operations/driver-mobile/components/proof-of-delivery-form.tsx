@@ -44,22 +44,22 @@ export function ProofOfDeliveryForm({ onSubmit, onCancel, isLoading }: ProofOfDe
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Signature Image URL</Label>
+        <Label>رابط صورة التوقيع</Label>
         <Input
           value={signature}
           onChange={(e) => setSignature(e.target.value)}
-          placeholder="https://... (upload URL)"
+          placeholder="https://... (رابط الرفع)"
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Photos</Label>
+        <Label>الصور</Label>
         {photos.map((photo, idx) => (
           <div key={idx} className="flex gap-2">
             <Input
               value={photo}
               onChange={(e) => updatePhoto(idx, e.target.value)}
-              placeholder={`Photo ${idx + 1} URL...`}
+              placeholder={`رابط الصورة ${idx + 1}...`}
               className="flex-1"
             />
             {photos.length > 1 && (
@@ -76,26 +76,26 @@ export function ProofOfDeliveryForm({ onSubmit, onCancel, isLoading }: ProofOfDe
         ))}
         <Button type="button" variant="outline" size="sm" onClick={addPhoto} className="gap-1">
           <PlusCircle className="h-4 w-4" />
-          Add Photo
+          إضافة صورة
         </Button>
       </div>
 
       <div className="space-y-1.5">
-        <Label>Notes</Label>
+        <Label>ملاحظات</Label>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Delivery notes..."
+          placeholder="ملاحظات التوصيل..."
           rows={2}
         />
       </div>
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
+          إلغاء
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Save Proof'}
+          {isLoading ? 'جارٍ الحفظ...' : 'حفظ إثبات التوصيل'}
         </Button>
       </div>
     </form>

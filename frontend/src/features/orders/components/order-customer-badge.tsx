@@ -201,7 +201,7 @@ export function OrderCustomerBadge({ order }: Props) {
         </a>
         <a
           href={`/app/customers/${customer.id}`}
-          className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          className="ms-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
         >
           <ExternalLink className="size-3" />
           {t('customerBadge.openProfile')}

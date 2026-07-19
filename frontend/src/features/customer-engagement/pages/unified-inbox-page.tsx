@@ -29,7 +29,7 @@ function ConvItem({ conv, isActive, onClick }: {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-3 py-3 border-b transition-colors hover:bg-muted/50 ${isActive ? 'bg-primary/10 border-l-2 border-l-primary' : ''}`}
+      className={`w-full text-start px-3 py-3 border-b transition-colors hover:bg-muted/50 ${isActive ? 'bg-primary/10 border-s-2 border-s-primary' : ''}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">

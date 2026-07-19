@@ -48,10 +48,10 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
     if (!companyId || !warehouseId) return;
     try {
       await create.mutateAsync({ company_id: companyId, warehouse_id: warehouseId, notes: notes || undefined });
-      toast.success('Count session created.');
+      toast.success('تم إنشاء جلسة الجرد.');
       handleClose();
     } catch {
-      toast.error('Failed to create count session.');
+      toast.error('فشل إنشاء جلسة الجرد.');
     }
   }
 
@@ -59,28 +59,28 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New Inventory Count</DialogTitle>
+          <DialogTitle>جلسة جرد جديدة</DialogTitle>
           <DialogDescription>
-            Create a new physical count session. All active products in the selected warehouse will be included.
+            أنشئ جلسة جرد فعلية جديدة. سيتم تضمين جميع المنتجات النشطة في المستودع المحدد.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-4 py-2">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Company <span className="text-destructive">*</span></label>
+            <label className="text-sm font-medium">الشركة <span className="text-destructive">*</span></label>
             <CompanySelect value={companyId || null} onChange={(v) => { setCompanyId(v ?? ''); setWarehouseId(''); }} />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Warehouse <span className="text-destructive">*</span></label>
+            <label className="text-sm font-medium">المستودع <span className="text-destructive">*</span></label>
             {!companyId ? (
-              <p className="text-xs text-muted-foreground italic">Select a company first.</p>
+              <p className="text-xs text-muted-foreground italic">اختر شركة أولاً.</p>
             ) : wLoading ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" /> Loading warehouses…
+                <Loader2 className="size-3.5 animate-spin" /> جارٍ تحميل المستودعات…
               </div>
             ) : warehouses.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">No active warehouses for this company.</p>
+              <p className="text-xs text-muted-foreground italic">لا توجد مستودعات نشطة لهذه الشركة.</p>
             ) : (
               <select
                 value={warehouseId}
@@ -88,7 +88,7 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
                 className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
                 required
               >
-                <option value="">Select a warehouse…</option>
+                <option value="">اختر المستودع…</option>
                 {warehouses.map((w) => (
                   <option key={w.id} value={w.id}>{w.name}</option>
                 ))}
@@ -97,21 +97,21 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Notes</label>
+            <label className="text-sm font-medium">ملاحظات</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              placeholder="Optional notes for this count session…"
+              placeholder="ملاحظات اختيارية لهذه الجلسة…"
               className="rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs resize-none focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
 
           <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={handleClose}>إلغاء</Button>
             <Button type="submit" disabled={!companyId || !warehouseId || create.isPending}>
               {create.isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
-              Create Session
+              إنشاء الجلسة
             </Button>
           </DialogFooter>
         </form>

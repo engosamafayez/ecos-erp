@@ -284,11 +284,11 @@ export function ViewGoodsReceiptPage() {
                 <div className="mt-4 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-muted-foreground border-b text-left">
+                      <tr className="text-muted-foreground border-b text-start">
                         <th className="pb-2 pr-3 font-medium">{t('lines.columns.product')}</th>
-                        <th className="w-28 pb-2 pr-3 text-right font-medium">{t('detail.unitPrice')}</th>
-                        <th className="w-28 pb-2 pr-3 text-right font-medium">{t('detail.netQty')}</th>
-                        <th className="w-32 pb-2 text-right font-medium">{t('detail.landedUnitCost')}</th>
+                        <th className="w-28 pb-2 pr-3 text-end font-medium">{t('detail.unitPrice')}</th>
+                        <th className="w-28 pb-2 pr-3 text-end font-medium">{t('detail.netQty')}</th>
+                        <th className="w-32 pb-2 text-end font-medium">{t('detail.landedUnitCost')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -297,9 +297,9 @@ export function ViewGoodsReceiptPage() {
                         .map((l) => (
                           <tr key={l.id}>
                             <td className="py-2 pr-3">{l.product?.name ?? '—'}</td>
-                            <td className="py-2 pr-3 text-right tabular-nums">{fmt(l.unit_price, 2)}</td>
-                            <td className="py-2 pr-3 text-right tabular-nums">{fmt(l.net_received_quantity, 4)}</td>
-                            <td className="py-2 text-right tabular-nums font-medium">{fmt(l.landed_unit_cost!, 4)}</td>
+                            <td className="py-2 pr-3 text-end tabular-nums">{fmt(l.unit_price, 2)}</td>
+                            <td className="py-2 pr-3 text-end tabular-nums">{fmt(l.net_received_quantity, 4)}</td>
+                            <td className="py-2 text-end tabular-nums font-medium">{fmt(l.landed_unit_cost!, 4)}</td>
                           </tr>
                         ))}
                     </tbody>

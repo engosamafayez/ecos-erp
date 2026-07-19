@@ -36,15 +36,15 @@ const fmt = (n: number | null | undefined, decimals = 2) =>
   n == null ? '—' : n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
 const EVENT_LABELS: Record<string, string> = {
-  created:             'Investigation created',
-  resolved:            'Investigation resolved',
-  attachment_added:    'Attachment added',
-  attachment_removed:  'Attachment removed',
-  notes_edited:        'Notes edited',
-  damage_reason_changed: 'Damage reason updated',
-  outcome_decided:     'Outcome decided',
-  liability_created:   'Warehouse liability created',
-  value_changed:       'Value changed',
+  created:             'تم إنشاء التحقيق',
+  resolved:            'تم حل التحقيق',
+  attachment_added:    'تمت إضافة مرفق',
+  attachment_removed:  'تمت إزالة مرفق',
+  notes_edited:        'تم تعديل الملاحظات',
+  damage_reason_changed: 'تم تحديث سبب التلف',
+  outcome_decided:     'تم تحديد النتيجة',
+  liability_created:   'تم إنشاء مسؤولية مستودع',
+  value_changed:       'تم تغيير القيمة',
 };
 
 const EVENT_COLORS: Record<string, string> = {
@@ -65,17 +65,17 @@ function formatBytes(bytes: number | null): string {
 
 function SummaryTab({ inv }: { inv: WasteInvestigation }) {
   const outcomeLabels: Record<string, string> = {
-    operational_waste:         'Operational Waste',
-    warehouse_responsibility:  'Warehouse Responsibility',
-    supplier_responsibility:   'Supplier Responsibility',
-    preparation_responsibility:'Preparation Responsibility',
+    operational_waste:         'هدر تشغيلي',
+    warehouse_responsibility:  'مسؤولية المستودع',
+    supplier_responsibility:   'مسؤولية المورد',
+    preparation_responsibility:'مسؤولية التحضير',
   };
 
   return (
     <div className="space-y-5 py-4">
       {/* Product */}
       <div className="rounded-lg border bg-muted/30 px-4 py-3">
-        <p className="text-xs text-muted-foreground mb-1">Product</p>
+        <p className="text-xs text-muted-foreground mb-1">المنتج</p>
         <p className="font-semibold">{inv.product?.name ?? '—'}</p>
         <p className="text-xs text-muted-foreground">{inv.product?.sku}</p>
       </div>
@@ -83,17 +83,17 @@ function SummaryTab({ inv }: { inv: WasteInvestigation }) {
       {/* Quantities */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-lg border bg-card p-3 text-center">
-          <p className="text-xs text-muted-foreground">Quantity</p>
+          <p className="text-xs text-muted-foreground">الكمية</p>
           <p className="text-lg font-semibold mt-0.5 tabular-nums">{fmt(inv.quantity, 2)}</p>
         </div>
         <div className="rounded-lg border bg-card p-3 text-center">
-          <p className="text-xs text-muted-foreground">Unit Cost</p>
+          <p className="text-xs text-muted-foreground">تكلفة الوحدة</p>
           <p className="text-lg font-semibold mt-0.5 tabular-nums">
             {inv.cost_snapshot_unit_cost != null ? fmt(inv.cost_snapshot_unit_cost, 4) : fmt(inv.unit_cost, 4)}
           </p>
         </div>
         <div className="rounded-lg border bg-card p-3 text-center">
-          <p className="text-xs text-muted-foreground">Total Value</p>
+          <p className="text-xs text-muted-foreground">القيمة الإجمالية</p>
           <p className="text-lg font-semibold mt-0.5 tabular-nums">
             {inv.cost_snapshot_total_value != null ? fmt(inv.cost_snapshot_total_value) : fmt(inv.total_cost)}
           </p>
@@ -105,8 +105,8 @@ function SummaryTab({ inv }: { inv: WasteInvestigation }) {
         <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 rounded-md border border-emerald-200 dark:border-emerald-800 px-3 py-2">
           <CheckCircle className="size-3.5 shrink-0" />
           <span>
-            <strong>FIFO cost frozen</strong> at {new Date(inv.cost_snapshot_at).toLocaleString()} ·
-            Method: {inv.cost_method ?? 'FIFO'} · Currency: {inv.currency ?? 'EGP'}
+            <strong>تكلفة FIFO مجمَّدة</strong> في {new Date(inv.cost_snapshot_at).toLocaleString()} ·
+            الطريقة: {inv.cost_method ?? 'FIFO'} · العملة: {inv.currency ?? 'EGP'}
           </span>
         </div>
       )}
@@ -114,50 +114,50 @@ function SummaryTab({ inv }: { inv: WasteInvestigation }) {
       {/* Details grid */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
         <div>
-          <p className="text-xs text-muted-foreground">Damage Reason</p>
+          <p className="text-xs text-muted-foreground">سبب التلف</p>
           <p className="mt-0.5 font-medium">{inv.damage_reason ?? '—'}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Warehouse</p>
+          <p className="text-xs text-muted-foreground">المستودع</p>
           <p className="mt-0.5 font-medium">{(inv.warehouse as { name: string } | null)?.name ?? '—'}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Status</p>
+          <p className="text-xs text-muted-foreground">الحالة</p>
           <p className="mt-0.5">
             {inv.status === 'resolved'
-              ? <span className="text-emerald-600 font-medium">Resolved</span>
-              : <span className="text-amber-600 font-medium">Pending</span>}
+              ? <span className="text-emerald-600 font-medium">محلول</span>
+              : <span className="text-amber-600 font-medium">معلّق</span>}
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Outcome</p>
+          <p className="text-xs text-muted-foreground">النتيجة</p>
           <p className="mt-0.5 font-medium">{inv.outcome ? outcomeLabels[inv.outcome] ?? inv.outcome : '—'}</p>
         </div>
         {inv.resolved_by && (
           <div>
-            <p className="text-xs text-muted-foreground">Resolved By</p>
+            <p className="text-xs text-muted-foreground">حُلّ بواسطة</p>
             <p className="mt-0.5 font-medium">{inv.resolved_by}</p>
           </div>
         )}
         {inv.resolved_at && (
           <div>
-            <p className="text-xs text-muted-foreground">Resolved At</p>
+            <p className="text-xs text-muted-foreground">تاريخ الحل</p>
             <p className="mt-0.5 font-medium">{new Date(inv.resolved_at).toLocaleDateString()}</p>
           </div>
         )}
         <div>
-          <p className="text-xs text-muted-foreground">Month</p>
+          <p className="text-xs text-muted-foreground">الشهر</p>
           <p className="mt-0.5 font-medium">{inv.month}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Days Open</p>
+          <p className="text-xs text-muted-foreground">أيام مفتوح</p>
           <p className="mt-0.5 font-medium">{inv.days_pending ?? '—'}</p>
         </div>
       </div>
 
       {inv.investigator_notes && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Investigator Notes</p>
+          <p className="text-xs text-muted-foreground mb-1">ملاحظات المحقق</p>
           <p className="text-sm rounded-md border bg-muted/30 px-3 py-2">{inv.investigator_notes}</p>
         </div>
       )}
@@ -165,7 +165,7 @@ function SummaryTab({ inv }: { inv: WasteInvestigation }) {
       {/* Future integration readiness */}
       {inv.metadata && Object.keys(inv.metadata).length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Integration References</p>
+          <p className="text-xs text-muted-foreground mb-1">مراجع التكامل</p>
           <div className="text-xs font-mono bg-muted/50 rounded px-3 py-2 space-y-0.5">
             {Object.entries(inv.metadata).map(([k, v]) => (
               <div key={k}><span className="text-muted-foreground">{k}:</span> {String(v)}</div>
@@ -184,7 +184,7 @@ function TimelineTab({ events }: { events: WasteInvestigationEvent[] }) {
     return (
       <div className="flex flex-col items-center gap-2 py-12 text-center">
         <Clock className="size-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">No timeline events yet</p>
+        <p className="text-sm text-muted-foreground">لا توجد أحداث بعد</p>
       </div>
     );
   }
@@ -244,9 +244,9 @@ function AttachmentsTab({
     try {
       await uploadMutation.mutateAsync({ file, description: description || undefined });
       setDescription('');
-      toast.success('Attachment uploaded.');
+      toast.success('تم رفع المرفق.');
     } catch {
-      toast.error('Upload failed.');
+      toast.error('فشل الرفع.');
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -256,9 +256,9 @@ function AttachmentsTab({
   async function handleDelete(attachmentId: string, fileName: string) {
     try {
       await deleteMutation.mutateAsync(attachmentId);
-      toast.success(`${fileName} removed.`);
+      toast.success(`تمت إزالة ${fileName}.`);
     } catch {
-      toast.error('Delete failed.');
+      toast.error('فشل الحذف.');
     }
   }
 
@@ -269,7 +269,7 @@ function AttachmentsTab({
         <div className="rounded-lg border border-dashed bg-muted/20 p-4 space-y-2">
           <input
             type="text"
-            placeholder="Description (optional)"
+            placeholder="وصف (اختياري)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="h-8 w-full rounded border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
@@ -292,9 +292,9 @@ function AttachmentsTab({
               {uploading
                 ? <Loader2 className="size-3.5 animate-spin" />
                 : <Upload className="size-3.5" />}
-              {uploading ? 'Uploading…' : 'Upload File'}
+              {uploading ? 'جارٍ الرفع…' : 'رفع ملف'}
             </Button>
-            <p className="text-xs text-muted-foreground">PDF, Images, Videos — max 20 MB</p>
+            <p className="text-xs text-muted-foreground">PDF، صور، فيديو — حتى 20 MB</p>
           </div>
         </div>
       )}
@@ -303,7 +303,7 @@ function AttachmentsTab({
       {attachments.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <Paperclip className="size-7 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No attachments</p>
+          <p className="text-sm text-muted-foreground">لا توجد مرفقات</p>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -384,7 +384,7 @@ function DrawerContent({ inv }: { inv: WasteInvestigation }) {
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <SheetTitle className="text-base font-semibold truncate">
-              {inv.product?.name ?? 'Waste Investigation'}
+              {inv.product?.name ?? 'تحقيق هدر'}
             </SheetTitle>
             <SheetDescription className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge
@@ -394,10 +394,10 @@ function DrawerContent({ inv }: { inv: WasteInvestigation }) {
                   : 'text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-xs'
                 }
               >
-                {isResolved ? 'Resolved' : 'Pending'}
+                {isResolved ? 'محلول' : 'معلّق'}
               </Badge>
               <span className={`text-xs font-medium ${overdueClass}`}>
-                {inv.days_pending != null ? `${inv.days_pending}d open` : ''}
+                {inv.days_pending != null ? `مفتوح ${inv.days_pending} يوم` : ''}
               </span>
             </SheetDescription>
           </div>
@@ -406,9 +406,9 @@ function DrawerContent({ inv }: { inv: WasteInvestigation }) {
 
       <Tabs defaultValue="summary" className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="mx-6 mt-3 mb-0 shrink-0 w-fit">
-          <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="summary">ملخص</TabsTrigger>
           <TabsTrigger value="timeline">
-            Timeline
+            الجدول الزمني
             {events.length > 0 && (
               <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[10px] font-medium tabular-nums">
                 {events.length}
@@ -416,7 +416,7 @@ function DrawerContent({ inv }: { inv: WasteInvestigation }) {
             )}
           </TabsTrigger>
           <TabsTrigger value="attachments">
-            Attachments
+            المرفقات
             {attachments.length > 0 && (
               <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[10px] font-medium tabular-nums">
                 {attachments.length}

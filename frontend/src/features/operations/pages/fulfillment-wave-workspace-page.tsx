@@ -118,7 +118,7 @@ function ZoneDistribution({ orders }: { orders: Array<{ delivery_zone_snapshot: 
           <div key={zone} className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground w-28 shrink-0 truncate">{zone}</span>
             <Progress value={pct} className="h-2 flex-1" />
-            <span className="text-xs tabular-nums text-muted-foreground w-10 text-right">{count}</span>
+            <span className="text-xs tabular-nums text-muted-foreground w-10 text-end">{count}</span>
           </div>
         );
       })}
@@ -226,11 +226,11 @@ export function FulfillmentWaveWorkspacePage() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/40">
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Product</th>
-                        <th className="px-3 py-2 text-right font-medium text-muted-foreground">Req</th>
-                        <th className="px-3 py-2 text-right font-medium text-muted-foreground">Prep</th>
-                        <th className="px-3 py-2 text-right font-medium text-muted-foreground">Rem</th>
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Progress</th>
+                        <th className="px-3 py-2 text-start font-medium text-muted-foreground">Product</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">Req</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">Prep</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">Rem</th>
+                        <th className="px-3 py-2 text-start font-medium text-muted-foreground w-28">Progress</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -242,9 +242,9 @@ export function FulfillmentWaveWorkspacePage() {
                               <div className="text-[10px] text-muted-foreground font-mono">{item.product_sku}</div>
                             )}
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmt(item.required_qty)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums text-emerald-700">{fmt(item.prepared_qty)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">
+                          <td className="px-3 py-2 text-end tabular-nums">{fmt(item.required_qty)}</td>
+                          <td className="px-3 py-2 text-end tabular-nums text-emerald-700">{fmt(item.prepared_qty)}</td>
+                          <td className="px-3 py-2 text-end tabular-nums">
                             <span className={item.remaining_qty > 0 ? 'text-amber-700' : 'text-muted-foreground'}>
                               {fmt(item.remaining_qty)}
                             </span>
@@ -278,10 +278,10 @@ export function FulfillmentWaveWorkspacePage() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/40">
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Material</th>
-                        <th className="px-3 py-2 text-right font-medium text-muted-foreground">Required</th>
-                        <th className="px-3 py-2 text-right font-medium text-muted-foreground">Available</th>
-                        <th className="px-3 py-2 text-right font-medium text-muted-foreground">Missing</th>
+                        <th className="px-3 py-2 text-start font-medium text-muted-foreground">Material</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">Required</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">Available</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">Missing</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -296,9 +296,9 @@ export function FulfillmentWaveWorkspacePage() {
                               <div className="text-[10px] text-muted-foreground font-mono">{mat.material_sku}</div>
                             )}
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmt(mat.required_qty)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmt(mat.available_qty)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">
+                          <td className="px-3 py-2 text-end tabular-nums">{fmt(mat.required_qty)}</td>
+                          <td className="px-3 py-2 text-end tabular-nums">{fmt(mat.available_qty)}</td>
+                          <td className="px-3 py-2 text-end tabular-nums">
                             {mat.missing_qty > 0 ? (
                               <span className="text-red-600 font-medium">{fmt(mat.missing_qty)}</span>
                             ) : (
@@ -338,10 +338,10 @@ export function FulfillmentWaveWorkspacePage() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-red-200 bg-red-50/60">
-                        <th className="px-3 py-2 text-left font-medium text-red-700">Material</th>
-                        <th className="px-3 py-2 text-right font-medium text-red-700">Missing</th>
-                        <th className="px-3 py-2 text-right font-medium text-red-700">Priority</th>
-                        <th className="px-3 py-2 text-right font-medium text-red-700">Orders</th>
+                        <th className="px-3 py-2 text-start font-medium text-red-700">Material</th>
+                        <th className="px-3 py-2 text-end font-medium text-red-700">Missing</th>
+                        <th className="px-3 py-2 text-end font-medium text-red-700">Priority</th>
+                        <th className="px-3 py-2 text-end font-medium text-red-700">Orders</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -350,8 +350,8 @@ export function FulfillmentWaveWorkspacePage() {
                           <td className="px-3 py-2 font-medium text-red-900 max-w-[140px]">
                             <div className="truncate">{mat.material_name}</div>
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums text-red-700 font-semibold">{fmt(mat.missing_qty)}</td>
-                          <td className="px-3 py-2 text-right">
+                          <td className="px-3 py-2 text-end tabular-nums text-red-700 font-semibold">{fmt(mat.missing_qty)}</td>
+                          <td className="px-3 py-2 text-end">
                             <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                               mat.priority === 'critical' ? 'bg-red-200 text-red-800' :
                               mat.priority === 'high'     ? 'bg-amber-100 text-amber-700' :
@@ -360,7 +360,7 @@ export function FulfillmentWaveWorkspacePage() {
                               {mat.priority}
                             </span>
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums text-red-800">{mat.affected_orders_count}</td>
+                          <td className="px-3 py-2 text-end tabular-nums text-red-800">{mat.affected_orders_count}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -387,10 +387,10 @@ export function FulfillmentWaveWorkspacePage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border/60 bg-muted/40">
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Order #</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Customer</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Delivery Zone</th>
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Added</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">Order #</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">Customer</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">Delivery Zone</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">Added</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -426,7 +426,7 @@ export function FulfillmentWaveWorkspacePage() {
             {wave.shortage_detected && (
               <Badge className="text-[10px] h-4 px-1.5 bg-amber-100 text-amber-700">Shortage detected</Badge>
             )}
-            <span className={`ml-auto flex items-center gap-1 ${isFetching ? 'text-primary' : ''}`}>
+            <span className={`ms-auto flex items-center gap-1 ${isFetching ? 'text-primary' : ''}`}>
               {isFetching && <RefreshCw className="h-3 w-3 animate-spin" />}
               {isFetching ? 'Updating…' : 'Live'}
             </span>

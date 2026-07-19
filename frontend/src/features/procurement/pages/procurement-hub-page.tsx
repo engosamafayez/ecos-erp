@@ -75,7 +75,7 @@ function QuickAction({ label, description, icon: Icon, shortcut, onClick, varian
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left p-3 rounded-lg border transition-all hover:shadow-sm ${
+      className={`w-full text-start p-3 rounded-lg border transition-all hover:shadow-sm ${
         variant === 'primary'
           ? 'border-blue-200 bg-blue-50 hover:bg-blue-100'
           : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -199,7 +199,7 @@ export function ProcurementHubPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <button
             onClick={() => navigate(`${ROUTES.materialRequests}?status=submitted`)}
-            className="p-4 bg-white rounded-lg border border-gray-200 text-left hover:border-blue-300 hover:shadow-sm transition-all"
+            className="p-4 bg-white rounded-lg border border-gray-200 text-start hover:border-blue-300 hover:shadow-sm transition-all"
           >
             <div className="flex items-center justify-between mb-1">
               <ClipboardList className="w-4 h-4 text-blue-500" />
@@ -211,7 +211,7 @@ export function ProcurementHubPage() {
 
           <button
             onClick={() => navigate(`${ROUTES.purchases}?status=pending_approval`)}
-            className="p-4 bg-white rounded-lg border border-gray-200 text-left hover:border-amber-300 hover:shadow-sm transition-all"
+            className="p-4 bg-white rounded-lg border border-gray-200 text-start hover:border-amber-300 hover:shadow-sm transition-all"
           >
             <div className="flex items-center justify-between mb-1">
               <ShoppingCart className="w-4 h-4 text-amber-500" />
@@ -223,7 +223,7 @@ export function ProcurementHubPage() {
 
           <button
             onClick={() => navigate(ROUTES.receivingCenter)}
-            className="p-4 bg-white rounded-lg border border-gray-200 text-left hover:border-green-300 hover:shadow-sm transition-all"
+            className="p-4 bg-white rounded-lg border border-gray-200 text-start hover:border-green-300 hover:shadow-sm transition-all"
           >
             <div className="flex items-center justify-between mb-1">
               <PackageOpen className="w-4 h-4 text-green-500" />
@@ -235,7 +235,7 @@ export function ProcurementHubPage() {
 
           <button
             onClick={() => navigate(`${ROUTES.supplierReturns}?status=waiting_approval`)}
-            className="p-4 bg-white rounded-lg border border-gray-200 text-left hover:border-red-300 hover:shadow-sm transition-all"
+            className="p-4 bg-white rounded-lg border border-gray-200 text-start hover:border-red-300 hover:shadow-sm transition-all"
           >
             <div className="flex items-center justify-between mb-1">
               <RotateCcw className="w-4 h-4 text-red-400" />

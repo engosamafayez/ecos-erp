@@ -7,8 +7,10 @@ namespace Modules\Commerce\Orders\Presentation\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
+use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderNote;
+use Modules\Commerce\Orders\Domain\Models\OrderReservationAudit;
 
 /**
  * @mixin Order
@@ -199,9 +201,15 @@ final class OrderResource extends JsonResource
                 'warehouse_name' => $line->warehouse_name ?? null,
                 'batch_number'   => $line->batch_number ?? null,
             ])),
-            'inventory_reserved_at' => $this->inventory_reserved_at?->toIso8601String(),
-            'inventory_shipped_at'  => $this->inventory_shipped_at?->toIso8601String(),
-            'inventory_released_at' => $this->inventory_released_at?->toIso8601String(),
+            'inventory_reserved_at'      => $this->inventory_reserved_at?->toIso8601String(),
+            'inventory_shipped_at'       => $this->inventory_shipped_at?->toIso8601String(),
+            'inventory_released_at'      => $this->inventory_released_at?->toIso8601String(),
+            'reservation_status'         => $this->reservation_status?->value,
+            'reservation_failure_reason' => $this->reservation_failure_reason,
+            'reservation_shortage_lines' => $this->resolveReservationShortageLines(),
+            'partial_reservation_approved_at'    => $this->partial_reservation_approved_at?->toIso8601String(),
+            'partial_reservation_approved_by'    => $this->partial_reservation_approved_by,
+            'partial_reservation_approval_notes' => $this->partial_reservation_approval_notes,
             'requested_delivery_date' => $this->requested_delivery_date?->toDateString(),
             'preferred_delivery_time' => $this->preferred_delivery_time,
             'delivery_window_id'      => $this->delivery_window_id,
@@ -259,6 +267,41 @@ final class OrderResource extends JsonResource
     }
 
     /**
+     * P1-003 — Reservation shortage lines for business visibility.
+     *
+     * Returns per-product shortage details from the latest partial/awaiting-stock
+     * reservation audit so the UI can show exactly what is missing and how much.
+     * Only populated when reservation_status is PartialReserved or AwaitingStock.
+     *
+     * @return list<array{product_id: string, requested: float, reserved: float, outcome: string}>
+     */
+    private function resolveReservationShortageLines(): array
+    {
+        $relevant = [ReservationStatus::PartialReserved, ReservationStatus::AwaitingStock];
+        if (! in_array($this->reservation_status, $relevant, true)) {
+            return [];
+        }
+
+        $audit = OrderReservationAudit::where('order_id', $this->id)
+            ->whereIn('to_status', [
+                ReservationStatus::PartialReserved->value,
+                ReservationStatus::AwaitingStock->value,
+            ])
+            ->latest('created_at')
+            ->first();
+
+        if ($audit === null) {
+            return [];
+        }
+
+        $lines = $audit->meta['lines'] ?? [];
+
+        return array_values(
+            array_filter($lines, fn (array $l) => in_array($l['outcome'] ?? '', ['partial', 'none'], true))
+        );
+    }
+
+    /**
      * V2 allowed workflow transitions (TASK-ORDER-WORKFLOW-V2-001).
      *
      * CONTRACT:
@@ -283,6 +326,12 @@ final class OrderResource extends JsonResource
         ];
 
         return match ($this->status) {
+            // ── Scheduled: activate (→ processing via ProcessOrderWorkflow) or cancel ──
+            OrderStatus::Scheduled => [
+                $t('pending',    'Pending',     false, 'return_to_pending'),
+                $t('processing', 'Processing',  false, 'process_order'),
+                $t('cancelled',  'Cancelled',   true,  'cancel_order'),
+            ],
             // ── Pending: all pre-execution transitions ────────────────────────────
             OrderStatus::Pending => [
                 $t('awaiting_payment', 'Payment',        false, 'return_to_payment'),

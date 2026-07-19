@@ -94,12 +94,12 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
           <DialogHeader>
             <div className="flex items-center gap-2">
               <Clock className="size-5" />
-              <DialogTitle>Open Shift</DialogTitle>
+              <DialogTitle>فتح وردية</DialogTitle>
             </div>
           </DialogHeader>
           <form onSubmit={openForm.handleSubmit(handleOpen)} className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Opening Cash ({currency})</Label>
+              <Label>النقد الافتتاحي ({currency})</Label>
               <Input
                 type="number"
                 min="0"
@@ -111,9 +111,9 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
               )}
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>إلغاء</Button>
               <Button type="submit" disabled={openShift.isPending}>
-                {openShift.isPending ? 'Opening...' : 'Open Shift'}
+                {openShift.isPending ? 'جارٍ الفتح...' : 'فتح الوردية'}
               </Button>
             </DialogFooter>
           </form>
@@ -128,20 +128,20 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Close Shift</DialogTitle>
+            <DialogTitle>إغلاق الوردية</DialogTitle>
           </DialogHeader>
           <form onSubmit={closeForm.handleSubmit(handleClose)} className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Closing Count ({currency})</Label>
+              <Label>العدّ الختامي ({currency})</Label>
               <Input type="number" min="0" step="0.01" {...closeForm.register('closing_count.amount')} />
               {errors.closing_count?.amount && (
                 <p className="text-xs text-destructive">{errors.closing_count.amount.message}</p>
               )}
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>إلغاء</Button>
               <Button type="submit" disabled={closeShift.isPending} variant="destructive">
-                {closeShift.isPending ? 'Submitting...' : 'Submit for Approval'}
+                {closeShift.isPending ? 'جارٍ الإرسال...' : 'إرسال للاعتماد'}
               </Button>
             </DialogFooter>
           </form>
@@ -158,27 +158,27 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Shift Approval</DialogTitle>
+          <DialogTitle>اعتماد الوردية</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="approve">
           <TabsList className="w-full">
-            <TabsTrigger value="approve" className="flex-1">Approve</TabsTrigger>
-            <TabsTrigger value="reject" className="flex-1">Reject</TabsTrigger>
+            <TabsTrigger value="approve" className="flex-1">اعتماد</TabsTrigger>
+            <TabsTrigger value="reject" className="flex-1">رفض</TabsTrigger>
           </TabsList>
 
           <TabsContent value="approve">
             <form onSubmit={approveForm.handleSubmit(handleApprove)} className="space-y-3 pt-3">
               <div className="space-y-1.5">
-                <Label>Expected Closing ({currency})</Label>
+                <Label>الإغلاق المتوقع ({currency})</Label>
                 <Input type="number" min="0" step="0.01" {...approveForm.register('expected_closing.amount')} />
                 {approveErrors.expected_closing?.amount && (
                   <p className="text-xs text-destructive">{approveErrors.expected_closing.amount.message}</p>
                 )}
               </div>
               <DialogFooter>
-                <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>إلغاء</Button>
                 <Button type="submit" disabled={approveShift.isPending}>
-                  {approveShift.isPending ? 'Approving...' : 'Approve'}
+                  {approveShift.isPending ? 'جارٍ الاعتماد...' : 'اعتماد'}
                 </Button>
               </DialogFooter>
             </form>
@@ -187,16 +187,16 @@ export function ShiftDialog({ open, mode, onOpenChange }: ShiftDialogProps) {
           <TabsContent value="reject">
             <form onSubmit={rejectForm.handleSubmit(handleReject)} className="space-y-3 pt-3">
               <div className="space-y-1.5">
-                <Label>Rejection Reason</Label>
-                <Input {...rejectForm.register('reason')} placeholder="Enter reason..." />
+                <Label>سبب الرفض</Label>
+                <Input {...rejectForm.register('reason')} placeholder="أدخل السبب..." />
                 {rejectErrors.reason && (
                   <p className="text-xs text-destructive">{rejectErrors.reason.message}</p>
                 )}
               </div>
               <DialogFooter>
-                <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>إلغاء</Button>
                 <Button type="submit" variant="destructive" disabled={rejectShift.isPending}>
-                  {rejectShift.isPending ? 'Rejecting...' : 'Reject Count'}
+                  {rejectShift.isPending ? 'جارٍ الرفض...' : 'رفض العدّ'}
                 </Button>
               </DialogFooter>
             </form>

@@ -25,6 +25,7 @@ use Modules\Operations\Fulfillment\Application\Workflows\MoveToPreparationWorkfl
 use Modules\Operations\Fulfillment\Application\Workflows\MoveToReviewWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ReceiveReturnWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\RescheduleOrderWorkflow;
+use Modules\Operations\Fulfillment\Application\Workflows\ApprovePartialReservationWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ResumeOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ReturnOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ReturnToPendingWorkflow;
@@ -52,10 +53,12 @@ final class FulfillmentController extends Controller
         private readonly RevertToConfirmedWorkflow    $revertToConfirmedWorkflow,
         private readonly ReturnToProcessingWorkflow   $returnToProcessingWorkflow,
         // V2 workflows
-        private readonly ProcessOrderWorkflow         $processWorkflow,
-        private readonly ReturnToPaymentWorkflow      $returnToPaymentWorkflow,
-        private readonly SetEarlyStatusWorkflow       $setEarlyStatusWorkflow,
-        private readonly MarkRescheduledWorkflow      $markRescheduledWorkflow,
+        private readonly ProcessOrderWorkflow                $processWorkflow,
+        private readonly ReturnToPaymentWorkflow             $returnToPaymentWorkflow,
+        private readonly SetEarlyStatusWorkflow              $setEarlyStatusWorkflow,
+        private readonly MarkRescheduledWorkflow             $markRescheduledWorkflow,
+        // P1 workflows
+        private readonly ApprovePartialReservationWorkflow   $approvePartialReservationWorkflow,
     ) {}
 
     /** POST /api/fulfillment/orders/{order}/confirm
@@ -93,6 +96,30 @@ final class FulfillmentController extends Controller
             'message'  => $result->message,
             'order_id' => $result->order->id,
             'status'   => $result->order->status->value,
+        ]);
+    }
+
+    /** POST /api/fulfillment/orders/{order}/approve-partial-reservation
+     *  P1-002 — Manager approval gate: allows PartialReserved → Preparing.
+     *  Body: { notes?: string }
+     */
+    public function approvePartialReservation(Request $request, Order $order): JsonResponse
+    {
+        $data    = $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
+
+        $result = $this->engine->run(
+            $this->approvePartialReservationWorkflow,
+            $order,
+            ['notes' => $data['notes'] ?? null],
+            $actorId,
+        );
+
+        return response()->json([
+            'message'     => $result->message,
+            'order_id'    => $result->order->id,
+            'approved_at' => $result->meta['approved_at'] ?? null,
+            'approved_by' => $result->meta['approved_by'] ?? null,
         ]);
     }
 
@@ -374,8 +401,10 @@ final class FulfillmentController extends Controller
         }
 
         // ── Helper sets ───────────────────────────────────────────────────────────
-        // Early states: no inventory held (or inventory was released)
-        $earlyStates = ['pending', 'awaiting_payment', 'awaiting_stock', 'rescheduled', 'review', 'cancelled'];
+        // Early states: no inventory held (or inventory was released).
+        // 'scheduled' is a pre-activation early state; guard in ProcessOrderWorkflow
+        // enforces the delivery-date constraint before allowing activation.
+        $earlyStates = ['scheduled', 'pending', 'awaiting_payment', 'awaiting_stock', 'rescheduled', 'review', 'cancelled'];
         // Reserved states: inventory is held and products are locked
         $reservedStates = ['processing', 'confirmed'];
 

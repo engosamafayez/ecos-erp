@@ -55,10 +55,17 @@ final class ReturnToPendingWorkflow implements FulfillmentWorkflowInterface
             $released = true;
         }
 
+        // DRIFT-009 fix: clear reservation_status so it does not stay stale as 'Released'
+        // H-4 fix: also clear partial_reservation_approved_at — a manager approved a specific
+        // shortage at a specific point in time. After returning to Pending and re-reserving,
+        // the shortage profile may change and must be re-approved.
         $order->update([
-            'status'                => OrderStatus::Pending,
-            'inventory_reserved_at' => null,
-            'inventory_released_at' => null,
+            'status'                          => OrderStatus::Pending,
+            'inventory_reserved_at'           => null,
+            'inventory_released_at'           => null,
+            'reservation_status'              => null,
+            'reservation_failure_reason'      => null,
+            'partial_reservation_approved_at' => null,
         ]);
         $order->refresh();
 

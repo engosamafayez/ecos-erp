@@ -1,0 +1,58 @@
+{
+  "title": "مشتريات المواد الخام",
+  "subtitle": "إدارة أوامر شراء المواد الخام وتسليمات الموردين.",
+  "search": "بحث بالمادة أو المورد أو رقم الأمر…",
+  "actions": {
+    "new": "أمر شراء مادة جديد",
+    "receive": "استلام توصيل",
+    "cancel": "إلغاء"
+  },
+  "columns": {
+    "number": "رقم الأمر",
+    "material": "المادة",
+    "supplier": "المورد",
+    "orderedQty": "الكمية المطلوبة",
+    "receivedQty": "الكمية المستلمة",
+    "unit": "الوحدة",
+    "unitCost": "تكلفة الوحدة",
+    "total": "الإجمالي",
+    "expectedDate": "تاريخ التوصيل المتوقع",
+    "status": "الحالة"
+  },
+  "status": {
+    "draft": "مسودة",
+    "sent": "مُرسَل",
+    "partially_received": "مستلم جزئياً",
+    "received": "مستلم بالكامل",
+    "cancelled": "ملغى"
+  },
+  "form": {
+    "material": { "label": "المادة الخام", "placeholder": "اختر مادة…" },
+    "supplier": { "label": "المورد", "placeholder": "اختر مورداً…" },
+    "quantity": { "label": "الكمية" },
+    "unit": { "label": "الوحدة", "placeholder": "اختر وحدة…" },
+    "unitCost": { "label": "تكلفة الوحدة" },
+    "expectedDate": "تاريخ التوصيل المتوقع",
+    "warehouse": { "label": "مستودع الاستلام", "placeholder": "اختر مستودعاً…" },
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" }
+  },
+  "receipt": {
+    "title": "استلام توصيل",
+    "receivedQty": "الكمية المستلمة",
+    "receivedDate": "تاريخ الاستلام",
+    "lotNumber": "رقم الدفعة / التشغيلة",
+    "expiryDate": "تاريخ انتهاء الصلاحية",
+    "notes": "ملاحظات الفحص",
+    "submit": "تسجيل الاستلام",
+    "submitting": "جارٍ التسجيل…"
+  },
+  "drawer": {
+    "createTitle": "أمر شراء مادة خام جديد",
+    "editTitle": "تعديل أمر الشراء",
+    "createSubtitle": "طلب مواد خام من المورد.",
+    "submitCreate": "إنشاء الأمر",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  }
+}

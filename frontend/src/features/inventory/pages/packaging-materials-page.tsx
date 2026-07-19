@@ -8,21 +8,20 @@ export function PackagingMaterialsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Packaging Materials"
-        subtitle="Manage packaging materials used in production"
+        title="مواد التغليف"
+        subtitle="إدارة مواد التغليف المستخدمة في الإنتاج"
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Inventory', to: ROUTES.inventoryProducts },
-          { label: 'Packaging Materials' },
+          { label: 'الرئيسية', to: ROUTES.dashboard },
+          { label: 'المخزون', to: ROUTES.inventoryProducts },
+          { label: 'مواد التغليف' },
         ]}
       />
       <Card>
         <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <Package className="size-10 text-muted-foreground" />
-          <p className="font-medium">Packaging Materials</p>
+          <p className="font-medium">مواد التغليف</p>
           <p className="text-muted-foreground text-sm max-w-sm">
-            Packaging material management is coming soon. This section will allow you to track
-            boxes, bags, labels, and other packaging used in production.
+            إدارة مواد التغليف قادمة قريبًا. سيتيح لك هذا القسم تتبع الصناديق والأكياس والملصقات وغيرها من مواد التغليف المستخدمة في الإنتاج.
           </p>
         </CardContent>
       </Card>

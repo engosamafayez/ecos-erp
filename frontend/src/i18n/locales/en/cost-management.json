@@ -1,0 +1,65 @@
+{
+  "title": "Cost Management",
+  "subtitle": "FIFO cost intelligence, pricing decisions, and margin analysis.",
+  "pricingCenter": {
+    "title": "Pricing Decision Center",
+    "subtitle": "Review and approve product price changes.",
+    "search": "Search products…",
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "bulkApprove": "Approve Selected",
+      "publishPrices": "Publish to Channels"
+    },
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "currentCost": "Current Cost",
+      "newCost": "New Cost",
+      "currentPrice": "Current Price",
+      "suggestedPrice": "Suggested Price",
+      "margin": "Margin %",
+      "status": "Status"
+    },
+    "status": {
+      "pending": "Pending Review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "published": "Published"
+    }
+  },
+  "costLayers": {
+    "title": "Cost Layers (FIFO)",
+    "subtitle": "Inventory cost layers by FIFO method.",
+    "search": "Search by product or warehouse…",
+    "columns": {
+      "product": "Product",
+      "warehouse": "Warehouse",
+      "quantity": "Quantity",
+      "unitCost": "Unit Cost",
+      "totalCost": "Total Cost",
+      "receiptDate": "Receipt Date",
+      "reference": "Reference"
+    }
+  },
+  "profitability": {
+    "title": "Profitability Analysis",
+    "subtitle": "Revenue, cost, and margin by product and period.",
+    "columns": {
+      "product": "Product",
+      "revenue": "Revenue",
+      "cogs": "COGS",
+      "grossProfit": "Gross Profit",
+      "margin": "Margin %",
+      "unitsSold": "Units Sold"
+    }
+  },
+  "filters": {
+    "dateFrom": "From Date",
+    "dateTo": "To Date",
+    "warehouse": "Warehouse",
+    "allWarehouses": "All Warehouses",
+    "category": "Category",
+    "allCategories": "All Categories"
+  }
+}

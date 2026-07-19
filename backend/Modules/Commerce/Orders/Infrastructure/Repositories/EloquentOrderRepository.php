@@ -396,7 +396,7 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
         // globally unique across all companies (matching the unique constraint).
         $last = Order::withoutGlobalScopes()
             ->withTrashed()
-            ->orderByRaw("CAST(REPLACE(order_number, 'ORD-', '') AS UNSIGNED) DESC")
+            ->orderByRaw("CAST(REPLACE(order_number, 'ORD-', '') AS INTEGER) DESC")
             ->value('order_number');
 
         if ($last === null) {

@@ -44,7 +44,7 @@ export function PaymentCollectionForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Payment Type</Label>
+        <Label>طريقة الدفع</Label>
         <Select value={paymentType} onValueChange={setPaymentType}>
           <SelectTrigger>
             <SelectValue />
@@ -58,7 +58,7 @@ export function PaymentCollectionForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Amount (EGP) *</Label>
+        <Label>المبلغ (EGP) *</Label>
         <Input
           type="number"
           min="0"
@@ -72,7 +72,7 @@ export function PaymentCollectionForm({
 
       {paymentType === 'bank_transfer' && (
         <div className="space-y-1.5">
-          <Label>Reference Number</Label>
+          <Label>رقم المرجع</Label>
           <Input
             value={reference}
             onChange={(e) => setReference(e.target.value)}
@@ -82,21 +82,21 @@ export function PaymentCollectionForm({
       )}
 
       <div className="space-y-1.5">
-        <Label>Notes</Label>
+        <Label>ملاحظات</Label>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Optional notes..."
+          placeholder="ملاحظات اختيارية..."
           rows={2}
         />
       </div>
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
+          إلغاء
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'Recording...' : 'Record Payment'}
+          {isLoading ? 'جارٍ التسجيل...' : 'تسجيل الدفعة'}
         </Button>
       </div>
     </form>

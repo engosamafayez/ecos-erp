@@ -8,21 +8,20 @@ export function SemiFinishedMaterialsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Semi-Finished Materials"
-        subtitle="Manage work-in-progress and semi-finished goods"
+        title="المواد نصف المصنّعة"
+        subtitle="إدارة المنتجات تحت التصنيع والبضائع نصف المصنّعة"
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Inventory', to: ROUTES.inventoryProducts },
-          { label: 'Semi-Finished' },
+          { label: 'الرئيسية', to: ROUTES.dashboard },
+          { label: 'المخزون', to: ROUTES.inventoryProducts },
+          { label: 'نصف مصنّع' },
         ]}
       />
       <Card>
         <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <Factory className="size-10 text-muted-foreground" />
-          <p className="font-medium">Semi-Finished Materials</p>
+          <p className="font-medium">المواد نصف المصنّعة</p>
           <p className="text-muted-foreground text-sm max-w-sm">
-            Semi-finished materials management is coming soon. This section will track
-            work-in-progress items and intermediate goods used in multi-stage production.
+            إدارة المواد نصف المصنّعة قادمة قريبًا. سيتتبع هذا القسم عناصر الإنتاج الجاري والبضائع الوسيطة المستخدمة في الإنتاج متعدد المراحل.
           </p>
         </CardContent>
       </Card>

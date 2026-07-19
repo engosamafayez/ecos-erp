@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Orders\Application\Actions;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyShippedException;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderWarehouseNotAssignedException;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderLine;
+use Modules\Commerce\Orders\Domain\Models\OrderReservationAudit;
 use Modules\Inventory\InventoryItems\Application\Actions\ShipStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
@@ -23,11 +26,19 @@ final class ShipOrderInventoryAction
         private readonly InventoryItemRepositoryInterface $inventory,
     ) {}
 
-    public function execute(Order $order): void
+    /**
+     * @param array<string, float>|null $lineQuantities Map of order_line_id => qty to ship.
+     *                                                   When null, the full reserved_qty per line is used.
+     *                                                   Used for split-shipment (P1-001): each vehicle
+     *                                                   ships only the quantities allocated to it.
+     */
+    public function execute(Order $order, ?array $lineQuantities = null): void
     {
         if ($order->inventory_shipped_at !== null) {
             throw new OrderAlreadyShippedException($order->id);
         }
+
+        $previousReservationStatus = $order->reservation_status?->value;
 
         if ($order->assigned_warehouse_id === null) {
             throw new OrderWarehouseNotAssignedException($order->id);
@@ -44,12 +55,21 @@ final class ShipOrderInventoryAction
         $companyId   = $order->assignedWarehouse->company_id;
         $warehouseId = $order->assigned_warehouse_id;
 
-        DB::transaction(function () use ($order, $companyId, $warehouseId): void {
+        DB::transaction(function () use ($order, $companyId, $warehouseId, $lineQuantities): void {
             $totalCogs = 0.0;
 
             foreach ($order->lines as $line) {
                 /** @var OrderLine $line */
-                $qty = (float) $line->quantity;
+                // When lineQuantities is provided (split-shipment path), use the quantity
+                // allocated to this specific vehicle for this line. Otherwise fall back to
+                // the fully-reserved quantity — the standard full-shipment path.
+                $qty = $lineQuantities !== null
+                    ? (float) ($lineQuantities[$line->id] ?? 0.0)
+                    : (float) ($line->reserved_qty ?? 0.0);
+
+                if ($qty <= 0.0) {
+                    continue;
+                }
 
                 // 1. Move physical stock
                 $this->shipStock->execute(new StockOperationDTO(
@@ -93,16 +113,31 @@ final class ShipOrderInventoryAction
                 'actual_cogs_amount'    => round($totalCogs, 2),
                 'actual_margin_amount'  => round($margin, 2),
                 'actual_margin_percent' => $marginPct,
+                'reservation_status'    => ReservationStatus::Transferred->value,
             ]);
         });
+
+        // Audit the transfer (vehicle_id not available at this layer — caller can add it)
+        OrderReservationAudit::record(
+            orderId:     $order->id,
+            fromStatus:  $previousReservationStatus,
+            toStatus:    ReservationStatus::Transferred->value,
+            reason:      'Inventory transferred to vehicle during loading',
+            warehouseId: $order->assigned_warehouse_id,
+            meta:        ['line_count' => $order->lines->count()],
+            actorId:     Auth::id(),
+            actorType:   Auth::check() ? 'user' : 'system',
+        );
     }
 
     private function refreshFifoCost(string $productId, string $warehouseId): void
     {
-        // Find the oldest remaining layer for this product in any warehouse
-        // (FIFO cost is global — not warehouse-specific — as it reflects purchase cost)
+        // BUG-08 fix: scope to the warehouse that shipped to get the correct per-warehouse
+        // FIFO cost. Without this, multi-warehouse deployments use a layer from a different
+        // warehouse — producing wrong COGS and pricing review data.
         $oldestLayer = \Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer::query()
             ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
             ->where('remaining_qty', '>', 0)
             ->orderBy('created_at')
             ->orderBy('id')

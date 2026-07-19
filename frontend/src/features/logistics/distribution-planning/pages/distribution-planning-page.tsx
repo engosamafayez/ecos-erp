@@ -166,12 +166,12 @@ function UnassignedPanel({
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-amber-200 dark:border-amber-700/40 text-muted-foreground">
-                <th className="text-left py-2 px-4 font-medium">Order #</th>
-                <th className="text-left py-2 px-3 font-medium">Customer</th>
-                <th className="text-left py-2 px-3 font-medium">Phone</th>
-                <th className="text-left py-2 px-3 font-medium">City</th>
-                <th className="text-left py-2 px-3 font-medium">Why unassigned</th>
-                <th className="text-right py-2 px-3 font-medium">Total</th>
+                <th className="text-start py-2 px-4 font-medium">Order #</th>
+                <th className="text-start py-2 px-3 font-medium">Customer</th>
+                <th className="text-start py-2 px-3 font-medium">Phone</th>
+                <th className="text-start py-2 px-3 font-medium">City</th>
+                <th className="text-start py-2 px-3 font-medium">Why unassigned</th>
+                <th className="text-end py-2 px-3 font-medium">Total</th>
                 <th className="py-2 px-3" />
               </tr>
             </thead>
@@ -195,7 +195,7 @@ function UnassignedPanel({
                   <td className="py-2 px-3">
                     <MissingReasonBadge reason={o.missing_reason} />
                   </td>
-                  <td className="py-2 px-3 text-right tabular-nums font-medium">
+                  <td className="py-2 px-3 text-end tabular-nums font-medium">
                     EGP {fmt(o.total)}
                   </td>
                   <td className="py-2 px-3">
@@ -634,7 +634,7 @@ export function DistributionPlanningPage() {
         </div>
 
         {/* Live status summary */}
-        <div className="ml-auto flex items-end gap-1.5 pb-0.5">
+        <div className="ms-auto flex items-end gap-1.5 pb-0.5">
           {planningKpis.ready > 0 && (
             <Badge variant="outline" className="text-xs">{planningKpis.ready} Ready</Badge>
           )}
@@ -686,7 +686,7 @@ export function DistributionPlanningPage() {
                 <thead className="bg-muted/50">
                   <tr className="border-b text-muted-foreground">
                     {['Zone', 'Orders', 'Customers', 'Products', 'Stops', 'Collection', 'Weight', 'Status', ''].map((h) => (
-                      <th key={h} className="py-2 px-3 font-medium text-left">{h}</th>
+                      <th key={h} className="py-2 px-3 font-medium text-start">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -774,7 +774,7 @@ export function DistributionPlanningPage() {
                     <SortTh label="Collection"     col="total_collection" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" />
                     <SortTh label="Weight"         col={null}             sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" />
                     <SortTh label="Status"         col="planning_status"  sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                    <th className="py-2 px-3 font-medium text-right">Action</th>
+                    <th className="py-2 px-3 font-medium text-end">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -799,29 +799,29 @@ export function DistributionPlanningPage() {
                         </div>
                       </td>
                       {/* Orders */}
-                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
+                      <td className="py-2.5 px-3 text-end tabular-nums font-semibold">
                         {zone.orders_count > 0 ? zone.orders_count : (
                           <span className="text-muted-foreground font-normal">—</span>
                         )}
                       </td>
                       {/* Customers */}
-                      <td className="py-2.5 px-3 text-right tabular-nums text-muted-foreground">
+                      <td className="py-2.5 px-3 text-end tabular-nums text-muted-foreground">
                         {zone.orders_count > 0 ? zone.customers_count : '—'}
                       </td>
                       {/* Products */}
-                      <td className="py-2.5 px-3 text-right tabular-nums text-muted-foreground">
+                      <td className="py-2.5 px-3 text-end tabular-nums text-muted-foreground">
                         {zone.orders_count > 0 ? zone.distinct_products : '—'}
                       </td>
                       {/* Stops */}
-                      <td className="py-2.5 px-3 text-right tabular-nums text-muted-foreground">
+                      <td className="py-2.5 px-3 text-end tabular-nums text-muted-foreground">
                         {zone.orders_count > 0 ? zone.estimated_stops : '—'}
                       </td>
                       {/* Collection */}
-                      <td className="py-2.5 px-3 text-right tabular-nums font-medium whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-end tabular-nums font-medium whitespace-nowrap">
                         {zone.orders_count > 0 ? `EGP ${fmt(zone.total_collection)}` : '—'}
                       </td>
                       {/* Weight */}
-                      <td className="py-2.5 px-3 text-right text-muted-foreground">—</td>
+                      <td className="py-2.5 px-3 text-end text-muted-foreground">—</td>
                       {/* Status */}
                       <td className="py-2.5 px-3">
                         {zone.planning_status === 'planned' ? (
@@ -839,7 +839,7 @@ export function DistributionPlanningPage() {
                         )}
                       </td>
                       {/* Action */}
-                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-end whitespace-nowrap">
                         {zone.orders_count === 0 ? (
                           <span className="text-xs text-muted-foreground">Empty</span>
                         ) : zone.planning_status === 'planned' ? (

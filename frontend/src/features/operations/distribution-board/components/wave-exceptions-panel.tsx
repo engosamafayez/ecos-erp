@@ -4,15 +4,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useWaveExceptions } from '../hooks/use-distribution-board';
 
 function formatTime(dateStr: string): string {
-  return new Intl.DateTimeFormat('en-EG', { hour: '2-digit', minute: '2-digit' }).format(new Date(dateStr));
+  return new Intl.DateTimeFormat('ar-EG', { hour: '2-digit', minute: '2-digit' }).format(new Date(dateStr));
 }
 
 const REASON_LABELS: Record<string, string> = {
-  supervisor_return: 'Supervisor Return',
-  zone_mismatch:     'Zone Mismatch',
-  outlier:           'Geographic Outlier',
-  capacity_exceeded: 'Capacity Exceeded',
-  other:             'Other',
+  supervisor_return: 'إرجاع من المشرف',
+  zone_mismatch:     'عدم تطابق المنطقة',
+  outlier:           'شاذ جغرافياً',
+  capacity_exceeded: 'تجاوز الطاقة',
+  other:             'أخرى',
 };
 
 export function WaveExceptionsPanel() {
@@ -29,7 +29,7 @@ export function WaveExceptionsPanel() {
         <div className="flex items-center gap-2">
           <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
           <span className="text-xs font-medium text-amber-800 dark:text-amber-300">
-            Wave Exceptions
+            استثناءات الموجة
           </span>
           {count > 0 && (
             <Badge
@@ -40,7 +40,7 @@ export function WaveExceptionsPanel() {
             </Badge>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">Orders returned to wave — need reassignment</p>
+        <p className="text-xs text-muted-foreground">طلبات أُعيدت إلى الموجة — تحتاج إعادة تعيين</p>
       </div>
 
       {isLoading ? (

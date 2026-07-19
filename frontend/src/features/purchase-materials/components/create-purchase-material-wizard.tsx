@@ -33,10 +33,10 @@ type LineItem = PurchaseMaterialLinePayload & {
 };
 
 const PRIORITY_OPTIONS: { value: PurchaseMaterialPriority; label: string }[] = [
-  { value: 'low', label: 'Low' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'high', label: 'High' },
-  { value: 'urgent', label: 'Urgent' },
+  { value: 'low', label: 'منخفضة' },
+  { value: 'normal', label: 'عادية' },
+  { value: 'high', label: 'عالية' },
+  { value: 'urgent', label: 'عاجلة' },
 ];
 
 const TOTAL_STEPS = 3;
@@ -133,10 +133,10 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
           notes: ln,
         })),
       });
-      toast.success('Purchase material request created.');
+      toast.success('تم إنشاء طلب المشتريات.');
       handleClose();
     } catch {
-      toast.error('Failed to create request. Please try again.');
+      toast.error('فشل إنشاء الطلب. حاول مرة أخرى.');
     }
   }
 
@@ -147,10 +147,10 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>New Purchase Material Request</DialogTitle>
+          <DialogTitle>طلب مشتريات جديد</DialogTitle>
           <DialogDescription>
-            Step {step} of {TOTAL_STEPS} —{' '}
-            {step === 1 ? 'General Information' : step === 2 ? 'Requested Materials' : 'Review & Submit'}
+            الخطوة {step} من {TOTAL_STEPS} —{' '}
+            {step === 1 ? 'المعلومات العامة' : step === 2 ? 'المواد المطلوبة' : 'المراجعة والإرسال'}
           </DialogDescription>
         </DialogHeader>
 
@@ -170,16 +170,16 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
             <div className="flex flex-col gap-4 px-1 overflow-y-auto max-h-[60vh] py-1">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Company</label>
+                  <label className="text-sm font-medium">الشركة</label>
                   <CompanySelect
                     value={companyId || null}
                     onChange={(v) => { setCompanyId(v ?? ''); setWarehouseId(''); }}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Channel</label>
+                  <label className="text-sm font-medium">القناة</label>
                   <Input
-                    placeholder="Channel identifier (optional)"
+                    placeholder="معرّف القناة (اختياري)"
                     value={channelId}
                     onChange={(e) => setChannelId(e.target.value)}
                   />
@@ -188,11 +188,11 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium">
-                  Warehouse <span className="text-destructive">*</span>
+                  المستودع <span className="text-destructive">*</span>
                 </label>
                 {wLoading ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="size-3.5 animate-spin" /> Loading warehouses…
+                    <Loader2 className="size-3.5 animate-spin" /> جارٍ تحميل المستودعات…
                   </div>
                 ) : (
                   <select
@@ -200,7 +200,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                     onChange={(e) => setWarehouseId(e.target.value)}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    <option value="">Select warehouse…</option>
+                    <option value="">اختر المستودع…</option>
                     {warehouses.map((w) => (
                       <option key={w.id} value={w.id}>{w.name}</option>
                     ))}
@@ -210,7 +210,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Priority</label>
+                  <label className="text-sm font-medium">الأولوية</label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as PurchaseMaterialPriority)}
@@ -222,18 +222,18 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Required By</label>
+                  <label className="text-sm font-medium">مطلوب بحلول</label>
                   <Input type="date" value={requiredDate} onChange={(e) => setRequiredDate(e.target.value)} />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">Notes</label>
+                <label className="text-sm font-medium">ملاحظات</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  placeholder="Optional context for procurement team…"
+                  placeholder="سياق اختياري لفريق المشتريات…"
                   className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
                 />
               </div>
@@ -246,12 +246,12 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
               {/* Left: product picker + selected lines */}
               <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-2">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Search Products</label>
+                  <label className="text-sm font-medium">بحث عن منتجات</label>
                   <div className="relative">
                     <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
                     <Input
                       className="pl-9"
-                      placeholder="Search by name or SKU…"
+                      placeholder="بحث بالاسم أو SKU…"
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
                     />
@@ -262,11 +262,11 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 <div className="border rounded-md overflow-hidden">
                   {pLoading ? (
                     <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                      <Loader2 className="size-4 animate-spin" /> Searching…
+                      <Loader2 className="size-4 animate-spin" /> جارٍ البحث…
                     </div>
                   ) : products.length === 0 ? (
                     <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-                      No products found
+                      لا توجد منتجات
                     </div>
                   ) : (
                     <table className="w-full text-sm">
@@ -284,7 +284,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                                 <p className="font-medium leading-tight">{p.name}</p>
                                 <p className="text-xs text-muted-foreground">{p.sku}</p>
                               </td>
-                              <td className="px-3 py-2 text-right">
+                              <td className="px-3 py-2 text-end">
                                 <Button
                                   type="button"
                                   size="sm"
@@ -295,7 +295,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                                   }}
                                 >
                                   {added ? <Minus className="size-3.5" /> : <Plus className="size-3.5" />}
-                                  {added ? 'Remove' : 'Add'}
+                                  {added ? 'إزالة' : 'إضافة'}
                                 </Button>
                               </td>
                             </tr>
@@ -310,14 +310,14 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 {lines.length > 0 && (
                   <div className="flex flex-col gap-2">
                     <p className="text-sm font-medium text-muted-foreground">
-                      Selected ({lines.length})
+                      المحدد ({lines.length})
                     </p>
                     <div className="border rounded-md overflow-hidden">
                       <table className="w-full text-sm">
                         <thead className="bg-muted/40">
                           <tr>
-                            <th className="px-3 py-1.5 text-left font-medium text-xs text-muted-foreground">Material</th>
-                            <th className="px-3 py-1.5 text-center font-medium text-xs text-muted-foreground w-24">Qty</th>
+                            <th className="px-3 py-1.5 text-start font-medium text-xs text-muted-foreground">المادة</th>
+                            <th className="px-3 py-1.5 text-center font-medium text-xs text-muted-foreground w-24">الكمية</th>
                             <th className="px-3 py-1.5 w-8" />
                           </tr>
                         </thead>
@@ -363,7 +363,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 {lines.length === 0 && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground border border-dashed rounded-md p-4">
                     <AlertCircle className="size-4 shrink-0" />
-                    Add at least one material to continue.
+                    أضف مادة واحدة على الأقل للمتابعة.
                   </div>
                 )}
               </div>
@@ -371,7 +371,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
               {/* Right: Enterprise Demand Panel */}
               <div className="w-64 shrink-0 border-l pl-4 overflow-y-auto">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                  Demand Intelligence
+                  ذكاء الطلب
                 </p>
                 <EnterpriseDemandPanel
                   productId={panelProductId}
@@ -388,22 +388,22 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
             <div className="flex flex-col gap-4 px-1 overflow-y-auto max-h-[60vh] py-1">
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div>
-                  <p className="text-xs text-muted-foreground">Warehouse</p>
+                  <p className="text-xs text-muted-foreground">المستودع</p>
                   <p className="font-medium">{warehouses.find((w) => w.id === warehouseId)?.name ?? warehouseId}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Priority</p>
+                  <p className="text-xs text-muted-foreground">الأولوية</p>
                   <p className="font-medium capitalize">{priority}</p>
                 </div>
                 {channelId && (
                   <div>
-                    <p className="text-xs text-muted-foreground">Channel</p>
+                    <p className="text-xs text-muted-foreground">القناة</p>
                     <p className="font-medium">{channelId}</p>
                   </div>
                 )}
                 {requiredDate && (
                   <div>
-                    <p className="text-xs text-muted-foreground">Required By</p>
+                    <p className="text-xs text-muted-foreground">مطلوب بحلول</p>
                     <p className="font-medium">
                       {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(requiredDate))}
                     </p>
@@ -411,7 +411,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 )}
                 {notes && (
                   <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground">Notes</p>
+                    <p className="text-xs text-muted-foreground">ملاحظات</p>
                     <p>{notes}</p>
                   </div>
                 )}
@@ -421,8 +421,8 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr>
-                      <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground">Material</th>
-                      <th className="px-3 py-2 text-right font-medium text-xs text-muted-foreground">Qty Requested</th>
+                      <th className="px-3 py-2 text-start font-medium text-xs text-muted-foreground">المادة</th>
+                      <th className="px-3 py-2 text-end font-medium text-xs text-muted-foreground">الكمية المطلوبة</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -432,7 +432,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                           <p className="font-medium">{line._name}</p>
                           <p className="text-xs text-muted-foreground">{line._sku}</p>
                         </td>
-                        <td className="px-3 py-2 text-right font-mono">{line.requested_qty.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-end font-mono">{line.requested_qty.toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -445,11 +445,11 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
         <DialogFooter className="gap-2 pt-2">
           {step > 1 && (
             <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
-              Back
+              السابق
             </Button>
           )}
           <Button type="button" variant="ghost" onClick={handleClose}>
-            Cancel
+            إلغاء
           </Button>
           {step < TOTAL_STEPS ? (
             <Button
@@ -457,7 +457,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
               disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
               onClick={() => setStep((s) => s + 1)}
             >
-              Next
+              التالي
             </Button>
           ) : (
             <Button
@@ -466,7 +466,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
               onClick={() => { void handleSubmit(); }}
             >
               {create.isPending && <Loader2 className="size-4 animate-spin mr-2" />}
-              Create Request
+              إنشاء الطلب
             </Button>
           )}
         </DialogFooter>

@@ -246,7 +246,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                           <p className="text-xs font-medium truncate">{line.material_name}</p>
                           <p className="text-[10px] text-muted-foreground font-mono">{line.material_sku}</p>
                         </div>
-                        <div className="text-right shrink-0">
+                        <div className="text-end shrink-0">
                           <p className="text-xs font-medium">{line.quantity} {line.unit_symbol}</p>
                           {line.waste_percentage > 0 && (
                             <p className="text-[10px] text-amber-600">+{line.waste_percentage}% waste</p>
@@ -274,7 +274,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                         <p className="text-xs font-mono font-medium">{o.order_number}</p>
                         <p className="text-[10px] text-muted-foreground">{o.customer_name ?? '—'}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-end">
                         <p className="text-xs font-medium">{o.quantity} {product?.unit_symbol}</p>
                         <p className="text-[10px] text-muted-foreground">{o.delivery_zone ?? '—'}</p>
                       </div>

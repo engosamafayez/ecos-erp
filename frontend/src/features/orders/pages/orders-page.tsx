@@ -22,7 +22,11 @@ import { OrderAdvancedFilters } from '@/features/orders/components/order-advance
 import { OrderCustomerIntelligence } from '@/features/orders/components/order-customer-intelligence';
 import { OrderDetailDrawer } from '@/features/orders/components/order-detail-drawer';
 import type { BulkActionKey } from '@/features/orders/components/order-list-toolbar';
-import { OrderListToolbar } from '@/features/orders/components/order-list-toolbar';
+import {
+  OrderListToolbar,
+  IRREVERSIBLE_BULK_ACTIONS,
+  BULK_ACTION_TARGET_LABEL,
+} from '@/features/orders/components/order-list-toolbar';
 import { OrderSmartToolbar } from '@/features/orders/components/order-smart-toolbar';
 import { OrderStatusTabs } from '@/features/orders/components/order-status-tabs';
 import { ORDER_COLUMN_META } from '@/features/orders/components/order-column-meta';
@@ -149,6 +153,9 @@ export function OrdersPage() {
   const [bulkRescheduleOpen, setBulkRescheduleOpen] = useState(false);
   const [bulkRescheduleDate, setBulkRescheduleDate] = useState('');
   const [pendingRescheduleIds, setPendingRescheduleIds] = useState<string[]>([]);
+
+  // ── Bulk confirmation dialog ──────────────────────────────────────────────────
+  const [pendingBulkAction, setPendingBulkAction] = useState<BulkActionKey | null>(null);
 
   // ── Drawer state ──────────────────────────────────────────────────────────────
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
@@ -439,33 +446,51 @@ export function OrdersPage() {
   }
 
   // ── Bulk action dispatch ──────────────────────────────────────────────────────
+  // Step 1: Capture intent — open confirmation dialog (or date picker for reschedule).
   function handleBulkAction(action: BulkActionKey) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (action === 'reschedule') {
+      setPendingRescheduleIds(ids);
+      setBulkRescheduleDate('');
+      setBulkRescheduleOpen(true);
+      return;
+    }
+    setPendingBulkAction(action);
+  }
+
+  // Step 2: Execute after user confirms in the dialog.
+  function executeBulkAction() {
+    const action = pendingBulkAction;
+    if (!action) return;
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
 
     switch (action) {
-      case 'confirm':              bulkConfirm.mutate(ids); break;
-      case 'verify_payment':       bulkConfirm.mutate(ids); break;
-      case 'cancel':               bulkCancel.mutate({ ids }); break;
-      case 'move_to_preparation':  bulkMoveToPrep.mutate(ids); break;
-      case 'complete_delivery':    bulkCompleteDelivery.mutate(ids); break;
-      case 'complete':             bulkComplete.mutate(ids); break;
-      case 'dispatch':             bulkDispatch.mutate(ids); break;
-      case 'awaiting_stock':       bulkAwaitingStock.mutate({ ids }); break;
-      case 'resume':               bulkResume.mutate(ids); break;
-      case 'resume_confirmed':     bulkResumeToConfirmed.mutate(ids); break;
-      case 'review':               bulkReview.mutate({ ids }); break;
-      case 'return':               bulkReturn.mutate({ ids }); break;
-      case 'return_to_confirmed':  bulkReturnToConfirmed.mutate(ids); break;
-      case 'reschedule':
-        setPendingRescheduleIds(ids);
-        setBulkRescheduleDate('');
-        setBulkRescheduleOpen(true);
-        return; // don't clear selection yet
-      default:
-        break;
+      case 'confirm':
+      case 'verify_payment':           bulkConfirm.mutate(ids); break;
+      case 'cancel':                   bulkCancel.mutate({ ids }); break;
+      case 'move_to_preparation':
+      case 'return_to_preparation':    bulkMoveToPrep.mutate(ids); break;
+      case 'complete_delivery':        bulkCompleteDelivery.mutate(ids); break;
+      case 'complete':                 bulkComplete.mutate(ids); break;
+      case 'dispatch':                 bulkDispatch.mutate(ids); break;
+      case 'awaiting_stock':           bulkAwaitingStock.mutate({ ids }); break;
+      case 'resume':
+      case 'retry_reservation':        bulkResume.mutate(ids); break;
+      case 'resume_confirmed':         bulkResumeToConfirmed.mutate(ids); break;
+      case 'review':
+      case 'delivery_failed':          bulkReview.mutate({ ids }); break;
+      case 'return':                   bulkReturn.mutate({ ids }); break;
+      case 'return_to_confirmed':
+      case 'return_to_stock':          bulkReturnToConfirmed.mutate(ids); break;
+      // Pending backend implementation — no-op for now:
+      // move_to_awaiting_payment, start_manufacturing, purchase_materials,
+      // inspect_return, scrap
+      default: break;
     }
     clearSelection();
+    setPendingBulkAction(null);
   }
 
   function confirmBulkReschedule() {
@@ -736,6 +761,71 @@ export function OrdersPage() {
         open={confirmingOrder !== null}
         onOpenChange={(open) => { if (!open) setConfirmingOrder(null); }}
       />
+
+      {/* ── Bulk Action Confirmation Dialog ── */}
+      {(() => {
+        const action = pendingBulkAction;
+        if (!action) return null;
+        const count = selectedOrders.length;
+        const isIrreversible = IRREVERSIBLE_BULK_ACTIONS.has(action);
+        const targetLabel = BULK_ACTION_TARGET_LABEL[action] ?? action;
+        const statusDist = selectedOrders.reduce<Record<string, number>>((acc, o) => {
+          acc[o.status] = (acc[o.status] ?? 0) + 1;
+          return acc;
+        }, {});
+        return (
+          <Dialog open onOpenChange={(open) => { if (!open) setPendingBulkAction(null); }}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{t(`bulk.${action}`, action)}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-1 text-sm">
+                <p className="text-foreground">
+                  You are about to perform this action on{' '}
+                  <span className="font-semibold">{count} {count === 1 ? 'order' : 'orders'}</span>.
+                </p>
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Selected orders
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(statusDist).map(([status, n]) => (
+                      <span key={status} className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                        {n} × {t(`status.${status}`, status)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Target state
+                  </p>
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                    → {targetLabel}
+                  </span>
+                </div>
+                {isIrreversible ? (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                    This action cannot be undone.
+                  </div>
+                ) : null}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" size="sm" onClick={() => setPendingBulkAction(null)}>
+                  {tCommon('cancel')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={isIrreversible ? 'destructive' : 'default'}
+                  onClick={executeBulkAction}
+                >
+                  Confirm
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
 
       {/* ── Bulk Reschedule Date Dialog ── */}
       <Dialog open={bulkRescheduleOpen} onOpenChange={setBulkRescheduleOpen}>

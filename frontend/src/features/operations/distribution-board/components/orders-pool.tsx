@@ -15,12 +15,12 @@ function OrderCard({ order, onClick }: { order: PoolOrder; onClick?: () => void 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors group"
+      className="w-full text-start p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors group"
     >
       <div className="flex items-start justify-between gap-2 mb-1.5">
         <span className="text-xs font-mono font-medium text-primary">#{order.order_number}</span>
         <span className="text-xs font-semibold tabular-nums">
-          EGP {Number(order.grand_total).toLocaleString('en-EG', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          EGP {Number(order.grand_total).toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
         </span>
       </div>
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
@@ -42,7 +42,7 @@ export function OrdersPool({ orders, isLoading, selectedZoneName, onOrderClick }
       <div className="px-3 py-2.5 border-b flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <Package className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Unassigned Orders</span>
+          <span className="text-sm font-medium">طلبات غير مُعيَّنة</span>
         </div>
         {!isLoading && (
           <Badge variant={orders.length > 0 ? 'secondary' : 'outline'} className="text-xs tabular-nums">
@@ -60,7 +60,7 @@ export function OrdersPool({ orders, isLoading, selectedZoneName, onOrderClick }
           ) : orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <Package className="h-8 w-8 text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">All orders assigned</p>
+              <p className="text-sm text-muted-foreground">جميع الطلبات مُعيَّنة</p>
               <p className="text-xs text-muted-foreground/60 mt-1">{selectedZoneName}</p>
             </div>
           ) : (

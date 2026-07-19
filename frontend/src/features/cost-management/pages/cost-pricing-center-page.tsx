@@ -84,22 +84,22 @@ import { ROUTES } from '@/router/routes';
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_OPTIONS: { value: ReviewStatus | 'all'; label: string }[] = [
-  { value: 'all',          label: 'All Statuses' },
-  { value: 'pending',      label: 'Pending' },
-  { value: 'approved',     label: 'Approved' },
-  { value: 'kept',         label: 'Kept Current' },
-  { value: 'custom_price', label: 'Custom Price' },
-  { value: 'snoozed',      label: 'Snoozed' },
-  { value: 'rejected',     label: 'Rejected' },
+  { value: 'all',          label: 'جميع الحالات' },
+  { value: 'pending',      label: 'معلّق' },
+  { value: 'approved',     label: 'معتمد' },
+  { value: 'kept',         label: 'السعر الحالي محتفظ به' },
+  { value: 'custom_price', label: 'سعر مخصص' },
+  { value: 'snoozed',      label: 'مؤجّل' },
+  { value: 'rejected',     label: 'مرفوض' },
 ];
 
 const IMPACT_OPTIONS: { value: ImpactType | 'all'; label: string }[] = [
-  { value: 'all',               label: 'All Impacts' },
-  { value: 'margin_below_target', label: 'Below Target' },
-  { value: 'cost_increased',    label: 'Cost Increased' },
-  { value: 'cost_decreased',    label: 'Cost Decreased' },
-  { value: 'recipe_changed',    label: 'Recipe Changed' },
-  { value: 'packaging_changed', label: 'Packaging Changed' },
+  { value: 'all',               label: 'جميع التأثيرات' },
+  { value: 'margin_below_target', label: 'أقل من الهدف' },
+  { value: 'cost_increased',    label: 'التكلفة ارتفعت' },
+  { value: 'cost_decreased',    label: 'التكلفة انخفضت' },
+  { value: 'recipe_changed',    label: 'الوصفة تغيّرت' },
+  { value: 'packaging_changed', label: 'التغليف تغيّر' },
 ];
 
 // ── Formatting ────────────────────────────────────────────────────────────────
@@ -122,13 +122,13 @@ function impactReasons(impacts: ImpactType[]): string {
   if (impacts.length === 0) return '—';
   return impacts.map((i) => {
     switch (i) {
-      case 'recipe_changed':      return 'Recipe changed';
-      case 'cost_increased':      return 'Cost increased';
-      case 'cost_decreased':      return 'Cost decreased';
-      case 'margin_below_target': return 'Below margin target';
-      case 'packaging_changed':   return 'Packaging changed';
+      case 'recipe_changed':      return 'تغيّرت الوصفة';
+      case 'cost_increased':      return 'التكلفة ارتفعت';
+      case 'cost_decreased':      return 'التكلفة انخفضت';
+      case 'margin_below_target': return 'أقل من هدف الهامش';
+      case 'packaging_changed':   return 'تغيّر التغليف';
     }
-  }).join(', ');
+  }).join('، ');
 }
 
 function addDays(n: number) {
@@ -184,12 +184,12 @@ const STATUS_BADGE: Record<ReviewStatus, string> = {
 };
 
 const STATUS_LABEL: Record<ReviewStatus, string> = {
-  pending:      'Pending',
-  approved:     'Approved',
-  kept:         'Kept',
-  custom_price: 'Custom',
-  snoozed:      'Snoozed',
-  rejected:     'Rejected',
+  pending:      'معلّق',
+  approved:     'معتمد',
+  kept:         'محتفظ به',
+  custom_price: 'مخصص',
+  snoozed:      'مؤجّل',
+  rejected:     'مرفوض',
 };
 
 function StatusBadge({ status }: { status: ReviewStatus }) {
@@ -204,23 +204,23 @@ function ImpactIcons({ impacts }: { impacts: ImpactType[] }) {
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {impacts.includes('margin_below_target') && (
-        <span title="Below target margin">
+        <span title="أقل من الهامش المستهدف">
           <AlertTriangle className="size-3.5 text-amber-500" />
         </span>
       )}
       {impacts.includes('cost_increased') && (
-        <span title="Cost increased">
+        <span title="التكلفة ارتفعت">
           <TrendingUp className="size-3.5 text-red-500" />
         </span>
       )}
       {impacts.includes('cost_decreased') && (
-        <span title="Cost decreased">
+        <span title="التكلفة انخفضت">
           <TrendingDown className="size-3.5 text-emerald-500" />
         </span>
       )}
       {impacts.includes('recipe_changed') && (
-        <span title="Recipe changed" className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded px-1 font-medium">
-          Recipe
+        <span title="تغيّرت الوصفة" className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded px-1 font-medium">
+          وصفة
         </span>
       )}
     </div>
@@ -242,26 +242,26 @@ function PolicyBadge({ review }: { review: PricingReview }) {
     <div className="flex flex-wrap gap-1">
       {isCustom ? (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-purple-400 text-purple-600 dark:text-purple-400">
-          Custom
+          مخصص
         </Badge>
       ) : (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-blue-400 text-blue-600 dark:text-blue-400">
-          Brand Policy
+          سياسة العلامة
         </Badge>
       )}
       {belowBrand && (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-red-400 text-red-600 dark:text-red-400">
-          Below Brand ↓
+          أقل من العلامة ↓
         </Badge>
       )}
       {saleMarginLow && (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-400 text-amber-600 dark:text-amber-400">
-          Sale Low
+          هامش تخفيض منخفض
         </Badge>
       )}
       {costChanged && (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-orange-400 text-orange-600 dark:text-orange-400">
-          Cost ↑
+          التكلفة ↑
         </Badge>
       )}
     </div>
@@ -351,7 +351,7 @@ function InlinePriceEditor({
         </div>
         <div className="flex gap-2 mt-2">
           <Button size="sm" className="h-7 flex-1" onClick={handleSave} disabled={isSaving || !val || isNaN(parseFloat(val))}>
-            {isSaving ? <Loader2 className="size-3 animate-spin" /> : 'Save'}
+            {isSaving ? <Loader2 className="size-3 animate-spin" /> : 'حفظ'}
           </Button>
           <Button size="sm" variant="ghost" className="h-7" onClick={() => setOpen(false)}>
             ✕
@@ -381,8 +381,8 @@ function PricingStrategyCell({
 
   const activeField  = mode === 'margin' ? 'target_margin' : 'markup';
   const activeValue  = mode === 'margin' ? review.target_margin : review.markup;
-  const activeLabel  = mode === 'margin' ? 'Target Margin %' : 'Markup %';
-  const derivedLabel = mode === 'margin' ? 'Markup' : 'Margin';
+  const activeLabel  = mode === 'margin' ? 'الهامش المستهدف %' : 'نسبة الربح %';
+  const derivedLabel = mode === 'margin' ? 'نسبة الربح' : 'الهامش';
   const derivedValue = mode === 'margin' ? review.markup : review.target_margin;
 
   return (
@@ -399,7 +399,7 @@ function PricingStrategyCell({
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
-          Margin
+          هامش
         </button>
         <span className="text-muted-foreground/40 text-[10px]">|</span>
         <button
@@ -412,7 +412,7 @@ function PricingStrategyCell({
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
-          Markup
+          ربح
         </button>
       </div>
       {/* Active field — editable via pencil popover */}
@@ -467,12 +467,12 @@ function CustomPriceDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Set Custom Price</DialogTitle>
+          <DialogTitle>تعيين سعر مخصص</DialogTitle>
           <DialogDescription>{review.product.name}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-2">
           <div>
-            <Label className="mb-1.5 block text-sm">Custom Selling Price</Label>
+            <Label className="mb-1.5 block text-sm">سعر البيع المخصص</Label>
             <Input
               type="number" min="0" step="0.01" value={price}
               onChange={(e) => setPrice(e.target.value)}
@@ -480,34 +480,34 @@ function CustomPriceDialog({
             />
             <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
               <div className="rounded-md border p-2 text-center">
-                <p className="text-muted-foreground">Margin</p>
+                <p className="text-muted-foreground">الهامش</p>
                 <p className={cn('font-medium', margin >= review.target_margin ? 'text-emerald-600' : 'text-red-600')}>
                   {margin.toFixed(1)}%
                 </p>
               </div>
               <div className="rounded-md border p-2 text-center">
-                <p className="text-muted-foreground">Profit/unit</p>
+                <p className="text-muted-foreground">ربح/وحدة</p>
                 <p className={cn('font-medium', profit >= 0 ? 'text-emerald-600' : 'text-red-600')}>
                   {fmt(profit)}
                 </p>
               </div>
               <div className="rounded-md border p-2 text-center">
-                <p className="text-muted-foreground">Target</p>
+                <p className="text-muted-foreground">المستهدف</p>
                 <p className="font-medium">{review.target_margin.toFixed(1)}%</p>
               </div>
             </div>
           </div>
           <div>
-            <Label className="mb-1.5 block text-sm">Reason <span className="text-destructive">*</span></Label>
+            <Label className="mb-1.5 block text-sm">السبب <span className="text-destructive">*</span></Label>
             <Textarea
               value={reason} onChange={(e) => setReason(e.target.value)}
-              placeholder="Why is this price appropriate?" rows={3}
+              placeholder="لماذا هذا السعر مناسب؟" rows={3}
             />
           </div>
           <div className="flex gap-2 text-xs">
             {[
-              { label: 'Current',   value: review.selling_price },
-              { label: 'Suggested', value: review.suggested_selling_price },
+              { label: 'الحالي',    value: review.selling_price },
+              { label: 'المقترح',  value: review.suggested_selling_price },
             ].map((ref) => (
               <button
                 key={ref.label} type="button"
@@ -521,10 +521,10 @@ function CustomPriceDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>إلغاء</Button>
           <Button onClick={() => onConfirm(priceNum, reason)} disabled={!valid || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Confirm Price
+            تأكيد السعر
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -545,21 +545,21 @@ function KeepCurrentDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Keep Current Price</DialogTitle>
-          <DialogDescription>{review.product.name} — current price {fmt(review.selling_price)}</DialogDescription>
+          <DialogTitle>الاحتفاظ بالسعر الحالي</DialogTitle>
+          <DialogDescription>{review.product.name} — السعر الحالي {fmt(review.selling_price)}</DialogDescription>
         </DialogHeader>
         <div className="py-2">
-          <Label className="mb-1.5 block text-sm">Reason <span className="text-destructive">*</span></Label>
+          <Label className="mb-1.5 block text-sm">السبب <span className="text-destructive">*</span></Label>
           <Textarea
             value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder="Why are you keeping the current price?" rows={4}
+            placeholder="لماذا تحتفظ بالسعر الحالي؟" rows={4}
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>إلغاء</Button>
           <Button onClick={() => onConfirm(reason)} disabled={!reason.trim() || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Confirm
+            تأكيد
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -568,9 +568,9 @@ function KeepCurrentDialog({
 }
 
 const SNOOZE_PRESETS = [
-  { label: 'Tomorrow', days: 1 },
-  { label: '3 Days',   days: 3 },
-  { label: '1 Week',   days: 7 },
+  { label: 'غداً',    days: 1 },
+  { label: '3 أيام', days: 3 },
+  { label: 'أسبوع',  days: 7 },
 ];
 
 function SnoozeDialog({
@@ -586,7 +586,7 @@ function SnoozeDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Snooze Review</DialogTitle>
+          <DialogTitle>تأجيل المراجعة</DialogTitle>
           <DialogDescription>{review.product.name}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 py-2">
@@ -608,7 +608,7 @@ function SnoozeDialog({
           </div>
           <Separator />
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Custom:</span>
+            <span className="text-muted-foreground">مخصص:</span>
             <Input
               type="date" value={selected}
               min={new Date().toISOString().slice(0, 10)}
@@ -618,10 +618,10 @@ function SnoozeDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>إلغاء</Button>
           <Button onClick={() => onConfirm(selected)} disabled={!selected || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Snooze Until {selected}
+            تأجيل حتى {selected}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -642,18 +642,18 @@ function AssignDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Assign Reviewer</DialogTitle>
+          <DialogTitle>تعيين مراجِع</DialogTitle>
           <DialogDescription>{review.product.name}</DialogDescription>
         </DialogHeader>
         <div className="py-2">
-          <Label className="mb-1.5 block text-sm">Reviewer Name <span className="text-destructive">*</span></Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter reviewer name" />
+          <Label className="mb-1.5 block text-sm">اسم المراجِع <span className="text-destructive">*</span></Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="أدخل اسم المراجِع" />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>إلغاء</Button>
           <Button onClick={() => onConfirm(name)} disabled={!name.trim() || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Assign
+            تعيين
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -694,10 +694,10 @@ function BulkValueDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>إلغاء</Button>
           <Button onClick={() => onConfirm(num)} disabled={isNaN(num) || num < 0 || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Apply to Selected
+            تطبيق على المحدد
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -717,7 +717,7 @@ function BulkSnoozeDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Snooze Selected Reviews</DialogTitle>
+          <DialogTitle>تأجيل المراجعات المحددة</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3 py-2">
           <div className="grid grid-cols-3 gap-2">
@@ -744,10 +744,10 @@ function BulkSnoozeDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>إلغاء</Button>
           <Button onClick={() => onConfirm(selected)} disabled={!selected || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Snooze Until {selected}
+            تأجيل حتى {selected}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -768,24 +768,24 @@ function RejectDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Reject Price Review</DialogTitle>
-          <DialogDescription>{review.product.name} — current price {fmt(review.selling_price)}</DialogDescription>
+          <DialogTitle>رفض مراجعة التسعير</DialogTitle>
+          <DialogDescription>{review.product.name} — السعر الحالي {fmt(review.selling_price)}</DialogDescription>
         </DialogHeader>
         <div className="py-2">
-          <Label className="mb-1.5 block text-sm">Rejection Reason <span className="text-destructive">*</span></Label>
+          <Label className="mb-1.5 block text-sm">سبب الرفض <span className="text-destructive">*</span></Label>
           <Textarea
             value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder="Why is this pricing review being rejected?" rows={3}
+            placeholder="لماذا يتم رفض مراجعة التسعير هذه؟" rows={3}
           />
           <p className="mt-2 text-xs text-muted-foreground">
-            No price changes will be applied. The review will be closed.
+            لن تُطبَّق أي تغييرات في الأسعار. سيتم إغلاق المراجعة.
           </p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>إلغاء</Button>
           <Button variant="destructive" onClick={() => onConfirm(reason)} disabled={!reason.trim() || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Reject Review
+            رفض المراجعة
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -806,21 +806,21 @@ function BulkRejectDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Reject {count} Reviews</DialogTitle>
-          <DialogDescription>No price changes will be applied to any of these items.</DialogDescription>
+          <DialogTitle>رفض {count} مراجعة</DialogTitle>
+          <DialogDescription>لن تُطبَّق أي تغييرات في الأسعار على أي من هذه العناصر.</DialogDescription>
         </DialogHeader>
         <div className="py-2">
-          <Label className="mb-1.5 block text-sm">Reason <span className="text-destructive">*</span></Label>
+          <Label className="mb-1.5 block text-sm">السبب <span className="text-destructive">*</span></Label>
           <Textarea
             value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason for rejection" rows={3}
+            placeholder="سبب الرفض" rows={3}
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>إلغاء</Button>
           <Button variant="destructive" onClick={() => onConfirm(reason)} disabled={!reason.trim() || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Reject {count} Reviews
+            رفض {count} مراجعة
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1128,16 +1128,16 @@ export function CostPricingCenterPage() {
     <div className="flex flex-col gap-6 p-6">
       {/* Page header */}
       <PageHeader
-        title="Price Decision Center"
-        subtitle="Manage product pricing policy, review cost changes, and set selling prices across all brands"
+        title="مركز قرار التسعير"
+        subtitle="إدارة سياسة تسعير المنتجات ومراجعة تغييرات التكاليف وتحديد أسعار البيع عبر جميع العلامات التجارية"
         breadcrumbs={[
-          { label: 'Inventory', to: ROUTES.inventory },
-          { label: 'Price Decision Center' },
+          { label: 'المخزون', to: ROUTES.inventory },
+          { label: 'مركز قرار التسعير' },
         ]}
         actions={
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="size-4" />
-            Export
+            تصدير
           </Button>
         }
       />
@@ -1145,56 +1145,56 @@ export function CostPricingCenterPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard
-          label="Pending"
+          label="معلّق"
           value={summary.pending}
           icon={<AlertTriangle className="size-5" />}
           accent={summary.pending > 0 ? 'amber' : 'default'}
         />
         <KpiCard
-          label="Approved"
+          label="معتمد"
           value={summary.approved}
           icon={<CheckCircle2 className="size-5" />}
           accent={summary.approved > 0 ? 'green' : 'default'}
         />
         <KpiCard
-          label="Kept Current"
+          label="محتفظ بالسعر"
           value={summary.kept}
           icon={<XCircle className="size-5" />}
         />
         <KpiCard
-          label="Custom Price"
+          label="سعر مخصص"
           value={summary.custom_price}
           icon={<TrendingUp className="size-5" />}
           accent="blue"
         />
         <KpiCard
-          label="Snoozed"
+          label="مؤجّل"
           value={summary.snoozed}
           icon={<TrendingDown className="size-5" />}
           accent={summary.snoozed > 0 ? 'amber' : 'default'}
         />
         <KpiCard
-          label="Below Brand Margin"
+          label="أقل من هامش العلامة"
           value={belowBrandCount}
           icon={<ShieldCheck className="size-5" />}
           accent={belowBrandCount > 0 ? 'red' : 'default'}
-          subtext="vs brand policy"
+          subtext="مقارنة بسياسة العلامة"
         />
       </div>
 
       {/* Bulk action bar */}
       {someSelected && (
         <div className="flex items-center gap-2 flex-wrap rounded-lg border border-primary/30 bg-primary/5 px-4 py-2">
-          <span className="text-sm font-medium mr-1">{selectedIds.size} selected</span>
+          <span className="text-sm font-medium mr-1">{selectedIds.size} محدد</span>
           <Separator orientation="vertical" className="h-4" />
 
           <Button size="sm" variant="outline" onClick={handleBulkApprove} disabled={bulkApprove.isPending}>
             {bulkApprove.isPending && <Loader2 className="size-3 animate-spin" />}
             <CheckCircle2 className="size-3.5" />
-            Approve Suggested
+            اعتماد المقترح
           </Button>
           <Button size="sm" variant="outline" onClick={handleBulkKeep} disabled={bulkApprove.isPending}>
-            Keep Prices
+            الاحتفاظ بالأسعار
           </Button>
           <Button
             size="sm" variant="outline"
@@ -1202,30 +1202,30 @@ export function CostPricingCenterPage() {
             onClick={() => setDialogState({ type: 'bulk_reject' })} disabled={bulkApprove.isPending}
           >
             <X className="size-3.5" />
-            Reject
+            رفض
           </Button>
           <Button size="sm" variant="outline" onClick={handleBulkApplyBrandPolicy} disabled={bulkPolicy.isPending}>
             <ShieldCheck className="size-3.5" />
-            Apply Brand Policy
+            تطبيق سياسة العلامة
           </Button>
           <Button size="sm" variant="outline" onClick={() => setDialogState({ type: 'bulk_margin' })} disabled={bulkPolicy.isPending}>
-            Set Target Margin
+            تعيين الهامش المستهدف
           </Button>
           <Button size="sm" variant="outline" onClick={() => setDialogState({ type: 'bulk_markup' })} disabled={bulkPolicy.isPending}>
-            Set Markup
+            تعيين نسبة الربح
           </Button>
           <Button size="sm" variant="outline" onClick={() => setDialogState({ type: 'bulk_snooze' })} disabled={bulkPolicy.isPending}>
-            Snooze
+            تأجيل
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
-            Clear
+            مسح
           </Button>
         </div>
       )}
 
       {/* Toolbar */}
       <EntityToolbar
-        searchPlaceholder="Search by product name or SKU…"
+        searchPlaceholder="بحث باسم المنتج أو SKU…"
         onSearchChange={(s) => setQuery((q) => ({ ...q, search: s || undefined, page: 1 }))}
         onRefresh={() => refetch()}
         isRefreshing={isFetching}
@@ -1238,7 +1238,7 @@ export function CostPricingCenterPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1600px] text-sm">
             <thead>
-              <tr className="border-b bg-muted/40 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <tr className="border-b bg-muted/40 text-start text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 <th className="w-10 px-3 py-3">
                   <input
                     type="checkbox" checked={allSelected} onChange={toggleAll}
@@ -1247,34 +1247,34 @@ export function CostPricingCenterPage() {
                 </th>
                 <th className="px-3 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('product')}>
-                    Product <SortIcon field="product" />
+                    المنتج <SortIcon field="product" />
                   </button>
                 </th>
-                <th className="px-3 py-3">Brand</th>
+                <th className="px-3 py-3">العلامة</th>
                 <th className="px-3 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('product_cost')}>
-                    Product Cost <SortIcon field="product_cost" />
+                    تكلفة المنتج <SortIcon field="product_cost" />
                   </button>
                 </th>
-                <th className="px-3 py-3">Pricing Strategy</th>
-                <th className="px-3 py-3">Regular Price</th>
-                <th className="px-3 py-3">Sale Price</th>
-                <th className="px-3 py-3">Suggested Regular</th>
-                <th className="px-3 py-3">Suggested Sale</th>
+                <th className="px-3 py-3">استراتيجية التسعير</th>
+                <th className="px-3 py-3">السعر العادي</th>
+                <th className="px-3 py-3">سعر التخفيض</th>
+                <th className="px-3 py-3">المقترح العادي</th>
+                <th className="px-3 py-3">مقترح التخفيض</th>
                 <th className="px-3 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('gross_profit_pct')}>
-                    Gross Profit <SortIcon field="gross_profit_pct" />
+                    الربح الإجمالي <SortIcon field="gross_profit_pct" />
                   </button>
                 </th>
                 <th className="px-3 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('final_margin_pct')}>
-                    Final Margin <SortIcon field="final_margin_pct" />
+                    الهامش النهائي <SortIcon field="final_margin_pct" />
                   </button>
                 </th>
-                <th className="px-3 py-3">Impacts</th>
-                <th className="px-3 py-3">Policy</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Updated</th>
+                <th className="px-3 py-3">التأثيرات</th>
+                <th className="px-3 py-3">السياسة</th>
+                <th className="px-3 py-3">الحالة</th>
+                <th className="px-3 py-3">التحديث</th>
                 <th className="w-10 px-3 py-3" />
               </tr>
             </thead>
@@ -1288,15 +1288,15 @@ export function CostPricingCenterPage() {
               ) : isError ? (
                 <tr>
                   <td colSpan={colSpan} className="py-12 text-center text-muted-foreground">
-                    Failed to load reviews.
-                    <Button variant="link" size="sm" onClick={() => refetch()}>Retry</Button>
+                    فشل تحميل المراجعات.
+                    <Button variant="link" size="sm" onClick={() => refetch()}>إعادة المحاولة</Button>
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={colSpan} className="py-16 text-center">
                     <CheckCircle2 className="size-8 mx-auto mb-2 text-emerald-500" />
-                    <p className="text-sm text-muted-foreground">No reviews pending — all pricing is up to date.</p>
+                    <p className="text-sm text-muted-foreground">لا توجد مراجعات معلّقة — جميع الأسعار محدَّثة.</p>
                   </td>
                 </tr>
               ) : (
@@ -1344,9 +1344,9 @@ export function CostPricingCenterPage() {
                             <p className="text-sm font-medium truncate max-w-[100px]">{review.brand.name}</p>
                             {review.brand.default_target_margin != null && (
                               <p className="text-[11px] text-muted-foreground">
-                                margin {review.brand.default_target_margin.toFixed(0)}%
+                                هامش {review.brand.default_target_margin.toFixed(0)}%
                                 {review.brand.default_discount_pct != null && (
-                                  <span> · disc {review.brand.default_discount_pct.toFixed(0)}%</span>
+                                  <span> · خصم {review.brand.default_discount_pct.toFixed(0)}%</span>
                                 )}
                               </p>
                             )}
@@ -1380,7 +1380,7 @@ export function CostPricingCenterPage() {
                             onSave={handleInlineSave}
                           />
                           <span className={cn('text-[10px]', belowTarget ? 'text-red-500' : 'text-emerald-500')}>
-                            actual {fmtPct(review.current_margin)}
+                            فعلي {fmtPct(review.current_margin)}
                           </span>
                         </div>
                       </td>
@@ -1391,7 +1391,7 @@ export function CostPricingCenterPage() {
                           reviewId={review.id}
                           field="regular_price"
                           currentValue={review.selling_price}
-                          label="Regular Price"
+                          label="السعر العادي"
                           isSaving={isSaving}
                           onSave={handleInlineSave}
                         />
@@ -1403,7 +1403,7 @@ export function CostPricingCenterPage() {
                           reviewId={review.id}
                           field="sale_price"
                           currentValue={review.sale_price}
-                          label="Sale Price"
+                          label="سعر التخفيض"
                           isSaving={isSaving}
                           onSave={handleInlineSave}
                         />
@@ -1462,11 +1462,11 @@ export function CostPricingCenterPage() {
                         {review.publish_status === 'pending_publish' && (
                           <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-0.5 flex items-center gap-0.5">
                             <Upload className="size-2.5" />
-                            Pending Publish
+                            بانتظار النشر
                           </p>
                         )}
                         {review.snooze_until && (
-                          <p className="text-[11px] text-muted-foreground mt-0.5">until {review.snooze_until}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">حتى {review.snooze_until}</p>
                         )}
                       </td>
 
@@ -1483,7 +1483,7 @@ export function CostPricingCenterPage() {
                               <Button
                                 size="icon" variant="ghost"
                                 className="size-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                                title="Approve suggested price"
+                                title="اعتماد السعر المقترح"
                                 onClick={() => handleApprove(review)}
                                 disabled={approveReview.isPending}
                               >
@@ -1492,7 +1492,7 @@ export function CostPricingCenterPage() {
                               <Button
                                 size="icon" variant="ghost"
                                 className="size-7 hover:bg-muted"
-                                title="Keep current price"
+                                title="الإبقاء على السعر الحالي"
                                 onClick={() => setDialogState({ type: 'keep_current', review })}
                               >
                                 <Minus className="size-3.5" />
@@ -1500,7 +1500,7 @@ export function CostPricingCenterPage() {
                               <Button
                                 size="icon" variant="ghost"
                                 className="size-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                title="Reject review"
+                                title="رفض المراجعة"
                                 onClick={() => setDialogState({ type: 'reject', review })}
                               >
                                 <X className="size-3.5" />
@@ -1508,7 +1508,7 @@ export function CostPricingCenterPage() {
                               <Button
                                 size="icon" variant="ghost"
                                 className="size-7 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                                title="Snooze review"
+                                title="تأجيل المراجعة"
                                 onClick={() => setDialogState({ type: 'snooze', review })}
                               >
                                 <Clock className="size-3.5" />
@@ -1519,9 +1519,9 @@ export function CostPricingCenterPage() {
                             <Button
                               size="icon" variant="ghost"
                               className="size-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-                              title="Publish prices to catalog"
+                              title="نشر الأسعار في الكتالوج"
                               onClick={() => publishReview.mutate(review.id, {
-                                onSuccess: () => toast.success('Prices published', `${review.product.name} is now live.`),
+                                onSuccess: () => toast.success('تم النشر', `${review.product.name} أصبح نشطًا.`),
                               })}
                               disabled={publishReview.isPending}
                             >
@@ -1537,22 +1537,22 @@ export function CostPricingCenterPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openDrawer(review)}>
                                 <ExternalLink className="size-4" />
-                                View Cost Analysis
+                                عرض تحليل التكلفة
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => setDialogState({ type: 'custom_price', review })}>
-                                Set Custom Price
+                                تحديد سعر مخصص
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() =>
                                 handleInlineSave(review.id, { pricing_mode: review.product.pricing_mode === 'custom' ? 'brand_policy' : 'custom' })
                               }>
                                 <ShieldCheck className="size-4" />
-                                {review.product.pricing_mode === 'custom' ? 'Revert to Brand Policy' : 'Switch to Custom Policy'}
+                                {review.product.pricing_mode === 'custom' ? 'الرجوع لسياسة العلامة' : 'التحويل لسياسة مخصصة'}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => setDialogState({ type: 'assign', review })}>
                                 <UserPlus className="size-4" />
-                                Assign Reviewer
+                                تعيين مراجع
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1569,7 +1569,7 @@ export function CostPricingCenterPage() {
         {data && (data.pagination?.total ?? 0) > 0 && (
           <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
             <span>
-              {data.pagination.total} total · page {data.pagination.current_page} of {data.pagination.last_page}
+              {data.pagination.total} إجمالاً · صفحة {data.pagination.current_page} من {data.pagination.last_page}
             </span>
             <div className="flex gap-2">
               <Button
@@ -1577,14 +1577,14 @@ export function CostPricingCenterPage() {
                 disabled={data.pagination.current_page <= 1}
                 onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) - 1 }))}
               >
-                Previous
+                السابق
               </Button>
               <Button
                 variant="outline" size="sm"
                 disabled={data.pagination.current_page >= data.pagination.last_page}
                 onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) + 1 }))}
               >
-                Next
+                التالي
               </Button>
             </div>
           </div>
@@ -1636,8 +1636,8 @@ export function CostPricingCenterPage() {
       {/* Bulk dialogs */}
       {dialogState?.type === 'bulk_margin' && (
         <BulkValueDialog
-          title="Set Target Margin for Selected"
-          label="Target Margin %" placeholder="e.g. 35" unit="%"
+          title="تحديد هامش الربح المستهدف للمحدد"
+          label="هامش الربح %" placeholder="مثال: 35" unit="%"
           onConfirm={handleBulkMarginConfirm}
           onCancel={() => setDialogState(null)}
           isPending={bulkPolicy.isPending}
@@ -1645,8 +1645,8 @@ export function CostPricingCenterPage() {
       )}
       {dialogState?.type === 'bulk_markup' && (
         <BulkValueDialog
-          title="Set Markup for Selected"
-          label="Markup %" placeholder="e.g. 53.85" unit="%"
+          title="تحديد نسبة الربح للمحدد"
+          label="نسبة الربح %" placeholder="مثال: 53.85" unit="%"
           onConfirm={handleBulkMarkupConfirm}
           onCancel={() => setDialogState(null)}
           isPending={bulkPolicy.isPending}

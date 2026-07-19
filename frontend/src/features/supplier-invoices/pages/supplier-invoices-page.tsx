@@ -119,7 +119,7 @@ function InvoiceDetailDrawer({
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       : <Zap className="w-3.5 h-3.5" />
                     }
-                    Post to Inventory
+                    ترحيل to Inventory
                   </Button>
                 )}
                 {['draft', 'validated', 'failed'].includes(invoice.status) && (
@@ -292,29 +292,29 @@ export function SupplierInvoicesPage() {
   const columns: ColumnDef<SupplierInvoice>[] = [
     {
       key: 'invoice_number',
-      header: 'Invoice #',
+      header: 'رقم الفاتورة',
       cell: (inv) => (
         <div>
           <span className="font-mono text-sm font-medium">{inv.invoice_number}</span>
           {inv.supplier_invoice_ref && (
-            <span className="text-xs text-gray-400 block">Ref: {inv.supplier_invoice_ref}</span>
+            <span className="text-xs text-gray-400 block">مرجع: {inv.supplier_invoice_ref}</span>
           )}
         </div>
       ),
     },
     {
       key: 'supplier',
-      header: 'Supplier',
+      header: 'المورد',
       cell: (inv) => <span className="text-sm">{inv.supplier?.name ?? '—'}</span>,
     },
     {
       key: 'invoice_date',
-      header: 'Invoice Date',
+      header: 'تاريخ الفاتورة',
       cell: (inv) => <span className="text-sm text-gray-600">{inv.invoice_date}</span>,
     },
     {
       key: 'due_date',
-      header: 'Due Date',
+      header: 'تاريخ الاستحقاق',
       cell: (inv) => (
         <span className={`text-sm ${
           inv.due_date && new Date(inv.due_date) < new Date() && inv.status !== 'posted'
@@ -327,14 +327,14 @@ export function SupplierInvoicesPage() {
     },
     {
       key: 'grand_total',
-      header: 'Grand Total',
+      header: 'الإجمالي الكلي',
       cell: (inv) => (
         <span className="text-sm font-semibold">SAR {inv.grand_total.toLocaleString()}</span>
       ),
     },
     {
       key: 'status',
-      header: 'Status',
+      header: 'الحالة',
       cell: (inv) => (
         <div className="flex items-center gap-2">
           <Badge
@@ -354,7 +354,7 @@ export function SupplierInvoicesPage() {
               disabled={postMutation.isPending}
             >
               <Zap className="w-3 h-3" />
-              Post
+              ترحيل
             </Button>
           )}
         </div>
@@ -367,12 +367,12 @@ export function SupplierInvoicesPage() {
       <div className="px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-4">
           <PageHeader
-            title="Supplier Invoices"
-            subtitle="Mode 3 procurement — one step from invoice to inventory"
+            title="فواتير الموردين"
+            subtitle="شراء النمط 3 — خطوة واحدة من الفاتورة إلى المخزون"
           />
           <Button onClick={() => setCreatingNew(true)} size="sm" className="gap-1.5">
             <Plus className="w-3.5 h-3.5" />
-            New Invoice
+            فاتورة جديدة
           </Button>
         </div>
 
@@ -380,25 +380,25 @@ export function SupplierInvoicesPage() {
           <div className="flex gap-3 flex-wrap">
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs text-gray-600">
               <FileText className="w-3.5 h-3.5" />
-              <span>Draft: <strong>{stats.draft}</strong></span>
+              <span>مسودة: <strong>{stats.draft}</strong></span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg text-xs text-blue-700">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Ready to Post: <strong>{stats.validated}</strong></span>
+              <span>جاهز للترحيل: <strong>{stats.validated}</strong></span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-lg text-xs text-green-700">
               <Zap className="w-3.5 h-3.5" />
-              <span>Posted: <strong>{stats.posted}</strong></span>
+              <span>مرحَّل: <strong>{stats.posted}</strong></span>
             </div>
             {stats.failed > 0 && (
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 rounded-lg text-xs text-red-700">
                 <AlertCircle className="w-3.5 h-3.5" />
-                <span>Failed: <strong>{stats.failed}</strong></span>
+                <span>فاشل: <strong>{stats.failed}</strong></span>
               </div>
             )}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs text-gray-600 ml-auto">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs text-gray-600 ms-auto">
               <DollarSign className="w-3.5 h-3.5" />
-              <span>Posted Value: <strong>SAR {(stats.total_value / 1000).toFixed(1)}K</strong></span>
+              <span>قيمة المرحَّل: <strong>SAR {(stats.total_value / 1000).toFixed(1)}K</strong></span>
             </div>
           </div>
         )}
@@ -408,7 +408,7 @@ export function SupplierInvoicesPage() {
         <Card className="shadow-none border-gray-200">
           <CardContent className="flex flex-col gap-4 pt-6">
             <EntityToolbar
-              searchPlaceholder="Search invoices…"
+              searchPlaceholder="ابحث في الفواتير…"
               onSearchChange={(v) => { setSearch(v); setPage(1); }}
               onRefresh={() => void refetch()}
               isRefreshing={isFetching}
@@ -416,19 +416,19 @@ export function SupplierInvoicesPage() {
               filterPanel={
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-medium">Status</span>
+                    <span className="text-sm font-medium">الحالة</span>
                     <select
                       value={statusFilter}
                       onChange={(e) => { setStatus(e.target.value as SupplierInvoiceStatus | 'all'); setPage(1); }}
                       className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                     >
-                      <option value="all">All Statuses</option>
-                      <option value="draft">Draft</option>
-                      <option value="validated">Validated</option>
-                      <option value="auto_processing">Processing</option>
-                      <option value="posted">Posted</option>
-                      <option value="failed">Failed</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="all">جميع الحالات</option>
+                      <option value="draft">مسودة</option>
+                      <option value="validated">تم التحقق</option>
+                      <option value="auto_processing">قيد المعالجة</option>
+                      <option value="posted">مرحَّل</option>
+                      <option value="failed">فاشل</option>
+                      <option value="cancelled">ملغي</option>
                     </select>
                   </div>
                 </div>
@@ -449,14 +449,14 @@ export function SupplierInvoicesPage() {
                   items={[
                     {
                       key: 'view',
-                      label: 'View Details',
+                      label: 'عرض التفاصيل',
                       icon: FileText,
                       onSelect: () => setSelectedId(inv.id),
                     },
                     ...(inv.status === 'draft' ? [
                       {
                         key: 'validate',
-                        label: 'Validate',
+                        label: 'تحقق',
                         icon: CheckCircle2,
                         onSelect: () => validateMutation.mutate(inv.id),
                       },
@@ -464,7 +464,7 @@ export function SupplierInvoicesPage() {
                     ...(inv.status === 'validated' ? [
                       {
                         key: 'post',
-                        label: 'Post to Inventory',
+                        label: 'ترحيل إلى المخزون',
                         icon: Zap,
                         onSelect: () => handlePost(inv.id),
                       },
@@ -472,7 +472,7 @@ export function SupplierInvoicesPage() {
                     ...(['draft', 'validated', 'failed'].includes(inv.status) ? [
                       {
                         key: 'cancel',
-                        label: 'Cancel',
+                        label: 'إلغاء',
                         icon: XCircle,
                         variant: 'destructive' as const,
                         onSelect: () => cancelMutation.mutate(inv.id),
@@ -481,7 +481,7 @@ export function SupplierInvoicesPage() {
                     ...(inv.status === 'draft' ? [
                       {
                         key: 'delete',
-                        label: 'Delete',
+                        label: 'حذف',
                         icon: Trash2,
                         variant: 'destructive' as const,
                         onSelect: () => setDeleting(inv),
@@ -518,9 +518,9 @@ export function SupplierInvoicesPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete Invoice"
-        description={`Delete invoice ${deleting?.invoice_number}? This cannot be undone.`}
-        confirmLabel="Delete"
+        title="حذف الفاتورة"
+        description={`هل تريد حذف الفاتورة ${deleting?.invoice_number}؟ لا يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف"
         variant="destructive"
         loading={deleteMutation.isPending}
         onConfirm={() => {

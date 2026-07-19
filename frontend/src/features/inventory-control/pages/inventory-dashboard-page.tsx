@@ -87,14 +87,14 @@ function VarianceTable({ rows, title }: { rows: VarianceProductRow[]; title: str
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-xs">
-              <th className="px-4 py-2 text-start font-medium">Product</th>
-              <th className="px-4 py-2 text-end font-medium">Var. Qty</th>
-              <th className="px-4 py-2 text-end font-medium">Var. Value</th>
+              <th className="px-4 py-2 text-start font-medium">المنتج</th>
+              <th className="px-4 py-2 text-end font-medium">الفارق (الكمية)</th>
+              <th className="px-4 py-2 text-end font-medium">الفارق (القيمة)</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={3} className="text-muted-foreground px-4 py-6 text-center text-xs">No data</td></tr>
+              <tr><td colSpan={3} className="text-muted-foreground px-4 py-6 text-center text-xs">لا توجد بيانات</td></tr>
             ) : rows.map((r) => (
               <tr key={r.product_id} className="hover:bg-muted/50 border-b last:border-0 transition-colors">
                 <td className="px-4 py-2">
@@ -145,53 +145,53 @@ export function InventoryDashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title="Inventory Dashboard"
-        subtitle="Real-time inventory health and count analytics."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Dashboard' }]}
+        title="لوحة تحكم المخزون"
+        subtitle="صحة المخزون الفورية وتحليلات الجرد."
+        breadcrumbs={[{ label: 'الرئيسية', to: ROUTES.dashboard }, { label: 'لوحة التحكم' }]}
       />
 
       {/* ── Section 1: Inventory Value ─────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
-        <SectionLabel>Inventory Value</SectionLabel>
+        <SectionLabel>قيمة المخزون</SectionLabel>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <ValueKpiCard
-            title="Total Inventory Value"
-            value={allStats.data ? `$${fmtCurrency(allStats.data.total_inventory_value)}` : '—'}
-            sub={allStats.data ? `${fmtQty(allStats.data.total_on_hand)} units on hand` : undefined}
+            title="إجمالي قيمة المخزون"
+            value={allStats.data ? `${fmtCurrency(allStats.data.total_inventory_value)} EGP` : '—'}
+            sub={allStats.data ? `${fmtQty(allStats.data.total_on_hand)} وحدة في المخزن` : undefined}
             icon={BarChart3}
             iconColor="text-primary"
             loading={statsLoading}
           />
           <ValueKpiCard
-            title="Raw Materials Value"
-            value={rmStats.data ? `$${fmtCurrency(rmStats.data.total_inventory_value)}` : '—'}
-            sub={rmStats.data ? `${rmStats.data.total_count} SKUs` : undefined}
+            title="قيمة المواد الخام"
+            value={rmStats.data ? `${fmtCurrency(rmStats.data.total_inventory_value)} EGP` : '—'}
+            sub={rmStats.data ? `${rmStats.data.total_count} SKU` : undefined}
             icon={FlaskConical}
             iconColor="text-blue-500"
             loading={statsLoading}
             onClick={() => navigate(ROUTES.rawMaterials)}
           />
           <ValueKpiCard
-            title="Finished Goods Value"
-            value={fgStats.data ? `$${fmtCurrency(fgStats.data.total_inventory_value)}` : '—'}
-            sub={fgStats.data ? `${fgStats.data.total_count} SKUs` : undefined}
+            title="قيمة المنتجات النهائية"
+            value={fgStats.data ? `${fmtCurrency(fgStats.data.total_inventory_value)} EGP` : '—'}
+            sub={fgStats.data ? `${fgStats.data.total_count} SKU` : undefined}
             icon={Package}
             iconColor="text-emerald-500"
             loading={statsLoading}
             onClick={() => navigate(ROUTES.products)}
           />
           <ValueKpiCard
-            title="Packaging Value"
-            value={pkgStats.data ? `$${fmtCurrency(pkgStats.data.total_inventory_value)}` : '—'}
-            sub={pkgStats.data ? `${pkgStats.data.total_count} SKUs` : undefined}
+            title="قيمة مواد التغليف"
+            value={pkgStats.data ? `${fmtCurrency(pkgStats.data.total_inventory_value)} EGP` : '—'}
+            sub={pkgStats.data ? `${pkgStats.data.total_count} SKU` : undefined}
             icon={Archive}
             iconColor="text-amber-500"
             loading={statsLoading}
           />
           <ValueKpiCard
-            title="Available Units"
+            title="الوحدات المتاحة"
             value={allStats.data ? fmtQty(allStats.data.total_available) : '—'}
-            sub={allStats.data ? `${fmtQty(allStats.data.total_reserved)} reserved` : undefined}
+            sub={allStats.data ? `${fmtQty(allStats.data.total_reserved)} محجوز` : undefined}
             icon={ShoppingBag}
             iconColor="text-purple-500"
             loading={statsLoading}
@@ -208,40 +208,40 @@ export function InventoryDashboardPage() {
         <>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <SectionLabel>Count Session Health</SectionLabel>
+              <SectionLabel>صحة جلسات الجرد</SectionLabel>
               <Badge variant={healthVariant(countData.kpis.health)} className="text-xs">
-                {countData.kpis.health.charAt(0).toUpperCase() + countData.kpis.health.slice(1)}
+                {countData.kpis.health === 'excellent' ? 'ممتاز' : countData.kpis.health === 'good' ? 'جيد' : countData.kpis.health === 'warning' ? 'تحذير' : 'حرج'}
               </Badge>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               <ValueKpiCard
-                title="Inventory Accuracy"
+                title="دقة المخزون"
                 value={fmtPct(countData.kpis.accuracy_pct)}
-                sub={`${countData.kpis.matched_products}/${countData.kpis.total_counted_products} matched`}
+                sub={`${countData.kpis.matched_products}/${countData.kpis.total_counted_products} مطابق`}
                 icon={BarChart3}
                 iconColor="text-emerald-500"
               />
               <ValueKpiCard
-                title="Open Sessions"
+                title="جلسات مفتوحة"
                 value={String(countData.kpis.open_sessions)}
                 icon={ClipboardList}
                 iconColor="text-blue-500"
                 onClick={() => navigate(ROUTES.inventoryCount)}
               />
               <ValueKpiCard
-                title="Products with Variance"
+                title="منتجات بفوارق"
                 value={String(countData.kpis.products_with_variance)}
                 icon={TrendingDown}
                 iconColor="text-amber-500"
               />
               <ValueKpiCard
-                title="Monthly Adjustments"
-                value={`$${fmtCurrency(countData.kpis.adjustment_value_month)}`}
+                title="تسويات الشهر"
+                value={`${fmtCurrency(countData.kpis.adjustment_value_month)} EGP`}
                 icon={Package}
               />
               <ValueKpiCard
-                title="Shrinkage (Month)"
-                value={`$${fmtCurrency(countData.kpis.shrinkage_value_month)}`}
+                title="الانكماش (الشهر)"
+                value={`${fmtCurrency(countData.kpis.shrinkage_value_month)} EGP`}
                 icon={PackageX}
                 iconColor="text-destructive"
               />
@@ -250,37 +250,37 @@ export function InventoryDashboardPage() {
 
           {/* Variance tables */}
           <div className="flex flex-col gap-3">
-            <SectionLabel>Top Variances</SectionLabel>
+            <SectionLabel>أعلى الفوارق</SectionLabel>
             <div className="flex flex-col gap-4 md:flex-row">
-              <VarianceTable rows={countData.top_negative} title="Top Negative Variances (Short)" />
-              <VarianceTable rows={countData.top_positive} title="Top Positive Variances (Over)" />
+              <VarianceTable rows={countData.top_negative} title="أعلى فوارق سلبية (عجز)" />
+              <VarianceTable rows={countData.top_positive} title="أعلى فوارق إيجابية (زيادة)" />
             </div>
           </div>
 
           {/* Recent sessions */}
           <div className="flex flex-col gap-3">
-            <SectionLabel>Recent Count Sessions</SectionLabel>
+            <SectionLabel>جلسات الجرد الأخيرة</SectionLabel>
             <Card>
               <CardContent className="p-0">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-muted-foreground border-b text-xs">
-                      <th className="px-4 py-2 text-start font-medium">Session</th>
-                      <th className="px-4 py-2 text-start font-medium">Warehouse</th>
-                      <th className="px-4 py-2 text-start font-medium">Completed</th>
-                      <th className="px-4 py-2 text-end font-medium">Accuracy</th>
+                      <th className="px-4 py-2 text-start font-medium">الجلسة</th>
+                      <th className="px-4 py-2 text-start font-medium">المستودع</th>
+                      <th className="px-4 py-2 text-start font-medium">تاريخ الاكتمال</th>
+                      <th className="px-4 py-2 text-end font-medium">الدقة</th>
                     </tr>
                   </thead>
                   <tbody>
                     {countData.recent_sessions.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="text-muted-foreground px-4 py-6 text-center text-xs">
-                          No sessions yet.{' '}
+                          لا توجد جلسات بعد.{' '}
                           <button
                             onClick={() => navigate(ROUTES.inventoryCount)}
                             className="text-primary underline underline-offset-2"
                           >
-                            Create one
+                            أنشئ جلسة
                           </button>
                         </td>
                       </tr>

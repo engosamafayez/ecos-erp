@@ -160,7 +160,7 @@ function AssignByGovPopover({ groups, assignedIds, onAssign, disabled }: AssignB
                 type="button"
                 onClick={() => assignGovernorate(g)}
                 disabled={g.freeCount === 0}
-                className="flex w-full items-center justify-between px-3 py-2 text-left text-xs hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-center justify-between px-3 py-2 text-start text-xs hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="font-medium">{g.governorate_name_ar}</span>
                 <Badge variant="secondary" className="text-[10px]">{g.freeCount} free</Badge>
@@ -222,7 +222,7 @@ function GovRow({
         />
         <button
           type="button"
-          className="flex flex-1 items-center gap-1.5 text-left"
+          className="flex flex-1 items-center gap-1.5 text-start"
           onClick={onToggleExpand}
         >
           {expanded ? (
@@ -233,7 +233,7 @@ function GovRow({
           <span className="text-xs font-semibold tracking-wide">
             {group.governorate_name_ar ?? group.governorate_name_en ?? '—'}
           </span>
-          <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
+          <span className="ms-auto text-[10px] text-muted-foreground tabular-nums">
             {assignedInGroup}/{visibleCities.length}
           </span>
         </button>
@@ -423,7 +423,7 @@ export function AreaSelector({
           </p>
         </div>
         {total > 0 && (
-          <div className="mt-1 rounded-md border bg-muted/40 px-5 py-3 text-sm space-y-1 text-left w-52">
+          <div className="mt-1 rounded-md border bg-muted/40 px-5 py-3 text-sm space-y-1 text-start w-52">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total Areas</span>
               <span className="font-semibold tabular-nums">{total}</span>
@@ -485,7 +485,7 @@ export function AreaSelector({
             </button>
           )}
 
-          <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+          <span className="ms-auto text-xs text-muted-foreground tabular-nums">
             {selectedCount} / {totalCount}
           </span>
         </div>

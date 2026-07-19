@@ -84,8 +84,8 @@ export function OrderItemsPreview({ lines }: Props) {
               <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b bg-muted/40 px-3 py-1.5 text-[10px] font-medium text-muted-foreground">
                 <span className="w-7" />
                 <span>Product</span>
-                <span className="text-right">Qty × Price</span>
-                <span className="w-16 text-right">Total</span>
+                <span className="text-end">Qty × Price</span>
+                <span className="w-16 text-end">Total</span>
               </div>
 
               {/* Lines */}
@@ -114,7 +114,7 @@ export function OrderItemsPreview({ lines }: Props) {
                       </div>
 
                       {/* Qty × Unit Price */}
-                      <p className="text-right text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                      <p className="text-end text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
                         {line.quantity}
                         {line.product?.unit_name ? ` ${line.product.unit_name}` : ''}
                         {' × '}
@@ -122,7 +122,7 @@ export function OrderItemsPreview({ lines }: Props) {
                       </p>
 
                       {/* Line Total */}
-                      <p className="w-16 text-right text-xs font-semibold tabular-nums">
+                      <p className="w-16 text-end text-xs font-semibold tabular-nums">
                         {fmt(line.line_total)}
                       </p>
                     </li>

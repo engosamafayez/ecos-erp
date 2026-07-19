@@ -73,52 +73,52 @@ function OverviewTab({ material }: { material: PurchaseMaterial }) {
   return (
     <div className="flex flex-col gap-5 text-sm">
       <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-        <Field label="Request #">
+        <Field label="رقم الطلب">
           <span className="font-mono">{material.request_number}</span>
         </Field>
-        <Field label="Status">
+        <Field label="الحالة">
           <PurchaseMaterialStatusBadge status={material.status} />
         </Field>
-        <Field label="Company">{material.company?.name ?? '—'}</Field>
-        <Field label="Channel">{material.channel_id ?? '—'}</Field>
-        <Field label="Warehouse">{material.warehouse?.name ?? '—'}</Field>
-        <Field label="Priority">
+        <Field label="الشركة">{material.company?.name ?? '—'}</Field>
+        <Field label="القناة">{material.channel_id ?? '—'}</Field>
+        <Field label="المستودع">{material.warehouse?.name ?? '—'}</Field>
+        <Field label="الأولوية">
           <PurchaseMaterialPriorityBadge priority={material.priority} />
         </Field>
-        <Field label="Required By">{fmt(material.required_date)}</Field>
-        <Field label="Requested By">{material.requested_by ?? '—'}</Field>
+        <Field label="مطلوب بحلول">{fmt(material.required_date)}</Field>
+        <Field label="طلب بواسطة">{material.requested_by ?? '—'}</Field>
         {material.assigned_buyer && (
-          <Field label="Assigned Buyer">
+          <Field label="المشتري المعيَّن">
             <span className="flex items-center gap-1.5">
               <Truck className="size-3.5 text-muted-foreground" />
               {material.assigned_buyer}
             </span>
           </Field>
         )}
-        <Field label="Created">{fmt(material.created_at)}</Field>
+        <Field label="تاريخ الإنشاء">{fmt(material.created_at)}</Field>
       </div>
 
       {material.notes && (
         <div>
-          <SectionLabel>Notes</SectionLabel>
+          <SectionLabel>ملاحظات</SectionLabel>
           <p className="text-sm whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-2">{material.notes}</p>
         </div>
       )}
 
       {material.rejection_reason && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-          <p className="text-xs font-medium text-destructive mb-0.5">Rejection Reason</p>
+          <p className="text-xs font-medium text-destructive mb-0.5">سبب الرفض</p>
           <p className="text-sm">{material.rejection_reason}</p>
         </div>
       )}
 
       <div>
-        <SectionLabel>Quick Stats</SectionLabel>
+        <SectionLabel>إحصاءات سريعة</SectionLabel>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: 'Items', value: String(material.items_count), mono: false },
-            { label: 'Total Qty', value: fmtNum(material.total_requested_qty, 0), mono: true },
-            { label: 'Est. Value', value: fmtNum(material.estimated_value, 0), mono: true },
+            { label: 'البنود', value: String(material.items_count), mono: false },
+            { label: 'إجمالي الكمية', value: fmtNum(material.total_requested_qty, 0), mono: true },
+            { label: 'القيمة التقديرية', value: fmtNum(material.estimated_value, 0), mono: true },
           ].map(({ label, value, mono }) => (
             <div key={label} className="rounded-lg border bg-muted/20 px-3 py-2.5 text-center">
               <p className="text-[10px] text-muted-foreground">{label}</p>
@@ -136,16 +136,16 @@ function OverviewTab({ material }: { material: PurchaseMaterial }) {
 function RequestedItemsTab({ material }: { material: PurchaseMaterial }) {
   const lines = material.lines ?? [];
   if (lines.length === 0) {
-    return <p className="text-sm text-muted-foreground italic py-4">No items on this request.</p>;
+    return <p className="text-sm text-muted-foreground italic py-4">لا توجد بنود في هذا الطلب.</p>;
   }
   return (
     <div className="border rounded-md overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-muted/40">
           <tr>
-            <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground">Material</th>
-            <th className="px-3 py-2 text-right font-medium text-xs text-muted-foreground">Req. Qty</th>
-            <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground">Notes</th>
+            <th className="px-3 py-2 text-start font-medium text-xs text-muted-foreground">المادة</th>
+            <th className="px-3 py-2 text-end font-medium text-xs text-muted-foreground">الكمية المطلوبة</th>
+            <th className="px-3 py-2 text-start font-medium text-xs text-muted-foreground">ملاحظات</th>
           </tr>
         </thead>
         <tbody>
@@ -168,7 +168,7 @@ function RequestedItemsTab({ material }: { material: PurchaseMaterial }) {
                   </div>
                 </div>
               </td>
-              <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">
+              <td className="px-3 py-2 text-end font-mono text-xs tabular-nums">
                 {fmtNum(line.requested_qty, 4).replace(/\.?0+$/, '')}
                 {line.unit_label && <span className="text-muted-foreground ml-1">{line.unit_label}</span>}
               </td>
@@ -198,26 +198,26 @@ function DemandAnalysisLineRow({ line, warehouseId }: { line: PurchaseMaterialLi
       </div>
       {isLoading ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
-          <Loader2 className="size-3.5 animate-spin" /> Loading…
+          <Loader2 className="size-3.5 animate-spin" /> جارٍ التحميل…
         </div>
       ) : panel ? (
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
           <div>
-            <span className="text-muted-foreground">Available: </span>
+            <span className="text-muted-foreground">المتاح: </span>
             <span className="font-mono font-semibold">{fmtNum(panel.inventory.available_qty, 0)}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">Daily avg: </span>
+            <span className="text-muted-foreground">متوسط يومي: </span>
             <span className="font-mono font-semibold">{fmtNum(panel.consumption.daily_avg, 2)}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">Coverage: </span>
+            <span className="text-muted-foreground">التغطية: </span>
             <span className="font-mono font-semibold">
-              {panel.coverage.days_remaining != null ? `${fmtNum(panel.coverage.days_remaining, 0)} days` : '—'}
+              {panel.coverage.days_remaining != null ? `${fmtNum(panel.coverage.days_remaining, 0)} أيام` : '—'}
             </span>
           </div>
           <div>
-            <span className="text-muted-foreground">Trend: </span>
+            <span className="text-muted-foreground">الاتجاه: </span>
             <span className="capitalize font-medium">{panel.consumption.trend}</span>
           </div>
           {panel.recommendations.length > 0 && (
@@ -238,7 +238,7 @@ function DemandAnalysisLineRow({ line, warehouseId }: { line: PurchaseMaterialLi
           )}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">No demand data available.</p>
+        <p className="text-xs text-muted-foreground">لا توجد بيانات طلب متاحة.</p>
       )}
     </div>
   );
@@ -247,7 +247,7 @@ function DemandAnalysisLineRow({ line, warehouseId }: { line: PurchaseMaterialLi
 function DemandAnalysisTab({ material }: { material: PurchaseMaterial }) {
   const lines = material.lines ?? [];
   if (lines.length === 0) {
-    return <p className="text-sm text-muted-foreground italic py-4">No items to analyze.</p>;
+    return <p className="text-sm text-muted-foreground italic py-4">لا توجد بنود للتحليل.</p>;
   }
   return (
     <div className="flex flex-col gap-3">
@@ -268,38 +268,38 @@ function ProcurementReviewTab({ material }: { material: PurchaseMaterial }) {
     if (!buyerName.trim()) return;
     try {
       await assignBuyer.mutateAsync(buyerName.trim());
-      toast.success('Buyer assigned.');
+      toast.success('تم تعيين المشتري.');
     } catch {
-      toast.error('Failed to assign buyer.');
+      toast.error('فشل تعيين المشتري.');
     }
   }
 
   return (
     <div className="flex flex-col gap-5 text-sm">
       <div>
-        <SectionLabel>Assign Buyer</SectionLabel>
+        <SectionLabel>تعيين مشتري</SectionLabel>
         <div className="flex gap-2">
           <input
             className="flex-1 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            placeholder="Buyer name…"
+            placeholder="اسم المشتري…"
             value={buyerName}
             onChange={(e) => setBuyerName(e.target.value)}
           />
           <Button size="sm" disabled={!buyerName.trim() || assignBuyer.isPending} onClick={() => void handleAssignBuyer()}>
             {assignBuyer.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-            Assign
+            تعيين
           </Button>
         </div>
         {material.assigned_buyer && (
           <p className="text-xs text-muted-foreground mt-1.5">
-            Currently assigned to: <span className="font-medium text-foreground">{material.assigned_buyer}</span>
+            معيَّن حاليًا لـ: <span className="font-medium text-foreground">{material.assigned_buyer}</span>
           </p>
         )}
       </div>
 
       {material.review_notes && (
         <div>
-          <SectionLabel>Review Notes</SectionLabel>
+          <SectionLabel>ملاحظات المراجعة</SectionLabel>
           <p className="text-sm whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-2">
             {material.review_notes}
           </p>
@@ -308,17 +308,17 @@ function ProcurementReviewTab({ material }: { material: PurchaseMaterial }) {
 
       {material.clarification_requested_at && (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
-          <p className="font-medium text-amber-800 text-xs mb-0.5">Clarification Requested</p>
+          <p className="font-medium text-amber-800 text-xs mb-0.5">طُلب التوضيح</p>
           <p className="text-amber-700">{fmt(material.clarification_requested_at)}</p>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Submitted">{fmt(material.submitted_at)}</Field>
-        <Field label="Approved">{fmt(material.approved_at)}</Field>
-        <Field label="Approved By">{material.approved_by ?? '—'}</Field>
+        <Field label="تاريخ الإرسال">{fmt(material.submitted_at)}</Field>
+        <Field label="تاريخ الاعتماد">{fmt(material.approved_at)}</Field>
+        <Field label="اعتمد بواسطة">{material.approved_by ?? '—'}</Field>
         {material.rejection_reason && (
-          <Field label="Rejection Reason">{material.rejection_reason}</Field>
+          <Field label="سبب الرفض">{material.rejection_reason}</Field>
         )}
       </div>
     </div>
@@ -346,9 +346,9 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
         agreed_qty: agreedQty ? parseFloat(agreedQty) : null,
         lead_time_days: leadTime ? parseInt(leadTime) : null,
       });
-      toast.success('Supplier selected for line.');
+      toast.success('تم تحديد المورد للبند.');
     } catch {
-      toast.error('Failed to select supplier.');
+      toast.error('فشل تحديد المورد.');
     }
   }
 
@@ -374,7 +374,7 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
       {/* Alternative suppliers for reference */}
       {panel && panel.alternative_suppliers.length > 0 && (
         <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-1">Reference: Known Suppliers</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium mb-1">مرجع: الموردون المعروفون</p>
           <div className="flex flex-col gap-1">
             {panel.alternative_suppliers.slice(0, 3).map((s) => (
               <div key={s.supplier_id} className="flex items-center justify-between rounded bg-muted/30 px-2 py-1 text-xs">
@@ -392,16 +392,16 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
       {/* Supplier entry (ID-based; full supplier picker deferred to Supplier Selection workspace) */}
       <div className="grid grid-cols-2 gap-2">
         <div className="col-span-2">
-          <label className="text-xs text-muted-foreground">Supplier ID</label>
+          <label className="text-xs text-muted-foreground">معرّف المورد</label>
           <input
             className="w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            placeholder="Supplier UUID…"
+            placeholder="UUID المورد…"
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">Agreed Price</label>
+          <label className="text-xs text-muted-foreground">السعر المتفق عليه</label>
           <input
             type="number"
             min="0"
@@ -413,7 +413,7 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">Agreed Qty</label>
+          <label className="text-xs text-muted-foreground">الكمية المتفق عليها</label>
           <input
             type="number"
             min="0"
@@ -425,7 +425,7 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">Lead Time (days)</label>
+          <label className="text-xs text-muted-foreground">مدة التوريد (أيام)</label>
           <input
             type="number"
             min="0"
@@ -439,7 +439,7 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
           <Button size="sm" disabled={!supplierId.trim() || selectSupplier.isPending} onClick={() => void handleSelect()}>
             {selectSupplier.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
             <ShoppingCart className="size-3.5 mr-1.5" />
-            Confirm Supplier
+            تأكيد المورد
           </Button>
         </div>
       </div>
@@ -456,20 +456,20 @@ function SupplierSelectionTab({ material }: { material: PurchaseMaterial }) {
     return (
       <div className="flex flex-col items-center justify-center py-10 gap-2 text-muted-foreground text-sm">
         <ShoppingCart className="size-8 text-muted-foreground/30" />
-        <p>Supplier selection is available once the request is in <strong>Waiting Supplier Selection</strong> or <strong>Approved</strong> status.</p>
-        <p className="text-xs">Current status: {material.status_label}</p>
+        <p>يتوفر اختيار المورد بعد انتقال الطلب إلى حالة <strong>انتظار المورد</strong> أو <strong>معتمد</strong>.</p>
+        <p className="text-xs">الحالة الحالية: {material.status_label}</p>
       </div>
     );
   }
 
   if (lines.length === 0) {
-    return <p className="text-sm text-muted-foreground italic py-4">No items on this request.</p>;
+    return <p className="text-sm text-muted-foreground italic py-4">لا توجد بنود في هذا الطلب.</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
-        Select a supplier for each material line. Warehouse managers cannot see this tab.
+        حدد موردًا لكل بند مادة. لا يمكن لمديري المستودعات رؤية هذه التبويبة.
       </p>
       {lines.map((line) => (
         <SupplierSelectionLineRow key={line.id} line={line} materialId={material.id} />
@@ -486,11 +486,11 @@ function FinancialSummaryTab({ material }: { material: PurchaseMaterial }) {
     <div className="flex flex-col gap-5 text-sm">
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Estimated Value', value: material.estimated_value },
-          { label: 'Approved Value', value: material.approved_value },
-          { label: 'Purchased Value', value: material.purchased_value },
+          { label: 'القيمة التقديرية', value: material.estimated_value },
+          { label: 'القيمة المعتمدة', value: material.approved_value },
+          { label: 'القيمة المشتراة', value: material.purchased_value },
           {
-            label: 'Outstanding',
+            label: 'المستحق',
             value: Math.max(0, (material.approved_value || material.estimated_value) - material.purchased_value),
           },
         ].map(({ label, value }) => (
@@ -503,15 +503,15 @@ function FinancialSummaryTab({ material }: { material: PurchaseMaterial }) {
 
       {lines.length > 0 && (
         <div>
-          <SectionLabel>Line-Level Value</SectionLabel>
+          <SectionLabel>قيمة البنود</SectionLabel>
           <div className="border rounded-md overflow-hidden">
             <table className="w-full text-xs">
               <thead className="bg-muted/40">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Material</th>
-                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">Req. Qty</th>
-                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">Unit Cost</th>
-                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">Line Value</th>
+                  <th className="px-3 py-2 text-start font-medium text-muted-foreground">المادة</th>
+                  <th className="px-3 py-2 text-end font-medium text-muted-foreground">الكمية المطلوبة</th>
+                  <th className="px-3 py-2 text-end font-medium text-muted-foreground">تكلفة الوحدة</th>
+                  <th className="px-3 py-2 text-end font-medium text-muted-foreground">قيمة البند</th>
                 </tr>
               </thead>
               <tbody>
@@ -521,13 +521,13 @@ function FinancialSummaryTab({ material }: { material: PurchaseMaterial }) {
                   return (
                     <tr key={line.id} className="border-t">
                       <td className="px-3 py-2">{line.product?.name ?? '—'}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      <td className="px-3 py-2 text-end font-mono tabular-nums">
                         {fmtNum(line.requested_qty, 4).replace(/\.?0+$/, '')}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                      <td className="px-3 py-2 text-end font-mono tabular-nums text-muted-foreground">
                         {unitCost != null ? fmtNum(unitCost, 2) : '—'}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums font-medium">
+                      <td className="px-3 py-2 text-end font-mono tabular-nums font-medium">
                         {lineValue != null ? fmtNum(lineValue, 0) : '—'}
                       </td>
                     </tr>
@@ -546,17 +546,17 @@ function FinancialSummaryTab({ material }: { material: PurchaseMaterial }) {
 
 function TimelineTab({ material }: { material: PurchaseMaterial }) {
   const events = [
-    { label: 'Created', date: material.created_at, icon: Clock, color: 'text-slate-500' },
-    { label: 'Submitted', date: material.submitted_at, icon: Send, color: 'text-blue-500' },
-    { label: 'Approved', date: material.approved_at, icon: CheckCircle, color: 'text-emerald-500' },
-    { label: 'Completed', date: (material.status === 'completed' ? material.updated_at : null), icon: Truck, color: 'text-cyan-500' },
-    { label: 'Rejected', date: (material.status === 'rejected' ? material.updated_at : null), icon: XCircle, color: 'text-red-500' },
-    { label: 'On Hold', date: (material.status === 'on_hold' ? material.updated_at : null), icon: PauseCircle, color: 'text-amber-500' },
-    { label: 'Cancelled', date: (material.status === 'cancelled' ? material.updated_at : null), icon: XCircle, color: 'text-slate-400' },
+    { label: 'تم الإنشاء', date: material.created_at, icon: Clock, color: 'text-slate-500' },
+    { label: 'تم الإرسال', date: material.submitted_at, icon: Send, color: 'text-blue-500' },
+    { label: 'تم الاعتماد', date: material.approved_at, icon: CheckCircle, color: 'text-emerald-500' },
+    { label: 'مكتمل', date: (material.status === 'completed' ? material.updated_at : null), icon: Truck, color: 'text-cyan-500' },
+    { label: 'مرفوض', date: (material.status === 'rejected' ? material.updated_at : null), icon: XCircle, color: 'text-red-500' },
+    { label: 'معلّق', date: (material.status === 'on_hold' ? material.updated_at : null), icon: PauseCircle, color: 'text-amber-500' },
+    { label: 'ملغى', date: (material.status === 'cancelled' ? material.updated_at : null), icon: XCircle, color: 'text-slate-400' },
   ].filter((e) => e.date);
 
   if (events.length === 0) {
-    return <p className="text-sm text-muted-foreground italic py-4">No timeline events available.</p>;
+    return <p className="text-sm text-muted-foreground italic py-4">لا توجد أحداث في الجدول الزمني.</p>;
   }
 
   return (
@@ -583,7 +583,7 @@ function PlaceholderTab({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
       <AlertCircle className="size-8 text-muted-foreground/30" />
-      <p className="text-sm">{label} is not yet implemented in this version.</p>
+      <p className="text-sm">{label} غير مُنفَّذ بعد في هذا الإصدار.</p>
     </div>
   );
 }
@@ -591,17 +591,17 @@ function PlaceholderTab({ label }: { label: string }) {
 // ── Main drawer ────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'items', label: 'Items' },
-  { id: 'demand', label: 'Demand' },
-  { id: 'review', label: 'Review' },
-  { id: 'supplier', label: 'Supplier' },
-  { id: 'purchasing', label: 'Purchasing' },
-  { id: 'receipt', label: 'Receipt' },
-  { id: 'financial', label: 'Financial' },
-  { id: 'documents', label: 'Docs' },
-  { id: 'timeline', label: 'Timeline' },
-  { id: 'activity', label: 'Activity' },
+  { id: 'overview', label: 'نظرة عامة' },
+  { id: 'items', label: 'البنود' },
+  { id: 'demand', label: 'الطلب' },
+  { id: 'review', label: 'المراجعة' },
+  { id: 'supplier', label: 'المورد' },
+  { id: 'purchasing', label: 'الشراء' },
+  { id: 'receipt', label: 'الاستلام' },
+  { id: 'financial', label: 'المالية' },
+  { id: 'documents', label: 'المستندات' },
+  { id: 'timeline', label: 'الجدول الزمني' },
+  { id: 'activity', label: 'النشاط' },
 ] as const;
 
 type Tab = (typeof TABS)[number]['id'];
@@ -636,24 +636,24 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
     try {
       if (action === 'submit') {
         await submitMutation.mutateAsync(id);
-        toast.success('Request submitted for review.');
+        toast.success('تم إرسال الطلب للمراجعة.');
       } else if (action === 'approve') {
         await approveMutation.mutateAsync(id);
-        toast.success('Request approved.');
+        toast.success('تم اعتماد الطلب.');
       } else if (action === 'reject') {
         await rejectMutation.mutateAsync({ id, reason: rejectReason || undefined });
-        toast.success('Request rejected.');
+        toast.success('تم رفض الطلب.');
         setShowRejectInput(false);
         setRejectReason('');
       } else if (action === 'hold') {
         await holdMutation.mutateAsync(id);
-        toast.success('Request placed on hold.');
+        toast.success('تم تعليق الطلب.');
       } else if (action === 'cancel') {
         await cancelMutation.mutateAsync(id);
-        toast.success('Request cancelled.');
+        toast.success('تم إلغاء الطلب.');
       }
     } catch {
-      toast.error(`Failed to ${action} request.`);
+      toast.error('فشل تنفيذ الإجراء.');
     }
   }
 
@@ -684,13 +684,13 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
                 </div>
               </>
             ) : (
-              <SheetTitle className="text-base font-semibold">Purchase Request</SheetTitle>
+              <SheetTitle className="text-base font-semibold">طلب مشتريات</SheetTitle>
             )}
           </div>
         </SheetHeader>
 
-        {isLoading && <LoadingState label="Loading request…" />}
-        {isError && <ErrorState description="Failed to load request." />}
+        {isLoading && <LoadingState label="جارٍ تحميل الطلب…" />}
+        {isError && <ErrorState description="فشل تحميل الطلب." />}
 
         {material && (
           <>
@@ -703,7 +703,7 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
                   <Button size="sm" disabled={isBusy} onClick={() => void handleAction('submit')}>
                     {submitMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
                     <Send className="size-3.5 mr-1.5" />
-                    Submit for Review
+                    إرسال للمراجعة
                   </Button>
                 )}
                 {(material.status === 'under_review' || material.status === 'waiting_supplier_selection') && (
@@ -711,16 +711,16 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
                     <Button size="sm" disabled={isBusy} onClick={() => void handleAction('approve')}>
                       {approveMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
                       <CheckCircle className="size-3.5 mr-1.5" />
-                      Approve
+                      اعتماد
                     </Button>
                     <Button size="sm" variant="outline" disabled={isBusy} onClick={() => setShowRejectInput((v) => !v)}>
                       <XCircle className="size-3.5 mr-1.5" />
-                      Reject
+                      رفض
                     </Button>
                     <Button size="sm" variant="outline" disabled={isBusy} onClick={() => void handleAction('hold')}>
                       {holdMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
                       <PauseCircle className="size-3.5 mr-1.5" />
-                      Hold
+                      تعليق
                     </Button>
                   </>
                 )}
@@ -733,7 +733,7 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
                     onClick={() => void handleAction('cancel')}
                   >
                     {cancelMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                    Cancel
+                    إلغاء
                   </Button>
                 )}
               </div>
@@ -744,13 +744,13 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
               <div className="flex gap-2 px-6 py-3 border-b bg-red-50/50 dark:bg-red-950/20 shrink-0">
                 <input
                   className="flex-1 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  placeholder="Reason for rejection (optional)…"
+                  placeholder="سبب الرفض (اختياري)…"
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                 />
                 <Button size="sm" variant="destructive" disabled={isBusy} onClick={() => void handleAction('reject')}>
                   {rejectMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                  Confirm Reject
+                  تأكيد الرفض
                 </Button>
               </div>
             )}
@@ -767,7 +767,7 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
                       : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {tid === 'items' ? `Items (${material.items_count})` : label}
+                  {tid === 'items' ? `البنود (${material.items_count})` : label}
                 </button>
               ))}
             </div>
@@ -779,12 +779,12 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
               {tab === 'demand' && <DemandAnalysisTab material={material} />}
               {tab === 'review' && <ProcurementReviewTab material={material} />}
               {tab === 'supplier' && <SupplierSelectionTab material={material} />}
-              {tab === 'purchasing' && <PlaceholderTab label="Purchasing details" />}
-              {tab === 'receipt' && <PlaceholderTab label="Goods Receipt" />}
+              {tab === 'purchasing' && <PlaceholderTab label="تفاصيل الشراء" />}
+              {tab === 'receipt' && <PlaceholderTab label="استلام البضاعة" />}
               {tab === 'financial' && <FinancialSummaryTab material={material} />}
-              {tab === 'documents' && <PlaceholderTab label="Documents" />}
+              {tab === 'documents' && <PlaceholderTab label="المستندات" />}
               {tab === 'timeline' && <TimelineTab material={material} />}
-              {tab === 'activity' && <PlaceholderTab label="Activity Log" />}
+              {tab === 'activity' && <PlaceholderTab label="سجل النشاط" />}
             </div>
           </>
         )}

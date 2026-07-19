@@ -29,7 +29,7 @@ final class StoreManualOrderRequest extends FormRequest
             // ── Delivery ─────────────────────────────────────────────────────
             'requested_delivery_date'   => 'nullable|date',
             'preferred_delivery_time'   => 'nullable|in:morning,afternoon,evening,any',
-            'delivery_window_id'        => 'nullable|uuid|exists:config_delivery_windows,id',
+            'delivery_window_id'        => 'nullable|uuid|exists:brand_delivery_time_slots,id',
             'delivery_window'           => 'nullable|string|max:100',
 
             // ── Payment ──────────────────────────────────────────────────────
@@ -43,6 +43,11 @@ final class StoreManualOrderRequest extends FormRequest
             'city_id'                   => 'nullable|integer',
             'area'                      => 'nullable|string|max:100',
             'shipping_address'          => 'nullable|string|max:500',
+            'building'                  => 'nullable|string|max:100',
+            'floor'                     => 'nullable|string|max:50',
+            'apartment'                 => 'nullable|string|max:50',
+            'landmark'                  => 'nullable|string|max:200',
+            'address_notes'             => 'nullable|string|max:500',
             'google_maps_lat'           => 'nullable|numeric|between:-90,90',
             'google_maps_lng'           => 'nullable|numeric|between:-180,180',
             'google_maps_url'           => 'nullable|string|max:500',
@@ -63,7 +68,7 @@ final class StoreManualOrderRequest extends FormRequest
             'company_id'                => 'nullable|uuid|exists:companies,id',
             'channel_id'                => 'nullable|uuid|exists:channels,id',
             'order_date'                => 'nullable|date',
-            'status'                    => 'nullable|string|in:pending,in_progress,processing,awaiting_payment,confirm_order,completed,cancelled',
+            'status'                    => 'nullable|string|in:pending,scheduled,processing,awaiting_payment,completed,cancelled',
             'notes'                     => 'nullable|string|max:2000',
 
             // ── Lines ────────────────────────────────────────────────────────

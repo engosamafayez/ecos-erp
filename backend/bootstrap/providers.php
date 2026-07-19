@@ -98,4 +98,5 @@ return [
     Modules\Marketing\Intelligence\Infrastructure\Providers\MarketingIntelligenceServiceProvider::class,
     Modules\Marketing\Automation\Infrastructure\Providers\AutomationServiceProvider::class,
     Modules\CustomerEngagement\Infrastructure\Providers\CustomerEngagementServiceProvider::class,
+    Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
 ];

@@ -72,9 +72,18 @@ final class CreateManualOrderAction extends BaseAction
             );
         }
 
-        $customerWasReused = false;
-        $order = DB::transaction(function () use ($data, $orderPolicy, $shippingResult, &$customerWasReused) {
+        $customerWasReused  = false;
+        $subtotal           = 0.0;
+        $monetaryDiscount   = 0.0;
+        $grandTotal         = 0.0;
+        $remaining          = 0.0;
+        $order = DB::transaction(function () use ($data, $orderPolicy, $shippingResult, &$customerWasReused, &$subtotal, &$monetaryDiscount, &$grandTotal, &$remaining) {
             [$customerId, $customerWasReused] = $this->resolveCustomer($data, $orderPolicy);
+
+            // Keep the customer's default delivery address in sync with the order data.
+            // This runs for both new and existing customers so that the profile is always
+            // up-to-date when searching the same customer in a subsequent order.
+            $this->syncCustomerDefaultAddress($customerId, $data);
 
             // Load the resolved customer to supply fallback values for snapshot fields.
             // When an existing customer is matched by phone the form may not pre-fill
@@ -169,8 +178,15 @@ final class CreateManualOrderAction extends BaseAction
         // CR-PREP-001: Auto-assign warehouse immediately after order creation.
         $this->warehouseAssignment->assign($order, Auth::user()?->company_id ?? $order->channel?->brand?->company_id);
 
-        // Auto-reserve inventory if the brand policy enables it and a warehouse is assigned.
-        if ((bool) ($orderPolicy['auto_reserve_inventory'] ?? false) && $order->assigned_warehouse_id !== null) {
+        // Auto-reserve inventory if the brand policy enables it, a warehouse is assigned,
+        // and the order is NOT Scheduled (BUG-003: future-dated orders must not lock stock
+        // until they activate on their delivery date).
+        $isScheduled = $order->status === OrderStatus::Scheduled;
+        if (
+            ! $isScheduled
+            && (bool) ($orderPolicy['auto_reserve_inventory'] ?? false)
+            && $order->assigned_warehouse_id !== null
+        ) {
             try {
                 $this->reserveInventory->execute($order->fresh());
             } catch (\Throwable $e) {
@@ -233,6 +249,12 @@ final class CreateManualOrderAction extends BaseAction
             if ($requirement === 'required' && empty($data['payment_proof_path'])) {
                 return OrderStatus::AwaitingPayment->value;
             }
+        }
+
+        // Future delivery date → Scheduled so the order waits until its date arrives.
+        $deliveryDate = (string) ($data['requested_delivery_date'] ?? '');
+        if ($deliveryDate !== '' && $deliveryDate > now()->toDateString()) {
+            return OrderStatus::Scheduled->value;
         }
 
         $configured = $orderPolicy['source_entry_policies']['manual'] ?? null;
@@ -571,46 +593,89 @@ final class CreateManualOrderAction extends BaseAction
         }
 
         // Create a new customer record.
-        $lastCode = Customer::orderByDesc('created_at')->value('code') ?? 'CUS-00000';
-        preg_match('/(\d+)$/', $lastCode, $m);
-        $next = isset($m[1]) ? (int) $m[1] + 1 : 1;
-        $code = 'CUS-' . str_pad((string) $next, 5, '0', STR_PAD_LEFT);
+        // Use MAX of the numeric suffix to avoid collision when records are inserted out of sequence.
+        $maxNum = (int) \DB::table('customers')
+            ->selectRaw("COALESCE(MAX(CAST(SPLIT_PART(code, '-', 2) AS INTEGER)), 0) as n")
+            ->value('n');
+        $code = 'CUS-' . str_pad((string) ($maxNum + 1), 5, '0', STR_PAD_LEFT);
 
         $customer = Customer::create([
-            'code'       => $code,
-            'name'       => (string) $data['customer_name'],
-            'phone'      => $data['customer_phone'] ?? null,
-            'mobile'     => $data['customer_secondary_phone'] ?? null,
-            'city'       => $data['city'] ?? null,
-            'governorate'=> $data['governorate'] ?? null,
-            'area'       => $data['area'] ?? null,
-            'address'    => $data['shipping_address'] ?? null,
-            'notes'      => $data['customer_notes'] ?? null,
-            'is_active'  => true,
+            'code'        => $code,
+            'name'        => (string) $data['customer_name'],
+            'phone'       => $data['customer_phone'] ?? null,
+            'mobile'      => $data['customer_secondary_phone'] ?? null,
+            'city'        => $data['city'] ?? null,
+            'governorate' => $data['governorate'] ?? null,
+            'area'        => $data['area'] ?? null,
+            'address'     => $data['shipping_address'] ?? null,
+            'notes'       => $data['customer_notes'] ?? null,
+            'is_active'   => true,
         ]);
 
-        if (!empty($data['governorate'])) {
-            CustomerAddress::create([
-                'customer_id'    => $customer->id,
-                'label'          => 'Default',
-                'governorate'    => (string) $data['governorate'],
-                'city'           => $data['city'] ?? null,
-                'area'           => $data['area'] ?? null,
-                'address_line'   => $data['shipping_address'] ?? null,
-                'building'       => $data['building'] ?? null,
-                'floor'          => $data['floor'] ?? null,
-                'apartment'      => $data['apartment'] ?? null,
-                'landmark'       => $data['landmark'] ?? null,
-                'address_notes'  => $data['address_notes'] ?? null,
-                'google_maps_lat'=> $data['google_maps_lat'] ?? null,
-                'google_maps_lng'=> $data['google_maps_lng'] ?? null,
-                'google_maps_url'=> $data['google_maps_url'] ?? null,
-                'location_source'=> $data['location_source'] ?? null,
-                'is_default'     => true,
-            ]);
+        // CustomerAddress is created by syncCustomerDefaultAddress after resolveCustomer returns.
+        return [$customer->id, false];
+    }
+
+    /**
+     * Upserts the customer's default delivery address with the non-null fields
+     * supplied by the order form. Runs for both new and existing customers so the
+     * customer profile always reflects the most recent known delivery details.
+     *
+     * Null values are intentionally skipped — they must not overwrite existing data
+     * when the current order form didn't include every address field.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function syncCustomerDefaultAddress(string $customerId, array $data): void
+    {
+        $governorate = $data['governorate'] ?? null;
+        $city        = $data['city']        ?? null;
+
+        if ($governorate === null && $city === null) {
+            return;
         }
 
-        return [$customer->id, false];
+        $fields = [
+            'governorate'     => $governorate,
+            'city'            => $city,
+            'area'            => $data['area']            ?? null,
+            'address_line'    => $data['shipping_address'] ?? null,
+            'building'        => $data['building']        ?? null,
+            'floor'           => $data['floor']           ?? null,
+            'apartment'       => $data['apartment']       ?? null,
+            'landmark'        => $data['landmark']        ?? null,
+            'address_notes'   => $data['address_notes']   ?? null,
+            'google_maps_lat' => $data['google_maps_lat'] ?? null,
+            'google_maps_lng' => $data['google_maps_lng'] ?? null,
+            'google_maps_url' => $data['google_maps_url'] ?? null,
+            'location_source' => $data['location_source'] ?? null,
+        ];
+
+        // Only send non-null values so we never blank out fields not present in this request.
+        $updates = array_filter($fields, static fn ($v) => $v !== null);
+
+        if (empty($updates)) {
+            return;
+        }
+
+        $existing = CustomerAddress::where('customer_id', $customerId)
+            ->where('is_default', true)
+            ->first();
+
+        if ($existing !== null) {
+            $existing->update($updates);
+        } else {
+            CustomerAddress::create(array_merge($updates, [
+                'customer_id' => $customerId,
+                'label'       => 'Default',
+                'is_default'  => true,
+            ]));
+        }
+
+        // Persist customer-level notes when the order form provided them.
+        if (! empty($data['customer_notes'])) {
+            Customer::where('id', $customerId)->update(['notes' => $data['customer_notes']]);
+        }
     }
 
     /**

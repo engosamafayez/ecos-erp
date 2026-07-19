@@ -1,0 +1,75 @@
+{
+  "title": "اللوجستيات",
+  "subtitle": "إدارة مناطق التوصيل والمحافظات ومناطق التغطية.",
+  "governorates": {
+    "title": "المحافظات",
+    "subtitle": "إدارة محافظات مصر وإعدادات التوصيل الخاصة بها.",
+    "search": "بحث في المحافظات…",
+    "actions": {
+      "new": "محافظة جديدة",
+      "edit": "تعديل المحافظة"
+    },
+    "columns": {
+      "nameAr": "الاسم بالعربية",
+      "nameEn": "الاسم بالإنجليزية",
+      "code": "الرمز",
+      "cities": "المدن",
+      "zones": "المناطق",
+      "status": "الحالة"
+    },
+    "form": {
+      "nameAr": { "label": "الاسم بالعربية", "placeholder": "القاهرة" },
+      "nameEn": { "label": "الاسم بالإنجليزية", "placeholder": "Cairo" },
+      "code": { "label": "الرمز", "placeholder": "CAI" },
+      "active": "نشطة"
+    }
+  },
+  "cities": {
+    "title": "المدن",
+    "subtitle": "إدارة المدن ومناطق التوصيل الخاصة بها.",
+    "search": "بحث في المدن…",
+    "actions": {
+      "new": "مدينة جديدة",
+      "edit": "تعديل المدينة"
+    },
+    "columns": {
+      "nameAr": "الاسم بالعربية",
+      "nameEn": "الاسم بالإنجليزية",
+      "governorate": "المحافظة",
+      "zones": "المناطق",
+      "status": "الحالة"
+    },
+    "form": {
+      "nameAr": { "label": "الاسم بالعربية", "placeholder": "مدينة نصر" },
+      "nameEn": { "label": "الاسم بالإنجليزية", "placeholder": "Nasr City" },
+      "governorate": { "label": "المحافظة", "placeholder": "اختر محافظة…" },
+      "active": "نشطة"
+    }
+  },
+  "zones": {
+    "title": "مناطق التوصيل",
+    "subtitle": "تحديد مناطق التوصيل وتكاليف الشحن الخاصة بها.",
+    "search": "بحث في المناطق…",
+    "actions": {
+      "new": "منطقة جديدة",
+      "edit": "تعديل المنطقة"
+    },
+    "columns": {
+      "name": "اسم المنطقة",
+      "city": "المدينة",
+      "governorate": "المحافظة",
+      "baseShipping": "تكلفة الشحن الأساسية",
+      "status": "الحالة"
+    },
+    "form": {
+      "name": { "label": "اسم المنطقة", "placeholder": "المنطقة أ — وسط البلد" },
+      "city": { "label": "المدينة", "placeholder": "اختر مدينة…" },
+      "baseShipping": { "label": "تكلفة الشحن الأساسية" },
+      "active": "نشطة"
+    }
+  },
+  "delete": {
+    "title": "حذف",
+    "confirm": "حذف"
+  }
+}

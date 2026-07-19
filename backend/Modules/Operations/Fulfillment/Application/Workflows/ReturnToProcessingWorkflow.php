@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Operations\Fulfillment\Application\Workflows;
 
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
+use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
@@ -33,6 +34,18 @@ final class ReturnToProcessingWorkflow implements FulfillmentWorkflowInterface
 
         $order->update(['status' => OrderStatus::Processing]);
         $order->refresh();
+
+        // H-3 fix: log the status reversion so the order's event history reflects it.
+        // A dedicated OrderReturnedToProcessingEvent (domain event) is pending; this audit
+        // entry ensures the transition is visible in the order timeline in the interim.
+        OrderEvent::log(
+            orderId:     $order->id,
+            type:        'returned_to_processing',
+            description: "Order #{$order->order_number} returned from Preparing to Processing" .
+                          ($ctx->get('reason') ? ': ' . $ctx->get('reason') : '.'),
+            payload:     ['actor_id' => $ctx->actorId],
+            module:      'fulfillment',
+        );
 
         return FulfillmentResult::success(
             $order,

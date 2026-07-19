@@ -27,7 +27,7 @@ export function ProductCard({ product, onClick, disabled }: ProductCardProps) {
       disabled={disabled || product.stock_status === 'out_of_stock'}
       onClick={() => onClick(product)}
       className={cn(
-        'group flex flex-col gap-2 rounded-lg border bg-card p-3 text-left transition-all',
+        'group flex flex-col gap-2 rounded-lg border bg-card p-3 text-start transition-all',
         'hover:border-primary/50 hover:shadow-sm active:scale-[0.98]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         (disabled || product.stock_status === 'out_of_stock') &&

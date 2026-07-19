@@ -55,11 +55,11 @@ function BrandLogoCell({ path, name }: { path: string | null; name: string }) {
 const PER_PAGE = 15;
 
 const OPTIONAL_COLS = [
-  { key: 'logo',     label: 'Logo' },
-  { key: 'code',     label: 'Code' },
-  { key: 'company',  label: 'Company' },
-  { key: 'channels', label: 'Active Channels' },
-  { key: 'updated_at', label: 'Updated' },
+  { key: 'logo',     label: 'الشعار' },
+  { key: 'code',     label: 'الكود' },
+  { key: 'company',  label: 'الشركة' },
+  { key: 'channels', label: 'القنوات النشطة' },
+  { key: 'updated_at', label: 'تاريخ التحديث' },
 ] as const;
 
 export function BrandsPage() {
@@ -139,22 +139,22 @@ export function BrandsPage() {
   const columns: ColumnDef<Brand>[] = [
     {
       key: 'logo',
-      header: 'Logo',
+      header: 'الشعار',
       cell: (b) => <BrandLogoCell path={b.logo} name={b.name} />,
     },
     {
       key: 'code',
-      header: 'Code',
+      header: 'الكود',
       sortable: true,
       cell: (b) => <span className="font-mono text-xs font-medium">{b.code}</span>,
     },
     {
       key: 'name',
-      header: 'Brand Name',
+      header: 'اسم العلامة التجارية',
       sortable: true,
       cell: (b) => (
         <button
-          className="font-medium hover:underline text-left leading-none"
+          className="font-medium hover:underline text-start leading-none"
           onClick={() => openDetail(b)}
         >
           {b.name}
@@ -163,12 +163,12 @@ export function BrandsPage() {
     },
     {
       key: 'company',
-      header: 'Company',
+      header: 'الشركة',
       cell: (b) => <span className="text-muted-foreground">{b.company?.name ?? '—'}</span>,
     },
     {
       key: 'channels',
-      header: 'Active Channels',
+      header: 'القنوات النشطة',
       cell: (b) => (
         <span className="text-muted-foreground">
           {b.active_channels_count > 0
@@ -179,13 +179,13 @@ export function BrandsPage() {
     },
     {
       key: 'is_active',
-      header: 'Status',
+      header: 'الحالة',
       sortable: true,
       cell: (b) => <StatusBadge status={b.is_active ? 'active' : 'inactive'} />,
     },
     {
       key: 'updated_at',
-      header: 'Updated',
+      header: 'تاريخ التحديث',
       sortable: true,
       cell: (b) => (
         <span className="text-muted-foreground text-xs">
@@ -203,17 +203,17 @@ export function BrandsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Brands"
-        subtitle="Manage your organization's brands, each scoped to a company."
+        title="العلامات التجارية"
+        subtitle="إدارة علامات مؤسستك التجارية، كل منها مرتبطة بشركة."
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Organization', to: ROUTES.organization },
-          { label: 'Brands' },
+          { label: 'الرئيسية', to: ROUTES.dashboard },
+          { label: 'المؤسسة', to: ROUTES.organization },
+          { label: 'العلامات التجارية' },
         ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Brand
+            علامة تجارية جديدة
           </Button>
         }
       />
@@ -222,13 +222,13 @@ export function BrandsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Total Brands</div>
+            <div className="text-muted-foreground text-sm">إجمالي العلامات</div>
             <div className="text-2xl font-bold">{meta?.total ?? 0}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Active Brands</div>
+            <div className="text-muted-foreground text-sm">العلامات النشطة</div>
             <div className="text-2xl font-bold text-emerald-600">
               {activeData?.meta.total ?? 0}
             </div>
@@ -236,13 +236,13 @@ export function BrandsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Inactive Brands</div>
+            <div className="text-muted-foreground text-sm">العلامات غير النشطة</div>
             <div className="text-2xl font-bold text-slate-400">{inactiveData?.meta.total ?? 0}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Connected Channels</div>
+            <div className="text-muted-foreground text-sm">القنوات المتصلة</div>
             <div className="text-2xl font-bold text-blue-600">
               {data?.summary?.total_active_channels ?? 0}
             </div>
@@ -253,7 +253,7 @@ export function BrandsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search brands…"
+            searchPlaceholder="ابحث عن علامة تجارية…"
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -266,18 +266,18 @@ export function BrandsPage() {
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Company</span>
+                  <span className="text-sm font-medium">الشركة</span>
                   <CompanySelect
                     value={companyFilter}
                     onChange={(value) => {
                       setCompanyFilter(value);
                       setPage(1);
                     }}
-                    placeholder="All companies"
+                    placeholder="جميع الشركات"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Status</span>
+                  <span className="text-sm font-medium">الحالة</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => {
@@ -286,9 +286,9 @@ export function BrandsPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="all">الكل</option>
+                    <option value="active">نشط</option>
+                    <option value="inactive">غير نشط</option>
                   </select>
                 </div>
               </>
@@ -298,11 +298,11 @@ export function BrandsPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <SlidersHorizontal className="size-4" />
-                  Columns
+                  الأعمدة
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                <DropdownMenuLabel>إظهار/إخفاء الأعمدة</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {OPTIONAL_COLS.map(({ key, label }) => (
                   <DropdownMenuCheckboxItem
@@ -329,11 +329,11 @@ export function BrandsPage() {
               <ActionMenu
                 label={`Actions for ${brand.name}`}
                 items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openDetail(brand) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(brand) },
+                  { key: 'view', label: 'عرض', icon: Eye, onSelect: () => openDetail(brand) },
+                  { key: 'edit', label: 'تعديل', icon: Pencil, onSelect: () => openEdit(brand) },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: 'حذف',
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(brand),
@@ -381,9 +381,9 @@ export function BrandsPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title="Delete Brand"
-        description={`Are you sure you want to delete "${deleting?.name ?? ''}"? This action can be undone.`}
-        confirmLabel="Delete Brand"
+        title="حذف العلامة التجارية"
+        description={`هل أنت متأكد من حذف "${deleting?.name ?? ''}"؟ يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف العلامة التجارية"
         variant="destructive"
         loading={deleteBrand.isPending}
         onConfirm={confirmDelete}

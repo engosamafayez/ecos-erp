@@ -175,13 +175,13 @@ export interface DeliveryStopDetail {
 }
 
 export const STOP_STATUS_LABELS: Record<DeliveryStopStatus, string> = {
-  pending:     'Pending',
-  in_progress: 'In Progress',
-  delivered:   'Delivered',
-  partial:     'Partial',
-  failed:      'Failed',
-  returned:    'Returned',
-  skipped:     'Skipped',
+  pending:     'قيد الانتظار',
+  in_progress: 'جارٍ',
+  delivered:   'تم التوصيل',
+  partial:     'جزئي',
+  failed:      'فاشل',
+  returned:    'مُعاد',
+  skipped:     'متجاوز',
 };
 
 export const STOP_STATUS_COLORS: Record<DeliveryStopStatus, string> = {
@@ -195,26 +195,26 @@ export const STOP_STATUS_COLORS: Record<DeliveryStopStatus, string> = {
 };
 
 export const ACTION_TYPE_LABELS: Record<DeliveryActionType, string> = {
-  completed:     'Delivered',
-  partial:       'Partial Delivery',
-  refused:       'Customer Refused',
-  not_available: 'Not Available',
-  delay:         'Requested Delay',
-  wrong_address: 'Wrong Address',
-  unreachable:   'Unreachable',
+  completed:     'تم التوصيل',
+  partial:       'توصيل جزئي',
+  refused:       'رفض العميل',
+  not_available: 'غير متاح',
+  delay:         'تأجيل مطلوب',
+  wrong_address: 'عنوان خاطئ',
+  unreachable:   'لا يمكن الوصول',
 };
 
 export const EXCEPTION_TYPE_LABELS: Record<ExceptionType, string> = {
-  damaged:       'Damaged Product',
-  missing:       'Missing Product',
-  wrong_product: 'Wrong Product',
-  complaint:     'Customer Complaint',
-  packaging:     'Packaging Issue',
-  other:         'Other',
+  damaged:       'منتج تالف',
+  missing:       'منتج مفقود',
+  wrong_product: 'منتج خاطئ',
+  complaint:     'شكوى عميل',
+  packaging:     'مشكلة تغليف',
+  other:         'أخرى',
 };
 
 export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
-  cash:          'Cash',
-  bank_transfer: 'Bank Transfer',
-  already_paid:  'Already Paid',
+  cash:          'نقداً',
+  bank_transfer: 'تحويل بنكي',
+  already_paid:  'مدفوع مسبقاً',
 };

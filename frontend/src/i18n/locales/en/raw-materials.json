@@ -1,0 +1,55 @@
+{
+  "title": "Raw Materials",
+  "subtitle": "Manage raw material catalog, stock levels, and procurement.",
+  "search": "Search by name, code, or category…",
+  "actions": {
+    "new": "New Material",
+    "edit": "Edit",
+    "archive": "Archive",
+    "adjust": "Stock Adjustment"
+  },
+  "columns": {
+    "name": "Material Name",
+    "code": "Code",
+    "category": "Category",
+    "unit": "Unit",
+    "stockQty": "On Hand",
+    "reorderPoint": "Reorder At",
+    "unitCost": "Unit Cost",
+    "supplier": "Primary Supplier",
+    "status": "Status"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "archived": "Archived"
+  },
+  "form": {
+    "name": { "label": "Material Name", "placeholder": "e.g. Wheat Flour 72%" },
+    "code": { "label": "Material Code", "placeholder": "MAT-001" },
+    "category": { "label": "Category", "placeholder": "Select category…" },
+    "unit": { "label": "Base Unit", "placeholder": "Select unit…" },
+    "reorderPoint": { "label": "Reorder Point" },
+    "reorderQty": { "label": "Reorder Quantity" },
+    "supplier": { "label": "Primary Supplier", "placeholder": "Select supplier…" },
+    "unitCost": { "label": "Standard Unit Cost" },
+    "notes": { "label": "Notes", "placeholder": "Storage or handling notes…" }
+  },
+  "stock": {
+    "currentStock": "Current Stock",
+    "reservedQty": "Reserved",
+    "availableQty": "Available",
+    "inTransitQty": "In Transit",
+    "belowReorder": "Below Reorder Point",
+    "outOfStock": "Out of Stock"
+  },
+  "drawer": {
+    "createTitle": "New Raw Material",
+    "editTitle": "Edit Material",
+    "createSubtitle": "Add a raw material to the production catalog.",
+    "submitCreate": "Create Material",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  }
+}

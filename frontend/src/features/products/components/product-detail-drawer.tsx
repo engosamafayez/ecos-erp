@@ -444,7 +444,7 @@ function PricingTab({ product }: { product: Product }) {
             <p className="text-xs text-muted-foreground">Pricing Source</p>
             <p className="text-sm font-semibold mt-0.5">{pricingSource.label}</p>
           </div>
-          <div className="text-right">
+          <div className="text-end">
             <p className="text-xs text-muted-foreground">Last Updated</p>
             <p className="text-xs text-foreground mt-0.5">{fmtDate(pricingSource.date)}</p>
           </div>
@@ -719,9 +719,9 @@ function RecipeTab({ product }: { product: Product }) {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b bg-muted/40">
-                    <th className="px-3 py-2 text-left font-medium text-muted-foreground">Material</th>
-                    <th className="px-3 py-2 text-right font-medium text-muted-foreground">Qty Needed</th>
-                    <th className="px-3 py-2 text-right font-medium text-muted-foreground">Available</th>
+                    <th className="px-3 py-2 text-start font-medium text-muted-foreground">Material</th>
+                    <th className="px-3 py-2 text-end font-medium text-muted-foreground">Qty Needed</th>
+                    <th className="px-3 py-2 text-end font-medium text-muted-foreground">Available</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -738,11 +738,11 @@ function RecipeTab({ product }: { product: Product }) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                      <td className="px-3 py-2 text-end tabular-nums text-muted-foreground">
                         {fmtQty(comp.quantity)}
                       </td>
                       <td className={cn(
-                        'px-3 py-2 text-right tabular-nums font-medium',
+                        'px-3 py-2 text-end tabular-nums font-medium',
                         comp.is_available ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400',
                       )}>
                         {fmtQty(comp.available_qty)}
@@ -927,24 +927,24 @@ function MarginTab({ product }: { product: Product }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/40">
-              <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Metric</th>
-              <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground">Regular</th>
+              <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Metric</th>
+              <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Regular</th>
               {hasSale && (
-                <th className="px-4 py-2.5 text-right text-xs font-medium text-emerald-700 dark:text-emerald-400">Sale</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-emerald-700 dark:text-emerald-400">Sale</th>
               )}
             </tr>
           </thead>
           <tbody className="divide-y">
             <tr>
               <td className="px-4 py-3 text-xs text-muted-foreground">Product Cost</td>
-              <td className="px-4 py-3 text-right tabular-nums">{fmtCurrency(cost)}</td>
-              {hasSale && <td className="px-4 py-3 text-right tabular-nums">{fmtCurrency(cost)}</td>}
+              <td className="px-4 py-3 text-end tabular-nums">{fmtCurrency(cost)}</td>
+              {hasSale && <td className="px-4 py-3 text-end tabular-nums">{fmtCurrency(cost)}</td>}
             </tr>
             <tr>
               <td className="px-4 py-3 text-xs text-muted-foreground">Selling Price</td>
-              <td className="px-4 py-3 text-right tabular-nums font-medium">{fmtCurrency(sellPrice)}</td>
+              <td className="px-4 py-3 text-end tabular-nums font-medium">{fmtCurrency(sellPrice)}</td>
               {hasSale && (
-                <td className="px-4 py-3 text-right tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
+                <td className="px-4 py-3 text-end tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
                   {fmtCurrency(salePrice)}
                 </td>
               )}
@@ -952,14 +952,14 @@ function MarginTab({ product }: { product: Product }) {
             <tr className="bg-muted/20">
               <td className="px-4 py-3 text-xs font-medium">Gross Profit / Unit</td>
               <td className={cn(
-                'px-4 py-3 text-right tabular-nums font-semibold',
+                'px-4 py-3 text-end tabular-nums font-semibold',
                 grossProfit != null && grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400',
               )}>
                 {fmtCurrency(grossProfit)}
               </td>
               {hasSale && (
                 <td className={cn(
-                  'px-4 py-3 text-right tabular-nums font-semibold',
+                  'px-4 py-3 text-end tabular-nums font-semibold',
                   saleGrossProfit != null && saleGrossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400',
                 )}>
                   {fmtCurrency(saleGrossProfit)}
@@ -968,11 +968,11 @@ function MarginTab({ product }: { product: Product }) {
             </tr>
             <tr className="bg-muted/20">
               <td className="px-4 py-3 text-xs font-medium">Final Margin</td>
-              <td className="px-4 py-3 text-right">
+              <td className="px-4 py-3 text-end">
                 {margin != null ? <MarginBadge pct={margin} /> : <span className="text-muted-foreground">—</span>}
               </td>
               {hasSale && (
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-end">
                   {saleMargin != null ? <MarginBadge pct={saleMargin} /> : <span className="text-muted-foreground">—</span>}
                 </td>
               )}

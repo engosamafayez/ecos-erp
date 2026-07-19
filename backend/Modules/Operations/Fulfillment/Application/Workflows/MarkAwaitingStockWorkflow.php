@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Operations\Fulfillment\Application\Workflows;
 
+use Modules\Commerce\Orders\Application\Actions\UpdateReservationStatusAction;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
+use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
@@ -19,6 +21,10 @@ use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionExcepti
  */
 final class MarkAwaitingStockWorkflow implements FulfillmentWorkflowInterface
 {
+    public function __construct(
+        private readonly UpdateReservationStatusAction $updateReservationStatus,
+    ) {}
+
     public function guard(FulfillmentContext $ctx): void
     {
         $order = $ctx->order;
@@ -49,6 +55,12 @@ final class MarkAwaitingStockWorkflow implements FulfillmentWorkflowInterface
 
         $order->update(['status' => OrderStatus::AwaitingStock]);
         $order->refresh();
+
+        $this->updateReservationStatus->execute(
+            $order,
+            ReservationStatus::AwaitingStock,
+            $reason,
+        );
 
         return FulfillmentResult::success(
             $order,

@@ -19,7 +19,7 @@ export function AuditTrailList({ entries }: Props) {
     return (
       <div className="flex flex-col items-center justify-center py-10 text-center">
         <Clock className="h-8 w-8 text-muted-foreground/30 mb-2" />
-        <p className="text-sm text-muted-foreground">No audit events recorded yet.</p>
+        <p className="text-sm text-muted-foreground">لا توجد أحداث تدقيق مسجلة بعد.</p>
       </div>
     );
   }
@@ -59,7 +59,7 @@ export function AuditTrailList({ entries }: Props) {
               <div className="mt-1 text-xs text-muted-foreground flex items-center gap-2">
                 {entry.performed_by_name && <span>{entry.performed_by_name}</span>}
                 {entry.performed_by_name && <span>·</span>}
-                <span>{new Date(entry.performed_at).toLocaleString('en-EG')}</span>
+                <span>{new Date(entry.performed_at).toLocaleString('ar-EG')}</span>
               </div>
 
               {entry.notes && (

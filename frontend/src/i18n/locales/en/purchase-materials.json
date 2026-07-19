@@ -1,0 +1,58 @@
+{
+  "title": "Purchase Materials",
+  "subtitle": "Manage raw material purchase orders and supplier deliveries.",
+  "search": "Search by material, supplier, or PO number…",
+  "actions": {
+    "new": "New Material PO",
+    "receive": "Receive Delivery",
+    "cancel": "Cancel"
+  },
+  "columns": {
+    "number": "PO Number",
+    "material": "Material",
+    "supplier": "Supplier",
+    "orderedQty": "Ordered Qty",
+    "receivedQty": "Received Qty",
+    "unit": "Unit",
+    "unitCost": "Unit Cost",
+    "total": "Total",
+    "expectedDate": "Expected",
+    "status": "Status"
+  },
+  "status": {
+    "draft": "Draft",
+    "sent": "Sent",
+    "partially_received": "Partially Received",
+    "received": "Fully Received",
+    "cancelled": "Cancelled"
+  },
+  "form": {
+    "material": { "label": "Raw Material", "placeholder": "Select material…" },
+    "supplier": { "label": "Supplier", "placeholder": "Select supplier…" },
+    "quantity": { "label": "Quantity" },
+    "unit": { "label": "Unit", "placeholder": "Select unit…" },
+    "unitCost": { "label": "Unit Cost" },
+    "expectedDate": "Expected Delivery Date",
+    "warehouse": { "label": "Receiving Warehouse", "placeholder": "Select warehouse…" },
+    "notes": { "label": "Notes", "placeholder": "Optional notes…" }
+  },
+  "receipt": {
+    "title": "Receive Delivery",
+    "receivedQty": "Received Quantity",
+    "receivedDate": "Receipt Date",
+    "lotNumber": "Lot / Batch Number",
+    "expiryDate": "Expiry Date",
+    "notes": "Inspection Notes",
+    "submit": "Record Receipt",
+    "submitting": "Recording…"
+  },
+  "drawer": {
+    "createTitle": "New Material Purchase Order",
+    "editTitle": "Edit Purchase Order",
+    "createSubtitle": "Order raw materials from a supplier.",
+    "submitCreate": "Create PO",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  }
+}

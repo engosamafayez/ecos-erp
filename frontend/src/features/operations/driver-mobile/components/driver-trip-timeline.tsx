@@ -27,7 +27,7 @@ const EVENT_DOT: Record<string, string> = {
 
 function formatTime(ts: string) {
   try {
-    return new Date(ts).toLocaleTimeString('en-EG', { hour: '2-digit', minute: '2-digit' });
+    return new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
   } catch {
     return ts;
   }
@@ -38,7 +38,7 @@ export function DriverTripTimeline({ events }: DriverTripTimelineProps) {
     return (
       <div className="flex flex-col items-center py-12 text-muted-foreground">
         <Clock className="h-8 w-8 mb-2 opacity-40" />
-        <p className="text-sm">No events yet</p>
+        <p className="text-sm">لا توجد أحداث بعد</p>
       </div>
     );
   }

@@ -9,6 +9,9 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentInAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
+use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryLayerConsumption;
+use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
 use Modules\Operations\Fulfillment\Domain\Events\InventoryRestoredEvent;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 use Modules\Operations\Fulfillment\Domain\Models\CustomerReturn;
@@ -73,7 +76,7 @@ final class ReceiveReturnWorkflow
                     continue;
                 }
 
-                // Restore inventory via AdjustmentIn (recorded as AdjustmentIn movement)
+                // Restore inventory via AdjustmentIn (updates on_hand_qty + stock ledger).
                 $this->adjustmentIn->execute(new StockOperationDTO(
                     warehouse_id:   $warehouseId,
                     product_id:     $line->product_id,
@@ -83,6 +86,42 @@ final class ReceiveReturnWorkflow
                     reference_id:   $customerReturn->id,
                     notes:          "Return accepted for order #{$order->order_number}. Condition: sellable.",
                 ));
+
+                // CERT-GAP-002: create a new FIFO receipt layer so returned goods
+                // can be consumed by future shipments. Without this layer,
+                // InventoryLayerConsumptionService cannot allocate the returned
+                // units and will throw InsufficientStockException even when
+                // on_hand_qty is positive, and COGS for future orders is wrong.
+                //
+                // Cost resolution (most-accurate → least-accurate):
+                //   1. Weighted average cost from the original FIFO consumption records
+                //      for this order + product. This traces the exact cost paid when
+                //      the goods were first shipped — the highest-fidelity option.
+                //   2. Product's current_fifo_cost (oldest open layer's cost).
+                //   3. Product's average_cost.
+                //   4. Product's last_purchase_cost.
+                //   5. 0 (sentinel — prevents a null layer from breaking FIFO math).
+                $product = Product::find($line->product_id);
+
+                $returnedUnitCost = $this->resolveReturnCost(
+                    $order->id,
+                    $line->product_id,
+                    $warehouseId,
+                    $product,
+                );
+
+                InventoryReceiptLayer::create([
+                    'supplier_id'           => null,
+                    'product_id'            => $line->product_id,
+                    'goods_receipt_id'      => null,
+                    'goods_receipt_line_id' => null,
+                    'warehouse_id'          => $warehouseId,
+                    'received_qty'          => $line->quantity_returned,
+                    'remaining_qty'         => $line->quantity_returned,
+                    'landed_unit_cost'      => $returnedUnitCost,
+                    'sale_price_snapshot'   => $product ? ((float) ($product->sale_price ?? 0)) ?: null : null,
+                    'receipt_date'          => now()->toDateString(),
+                ]);
 
                 $line->update(['condition' => $condition]);
                 $linesRestored++;
@@ -119,5 +158,48 @@ final class ReceiveReturnWorkflow
         ));
 
         return $customerReturn;
+    }
+
+    /**
+     * Resolve the unit cost for a returned FIFO layer.
+     *
+     * Strategy (highest fidelity first):
+     *   1. Weighted average from the original InventoryLayerConsumption records for
+     *      this order + product + warehouse. This is the actual cost paid when the
+     *      goods were shipped — full traceability, no schema changes required.
+     *   2. Product's current_fifo_cost (oldest open layer's landed cost).
+     *   3. Product's average_cost.
+     *   4. Product's last_purchase_cost.
+     *   5. 0 — prevents a null value corrupting FIFO arithmetic.
+     */
+    private function resolveReturnCost(
+        string $orderId,
+        string $productId,
+        string $warehouseId,
+        ?Product $product,
+    ): float {
+        // 1. Trace original FIFO consumption records for this order + product + warehouse.
+        $consumptions = InventoryLayerConsumption::query()
+            ->where('order_id', $orderId)
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->get(['quantity', 'unit_cost', 'total_cost']);
+
+        if ($consumptions->isNotEmpty()) {
+            $totalQty  = $consumptions->sum(fn ($c) => (float) $c->quantity);
+            $totalCost = $consumptions->sum(fn ($c) => (float) $c->total_cost);
+
+            if ($totalQty > 0) {
+                return round($totalCost / $totalQty, 4);
+            }
+        }
+
+        // 2-5. Progressive fallback chain.
+        return (float) (
+            $product?->current_fifo_cost
+            ?? $product?->average_cost
+            ?? $product?->last_purchase_cost
+            ?? 0
+        );
     }
 }

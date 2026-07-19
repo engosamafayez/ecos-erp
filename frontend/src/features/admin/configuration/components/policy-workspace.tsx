@@ -505,7 +505,7 @@ function PolicyField({
                 type="button"
                 onClick={() => onChange(opt.value)}
                 className={cn(
-                  'flex-1 rounded-lg border px-3 py-2.5 text-left transition-colors',
+                  'flex-1 rounded-lg border px-3 py-2.5 text-start transition-colors',
                   active
                     ? 'border-primary bg-primary/5 ring-1 ring-primary'
                     : 'border-border bg-card hover:border-input',

@@ -31,9 +31,9 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 15;
 
 const OPTIONAL_COLS = [
-  { key: 'code',        label: 'Code' },
-  { key: 'company',     label: 'Company' },
-  { key: 'leader_name', label: 'Leader' },
+  { key: 'code',        label: 'الكود' },
+  { key: 'company',     label: 'الشركة' },
+  { key: 'leader_name', label: 'القائد' },
 ] as const;
 
 export function TeamsPage() {
@@ -100,29 +100,29 @@ export function TeamsPage() {
   const columns: ColumnDef<Team>[] = [
     {
       key: 'code',
-      header: 'Code',
+      header: 'الكود',
       cell: (t) => <span className="font-mono text-xs font-medium">{t.code}</span>,
     },
     {
       key: 'name',
-      header: 'Name',
+      header: 'الاسم',
       cell: (t) => <span className="font-medium">{t.name}</span>,
     },
     {
       key: 'company',
-      header: 'Company',
+      header: 'الشركة',
       cell: (t) => <span className="text-muted-foreground">{t.company?.name ?? '—'}</span>,
     },
     {
       key: 'leader_name',
-      header: 'Leader',
+      header: 'القائد',
       cell: (t) => (
         <span className="text-muted-foreground">{t.leader_name ?? '—'}</span>
       ),
     },
     {
       key: 'is_active',
-      header: 'Status',
+      header: 'الحالة',
       cell: (t) => <StatusBadge status={t.is_active ? 'active' : 'inactive'} />,
     },
   ];
@@ -135,17 +135,17 @@ export function TeamsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Teams"
-        subtitle="Manage your organization's teams and assign leaders."
+        title="الفرق"
+        subtitle="إدارة فرق مؤسستك وتعيين القادة."
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Organization', to: ROUTES.organization },
-          { label: 'Teams' },
+          { label: 'الرئيسية', to: ROUTES.dashboard },
+          { label: 'المؤسسة', to: ROUTES.organization },
+          { label: 'الفرق' },
         ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Team
+            فريق جديد
           </Button>
         }
       />
@@ -154,13 +154,13 @@ export function TeamsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Total Teams</div>
+            <div className="text-muted-foreground text-sm">إجمالي الفرق</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : totalCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Active Teams</div>
+            <div className="text-muted-foreground text-sm">الفرق النشطة</div>
             <div className="text-2xl font-bold text-emerald-600">
               {isLoading ? '—' : activeCount}
             </div>
@@ -168,7 +168,7 @@ export function TeamsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Inactive Teams</div>
+            <div className="text-muted-foreground text-sm">الفرق غير النشطة</div>
             <div className="text-2xl font-bold text-slate-400">
               {isLoading ? '—' : inactiveCount}
             </div>
@@ -179,7 +179,7 @@ export function TeamsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search teams…"
+            searchPlaceholder="ابحث عن فريق…"
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -192,18 +192,18 @@ export function TeamsPage() {
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Company</span>
+                  <span className="text-sm font-medium">الشركة</span>
                   <CompanySelect
                     value={companyFilter}
                     onChange={(value) => {
                       setCompanyFilter(value);
                       setPage(1);
                     }}
-                    placeholder="All companies"
+                    placeholder="جميع الشركات"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Status</span>
+                  <span className="text-sm font-medium">الحالة</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => {
@@ -212,9 +212,9 @@ export function TeamsPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="">الكل</option>
+                    <option value="active">نشط</option>
+                    <option value="inactive">غير نشط</option>
                   </select>
                 </div>
               </>
@@ -224,11 +224,11 @@ export function TeamsPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <SlidersHorizontal className="size-4" />
-                  Columns
+                  الأعمدة
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                <DropdownMenuLabel>إظهار/إخفاء الأعمدة</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {OPTIONAL_COLS.map(({ key, label }) => (
                   <DropdownMenuCheckboxItem
@@ -253,11 +253,11 @@ export function TeamsPage() {
               <ActionMenu
                 label={`Actions for ${team.name}`}
                 items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openDetail(team) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(team) },
+                  { key: 'view', label: 'عرض', icon: Eye, onSelect: () => openDetail(team) },
+                  { key: 'edit', label: 'تعديل', icon: Pencil, onSelect: () => openEdit(team) },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: 'حذف',
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(team),
@@ -305,9 +305,9 @@ export function TeamsPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title="Delete Team"
-        description={`Are you sure you want to delete "${deleting?.name ?? ''}"? This action can be undone.`}
-        confirmLabel="Delete Team"
+        title="حذف الفريق"
+        description={`هل أنت متأكد من حذف "${deleting?.name ?? ''}"؟ يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف الفريق"
         variant="destructive"
         loading={deleteTeam.isPending}
         onConfirm={confirmDelete}

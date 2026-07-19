@@ -25,10 +25,10 @@ import { cn } from '@/lib/utils';
 type Tab = 'review' | 'acceptance' | 'dispatch' | 'history';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'review',     label: 'Trip Review',       icon: ClipboardList },
-  { id: 'acceptance', label: 'Driver Acceptance',  icon: CheckCircle2 },
-  { id: 'dispatch',   label: 'Dispatch',           icon: Truck },
-  { id: 'history',    label: 'Audit Trail',        icon: History },
+  { id: 'review',     label: 'مراجعة الرحلة',  icon: ClipboardList },
+  { id: 'acceptance', label: 'قبول السائق',    icon: CheckCircle2 },
+  { id: 'dispatch',   label: 'الإرسال',        icon: Truck },
+  { id: 'history',    label: 'سجل التدقيق',    icon: History },
 ];
 
 export function DispatchGateWorkspacePage() {
@@ -57,9 +57,9 @@ export function DispatchGateWorkspacePage() {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <ShieldCheck className="h-10 w-10 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">Trip not found or access denied.</p>
+        <p className="text-sm text-muted-foreground">الرحلة غير موجودة أو ممنوع الوصول.</p>
         <Button variant="outline" size="sm" onClick={() => navigate(ROUTES.dispatchGate)}>
-          Back to Dispatch Gate
+          العودة إلى بوابة الإرسال
         </Button>
       </div>
     );
@@ -111,13 +111,13 @@ export function DispatchGateWorkspacePage() {
         {/* Header KPIs */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
           <div className="text-xs px-2 py-1 rounded-md bg-muted border">
-            <span className="text-muted-foreground">Orders </span>
+            <span className="text-muted-foreground">الطلبات </span>
             <span className="font-semibold">{trip.orders_count}</span>
           </div>
           <div className="text-xs px-2 py-1 rounded-md bg-muted border">
             <span className="text-muted-foreground">EGP </span>
             <span className="font-semibold">
-              {trip.collection_amount.toLocaleString('en-EG', { maximumFractionDigits: 0 })}
+              {trip.collection_amount.toLocaleString('ar-EG', { maximumFractionDigits: 0 })}
             </span>
           </div>
         </div>
@@ -130,13 +130,13 @@ export function DispatchGateWorkspacePage() {
             onClick={() => setDepartureOpen(true)}
           >
             <Truck className="h-3.5 w-3.5" />
-            Dispatch Vehicle
+            إرسال المركبة
           </Button>
         )}
 
         {isDispatched && (
           <Badge className="shrink-0 bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 text-xs">
-            Out for Delivery
+            خرج للتوصيل
           </Badge>
         )}
       </div>
@@ -200,29 +200,29 @@ export function DispatchGateWorkspacePage() {
             {isDispatched && trip.departure_at && (
               <div className="p-4 rounded-lg border border-indigo-200 bg-indigo-50 dark:border-indigo-900/40 dark:bg-indigo-950/20">
                 <div className="font-semibold text-sm text-indigo-700 dark:text-indigo-300 mb-2">
-                  Vehicle Dispatched
+                  تم إرسال المركبة
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <span className="text-muted-foreground">Departure Time</span>
-                    <div className="font-medium">{new Date(trip.departure_at).toLocaleString('en-EG')}</div>
+                    <span className="text-muted-foreground">وقت المغادرة</span>
+                    <div className="font-medium">{new Date(trip.departure_at).toLocaleString('ar-EG')}</div>
                   </div>
                   {trip.odometer_start != null && (
                     <div>
-                      <span className="text-muted-foreground">Odometer</span>
-                      <div className="font-medium">{trip.odometer_start.toLocaleString()} km</div>
+                      <span className="text-muted-foreground">عداد المسافة</span>
+                      <div className="font-medium">{trip.odometer_start.toLocaleString('ar-EG')} كم</div>
                     </div>
                   )}
                   {trip.fuel_level != null && (
                     <div>
-                      <span className="text-muted-foreground">Fuel Level</span>
+                      <span className="text-muted-foreground">مستوى الوقود</span>
                       <div className="font-medium">{trip.fuel_level}%</div>
                     </div>
                   )}
                   <div>
-                    <span className="text-muted-foreground">GPS Tracking</span>
+                    <span className="text-muted-foreground">GPS</span>
                     <div className="font-medium text-emerald-600 dark:text-emerald-400">
-                      {trip.gps_tracking_started ? 'Active' : 'Not started'}
+                      {trip.gps_tracking_started ? 'نشط' : 'لم يبدأ'}
                     </div>
                   </div>
                 </div>

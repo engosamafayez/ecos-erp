@@ -69,7 +69,7 @@ export function InlineCostEditor({ materialId, currentCost, canEdit, isSaving, o
           onClick={(e) => e.stopPropagation()}
           className={cn(
             'group inline-flex items-center gap-1.5 rounded px-1 -mx-1',
-            'text-sm font-medium tabular-nums text-right',
+            'text-sm font-medium tabular-nums text-end',
             'hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           )}
           aria-label={`Edit cost for material: ${fmtCost(currentCost)}`}

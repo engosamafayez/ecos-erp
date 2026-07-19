@@ -57,11 +57,11 @@ export function PurchaseOrderLinesEditor({ readOnly = false }: { readOnly?: bool
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-muted-foreground border-b text-left">
+            <tr className="text-muted-foreground border-b text-start">
               <th className="pb-2 pr-3 font-medium">Product</th>
               <th className="w-28 pb-2 pr-3 font-medium">Qty</th>
               <th className="w-32 pb-2 pr-3 font-medium">Unit Price</th>
-              <th className="w-32 pb-2 pr-3 font-medium text-right">Line Total</th>
+              <th className="w-32 pb-2 pr-3 font-medium text-end">Line Total</th>
               {!readOnly && <th className="w-10 pb-2" />}
             </tr>
           </thead>
@@ -111,7 +111,7 @@ export function PurchaseOrderLinesEditor({ readOnly = false }: { readOnly?: bool
                       <p className="text-destructive mt-1 text-xs">{fieldError(errs, 'unit_price')}</p>
                     )}
                   </td>
-                  <td className="py-2 pr-3 text-right font-medium">
+                  <td className="py-2 pr-3 text-end font-medium">
                     {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   {!readOnly && (

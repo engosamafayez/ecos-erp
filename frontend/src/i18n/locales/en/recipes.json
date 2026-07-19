@@ -1,0 +1,69 @@
+{
+  "title": "Recipes",
+  "subtitle": "Bill of materials and production recipes for finished goods.",
+  "search": "Search recipes by product name or SKU…",
+  "actions": {
+    "new": "New Recipe",
+    "edit": "Edit Recipe",
+    "duplicate": "Duplicate",
+    "archive": "Archive",
+    "viewCost": "View Cost Breakdown"
+  },
+  "columns": {
+    "product": "Finished Product",
+    "sku": "SKU",
+    "version": "Version",
+    "yieldQty": "Yield Qty",
+    "yieldUnit": "Yield Unit",
+    "totalCost": "Material Cost",
+    "status": "Status",
+    "updatedAt": "Last Updated"
+  },
+  "status": {
+    "active": "Active",
+    "draft": "Draft",
+    "archived": "Archived"
+  },
+  "form": {
+    "product": { "label": "Finished Product", "placeholder": "Select product…" },
+    "version": { "label": "Version", "placeholder": "1.0" },
+    "yieldQty": { "label": "Yield Quantity" },
+    "yieldUnit": { "label": "Yield Unit", "placeholder": "Select unit…" },
+    "notes": { "label": "Production Notes", "placeholder": "Optional notes…" }
+  },
+  "ingredients": {
+    "title": "Ingredients",
+    "addIngredient": "Add Ingredient",
+    "columns": {
+      "material": "Raw Material",
+      "quantity": "Quantity",
+      "unit": "Unit",
+      "unitCost": "Unit Cost",
+      "totalCost": "Total Cost"
+    },
+    "selectMaterial": "Select raw material…",
+    "noIngredients": "No ingredients added yet."
+  },
+  "cost": {
+    "title": "Cost Breakdown",
+    "materialCost": "Total Material Cost",
+    "costPerUnit": "Cost per Yield Unit",
+    "suggestedPrice": "Suggested Sale Price",
+    "margin": "Target Margin"
+  },
+  "drawer": {
+    "createTitle": "New Recipe",
+    "editTitle": "Edit Recipe",
+    "createSubtitle": "Define the bill of materials for a finished product.",
+    "editSubtitle": "Update ingredients and production details.",
+    "submitCreate": "Create Recipe",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "delete": {
+    "title": "Delete Recipe",
+    "description": "Delete recipe for {{product}}? This cannot be undone.",
+    "confirm": "Delete"
+  }
+}

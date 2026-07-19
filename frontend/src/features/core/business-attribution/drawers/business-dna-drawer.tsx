@@ -184,7 +184,7 @@ function MetricsTab({ dnaId }: { dnaId: string }) {
         <KpiRow label="Total Journey Time"     value={fmtDuration(metric?.total_journey_time_s ?? null)} />
       </div>
       {metric?.calculated_at && (
-        <p className="text-xs text-muted-foreground text-right">
+        <p className="text-xs text-muted-foreground text-end">
           Calculated {new Date(metric.calculated_at).toLocaleString()}
         </p>
       )}

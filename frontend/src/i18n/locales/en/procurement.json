@@ -1,0 +1,68 @@
+{
+  "title": "Procurement",
+  "subtitle": "Purchase orders, supplier management, and goods receipt.",
+  "overview": {
+    "title": "Procurement Overview",
+    "pendingOrders": "Pending Orders",
+    "overdueOrders": "Overdue Orders",
+    "pendingReceipts": "Pending Receipts",
+    "totalSpend": "Total Spend (MTD)",
+    "openInvoices": "Open Invoices"
+  },
+  "purchaseOrders": {
+    "title": "Purchase Orders",
+    "search": "Search by PO number, supplier, or product…",
+    "new": "New Purchase Order",
+    "columns": {
+      "number": "PO Number",
+      "supplier": "Supplier",
+      "warehouse": "Destination",
+      "orderDate": "Order Date",
+      "expectedDate": "Expected",
+      "total": "Total",
+      "status": "Status"
+    },
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "confirmed": "Confirmed",
+      "partially_received": "Partially Received",
+      "received": "Received",
+      "cancelled": "Cancelled"
+    }
+  },
+  "suppliers": {
+    "title": "Suppliers",
+    "search": "Search suppliers…",
+    "new": "New Supplier",
+    "columns": {
+      "name": "Supplier Name",
+      "code": "Code",
+      "contactName": "Contact",
+      "phone": "Phone",
+      "email": "Email",
+      "paymentTerms": "Payment Terms",
+      "balance": "Balance",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "blocked": "Blocked"
+    }
+  },
+  "actions": {
+    "send": "Send to Supplier",
+    "confirm": "Confirm PO",
+    "receive": "Receive Goods",
+    "cancel": "Cancel",
+    "duplicate": "Duplicate"
+  },
+  "tabs": {
+    "orders": "Purchase Orders",
+    "suppliers": "Suppliers",
+    "receipts": "Goods Receipts",
+    "invoices": "Invoices",
+    "returns": "Returns"
+  }
+}

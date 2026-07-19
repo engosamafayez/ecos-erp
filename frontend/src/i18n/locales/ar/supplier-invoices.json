@@ -1,0 +1,68 @@
+{
+  "title": "فواتير الموردين",
+  "subtitle": "إدارة المستحقات ومطابقة فواتير الموردين.",
+  "search": "بحث بالرقم أو المورد أو المرجع…",
+  "actions": {
+    "new": "فاتورة جديدة",
+    "post": "ترحيل الفاتورة",
+    "pay": "تسجيل دفعة",
+    "cancel": "إلغاء"
+  },
+  "columns": {
+    "number": "رقم الفاتورة",
+    "supplier": "المورد",
+    "purchaseOrder": "مرجع أمر الشراء",
+    "invoiceDate": "تاريخ الفاتورة",
+    "dueDate": "تاريخ الاستحقاق",
+    "amount": "المبلغ",
+    "paid": "المدفوع",
+    "balance": "الرصيد",
+    "status": "الحالة"
+  },
+  "status": {
+    "draft": "مسودة",
+    "posted": "مرحَّلة",
+    "partially_paid": "مدفوعة جزئياً",
+    "paid": "مدفوعة",
+    "overdue": "متأخرة",
+    "cancelled": "ملغاة"
+  },
+  "form": {
+    "supplier": { "label": "المورد", "placeholder": "اختر مورداً…" },
+    "purchaseOrder": { "label": "أمر الشراء (اختياري)", "placeholder": "اختر أمر شراء…" },
+    "invoiceNumber": { "label": "رقم فاتورة المورد", "placeholder": "INV-2026-001" },
+    "invoiceDate": "تاريخ الفاتورة",
+    "dueDate": "تاريخ الاستحقاق",
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" }
+  },
+  "payment": {
+    "title": "تسجيل دفعة",
+    "amount": "مبلغ الدفعة",
+    "paymentDate": "تاريخ الدفع",
+    "paymentMethod": "طريقة الدفع",
+    "reference": "مرجع البنك",
+    "methods": {
+      "bank_transfer": "تحويل بنكي",
+      "cheque": "شيك",
+      "cash": "نقداً"
+    },
+    "submit": "تسجيل الدفعة",
+    "submitting": "جارٍ التسجيل…"
+  },
+  "totals": {
+    "subtotal": "المجموع الفرعي",
+    "tax": "الضريبة",
+    "total": "إجمالي الفاتورة",
+    "paid": "المبلغ المدفوع",
+    "balance": "الرصيد المستحق"
+  },
+  "drawer": {
+    "createTitle": "فاتورة مورد جديدة",
+    "editTitle": "تعديل الفاتورة",
+    "createSubtitle": "تسجيل فاتورة مورد لمعالجة الدفع.",
+    "submitCreate": "إنشاء الفاتورة",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "title": "المواد الخام",
+  "subtitle": "إدارة كتالوج المواد الخام ومستويات المخزون والمشتريات.",
+  "search": "بحث بالاسم أو الكود أو الفئة…",
+  "actions": {
+    "new": "مادة جديدة",
+    "edit": "تعديل",
+    "archive": "أرشفة",
+    "adjust": "تسوية مخزون"
+  },
+  "columns": {
+    "name": "اسم المادة",
+    "code": "الكود",
+    "category": "الفئة",
+    "unit": "الوحدة",
+    "stockQty": "المخزون الحالي",
+    "reorderPoint": "نقطة إعادة الطلب",
+    "unitCost": "تكلفة الوحدة",
+    "supplier": "المورد الرئيسي",
+    "status": "الحالة"
+  },
+  "status": {
+    "active": "نشطة",
+    "inactive": "غير نشطة",
+    "archived": "مؤرشفة"
+  },
+  "form": {
+    "name": { "label": "اسم المادة", "placeholder": "مثال: دقيق قمح 72%" },
+    "code": { "label": "كود المادة", "placeholder": "MAT-001" },
+    "category": { "label": "الفئة", "placeholder": "اختر فئة…" },
+    "unit": { "label": "الوحدة الأساسية", "placeholder": "اختر وحدة…" },
+    "reorderPoint": { "label": "نقطة إعادة الطلب" },
+    "reorderQty": { "label": "كمية إعادة الطلب" },
+    "supplier": { "label": "المورد الرئيسي", "placeholder": "اختر مورداً…" },
+    "unitCost": { "label": "تكلفة الوحدة المعيارية" },
+    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات التخزين والمناولة…" }
+  },
+  "stock": {
+    "currentStock": "المخزون الحالي",
+    "reservedQty": "المحجوز",
+    "availableQty": "المتاح",
+    "inTransitQty": "في الطريق",
+    "belowReorder": "أقل من نقطة إعادة الطلب",
+    "outOfStock": "نفد من المخزون"
+  },
+  "drawer": {
+    "createTitle": "مادة خام جديدة",
+    "editTitle": "تعديل المادة",
+    "createSubtitle": "إضافة مادة خام إلى كتالوج الإنتاج.",
+    "submitCreate": "إنشاء المادة",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  }
+}

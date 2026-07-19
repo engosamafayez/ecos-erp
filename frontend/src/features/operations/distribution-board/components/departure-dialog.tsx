@@ -43,22 +43,22 @@ export function DepartureDialog({ open, onOpenChange, tripType, onDispatch, isPe
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Truck className="h-5 w-5 text-primary" />
-            Dispatch Vehicle
+            إرسال المركبة
           </DialogTitle>
           <DialogDescription>
-            Record departure information. GPS tracking will start automatically upon dispatch.
+            سجّل معلومات المغادرة. سيبدأ تتبع GPS تلقائياً عند الإرسال.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {isCompanyVehicle && (
             <div className="space-y-1.5">
-              <Label htmlFor="odometer">Odometer Reading (km)</Label>
+              <Label htmlFor="odometer">قراءة عداد المسافة (كم)</Label>
               <Input
                 id="odometer"
                 type="number"
                 min="0"
-                placeholder="e.g. 45320"
+                placeholder="مثال: 45320"
                 value={odometer}
                 onChange={(e) => setOdometer(e.target.value)}
               />
@@ -66,24 +66,24 @@ export function DepartureDialog({ open, onOpenChange, tripType, onDispatch, isPe
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="fuel">Fuel Level (%)</Label>
+            <Label htmlFor="fuel">مستوى الوقود (%)</Label>
             <Input
               id="fuel"
               type="number"
               min="0"
               max="100"
               step="5"
-              placeholder="e.g. 85"
+              placeholder="مثال: 85"
               value={fuel}
               onChange={(e) => setFuel(e.target.value)}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes (optional)</Label>
+            <Label htmlFor="notes">ملاحظات (اختياري)</Label>
             <Textarea
               id="notes"
-              placeholder="Any additional departure notes..."
+              placeholder="أي ملاحظات إضافية عند المغادرة..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
@@ -92,18 +92,18 @@ export function DepartureDialog({ open, onOpenChange, tripType, onDispatch, isPe
           </div>
 
           <div className="text-xs text-muted-foreground p-3 rounded-lg bg-muted/40 border">
-            Dispatching will set the trip status to <strong>Out for Delivery</strong> and start GPS tracking.
-            This action cannot be undone.
+            سيضع الإرسال حالة الرحلة كـ <strong>خرج للتوصيل</strong> ويبدأ تتبع GPS.
+            لا يمكن التراجع عن هذا الإجراء.
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Cancel
+            إلغاء
           </Button>
           <Button onClick={handleDispatch} disabled={isPending} className="gap-2">
             <Truck className="h-4 w-4" />
-            {isPending ? 'Dispatching…' : 'Dispatch Vehicle'}
+            {isPending ? 'جارٍ الإرسال…' : 'إرسال المركبة'}
           </Button>
         </DialogFooter>
       </DialogContent>

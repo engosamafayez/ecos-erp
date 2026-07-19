@@ -139,13 +139,13 @@ export function ViewPurchaseOrderPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-muted-foreground border-b text-left">
+                <tr className="text-muted-foreground border-b text-start">
                   <th className="pb-2 pr-3 font-medium">{t('detail.product')}</th>
                   <th className="w-24 pb-2 pr-3 font-medium">{t('detail.qty')}</th>
                   <th className="w-24 pb-2 pr-3 font-medium">{t('detail.receivedQty')}</th>
                   <th className="w-24 pb-2 pr-3 font-medium">{t('detail.remainingQty')}</th>
                   <th className="w-32 pb-2 pr-3 font-medium">{t('detail.unitPrice')}</th>
-                  <th className="w-32 pb-2 font-medium text-right">{t('detail.lineTotal')}</th>
+                  <th className="w-32 pb-2 font-medium text-end">{t('detail.lineTotal')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -173,7 +173,7 @@ export function ViewPurchaseOrderPage() {
                       <td className="py-2 pr-3">
                         {fmt(line.unit_price)}
                       </td>
-                      <td className="py-2 text-right font-medium">
+                      <td className="py-2 text-end font-medium">
                         {fmt(line.line_total)}
                       </td>
                     </tr>
@@ -187,29 +187,29 @@ export function ViewPurchaseOrderPage() {
           <div className="flex flex-col items-end gap-1 border-t pt-3 text-sm">
             <div className="flex gap-8">
               <span className="text-muted-foreground">{t('detail.subtotal')}</span>
-              <span className="w-32 text-right font-medium">{fmt(order.subtotal)}</span>
+              <span className="w-32 text-end font-medium">{fmt(order.subtotal)}</span>
             </div>
             {order.discount_amount > 0 && (
               <div className="flex gap-8">
                 <span className="text-muted-foreground">{t('detail.discount')}</span>
-                <span className="w-32 text-right font-medium">- {fmt(order.discount_amount)}</span>
+                <span className="w-32 text-end font-medium">- {fmt(order.discount_amount)}</span>
               </div>
             )}
             {order.shipping_amount > 0 && (
               <div className="flex gap-8">
                 <span className="text-muted-foreground">{t('detail.shipping')}</span>
-                <span className="w-32 text-right font-medium">{fmt(order.shipping_amount)}</span>
+                <span className="w-32 text-end font-medium">{fmt(order.shipping_amount)}</span>
               </div>
             )}
             {order.additional_costs > 0 && (
               <div className="flex gap-8">
                 <span className="text-muted-foreground">{t('detail.additionalCosts')}</span>
-                <span className="w-32 text-right font-medium">{fmt(order.additional_costs)}</span>
+                <span className="w-32 text-end font-medium">{fmt(order.additional_costs)}</span>
               </div>
             )}
             <div className="flex gap-8 text-base font-semibold">
               <span>{t('detail.grandTotal')}</span>
-              <span className="w-32 text-right">{fmt(order.grand_total)}</span>
+              <span className="w-32 text-end">{fmt(order.grand_total)}</span>
             </div>
           </div>
         </CardContent>

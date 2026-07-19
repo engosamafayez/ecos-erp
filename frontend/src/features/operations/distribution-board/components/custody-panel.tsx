@@ -30,7 +30,7 @@ export function CustodyPanel({ tripId, items }: CustodyPanelProps) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Custody</span>
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">العهدة</span>
         {!adding && (
           <Button
             variant="ghost"
@@ -82,7 +82,7 @@ export function CustodyPanel({ tripId, items }: CustodyPanelProps) {
             onChange={(e) => setQty(e.target.value)}
           />
           <Button size="sm" className="h-7 text-xs px-2" onClick={handleAdd} disabled={addItem.isPending}>
-            Add
+            إضافة
           </Button>
           <Button
             variant="ghost"
@@ -90,13 +90,13 @@ export function CustodyPanel({ tripId, items }: CustodyPanelProps) {
             className="h-7 text-xs px-2"
             onClick={() => setAdding(false)}
           >
-            Cancel
+            إلغاء
           </Button>
         </div>
       )}
 
       {items.length === 0 && !adding && (
-        <p className="text-xs text-muted-foreground/50 italic">No custody items</p>
+        <p className="text-xs text-muted-foreground/50 italic">لا توجد عهدة</p>
       )}
     </div>
   );

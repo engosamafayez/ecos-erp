@@ -7,9 +7,11 @@ namespace Modules\Commerce\Orders\Presentation\Http\Controllers;
 use App\Core\Company\CurrentCompanyService;
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
+use GuzzleHttp\TransferStats;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\Workflows\ConfirmOrderWorkflow;
@@ -262,7 +264,10 @@ final class OrderController extends Controller
             'payment_proof_path' => 'nullable|string|max:500',
         ]);
 
-        $model  = Order::findOrFail($order);
+        $model = Order::where('id', $order)
+            ->where('company_id', $this->currentCompany->id())
+            ->firstOrFail();
+
         $result = $action->execute($model, $validated['payment_proof_path'] ?? null);
 
         return $this->success(new OrderResource($result->data()), $result->message());
@@ -284,19 +289,20 @@ final class OrderController extends Controller
             return $this->success(['resolved_url' => $url]);
         }
 
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            \CURLOPT_RETURNTRANSFER => true,
-            \CURLOPT_FOLLOWLOCATION => true,
-            \CURLOPT_MAXREDIRS      => 10,
-            \CURLOPT_NOBODY         => true,
-            \CURLOPT_TIMEOUT        => 8,
-            \CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; ECOS/1.0)',
-            \CURLOPT_SSL_VERIFYPEER => false,
-        ]);
-        curl_exec($ch);
-        $finalUrl = curl_getinfo($ch, \CURLINFO_EFFECTIVE_URL) ?: $url;
-        curl_close($ch);
+        $finalUrl = $url;
+
+        try {
+            Http::withOptions([
+                'allow_redirects' => ['max' => 10],
+                'on_stats'        => function (TransferStats $stats) use (&$finalUrl): void {
+                    $finalUrl = (string) $stats->getEffectiveUri();
+                },
+            ])->withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; ECOS/1.0)'])
+              ->timeout(8)
+              ->head($url);
+        } catch (\Throwable) {
+            // Network or resolution failure — return the original URL unchanged.
+        }
 
         return $this->success(['resolved_url' => $finalUrl]);
     }
@@ -323,7 +329,10 @@ final class OrderController extends Controller
             'notes'                => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $model     = Order::findOrFail($order);
+        $model = Order::where('id', $order)
+            ->where('company_id', $this->currentCompany->id())
+            ->firstOrFail();
+
         $actorId   = $request->user()?->id !== null ? (string) $request->user()->id : null;
         $actorName = $request->user()?->name ?? 'system';
 
@@ -586,7 +595,9 @@ final class OrderController extends Controller
             'delivery_zone'    => ['required', 'string', 'max:255'],
         ]);
 
-        $model = Order::findOrFail($order);
+        $model = Order::where('id', $order)
+            ->where('company_id', $this->currentCompany->id())
+            ->firstOrFail();
 
         $previousZone = $model->delivery_zone;
 

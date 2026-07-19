@@ -35,18 +35,18 @@ interface Props {
 const CONFIRMATIONS = [
   {
     key: 'products_accepted' as const,
-    label: 'Products',
-    description: 'I confirm that I have received the loaded products.',
+    label: 'المنتجات',
+    description: 'أؤكد أنني استلمت المنتجات المحمّلة.',
   },
   {
     key: 'custody_accepted' as const,
-    label: 'Custody',
-    description: 'I confirm that I have received all assigned custody.',
+    label: 'العهدة',
+    description: 'أؤكد أنني استلمت جميع العهدة المُعيَّنة.',
   },
   {
     key: 'equipment_accepted' as const,
-    label: 'Equipment',
-    description: 'I confirm that all operational equipment has been received.',
+    label: 'المعدات',
+    description: 'أؤكد أنني استلمت جميع المعدات التشغيلية.',
   },
 ];
 
@@ -91,11 +91,11 @@ export function DriverAcceptanceForm({
           )}
           <div>
             <div className="font-semibold text-sm">
-              {hasDiscrepancy ? 'Discrepancy Reported — Dispatch Blocked' : 'Driver Acceptance Confirmed'}
+              {hasDiscrepancy ? 'تم الإبلاغ عن تعارض — الإرسال محظور' : 'تم تأكيد قبول السائق'}
             </div>
             {driverAcceptanceAt && (
               <div className="text-xs text-muted-foreground mt-0.5">
-                {new Date(driverAcceptanceAt).toLocaleString('en-EG')}
+                {new Date(driverAcceptanceAt).toLocaleString('ar-EG')}
                 {acceptingUserName && ` · ${acceptingUserName}`}
               </div>
             )}
@@ -124,7 +124,7 @@ export function DriverAcceptanceForm({
                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
                     : 'bg-muted text-muted-foreground',
                 )}>
-                  {accepted ? 'Confirmed' : 'Not Confirmed'}
+                  {accepted ? 'مؤكد' : 'غير مؤكد'}
                 </span>
               </div>
             );
@@ -133,7 +133,7 @@ export function DriverAcceptanceForm({
 
         {/* Current trip status */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>Trip Status:</span>
+          <span>حالة الرحلة:</span>
           <span className={cn('px-2 py-0.5 rounded-md font-medium', TRIP_STATUS_COLORS[tripStatus])}>
             {TRIP_STATUS_LABELS[tripStatus]}
           </span>
@@ -145,8 +145,8 @@ export function DriverAcceptanceForm({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        The driver must explicitly confirm receipt of products, custody items, and operational equipment.
-        All three confirmations are mandatory before dispatch can be authorized.
+        يجب على السائق تأكيد استلام المنتجات والعهدة والمعدات التشغيلية بشكل صريح.
+        التأكيدات الثلاثة إلزامية قبل الحصول على ترخيص الإرسال.
       </p>
 
       {/* 3 checkboxes */}
@@ -182,18 +182,18 @@ export function DriverAcceptanceForm({
           onCheckedChange={(v) => setShowDiscrepancy(!!v)}
         />
         <Label htmlFor="flag-discrepancy" className="text-sm cursor-pointer text-amber-700 dark:text-amber-400">
-          Report a discrepancy (blocks dispatch until resolved)
+          الإبلاغ عن تعارض (يحظر الإرسال حتى يُحلّ)
         </Label>
       </div>
 
       {showDiscrepancy && (
         <div className="space-y-1.5">
           <Label htmlFor="discrepancy-notes" className="text-xs text-muted-foreground">
-            Discrepancy details
+            تفاصيل التعارض
           </Label>
           <Textarea
             id="discrepancy-notes"
-            placeholder="Describe the discrepancy in detail..."
+            placeholder="اوصف التعارض بالتفصيل..."
             value={discrepancyText}
             onChange={(e) => setDiscrepancyText(e.target.value)}
             rows={3}
@@ -212,7 +212,7 @@ export function DriverAcceptanceForm({
             onClick={() => setDiscConfirmOpen(true)}
           >
             <AlertTriangle className="h-4 w-4 mr-1.5" />
-            Submit with Discrepancy
+            تقديم مع تعارض
           </Button>
         ) : (
           <Button
@@ -220,7 +220,7 @@ export function DriverAcceptanceForm({
             disabled={!allChecked || isPending}
             onClick={() => setConfirmOpen(true)}
           >
-            Confirm Driver Acceptance
+            تأكيد قبول السائق
           </Button>
         )}
       </div>
@@ -229,21 +229,21 @@ export function DriverAcceptanceForm({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Driver Acceptance?</AlertDialogTitle>
+            <AlertDialogTitle>تأكيد قبول السائق؟</AlertDialogTitle>
             <AlertDialogDescription>
-              The driver has confirmed receipt of all products, custody items, and equipment.
-              The trip will advance to <strong>Driver Accepted</strong> and be ready for dispatch.
+              أكّد السائق استلام جميع المنتجات والعهدة والمعدات.
+              ستنتقل الرحلة إلى <strong>قبل السائق</strong> وتصبح جاهزة للإرسال.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setConfirmOpen(false);
                 onAccept({ products_accepted: true, custody_accepted: true, equipment_accepted: true, has_discrepancy: false });
               }}
             >
-              Confirm
+              تأكيد
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -253,14 +253,14 @@ export function DriverAcceptanceForm({
       <AlertDialog open={discrepancyConfirmOpen} onOpenChange={setDiscConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Report Discrepancy?</AlertDialogTitle>
+            <AlertDialogTitle>الإبلاغ عن تعارض؟</AlertDialogTitle>
             <AlertDialogDescription>
-              This will flag the trip as <strong>Dispatch Blocked</strong>. A supervisor must review and
-              resolve the discrepancy before the vehicle can be dispatched.
+              سيتم وضع علامة على الرحلة بوصفها <strong>محظورة الإرسال</strong>. يجب على المشرف مراجعة
+              التعارض وحله قبل إرسال المركبة.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -274,7 +274,7 @@ export function DriverAcceptanceForm({
                 });
               }}
             >
-              Report & Block Dispatch
+              إبلاغ وحظر الإرسال
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

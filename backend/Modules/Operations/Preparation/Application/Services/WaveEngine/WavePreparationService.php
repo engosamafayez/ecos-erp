@@ -54,7 +54,7 @@ final class WavePreparationService
             ]);
 
             // Publish OrderMovedToPreparing for every order currently in this wave
-            $orderIds = $fresh->waveOrders()->pluck('order_id');
+            $orderIds = $fresh->waveOrders()->pluck('order_id')->all();
 
             foreach ($orderIds as $orderId) {
                 event(new OrderMovedToPreparing(
@@ -67,6 +67,8 @@ final class WavePreparationService
                 ));
             }
 
+            // C-1 fix: pass orderIds so HandlePreparationWavePreparationStarted
+            // can transition each order to Preparing via the FulfillmentEngine.
             event(new WavePreparationStarted(
                 waveId:       $fresh->id,
                 waveNumber:   $fresh->wave_number,
@@ -74,6 +76,7 @@ final class WavePreparationService
                 warehouseId:  $fresh->warehouse_id,
                 planningDate: $fresh->planning_date->toDateString(),
                 ordersCount:  $fresh->orders_count,
+                orderIds:     $orderIds,
                 startedBy:    $actorId,
                 startedAt:    $now->toIso8601String(),
             ));

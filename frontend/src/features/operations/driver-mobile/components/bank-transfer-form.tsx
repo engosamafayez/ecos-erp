@@ -31,7 +31,7 @@ export function BankTransferForm({ onSubmit, onCancel, isLoading }: BankTransfer
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Amount (EGP) *</Label>
+        <Label>المبلغ (EGP) *</Label>
         <Input
           type="number"
           min="0"
@@ -44,43 +44,43 @@ export function BankTransferForm({ onSubmit, onCancel, isLoading }: BankTransfer
       </div>
 
       <div className="space-y-1.5">
-        <Label>Reference Number *</Label>
+        <Label>رقم المرجع *</Label>
         <Input
           value={reference}
           onChange={(e) => setReference(e.target.value)}
-          placeholder="Bank transaction reference..."
+          placeholder="مرجع معاملة بنكية..."
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label>Receipt Image URL</Label>
+        <Label>رابط صورة الإيصال</Label>
         <Input
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://... (upload URL)"
+          placeholder="https://... (رابط الرفع)"
         />
         <p className="text-xs text-muted-foreground">
-          Enter the URL of the uploaded receipt image.
+          أدخل رابط صورة الإيصال المرفوعة.
         </p>
       </div>
 
       <div className="space-y-1.5">
-        <Label>Notes</Label>
+        <Label>ملاحظات</Label>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Optional notes..."
+          placeholder="ملاحظات اختيارية..."
           rows={2}
         />
       </div>
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
+          إلغاء
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'Recording...' : 'Record Transfer'}
+          {isLoading ? 'جارٍ التسجيل...' : 'تسجيل التحويل'}
         </Button>
       </div>
     </form>

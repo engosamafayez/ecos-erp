@@ -123,7 +123,7 @@ export function OrderZoneEditor({ order }: Props) {
           type="button"
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
-          className="group flex flex-col rounded-sm px-1 py-0.5 text-left hover:bg-muted"
+          className="group flex flex-col rounded-sm px-1 py-0.5 text-start hover:bg-muted"
           title={t('columns.editZone')}
         >
           {displayZone ? (

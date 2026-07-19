@@ -37,10 +37,13 @@ final class InventoryLayerConsumptionService
         ?string $orderId = null,
         ?string $orderLineId = null,
     ): ConsumptionResult {
-        // Load open layers for this product+warehouse in FIFO order (oldest first)
+        // Load open layers for this product+warehouse+company in FIFO order (oldest first).
+        // BUG-08 fix: company_id filter enforces tenant isolation — without it, a layer
+        // belonging to Company A can be consumed for a Company B shipment in shared warehouses.
         $layers = InventoryReceiptLayer::query()
             ->where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
+            ->where('company_id', $companyId)
             ->where('remaining_qty', '>', 0)
             ->lockForUpdate()
             ->orderBy('created_at')

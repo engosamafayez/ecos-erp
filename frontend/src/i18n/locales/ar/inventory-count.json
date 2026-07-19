@@ -1,0 +1,70 @@
+{
+  "title": "جرد المخزون",
+  "subtitle": "إجراء الجرد العمياني ومطابقة المخزون الفعلي.",
+  "sessions": {
+    "title": "جلسات الجرد",
+    "search": "بحث في الجلسات…",
+    "actions": {
+      "new": "جلسة جرد جديدة",
+      "open": "فتح الجلسة",
+      "freeze": "تجميد",
+      "finalize": "إنهاء الجرد",
+      "exportReport": "تصدير التقرير"
+    },
+    "columns": {
+      "session": "الجلسة",
+      "warehouse": "المستودع",
+      "status": "الحالة",
+      "products": "المنتجات",
+      "accuracy": "الدقة",
+      "startedAt": "تاريخ البدء",
+      "finalizedAt": "تاريخ الإنهاء",
+      "createdBy": "أنشأها"
+    },
+    "status": {
+      "open": "مفتوحة",
+      "frozen": "مجمّدة",
+      "finalized": "منتهية",
+      "cancelled": "ملغاة"
+    },
+    "form": {
+      "name": { "label": "اسم الجلسة", "placeholder": "الجرد الشهري — يوليو 2026" },
+      "warehouse": { "label": "المستودع", "placeholder": "اختر مستودعاً…" },
+      "category": { "label": "الفئة (اختياري)", "placeholder": "جميع الفئات" },
+      "countMethod": { "label": "طريقة الجرد" },
+      "methods": {
+        "blind": "الجرد العمياني (موصى به)",
+        "standard": "الجرد العادي"
+      }
+    }
+  },
+  "counting": {
+    "title": "إدخال الجرد",
+    "subtitle": "أدخل الكمية الفعلية لكل منتج. تُخفى كميات النظام أثناء الجرد العمياني.",
+    "search": "بحث عن منتج للجرد…",
+    "columns": {
+      "product": "المنتج",
+      "sku": "الرمز",
+      "unit": "الوحدة",
+      "counted": "الكمية المعدودة",
+      "systemQty": "كمية النظام",
+      "variance": "الفرق",
+      "varianceValue": "قيمة الفرق"
+    },
+    "saveCount": "حفظ الجرد",
+    "saving": "جارٍ الحفظ…"
+  },
+  "report": {
+    "title": "تقرير الجرد النهائي",
+    "subtitle": "مطابقة الفروقات بين الكميات الفعلية وكميات النظام.",
+    "accuracy": "دقة الجرد",
+    "totalProducts": "إجمالي المنتجات",
+    "matched": "متطابق",
+    "variances": "الفروقات",
+    "totalVarianceValue": "إجمالي قيمة الفروقات",
+    "adjIn": "مخزون مضاف",
+    "adjOut": "مخزون محذوف",
+    "approve": "اعتماد وترحيل التسويات",
+    "approving": "جارٍ الترحيل…"
+  }
+}

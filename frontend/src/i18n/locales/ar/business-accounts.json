@@ -1,0 +1,62 @@
+{
+  "title": "حسابات الأعمال",
+  "subtitle": "إدارة حسابات منصات التسويق والإنفاق الإعلاني.",
+  "search": "بحث في الحسابات…",
+  "actions": {
+    "new": "ربط حساب",
+    "edit": "تعديل الحساب",
+    "disconnect": "فصل الحساب",
+    "sync": "مزامنة الآن",
+    "viewInsights": "عرض الرؤى"
+  },
+  "columns": {
+    "name": "اسم الحساب",
+    "platform": "المنصة",
+    "accountId": "معرّف الحساب",
+    "currency": "العملة",
+    "status": "الحالة",
+    "lastSync": "آخر مزامنة"
+  },
+  "platforms": {
+    "meta": "ميتا (فيسبوك وإنستغرام)",
+    "google": "إعلانات جوجل",
+    "tiktok": "إعلانات تيك توك",
+    "snapchat": "إعلانات سناب شات"
+  },
+  "status": {
+    "connected": "مرتبط",
+    "disconnected": "غير مرتبط",
+    "error": "خطأ",
+    "syncing": "جارٍ المزامنة"
+  },
+  "form": {
+    "name": { "label": "الاسم المعروض", "placeholder": "حساب ميتا للأعمال" },
+    "platform": { "label": "المنصة", "placeholder": "اختر منصة…" },
+    "accountId": { "label": "معرّف الحساب", "placeholder": "act_123456789" },
+    "active": "نشط"
+  },
+  "drawer": {
+    "createTitle": "ربط حساب أعمال",
+    "editTitle": "تعديل حساب الأعمال",
+    "createSubtitle": "ربط حساب إعلاني لتتبع الإنفاق والأداء.",
+    "editSubtitle": "تحديث تفاصيل الحساب أدناه.",
+    "submitCreate": "ربط الحساب",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "insights": {
+    "title": "رؤى الحساب",
+    "spend": "إجمالي الإنفاق",
+    "impressions": "مرات الظهور",
+    "clicks": "النقرات",
+    "conversions": "التحويلات",
+    "roas": "عائد الإنفاق الإعلاني",
+    "cpa": "تكلفة الاكتساب"
+  },
+  "disconnect": {
+    "title": "فصل الحساب",
+    "description": "فصل {{name}}؟ ستُحتفظ بالبيانات التاريخية.",
+    "confirm": "فصل"
+  }
+}

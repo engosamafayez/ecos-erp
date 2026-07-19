@@ -109,7 +109,7 @@ export function ZonePlanningCard({
               Orders
             </p>
           </div>
-          <div className="text-right pb-0.5">
+          <div className="text-end pb-0.5">
             <p className="text-xl font-bold tabular-nums leading-none">
               {isEmpty ? '—' : `EGP ${fmt(zone.total_collection)}`}
             </p>

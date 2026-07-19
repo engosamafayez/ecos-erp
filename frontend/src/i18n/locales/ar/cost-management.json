@@ -1,0 +1,65 @@
+{
+  "title": "إدارة التكاليف",
+  "subtitle": "ذكاء تكلفة FIFO وقرارات التسعير وتحليل هامش الربح.",
+  "pricingCenter": {
+    "title": "مركز قرارات التسعير",
+    "subtitle": "مراجعة واعتماد تغييرات أسعار المنتجات.",
+    "search": "بحث عن منتج…",
+    "actions": {
+      "approve": "اعتماد",
+      "reject": "رفض",
+      "bulkApprove": "اعتماد المحدد",
+      "publishPrices": "نشر إلى القنوات"
+    },
+    "columns": {
+      "product": "المنتج",
+      "sku": "الرمز",
+      "currentCost": "التكلفة الحالية",
+      "newCost": "التكلفة الجديدة",
+      "currentPrice": "السعر الحالي",
+      "suggestedPrice": "السعر المقترح",
+      "margin": "هامش الربح %",
+      "status": "الحالة"
+    },
+    "status": {
+      "pending": "بانتظار المراجعة",
+      "approved": "معتمد",
+      "rejected": "مرفوض",
+      "published": "منشور"
+    }
+  },
+  "costLayers": {
+    "title": "طبقات التكلفة (FIFO)",
+    "subtitle": "طبقات تكلفة المخزون بأسلوب الوارد أولاً صادر أولاً.",
+    "search": "بحث بالمنتج أو المستودع…",
+    "columns": {
+      "product": "المنتج",
+      "warehouse": "المستودع",
+      "quantity": "الكمية",
+      "unitCost": "تكلفة الوحدة",
+      "totalCost": "إجمالي التكلفة",
+      "receiptDate": "تاريخ الاستلام",
+      "reference": "المرجع"
+    }
+  },
+  "profitability": {
+    "title": "تحليل الربحية",
+    "subtitle": "الإيرادات والتكاليف وهامش الربح حسب المنتج والفترة.",
+    "columns": {
+      "product": "المنتج",
+      "revenue": "الإيرادات",
+      "cogs": "تكلفة البضاعة المباعة",
+      "grossProfit": "الربح الإجمالي",
+      "margin": "هامش الربح %",
+      "unitsSold": "الوحدات المباعة"
+    }
+  },
+  "filters": {
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "warehouse": "المستودع",
+    "allWarehouses": "جميع المستودعات",
+    "category": "الفئة",
+    "allCategories": "جميع الفئات"
+  }
+}

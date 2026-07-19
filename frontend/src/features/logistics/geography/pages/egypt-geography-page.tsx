@@ -136,7 +136,7 @@ function GovernoratesTable({
                 <td className="px-3 py-2.5 text-center"><Skeleton className="h-4 w-5 mx-auto" /></td>
                 <td className="px-3 py-2.5"><Skeleton className="h-4 w-24" /></td>
                 <td className="px-3 py-2.5"><Skeleton className="h-4 w-20" /></td>
-                <td className="px-3 py-2.5 text-end"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                <td className="px-3 py-2.5 text-end"><Skeleton className="h-4 w-16 ms-auto" /></td>
                 <td className="px-3 py-2.5 text-center"><Skeleton className="h-4 w-8 mx-auto" /></td>
                 <td className="px-3 py-2.5"><Skeleton className="h-5 w-14 mx-auto rounded-full" /></td>
                 <td className="px-3 py-2.5" />

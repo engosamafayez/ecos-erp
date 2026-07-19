@@ -97,36 +97,36 @@ export function SupplierReturnsPage() {
   const columns: ColumnDef<SupplierReturn>[] = [
     {
       key: 'return_number',
-      header: 'Return #',
+      header: 'رقم المرتجع',
       cell: (r) => <span className="font-mono text-sm font-medium">{r.return_number}</span>,
     },
     {
       key: 'supplier',
-      header: 'Supplier',
+      header: 'المورد',
       cell: (r) => <span className="text-sm">{r.supplier?.name ?? '—'}</span>,
     },
     {
       key: 'return_date',
-      header: 'Return Date',
+      header: 'تاريخ المرتجع',
       cell: (r) => <span className="text-sm text-gray-600">{r.return_date}</span>,
     },
     {
       key: 'reason',
-      header: 'Reason',
+      header: 'السبب',
       cell: (r) => (
         <span className="text-xs text-gray-500 capitalize">{r.reason?.replace(/_/g, ' ') ?? '—'}</span>
       ),
     },
     {
       key: 'total_return_value',
-      header: 'Value',
+      header: 'القيمة',
       cell: (r) => (
         <span className="text-sm font-medium">SAR {r.total_return_value.toLocaleString()}</span>
       ),
     },
     {
       key: 'status',
-      header: 'Status',
+      header: 'الحالة',
       cell: (r) => (
         <Badge className={`${STATUS_COLORS[r.status]} border-0 text-xs`} variant="secondary">
           {STATUS_LABELS[r.status]}
@@ -140,22 +140,22 @@ export function SupplierReturnsPage() {
       <div className="px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-4">
           <PageHeader
-            title="Supplier Returns"
-            subtitle="Manage returns to suppliers for defective, wrong, or excess goods"
+            title="مرتجعات الموردين"
+            subtitle="إدارة مرتجعات البضائع المعيبة أو الخاطئة أو الزائدة للموردين"
           />
           <Button onClick={() => setCreatingNew(true)} size="sm" className="gap-1.5">
             <Plus className="w-3.5 h-3.5" />
-            New Return
+            مرتجع جديد
           </Button>
         </div>
 
         {stats && (
           <div className="flex gap-2 flex-wrap">
             {([
-              { label: 'Draft',          key: 'draft',          color: 'gray'   },
-              { label: 'Waiting',        key: 'waiting',        color: 'yellow' },
-              { label: 'Credit Pending', key: 'credit_pending', color: 'orange' },
-              { label: 'Completed',      key: 'completed',      color: 'green'  },
+              { label: 'مسودة',          key: 'draft',          color: 'gray'   },
+              { label: 'في الانتظار',        key: 'waiting',        color: 'yellow' },
+              { label: 'ائتمان معلّق', key: 'credit_pending', color: 'orange' },
+              { label: 'مكتمل',      key: 'completed',      color: 'green'  },
             ] as const).map(({ label, key, color }) => {
               const colorMap: Record<string, string> = {
                 gray:   'bg-gray-100 text-gray-700',
@@ -177,7 +177,7 @@ export function SupplierReturnsPage() {
               onClick={() => { setStatus('all'); setPage(1); }}
               className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200"
             >
-              All: {stats.total}
+              الكل: {stats.total}
             </button>
           </div>
         )}
@@ -187,7 +187,7 @@ export function SupplierReturnsPage() {
         <Card className="shadow-none border-gray-200">
           <CardContent className="flex flex-col gap-4 pt-6">
             <EntityToolbar
-              searchPlaceholder="Search returns…"
+              searchPlaceholder="ابحث في المرتجعات…"
               onSearchChange={(v) => { setSearch(v); setPage(1); }}
               onRefresh={() => void refetch()}
               isRefreshing={isFetching}
@@ -195,20 +195,20 @@ export function SupplierReturnsPage() {
               filterPanel={
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-medium">Status</span>
+                    <span className="text-sm font-medium">الحالة</span>
                     <select
                       value={statusFilter}
                       onChange={(e) => { setStatus(e.target.value as SupplierReturnStatus | 'all'); setPage(1); }}
                       className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                     >
-                      <option value="all">All Statuses</option>
-                      <option value="draft">Draft</option>
-                      <option value="waiting_approval">Waiting Approval</option>
-                      <option value="approved">Approved</option>
-                      <option value="sent">Sent</option>
-                      <option value="credit_pending">Credit Pending</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="all">جميع الحالات</option>
+                      <option value="draft">مسودة</option>
+                      <option value="waiting_approval">في انتظار الاعتماد</option>
+                      <option value="approved">معتمد</option>
+                      <option value="sent">مُرسَل</option>
+                      <option value="credit_pending">ائتمان معلّق</option>
+                      <option value="completed">مكتمل</option>
+                      <option value="cancelled">ملغي</option>
                     </select>
                   </div>
                 </div>
@@ -229,14 +229,14 @@ export function SupplierReturnsPage() {
                   items={[
                     {
                       key: 'view',
-                      label: 'View Details',
+                      label: 'عرض التفاصيل',
                       icon: RotateCcw,
                       onSelect: () => setSelectedId(r.id),
                     },
                     ...(r.status === 'draft' ? [
                       {
                         key: 'submit',
-                        label: 'Submit for Approval',
+                        label: 'تقديم للاعتماد',
                         icon: Send,
                         onSelect: () => submitMutation.mutate(r.id),
                       },
@@ -244,7 +244,7 @@ export function SupplierReturnsPage() {
                     ...(r.status === 'waiting_approval' ? [
                       {
                         key: 'approve',
-                        label: 'Approve',
+                        label: 'اعتماد',
                         icon: CheckCircle2,
                         onSelect: () => approveMutation.mutate(r.id),
                       },
@@ -252,7 +252,7 @@ export function SupplierReturnsPage() {
                     ...(['draft', 'waiting_approval'].includes(r.status) ? [
                       {
                         key: 'cancel',
-                        label: 'Cancel',
+                        label: 'إلغاء',
                         icon: XCircle,
                         variant: 'destructive' as const,
                         onSelect: () => setCancelling(r),
@@ -261,7 +261,7 @@ export function SupplierReturnsPage() {
                     ...(r.status === 'draft' ? [
                       {
                         key: 'delete',
-                        label: 'Delete',
+                        label: 'حذف',
                         icon: Trash2,
                         variant: 'destructive' as const,
                         onSelect: () => setDeleting(r),
@@ -298,9 +298,9 @@ export function SupplierReturnsPage() {
       <ConfirmDialog
         open={cancelling !== null}
         onOpenChange={(open) => { if (!open) setCancelling(null); }}
-        title="Cancel Return"
-        description={`Cancel return ${cancelling?.return_number}?`}
-        confirmLabel="Cancel Return"
+        title="إلغاء المرتجع"
+        description={`هل تريد إلغاء المرتجع ${cancelling?.return_number}؟`}
+        confirmLabel="إلغاء المرتجع"
         variant="destructive"
         loading={cancelMutation.isPending}
         onConfirm={() => {
@@ -311,9 +311,9 @@ export function SupplierReturnsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete Return"
-        description={`Permanently delete return ${deleting?.return_number}?`}
-        confirmLabel="Delete"
+        title="حذف المرتجع"
+        description={`هل تريد حذف المرتجع ${deleting?.return_number}؟ لا يمكن التراجع.`}
+        confirmLabel="حذف"
         variant="destructive"
         loading={deleteMutation.isPending}
         onConfirm={() => {

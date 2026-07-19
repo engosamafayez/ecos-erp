@@ -76,7 +76,17 @@ final class AdjustmentOutAction extends BaseAction
                 );
             }
 
+            // D2/BUG-21 fix: prevent reducing on_hand_qty below reserved_qty.
+            // Without this guard, a direct issue or adjustment-out could bring
+            // on_hand_qty below reserved_qty, causing reserved orders to be
+            // unfulfillable when ShipStockAction checks on_hand_qty >= ship_qty.
             $onHandAfter = $onHandBefore - $dto->quantity;
+            if ($onHandAfter < $reservedBefore) {
+                throw new InvalidInventoryMovementException(
+                    "Cannot adjust out {$dto->quantity} units: on_hand_qty would fall below reserved_qty ({$reservedBefore}). " .
+                    'Release or fulfil reserved orders first.'
+                );
+            }
 
             $locked->on_hand_qty = $onHandAfter;
             $this->inventory->save($locked);

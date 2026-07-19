@@ -464,7 +464,7 @@ function GovernorateRow({
             <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-4 px-6 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/30">
               <span className="w-8" />
               <span>Zone</span>
-              <span className="text-right w-32">Shipping Cost</span>
+              <span className="text-end w-32">Shipping Cost</span>
               <span className="w-8" />
             </div>
           )}

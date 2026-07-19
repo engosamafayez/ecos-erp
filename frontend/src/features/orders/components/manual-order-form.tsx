@@ -85,10 +85,12 @@ import type { CustomerLookupResult, Order } from '@/features/orders/types/order'
 import type { Product } from '@/features/products/types/product';
 import { getMediaUrl } from '@/lib/media';
 import { ROUTES } from '@/router/routes';
+import { parseGoogleMapsUrl, isGoogleMapsUrl } from '@/features/orders/utils/google-maps-parser';
 
 const FORM_ID = 'manual-order-form';
 
 const STATUS_LABELS: Record<string, string> = {
+  scheduled:        'Scheduled',
   pending:          'Pending',
   awaiting_payment: 'Awaiting Payment',
   processing:       'Processing',
@@ -106,8 +108,6 @@ const STATUS_LABELS: Record<string, string> = {
 
 // Statuses managed exclusively by workflow automation — never selectable as manual entry points
 const INTERNAL_STATUSES = new Set([
-  'confirm_order',
-  'needs_shipping_review',
   'ready_for_loading',
 ]);
 
@@ -126,36 +126,6 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   credit_card:   'Credit Card',
 };
 
-function parseGoogleMapsUrl(url: string): { lat: number; lng: number } | null {
-  if (!url) return null;
-  // @lat,lng (standard Maps share URL and Place URLs)
-  const atMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-  if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
-  // ?q=lat,lng or ?ll=lat,lng
-  const qMatch = url.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-  if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
-  const llMatch = url.match(/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-  if (llMatch) return { lat: parseFloat(llMatch[1]), lng: parseFloat(llMatch[2]) };
-  // Direct coordinate string: "30.0444, 31.2357"
-  const coordMatch = url.trim().match(/^(-?\d{1,3}\.?\d*),\s*(-?\d{1,3}\.?\d*)$/);
-  if (coordMatch) {
-    const lat = parseFloat(coordMatch[1]);
-    const lng = parseFloat(coordMatch[2]);
-    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-      return { lat, lng };
-    }
-  }
-  return null;
-}
-
-function isGoogleMapsUrl(url: string): boolean {
-  if (!url) return false;
-  // Accept Google Maps URLs (short and long)
-  if (/maps\.app\.goo\.gl|google\.com\/maps|maps\.google\.com|goo\.gl\/maps/.test(url)) return true;
-  // Accept direct coordinate pairs: "30.0444, 31.2357"
-  if (/^-?\d{1,3}\.?\d*,\s*-?\d{1,3}\.?\d*$/.test(url.trim())) return true;
-  return false;
-}
 
 // ── Inline hooks ──────────────────────────────────────────────────────────────
 
@@ -467,7 +437,7 @@ function ManualLineRow({
         </div>
       </td>
 
-      <td className="w-24 py-2 pr-3 align-middle text-right font-medium tabular-nums text-sm">
+      <td className="w-24 py-2 pr-3 align-middle text-end font-medium tabular-nums text-sm">
         {fmt(qty * price)}
       </td>
 
@@ -569,11 +539,11 @@ function ManualOrderProductsSection({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
+                <tr className="border-b text-start text-xs text-muted-foreground">
                   <th className="pb-1.5 pr-3 font-medium">Product</th>
-                  <th className="w-24 pb-1.5 pr-3 font-medium text-right">Qty</th>
-                  <th className="w-28 pb-1.5 pr-3 font-medium text-right">Unit Price</th>
-                  <th className="w-24 pb-1.5 text-right font-medium">Total</th>
+                  <th className="w-24 pb-1.5 pr-3 font-medium text-end">Qty</th>
+                  <th className="w-28 pb-1.5 pr-3 font-medium text-end">Unit Price</th>
+                  <th className="w-24 pb-1.5 text-end font-medium">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -584,9 +554,9 @@ function ManualOrderProductsSection({
                   return (
                     <tr key={idx} className="text-sm">
                       <td className="py-2 pr-3 font-medium">{product?.name ?? l.product_id}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">{qty}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">{fmt(price)}</td>
-                      <td className="py-2 text-right tabular-nums font-medium">{fmt(qty * price)}</td>
+                      <td className="py-2 pr-3 text-end tabular-nums text-muted-foreground">{qty}</td>
+                      <td className="py-2 pr-3 text-end tabular-nums text-muted-foreground">{fmt(price)}</td>
+                      <td className="py-2 text-end tabular-nums font-medium">{fmt(qty * price)}</td>
                     </tr>
                   );
                 })}
@@ -642,11 +612,11 @@ function ManualOrderProductsSection({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
+                <tr className="border-b text-start text-xs text-muted-foreground">
                   <th className="pb-1.5 pr-3 font-medium">Product</th>
                   <th className="w-24 pb-1.5 pr-3 font-medium">Qty</th>
                   <th className="w-28 pb-1.5 pr-3 font-medium">Price</th>
-                  <th className="w-24 pb-1.5 pr-3 text-right font-medium">Total</th>
+                  <th className="w-24 pb-1.5 pr-3 text-end font-medium">Total</th>
                   <th className="w-10 pb-1.5" />
                 </tr>
               </thead>
@@ -696,11 +666,11 @@ function ManualOrderProductsSection({
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b text-left text-xs text-muted-foreground">
+                    <tr className="border-b text-start text-xs text-muted-foreground">
                       <th className="pb-1.5 pr-3 font-medium">Material</th>
                       <th className="w-24 pb-1.5 pr-3 font-medium">Qty</th>
                       <th className="w-28 pb-1.5 pr-3 font-medium">Price</th>
-                      <th className="w-24 pb-1.5 pr-3 text-right font-medium">Total</th>
+                      <th className="w-24 pb-1.5 pr-3 text-end font-medium">Total</th>
                       <th className="w-10 pb-1.5" />
                     </tr>
                   </thead>
@@ -769,7 +739,30 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   const isTerminal = isEdit && order != null && order.status === 'completed';
 
   const [serverError, setServerError] = useState<string | null>(null);
+  const [slotError, setSlotError] = useState<string | null>(null);
+  const userHasSelectedSlotRef = useRef(false);
   const [pendingSubmitValues, setPendingSubmitValues] = useState<ManualOrderFormValues | null>(null);
+
+  // ── Diagnostic: prove component lifecycle across SPA navigation ────────────
+  // ROOT-CAUSE LOGGING: if this MOUNT log never appears when navigating to
+  // New Order, the component is being REUSED (not remounted) — state bleeds.
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log(
+        '[FORM-LIFECYCLE] MOUNT — mode:', mode,
+        '| orderId:', order?.id ?? '(none)',
+        '| delivery_window_id in order prop:', order?.delivery_window_id ?? '(none)',
+        '| initial serverError:', serverError,
+        '| initial slotError:', slotError,
+        '| userHasSelectedSlotRef:', userHasSelectedSlotRef.current,
+      );
+    }
+    return () => {
+      if (import.meta.env.DEV) {
+        console.log('[FORM-LIFECYCLE] UNMOUNT — mode:', mode, '| orderId:', order?.id ?? '(none)');
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Distribution SSOT: detect if this order is in an active trip before allowing save.
   const { data: distributionStage } = useOrderDistributionStage(isEdit ? (order?.id ?? null) : null, isEdit);
@@ -1082,6 +1075,38 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     }
   }, [orderPolicy, isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Background slot validation — only fires AFTER the user has explicitly selected a slot.
+  // Silent when user hasn't touched the field (satisfies "no error on page load" requirement).
+  // Also silent during brand resets (userHasSelectedSlotRef is cleared there).
+  useEffect(() => {
+    const currentSlotId = form.getValues('delivery_window_id');
+    if (import.meta.env.DEV) {
+      console.log(
+        '[SLOT-EFFECT] activeTimeSlots changed:',
+        '| ref:', userHasSelectedSlotRef.current,
+        '| delivery_window_id:', currentSlotId ?? '(none)',
+        '| activeTimeSlots.length:', activeTimeSlots.length,
+        '| slotIds:', activeTimeSlots.map((s) => s.id),
+      );
+    }
+    if (!userHasSelectedSlotRef.current) {
+      if (import.meta.env.DEV) console.log('[SLOT-EFFECT] gated — ref is false, no validation');
+      return;
+    }
+    if (!currentSlotId || activeTimeSlots.length === 0) {
+      if (import.meta.env.DEV) console.log('[SLOT-EFFECT] gated — no slot selected or list empty');
+      return;
+    }
+    const isValid = activeTimeSlots.some((s) => s.id === currentSlotId);
+    if (import.meta.env.DEV) console.log('[SLOT-EFFECT] isValid:', isValid);
+    if (!isValid) {
+      if (import.meta.env.DEV) console.log('[SLOT-EFFECT] SETTING slotError — slot', currentSlotId, 'not in updated list');
+      form.setValue('delivery_window_id', undefined);
+      form.setValue('delivery_window', undefined);
+      setSlotError('The selected delivery time slot is no longer available. Please choose a new one from the updated list.');
+    }
+  }, [activeTimeSlots]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Cascade handlers ────────────────────────────────────────────────────────
 
   const resetDownstreamOfBrand = () => {
@@ -1094,6 +1119,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     form.setValue('shipping_cost', undefined);
     form.setValue('shipping_cost_source', undefined);
     form.setValue('lines', [{ product_id: '', quantity: '', unit_price: '' }]);
+    setSlotError(null);
+    userHasSelectedSlotRef.current = false;
     setOverrideUnlocked(false);
     setShippingGovernorateId(null);
     setShippingCityId(null);
@@ -1154,9 +1181,13 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   };
 
   const handleWindowChange = (value: string | null) => {
+    if (import.meta.env.DEV) console.log('[SLOT-SELECT] handleWindowChange:', value, '| ref before:', userHasSelectedSlotRef.current);
+    if (value) userHasSelectedSlotRef.current = true;
+    setSlotError(null);
     form.setValue('delivery_window_id', value ?? undefined);
     const slot = activeTimeSlots.find((s) => s.id === value);
     form.setValue('delivery_window', slot?.name ?? undefined);
+    if (import.meta.env.DEV) console.log('[SLOT-SELECT] ref after:', userHasSelectedSlotRef.current);
   };
 
   const handleCityChange = (value: string | null) => {
@@ -1197,7 +1228,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
       if (addr.google_maps_lat != null) {
         form.setValue('google_maps_lat', addr.google_maps_lat);
         form.setValue('google_maps_lng', addr.google_maps_lng ?? undefined);
-        form.setValue('location_source', 'customer');
+        form.setValue('location_source', addr.location_source ?? 'google_maps');
         setLocImported(true);
       }
     }
@@ -1309,6 +1340,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
           if (axios.isAxiosError(err)) {
             const errors = err.response?.data?.errors as Record<string, unknown> | undefined;
             if (errors?.delivery_window_id) {
+              // eslint-disable-next-line no-console
+              if (import.meta.env.DEV) console.log('[SERVER-ERROR] doEditSave onError — delivery_window_id backend rejection');
               form.setValue('delivery_window_id', undefined);
               form.setValue('delivery_window', undefined);
               void queryClient.invalidateQueries({ queryKey: ['brand-delivery-time-slots', brandId ?? ''] });
@@ -1317,6 +1350,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
               return;
             }
           }
+          // eslint-disable-next-line no-console
+          if (import.meta.env.DEV) console.log('[SERVER-ERROR] doEditSave onError — generic:', extractMessage(err));
           setServerError(extractMessage(err));
         },
       },
@@ -1377,7 +1412,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     if (shippingGovernorateId) payload.governorate_id = shippingGovernorateId;
     if (shippingCityId) payload.city_id = shippingCityId;
     // eslint-disable-next-line no-console
-    if (import.meta.env.DEV) console.log('[Submit][STEP 5] calling createManual.mutate →', { lines: payload.lines, status: payload.status, shipping_cost: payload.shipping_cost });
+    if (import.meta.env.DEV) console.log('[Submit][STEP 5] calling createManual.mutate →', { lines: payload.lines, status: payload.status, shipping_cost: payload.shipping_cost, delivery_window_id: payload.delivery_window_id ?? '(none)', delivery_window: payload.delivery_window ?? '(none)' });
     createManual.mutate(payload, {
       onSuccess: (created) => {
         // eslint-disable-next-line no-console
@@ -1391,14 +1426,19 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
         if (axios.isAxiosError(err)) {
           const errors = err.response?.data?.errors as Record<string, unknown> | undefined;
           if (errors?.delivery_window_id) {
+            // eslint-disable-next-line no-console
+            if (import.meta.env.DEV) console.log('[SLOT-ERROR] createManual onError — delivery_window_id backend rejection → setting slotError');
             form.setValue('delivery_window_id', undefined);
             form.setValue('delivery_window', undefined);
             void queryClient.invalidateQueries({ queryKey: ['brand-delivery-time-slots', brandId ?? ''] });
             void refetchTimeSlots();
-            setServerError('The delivery time slot you selected is no longer available. An updated list of time slots has been loaded — please choose one and try again.');
+            // Inline slot error (not the global banner) so it dismisses when user picks a new slot.
+            setSlotError('The delivery time slot you selected is no longer available. An updated list of time slots has been loaded — please choose one and try again.');
             return;
           }
         }
+        // eslint-disable-next-line no-console
+        if (import.meta.env.DEV) console.log('[SERVER-ERROR] createManual onError — generic:', extractMessage(err));
         setServerError(extractMessage(err));
       },
     });
@@ -1501,6 +1541,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                   .filter(([k]) => k !== 'lines')
                   .map(([, v]) => (v as { message?: string })?.message)
                   .filter(Boolean)[0] as string | undefined;
+                // eslint-disable-next-line no-console
+                if (import.meta.env.DEV) console.log('[SERVER-ERROR] onInvalid (Zod) — errors:', errs, '→ message:', linesMsg ?? firstFieldMsg);
                 setServerError(linesMsg ?? firstFieldMsg ?? 'Please fix the form errors before submitting.');
               },
             )(e);
@@ -1702,18 +1744,26 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                             </button>
                           </div>
                         ) : (
-                          <Controller
-                            control={form.control}
-                            name="delivery_window_id"
-                            render={({ field }) => (
-                              <Combobox
-                                options={windowOptions}
-                                value={field.value ?? null}
-                                onChange={handleWindowChange}
-                                placeholder="Select time slot"
-                              />
+                          <>
+                            <Controller
+                              control={form.control}
+                              name="delivery_window_id"
+                              render={({ field }) => (
+                                <Combobox
+                                  options={windowOptions}
+                                  value={field.value ?? null}
+                                  onChange={handleWindowChange}
+                                  placeholder="Select time slot"
+                                />
+                              )}
+                            />
+                            {slotError && (
+                              <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                                <AlertTriangle className="size-3 shrink-0" />
+                                {slotError}
+                              </p>
                             )}
-                          />
+                          </>
                         )}
                       </FormField>
                     </div>
@@ -2250,12 +2300,12 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                   {watchedDiscountType === 'percentage' ? '%' : ' EGP'}
                                 </span>
                                 <span className="text-xs capitalize text-muted-foreground">({watchedDiscountType})</span>
-                                <Lock className="ml-auto size-3 text-muted-foreground/60" />
+                                <Lock className="ms-auto size-3 text-muted-foreground/60" />
                               </div>
                             ) : (
                               <div className="flex h-9 items-center rounded-md border bg-muted/50 px-3 text-sm text-muted-foreground">
                                 No discount
-                                <Lock className="ml-auto size-3 text-muted-foreground/60" />
+                                <Lock className="ms-auto size-3 text-muted-foreground/60" />
                               </div>
                             )}
                           </div>

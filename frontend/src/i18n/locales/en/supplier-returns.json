@@ -1,0 +1,76 @@
+{
+  "title": "Supplier Returns",
+  "subtitle": "Manage return requests to suppliers and credit notes.",
+  "search": "Search returns by number, supplier, or PO…",
+  "actions": {
+    "new": "New Return",
+    "submit": "Submit to Supplier",
+    "approve": "Approve Return",
+    "reject": "Reject",
+    "cancel": "Cancel Return"
+  },
+  "columns": {
+    "number": "Return No.",
+    "supplier": "Supplier",
+    "purchaseOrder": "PO Reference",
+    "returnDate": "Return Date",
+    "reason": "Reason",
+    "amount": "Amount",
+    "status": "Status"
+  },
+  "status": {
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "reason": {
+    "damaged": "Damaged Goods",
+    "wrong_item": "Wrong Item Received",
+    "excess_quantity": "Excess Quantity",
+    "quality_issue": "Quality Issue",
+    "expired": "Expired Product",
+    "other": "Other"
+  },
+  "form": {
+    "supplier": { "label": "Supplier", "placeholder": "Select supplier…" },
+    "purchaseOrder": { "label": "Purchase Order", "placeholder": "Select PO…" },
+    "returnDate": "Return Date",
+    "reason": { "label": "Return Reason", "placeholder": "Select reason…" },
+    "notes": { "label": "Notes", "placeholder": "Describe the issue…" }
+  },
+  "lines": {
+    "title": "Return Lines",
+    "addLine": "Add Item",
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "receivedQty": "Received Qty",
+      "returnQty": "Return Qty",
+      "unit": "Unit",
+      "unitCost": "Unit Cost",
+      "totalCost": "Total"
+    },
+    "selectProduct": "Select product…",
+    "noLines": "No items added yet."
+  },
+  "creditNote": {
+    "title": "Credit Note",
+    "number": "Credit Note No.",
+    "date": "Credit Date",
+    "amount": "Credit Amount",
+    "applied": "Applied to Invoices",
+    "balance": "Available Balance"
+  },
+  "drawer": {
+    "createTitle": "New Supplier Return",
+    "editTitle": "Edit Return",
+    "createSubtitle": "Create a return request for supplier goods.",
+    "submitCreate": "Create Return",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  }
+}

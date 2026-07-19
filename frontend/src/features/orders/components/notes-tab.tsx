@@ -423,7 +423,7 @@ export function OrderNotesTab({ order }: OrderNotesTabProps) {
             </button>
           ))}
           {search && (
-            <span className="ml-auto text-[10px] text-muted-foreground">
+            <span className="ms-auto text-[10px] text-muted-foreground">
               {totalCount} result{totalCount !== 1 ? 's' : ''}
             </span>
           )}

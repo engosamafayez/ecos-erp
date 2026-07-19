@@ -64,27 +64,27 @@ function ProductRow({
             )}
             {isDiscrepancy && (
               <Badge className="text-xs h-4 px-1.5 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                Discrepancy
+                تعارض
               </Badge>
             )}
             {item.driver_status === 'accepted' && (
               <Badge className="text-xs h-4 px-1.5 bg-slate-100 text-slate-600 dark:bg-slate-800/40">
-                Accepted
+                مقبول
               </Badge>
             )}
           </div>
 
           {/* Qty line */}
           <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground">
-            <span>Loaded: <span className="font-semibold tabular-nums text-foreground">{item.loaded_qty}</span></span>
+            <span>محمّل: <span className="font-semibold tabular-nums text-foreground">{item.loaded_qty}</span></span>
             {item.driver_received_qty !== null && (
-              <span>Received: <span className={cn(
+              <span>مستلم: <span className={cn(
                 'font-semibold tabular-nums',
                 isDiscrepancy ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400',
               )}>{item.driver_received_qty}</span></span>
             )}
             {item.shortage_qty !== null && item.shortage_qty > 0 && (
-              <span className="text-red-500">Short: {item.shortage_qty}</span>
+              <span className="text-red-500">نقص: {item.shortage_qty}</span>
             )}
           </div>
 
@@ -98,7 +98,7 @@ function ProductRow({
                 value={receivedQty}
                 onChange={(e) => setReceivedQty(e.target.value)}
                 className="h-8 w-28 text-sm"
-                placeholder="Received qty"
+                placeholder="الكمية المستلمة"
               />
               <Button
                 size="sm"
@@ -107,7 +107,7 @@ function ProductRow({
                 onClick={() => onConfirm(item.id, parseFloat(receivedQty) || 0)}
               >
                 {confirmPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
-                Confirm Receipt
+                تأكيد الاستلام
               </Button>
             </div>
           )}
@@ -122,13 +122,13 @@ function ProductRow({
                 onClick={() => setShowAccept((v) => !v)}
               >
                 {showAccept ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                Supervisor Accept Discrepancy
+                قبول التعارض من المشرف
               </Button>
 
               {showAccept && (
                 <div className="mt-2 space-y-2">
                   <Textarea
-                    placeholder="Notes on discrepancy (optional)…"
+                    placeholder="ملاحظات على التعارض (اختياري)…"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="text-sm resize-none h-16"
@@ -141,7 +141,7 @@ function ProductRow({
                     onClick={() => onAcceptDiscrepancy(item.id, notes || undefined)}
                   >
                     {acceptPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                    Accept &amp; Allow Dispatch
+                    قبول والسماح بالإرسال
                   </Button>
                 </div>
               )}
@@ -168,7 +168,7 @@ export function DriverProductConfirmation({
     <div className="space-y-4">
       {/* Progress */}
       <div className="flex items-center gap-3 text-sm">
-        <span className="text-muted-foreground">Driver Confirmations</span>
+        <span className="text-muted-foreground">تأكيدات السائق</span>
         <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
           <div
             className="h-full rounded-full bg-emerald-500 transition-all"
@@ -181,7 +181,7 @@ export function DriverProductConfirmation({
       {pending.length > 0 && (
         <section>
           <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-            Awaiting Driver Confirmation
+            بانتظار تأكيد السائق
           </h4>
           <div className="space-y-2">
             {pending.map((item) => (
@@ -201,7 +201,7 @@ export function DriverProductConfirmation({
       {discrepancy.length > 0 && (
         <section>
           <h4 className="text-xs font-medium text-amber-600 dark:text-amber-400 mb-2 uppercase tracking-wide">
-            Discrepancies ({discrepancy.length})
+            تعارضات ({discrepancy.length})
           </h4>
           <div className="space-y-2">
             {discrepancy.map((item) => (
@@ -221,7 +221,7 @@ export function DriverProductConfirmation({
       {confirmed.length > 0 && (
         <section>
           <h4 className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2 uppercase tracking-wide">
-            Confirmed ({confirmed.length})
+            مؤكد ({confirmed.length})
           </h4>
           <div className="space-y-2">
             {confirmed.map((item) => (

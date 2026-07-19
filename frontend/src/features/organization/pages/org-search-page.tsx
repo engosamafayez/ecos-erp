@@ -86,7 +86,7 @@ function ResultGroupCard({ group }: { group: ResultGroup }) {
           <button
             key={item.id}
             onClick={() => navigate(group.route)}
-            className="flex items-center justify-between rounded-md px-2 py-1.5 text-left hover:bg-muted/50 transition-colors w-full"
+            className="flex items-center justify-between rounded-md px-2 py-1.5 text-start hover:bg-muted/50 transition-colors w-full"
           >
             <div className="flex items-center gap-2 min-w-0">
               {item.code && (

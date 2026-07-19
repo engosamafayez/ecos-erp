@@ -32,6 +32,51 @@ final class SearchCustomerByPhoneAction extends BaseAction
 
         $stats = $this->buildStats($customer->id);
 
+        // Build the address list. When the customer has no customer_addresses records
+        // (e.g. created via the Customers module, not via the order form), synthesise
+        // a fallback entry from the customer-level fields so the order form can still
+        // hydrate governorate, city, area, and street address.
+        $rawAddresses = $customer->addresses;
+
+        if ($rawAddresses->isEmpty()) {
+            $addresses = ($customer->governorate !== null || $customer->city !== null)
+                ? [[
+                    'id'              => null,
+                    'is_default'      => true,
+                    'governorate'     => $customer->governorate,
+                    'city'            => $customer->city,
+                    'area'            => $customer->area,
+                    'address_line'    => $customer->address,
+                    'building'        => null,
+                    'floor'           => null,
+                    'apartment'       => null,
+                    'landmark'        => null,
+                    'address_notes'   => null,
+                    'google_maps_lat' => null,
+                    'google_maps_lng' => null,
+                    'google_maps_url' => null,
+                ]]
+                : [];
+        } else {
+            $addresses = $rawAddresses->map(fn ($a) => [
+                'id'              => $a->id,
+                'is_default'      => $a->is_default,
+                'governorate'     => $a->governorate,
+                'city'            => $a->city,
+                'area'            => $a->area,
+                'address_line'    => $a->address_line,
+                'building'        => $a->building,
+                'floor'           => $a->floor,
+                'apartment'       => $a->apartment,
+                'landmark'        => $a->landmark,
+                'address_notes'   => $a->address_notes,
+                'google_maps_lat' => $a->google_maps_lat,
+                'google_maps_lng' => $a->google_maps_lng,
+                'google_maps_url' => $a->google_maps_url,
+                'location_source' => $a->location_source,
+            ])->values()->all();
+        }
+
         return OperationResult::success([
             'customer' => [
                 'id'          => $customer->id,
@@ -43,23 +88,8 @@ final class SearchCustomerByPhoneAction extends BaseAction
                 'area'        => $customer->area,
                 'notes'       => $customer->notes,
             ],
-            'addresses' => $customer->addresses->map(fn($a) => [
-                'id'            => $a->id,
-                'is_default'    => $a->is_default,
-                'governorate'   => $a->governorate,
-                'city'          => $a->city,
-                'area'          => $a->area,
-                'address_line'  => $a->address_line,
-                'building'      => $a->building,
-                'floor'         => $a->floor,
-                'apartment'     => $a->apartment,
-                'landmark'      => $a->landmark,
-                'address_notes' => $a->address_notes,
-                'google_maps_lat' => $a->google_maps_lat,
-                'google_maps_lng' => $a->google_maps_lng,
-                'google_maps_url' => $a->google_maps_url,
-            ])->values(),
-            'stats' => $stats,
+            'addresses' => $addresses,
+            'stats'     => $stats,
         ], 'Customer found.');
     }
 

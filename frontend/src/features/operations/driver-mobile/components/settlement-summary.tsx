@@ -5,20 +5,26 @@ interface SettlementSummaryProps {
 }
 
 function fmt(v: number | null | undefined) {
-  return `EGP ${Number(v ?? 0).toLocaleString('en-EG', { minimumFractionDigits: 2 })}`;
+  return `EGP ${Number(v ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}`;
 }
 
 export function SettlementSummary({ settlement }: SettlementSummaryProps) {
   const rows = [
-    { label: 'Cash Collected',               value: fmt(settlement.cash_collected),         highlight: false },
-    { label: 'Bank Transfers (Pending Verification)', value: fmt(settlement.bank_transfers_pending), highlight: false },
-    { label: 'Already Paid (Excluded)',      value: fmt(settlement.already_paid),           highlight: false },
-    { label: 'Total Collected',              value: fmt(settlement.total_collected),        highlight: true  },
-    { label: 'Cash Expected',                value: fmt(settlement.cash_expected),          highlight: false },
-    { label: 'Driver Submitted',             value: fmt(settlement.driver_cash_submitted),  highlight: false },
-    { label: 'Discrepancy',                  value: fmt(settlement.discrepancy),            highlight: settlement.discrepancy !== null && settlement.discrepancy !== 0 },
+    { label: 'النقد المحصّل',                value: fmt(settlement.cash_collected),         highlight: false },
+    { label: 'تحويلات بنكية (بانتظار تحقق)', value: fmt(settlement.bank_transfers_pending), highlight: false },
+    { label: 'مدفوع مسبقاً (مستثنى)',       value: fmt(settlement.already_paid),           highlight: false },
+    { label: 'إجمالي المحصّل',             value: fmt(settlement.total_collected),        highlight: true  },
+    { label: 'النقد المتوقع',               value: fmt(settlement.cash_expected),          highlight: false },
+    { label: 'المقدَّم من السائق',          value: fmt(settlement.driver_cash_submitted),  highlight: false },
+    { label: 'الفارق',                      value: fmt(settlement.discrepancy),            highlight: settlement.discrepancy !== null && settlement.discrepancy !== 0 },
   ];
 
+  const statusLabels: Record<string, string> = {
+    draft:     'مسودة',
+    submitted: 'مقدَّم',
+    verified:  'محقَّق',
+    closed:    'مغلق',
+  };
   const statusColors: Record<string, string> = {
     draft:     'bg-gray-100 text-gray-700',
     submitted: 'bg-blue-100 text-blue-700',
@@ -29,9 +35,9 @@ export function SettlementSummary({ settlement }: SettlementSummaryProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="font-semibold text-sm">Settlement Summary</p>
+        <p className="font-semibold text-sm">ملخص التسوية</p>
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColors[settlement.status] ?? ''}`}>
-          {settlement.status.charAt(0).toUpperCase() + settlement.status.slice(1)}
+          {statusLabels[settlement.status] ?? settlement.status}
         </span>
       </div>
 

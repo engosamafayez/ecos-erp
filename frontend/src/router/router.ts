@@ -78,6 +78,7 @@ import { DispatchGateWorkspacePage } from '@/features/operations/distribution-bo
 import { MarketingDashboardPage } from '@/features/marketing/pages/marketing-dashboard-page';
 import { MarketingAssetsPage } from '@/features/marketing/pages/marketing-assets-page';
 import { MetaConnectPage } from '@/features/marketing/pages/meta-connect-page';
+import { MetaConnectionPage } from '@/features/marketing/pages/meta-connection-page';
 import { CampaignsWorkspacePage } from '@/features/marketing/pages/campaigns-workspace-page';
 import { CampaignExecutiveDashboardPage } from '@/features/marketing/pages/campaign-executive-dashboard-page';
 import { InitiativesWorkspacePage } from '@/features/marketing/pages/initiatives-workspace-page';
@@ -85,12 +86,6 @@ import { InitiativeExecutiveViewPage } from '@/features/marketing/pages/initiati
 import { CampaignStudioPage } from '@/features/marketing/campaign-studio/pages/campaign-studio-page';
 import { CampaignGovernancePage } from '@/features/marketing/campaign-studio/pages/campaign-governance-page';
 import { StudioExecutiveDashboardPage } from '@/features/marketing/campaign-studio/pages/studio-executive-dashboard-page';
-import { AutomationWorkspacePage } from '@/features/marketing/automation/pages/automation-workspace-page';
-import { WorkflowBuilderPage } from '@/features/marketing/automation/pages/workflow-builder-page';
-import { AudienceSegmentsPage } from '@/features/marketing/automation/pages/audience-segments-page';
-import { AutomationDashboardPage } from '@/features/marketing/automation/pages/automation-dashboard-page';
-import { AutomationGovernancePage } from '@/features/marketing/automation/pages/automation-governance-page';
-import { MetaConnectionPage } from '@/features/marketing/pages/meta-connection-page';
 import { ExecutiveDashboardPage } from '@/features/marketing/intelligence/pages/executive-dashboard-page';
 import { CampaignAnalyticsPage } from '@/features/marketing/intelligence/pages/campaign-analytics-page';
 import { AdAnalyticsPage } from '@/features/marketing/intelligence/pages/ad-analytics-page';
@@ -99,6 +94,11 @@ import { PerformanceTrendsPage } from '@/features/marketing/intelligence/pages/p
 import { BudgetAnalysisPage } from '@/features/marketing/intelligence/pages/budget-analysis-page';
 import { ReportsPage } from '@/features/marketing/intelligence/pages/reports-page';
 import { MarketingSettingsPage } from '@/features/marketing/pages/marketing-settings-page';
+import { AutomationWorkspacePage } from '@/features/marketing/automation/pages/automation-workspace-page';
+import { WorkflowBuilderPage } from '@/features/marketing/automation/pages/workflow-builder-page';
+import { AudienceSegmentsPage } from '@/features/marketing/automation/pages/audience-segments-page';
+import { AutomationDashboardPage } from '@/features/marketing/automation/pages/automation-dashboard-page';
+import { AutomationGovernancePage } from '@/features/marketing/automation/pages/automation-governance-page';
 import { DriverHomePage } from '@/features/operations/driver-mobile/pages/driver-home-page';
 import { DriverTripDashboardPage } from '@/features/operations/driver-mobile/pages/driver-trip-dashboard-page';
 import { DriverStopListPage } from '@/features/operations/driver-mobile/pages/driver-stop-list-page';
@@ -115,6 +115,11 @@ import { BaeTimelinePage } from '@/features/core/business-attribution/pages/bae-
 import { UnifiedInboxPage } from '@/features/customer-engagement/pages/unified-inbox-page';
 import { CepDashboardPage } from '@/features/customer-engagement/pages/cep-dashboard-page';
 import { CepLeadsPage } from '@/features/customer-engagement/pages/cep-leads-page';
+import { BridgeDashboardPage }   from '@/features/claude-bridge/pages/bridge-dashboard-page';
+import { BridgeTasksPage }       from '@/features/claude-bridge/pages/bridge-tasks-page';
+import { BridgeCreateTaskPage }  from '@/features/claude-bridge/pages/bridge-create-task-page';
+import { BridgeTaskDetailPage }  from '@/features/claude-bridge/pages/bridge-task-detail-page';
+import { BridgeSettingsPage }    from '@/features/claude-bridge/pages/bridge-settings-page';
 import { OmnichannelInboxPage } from '@/features/conversational-commerce/pages/omnichannel-inbox-page';
 import { MacrosPage } from '@/features/conversational-commerce/pages/macros-page';
 import { RoutingRulesPage } from '@/features/conversational-commerce/pages/routing-rules-page';
@@ -238,10 +243,21 @@ export const router = createBrowserRouter(
             { path: ROUTES.marketing,               Component: MarketingDashboardPage },
             { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },
             { path: ROUTES.marketingConnectMeta,    Component: MetaConnectPage },
+            { path: ROUTES.marketingMetaConnection, Component: MetaConnectionPage },
             { path: ROUTES.marketingCampaigns,      Component: CampaignsWorkspacePage },
             { path: ROUTES.marketingCampaignDash,    Component: CampaignExecutiveDashboardPage },
             { path: ROUTES.marketingInitiatives,    Component: InitiativesWorkspacePage },
             { path: ROUTES.marketingInitiativeDash, Component: InitiativeExecutiveViewPage },
+            // Marketing Intelligence
+            { path: ROUTES.marketingIntelligence,      Component: ExecutiveDashboardPage },
+            { path: ROUTES.marketingCampaignAnalytics, Component: CampaignAnalyticsPage },
+            { path: ROUTES.marketingAdAnalytics,       Component: AdAnalyticsPage },
+            { path: ROUTES.marketingCreativeAnalytics, Component: CreativeAnalyticsPage },
+            { path: ROUTES.marketingTrends,            Component: PerformanceTrendsPage },
+            { path: ROUTES.marketingBudget,            Component: BudgetAnalysisPage },
+            { path: ROUTES.marketingReports,           Component: ReportsPage },
+            // Marketing Settings
+            { path: ROUTES.marketingSettings,          Component: MarketingSettingsPage },
             // Campaign Studio
             { path: ROUTES.campaignStudio,          Component: CampaignStudioPage },
             { path: ROUTES.campaignGovernance,      Component: CampaignGovernancePage },
@@ -265,16 +281,6 @@ export const router = createBrowserRouter(
             { path: ROUTES.audienceSegments,     Component: AudienceSegmentsPage },
             { path: ROUTES.automationDashboard,  Component: AutomationDashboardPage },
             { path: ROUTES.automationGovernance, Component: AutomationGovernancePage },
-            // Marketing Intelligence + Connection + Settings
-            { path: ROUTES.marketingMetaConnection,    Component: MetaConnectionPage },
-            { path: ROUTES.marketingIntelligence,      Component: ExecutiveDashboardPage },
-            { path: ROUTES.marketingCampaignAnalytics, Component: CampaignAnalyticsPage },
-            { path: ROUTES.marketingAdAnalytics,       Component: AdAnalyticsPage },
-            { path: ROUTES.marketingCreativeAnalytics, Component: CreativeAnalyticsPage },
-            { path: ROUTES.marketingTrends,            Component: PerformanceTrendsPage },
-            { path: ROUTES.marketingBudget,            Component: BudgetAnalysisPage },
-            { path: ROUTES.marketingReports,           Component: ReportsPage },
-            { path: ROUTES.marketingSettings,          Component: MarketingSettingsPage },
             // Commerce
             { path: ROUTES.productMappings, Component: ProductMappingsPage },
             { path: ROUTES.syncLogs, Component: SyncLogsPage },
@@ -309,6 +315,12 @@ export const router = createBrowserRouter(
                 { path: 'settings',        Component: WaveSettingsPage },
               ],
             },
+            // Claude Bridge
+            { path: ROUTES.claudeBridge,           Component: BridgeDashboardPage },
+            { path: ROUTES.claudeBridgeTasks,      Component: BridgeTasksPage },
+            { path: ROUTES.claudeBridgeTasksNew,   Component: BridgeCreateTaskPage },
+            { path: ROUTES.claudeBridgeTaskDetail, Component: BridgeTaskDetailPage },
+            { path: ROUTES.claudeBridgeSettings,   Component: BridgeSettingsPage },
             // Driver Mobile OS (TASK-DIST-005)
             { path: ROUTES.driverHome,            Component: DriverHomePage },
             { path: ROUTES.driverTrip,            Component: DriverTripDashboardPage },

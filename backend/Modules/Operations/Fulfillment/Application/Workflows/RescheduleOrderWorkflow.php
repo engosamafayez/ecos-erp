@@ -8,6 +8,7 @@ use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
+use Modules\Operations\Fulfillment\Domain\Events\OrderRescheduledEvent;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 
 /**
@@ -64,6 +65,8 @@ final class RescheduleOrderWorkflow implements FulfillmentWorkflowInterface
         $nextDeliveryDate  = $ctx->get('next_delivery_date');
         $rescheduleReason  = $ctx->get('reschedule_reason') ?? $ctx->get('reason');
 
+        $fromStatus = $currentStatus->value;
+
         $order->update([
             'status'             => OrderStatus::Rescheduled,
             'rescheduled_at'     => now(),
@@ -78,9 +81,11 @@ final class RescheduleOrderWorkflow implements FulfillmentWorkflowInterface
             $order,
             "Order #{$order->order_number} rescheduled for {$nextDeliveryDate}.",
             [
+                'from_status'        => $fromStatus,
                 'resume_from_status' => $resumeFromStatus,
                 'next_delivery_date' => $nextDeliveryDate,
                 'reason'             => $rescheduleReason,
+                'rescheduled_at'     => $order->rescheduled_at?->toIso8601String(),
                 'actor_id'           => $ctx->actorId,
             ],
         );
@@ -89,7 +94,21 @@ final class RescheduleOrderWorkflow implements FulfillmentWorkflowInterface
     /** @return list<object> */
     public function events(FulfillmentResult $result): array
     {
-        return [];
+        $order = $result->order;
+
+        return [
+            new OrderRescheduledEvent(
+                orderId:           $order->id,
+                orderNumber:       $order->order_number,
+                companyId:         $order->company_id ?? '',
+                fromStatus:        $result->meta['from_status'] ?? '',
+                nextDeliveryDate:  $result->meta['next_delivery_date'] ?? '',
+                rescheduleReason:  $result->meta['reason'] ?? null,
+                resumeFromStatus:  $result->meta['resume_from_status'] ?? null,
+                rescheduledAt:     $result->meta['rescheduled_at'] ?? now()->toIso8601String(),
+                actorId:           $result->meta['actor_id'] ?? null,
+            ),
+        ];
     }
 
     public function name(): string

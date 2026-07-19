@@ -133,7 +133,7 @@ function InfoCard({ title, icon: Icon, children, className, headerExtra }: {
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
           {Icon && <Icon className="size-4 text-muted-foreground" />}
           {title}
-          {headerExtra && <div className="ml-auto">{headerExtra}</div>}
+          {headerExtra && <div className="ms-auto">{headerExtra}</div>}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 py-4">{children}</CardContent>
@@ -268,7 +268,7 @@ function OrderHeader({
             {order.source.replace(/_/g, ' ')}
           </span>
         ) : null}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ms-auto flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onPrint}>
             <Printer className="size-3.5" />
             Print
@@ -735,8 +735,8 @@ function ProductsGrid({ order }: { order: Order }) {
         <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-2 border-b px-4 pb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           <span>Product</span>
           <span className="text-center">Qty</span>
-          <span className="text-right">Unit Price</span>
-          <span className="text-right">Line Total</span>
+          <span className="text-end">Unit Price</span>
+          <span className="text-end">Line Total</span>
         </div>
         {/* Rows */}
         {order.lines.map((line) => (
@@ -764,8 +764,8 @@ function ProductsGrid({ order }: { order: Order }) {
               </div>
             </div>
             <p className="text-center text-sm tabular-nums font-medium">{line.quantity}</p>
-            <p className="text-right text-sm tabular-nums">{fmtMoney(line.unit_price)}</p>
-            <p className="text-right text-sm tabular-nums font-semibold">{fmtMoney(line.line_total)}</p>
+            <p className="text-end text-sm tabular-nums">{fmtMoney(line.unit_price)}</p>
+            <p className="text-end text-sm tabular-nums font-semibold">{fmtMoney(line.line_total)}</p>
           </div>
         ))}
         {/* Totals row */}
@@ -822,7 +822,7 @@ function PaymentCard({ order }: { order: Order }) {
         {order.payment_proof_path ? (
           <Field label="Proof Uploaded">
             <a
-              href={order.payment_proof_path}
+              href={getMediaUrl(order.payment_proof_path) ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
@@ -1103,7 +1103,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
                   {/* Collapsed row */}
                   <button
                     className={cn(
-                      'group flex w-full items-start gap-3 rounded-md px-2 py-2.5 text-left transition-colors',
+                      'group flex w-full items-start gap-3 rounded-md px-2 py-2.5 text-start transition-colors',
                       hasDetail ? 'hover:bg-muted/40 cursor-pointer' : 'cursor-default',
                     )}
                     onClick={() => hasDetail && toggle(ev.id)}

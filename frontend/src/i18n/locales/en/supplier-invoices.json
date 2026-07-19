@@ -1,0 +1,68 @@
+{
+  "title": "Supplier Invoices",
+  "subtitle": "Manage payables and supplier invoice reconciliation.",
+  "search": "Search invoices by number, supplier, or reference…",
+  "actions": {
+    "new": "New Invoice",
+    "post": "Post Invoice",
+    "pay": "Record Payment",
+    "cancel": "Cancel"
+  },
+  "columns": {
+    "number": "Invoice No.",
+    "supplier": "Supplier",
+    "purchaseOrder": "PO Reference",
+    "invoiceDate": "Invoice Date",
+    "dueDate": "Due Date",
+    "amount": "Amount",
+    "paid": "Paid",
+    "balance": "Balance",
+    "status": "Status"
+  },
+  "status": {
+    "draft": "Draft",
+    "posted": "Posted",
+    "partially_paid": "Partially Paid",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "cancelled": "Cancelled"
+  },
+  "form": {
+    "supplier": { "label": "Supplier", "placeholder": "Select supplier…" },
+    "purchaseOrder": { "label": "Purchase Order (optional)", "placeholder": "Select PO…" },
+    "invoiceNumber": { "label": "Supplier Invoice Number", "placeholder": "INV-2026-001" },
+    "invoiceDate": "Invoice Date",
+    "dueDate": "Due Date",
+    "notes": { "label": "Notes", "placeholder": "Optional notes…" }
+  },
+  "payment": {
+    "title": "Record Payment",
+    "amount": "Payment Amount",
+    "paymentDate": "Payment Date",
+    "paymentMethod": "Payment Method",
+    "reference": "Bank Reference",
+    "methods": {
+      "bank_transfer": "Bank Transfer",
+      "cheque": "Cheque",
+      "cash": "Cash"
+    },
+    "submit": "Record Payment",
+    "submitting": "Recording…"
+  },
+  "totals": {
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "total": "Invoice Total",
+    "paid": "Amount Paid",
+    "balance": "Outstanding Balance"
+  },
+  "drawer": {
+    "createTitle": "New Supplier Invoice",
+    "editTitle": "Edit Invoice",
+    "createSubtitle": "Record a supplier invoice for payment processing.",
+    "submitCreate": "Create Invoice",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  }
+}

@@ -16,6 +16,7 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderFee;
 use Modules\Commerce\Orders\Domain\Models\OrderCoupon;
 use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
+use Modules\Commerce\Synchronization\Application\Services\WooCommerceOrderStatusTranslator;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Logistics\Geography\Domain\Models\City;
 use Modules\Logistics\Geography\Domain\Models\Governorate;
@@ -28,24 +29,15 @@ final class WooCommerceOrderImporter
 
     private const TIMEOUT = 30;
 
-    private const STATUS_MAP = [
-        'pending'    => 'pending',
-        'processing' => 'processing',
-        'completed'  => 'delivered',
-        'cancelled'  => 'cancelled',
-        'on-hold'    => 'awaiting_payment',
-        'refunded'   => 'returned',
-        'failed'     => 'cancelled',
-    ];
-
     /** WooCommerce statuses that require inventory reservation on import. */
     private const RESERVE_ON_IMPORT = ['processing', 'on-hold'];
 
     public function __construct(
-        private readonly OrderRepositoryInterface $orders,
-        private readonly ReserveOrderInventoryAction $reserveInventory,
-        private readonly ConfigurationManager $config,
-        private readonly ShippingValidationService $shippingEngine,
+        private readonly OrderRepositoryInterface        $orders,
+        private readonly ReserveOrderInventoryAction     $reserveInventory,
+        private readonly ConfigurationManager            $config,
+        private readonly ShippingValidationService       $shippingEngine,
+        private readonly WooCommerceOrderStatusTranslator $statusTranslator,
     ) {}
 
     /**
@@ -343,7 +335,8 @@ final class WooCommerceOrderImporter
         $externalId = (string) ($wooOrder['id'] ?? '');
         $wooNumber = (string) ($wooOrder['number'] ?? $externalId);
         $wooStatus = (string) ($wooOrder['status'] ?? 'pending');
-        $status = self::STATUS_MAP[$wooStatus] ?? 'pending';
+        // P5 fix: use the canonical WooCommerce → ECOS status translator (single source of truth).
+        $status = $this->statusTranslator->translate($wooStatus)?->value ?? 'pending';
 
         $dateCreated = (string) ($wooOrder['date_created'] ?? '');
         $orderDate = $dateCreated !== '' ? substr($dateCreated, 0, 10) : now()->toDateString();

@@ -161,7 +161,7 @@ export function OrderAreaCell({ orderId, area, governorate }: OrderAreaCellProps
                   type="button"
                   onClick={() => handleAreaSelect(a)}
                   className={cn(
-                    'flex w-full items-center px-2 py-1 text-left text-xs transition-colors hover:bg-accent',
+                    'flex w-full items-center px-2 py-1 text-start text-xs transition-colors hover:bg-accent',
                     a === area ? 'bg-accent/60 font-medium' : '',
                   )}
                 >

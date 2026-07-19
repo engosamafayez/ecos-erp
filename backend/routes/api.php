@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\CompanyContextController;
 use App\Http\Controllers\Infrastructure\HealthController;
 use App\Http\Controllers\MediaController;
@@ -109,6 +110,12 @@ use Modules\Operations\Distribution\Presentation\Http\Controllers\TripSettlement
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandShippingController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryTimeSlotController;
 use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerController as CbWorkerController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerApiController as CbWorkerApiController;
+use Modules\ClaudeBridge\Presentation\Http\Middleware\VerifyWorkerToken;
 
 /*
 |--------------------------------------------------------------------------
@@ -143,6 +150,7 @@ Route::prefix('auth')->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('admin/dashboard', AdminDashboardController::class);
+    Route::get('admin/executive-dashboard', ExecutiveDashboardController::class);
     Route::get('context/company', CompanyContextController::class);
     Route::apiResource('companies', CompanyController::class);
     Route::apiResource('branches', BranchController::class);
@@ -230,16 +238,24 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::apiResource('inventory-counts', InventoryCountController::class);
-    Route::post('inventory-counts/{inventoryCount}/start',    [InventoryCountController::class, 'start']);
-    Route::post('inventory-counts/{inventoryCount}/complete', [InventoryCountController::class, 'complete']);
-    Route::post('inventory-counts/{inventoryCount}/approve',  [InventoryCountController::class, 'approve'])
-         ->middleware('permission:inventory.count.approve');
-    Route::post('inventory-counts/{inventoryCount}/cancel',   [InventoryCountController::class, 'cancel']);
-    Route::get('inventory-counts/{inventoryCount}/report',    [InventoryCountController::class, 'report']);
+    // Explicit per-action permission middleware replaces the bare apiResource call
+    // so every endpoint is protected at the appropriate authorization level.
+    Route::get('inventory-counts',                 [InventoryCountController::class, 'index'])   ->middleware('permission:inventory.count.view');
+    Route::post('inventory-counts',                [InventoryCountController::class, 'store'])   ->middleware('permission:inventory.count.create');
+    Route::get('inventory-counts/{inventoryCount}',    [InventoryCountController::class, 'show'])    ->middleware('permission:inventory.count.view');
+    Route::put('inventory-counts/{inventoryCount}',    [InventoryCountController::class, 'update'])  ->middleware('permission:inventory.count.update');
+    Route::patch('inventory-counts/{inventoryCount}',  [InventoryCountController::class, 'update'])  ->middleware('permission:inventory.count.update');
+    Route::delete('inventory-counts/{inventoryCount}', [InventoryCountController::class, 'destroy']) ->middleware('permission:inventory.count.delete');
+
+    Route::post('inventory-counts/{inventoryCount}/start',    [InventoryCountController::class, 'start'])    ->middleware('permission:inventory.count.update');
+    Route::post('inventory-counts/{inventoryCount}/complete', [InventoryCountController::class, 'complete']) ->middleware('permission:inventory.count.update');
+    Route::post('inventory-counts/{inventoryCount}/approve',  [InventoryCountController::class, 'approve'])  ->middleware('permission:inventory.count.approve');
+    Route::post('inventory-counts/{inventoryCount}/cancel',   [InventoryCountController::class, 'cancel'])   ->middleware('permission:inventory.count.delete');
+    Route::get('inventory-counts/{inventoryCount}/report',    [InventoryCountController::class, 'report'])   ->middleware('permission:inventory.count.view');
+
     // Line attachments
-    Route::post('inventory-counts/{inventoryCount}/lines/{line}/attachments',                     [InventoryCountController::class, 'storeAttachment']);
-    Route::delete('inventory-counts/{inventoryCount}/lines/{line}/attachments/{attachment}',      [InventoryCountController::class, 'destroyAttachment']);
+    Route::post('inventory-counts/{inventoryCount}/lines/{line}/attachments',                    [InventoryCountController::class, 'storeAttachment'])   ->middleware('permission:inventory.count.update');
+    Route::delete('inventory-counts/{inventoryCount}/lines/{line}/attachments/{attachment}',     [InventoryCountController::class, 'destroyAttachment']) ->middleware('permission:inventory.count.delete');
 });
 
 /*
@@ -803,6 +819,7 @@ Route::middleware('auth:sanctum')->prefix('fulfillment')->group(function (): voi
     Route::post('orders/{order}/return-to-pending',   [OrderFulfillmentController::class, 'returnToPending']);
     Route::post('orders/{order}/revert-to-confirmed', [OrderFulfillmentController::class, 'revertToConfirmed']);
     Route::post('orders/{order}/return-to-processing',[OrderFulfillmentController::class, 'returnToProcessing']);
+    Route::post('orders/{order}/approve-partial-reservation', [OrderFulfillmentController::class, 'approvePartialReservation']);
     // Generic business-state transition — frontend sends target_status, backend resolves workflow
     Route::post('orders/{order}/transition',           [OrderFulfillmentController::class, 'transition']);
 
@@ -969,30 +986,30 @@ Route::middleware('auth:sanctum')->prefix('marketing')->group(function (): void 
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->prefix('marketing/intelligence')->group(function (): void {
-    // ─── Executive Dashboard ──────────────────���─────────────────────────────
+    // ─── Executive Dashboard ────────────────────────────────────────────────
     Route::get('dashboard',                     [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\ExecutiveDashboardController::class, 'index']);
 
-    // ─── Campaign Analytics ────────��──────────────────────────────────��─────
+    // ─── Campaign Analytics ─────────────────────────────────────────────────
     Route::get('campaigns',                     [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'index']);
     Route::get('campaigns/export',              [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'export']);
     Route::get('campaigns/{campaignId}/trend',  [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'trend']);
 
-    // ─── Ad Analytics ───────────��───────────────────────────────────────────
+    // ─── Ad Analytics ───────────────────────────────────────────────────────
     Route::get('ads',                           [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\AdAnalyticsController::class, 'index']);
     Route::get('ads/export',                    [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\AdAnalyticsController::class, 'export']);
 
-    // ─── Creative Analytics ──────��───────────────────────��──────────────────
+    // ─── Creative Analytics ─────────────────────────────────────────────────
     Route::get('creatives',                     [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CreativeAnalyticsController::class, 'index']);
     Route::get('creatives/export',              [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CreativeAnalyticsController::class, 'export']);
 
-    // ─── Performance Trends ──────��──────────────────────────────────────────
+    // ─── Performance Trends ─────────────────────────────────────────────────
     Route::get('trends',                        [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\PerformanceTrendsController::class, 'index']);
     Route::get('trends/compare',                [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\PerformanceTrendsController::class, 'compare']);
 
-    // ─── Budget Analysis ─────────────��─────────────────────────────���────────
+    // ─── Budget Analysis ────────────────────────────────────────────────────
     Route::get('budget',                        [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\BudgetAnalysisController::class, 'index']);
 
-    // ─── Reports (streaming + history) ──────────���──────────────────────────
+    // ─── Reports (streaming + history) ─────────────────────────────────────
     Route::get('reports/export/campaigns',      [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportCampaigns']);
     Route::get('reports/export/ads',            [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportAds']);
     Route::get('reports/export/creatives',      [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportCreatives']);
@@ -1442,6 +1459,52 @@ Route::middleware('auth:sanctum')->prefix('driver')->group(function (): void {
     Route::get('stops/{stopId}/collections',            [DriverStopController::class, 'collections']);
     Route::post('stops/{stopId}/payment',               [DriverPaymentController::class, 'collect']);
     Route::post('returns/{returnId}/confirm',           [TripSettlementController::class, 'confirmReturn']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Claude Bridge — UI-facing endpoints (Sanctum auth)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('cb')->group(function (): void {
+    Route::get('/dashboard',                        [CbDashboardController::class, 'show']);
+
+    // Tasks
+    Route::get('/tasks',                            [CbTaskController::class, 'index']);
+    Route::post('/tasks',                           [CbTaskController::class, 'store']);
+    Route::get('/tasks/{id}',                       [CbTaskController::class, 'show']);
+    Route::patch('/tasks/{id}',                     [CbTaskController::class, 'update']);
+    Route::post('/tasks/{id}/queue',                [CbTaskController::class, 'queue']);
+    Route::post('/tasks/{id}/cancel',               [CbTaskController::class, 'cancel']);
+    Route::post('/tasks/{id}/approve',              [CbTaskController::class, 'approve']);
+    Route::post('/tasks/{id}/request-changes',      [CbTaskController::class, 'requestChanges']);
+    Route::post('/tasks/{id}/mark-merged',          [CbTaskController::class, 'markMerged']);
+    Route::get('/tasks/{id}/log',                   [CbTaskController::class, 'log']);
+
+    // Workers
+    Route::get('/workers',                          [CbWorkerController::class, 'index']);
+    Route::post('/workers',                         [CbWorkerController::class, 'store']);
+    Route::delete('/workers/{id}',                  [CbWorkerController::class, 'destroy']);
+    Route::post('/workers/{id}/regenerate-token',   [CbWorkerController::class, 'regenerateToken']);
+
+    // Artifacts
+    Route::get('/artifacts/{id}/download',          [CbArtifactController::class, 'download']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Claude Bridge — Worker-facing endpoints (bcrypt Bearer token auth)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(VerifyWorkerToken::class)->prefix('cb/worker')->group(function (): void {
+    Route::post('/heartbeat',                       [CbWorkerApiController::class, 'heartbeat']);
+    Route::get('/my-running-task',                  [CbWorkerApiController::class, 'myRunningTask']);
+    Route::get('/tasks/next',                       [CbWorkerApiController::class, 'nextTask']);
+    Route::post('/tasks/{id}/start',                [CbWorkerApiController::class, 'startTask']);
+    Route::post('/tasks/{id}/log-chunk',            [CbWorkerApiController::class, 'logChunk']);
+    Route::post('/tasks/{id}/artifact',             [CbWorkerApiController::class, 'uploadArtifact']);
+    Route::post('/tasks/{id}/complete',             [CbWorkerApiController::class, 'completeTask']);
+    Route::post('/tasks/{id}/fail',                 [CbWorkerApiController::class, 'failTask']);
 });
 
 

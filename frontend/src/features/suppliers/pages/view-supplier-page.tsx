@@ -173,14 +173,14 @@ export function ViewSupplierPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-muted-foreground border-b text-left">
+                  <tr className="text-muted-foreground border-b text-start">
                     <th className="pb-2 pr-3 font-medium">{t('detail.product')}</th>
-                    <th className="w-24 pb-2 pr-3 text-right font-medium">{t('detail.qty')}</th>
-                    <th className="w-28 pb-2 pr-3 text-right font-medium">{t('detail.avgCost')}</th>
-                    <th className="w-28 pb-2 pr-3 text-right font-medium">{t('detail.salePrice')}</th>
-                    <th className="w-28 pb-2 pr-3 text-right font-medium">{t('detail.costValue')}</th>
-                    <th className="w-28 pb-2 pr-3 text-right font-medium">{t('detail.saleValue')}</th>
-                    <th className="w-28 pb-2 text-right font-medium">{t('detail.grossProfit')}</th>
+                    <th className="w-24 pb-2 pr-3 text-end font-medium">{t('detail.qty')}</th>
+                    <th className="w-28 pb-2 pr-3 text-end font-medium">{t('detail.avgCost')}</th>
+                    <th className="w-28 pb-2 pr-3 text-end font-medium">{t('detail.salePrice')}</th>
+                    <th className="w-28 pb-2 pr-3 text-end font-medium">{t('detail.costValue')}</th>
+                    <th className="w-28 pb-2 pr-3 text-end font-medium">{t('detail.saleValue')}</th>
+                    <th className="w-28 pb-2 text-end font-medium">{t('detail.grossProfit')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -190,16 +190,16 @@ export function ViewSupplierPage() {
                         <span className="font-medium">{p.product_name}</span>
                         <span className="text-muted-foreground ml-1.5 text-xs">{p.product_sku}</span>
                       </td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{fmt(p.remaining_quantity, 4)}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums">
+                      <td className="py-2 pr-3 text-end tabular-nums">{fmt(p.remaining_quantity, 4)}</td>
+                      <td className="py-2 pr-3 text-end tabular-nums">
                         {p.average_cost != null ? fmt(p.average_cost, 4) : '—'}
                       </td>
-                      <td className="py-2 pr-3 text-right tabular-nums">
+                      <td className="py-2 pr-3 text-end tabular-nums">
                         {p.sale_price != null ? fmt(p.sale_price) : '—'}
                       </td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{fmt(p.cost_value)}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{fmt(p.sale_value)}</td>
-                      <td className="py-2 text-right tabular-nums font-medium">{fmt(p.gross_profit)}</td>
+                      <td className="py-2 pr-3 text-end tabular-nums">{fmt(p.cost_value)}</td>
+                      <td className="py-2 pr-3 text-end tabular-nums">{fmt(p.sale_value)}</td>
+                      <td className="py-2 text-end tabular-nums font-medium">{fmt(p.gross_profit)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -97,10 +97,10 @@ function WasteBadge({ pct }: { pct: number }) {
   if (pct <= 0) return <span className="text-xs text-muted-foreground">—</span>;
   let cls: string;
   let label: string;
-  if (pct <= 2)       { cls = 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'; label = 'Excellent'; }
-  else if (pct <= 5)  { cls = 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800'; label = 'Normal'; }
-  else if (pct <= 10) { cls = 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800'; label = 'High'; }
-  else                { cls = 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'; label = 'Critical'; }
+  if (pct <= 2)       { cls = 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'; label = 'ممتاز'; }
+  else if (pct <= 5)  { cls = 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800'; label = 'عادي'; }
+  else if (pct <= 10) { cls = 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800'; label = 'مرتفع'; }
+  else                { cls = 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'; label = 'حرج'; }
   return (
     <div className="flex items-center gap-1.5">
       <Badge variant="outline" className={`text-xs ${cls}`}>{label}</Badge>
@@ -167,10 +167,10 @@ function RecipeStats({ query }: { query: SharedFilter }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <QuickStatCard icon={BookOpen}   title="Total Recipes"   value={total}             colorClassName="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" />
-      <QuickStatCard icon={BookMarked} title="Active Recipes"  value={active}            colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30" />
-      <QuickStatCard icon={FileText}   title="Draft Recipes"   value={draft}             colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30" />
-      <QuickStatCard icon={DollarSign} title="Avg. Recipe Cost" value={fmtAbbrev(avgCost, currency, locale)} colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30" />
+      <QuickStatCard icon={BookOpen}   title="إجمالي الوصفات"    value={total}             colorClassName="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" />
+      <QuickStatCard icon={BookMarked} title="الوصفات النشطة"    value={active}            colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30" />
+      <QuickStatCard icon={FileText}   title="وصفات المسودة"     value={draft}             colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30" />
+      <QuickStatCard icon={DollarSign} title="متوسط تكلفة الوصفة" value={fmtAbbrev(avgCost, currency, locale)} colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30" />
     </div>
   );
 }
@@ -188,14 +188,14 @@ function ColumnManagerPanel({ visibleColumns, onToggle, onRestoreDefaults, onSho
   return (
     <PopoverContent align="end" className="w-56 p-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium">Columns</p>
+        <p className="text-sm font-medium">الأعمدة</p>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onShowAll}>
-            Show All
+            إظهار الكل
           </Button>
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onRestoreDefaults}>
             <RotateCcw className="size-3 mr-1" />
-            Reset
+            إعادة تعيين
           </Button>
         </div>
       </div>
@@ -213,7 +213,7 @@ function ColumnManagerPanel({ visibleColumns, onToggle, onRestoreDefaults, onSho
               aria-label={col.label}
             />
             <span>{col.label}</span>
-            {col.locked && <span className="ml-auto text-[10px] text-muted-foreground">locked</span>}
+            {col.locked && <span className="ms-auto text-[10px] text-muted-foreground">مقفل</span>}
           </label>
         ))}
       </div>
@@ -240,40 +240,40 @@ function FiltersPanel({ hasMfgCost, hasPkgMaterials, updatedFrom, updatedTo, onC
   return (
     <PopoverContent align="end" className="w-72 p-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-medium">Filters</p>
+        <p className="text-sm font-medium">المرشحات</p>
         {hasAny && (
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-muted-foreground" onClick={onClear}>
-            <X className="size-3 mr-1" />Clear all
+            <X className="size-3 mr-1" />مسح الكل
           </Button>
         )}
       </div>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm">Has Manufacturing Cost</label>
+          <label className="text-sm">يحتوي على تكلفة تصنيع</label>
           <Switch checked={hasMfgCost} onCheckedChange={(v) => onChange({ hasMfgCost: v })} />
         </div>
         <div className="flex items-center justify-between">
-          <label className="text-sm">Has Packaging Materials</label>
+          <label className="text-sm">يحتوي على مواد تغليف</label>
           <Switch checked={hasPkgMaterials} onCheckedChange={(v) => onChange({ hasPkgMaterials: v })} />
         </div>
         <Separator />
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Updated</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">تاريخ التحديث</p>
           <div className="flex items-center gap-2">
             <Input
               type="date"
               value={updatedFrom}
               onChange={(e) => onChange({ updatedFrom: e.target.value })}
               className="h-8 text-sm"
-              placeholder="From"
+              placeholder="من"
             />
-            <span className="text-muted-foreground text-xs shrink-0">to</span>
+            <span className="text-muted-foreground text-xs shrink-0">إلى</span>
             <Input
               type="date"
               value={updatedTo}
               onChange={(e) => onChange({ updatedTo: e.target.value })}
               className="h-8 text-sm"
-              placeholder="To"
+              placeholder="إلى"
             />
           </div>
         </div>
@@ -323,7 +323,7 @@ function RecipeToolbar({
       {/* Search */}
       <div className="relative flex-1 min-w-52 max-w-80">
         <Input
-          placeholder="Search by product name or SKU…"
+          placeholder="بحث بالاسم أو SKU…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           className="h-9"
@@ -333,37 +333,37 @@ function RecipeToolbar({
       {/* Status */}
       <Select value={status} onValueChange={onStatus}>
         <SelectTrigger className="h-9 w-36">
-          <SelectValue placeholder="All Statuses" />
+          <SelectValue placeholder="كل الحالات" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Statuses</SelectItem>
-          <SelectItem value="active">Active</SelectItem>
-          <SelectItem value="draft">Draft</SelectItem>
+          <SelectItem value="all">كل الحالات</SelectItem>
+          <SelectItem value="active">نشط</SelectItem>
+          <SelectItem value="draft">مسودة</SelectItem>
         </SelectContent>
       </Select>
 
       {/* Company */}
       <div className="w-44">
-        <CompanySelect value={companyId} onChange={onCompany} placeholder="All Companies" />
+        <CompanySelect value={companyId} onChange={onCompany} placeholder="كل الشركات" />
       </div>
 
       {/* Channel */}
       <div className="w-44">
-        <ChannelSelect value={channelId} onChange={onChannel} placeholder="All Channels" />
+        <ChannelSelect value={channelId} onChange={onChannel} placeholder="كل القنوات" />
       </div>
 
       {/* Action buttons */}
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ms-auto flex items-center gap-2">
         <Button size="sm" onClick={onNew} className="gap-1.5">
           <Plus className="size-4" />
-          New Recipe
+          وصفة جديدة
         </Button>
 
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
               <Columns3 className="size-4" />
-              Columns
+              الأعمدة
             </Button>
           </PopoverTrigger>
           <ColumnManagerPanel
@@ -378,7 +378,7 @@ function RecipeToolbar({
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5 relative">
               <Filter className="size-4" />
-              Filters
+              المرشحات
               {activeFilterCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                   {activeFilterCount}
@@ -401,12 +401,12 @@ function RecipeToolbar({
           className="gap-1.5"
         >
           <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
+          تحديث
         </Button>
 
         <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5">
           <Download className="size-4" />
-          Export
+          تصدير
         </Button>
       </div>
     </div>
@@ -420,15 +420,15 @@ function BulkActionBar({
 }: { count: number; onExport: () => void; onClear: () => void }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-2.5 shadow-sm">
-      <span className="text-sm font-medium shrink-0">{count} selected</span>
+      <span className="text-sm font-medium shrink-0">{count} محدد</span>
       <div className="w-px h-5 bg-border mx-1" />
       <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5 h-8">
         <Download className="size-3.5" />
-        Export Selected
+        تصدير المحدد
       </Button>
-      <Button variant="ghost" size="sm" onClick={onClear} className="ml-auto h-8 gap-1.5 text-muted-foreground">
+      <Button variant="ghost" size="sm" onClick={onClear} className="ms-auto h-8 gap-1.5 text-muted-foreground">
         <X className="size-3.5" />
-        Clear
+        إلغاء التحديد
       </Button>
     </div>
   );
@@ -443,9 +443,9 @@ function SortableHead({
 }: { field: string; label: string; sort?: SortState; onSort?: (f: string) => void; align?: 'left' | 'right' }) {
   const isSorted = sort?.field === field;
   const Icon     = isSorted ? (sort?.direction === 'asc' ? ArrowUp : ArrowDown) : ChevronsUpDown;
-  if (!onSort) return <TableHead className={align === 'right' ? 'text-right' : ''}>{label}</TableHead>;
+  if (!onSort) return <TableHead className={align === 'right' ? 'text-end' : ''}>{label}</TableHead>;
   return (
-    <TableHead className={align === 'right' ? 'text-right' : ''}>
+    <TableHead className={align === 'right' ? 'text-end' : ''}>
       <button
         type="button"
         onClick={() => onSort(field)}
@@ -521,17 +521,17 @@ function RecipeTable({
                 aria-label="Select all"
               />
             </TableHead>
-            {vis('image')           && <TableHead className="w-14">Image</TableHead>}
-            {vis('product')         && <SortableHead field="product_name"    label="Product"         sort={sort} onSort={onSortChange} />}
-            {vis('category')        && <SortableHead field="category"        label="Category"        sort={sort} onSort={onSortChange} />}
-            {vis('recipe_cost')     && <SortableHead field="recipe_cost"     label="Recipe Cost"     sort={sort} onSort={onSortChange} align="right" />}
-            {vis('waste_pct')       && <SortableHead field="total_waste_pct" label="Waste %"         sort={sort} onSort={onSortChange} />}
-            {vis('total_materials') && <SortableHead field="lines_count"     label="Total Materials" sort={sort} onSort={onSortChange} align="right" />}
-            {vis('channel')         && <TableHead>Channel</TableHead>}
-            {vis('company')         && <TableHead>Company</TableHead>}
-            {vis('updated')         && <SortableHead field="updated_at"      label="Updated"         sort={sort} onSort={onSortChange} />}
-            {vis('status')          && <TableHead>Status</TableHead>}
-            {vis('actions')         && <TableHead className="w-12 text-right">Actions</TableHead>}
+            {vis('image')           && <TableHead className="w-14">صورة</TableHead>}
+            {vis('product')         && <SortableHead field="product_name"    label="المنتج"          sort={sort} onSort={onSortChange} />}
+            {vis('category')        && <SortableHead field="category"        label="التصنيف"         sort={sort} onSort={onSortChange} />}
+            {vis('recipe_cost')     && <SortableHead field="recipe_cost"     label="تكلفة الوصفة"   sort={sort} onSort={onSortChange} align="right" />}
+            {vis('waste_pct')       && <SortableHead field="total_waste_pct" label="هدر %"          sort={sort} onSort={onSortChange} />}
+            {vis('total_materials') && <SortableHead field="lines_count"     label="إجمالي المواد"  sort={sort} onSort={onSortChange} align="right" />}
+            {vis('channel')         && <TableHead>القناة</TableHead>}
+            {vis('company')         && <TableHead>الشركة</TableHead>}
+            {vis('updated')         && <SortableHead field="updated_at"      label="تاريخ التحديث"  sort={sort} onSort={onSortChange} />}
+            {vis('status')          && <TableHead>الحالة</TableHead>}
+            {vis('actions')         && <TableHead className="w-12 text-end">الإجراءات</TableHead>}
           </TableRow>
         </TableHeader>
 
@@ -547,7 +547,7 @@ function RecipeTable({
           ) : isError ? (
             <TableRow>
               <TableCell colSpan={colSpan} className="py-12 text-center text-muted-foreground">
-                Failed to load recipes. Try refreshing.
+                فشل تحميل الوصفات. جرّب التحديث.
               </TableCell>
             </TableRow>
           ) : data.length === 0 ? (
@@ -555,8 +555,8 @@ function RecipeTable({
               <TableCell colSpan={colSpan}>
                 <EmptyState
                   icon={BookOpen}
-                  title="No recipes found"
-                  description="Try adjusting your filters or create a new recipe."
+                  title="لا توجد وصفات"
+                  description="جرّب تعديل المرشحات أو أنشئ وصفة جديدة."
                 />
               </TableCell>
             </TableRow>
@@ -617,7 +617,7 @@ function RecipeTable({
 
                   {/* Recipe Cost */}
                   {vis('recipe_cost') && (
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <span className="text-sm font-medium tabular-nums">
                         {cost > 0 ? fmtCost(cost, currency, locale) : <span className="text-muted-foreground">—</span>}
                       </span>
@@ -633,7 +633,7 @@ function RecipeTable({
 
                   {/* Total Materials — interactive preview popover */}
                   {vis('total_materials') && (
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <MaterialsPreviewPopover recipe={r} onViewMaterials={onViewMaterials} />
                     </TableCell>
                   )}
@@ -670,30 +670,30 @@ function RecipeTable({
                     <TableCell>
                       {r.is_active ? (
                         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 text-xs">
-                          Active
+                          نشط
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-muted-foreground text-xs">Draft</Badge>
+                        <Badge variant="outline" className="text-muted-foreground text-xs">مسودة</Badge>
                       )}
                     </TableCell>
                   )}
 
                   {/* Actions */}
                   {vis('actions') && (
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu
                         label={`Actions for ${r.product?.name ?? r.bom_number}`}
                         items={[
-                          { key: 'view',        label: 'View',                     icon: Eye,    onSelect: () => onRowClick(r) },
-                          { key: 'edit',        label: 'Edit',                     icon: Pencil, onSelect: () => onEdit(r) },
-                          { key: 'create-from', label: 'Create From This Recipe',  icon: Copy,   onSelect: () => onCreateFrom(r) },
+                          { key: 'view',        label: 'عرض',                      icon: Eye,    onSelect: () => onRowClick(r) },
+                          { key: 'edit',        label: 'تعديل',                    icon: Pencil, onSelect: () => onEdit(r) },
+                          { key: 'create-from', label: 'إنشاء من هذه الوصفة',     icon: Copy,   onSelect: () => onCreateFrom(r) },
                           {
                             key: 'toggle',
-                            label: r.is_active ? 'Set as Draft' : 'Set as Active',
+                            label: r.is_active ? 'تعيين كمسودة' : 'تعيين كنشط',
                             icon: Power,
                             onSelect: () => onToggle(r),
                           },
-                          { key: 'delete', label: 'Delete', icon: Trash2, onSelect: () => onDelete(r), variant: 'destructive' },
+                          { key: 'delete', label: 'حذف', icon: Trash2, onSelect: () => onDelete(r), variant: 'destructive' },
                         ]}
                       />
                     </TableCell>
@@ -765,11 +765,11 @@ function MaterialPreviewRow({ line }: { line: PreviewLine }) {
                 : 'border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400'
             }`}
           >
-            {isPkg ? 'Pkg' : 'Raw'}
+            {isPkg ? 'تغليف' : 'خام'}
           </Badge>
           {line.waste_percentage > 0 && (
             <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium">
-              +{line.waste_percentage.toFixed(0)}% waste
+              +{line.waste_percentage.toFixed(0)}% هدر
             </span>
           )}
         </div>
@@ -780,7 +780,7 @@ function MaterialPreviewRow({ line }: { line: PreviewLine }) {
         <span className="text-xs tabular-nums font-medium">{line.quantity}</span>
         {!hasCost && (
           <span className="text-[9px] text-amber-500 flex items-center gap-0.5">
-            <TriangleAlert className="size-2.5" />No cost
+            <TriangleAlert className="size-2.5" />بدون تكلفة
           </span>
         )}
       </div>
@@ -835,9 +835,9 @@ function MaterialsPreviewPopover({
           onMouseEnter={handleMouseEnterTrigger}
           onMouseLeave={handleMouseLeaveTrigger}
           onClick={() => setOpen((v) => !v)}
-          aria-label={`Preview ${materialsCount} ${materialsCount === 1 ? 'material' : 'materials'} for ${recipe.product?.name ?? recipe.bom_number}`}
+          aria-label={`معاينة ${materialsCount} مادة للـ ${recipe.product?.name ?? recipe.bom_number}`}
         >
-          {materialsCount} {materialsCount === 1 ? 'Material' : 'Materials'}
+          {materialsCount} مادة
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -852,9 +852,9 @@ function MaterialsPreviewPopover({
         <div className="px-3 py-2 border-b">
           <p className="text-xs font-semibold truncate">{recipe.product?.name ?? recipe.bom_number}</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            {rawCount > 0 && `${rawCount} Raw`}
+            {rawCount > 0 && `${rawCount} خام`}
             {rawCount > 0 && pkgCount > 0 && ' · '}
-            {pkgCount > 0 && `${pkgCount} Packaging`}
+            {pkgCount > 0 && `${pkgCount} تغليف`}
           </p>
         </div>
 
@@ -863,7 +863,7 @@ function MaterialsPreviewPopover({
           {isFetching && lines.length === 0 ? (
             <SkeletonMaterialList />
           ) : lines.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-6">No materials found.</p>
+            <p className="text-xs text-muted-foreground text-center py-6">لا توجد مواد.</p>
           ) : (
             lines.map((line) => <MaterialPreviewRow key={line.id} line={line} />)
           )}
@@ -872,14 +872,14 @@ function MaterialsPreviewPopover({
         {/* Footer */}
         <div className="border-t px-3 py-2 flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground tabular-nums">
-            {materialsCount} total
+            {materialsCount} إجمالي
           </span>
           <button
             type="button"
             className="text-[10px] text-primary font-medium flex items-center gap-1 hover:underline"
             onClick={() => { setOpen(false); onViewMaterials(recipe); }}
           >
-            View Full Recipe
+            عرض الوصفة كاملة
             <ArrowRight className="size-3" />
           </button>
         </div>
@@ -1008,12 +1008,12 @@ export function RecipesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Recipes"
-        subtitle="Manage production recipes and their material components."
+        title="الوصفات"
+        subtitle="إدارة وصفات الإنتاج ومكوناتها من المواد."
         breadcrumbs={[
-          { label: 'Home',      to: ROUTES.dashboard },
-          { label: 'Inventory', to: ROUTES.inventoryProducts },
-          { label: 'Recipes' },
+          { label: 'الرئيسية', to: ROUTES.dashboard },
+          { label: 'المخزون',  to: ROUTES.inventoryProducts },
+          { label: 'الوصفات' },
         ]}
       />
 
@@ -1095,9 +1095,9 @@ export function RecipesPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete Recipe"
-        description={`Are you sure you want to delete the recipe for "${deleting?.product?.name ?? deleting?.bom_number}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title="حذف الوصفة"
+        description={`هل أنت متأكد من حذف وصفة "${deleting?.product?.name ?? deleting?.bom_number}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف"
         variant="destructive"
         loading={deleteRecipe.isPending}
         onConfirm={() => {

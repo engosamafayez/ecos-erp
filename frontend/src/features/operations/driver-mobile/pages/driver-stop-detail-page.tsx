@@ -25,13 +25,13 @@ import { ACTION_TYPE_LABELS } from '../types/driver-mobile';
 type SheetMode = 'action' | 'payment' | null;
 
 const ACTION_BUTTONS: { type: DeliveryActionType; label: string; variant: 'default' | 'outline' | 'destructive' }[] = [
-  { type: 'completed',     label: 'Delivered',       variant: 'default'     },
-  { type: 'partial',       label: 'Partial',         variant: 'outline'     },
-  { type: 'refused',       label: 'Refused',         variant: 'destructive' },
-  { type: 'not_available', label: 'Not Available',   variant: 'outline'     },
-  { type: 'delay',         label: 'Delay Requested', variant: 'outline'     },
-  { type: 'wrong_address', label: 'Wrong Address',   variant: 'outline'     },
-  { type: 'unreachable',   label: 'Unreachable',     variant: 'outline'     },
+  { type: 'completed',     label: 'تم التوصيل',       variant: 'default'     },
+  { type: 'partial',       label: 'جزئي',             variant: 'outline'     },
+  { type: 'refused',       label: 'رُفض',             variant: 'destructive' },
+  { type: 'not_available', label: 'غير متاح',         variant: 'outline'     },
+  { type: 'delay',         label: 'تأجيل مطلوب',     variant: 'outline'     },
+  { type: 'wrong_address', label: 'عنوان خاطئ',       variant: 'outline'     },
+  { type: 'unreachable',   label: 'لا يمكن الوصول',  variant: 'outline'     },
 ];
 
 export function DriverStopDetailPage() {
@@ -64,7 +64,7 @@ export function DriverStopDetailPage() {
   }
 
   if (!stop) {
-    return <div className="p-4 text-center text-muted-foreground">Stop not found.</div>;
+    return <div className="p-4 text-center text-muted-foreground">المحطة غير موجودة.</div>;
   }
 
   const { order } = stop;
@@ -81,7 +81,7 @@ export function DriverStopDetailPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-base">Stop #{stop.sequence}</h1>
+          <h1 className="font-semibold text-base">محطة #{stop.sequence}</h1>
           <p className="text-xs text-muted-foreground truncate">{order?.order_number}</p>
         </div>
         <StopStatusBadge status={stop.status} />
@@ -90,7 +90,7 @@ export function DriverStopDetailPage() {
       <div className="p-4 space-y-4">
         {/* Customer */}
         <div className="rounded-xl border p-4 space-y-2">
-          <p className="font-semibold">{order?.customer_name ?? 'No name'}</p>
+          <p className="font-semibold">{order?.customer_name ?? 'بدون اسم'}</p>
           {order?.billing_phone && (
             <a
               href={`tel:${order.billing_phone}`}
@@ -122,7 +122,7 @@ export function DriverStopDetailPage() {
           <div className="rounded-xl border p-4 space-y-2">
             <div className="flex items-center gap-1.5 font-semibold text-sm">
               <Package className="h-4 w-4" />
-              Items ({order.lines.length})
+              المنتجات ({order.lines.length})
             </div>
             <div className="space-y-2">
               {order.lines.map((line) => (
@@ -131,7 +131,7 @@ export function DriverStopDetailPage() {
                     {line.quantity}× {line.product_name}
                   </span>
                   <span>
-                    EGP {Number(line.line_total).toLocaleString('en-EG', { minimumFractionDigits: 2 })}
+                    EGP {Number(line.line_total).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               ))}
@@ -143,26 +143,26 @@ export function DriverStopDetailPage() {
         <div className="rounded-xl border p-4 space-y-1.5">
           <div className="flex items-center gap-1.5 font-semibold text-sm mb-2">
             <DollarSign className="h-4 w-4" />
-            Payment
+            الدفع
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Method</span>
+            <span className="text-muted-foreground">طريقة الدفع</span>
             <span className="capitalize">{order?.payment_method ?? '—'}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Grand Total</span>
-            <span>EGP {Number(order?.grand_total ?? 0).toLocaleString('en-EG', { minimumFractionDigits: 2 })}</span>
+            <span className="text-muted-foreground">الإجمالي</span>
+            <span>EGP {Number(order?.grand_total ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Deposit Paid</span>
+            <span className="text-muted-foreground">مدفوع مقدماً</span>
             <span className="text-green-600">
-              - EGP {Number(order?.deposit_paid ?? 0).toLocaleString('en-EG', { minimumFractionDigits: 2 })}
+              - EGP {Number(order?.deposit_paid ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
             </span>
           </div>
           <div className="flex justify-between text-sm font-semibold border-t pt-1.5">
-            <span>Remaining</span>
+            <span>المتبقي</span>
             <span>
-              EGP {Number(order?.remaining_balance ?? 0).toLocaleString('en-EG', { minimumFractionDigits: 2 })}
+              EGP {Number(order?.remaining_balance ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -170,13 +170,13 @@ export function DriverStopDetailPage() {
         {/* Delivery action summary (if done) */}
         {isDone && stop.delivery_type && (
           <div className="rounded-xl border bg-muted/30 p-4 space-y-1.5">
-            <p className="text-sm font-semibold">Action Recorded</p>
+            <p className="text-sm font-semibold">الإجراء المسجَّل</p>
             <Badge variant="secondary">
               {ACTION_TYPE_LABELS[stop.delivery_type] ?? stop.delivery_type}
             </Badge>
             {stop.notes && <p className="text-xs text-muted-foreground">{stop.notes}</p>}
             <p className="text-xs text-muted-foreground">
-              Collected: EGP {Number(stop.collected_amount ?? 0).toLocaleString('en-EG', { minimumFractionDigits: 2 })}
+              المحصّل: EGP {Number(stop.collected_amount ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
             </p>
           </div>
         )}
@@ -184,7 +184,7 @@ export function DriverStopDetailPage() {
         {/* Delivery action buttons */}
         {isPending && (
           <div className="space-y-2">
-            <p className="text-sm font-semibold">Record Delivery</p>
+            <p className="text-sm font-semibold">تسجيل التوصيل</p>
             <div className="grid grid-cols-2 gap-2">
               {ACTION_BUTTONS.map((btn) => (
                 <Button
@@ -209,7 +209,7 @@ export function DriverStopDetailPage() {
             onClick={() => setSheetMode('payment')}
           >
             <DollarSign className="mr-2 h-4 w-4" />
-            Record Payment
+            تسجيل دفعة
           </Button>
         )}
 
@@ -221,7 +221,7 @@ export function DriverStopDetailPage() {
               .replace(':stopId', stopId)}/proof`,
           )}>
             <Camera className="mr-2 h-4 w-4" />
-            Proof of Delivery
+            إثبات التوصيل
           </Button>
         )}
       </div>
@@ -230,7 +230,7 @@ export function DriverStopDetailPage() {
       <Sheet open={sheetMode === 'action'} onOpenChange={(o) => !o && setSheetMode(null)}>
         <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
           <SheetHeader className="mb-4">
-            <SheetTitle>Delivery Action</SheetTitle>
+            <SheetTitle>إجراء التوصيل</SheetTitle>
           </SheetHeader>
           <DeliveryActionForm
             actionType={actionType}
@@ -249,7 +249,7 @@ export function DriverStopDetailPage() {
       <Sheet open={sheetMode === 'payment'} onOpenChange={(o) => !o && setSheetMode(null)}>
         <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
           <SheetHeader className="mb-4">
-            <SheetTitle>Record Payment</SheetTitle>
+            <SheetTitle>تسجيل دفعة</SheetTitle>
           </SheetHeader>
           <PaymentCollectionForm
             isLoading={paymentMutation.isPending}

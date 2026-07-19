@@ -50,6 +50,19 @@ final class CancelOrderWorkflow implements FulfillmentWorkflowInterface
                 "Order [{$order->id}] is in state [{$order->status->value}] and cannot be cancelled."
             );
         }
+
+        // P1-007 — Prevent silent cancellation during active preparation.
+        // Once an order is Preparing, physical work may have begun (labels printed,
+        // pickers assigned, stock pulled). Require explicit force acknowledgement so
+        // operations teams cannot accidentally discard in-progress work.
+        if ($order->status === OrderStatus::Preparing) {
+            $forced = (bool) ($ctx->get('force_cancel_preparation') ?? false);
+            if (! $forced) {
+                throw new WorkflowPreconditionException(
+                    "Order [{$order->id}] is currently being prepared. Pass force_cancel_preparation=true to confirm cancellation and acknowledge that in-progress preparation work will be discarded."
+                );
+            }
+        }
     }
 
     public function execute(FulfillmentContext $ctx): FulfillmentResult
@@ -58,9 +71,12 @@ final class CancelOrderWorkflow implements FulfillmentWorkflowInterface
         $reason  = $ctx->get('reason');
         $released = false;
 
+        // FulfillmentEngine wraps execute() in DB::transaction — no inner transaction
+        // needed. Release + status update are automatically atomic in the outer tx.
         if ($order->assigned_warehouse_id !== null && $order->inventory_released_at === null) {
             $this->releaseInventory->execute($order);
             $released = true;
+            $order->refresh();
         }
 
         $order->update(['status' => OrderStatus::Cancelled]);

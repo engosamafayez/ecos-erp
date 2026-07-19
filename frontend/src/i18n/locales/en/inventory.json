@@ -1,0 +1,68 @@
+{
+  "title": "Inventory",
+  "subtitle": "Real-time stock levels across all warehouses.",
+  "search": "Search by product, SKU, or barcode…",
+  "actions": {
+    "adjust": "Manual Adjustment",
+    "transfer": "Transfer Stock",
+    "export": "Export"
+  },
+  "columns": {
+    "product": "Product",
+    "sku": "SKU",
+    "warehouse": "Warehouse",
+    "onHand": "On Hand",
+    "reserved": "Reserved",
+    "available": "Available",
+    "reorderPoint": "Reorder Point",
+    "avgCost": "Avg. Cost",
+    "totalValue": "Total Value",
+    "lastMovement": "Last Movement"
+  },
+  "filters": {
+    "warehouse": "Warehouse",
+    "allWarehouses": "All Warehouses",
+    "category": "Category",
+    "allCategories": "All Categories",
+    "stockStatus": "Stock Status",
+    "allStatuses": "All",
+    "inStock": "In Stock",
+    "lowStock": "Low Stock",
+    "outOfStock": "Out of Stock"
+  },
+  "stockStatus": {
+    "inStock": "In Stock",
+    "lowStock": "Low Stock",
+    "outOfStock": "Out of Stock",
+    "belowReorderPoint": "Below Reorder Point"
+  },
+  "adjustment": {
+    "title": "Manual Stock Adjustment",
+    "subtitle": "Record a physical stock correction.",
+    "product": "Product",
+    "warehouse": "Warehouse",
+    "type": "Adjustment Type",
+    "quantity": "Quantity",
+    "reason": "Reason",
+    "reference": "Reference",
+    "types": {
+      "in": "Stock In (Add)",
+      "out": "Stock Out (Remove)"
+    },
+    "reasons": {
+      "damage": "Damage / Loss",
+      "cycle_count": "Cycle Count Correction",
+      "receiving_error": "Receiving Error",
+      "other": "Other"
+    },
+    "submit": "Post Adjustment",
+    "posting": "Posting…",
+    "errorTitle": "Adjustment Failed"
+  },
+  "kpis": {
+    "totalSkus": "Total SKUs",
+    "totalValue": "Total Inventory Value",
+    "lowStockItems": "Low Stock Items",
+    "outOfStockItems": "Out of Stock Items"
+  }
+}

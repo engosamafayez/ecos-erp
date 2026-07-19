@@ -41,7 +41,7 @@ export function DriverSettlementPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base">Settlement</h1>
+        <h1 className="font-semibold text-base">التسوية</h1>
       </div>
 
       <div className="p-4 space-y-4">
@@ -50,10 +50,10 @@ export function DriverSettlementPage() {
         {/* Submit form — only when draft */}
         {settlement?.status === 'draft' && (
           <div className="rounded-xl border p-4 space-y-3">
-            <p className="font-semibold text-sm">Submit Settlement</p>
+            <p className="font-semibold text-sm">تقديم التسوية</p>
 
             <div className="space-y-1.5">
-              <Label>Cash You Are Submitting (EGP)</Label>
+              <Label>النقد الذي تقدّمه (EGP)</Label>
               <Input
                 type="number"
                 min="0"
@@ -65,11 +65,11 @@ export function DriverSettlementPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Notes</Label>
+              <Label>ملاحظات</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any notes about discrepancy..."
+                placeholder="ملاحظات حول أي فارق في التسوية..."
                 rows={2}
               />
             </div>
@@ -84,7 +84,7 @@ export function DriverSettlementPage() {
                 })
               }
             >
-              {submitMutation.isPending ? 'Submitting...' : 'Submit Settlement'}
+              {submitMutation.isPending ? 'جارٍ التقديم...' : 'تقديم التسوية'}
             </Button>
           </div>
         )}
@@ -97,7 +97,7 @@ export function DriverSettlementPage() {
             onClick={() => closeMutation.mutate()}
             disabled={closeMutation.isPending}
           >
-            {closeMutation.isPending ? 'Closing...' : 'Close Trip'}
+            {closeMutation.isPending ? 'جارٍ الإغلاق...' : 'إغلاق الرحلة'}
           </Button>
         )}
 
@@ -107,13 +107,13 @@ export function DriverSettlementPage() {
             variant="outline"
             onClick={() => navigate(ROUTES.driverTripCustody.replace(':tripId', tripId))}
           >
-            Custody Returns
+            مرتجعات العهدة
           </Button>
           <Button
             variant="outline"
             onClick={() => navigate(ROUTES.driverTripReturns.replace(':tripId', tripId))}
           >
-            Product Returns
+            مرتجعات المنتجات
           </Button>
         </div>
       </div>

@@ -75,7 +75,7 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
   return (
     <div className="flex items-baseline justify-between gap-4 py-2 border-b last:border-0">
       <span className="text-xs text-muted-foreground shrink-0">{label}</span>
-      <span className="text-sm text-right">{value || '—'}</span>
+      <span className="text-sm text-end">{value || '—'}</span>
     </div>
   );
 }
@@ -267,7 +267,7 @@ function ProductsTab({ supplierId }: { supplierId: string }) {
               <thead>
                 <tr className="border-b bg-muted/40">
                   {['Product', 'On Hand', 'Avg Cost', 'Cost Value', 'Sale Value', 'Last Receipt', 'Receipts'].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-xs font-medium text-muted-foreground text-right first:text-left">{h}</th>
+                    <th key={h} className="px-4 py-2.5 text-xs font-medium text-muted-foreground text-end first:text-start">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -278,12 +278,12 @@ function ProductsTab({ supplierId }: { supplierId: string }) {
                       <p className="font-medium">{p.product_name}</p>
                       <p className="text-[10px] text-muted-foreground font-mono">{p.product_sku}</p>
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">{fmt(p.remaining_quantity, 4).replace(/\.?0+$/, '')}</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">${fmt(p.average_cost ?? 0)}</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">${fmt(p.cost_value)}</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">${fmt(p.sale_value)}</td>
-                    <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">{p.latest_receipt_date?.slice(0, 10) ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-right text-muted-foreground">{p.receipt_count}</td>
+                    <td className="px-4 py-2.5 text-end tabular-nums">{fmt(p.remaining_quantity, 4).replace(/\.?0+$/, '')}</td>
+                    <td className="px-4 py-2.5 text-end tabular-nums">${fmt(p.average_cost ?? 0)}</td>
+                    <td className="px-4 py-2.5 text-end tabular-nums">${fmt(p.cost_value)}</td>
+                    <td className="px-4 py-2.5 text-end tabular-nums">${fmt(p.sale_value)}</td>
+                    <td className="px-4 py-2.5 text-end text-xs text-muted-foreground">{p.latest_receipt_date?.slice(0, 10) ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-end text-muted-foreground">{p.receipt_count}</td>
                   </tr>
                 ))}
               </tbody>
@@ -315,7 +315,7 @@ function PurchaseOrdersTab({ supplierId }: { supplierId: string }) {
             <thead>
               <tr className="border-b bg-muted/40">
                 {['PO #', 'Date', 'Expected', 'Status', 'Total'].map((h, i) => (
-                  <th key={h} className={`px-4 py-2.5 text-xs font-medium text-muted-foreground ${i === 4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                  <th key={h} className={`px-4 py-2.5 text-xs font-medium text-muted-foreground ${i === 4 ? 'text-end' : 'text-start'}`}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -326,7 +326,7 @@ function PurchaseOrdersTab({ supplierId }: { supplierId: string }) {
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">{po.order_date}</td>
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">{po.expected_date ?? '—'}</td>
                   <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{po.status_label}</Badge></td>
-                  <td className="px-4 py-2.5 text-right tabular-nums font-medium">${fmt(po.grand_total)}</td>
+                  <td className="px-4 py-2.5 text-end tabular-nums font-medium">${fmt(po.grand_total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -357,7 +357,7 @@ function GoodsReceiptsTab({ supplierId }: { supplierId: string }) {
             <thead>
               <tr className="border-b bg-muted/40">
                 {['Receipt #', 'Date', 'PO #', 'Status', 'Invoice Total', 'Outstanding'].map((h, i) => (
-                  <th key={h} className={`px-4 py-2.5 text-xs font-medium text-muted-foreground ${i >= 4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                  <th key={h} className={`px-4 py-2.5 text-xs font-medium text-muted-foreground ${i >= 4 ? 'text-end' : 'text-start'}`}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -368,8 +368,8 @@ function GoodsReceiptsTab({ supplierId }: { supplierId: string }) {
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">{gr.receipt_date}</td>
                   <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono">{gr.purchase_order?.po_number ?? '—'}</td>
                   <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{gr.payment_status_label}</Badge></td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">${fmt(gr.invoice_total_amount)}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums font-medium text-destructive">
+                  <td className="px-4 py-2.5 text-end tabular-nums">${fmt(gr.invoice_total_amount)}</td>
+                  <td className="px-4 py-2.5 text-end tabular-nums font-medium text-destructive">
                     {gr.outstanding_amount > 0 ? `$${fmt(gr.outstanding_amount)}` : '—'}
                   </td>
                 </tr>
@@ -563,7 +563,7 @@ function PriceHistoryTab({ supplierId }: { supplierId: string }) {
               <thead>
                 <tr className="border-b bg-muted/40">
                   {['Date', 'PO #', 'Product', 'Warehouse', 'Qty', 'Unit Cost', 'Landed', 'vs Previous', '% Change'].map((h, i) => (
-                    <th key={h} className={`px-3 py-2.5 text-xs font-medium text-muted-foreground ${i >= 4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                    <th key={h} className={`px-3 py-2.5 text-xs font-medium text-muted-foreground ${i >= 4 ? 'text-end' : 'text-start'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -577,15 +577,15 @@ function PriceHistoryTab({ supplierId }: { supplierId: string }) {
                       <p className="text-[10px] text-muted-foreground font-mono">{r.product_sku}</p>
                     </td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{r.warehouse_name}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-xs">{fmt(r.quantity, 2)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-sm font-medium">${fmt(r.unit_cost, 4)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-xs text-muted-foreground">
+                    <td className="px-3 py-2.5 text-end tabular-nums text-xs">{fmt(r.quantity, 2)}</td>
+                    <td className="px-3 py-2.5 text-end tabular-nums text-sm font-medium">${fmt(r.unit_cost, 4)}</td>
+                    <td className="px-3 py-2.5 text-end tabular-nums text-xs text-muted-foreground">
                       {r.landed_unit_cost != null ? `$${fmt(r.landed_unit_cost, 4)}` : '—'}
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-xs text-muted-foreground">
+                    <td className="px-3 py-2.5 text-end tabular-nums text-xs text-muted-foreground">
                       {r.previous_price != null ? `$${fmt(r.previous_price, 4)}` : '—'}
                     </td>
-                    <td className="px-3 py-2.5 text-right"><PriceChange entry={r} /></td>
+                    <td className="px-3 py-2.5 text-end"><PriceChange entry={r} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -615,8 +615,8 @@ function ScoreBar({ score, weight }: { score: number; weight: number }) {
       <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
         <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${score}%` }} />
       </div>
-      <span className="text-xs tabular-nums w-10 text-right font-medium">{score.toFixed(0)}</span>
-      <span className="text-[10px] text-muted-foreground w-8 text-right">{(weight * 100).toFixed(0)}%</span>
+      <span className="text-xs tabular-nums w-10 text-end font-medium">{score.toFixed(0)}</span>
+      <span className="text-[10px] text-muted-foreground w-8 text-end">{(weight * 100).toFixed(0)}%</span>
     </div>
   );
 }
@@ -882,7 +882,7 @@ function TimelineTab({ supplierId }: { supplierId: string }) {
                           <p className="text-xs font-mono text-muted-foreground mt-0.5">{event.reference}</p>
                         )}
                       </div>
-                      <div className="text-right shrink-0">
+                      <div className="text-end shrink-0">
                         <p className="text-xs text-muted-foreground tabular-nums">
                           {event.occurred_at?.slice(0, 10)}
                         </p>
@@ -930,7 +930,7 @@ function AiReadyTab() {
               <p className="text-sm font-medium">{a.label}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{a.desc}</p>
             </div>
-            <Badge variant="secondary" className="ml-auto shrink-0 text-[10px]">Soon</Badge>
+            <Badge variant="secondary" className="ms-auto shrink-0 text-[10px]">Soon</Badge>
           </div>
         ))}
       </div>

@@ -1,0 +1,69 @@
+{
+  "title": "وصفات الإنتاج",
+  "subtitle": "قوائم المكونات ووصفات الإنتاج للسلع الجاهزة.",
+  "search": "بحث بالمنتج أو الرمز…",
+  "actions": {
+    "new": "وصفة جديدة",
+    "edit": "تعديل الوصفة",
+    "duplicate": "تكرار",
+    "archive": "أرشفة",
+    "viewCost": "عرض تفاصيل التكلفة"
+  },
+  "columns": {
+    "product": "المنتج النهائي",
+    "sku": "الرمز",
+    "version": "الإصدار",
+    "yieldQty": "كمية الإنتاج",
+    "yieldUnit": "وحدة الإنتاج",
+    "totalCost": "تكلفة المواد",
+    "status": "الحالة",
+    "updatedAt": "آخر تحديث"
+  },
+  "status": {
+    "active": "نشطة",
+    "draft": "مسودة",
+    "archived": "مؤرشفة"
+  },
+  "form": {
+    "product": { "label": "المنتج النهائي", "placeholder": "اختر منتجاً…" },
+    "version": { "label": "الإصدار", "placeholder": "1.0" },
+    "yieldQty": { "label": "كمية الإنتاج" },
+    "yieldUnit": { "label": "وحدة الإنتاج", "placeholder": "اختر وحدة…" },
+    "notes": { "label": "ملاحظات الإنتاج", "placeholder": "ملاحظات اختيارية…" }
+  },
+  "ingredients": {
+    "title": "المكونات",
+    "addIngredient": "إضافة مكوّن",
+    "columns": {
+      "material": "المادة الخام",
+      "quantity": "الكمية",
+      "unit": "الوحدة",
+      "unitCost": "تكلفة الوحدة",
+      "totalCost": "إجمالي التكلفة"
+    },
+    "selectMaterial": "اختر مادة خام…",
+    "noIngredients": "لم تُضف مكونات بعد."
+  },
+  "cost": {
+    "title": "تفاصيل التكلفة",
+    "materialCost": "إجمالي تكلفة المواد",
+    "costPerUnit": "التكلفة لكل وحدة إنتاج",
+    "suggestedPrice": "السعر المقترح للبيع",
+    "margin": "هامش الربح المستهدف"
+  },
+  "drawer": {
+    "createTitle": "وصفة جديدة",
+    "editTitle": "تعديل الوصفة",
+    "createSubtitle": "تحديد قائمة مكونات المنتج النهائي.",
+    "editSubtitle": "تحديث المكونات وتفاصيل الإنتاج.",
+    "submitCreate": "إنشاء الوصفة",
+    "submitEdit": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "errorTitle": "تعذر الحفظ"
+  },
+  "delete": {
+    "title": "حذف الوصفة",
+    "description": "حذف وصفة {{product}}؟ لا يمكن التراجع عن هذا الإجراء.",
+    "confirm": "حذف"
+  }
+}

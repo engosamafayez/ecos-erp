@@ -10,34 +10,44 @@ import type { Order, OrderStatus } from '@/features/orders/types/order';
 
 export type BulkActionKey =
   | 'confirm'
+  | 'move_to_awaiting_payment'
   | 'verify_payment'
   | 'move_to_preparation'
+  | 'return_to_preparation'
   | 'awaiting_stock'
+  | 'retry_reservation'
+  | 'start_manufacturing'
+  | 'purchase_materials'
   | 'resume'
   | 'resume_confirmed'
   | 'dispatch'
   | 'complete_delivery'
   | 'complete'
+  | 'delivery_failed'
   | 'reschedule'
   | 'review'
   | 'return'
   | 'return_to_confirmed'
+  | 'inspect_return'
+  | 'return_to_stock'
+  | 'scrap'
   | 'cancel';
 
-// ── Part 1: Dynamic Transition Matrix ────────────────────────────────────────
-// Maps each status to the set of bulk operations valid from that state.
-// This is the single source of truth for what operations are permitted per status.
+// ── Part 1: Context-Aware Transition Matrix ───────────────────────────────────
+// Maps each order status to the set of bulk operations valid from that state.
+// This is the single source of truth for allowed operations per status.
+// Mixed selections show only the INTERSECTION of valid actions.
 
 const BULK_TRANSITION_MATRIX: Record<OrderStatus, BulkActionKey[]> = {
-  pending:          ['confirm', 'cancel'],
-  awaiting_payment: ['verify_payment', 'confirm', 'cancel'],
-  processing:       ['move_to_preparation', 'awaiting_stock', 'review', 'cancel'],
-  awaiting_stock:   ['resume', 'cancel'],
-  confirmed:        ['move_to_preparation', 'reschedule', 'cancel'],
-  preparing:        ['dispatch', 'reschedule', 'review', 'cancel'],
-  out_for_delivery: ['complete_delivery', 'return', 'reschedule', 'review'],
-  delivered:        ['complete', 'review', 'resume', 'resume_confirmed', 'reschedule', 'cancel'],
-  returned:         ['return_to_confirmed', 'reschedule', 'review', 'cancel'],
+  pending:          ['confirm', 'move_to_awaiting_payment', 'cancel'],
+  awaiting_payment: ['confirm', 'cancel'],
+  processing:       ['move_to_preparation', 'cancel'],
+  awaiting_stock:   ['retry_reservation', 'start_manufacturing', 'purchase_materials'],
+  confirmed:        ['move_to_preparation', 'cancel'],
+  preparing:        ['dispatch', 'return_to_preparation'],
+  out_for_delivery: ['complete_delivery', 'return', 'delivery_failed'],
+  delivered:        ['complete', 'resume_confirmed'],
+  returned:         ['inspect_return', 'return_to_stock', 'scrap'],
   review:           ['resume', 'reschedule', 'cancel'],
   rescheduled:      ['resume', 'reschedule', 'cancel'],
   completed:        [],
@@ -46,26 +56,66 @@ const BULK_TRANSITION_MATRIX: Record<OrderStatus, BulkActionKey[]> = {
 
 // Display config for each action key (destructive styling + separator before it).
 const BULK_ACTION_DISPLAY: Partial<Record<BulkActionKey, { destructive?: boolean; separator?: boolean }>> = {
+  scrap:  { destructive: true, separator: true },
   cancel: { destructive: true, separator: true },
 };
 
 // Canonical order for rendering — ensures stable, predictable button order.
 const BULK_ACTION_ORDER: BulkActionKey[] = [
   'confirm',
+  'move_to_awaiting_payment',
   'verify_payment',
   'move_to_preparation',
+  'return_to_preparation',
   'dispatch',
   'complete_delivery',
   'complete',
+  'retry_reservation',
+  'start_manufacturing',
+  'purchase_materials',
   'awaiting_stock',
   'resume',
   'resume_confirmed',
   'return_to_confirmed',
+  'delivery_failed',
+  'inspect_return',
+  'return_to_stock',
   'reschedule',
   'review',
   'return',
+  'scrap',
   'cancel',
 ];
+
+// Actions that cannot be undone — shown with an irreversible warning in the dialog.
+export const IRREVERSIBLE_BULK_ACTIONS = new Set<BulkActionKey>(['cancel', 'complete', 'scrap']);
+
+// Human-readable target outcome for each action (used in confirmation dialog).
+export const BULK_ACTION_TARGET_LABEL: Partial<Record<BulkActionKey, string>> = {
+  confirm:                  'Confirmed',
+  move_to_awaiting_payment: 'Awaiting Payment',
+  verify_payment:           'Confirmed',
+  move_to_preparation:      'Preparing',
+  return_to_preparation:    'Preparing (Reset)',
+  dispatch:                 'Out for Delivery',
+  complete_delivery:        'Delivered',
+  complete:                 'Completed',
+  retry_reservation:        'Processing',
+  start_manufacturing:      'Manufacturing Started',
+  purchase_materials:       'Procurement Queue',
+  awaiting_stock:           'Awaiting Stock',
+  resume:                   'Processing',
+  resume_confirmed:         'Confirmed',
+  return_to_confirmed:      'Confirmed',
+  delivery_failed:          'Under Review',
+  inspect_return:           'Return Inspection',
+  return_to_stock:          'Returned to Stock',
+  scrap:                    'Scrapped',
+  reschedule:               'Rescheduled',
+  review:                   'Under Review',
+  return:                   'Returned',
+  cancel:                   'Cancelled',
+};
 
 /**
  * Computes the intersection of valid bulk actions across all selected orders.

@@ -232,7 +232,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
                             </p>
                           )}
                         </div>
-                        <div className="text-right">
+                        <div className="text-end">
                           <p className="text-sm font-semibold">
                             SAR {line.total_cost.toLocaleString()}
                           </p>

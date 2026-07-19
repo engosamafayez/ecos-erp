@@ -10,6 +10,14 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// ARCH-003 — Activate Scheduled orders whose delivery date has arrived.
+// Runs at 00:05 daily so orders are in the operational queue for the morning shift.
+// withoutOverlapping() prevents concurrent runs on large order volumes.
+Schedule::command('orders:activate-scheduled')
+    ->dailyAt('00:05')
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // CR-PREP-001 — Auto-create daily preparation sessions for all active warehouses.
 // Runs at 06:00 every day; ensureSessionExists() is idempotent so double-runs are safe.
 Schedule::command('preparation:create-daily-sessions')

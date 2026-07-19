@@ -14,7 +14,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
+use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
+use Modules\Commerce\Orders\Domain\Exceptions\UnauthorizedOrderStatusWriteException;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
+use Modules\Operations\Fulfillment\Application\OrderStatusGuard;
 use Modules\Sales\Customers\Domain\Models\Customer;
 
 /**
@@ -97,6 +100,8 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property float|null $google_maps_lng
  * @property string|null $google_maps_url
  * @property string|null $location_source
+ * @property string|null $reservation_status
+ * @property string|null $reservation_failure_reason
  */
 class Order extends Model
 {
@@ -117,6 +122,18 @@ class Order extends Model
                 return; // super-admin sees all orders
             }
             $query->where('company_id', $companyId);
+        });
+
+        // P9 — Architecture enforcement: status may only change through FulfillmentEngine::run().
+        // Any direct $order->update(['status' => ...]) outside the engine throws here.
+        // LoadVehicleWorkflow is the only authorized non-engine caller (uses OrderStatusGuard::withAuthorization).
+        static::updating(static function (Order $order): void {
+            if ($order->isDirty('status') && ! OrderStatusGuard::isActive()) {
+                throw new UnauthorizedOrderStatusWriteException(
+                    "Unauthorized direct write to Order[{$order->id}].status detected. " .
+                    'All status transitions must go through FulfillmentEngine::run($workflow, $order).'
+                );
+            }
         });
     }
 
@@ -225,6 +242,9 @@ class Order extends Model
         'previous_status',
         'status_entered_by',
         'status_entered_at',
+        // Reservation lifecycle (TASK-INV-RESERVATION-LIFECYCLE-001)
+        'reservation_status',
+        'reservation_failure_reason',
     ];
 
     /**
@@ -261,6 +281,7 @@ class Order extends Model
             'customer_confirmed_at'       => 'datetime',
             'shipping_attempts'           => 'integer',
             'status_entered_at'           => 'datetime',
+            'reservation_status'          => ReservationStatus::class,
         ];
     }
 

@@ -38,20 +38,20 @@ export function DriverCollectionsPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base">Collections</h1>
+        <h1 className="font-semibold text-base">التحصيلات</h1>
       </div>
 
       <div className="p-4 space-y-4">
         {/* Summary */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: 'Cash',     value: totals.cash, color: 'text-green-600' },
-            { label: 'Bank',     value: totals.bank, color: 'text-blue-600'  },
-            { label: 'Pre-Paid', value: totals.paid, color: 'text-gray-600'  },
+            { label: 'نقداً',          value: totals.cash, color: 'text-green-600' },
+            { label: 'تحويل بنكي',    value: totals.bank, color: 'text-blue-600'  },
+            { label: 'مدفوع مسبقاً',  value: totals.paid, color: 'text-gray-600'  },
           ].map((t) => (
             <div key={t.label} className="rounded-lg border p-3 text-center">
               <p className={`font-bold text-sm ${t.color}`}>
-                {t.value.toLocaleString('en-EG', { minimumFractionDigits: 2 })}
+                {t.value.toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
               </p>
               <p className="text-xs text-muted-foreground">{t.label}</p>
             </div>
@@ -74,18 +74,18 @@ export function DriverCollectionsPage() {
                       {PAYMENT_TYPE_LABELS[col.payment_type] ?? col.payment_type}
                     </span>
                     <span className="font-semibold text-sm">
-                      EGP {Number(col.amount).toLocaleString('en-EG', { minimumFractionDigits: 2 })}
+                      EGP {Number(col.amount).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   {col.reference_number && (
-                    <p className="text-xs text-muted-foreground">Ref: {col.reference_number}</p>
+                    <p className="text-xs text-muted-foreground">مرجع: {col.reference_number}</p>
                   )}
                   <div className="flex items-center justify-between mt-0.5">
                     <Badge variant="outline" className="text-xs">
                       {col.status}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(col.created_at).toLocaleTimeString('en-EG', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(col.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 </div>
@@ -93,7 +93,7 @@ export function DriverCollectionsPage() {
             ))
           ) : (
             <p className="text-center text-sm text-muted-foreground py-10">
-              No payments collected yet.
+              لا توجد دفعات محصّلة بعد.
             </p>
           )}
         </div>

@@ -7,10 +7,19 @@ namespace Modules\Commerce\Orders\Application\Actions;
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Modules\Commerce\Orders\Application\Actions\ReleaseOrderInventoryAction;
+use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
+use Modules\Commerce\Orders\Application\Actions\UpdateReservationStatusAction;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
+use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
+use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReleasedException;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderNotFoundException;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
+use Modules\Sales\Customers\Domain\Models\Customer;
+use Modules\Sales\Customers\Domain\Models\CustomerAddress;
 
 final class UpdateOrderAction extends BaseAction
 {
@@ -40,7 +49,12 @@ final class UpdateOrderAction extends BaseAction
         'discount_amount', 'discount_type',
     ];
 
-    public function __construct(private readonly OrderRepositoryInterface $orders) {}
+    public function __construct(
+        private readonly OrderRepositoryInterface     $orders,
+        private readonly ReleaseOrderInventoryAction  $releaseInventory,
+        private readonly ReserveOrderInventoryAction  $reserveInventory,
+        private readonly UpdateReservationStatusAction $updateReservationStatus,
+    ) {}
 
     public function execute(mixed ...$arguments): OperationResult
     {
@@ -128,7 +142,69 @@ final class UpdateOrderAction extends BaseAction
             $attributes['total']             = $grandTotal;
             $attributes['remaining_balance'] = max(0.0, round($grandTotal - $depositAmount, 2));
 
-            $updated = $this->orders->update($order, $attributes, $dto->lineAttributes());
+            // BUG-001 fix: detect whether the order has an active reservation before
+            // deleting lines. If so, release it first so per-line reserved_qty is returned
+            // to the inventory item's available pool. Then update lines. Then re-reserve
+            // against the new lines. Without this, deleting lines orphans the reservation:
+            // stock remains locked in inventory_items.reserved_qty but no order line tracks it.
+            $activeReservationStates = [ReservationStatus::Reserved, ReservationStatus::PartialReserved];
+            $hasActiveReservation    = in_array($order->reservation_status, $activeReservationStates, true)
+                && $order->inventory_reserved_at !== null
+                && $order->assigned_warehouse_id !== null;
+
+            $updated = DB::transaction(function () use ($order, $attributes, $dto, $hasActiveReservation): \Modules\Commerce\Orders\Domain\Models\Order {
+                if ($hasActiveReservation) {
+                    try {
+                        // Release existing reservation — decrements inventory_items.reserved_qty
+                        // per line using the OLD line quantities.
+                        $this->releaseInventory->execute($order);
+                    } catch (OrderAlreadyReleasedException) {
+                        // Already released — nothing to unlock; proceed normally.
+                    }
+                    $order->refresh();
+                }
+
+                // Delete old lines + create new lines (structural update).
+                $updated = $this->orders->update($order, $attributes, $dto->lineAttributes());
+
+                if ($hasActiveReservation) {
+                    // Clear the lifecycle timestamps that the release action stamped so that
+                    // ReserveOrderInventoryAction will execute (its idempotency guard skips
+                    // 'released' and 'reserved' states).
+                    // H-4 fix: also clear partial_reservation_approved_at — after a structural
+                    // edit the order lines change, so the previous shortage approval is stale.
+                    $updated->update([
+                        'inventory_released_at'           => null,
+                        'inventory_reserved_at'           => null,
+                        'reservation_status'              => null,
+                        'reservation_failure_reason'      => null,
+                        'partial_reservation_approved_at' => null,
+                    ]);
+                    $updated->refresh();
+
+                    // Re-reserve for the NEW line quantities.
+                    try {
+                        $this->reserveInventory->execute($updated);
+                        $updated->refresh();
+                    } catch (\Throwable $e) {
+                        Log::channel('daily')->warning('[UpdateOrder] Re-reserve after structural edit failed', [
+                            'order_id' => $updated->id,
+                            'error'    => $e->getMessage(),
+                        ]);
+                        // Mark the order as awaiting stock so it is not left with a null
+                        // reservation_status while still appearing active. The operator will
+                        // see it in the AwaitingStock queue and can retry when stock is ready.
+                        $this->updateReservationStatus->execute(
+                            $updated,
+                            ReservationStatus::AwaitingStock,
+                            'Re-reservation failed after structural order edit: ' . $e->getMessage(),
+                        );
+                        $updated->refresh();
+                    }
+                }
+
+                return $updated;
+            });
         }
 
         $actorId   = Auth::id() !== null ? (string) Auth::id() : null;
@@ -154,6 +230,11 @@ final class UpdateOrderAction extends BaseAction
             }
         }
 
+        // Keep the customer's delivery profile in sync with the order's latest address data.
+        if ($order->customer_id !== null) {
+            $this->syncCustomerDefaultAddress((string) $order->customer_id, $extraData);
+        }
+
         OrderEvent::log(
             $updated->id,
             'order_updated',
@@ -176,5 +257,62 @@ final class UpdateOrderAction extends BaseAction
         );
 
         return OperationResult::success($updated, 'Order updated successfully.');
+    }
+
+    /**
+     * Upserts the customer's default delivery address using non-null address fields
+     * from the order update payload. Null values are skipped so that fields not
+     * present in this particular update don't overwrite existing stored data.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function syncCustomerDefaultAddress(string $customerId, array $data): void
+    {
+        $governorate = $data['governorate'] ?? null;
+        $city        = $data['city']        ?? null;
+
+        if ($governorate === null && $city === null) {
+            return;
+        }
+
+        $fields = [
+            'governorate'     => $governorate,
+            'city'            => $city,
+            'area'            => $data['area']             ?? null,
+            'address_line'    => $data['shipping_address'] ?? null,
+            'building'        => $data['building']         ?? null,
+            'floor'           => $data['floor']            ?? null,
+            'apartment'       => $data['apartment']        ?? null,
+            'landmark'        => $data['landmark']         ?? null,
+            'address_notes'   => $data['address_notes']    ?? null,
+            'google_maps_lat' => $data['google_maps_lat']  ?? null,
+            'google_maps_lng' => $data['google_maps_lng']  ?? null,
+            'google_maps_url' => $data['google_maps_url']  ?? null,
+            'location_source' => $data['location_source']  ?? null,
+        ];
+
+        $updates = array_filter($fields, static fn ($v) => $v !== null);
+
+        if (empty($updates)) {
+            return;
+        }
+
+        $existing = CustomerAddress::where('customer_id', $customerId)
+            ->where('is_default', true)
+            ->first();
+
+        if ($existing !== null) {
+            $existing->update($updates);
+        } else {
+            CustomerAddress::create(array_merge($updates, [
+                'customer_id' => $customerId,
+                'label'       => 'Default',
+                'is_default'  => true,
+            ]));
+        }
+
+        if (! empty($data['customer_notes'])) {
+            Customer::where('id', $customerId)->update(['notes' => $data['customer_notes']]);
+        }
     }
 }

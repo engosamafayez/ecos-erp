@@ -19,11 +19,11 @@ export function OrderTotalsLive() {
     <div className="flex flex-col items-end gap-1 border-t pt-3 text-sm">
       <div className="flex gap-8">
         <span className="text-muted-foreground">Subtotal</span>
-        <span className="w-28 text-right font-medium">{fmt(subtotal)}</span>
+        <span className="w-28 text-end font-medium">{fmt(subtotal)}</span>
       </div>
       <div className="flex gap-8 text-base font-semibold">
         <span>Total</span>
-        <span className="w-28 text-right">{fmt(subtotal)}</span>
+        <span className="w-28 text-end">{fmt(subtotal)}</span>
       </div>
     </div>
   );

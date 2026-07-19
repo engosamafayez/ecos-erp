@@ -8,11 +8,23 @@ export type DatePreset =
   | 'last_month'
   | 'custom';
 
+// ── Reservation Status (TASK-INV-RESERVATION-LIFECYCLE-001) ──────────────────
+export type ReservationStatus =
+  | 'pending'
+  | 'reserved'
+  | 'partial_reserved'
+  | 'awaiting_stock'
+  | 'released'
+  | 'transferred'
+  | 'consumed'
+  | 'failed';
+
 // ── Status ────────────────────────────────────────────────────────────────────
 // V2 lifecycle (TASK-ORDER-WORKFLOW-V2-001).
 // Cancelled is no longer terminal — orders may be reopened.
 // Completed is the only true terminal state (financial closure).
 export type OrderStatus =
+  | 'scheduled'
   | 'pending'
   | 'awaiting_payment'   // V2 label: "Payment"
   | 'processing'
@@ -34,6 +46,7 @@ export type OrderStatus =
  */
 export const STATUS_TAB_ORDER: Array<OrderStatus | 'all'> = [
   'all',
+  'scheduled',
   'pending',
   'awaiting_payment',
   'processing',
@@ -146,6 +159,8 @@ export type Order = {
   inventory_reserved_at: string | null;
   inventory_released_at: string | null;
   inventory_shipped_at: string | null;
+  reservation_status: ReservationStatus | null;
+  reservation_failure_reason: string | null;
   subtotal: number;
   shipping_total: number;
   discount_total: number;
@@ -312,7 +327,7 @@ export type OrdersQuery = {
   payment_method?: string;
   payment_status?: 'paid' | 'partial' | 'unpaid';
   has_payment_proof?: boolean;
-  reservation_status?: 'reserved' | 'not_reserved';
+  reservation_status?: ReservationStatus;
   shipping_company?: string;
   date_from?: string;
   date_to?: string;
@@ -496,6 +511,7 @@ export type CustomerAddress = {
   google_maps_lat: number | null;
   google_maps_lng: number | null;
   google_maps_url: string | null;
+  location_source: string | null;
 };
 
 export type CustomerLookupCustomer = {

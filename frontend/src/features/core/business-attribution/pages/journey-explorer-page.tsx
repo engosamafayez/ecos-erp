@@ -112,13 +112,13 @@ export function JourneyExplorerPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wide">
             <tr>
-              <th className="text-left px-3 py-2 font-medium">Entity</th>
-              <th className="text-left px-3 py-2 font-medium">Type</th>
-              <th className="text-left px-3 py-2 font-medium">Attribution</th>
-              <th className="text-left px-3 py-2 font-medium">Stages</th>
-              <th className="text-right px-3 py-2 font-medium">Journey Time</th>
-              <th className="text-left px-3 py-2 font-medium">Acquired</th>
-              <th className="text-left px-3 py-2 font-medium">Converted</th>
+              <th className="text-start px-3 py-2 font-medium">Entity</th>
+              <th className="text-start px-3 py-2 font-medium">Type</th>
+              <th className="text-start px-3 py-2 font-medium">Attribution</th>
+              <th className="text-start px-3 py-2 font-medium">Stages</th>
+              <th className="text-end px-3 py-2 font-medium">Journey Time</th>
+              <th className="text-start px-3 py-2 font-medium">Acquired</th>
+              <th className="text-start px-3 py-2 font-medium">Converted</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
@@ -171,7 +171,7 @@ export function JourneyExplorerPage() {
                       )}
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-right text-xs tabular-nums">
+                  <td className="px-3 py-2 text-end text-xs tabular-nums">
                     {fmtDuration(dna.metrics?.total_journey_time_s ?? null)}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">

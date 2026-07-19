@@ -60,21 +60,21 @@ function stockStatusConfig(availableQty: number | null | undefined, allowNegativ
   const status = resolveMaterialStockStatus(availableQty, allowNegativeStock);
   if (status === 'in_stock') {
     return {
-      label: 'In Stock',
+      label: 'متوفر',
       dot:   'bg-emerald-500',
       text:  'text-emerald-700 dark:text-emerald-400',
       badge: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800',
     };
   }
   return {
-    label: 'Out of Stock',
+    label: 'نفد المخزون',
     dot:   'bg-red-500',
     text:  'text-red-700 dark:text-red-400',
     badge: 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800',
   };
 }
 
-function formatCost(cost: number | null | undefined, unit?: string, currency = 'EGP', locale = 'en-EG'): string {
+function formatCost(cost: number | null | undefined, unit?: string, currency = 'EGP', locale = 'ar-EG'): string {
   if (cost == null) return '—';
   const formatted = formatMoney(cost, currency, locale);
   return unit ? `${formatted} / ${unit}` : formatted;
@@ -83,7 +83,7 @@ function formatCost(cost: number | null | undefined, unit?: string, currency = '
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('en-EG', {
+    return new Date(iso).toLocaleDateString('ar-EG', {
       year:  'numeric',
       month: 'short',
       day:   'numeric',
@@ -96,7 +96,7 @@ function formatDate(iso: string | null | undefined): string {
 function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString('en-EG', {
+    return new Date(iso).toLocaleString('ar-EG', {
       month:  'short',
       day:    'numeric',
       hour:   '2-digit',
@@ -110,17 +110,17 @@ function formatDateTime(iso: string | null | undefined): string {
 function movementTypeMeta(type: MovementType): { label: string; color: string } {
   switch (type) {
     case 'purchase_receipt':
-      return { label: 'Purchase',     color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' };
+      return { label: 'استلام شراء',  color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' };
     case 'transfer_in':
-      return { label: 'Transfer In',  color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' };
+      return { label: 'نقل وارد',     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' };
     case 'transfer_out':
-      return { label: 'Transfer Out', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' };
+      return { label: 'نقل صادر',     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' };
     case 'adjustment_in':
-      return { label: 'Adj. In',      color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' };
+      return { label: 'تسوية وارد',   color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' };
     case 'adjustment_out':
-      return { label: 'Adj. Out',     color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300' };
+      return { label: 'تسوية صادر',   color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300' };
     case 'sales_issue':
-      return { label: 'Sales Issue',  color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' };
+      return { label: 'إصدار مبيعات', color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' };
     default:
       return { label: type,           color: 'bg-muted text-muted-foreground' };
   }
@@ -226,7 +226,7 @@ function SmartStatusPanel({
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium uppercase tracking-wide">
           <DollarSign className="size-3.5 flex-none text-blue-500" />
-          <span>Material Cost</span>
+          <span>تكلفة المادة</span>
           {source && (
             <span
               className={cn(
@@ -236,7 +236,7 @@ function SmartStatusPanel({
                   : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
               )}
             >
-              {source === 'purchase_invoice' ? 'PO' : 'Manual'}
+              {source === 'purchase_invoice' ? 'PO' : 'يدوي'}
             </span>
           )}
         </div>
@@ -262,33 +262,33 @@ function SmartStatusPanel({
       </div>
 
       <StatTile
-        label="Unit of Measure"
+        label="وحدة القياس"
         value={material.unit?.name ?? '—'}
         icon={Box}
         iconClass="text-amber-500"
       />
       <StatTile
-        label="Category"
+        label="الفئة"
         value={material.category?.name ?? '—'}
         icon={Tag}
         iconClass="text-cyan-500"
       />
       <StatTile
-        label="Min. Before Purchase"
+        label="الحد الأدنى قبل الشراء"
         value={material.reorder_point != null ? String(material.reorder_point) : '—'}
         sub={material.reorder_point != null ? material.unit?.name : undefined}
         icon={TrendingDown}
         iconClass="text-orange-500"
       />
       <StatTile
-        label="Min. Stock"
+        label="الحد الأدنى للمخزون"
         value={material.minimum_stock != null ? String(material.minimum_stock) : '—'}
         sub={material.minimum_stock != null ? material.unit?.name : undefined}
         icon={Package}
         iconClass="text-green-500"
       />
       <StatTile
-        label="Last Updated"
+        label="آخر تحديث"
         value={formatDate(material.updated_at)}
         icon={Calendar}
         iconClass="text-slate-400"
@@ -309,9 +309,9 @@ function OverviewTab({ material }: { material: RawMaterial }) {
   return (
     <div className="space-y-7">
       <div>
-        <SectionTitle>General Information</SectionTitle>
+        <SectionTitle>المعلومات العامة</SectionTitle>
         <DetailGrid>
-          <DetailRow label="Full Name" value={material.name} />
+          <DetailRow label="الاسم الكامل" value={material.name} />
           <DetailRow
             label="SKU"
             value={
@@ -320,11 +320,11 @@ function OverviewTab({ material }: { material: RawMaterial }) {
               </code>
             }
           />
-          <DetailRow label="Category"        value={material.category?.name} />
-          <DetailRow label="Unit of Measure" value={material.unit?.name} />
-          <DetailRow label="Product Type"    value="Raw Material" />
-          <DetailRow label="Created" value={formatDate(material.created_at)} />
-          <DetailRow label="Updated" value={formatDate(material.updated_at)} />
+          <DetailRow label="الفئة"       value={material.category?.name} />
+          <DetailRow label="وحدة القياس" value={material.unit?.name} />
+          <DetailRow label="نوع المادة"  value="مادة خام" />
+          <DetailRow label="تاريخ الإنشاء" value={formatDate(material.created_at)} />
+          <DetailRow label="آخر تحديث"   value={formatDate(material.updated_at)} />
         </DetailGrid>
       </div>
 
@@ -332,7 +332,7 @@ function OverviewTab({ material }: { material: RawMaterial }) {
         <>
           <Separator />
           <div>
-            <SectionTitle>Description</SectionTitle>
+            <SectionTitle>الوصف</SectionTitle>
             {(material.short_description ?? material.description) && (
               <p className="text-sm text-foreground mb-2">
                 {material.short_description ?? material.description}
@@ -350,22 +350,22 @@ function OverviewTab({ material }: { material: RawMaterial }) {
       <Separator />
 
       <div>
-        <SectionTitle>Inventory Rules</SectionTitle>
+        <SectionTitle>قواعد المخزون</SectionTitle>
         <DetailGrid>
           <DetailRow
-            label="Minimum Stock"
+            label="الحد الأدنى للمخزون"
             value={material.minimum_stock != null ? `${material.minimum_stock} ${material.unit?.name ?? ''}` : null}
           />
           <DetailRow
-            label="Minimum Available Before Purchase"
+            label="الحد الأدنى المتاح قبل الشراء"
             value={material.reorder_point != null ? `${material.reorder_point} ${material.unit?.name ?? ''}` : null}
           />
           <DetailRow
-            label="Allow Negative Stock"
-            value={material.allow_negative_stock ? 'Allowed' : 'Blocked'}
+            label="المخزون السالب"
+            value={material.allow_negative_stock ? 'مسموح' : 'محظور'}
           />
           <DetailRow
-            label="Preferred Warehouse"
+            label="المستودع المفضّل"
             value={material.preferred_warehouse_id ?? null}
           />
         </DetailGrid>
@@ -374,23 +374,23 @@ function OverviewTab({ material }: { material: RawMaterial }) {
       <Separator />
 
       <div>
-        <SectionTitle>Cost</SectionTitle>
+        <SectionTitle>التكلفة</SectionTitle>
         <DetailGrid>
           <DetailRow
-            label="Current Cost"
+            label="التكلفة الحالية"
             value={formatCost(material.material_cost, material.unit?.name, currency, locale)}
           />
           <DetailRow
-            label="Last Updated"
+            label="آخر تحديث"
             value={formatDate(material.updated_at)}
           />
           <DetailRow
-            label="Source"
+            label="المصدر"
             value={
               material.cost_source === 'manual'
-                ? 'Manual'
+                ? 'يدوي'
                 : material.cost_source === 'purchase'
-                  ? 'Purchase Invoice'
+                  ? 'فاتورة شراء'
                   : '—'
             }
           />
@@ -400,16 +400,16 @@ function OverviewTab({ material }: { material: RawMaterial }) {
       <Separator />
 
       <div>
-        <SectionTitle>Purchasing</SectionTitle>
+        <SectionTitle>المشتريات</SectionTitle>
         <DetailGrid>
           <DetailRow
-            label="Lead Time"
+            label="مدة التوريد"
             value={material.purchasing_lead_time_days != null
-              ? `${material.purchasing_lead_time_days} days`
+              ? `${material.purchasing_lead_time_days} أيام`
               : null}
           />
           <DetailRow
-            label="Min. Order Qty"
+            label="الحد الأدنى لكمية الطلب"
             value={material.purchasing_minimum_order_qty != null
               ? `${material.purchasing_minimum_order_qty} ${material.unit?.name ?? ''}`
               : null}
@@ -421,7 +421,7 @@ function OverviewTab({ material }: { material: RawMaterial }) {
         <>
           <Separator />
           <div>
-            <SectionTitle>Internal Notes</SectionTitle>
+            <SectionTitle>ملاحظات داخلية</SectionTitle>
             <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
               {material.internal_notes}
             </p>
@@ -436,11 +436,11 @@ function OverviewTab({ material }: { material: RawMaterial }) {
 
 function fmtQtyStr(n: number | null | undefined, unit?: string): string {
   if (n == null) return '—';
-  const fmt = n.toLocaleString('en-EG', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+  const fmt = n.toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
   return unit ? `${fmt} ${unit}` : fmt;
 }
 
-function fmtCostStr(n: number | null | undefined, currency = 'EGP', locale = 'en-EG'): string {
+function fmtCostStr(n: number | null | undefined, currency = 'EGP', locale = 'ar-EG'): string {
   if (n == null) return '—';
   return formatMoney(n, currency, locale);
 }
@@ -456,25 +456,25 @@ function InventoryTab({ material }: { material: RawMaterial }) {
 
   const metrics = [
     {
-      label: 'Available',
+      label: 'المتاح',
       value: fmtQtyStr(available, unit),
-      sub:   'free to use',
+      sub:   'متاح للاستخدام',
       highlight: available != null && available <= 0 ? 'border-red-200 dark:border-red-800' : undefined,
     },
     {
-      label: 'Reserved',
+      label: 'المحجوز',
       value: fmtQtyStr(reserved, unit),
-      sub:   'allocated to orders',
+      sub:   'مخصص للطلبات',
     },
     {
-      label: 'On Hand',
+      label: 'الرصيد الفعلي',
       value: fmtQtyStr(onHand, unit),
-      sub:   'total in all warehouses',
+      sub:   'إجمالي في جميع المستودعات',
     },
     {
-      label: 'Inventory Value',
+      label: 'قيمة المخزون',
       value: fmtCostStr(invValue, currency, locale),
-      sub:   'on hand × material cost',
+      sub:   'الرصيد الفعلي × تكلفة المادة',
     },
   ];
 
@@ -486,14 +486,14 @@ function InventoryTab({ material }: { material: RawMaterial }) {
         <div>
           <p className={cn('text-sm font-semibold', avail.text)}>{avail.label}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Aggregated across all warehouses.
+            مجمَّع من جميع المستودعات.
           </p>
         </div>
       </div>
 
       {/* Inventory snapshot */}
       <div>
-        <SectionTitle>Inventory Snapshot</SectionTitle>
+        <SectionTitle>لقطة المخزون</SectionTitle>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {metrics.map((card) => (
             <div
@@ -512,22 +512,22 @@ function InventoryTab({ material }: { material: RawMaterial }) {
 
       {/* Inventory rules */}
       <div>
-        <SectionTitle>Inventory Rules</SectionTitle>
+        <SectionTitle>قواعد المخزون</SectionTitle>
         <DetailGrid>
           <DetailRow
-            label="Allow Negative Stock"
-            value={material.allow_negative_stock ? 'Allowed' : 'Blocked'}
+            label="المخزون السالب"
+            value={material.allow_negative_stock ? 'مسموح' : 'محظور'}
           />
           <DetailRow
-            label="Minimum Stock Level"
+            label="الحد الأدنى للمخزون"
             value={fmtQtyStr(material.minimum_stock, unit) === '—' ? null : fmtQtyStr(material.minimum_stock, unit)}
           />
           <DetailRow
-            label="Minimum Available Before Purchase"
+            label="الحد الأدنى المتاح قبل الشراء"
             value={fmtQtyStr(material.reorder_point, unit) === '—' ? null : fmtQtyStr(material.reorder_point, unit)}
           />
           <DetailRow
-            label="Preferred Warehouse"
+            label="المستودع المفضّل"
             value={material.preferred_warehouse_id ?? null}
           />
         </DetailGrid>
@@ -546,8 +546,8 @@ function SuppliersTab({ material }: { material: RawMaterial }) {
     return (
       <EmptyState
         icon={Truck}
-        title="No suppliers linked"
-        description="Link suppliers to this raw material to track purchase prices, lead times, and preferred vendors."
+        title="لا يوجد موردون مرتبطون"
+        description="أضف موردين لهذه المادة الخام لتتبع أسعار الشراء ومدد التوريد والموردين المفضّلين."
       />
     );
   }
@@ -557,10 +557,10 @@ function SuppliersTab({ material }: { material: RawMaterial }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50">
-            {['Supplier', 'Last Cost', 'MOQ', 'Default', 'Active'].map((h) => (
+            {['المورد', 'آخر تكلفة', 'أدنى كمية', 'افتراضي', 'نشط'].map((h) => (
               <th
                 key={h}
-                className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                className="px-3 py-2.5 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
               >
                 {h}
               </th>
@@ -593,7 +593,7 @@ function SuppliersTab({ material }: { material: RawMaterial }) {
                       : 'bg-muted text-muted-foreground',
                   )}
                 >
-                  {s.is_active ? 'Active' : 'Inactive'}
+                  {s.is_active ? 'نشط' : 'غير نشط'}
                 </span>
               </td>
             </tr>
@@ -626,9 +626,9 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Current Cost',  value: formatCost(currentCost,  undefined, currency, locale) },
-          { label: 'Highest Cost',  value: formatCost(highestCost,  undefined, currency, locale) },
-          { label: 'Lowest Cost',   value: formatCost(lowestCost,   undefined, currency, locale) },
+          { label: 'التكلفة الحالية', value: formatCost(currentCost,  undefined, currency, locale) },
+          { label: 'أعلى تكلفة',     value: formatCost(highestCost,  undefined, currency, locale) },
+          { label: 'أدنى تكلفة',     value: formatCost(lowestCost,   undefined, currency, locale) },
         ].map((c) => (
           <div key={c.label} className="rounded-lg border bg-card p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -643,8 +643,8 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
       {entries.length === 0 ? (
         <EmptyState
           icon={TrendingUp}
-          title="No cost history"
-          description="Material cost changes will be recorded here automatically each time the cost is updated."
+          title="لا يوجد سجل تكاليف"
+          description="سيتم تسجيل تغييرات تكلفة المادة هنا تلقائيًا في كل مرة يتم فيها تحديث التكلفة."
         />
       ) : (
         <>
@@ -652,10 +652,10 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  {['Date', 'Previous Cost', 'New Cost', 'Change', 'Source', 'Changed By', 'Recipes'].map((h) => (
+                  {['التاريخ', 'التكلفة السابقة', 'التكلفة الجديدة', 'التغيير', 'المصدر', 'بواسطة', 'الوصفات'].map((h) => (
                     <th
                       key={h}
-                      className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                      className="px-3 py-2.5 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
                     >
                       {h}
                     </th>
@@ -702,7 +702,7 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
                               : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
                           )}
                         >
-                          {entry.source === 'purchase_invoice' ? 'Purchase' : 'Manual'}
+                          {entry.source === 'purchase_invoice' ? 'شراء' : 'يدوي'}
                         </span>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
@@ -710,7 +710,7 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap text-xs">
                         {entry.affected_recipe_count > 0 ? (
-                          <span className="font-medium">{entry.affected_recipe_count} recipes</span>
+                          <span className="font-medium">{entry.affected_recipe_count} وصفة</span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
@@ -763,23 +763,23 @@ function StockHistoryTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {pagination ? `${pagination.total} movement${pagination.total === 1 ? '' : 's'} total` : ''}
+          {pagination ? `${pagination.total} حركة إجمالاً` : ''}
         </p>
         <Button size="sm" className="gap-1.5" onClick={onAddStock}>
           <PackagePlus className="size-4" />
-          Add Stock
+          إضافة مخزون
         </Button>
       </div>
 
       {movements.length === 0 ? (
         <EmptyState
           icon={RotateCcw}
-          title="No stock movements"
-          description="Every stock in/out transaction will be recorded here for full traceability."
+          title="لا توجد حركات مخزون"
+          description="سيتم تسجيل كل عملية دخول/خروج مخزون هنا لكامل إمكانية التتبع."
           action={
             <Button size="sm" onClick={onAddStock} className="gap-1.5 mt-1">
               <PackagePlus className="size-4" />
-              Add First Stock Entry
+              إضافة أول إدخال مخزون
             </Button>
           }
         />
@@ -789,10 +789,10 @@ function StockHistoryTab({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  {['Date', 'Warehouse', 'Type', 'Qty', 'Balance After', 'Notes'].map((h) => (
+                  {['التاريخ', 'المستودع', 'النوع', 'الكمية', 'الرصيد بعد', 'ملاحظات'].map((h) => (
                     <th
                       key={h}
-                      className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                      className="px-3 py-2.5 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
                     >
                       {h}
                     </th>
@@ -860,8 +860,8 @@ function PurchaseHistoryTab() {
   return (
     <EmptyState
       icon={ShoppingCart}
-      title="No purchase orders"
-      description="Purchase orders for this raw material will appear here once created."
+      title="لا توجد أوامر شراء"
+      description="ستظهر هنا أوامر الشراء لهذه المادة الخام بمجرد إنشائها."
     />
   );
 }
@@ -872,8 +872,8 @@ function ManufacturingTab() {
   return (
     <EmptyState
       icon={Factory}
-      title="Not used in any recipe"
-      description="This material will appear here once added to a manufacturing recipe as a component."
+      title="غير مستخدمة في أي وصفة"
+      description="ستظهر هذه المادة هنا عند إضافتها إلى وصفة تصنيع كمكوّن."
     />
   );
 }
@@ -889,21 +889,21 @@ function AnalyticsTab({ material }: { material: RawMaterial }) {
     icon:      LucideIcon;
     iconClass: string;
   }> = [
-    { label: 'Avg Purchase Cost',  value: '—', sub: 'last 12 months',         icon: DollarSign,  iconClass: 'text-blue-500'   },
-    { label: 'Monthly Consumption', value: '—', sub: 'units/month avg',        icon: TrendingDown, iconClass: 'text-purple-500' },
-    { label: 'Stock Coverage',     value: '—', sub: 'days at current rate',    icon: Calendar,    iconClass: 'text-green-500'  },
+    { label: 'متوسط تكلفة الشراء',  value: '—', sub: 'آخر 12 شهرًا',          icon: DollarSign,  iconClass: 'text-blue-500'   },
+    { label: 'الاستهلاك الشهري',   value: '—', sub: 'وحدة/شهر بالمتوسط',     icon: TrendingDown, iconClass: 'text-purple-500' },
+    { label: 'تغطية المخزون',      value: '—', sub: 'أيام بالمعدل الحالي',   icon: Calendar,    iconClass: 'text-green-500'  },
     {
-      label: 'Unit Cost',
+      label: 'تكلفة الوحدة',
       value: formatCost(material.material_cost, undefined, currency, locale),
-      sub:   'current material cost',
+      sub:   'التكلفة الحالية للمادة',
       icon:  BarChart2,
       iconClass: 'text-amber-500',
     },
-    { label: 'Linked Suppliers',  value: '0', sub: 'active vendor sources',    icon: Truck,       iconClass: 'text-cyan-500'   },
-    { label: 'Recipes Using',     value: '0', sub: 'manufacturing recipes',    icon: Factory,     iconClass: 'text-red-500'    },
-    { label: 'Stock-Out Events',  value: '—', sub: 'last 90 days',             icon: TrendingDown, iconClass: 'text-orange-500' },
-    { label: 'Cost Changes',      value: '—', sub: 'last 12 months',           icon: TrendingUp,  iconClass: 'text-indigo-500' },
-    { label: 'Avg Lead Time',     value: '—', sub: 'days from PO to receipt',  icon: Calendar,    iconClass: 'text-teal-500'   },
+    { label: 'الموردون المرتبطون', value: '0', sub: 'مورد نشط',               icon: Truck,       iconClass: 'text-cyan-500'   },
+    { label: 'مستخدم في وصفات',   value: '0', sub: 'وصفة تصنيع',             icon: Factory,     iconClass: 'text-red-500'    },
+    { label: 'أحداث نفاد المخزون', value: '—', sub: 'آخر 90 يوم',             icon: TrendingDown, iconClass: 'text-orange-500' },
+    { label: 'تغييرات التكلفة',    value: '—', sub: 'آخر 12 شهرًا',           icon: TrendingUp,  iconClass: 'text-indigo-500' },
+    { label: 'متوسط مدة التوريد', value: '—', sub: 'أيام من الطلب للاستلام', icon: Calendar,    iconClass: 'text-teal-500'   },
   ];
 
   return (
@@ -923,9 +923,9 @@ function AnalyticsTab({ material }: { material: RawMaterial }) {
 
       <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 px-4 py-6 text-center">
         <BarChart2 className="mx-auto size-8 text-muted-foreground mb-2" />
-        <p className="text-sm font-medium text-muted-foreground">Analytics Dashboard Coming Soon</p>
+        <p className="text-sm font-medium text-muted-foreground">لوحة التحليلات قادمة قريبًا</p>
         <p className="text-xs text-muted-foreground mt-1">
-          Charts and trend analysis will appear here once connected to the reporting module.
+          ستظهر هنا الرسوم البيانية وتحليلات الاتجاهات عند الاتصال بوحدة التقارير.
         </p>
       </div>
     </div>
@@ -966,42 +966,42 @@ export function RawMaterialDetailDrawer({
   const tabs: TabItem[] = [
     {
       key:     'overview',
-      label:   'Overview',
+      label:   'نظرة عامة',
       content: <OverviewTab material={material} />,
     },
     {
       key:     'inventory',
-      label:   'Inventory',
+      label:   'المخزون',
       content: <InventoryTab material={material} />,
     },
     {
       key:     'suppliers',
-      label:   'Suppliers',
+      label:   'الموردون',
       content: <SuppliersTab material={material} />,
     },
     {
       key:     'price-history',
-      label:   'Cost History',
+      label:   'سجل التكاليف',
       content: <PriceHistoryTab materialId={material.id} />,
     },
     {
       key:     'stock-history',
-      label:   'Stock History',
+      label:   'سجل المخزون',
       content: <StockHistoryTab material={material} onAddStock={openAddStock} />,
     },
     {
       key:     'purchase-history',
-      label:   'Purchase History',
+      label:   'سجل الشراء',
       content: <PurchaseHistoryTab />,
     },
     {
       key:     'manufacturing',
-      label:   'Used In Recipes',
+      label:   'مستخدم في الوصفات',
       content: <ManufacturingTab />,
     },
     {
       key:     'analytics',
-      label:   'Analytics',
+      label:   'التحليلات',
       content: <AnalyticsTab material={material} />,
     },
   ];
@@ -1014,7 +1014,7 @@ export function RawMaterialDetailDrawer({
           className="flex flex-col gap-0 overflow-hidden p-0 sm:max-w-none w-full sm:w-[90vw] lg:w-[70vw]"
           style={{ maxWidth: 1400 }}
         >
-          <SheetTitle className="sr-only">{material.name} — Raw Material Details</SheetTitle>
+          <SheetTitle className="sr-only">{material.name} — تفاصيل المادة الخام</SheetTitle>
 
           {/* ── Drawer Header ── */}
           <div className="flex items-start gap-4 border-b px-6 py-5 flex-none pr-14">
@@ -1071,7 +1071,7 @@ export function RawMaterialDetailDrawer({
                 onClick={openAddStock}
               >
                 <Zap className="size-3.5" />
-                Add Stock
+                إضافة مخزون
               </Button>
               {onEdit && (
                 <Button
@@ -1084,7 +1084,7 @@ export function RawMaterialDetailDrawer({
                   }}
                 >
                   <Pencil className="size-3.5" />
-                  Edit
+                  تعديل
                 </Button>
               )}
             </div>

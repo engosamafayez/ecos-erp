@@ -59,6 +59,9 @@ export function OrderWorkspacePage() {
   }
 
   if (mode === 'view') return <OrderDetailPage />;
-  if (mode === 'create') return <ManualOrderFormWorkspace />;
-  return <ManualOrderFormWorkspace mode="edit" order={order!} />;
+  // key forces a clean remount whenever the mode or order changes.
+  // Without it, React reconciles create and edit as the same component instance,
+  // allowing serverError / slotError / ref state to bleed across SPA navigations.
+  if (mode === 'create') return <ManualOrderFormWorkspace key="create" />;
+  return <ManualOrderFormWorkspace key={order!.id} mode="edit" order={order!} />;
 }

@@ -12,10 +12,10 @@ import type { DeliveryStop, DeliveryStopStatus } from '../types/driver-mobile';
 type FilterTab = 'all' | DeliveryStopStatus;
 
 const FILTER_TABS: { key: FilterTab; label: string }[] = [
-  { key: 'all',       label: 'All' },
-  { key: 'pending',   label: 'Pending' },
-  { key: 'delivered', label: 'Done' },
-  { key: 'failed',    label: 'Failed' },
+  { key: 'all',       label: 'الكل' },
+  { key: 'pending',   label: 'قيد الانتظار' },
+  { key: 'delivered', label: 'تم التوصيل' },
+  { key: 'failed',    label: 'فاشل' },
 ];
 
 export function DriverStopListPage() {
@@ -51,7 +51,7 @@ export function DriverStopListPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="font-semibold text-base">Stop List</h1>
+          <h1 className="font-semibold text-base">قائمة المحطات</h1>
         </div>
 
         {/* Search */}
@@ -59,7 +59,7 @@ export function DriverStopListPage() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="Search by order or customer..."
+            placeholder="بحث برقم الطلب أو اسم العميل..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -93,7 +93,7 @@ export function DriverStopListPage() {
           ))
         ) : (
           <div className="text-center py-12 text-muted-foreground">
-            <p className="text-sm">No stops match your filter.</p>
+            <p className="text-sm">لا توجد محطات تطابق الفلتر.</p>
           </div>
         )}
       </div>

@@ -11,20 +11,32 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\OrderImport\Application\Services\WooCommerceOrderImporter;
-use Modules\Commerce\Orders\Application\Actions\ReleaseOrderInventoryAction;
-use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
-use Modules\Commerce\Orders\Application\Actions\ShipOrderInventoryAction;
-use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
-use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReleasedException;
-use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReservedException;
-use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyShippedException;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Synchronization\Application\Services\SyncLogService;
+use Modules\Commerce\Synchronization\Application\Services\WooCommerceOrderStatusTranslator;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncDirection;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncEntityType;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncStatus;
+use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
+use Modules\Operations\Fulfillment\Application\Workflows\CancelOrderWorkflow;
+use Modules\Operations\Fulfillment\Application\Workflows\CompleteDeliveryWorkflow;
+use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
+use Modules\Operations\Fulfillment\Application\Workflows\ReturnOrderWorkflow;
+use Modules\Operations\Fulfillment\Application\Workflows\SetEarlyStatusWorkflow;
 use Throwable;
 
+/**
+ * Processes an inbound WooCommerce order webhook (created/updated/deleted).
+ *
+ * P5 fix: replaced the inline status map and parallel inventory pipeline with
+ * the canonical WooCommerceOrderStatusTranslator + FulfillmentEngine routing.
+ * - ONE status translation map (WooCommerceOrderStatusTranslator)
+ * - ONE inventory pipeline (via FulfillmentEngine workflows)
+ * - withoutEvents() removed — domain events now fire normally
+ *
+ * Guard failures are non-fatal: if ECOS and WC are out of sync, the webhook
+ * logs a warning and skips the transition rather than crashing.
+ */
 final class ProcessOrderWebhookJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -43,9 +55,13 @@ final class ProcessOrderWebhookJob implements ShouldQueue
     public function handle(
         SyncLogService $logService,
         WooCommerceOrderImporter $importer,
-        ReserveOrderInventoryAction $reserveInventory,
-        ReleaseOrderInventoryAction $releaseInventory,
-        ShipOrderInventoryAction $shipInventory,
+        WooCommerceOrderStatusTranslator $translator,
+        FulfillmentEngine $fulfillmentEngine,
+        ProcessOrderWorkflow $processWorkflow,
+        CancelOrderWorkflow $cancelWorkflow,
+        CompleteDeliveryWorkflow $deliverWorkflow,
+        ReturnOrderWorkflow $returnWorkflow,
+        SetEarlyStatusWorkflow $earlyStatusWorkflow,
     ): void {
         $externalId = (string) ($this->payload['id'] ?? '');
 
@@ -68,44 +84,44 @@ final class ProcessOrderWebhookJob implements ShouldQueue
                 : null;
 
             if ($existingOrder !== null) {
-                $wooStatus = (string) ($this->payload['status'] ?? '');
-                $statusMap = [
-                    'pending'    => 'pending',
-                    'processing' => 'processing',
-                    'completed'  => 'completed',
-                    'cancelled'  => 'cancelled',
-                    'on-hold'    => 'pending',
-                    'refunded'   => 'cancelled',
-                    'failed'     => 'cancelled',
-                ];
-                $newStatus = $statusMap[$wooStatus] ?? null;
+                $wooStatus   = (string) ($this->payload['status'] ?? '');
+                $ecosStatus  = $translator->translate($wooStatus);
 
-                if ($newStatus !== null) {
-                    // Use withoutEvents to prevent OrderObserver from dispatching an outbound
-                    // OrderStatusSyncJob back to WooCommerce for a status that came FROM WooCommerce.
-                    Order::withoutEvents(function () use ($existingOrder, $newStatus): void {
-                        $existingOrder->update(['status' => OrderStatus::from($newStatus)->value]);
-                    });
-                }
-
-                // Trigger inventory lifecycle based on the incoming WooCommerce status.
-                $existingOrder->refresh();
-
-                try {
-                    match ($wooStatus) {
-                        'processing', 'on-hold'            => $reserveInventory->execute($existingOrder),
-                        'completed'                        => $shipInventory->execute($existingOrder),
-                        'cancelled', 'refunded', 'failed'  => $releaseInventory->execute($existingOrder),
-                        default                            => null,
+                if ($ecosStatus !== null && $ecosStatus !== $existingOrder->status) {
+                    // Route through the appropriate canonical workflow.
+                    // Guard failures are skipped — WC/ECOS state divergence is expected
+                    // when orders are managed in ECOS outside the WC lifecycle.
+                    $workflow = match (true) {
+                        // 'refunded' maps to 'returned' per the translator — must NOT use cancelWorkflow.
+                        // ReturnOrderWorkflow::guard() will fail non-fatally for orders not yet OutForDelivery;
+                        // the catch below handles that gracefully.
+                        $wooStatus === 'refunded'                                        => $returnWorkflow,
+                        in_array($wooStatus, ['cancelled', 'failed'], true)              => $cancelWorkflow,
+                        $wooStatus === 'processing'                                      => $processWorkflow,
+                        $wooStatus === 'completed'                                       => $deliverWorkflow,
+                        default                                                          => $earlyStatusWorkflow,
                     };
-                } catch (OrderAlreadyReservedException|OrderAlreadyShippedException|OrderAlreadyReleasedException) {
-                    // Idempotent — order is already in the target inventory state.
-                } catch (Throwable $inventoryError) {
-                    // Non-fatal: log but do not fail the webhook job.
-                    report($inventoryError);
+
+                    try {
+                        $fulfillmentEngine->run(
+                            $workflow,
+                            $existingOrder,
+                            ['target_status' => $ecosStatus->value, 'reason' => "WooCommerce webhook: {$wooStatus}"],
+                            null, // system actor
+                        );
+                    } catch (Throwable $workflowError) {
+                        // Non-fatal: guard failure or state mismatch — log and continue.
+                        \Illuminate\Support\Facades\Log::warning('[WcWebhook] Workflow guard rejected status transition', [
+                            'order_id'   => $existingOrder->id,
+                            'wc_status'  => $wooStatus,
+                            'ecos_from'  => $existingOrder->status->value,
+                            'ecos_to'    => $ecosStatus->value,
+                            'error'      => $workflowError->getMessage(),
+                        ]);
+                    }
                 }
 
-                $logService->markSuccess($log, ['message' => 'Order status updated.', 'order_id' => $existingOrder->id], $this->channel);
+                $logService->markSuccess($log, ['message' => 'Order status processed.', 'order_id' => $existingOrder->id], $this->channel);
             } else {
                 $created = $importer->importSingle($this->channel, $this->payload);
                 $logService->markSuccess(

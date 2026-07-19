@@ -66,6 +66,12 @@ export const ROUTES = {
   hr: '/hr',
   reports: '/reports',
   settings: '/settings',
+  // Claude Bridge
+  claudeBridge:           '/claude-bridge',
+  claudeBridgeTasks:      '/claude-bridge/tasks',
+  claudeBridgeTasksNew:   '/claude-bridge/tasks/new',
+  claudeBridgeTaskDetail: '/claude-bridge/tasks/:id',
+  claudeBridgeSettings:   '/claude-bridge/settings',
   // Distribution OS
   distributionBoard:      '/operations/distribution/board',
   loadingWorkspace:       '/operations/distribution/loading',
@@ -120,6 +126,16 @@ export const ROUTES = {
   marketingCampaignDash:   '/marketing/campaigns/dashboard',
   marketingInitiatives:    '/marketing/initiatives',
   marketingInitiativeDash: '/marketing/initiatives/executive',
+  // Marketing Intelligence
+  marketingIntelligence:       '/marketing/intelligence',
+  marketingCampaignAnalytics:  '/marketing/intelligence/campaigns',
+  marketingAdAnalytics:        '/marketing/intelligence/ads',
+  marketingCreativeAnalytics:  '/marketing/intelligence/creatives',
+  marketingTrends:             '/marketing/intelligence/trends',
+  marketingBudget:             '/marketing/intelligence/budget',
+  marketingReports:            '/marketing/intelligence/reports',
+  // Marketing Settings
+  marketingSettings:           '/marketing/settings',
   // Campaign Studio
   campaignStudio:          '/marketing/studio',
   campaignStudioDraft:     '/marketing/studio/drafts/:draftId',
@@ -144,16 +160,6 @@ export const ROUTES = {
   audienceSegments:       '/marketing/automation/segments',
   automationDashboard:    '/marketing/automation/dashboard',
   automationGovernance:   '/marketing/automation/governance',
-  // Marketing Intelligence
-  marketingIntelligence:       '/marketing/intelligence',
-  marketingCampaignAnalytics:  '/marketing/intelligence/campaigns',
-  marketingAdAnalytics:        '/marketing/intelligence/ads',
-  marketingCreativeAnalytics:  '/marketing/intelligence/creatives',
-  marketingTrends:             '/marketing/intelligence/trends',
-  marketingBudget:             '/marketing/intelligence/budget',
-  marketingReports:            '/marketing/intelligence/reports',
-  // Marketing Settings
-  marketingSettings:           '/marketing/settings',
   // Driver Mobile OS (TASK-DIST-005)
   driverHome:             '/driver/home',
   driverTrip:             '/driver/trips/:tripId',

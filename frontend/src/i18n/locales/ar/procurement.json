@@ -1,0 +1,68 @@
+{
+  "title": "المشتريات",
+  "subtitle": "أوامر الشراء وإدارة الموردين واستلام البضائع.",
+  "overview": {
+    "title": "نظرة عامة على المشتريات",
+    "pendingOrders": "الطلبات المعلقة",
+    "overdueOrders": "الطلبات المتأخرة",
+    "pendingReceipts": "استلام بضائع معلق",
+    "totalSpend": "إجمالي الإنفاق (الشهر الحالي)",
+    "openInvoices": "فواتير مفتوحة"
+  },
+  "purchaseOrders": {
+    "title": "أوامر الشراء",
+    "search": "بحث برقم الأمر أو المورد أو المنتج…",
+    "new": "أمر شراء جديد",
+    "columns": {
+      "number": "رقم الأمر",
+      "supplier": "المورد",
+      "warehouse": "مستودع الوجهة",
+      "orderDate": "تاريخ الأمر",
+      "expectedDate": "تاريخ الاستلام المتوقع",
+      "total": "الإجمالي",
+      "status": "الحالة"
+    },
+    "status": {
+      "draft": "مسودة",
+      "sent": "مُرسَل",
+      "confirmed": "مؤكد",
+      "partially_received": "مستلم جزئياً",
+      "received": "مستلم",
+      "cancelled": "ملغى"
+    }
+  },
+  "suppliers": {
+    "title": "الموردون",
+    "search": "بحث في الموردين…",
+    "new": "مورد جديد",
+    "columns": {
+      "name": "اسم المورد",
+      "code": "الرمز",
+      "contactName": "جهة الاتصال",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني",
+      "paymentTerms": "شروط الدفع",
+      "balance": "الرصيد",
+      "status": "الحالة"
+    },
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "blocked": "محظور"
+    }
+  },
+  "actions": {
+    "send": "إرسال للمورد",
+    "confirm": "تأكيد الأمر",
+    "receive": "استلام البضائع",
+    "cancel": "إلغاء",
+    "duplicate": "تكرار"
+  },
+  "tabs": {
+    "orders": "أوامر الشراء",
+    "suppliers": "الموردون",
+    "receipts": "استلام البضائع",
+    "invoices": "الفواتير",
+    "returns": "المرتجعات"
+  }
+}

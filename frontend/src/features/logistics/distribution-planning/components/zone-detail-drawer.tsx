@@ -107,14 +107,14 @@ function OrdersTab({ zoneId, filters }: { zoneId: number; filters: PlanningFilte
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-background z-10">
               <tr className="border-b text-muted-foreground">
-                <th className="text-left py-2 px-3 font-medium">Order #</th>
-                <th className="text-left py-2 px-3 font-medium">Customer</th>
-                <th className="text-left py-2 px-3 font-medium">Phone</th>
-                <th className="text-left py-2 px-3 font-medium">Area</th>
-                <th className="text-left py-2 px-3 font-medium">Payment</th>
-                <th className="text-left py-2 px-3 font-medium">Priority</th>
-                <th className="text-left py-2 px-3 font-medium">Status</th>
-                <th className="text-right py-2 px-3 font-medium">Total</th>
+                <th className="text-start py-2 px-3 font-medium">Order #</th>
+                <th className="text-start py-2 px-3 font-medium">Customer</th>
+                <th className="text-start py-2 px-3 font-medium">Phone</th>
+                <th className="text-start py-2 px-3 font-medium">Area</th>
+                <th className="text-start py-2 px-3 font-medium">Payment</th>
+                <th className="text-start py-2 px-3 font-medium">Priority</th>
+                <th className="text-start py-2 px-3 font-medium">Status</th>
+                <th className="text-end py-2 px-3 font-medium">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -145,7 +145,7 @@ function OrdersTab({ zoneId, filters }: { zoneId: number; filters: PlanningFilte
                   <td className="py-2 px-3">
                     <OrderStatusBadge status={order.status} />
                   </td>
-                  <td className="py-2 px-3 text-right tabular-nums text-xs font-medium whitespace-nowrap">
+                  <td className="py-2 px-3 text-end tabular-nums text-xs font-medium whitespace-nowrap">
                     {fmtEgp2(order.total)}
                   </td>
                 </tr>
@@ -193,25 +193,25 @@ function ProductsTab({ zoneId, filters }: { zoneId: number; filters: PlanningFil
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-background z-10">
               <tr className="border-b text-muted-foreground">
-                <th className="text-left py-2 px-3 font-medium">Product</th>
-                <th className="text-right py-2 px-3 font-medium">Qty</th>
-                <th className="text-right py-2 px-3 font-medium">Est. Weight</th>
-                <th className="text-right py-2 px-3 font-medium">Orders</th>
-                <th className="text-right py-2 px-3 font-medium">Value</th>
+                <th className="text-start py-2 px-3 font-medium">Product</th>
+                <th className="text-end py-2 px-3 font-medium">Qty</th>
+                <th className="text-end py-2 px-3 font-medium">Est. Weight</th>
+                <th className="text-end py-2 px-3 font-medium">Orders</th>
+                <th className="text-end py-2 px-3 font-medium">Value</th>
               </tr>
             </thead>
             <tbody>
               {products.map((p) => (
                 <tr key={p.product_id} className="border-b hover:bg-muted/30 transition-colors">
                   <td className="py-2 px-3 text-xs font-medium">{p.name}</td>
-                  <td className="py-2 px-3 text-right tabular-nums text-xs">
+                  <td className="py-2 px-3 text-end tabular-nums text-xs">
                     {Number(p.total_qty).toLocaleString()}
                   </td>
-                  <td className="py-2 px-3 text-right text-xs text-muted-foreground">—</td>
-                  <td className="py-2 px-3 text-right tabular-nums text-xs text-muted-foreground">
+                  <td className="py-2 px-3 text-end text-xs text-muted-foreground">—</td>
+                  <td className="py-2 px-3 text-end tabular-nums text-xs text-muted-foreground">
                     {p.order_count}
                   </td>
-                  <td className="py-2 px-3 text-right tabular-nums text-xs">{fmtEgp(p.total_value)}</td>
+                  <td className="py-2 px-3 text-end tabular-nums text-xs">{fmtEgp(p.total_value)}</td>
                 </tr>
               ))}
             </tbody>
@@ -257,11 +257,11 @@ function CustomersTab({ zoneId, filters }: { zoneId: number; filters: PlanningFi
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-background z-10">
               <tr className="border-b text-muted-foreground">
-                <th className="text-left py-2 px-3 font-medium">Customer</th>
-                <th className="text-left py-2 px-3 font-medium">Phone</th>
-                <th className="text-left py-2 px-3 font-medium">Area</th>
-                <th className="text-right py-2 px-3 font-medium">Orders</th>
-                <th className="text-right py-2 px-3 font-medium">Value</th>
+                <th className="text-start py-2 px-3 font-medium">Customer</th>
+                <th className="text-start py-2 px-3 font-medium">Phone</th>
+                <th className="text-start py-2 px-3 font-medium">Area</th>
+                <th className="text-end py-2 px-3 font-medium">Orders</th>
+                <th className="text-end py-2 px-3 font-medium">Value</th>
               </tr>
             </thead>
             <tbody>
@@ -277,8 +277,8 @@ function CustomersTab({ zoneId, filters }: { zoneId: number; filters: PlanningFi
                     ) : '—'}
                   </td>
                   <td className="py-2 px-3 text-xs text-muted-foreground">{c.city ?? '—'}</td>
-                  <td className="py-2 px-3 text-right tabular-nums text-xs">{c.order_count}</td>
-                  <td className="py-2 px-3 text-right tabular-nums text-xs">
+                  <td className="py-2 px-3 text-end tabular-nums text-xs">{c.order_count}</td>
+                  <td className="py-2 px-3 text-end tabular-nums text-xs">
                     {fmtEgp(c.total_value)}
                   </td>
                 </tr>

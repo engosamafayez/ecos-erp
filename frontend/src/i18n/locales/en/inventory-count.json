@@ -1,0 +1,70 @@
+{
+  "title": "Inventory Count",
+  "subtitle": "Conduct blind counts and reconcile physical inventory.",
+  "sessions": {
+    "title": "Count Sessions",
+    "search": "Search sessions…",
+    "actions": {
+      "new": "New Count Session",
+      "open": "Open Session",
+      "freeze": "Freeze",
+      "finalize": "Finalize Count",
+      "exportReport": "Export Report"
+    },
+    "columns": {
+      "session": "Session",
+      "warehouse": "Warehouse",
+      "status": "Status",
+      "products": "Products",
+      "accuracy": "Accuracy",
+      "startedAt": "Started",
+      "finalizedAt": "Finalized",
+      "createdBy": "Created By"
+    },
+    "status": {
+      "open": "Open",
+      "frozen": "Frozen",
+      "finalized": "Finalized",
+      "cancelled": "Cancelled"
+    },
+    "form": {
+      "name": { "label": "Session Name", "placeholder": "Monthly Count — July 2026" },
+      "warehouse": { "label": "Warehouse", "placeholder": "Select warehouse…" },
+      "category": { "label": "Category (optional)", "placeholder": "All categories" },
+      "countMethod": { "label": "Count Method" },
+      "methods": {
+        "blind": "Blind Count (recommended)",
+        "standard": "Standard Count"
+      }
+    }
+  },
+  "counting": {
+    "title": "Enter Count",
+    "subtitle": "Enter the physical count for each product. System quantities are hidden during blind count.",
+    "search": "Search products to count…",
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "unit": "Unit",
+      "counted": "Counted Qty",
+      "systemQty": "System Qty",
+      "variance": "Variance",
+      "varianceValue": "Variance Value"
+    },
+    "saveCount": "Save Count",
+    "saving": "Saving…"
+  },
+  "report": {
+    "title": "Final Count Report",
+    "subtitle": "Variance reconciliation between physical and system quantities.",
+    "accuracy": "Count Accuracy",
+    "totalProducts": "Total Products",
+    "matched": "Matched",
+    "variances": "Variances",
+    "totalVarianceValue": "Total Variance Value",
+    "adjIn": "Stock Added",
+    "adjOut": "Stock Removed",
+    "approve": "Approve & Post Adjustments",
+    "approving": "Posting…"
+  }
+}

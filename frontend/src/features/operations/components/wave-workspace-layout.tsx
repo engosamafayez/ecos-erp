@@ -327,7 +327,7 @@ export function WaveWorkspaceLayout() {
           <SummaryItem label="Missing"   value={missing.length} accent={missing.length > 0 ? 'danger' : undefined} />
           <span className="text-border shrink-0">·</span>
           <SummaryItem label="Stage"     value={STAGE_LABELS[wave.status]} />
-          <span className="ml-auto flex items-center gap-1 text-muted-foreground shrink-0">
+          <span className="ms-auto flex items-center gap-1 text-muted-foreground shrink-0">
             <Clock className="h-2.5 w-2.5" />
             {fmtTime(wave.updated_at)}
           </span>

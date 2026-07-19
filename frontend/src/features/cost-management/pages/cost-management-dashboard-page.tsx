@@ -83,9 +83,9 @@ export function CostManagementDashboardPage() {
       <div className="flex items-center gap-3">
         <BarChart3 className="size-5 text-primary" />
         <div>
-          <h1 className="text-lg font-semibold">Cost Management Dashboard</h1>
+          <h1 className="text-lg font-semibold">لوحة إدارة التكاليف</h1>
           <p className="text-sm text-muted-foreground">
-            Live overview of cost changes and pricing review status
+            نظرة مباشرة على تغييرات التكاليف وحالة مراجعة التسعير
           </p>
         </div>
       </div>
@@ -99,55 +99,55 @@ export function CostManagementDashboardPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard
-            label="Pending Reviews"
+            label="مراجعات معلّقة"
             value={fmt(stats?.pending_reviews)}
             icon={Clock}
-            description="Awaiting management decision"
+            description="بانتظار قرار الإدارة"
             onClick={() => navigate(ROUTES.costManagementPriceReview)}
             variant={stats && stats.pending_reviews > 0 ? 'warning' : 'default'}
           />
           <KpiCard
-            label="Below Target Margin"
+            label="أقل من الهامش المستهدف"
             value={fmt(stats?.below_target_margin)}
             icon={AlertTriangle}
-            description="Products under target margin"
+            description="منتجات تحت الهامش المستهدف"
             onClick={() => navigate(ROUTES.costManagementPriceReview)}
             variant={stats && stats.below_target_margin > 0 ? 'warning' : 'success'}
           />
           <KpiCard
-            label="Cost Increased Today"
+            label="تكاليف ارتفعت اليوم"
             value={fmt(stats?.cost_increased_today)}
             icon={TrendingUp}
-            description="Material costs up since midnight"
+            description="تكاليف مواد ارتفعت منذ منتصف الليل"
             onClick={() => navigate(ROUTES.costManagementCostHistory)}
             variant={stats && stats.cost_increased_today > 0 ? 'warning' : 'default'}
           />
           <KpiCard
-            label="Cost Decreased Today"
+            label="تكاليف انخفضت اليوم"
             value={fmt(stats?.cost_decreased_today)}
             icon={TrendingDown}
-            description="Material costs down since midnight"
+            description="تكاليف مواد انخفضت منذ منتصف الليل"
             onClick={() => navigate(ROUTES.costManagementCostHistory)}
             variant={stats && stats.cost_decreased_today > 0 ? 'success' : 'default'}
           />
           <KpiCard
-            label="Expected Profit Impact"
+            label="الأثر المتوقع على الربح"
             value={fmt(stats?.expected_profit_impact, 2)}
             icon={stats && stats.expected_profit_impact >= 0 ? ArrowUp : ArrowDown}
-            description="Sum of pending cost differences"
+            description="مجموع فروق التكاليف المعلّقة"
             variant="info"
           />
           <KpiCard
-            label="Average Margin"
+            label="متوسط الهامش"
             value={stats?.average_margin != null ? `${fmt(stats.average_margin, 1)}%` : '—'}
             icon={BarChart3}
-            description="Across pending reviews"
+            description="عبر المراجعات المعلّقة"
           />
           <KpiCard
-            label="Awaiting Approval"
+            label="بانتظار الموافقة"
             value={fmt(stats?.awaiting_approval)}
             icon={CheckCircle2}
-            description="Assigned reviews pending sign-off"
+            description="مراجعات مُعيَّنة بانتظار التوقيع"
             onClick={() => navigate(ROUTES.costManagementPriceReview)}
             variant={stats && stats.awaiting_approval > 0 ? 'info' : 'default'}
           />
@@ -161,14 +161,14 @@ export function CostManagementDashboardPage() {
           onClick={() => navigate(ROUTES.costManagementPriceReview)}
           className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted/40 transition-colors"
         >
-          Go to Price Review Center
+          مركز مراجعة التسعير
         </button>
         <button
           type="button"
           onClick={() => navigate(ROUTES.costManagementCostHistory)}
           className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted/40 transition-colors"
         >
-          View Cost History
+          عرض سجل التكاليف
         </button>
       </div>
     </div>

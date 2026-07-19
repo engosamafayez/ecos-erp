@@ -238,7 +238,7 @@ export function CompaniesPage() {
       cell: (c) => (
         <div>
           <button
-            className="font-medium hover:underline text-left leading-none"
+            className="font-medium hover:underline text-start leading-none"
             onClick={() => openView(c)}
           >
             {c.name}
@@ -435,7 +435,7 @@ export function CompaniesPage() {
               ))}
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ms-auto flex items-center gap-2">
               {/* Columns Manager */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

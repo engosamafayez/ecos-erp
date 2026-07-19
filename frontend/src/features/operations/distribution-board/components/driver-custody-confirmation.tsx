@@ -47,9 +47,9 @@ function CustodyRow({
           {CUSTODY_ITEM_LABELS[item.item_type] ?? item.label}
         </div>
         <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-          <span>Assigned: <span className="font-semibold tabular-nums text-foreground">{item.quantity}</span></span>
+          <span>مُعيَّن: <span className="font-semibold tabular-nums text-foreground">{item.quantity}</span></span>
           {item.received_quantity !== null && (
-            <span>Received: <span className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">{item.received_quantity}</span></span>
+            <span>مستلم: <span className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">{item.received_quantity}</span></span>
           )}
         </div>
       </div>
@@ -71,14 +71,14 @@ function CustodyRow({
             onClick={() => onConfirm(item.id, parseInt(receivedQty) || 0)}
           >
             {confirmPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
-            Confirm
+            تأكيد
           </Button>
         </div>
       )}
 
       {item.is_driver_confirmed && (
         <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium shrink-0">
-          Confirmed
+          مؤكد
         </span>
       )}
     </div>
@@ -94,7 +94,7 @@ export function DriverCustodyConfirmation({
     return (
       <div className="flex flex-col items-center justify-center py-10 text-center">
         <Package className="h-8 w-8 text-muted-foreground/30 mb-2" />
-        <p className="text-sm text-muted-foreground">No custody items assigned to this trip.</p>
+        <p className="text-sm text-muted-foreground">لا توجد عهدة مُعيَّنة لهذه الرحلة.</p>
       </div>
     );
   }
@@ -106,7 +106,7 @@ export function DriverCustodyConfirmation({
     <div className="space-y-4">
       {/* Progress */}
       <div className="flex items-center gap-3 text-sm">
-        <span className="text-muted-foreground">Custody Handover</span>
+        <span className="text-muted-foreground">تسليم العهدة</span>
         <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
           <div
             className="h-full rounded-full bg-emerald-500 transition-all"
@@ -119,7 +119,7 @@ export function DriverCustodyConfirmation({
       {pending.length > 0 && (
         <section>
           <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-            Pending Confirmation
+            بانتظار التأكيد
           </h4>
           <div className="space-y-2">
             {pending.map((item) => (
@@ -132,7 +132,7 @@ export function DriverCustodyConfirmation({
       {confirmed.length > 0 && (
         <section>
           <h4 className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2 uppercase tracking-wide">
-            Confirmed ({confirmed.length})
+            مؤكد ({confirmed.length})
           </h4>
           <div className="space-y-2">
             {confirmed.map((item) => (

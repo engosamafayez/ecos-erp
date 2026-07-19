@@ -19,6 +19,9 @@ final class WavePreparationStarted implements DomainEvent
     private readonly string          $eventId;
     private readonly DateTimeImmutable $occurredAt;
 
+    /**
+     * @param list<string> $orderIds IDs of all orders in this wave at the moment preparation started.
+     */
     public function __construct(
         public readonly string $waveId,
         public readonly string $waveNumber,
@@ -26,6 +29,7 @@ final class WavePreparationStarted implements DomainEvent
         public readonly string $warehouseId,
         public readonly string $planningDate,
         public readonly int    $ordersCount,
+        public readonly array  $orderIds,
         public readonly string $startedBy,
         public readonly string $startedAt,
         public readonly string $correlationIdValue = '',

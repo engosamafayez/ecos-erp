@@ -29,7 +29,9 @@ final class ReturnOrderWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        $allowed = [OrderStatus::OutForDelivery, OrderStatus::ReadyForLoading];
+        // ReadyForLoading was removed in V2 (loading is handled by LoadVehicleWorkflow).
+        // Returns are only accepted when the order is actively out for delivery.
+        $allowed = [OrderStatus::OutForDelivery];
 
         if (! in_array($order->status, $allowed, true)) {
             throw new WorkflowPreconditionException(

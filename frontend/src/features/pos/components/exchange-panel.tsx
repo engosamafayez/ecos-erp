@@ -116,7 +116,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <div className="flex items-center gap-2">
           <ArrowLeftRight className="size-4 text-blue-500" />
-          <h2 className="text-base font-semibold">Process Exchange</h2>
+          <h2 className="text-base font-semibold">معالجة الاستبدال</h2>
         </div>
         <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose} aria-label="Close exchange panel">
           <X className="size-4" />
@@ -128,12 +128,12 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
         {/* Sale lookup */}
         <div>
-          <Label className="mb-2 text-xs">Original Sale ID</Label>
+          <Label className="mb-2 text-xs">رقم فاتورة البيع الأصلية</Label>
           <div className="flex gap-2">
             <Input
               value={saleSearch}
               onChange={(e) => setSaleSearch(e.target.value)}
-              placeholder="Enter sale ID..."
+              placeholder="أدخل رقم الفاتورة..."
               onKeyDown={(e) => e.key === 'Enter' && loadSale()}
               aria-label="Original sale ID"
             />
@@ -147,7 +147,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
           <>
             <div className="rounded-lg bg-muted p-3 text-xs">
               <div className="flex justify-between font-medium">
-                <span>Receipt #{sale.receipt_number}</span>
+                <span>إيصال #{sale.receipt_number}</span>
                 <span>{currency} {sale.total.amount}</span>
               </div>
             </div>
@@ -156,7 +156,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Label className="text-xs">Items Returned</Label>
+                  <Label className="text-xs">الأصناف المرتجعة</Label>
                   {submitError && (
                     <span className="flex items-center gap-1 text-[10px] text-destructive">
                       <AlertCircle className="size-3" />{submitError}
@@ -164,11 +164,11 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
                   )}
                 </div>
                 <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={addAllReturned}>
-                  All Items
+                  جميع الأصناف
                 </Button>
               </div>
               {returnedLines.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">No items selected for return.</p>
+                <p className="text-xs text-muted-foreground italic">لم يتم اختيار أصناف للإرجاع.</p>
               ) : (
                 <div className="space-y-1.5">
                   {returnedLines.map((l, i) => (
@@ -194,20 +194,20 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
             {/* Replacement items */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label className="text-xs">Replacement Items</Label>
+                <Label className="text-xs">أصناف الاستبدال</Label>
                 <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={addBlankReplacement}>
-                  <Plus className="size-3" />Add
+                  <Plus className="size-3" />إضافة
                 </Button>
               </div>
               {replacementLines.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">No replacement items (return-only).</p>
+                <p className="text-xs text-muted-foreground italic">لا توجد أصناف استبدال (إرجاع فقط).</p>
               ) : (
                 <div className="space-y-1.5">
                   {replacementLines.map((l, i) => (
                     <div key={i} className="grid grid-cols-3 gap-1.5">
                       <Input
                         className="h-7 text-xs col-span-2"
-                        placeholder="Product ID"
+                        placeholder="كود المنتج"
                         value={l.product_id}
                         aria-label={`Replacement product ID ${i + 1}`}
                         onChange={(e) => {
@@ -222,7 +222,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
                           type="number"
                           min="0.01"
                           step="0.01"
-                          placeholder="Price"
+                          placeholder="السعر"
                           value={l.unit_price.amount}
                           aria-label={`Replacement price ${i + 1}`}
                           onChange={(e) => {
@@ -248,7 +248,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
             <form id="exchange-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
               {/* Reason */}
               <div className="space-y-1.5">
-                <Label className="text-xs" htmlFor="exchange-reason">Reason</Label>
+                <Label className="text-xs" htmlFor="exchange-reason">السبب</Label>
                 <Input
                   id="exchange-reason"
                   {...form.register('reason')}
@@ -267,12 +267,12 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
               {/* Notes (required when reason === 'other') */}
               <div className="space-y-1.5">
                 <Label className="text-xs" htmlFor="exchange-notes">
-                  Notes {watchedReason === 'other' && <span className="text-destructive">*</span>}
+                  ملاحظات {watchedReason === 'other' && <span className="text-destructive">*</span>}
                 </Label>
                 <Input
                   id="exchange-notes"
                   {...form.register('notes')}
-                  placeholder={watchedReason === 'other' ? 'Required for "other" reason...' : 'Optional...'}
+                  placeholder={watchedReason === 'other' ? 'مطلوب لسبب "أخرى"...' : 'اختياري...'}
                   aria-invalid={!!form.formState.errors.notes}
                   aria-describedby={form.formState.errors.notes ? 'exchange-notes-error' : undefined}
                   className={cn(form.formState.errors.notes && 'border-destructive')}
@@ -298,7 +298,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
           className="w-full"
           disabled={!sale || processExchange.isPending}
         >
-          {processExchange.isPending ? 'Processing...' : 'Process Exchange'}
+          {processExchange.isPending ? 'جارٍ المعالجة...' : 'معالجة الاستبدال'}
         </Button>
       </div>
     </div>

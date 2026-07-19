@@ -382,7 +382,7 @@ function WorkspaceConfigCard({
   return (
     <button
       onClick={() => onOpen(card.id)}
-      className="group relative rounded-xl border border-border/60 bg-card p-4 text-left hover:border-primary/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group relative rounded-xl border border-border/60 bg-card p-4 text-start hover:border-primary/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="p-1.5 rounded-lg bg-muted/60 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
@@ -535,7 +535,7 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
           {entry.config_key && (
             <code className="text-[10px] bg-muted px-1 rounded">{entry.config_key}</code>
           )}
-          <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap">
+          <span className="text-xs text-muted-foreground ms-auto whitespace-nowrap">
             {new Date(entry.occurred_at).toLocaleString('en', {
               month: 'short', day: 'numeric',
               hour: '2-digit', minute: '2-digit',

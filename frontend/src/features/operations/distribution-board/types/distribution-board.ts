@@ -192,19 +192,19 @@ export interface AddCustodyPayload {
 }
 
 export const TRIP_TYPE_LABELS: Record<TripType, string> = {
-  company_vehicle:  'Company Vehicle',
-  personal_vehicle: 'Personal Vehicle',
-  external_carrier: 'External Carrier',
+  company_vehicle:  'مركبة الشركة',
+  personal_vehicle: 'مركبة شخصية',
+  external_carrier: 'ناقل خارجي',
 };
 
 export const CUSTODY_ITEM_LABELS: Record<CustodyItemType, string> = {
-  cash_float:    'Cash Float',
-  pos_device:    'POS Device',
-  ice_boxes:     'Ice Boxes',
-  ice_packs:     'Ice Packs',
-  thermal_bags:  'Thermal Bags',
-  delivery_bags: 'Delivery Bags',
-  other:         'Other',
+  cash_float:    'سيولة نقدية',
+  pos_device:    'جهاز POS',
+  ice_boxes:     'صناديق ثلج',
+  ice_packs:     'عبوات ثلج',
+  thermal_bags:  'أكياس حرارية',
+  delivery_bags: 'أكياس توصيل',
+  other:         'أخرى',
 };
 
 // ─── Loading Manifest ─────────────────────────────────────────────────────────
@@ -265,11 +265,11 @@ export interface ManifestSummary {
 }
 
 export const SHORTAGE_RESOLUTION_LABELS: Record<ShortageResolution, string> = {
-  priority_allocation: 'Priority Allocation',
-  manual_selection:    'Manual Selection',
-  return_preparation:  'Return to Preparation',
-  send_manufacturing:  'Send to Manufacturing',
-  delay_orders:        'Delay Affected Orders',
+  priority_allocation: 'توزيع بالأولوية',
+  manual_selection:    'اختيار يدوي',
+  return_preparation:  'إرجاع للتحضير',
+  send_manufacturing:  'إرسال للتصنيع',
+  delay_orders:        'تأجيل الطلبات المتأثرة',
 };
 
 // ─── Wave Exceptions ──────────────────────────────────────────────────────────
@@ -409,10 +409,10 @@ export interface LoadingDashboardData {
 }
 
 export const LOADING_STATUS_LABELS: Record<LoadingStatus, string> = {
-  waiting_for_loading: 'Waiting for Loading',
-  loading:             'Loading',
-  loaded:              'Loaded — Driver Handover',
-  ready_for_dispatch:  'Ready for Dispatch',
+  waiting_for_loading: 'بانتظار التحميل',
+  loading:             'جارٍ التحميل',
+  loaded:              'محمّل — تسليم السائق',
+  ready_for_dispatch:  'جاهز للإرسال',
 };
 
 export const LOADING_STATUS_COLORS: Record<LoadingStatus, string> = {
@@ -425,18 +425,18 @@ export const LOADING_STATUS_COLORS: Record<LoadingStatus, string> = {
 // ─── Trip Status Labels & Colors ──────────────────────────────────────────────
 
 export const TRIP_STATUS_LABELS: Record<TripStatus, string> = {
-  planning:           'Planning',
-  loading:            'Loading',
-  loading_completed:  'Loading Complete',
-  driver_accepted:    'Driver Accepted',
-  dispatch_blocked:   'Dispatch Blocked',
-  ready_for_dispatch: 'Ready for Dispatch',
-  out_for_delivery:   'Out for Delivery',
-  dispatched:         'Dispatched',
-  completed:          'Completed',
-  settlement_pending: 'Settlement Pending',
-  closed:             'Closed',
-  cancelled:          'Cancelled',
+  planning:           'تخطيط',
+  loading:            'جارٍ التحميل',
+  loading_completed:  'اكتمل التحميل',
+  driver_accepted:    'قبل السائق',
+  dispatch_blocked:   'محظور الإرسال',
+  ready_for_dispatch: 'جاهز للإرسال',
+  out_for_delivery:   'خرج للتوصيل',
+  dispatched:         'تم الإرسال',
+  completed:          'مكتمل',
+  settlement_pending: 'بانتظار التسوية',
+  closed:             'مغلق',
+  cancelled:          'ملغى',
 };
 
 export const TRIP_STATUS_COLORS: Record<TripStatus, string> = {
@@ -595,11 +595,11 @@ export interface DeparturePayload {
 }
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
-  loading_completed:    'Loading Completed',
-  driver_accepted:      'Driver Accepted',
-  dispatch_blocked:     'Dispatch Blocked',
-  vehicle_dispatched:   'Vehicle Dispatched',
-  manifest_regenerated: 'Manifest Regenerated',
+  loading_completed:    'اكتمل التحميل',
+  driver_accepted:      'قبل السائق',
+  dispatch_blocked:     'محظور الإرسال',
+  vehicle_dispatched:   'تم إرسال المركبة',
+  manifest_regenerated: 'تم إعادة إنشاء البيان',
 };
 
 // ── ADR-DIST-008: Order SSOT & Distribution Sync ─────────────────────────────

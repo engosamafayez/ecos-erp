@@ -149,7 +149,7 @@ export function CustomerPanel({ className }: CustomerPanelProps) {
             results.map((customer) => (
               <button
                 key={customer.id}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-accent focus-visible:bg-accent outline-none"
+                className="flex w-full items-center gap-2 px-3 py-2 text-start hover:bg-accent focus-visible:bg-accent outline-none"
                 onClick={() => selectCustomer(customer.id, customer.name)}
               >
                 <User className="size-3.5 shrink-0 text-muted-foreground" />

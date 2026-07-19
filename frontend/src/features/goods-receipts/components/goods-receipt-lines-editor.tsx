@@ -68,12 +68,12 @@ export function GoodsReceiptLinesEditor({ readOnly = false, poLineInfos = [] }: 
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-muted-foreground border-b text-left">
+          <tr className="text-muted-foreground border-b text-start">
             <th className="pb-2 pr-3 font-medium">{t('lines.columns.product')}</th>
-            <th className="w-28 pb-2 pr-3 text-right font-medium">{t('lines.columns.orderedQty')}</th>
+            <th className="w-28 pb-2 pr-3 text-end font-medium">{t('lines.columns.orderedQty')}</th>
             <th className="w-32 pb-2 pr-3 font-medium">{t('lines.columns.grossQty')}</th>
             <th className="w-32 pb-2 pr-3 font-medium">{t('lines.columns.netQty')}</th>
-            <th className="w-24 pb-2 pr-3 text-right font-medium">{t('lines.columns.varianceQty')}</th>
+            <th className="w-24 pb-2 pr-3 text-end font-medium">{t('lines.columns.varianceQty')}</th>
             <th className="w-36 pb-2 pr-3 font-medium">{t('lines.columns.weightPhoto')}</th>
             <th className="w-40 pb-2 font-medium">{t('lines.columns.notes')}</th>
           </tr>
@@ -148,7 +148,7 @@ function LineRow({
       </td>
 
       {/* Ordered qty */}
-      <td className="py-3 pr-3 text-right tabular-nums">{fmt(ordered)}</td>
+      <td className="py-3 pr-3 text-end tabular-nums">{fmt(ordered)}</td>
 
       {/* Gross received qty */}
       <td className="py-3 pr-3">
@@ -198,7 +198,7 @@ function LineRow({
       </td>
 
       {/* Variance */}
-      <td className={`py-3 pr-3 text-right tabular-nums ${varianceClass(variance)}`}>
+      <td className={`py-3 pr-3 text-end tabular-nums ${varianceClass(variance)}`}>
         {net > 0 ? (variance >= 0 ? '+' : '') + fmt(variance) : '—'}
       </td>
 

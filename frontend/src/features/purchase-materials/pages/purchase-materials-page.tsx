@@ -20,17 +20,17 @@ import {
 import type { PurchaseMaterial, PurchaseMaterialPriority, PurchaseMaterialStatus } from '../types/purchase-material';
 
 const STATUS_CHIPS: { value: PurchaseMaterialStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'under_review', label: 'Under Review' },
-  { value: 'waiting_supplier_selection', label: 'Awaiting Supplier' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'purchasing', label: 'Purchasing' },
-  { value: 'receiving', label: 'Receiving' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'on_hold', label: 'On Hold' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'all', label: 'الكل' },
+  { value: 'draft', label: 'مسودة' },
+  { value: 'under_review', label: 'قيد المراجعة' },
+  { value: 'waiting_supplier_selection', label: 'انتظار المورد' },
+  { value: 'approved', label: 'معتمد' },
+  { value: 'purchasing', label: 'قيد الشراء' },
+  { value: 'receiving', label: 'قيد الاستلام' },
+  { value: 'completed', label: 'مكتمل' },
+  { value: 'on_hold', label: 'معلّق' },
+  { value: 'rejected', label: 'مرفوض' },
+  { value: 'cancelled', label: 'ملغى' },
 ];
 
 function fmtDate(d: string | null | undefined): string {
@@ -102,12 +102,12 @@ export function PurchaseMaterialsPage() {
 
   async function handleDelete(material: PurchaseMaterial, e: React.MouseEvent) {
     e.stopPropagation();
-    if (!confirm(`Delete request ${material.request_number}?`)) return;
+    if (!confirm(`حذف الطلب ${material.request_number}؟`)) return;
     try {
       await deleteMutation.mutateAsync(material.id);
-      toast.success('Request deleted.');
+      toast.success('تم حذف الطلب.');
     } catch {
-      toast.error('Failed to delete request.');
+      toast.error('فشل حذف الطلب.');
     }
   }
 
@@ -117,10 +117,10 @@ export function PurchaseMaterialsPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Purchase Materials"
-        subtitle="Manage procurement requests, supplier selection and purchasing decisions."
+        title="طلبات المواد"
+        subtitle="إدارة طلبات التوريد واختيار الموردين وقرارات الشراء."
         actions={
-          <Button onClick={() => setWizardOpen(true)}>New Request</Button>
+          <Button onClick={() => setWizardOpen(true)}>طلب جديد</Button>
         }
       />
 
@@ -129,15 +129,15 @@ export function PurchaseMaterialsPage() {
         <div className="flex flex-col gap-3">
           {/* Operational group */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Operational</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">التشغيل</p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {[
-                { label: 'Draft', value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' as const },
-                { label: 'Under Review', value: op?.under_review ?? 0, color: 'text-blue-700', status: 'under_review' as const },
-                { label: 'Await Supplier', value: op?.waiting_supplier_selection ?? 0, color: 'text-violet-700', status: 'waiting_supplier_selection' as const },
-                { label: 'Approved', value: op?.approved ?? 0, color: 'text-emerald-700', status: 'approved' as const },
-                { label: 'Purchasing', value: op?.purchasing ?? 0, color: 'text-cyan-700', status: 'purchasing' as const },
-                { label: 'Receiving', value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' as const },
+                { label: 'مسودة', value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' as const },
+                { label: 'قيد المراجعة', value: op?.under_review ?? 0, color: 'text-blue-700', status: 'under_review' as const },
+                { label: 'انتظار المورد', value: op?.waiting_supplier_selection ?? 0, color: 'text-violet-700', status: 'waiting_supplier_selection' as const },
+                { label: 'معتمد', value: op?.approved ?? 0, color: 'text-emerald-700', status: 'approved' as const },
+                { label: 'قيد الشراء', value: op?.purchasing ?? 0, color: 'text-cyan-700', status: 'purchasing' as const },
+                { label: 'قيد الاستلام', value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' as const },
               ].map(({ label, value, color, status }) => (
                 <Card
                   key={label}
@@ -155,13 +155,13 @@ export function PurchaseMaterialsPage() {
 
           {/* Financial group */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Financial</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">المالية</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[
-                { label: 'Total Requested', value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
-                { label: 'Approved Value', value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
-                { label: 'Purchased Value', value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
-                { label: 'Outstanding', value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
+                { label: 'إجمالي المطلوب', value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
+                { label: 'القيمة المعتمدة', value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
+                { label: 'القيمة المشتراة', value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
+                { label: 'المستحق', value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
               ].map(({ label, value, color }) => (
                 <Card key={label} className="border shadow-none">
                   <CardContent className="pt-3 pb-2.5 px-3">
@@ -197,7 +197,7 @@ export function PurchaseMaterialsPage() {
           <div className="flex flex-wrap gap-2 items-center">
             <Input
               className="w-48 h-8 text-sm"
-              placeholder="Search request # / notes…"
+              placeholder="بحث برقم الطلب أو الملاحظات…"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
@@ -214,7 +214,7 @@ export function PurchaseMaterialsPage() {
               onChange={(e) => { setWarehouseFilter(e.target.value); setPage(1); }}
               className="h-8 w-44 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">All Warehouses</option>
+              <option value="">جميع المستودعات</option>
               {(warehouseOptions ?? []).map((w) => (
                 <option key={w.value} value={w.value}>{w.label}</option>
               ))}
@@ -225,22 +225,22 @@ export function PurchaseMaterialsPage() {
               onChange={(e) => { setPriorityFilter(e.target.value as PurchaseMaterialPriority | 'all'); setPage(1); }}
               className="h-8 w-32 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="all">All Priorities</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="normal">Normal</option>
-              <option value="low">Low</option>
+              <option value="all">جميع الأولويات</option>
+              <option value="urgent">عاجلة</option>
+              <option value="high">عالية</option>
+              <option value="normal">عادية</option>
+              <option value="low">منخفضة</option>
             </select>
 
             <Input
               className="h-8 w-36 text-sm"
-              placeholder="Buyer…"
+              placeholder="المشتري…"
               value={buyerFilter}
               onChange={(e) => { setBuyerFilter(e.target.value); setPage(1); }}
             />
 
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span>Required:</span>
+              <span>مطلوب بحلول:</span>
               <Input type="date" className="h-8 w-36 text-sm" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} />
               <span>→</span>
               <Input type="date" className="h-8 w-36 text-sm" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
@@ -248,7 +248,7 @@ export function PurchaseMaterialsPage() {
 
             {(search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter || buyerFilter || dateFrom || dateTo) && (
               <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={resetFilters}>
-                Clear filters
+                مسح الفلاتر
               </Button>
             )}
           </div>
@@ -261,19 +261,19 @@ export function PurchaseMaterialsPage() {
               <table className="w-full text-sm whitespace-nowrap">
                 <thead className="bg-muted/40 border-b">
                   <tr>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Request #</th>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Company</th>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Channel</th>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Warehouse</th>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Requested By</th>
-                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">Items</th>
-                    <th className="px-3 py-3 text-right font-medium text-xs text-muted-foreground">Req. Qty</th>
-                    <th className="px-3 py-3 text-right font-medium text-xs text-muted-foreground">Est. Value</th>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Priority</th>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Required By</th>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Status</th>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Assigned Buyer</th>
-                    <th className="px-3 py-3 text-left font-medium text-xs text-muted-foreground">Last Updated</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">رقم الطلب</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">الشركة</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">القناة</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">المستودع</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">طلب بواسطة</th>
+                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">البنود</th>
+                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">الكمية المطلوبة</th>
+                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">القيمة التقديرية</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">الأولوية</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">مطلوب بحلول</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">الحالة</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">المشتري المعيَّن</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">آخر تحديث</th>
                     <th className="px-3 py-3 w-10" />
                   </tr>
                 </thead>
@@ -281,13 +281,13 @@ export function PurchaseMaterialsPage() {
                   {isLoading ? (
                     <tr>
                       <td colSpan={14} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                        Loading requests…
+                        جارٍ تحميل الطلبات…
                       </td>
                     </tr>
                   ) : items.length === 0 ? (
                     <tr>
                       <td colSpan={14} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                        {search || statusFilter !== 'all' ? 'No requests match your filters.' : 'No purchase material requests yet.'}
+                        {search || statusFilter !== 'all' ? 'لا توجد طلبات تطابق الفلاتر.' : 'لا توجد طلبات مواد بعد.'}
                       </td>
                     </tr>
                   ) : (
@@ -305,10 +305,10 @@ export function PurchaseMaterialsPage() {
                         <td className="px-3 py-2.5 text-muted-foreground">{pm.warehouse?.name ?? '—'}</td>
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{pm.requested_by ?? '—'}</td>
                         <td className="px-3 py-2.5 text-center tabular-nums">{pm.items_count}</td>
-                        <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums">
+                        <td className="px-3 py-2.5 text-end font-mono text-xs tabular-nums">
                           {pm.total_requested_qty > 0 ? pm.total_requested_qty.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '—'}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums">
+                        <td className="px-3 py-2.5 text-end font-mono text-xs tabular-nums">
                           {pm.estimated_value > 0 ? fmtCurrency(pm.estimated_value) : '—'}
                         </td>
                         <td className="px-3 py-2.5">
@@ -320,14 +320,14 @@ export function PurchaseMaterialsPage() {
                         </td>
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{pm.assigned_buyer ?? '—'}</td>
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">{fmtDate(pm.updated_at)}</td>
-                        <td className="px-3 py-2.5 text-right">
+                        <td className="px-3 py-2.5 text-end">
                           {pm.status === 'draft' && (
                             <button
                               type="button"
                               onClick={(e) => void handleDelete(pm, e)}
                               className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                             >
-                              Delete
+                              حذف
                             </button>
                           )}
                         </td>
@@ -343,14 +343,14 @@ export function PurchaseMaterialsPage() {
         {/* Pagination */}
         {meta && meta.last_page > 1 && (
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{meta.total} total requests</span>
+            <span>{meta.total} طلب إجمالاً</span>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                Previous
+                السابق
               </Button>
-              <span>Page {meta.current_page} of {meta.last_page}</span>
+              <span>صفحة {meta.current_page} من {meta.last_page}</span>
               <Button size="sm" variant="outline" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
-                Next
+                التالي
               </Button>
             </div>
           </div>

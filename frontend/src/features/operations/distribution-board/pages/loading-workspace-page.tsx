@@ -51,7 +51,7 @@ function ProgressBar({ value, max }: { value: number; max: number }) {
       <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs tabular-nums text-muted-foreground min-w-[3rem] text-right">
+      <span className="text-xs tabular-nums text-muted-foreground min-w-[3rem] text-end">
         {value}/{max}
       </span>
     </div>
@@ -134,10 +134,10 @@ export function LoadingWorkspacePage() {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <ClipboardList className="h-10 w-10 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">No loading manifest generated yet.</p>
-        <p className="text-xs text-muted-foreground/70">Approve the trip on the Distribution Board first.</p>
+        <p className="text-sm text-muted-foreground">لم يتم إنشاء بيان التحميل بعد.</p>
+        <p className="text-xs text-muted-foreground/70">اعتمد الرحلة على لوحة التوزيع أولاً.</p>
         <Button variant="outline" size="sm" onClick={() => navigate(ROUTES.distributionBoard)}>
-          Back to Distribution Board
+          العودة إلى لوحة التوزيع
         </Button>
       </div>
     );
@@ -147,9 +147,9 @@ export function LoadingWorkspacePage() {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <Package className="h-10 w-10 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">Loading manifest not found or access denied.</p>
+        <p className="text-sm text-muted-foreground">بيان التحميل غير موجود أو ممنوع الوصول.</p>
         <Button variant="outline" size="sm" onClick={() => navigate(ROUTES.distributionBoard)}>
-          Back to Distribution Board
+          العودة إلى لوحة التوزيع
         </Button>
       </div>
     );
@@ -161,21 +161,21 @@ export function LoadingWorkspacePage() {
   const unresolved  = shortages.filter((i) => !i.shortage_resolution);
 
   const statusBadge = {
-    pending:     { label: 'Pending',     className: 'bg-muted text-muted-foreground' },
-    in_progress: { label: 'In Progress', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-    completed:   { label: 'Loaded',      className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
-    cancelled:   { label: 'Cancelled',   className: 'bg-muted text-muted-foreground' },
+    pending:     { label: 'قيد الانتظار', className: 'bg-muted text-muted-foreground' },
+    in_progress: { label: 'جارٍ التحميل', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+    completed:   { label: 'محمّل',         className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+    cancelled:   { label: 'ملغى',          className: 'bg-muted text-muted-foreground' },
   }[manifest.status] ?? { label: manifest.status, className: '' };
 
   const phase2Tabs: { id: Phase2Tab; label: string; badge?: number }[] = [
     {
       id: 'products',
-      label: 'Product Receipt',
+      label: 'استلام المنتجات',
       badge: handover?.manifest?.driver_pending,
     },
     {
       id: 'custody',
-      label: 'Custody Handover',
+      label: 'تسليم العهدة',
       badge: handover ? handover.custody.total - handover.custody.confirmed : undefined,
     },
   ];
@@ -199,14 +199,14 @@ export function LoadingWorkspacePage() {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm">Loading Workspace</span>
-            <span className="text-xs text-muted-foreground">Manifest #{manifest.id}</span>
+            <span className="font-semibold text-sm">مساحة عمل التحميل</span>
+            <span className="text-xs text-muted-foreground">بيان #{manifest.id}</span>
             <Badge className={`text-xs h-4 px-1.5 ${statusBadge.className}`}>
               {statusBadge.label}
             </Badge>
             {isPhase2 && (
               <Badge className="text-xs h-4 px-1.5 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                Driver Handover
+                تسليم السائق
               </Badge>
             )}
           </div>
@@ -219,16 +219,16 @@ export function LoadingWorkspacePage() {
         {/* KPI pills */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
           <div className="text-xs px-2 py-1 rounded-md bg-muted border">
-            <span className="text-muted-foreground">Products </span>
+            <span className="text-muted-foreground">المنتجات </span>
             <span className="font-semibold">{manifest.total_products}</span>
           </div>
           <div className="text-xs px-2 py-1 rounded-md bg-emerald-50 border-emerald-200 border dark:bg-emerald-950/20 dark:border-emerald-900/50">
-            <span className="text-muted-foreground">Loaded </span>
+            <span className="text-muted-foreground">محمّل </span>
             <span className="font-semibold text-emerald-700 dark:text-emerald-300">{manifest.confirmed_products}</span>
           </div>
           {isPhase2 && handover && (
             <div className="text-xs px-2 py-1 rounded-md bg-amber-50 border-amber-200 border dark:bg-amber-950/20 dark:border-amber-900/50">
-              <span className="text-muted-foreground">Driver </span>
+              <span className="text-muted-foreground">السائق </span>
               <span className="font-semibold text-amber-700 dark:text-amber-300">{handover.manifest?.driver_confirmed ?? 0}/{manifest.total_products}</span>
             </div>
           )}
@@ -247,7 +247,7 @@ export function LoadingWorkspacePage() {
             ) : (
               <Truck className="h-3.5 w-3.5" />
             )}
-            Complete Loading
+            اكتمال التحميل
           </Button>
         )}
       </div>
@@ -257,17 +257,17 @@ export function LoadingWorkspacePage() {
         <>
           {/* Live validation bar */}
           <div className="flex items-center gap-4 px-4 py-2 border-b text-xs bg-muted/30 shrink-0">
-            <Indicator ok={confirmed.length > 0 || manifest.total_products === 0} label="Products Confirmed" />
-            <Indicator ok={unresolved.length === 0} label="No Unresolved Shortages" />
-            <Indicator ok={manifest.can_complete} label="Ready to Complete" />
+            <Indicator ok={confirmed.length > 0 || manifest.total_products === 0} label="تأكيد المنتجات" />
+            <Indicator ok={unresolved.length === 0} label="لا نواقص معلّقة" />
+            <Indicator ok={manifest.can_complete} label="جاهز للإكمال" />
             {!manifest.can_complete && pending.length > 0 && (
-              <span className="text-muted-foreground ml-auto">
-                {pending.length} product{pending.length !== 1 ? 's' : ''} still pending
+              <span className="text-muted-foreground ms-auto">
+                {pending.length} منتج لا يزال قيد الانتظار
               </span>
             )}
             {unresolved.length > 0 && (
-              <span className="text-red-500 font-medium ml-auto">
-                {unresolved.length} shortage{unresolved.length !== 1 ? 's' : ''} need resolution
+              <span className="text-red-500 font-medium ms-auto">
+                {unresolved.length} نقص يحتاج حلاً
               </span>
             )}
           </div>
@@ -278,14 +278,14 @@ export function LoadingWorkspacePage() {
               {manifest.items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <Package className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                  <p className="text-sm text-muted-foreground">No products in this manifest.</p>
+                  <p className="text-sm text-muted-foreground">لا توجد منتجات في هذا البيان.</p>
                 </div>
               ) : (
                 <>
                   {pending.length > 0 && (
                     <section>
                       <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-                        Pending Confirmation
+                        بانتظار التأكيد
                       </h4>
                       <div className="space-y-2">
                         {pending.map((item) => (
@@ -308,7 +308,7 @@ export function LoadingWorkspacePage() {
                   {shortages.length > 0 && (
                     <section>
                       <h4 className="text-xs font-medium text-red-600 dark:text-red-400 mb-2 uppercase tracking-wide">
-                        Shortages
+                        نواقص
                       </h4>
                       <div className="space-y-2">
                         {shortages.map((item) => (
@@ -331,7 +331,7 @@ export function LoadingWorkspacePage() {
                   {confirmed.length > 0 && (
                     <section>
                       <h4 className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2 uppercase tracking-wide">
-                        Confirmed ({confirmed.length})
+                        مؤكد ({confirmed.length})
                       </h4>
                       <div className="space-y-2">
                         {confirmed.map((item) => (
@@ -397,9 +397,9 @@ export function LoadingWorkspacePage() {
               <div className="mx-4 mt-4 flex items-center gap-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
                 <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">Loading Complete</div>
+                  <div className="text-sm font-medium">اكتمل التحميل</div>
                   <div className="text-xs text-muted-foreground">
-                    Proceed to Dispatch Gate for formal driver acceptance and vehicle dispatch authorization.
+                    انتقل إلى بوابة الإرسال لقبول السائق رسمياً والحصول على ترخيص إرسال المركبة.
                   </div>
                 </div>
                 <Button
@@ -408,7 +408,7 @@ export function LoadingWorkspacePage() {
                   className="shrink-0 gap-1.5"
                   onClick={() => navigate(`${ROUTES.dispatchGate}/${tripId}`)}
                 >
-                  Dispatch Gate
+                  بوابة الإرسال
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -442,21 +442,21 @@ export function LoadingWorkspacePage() {
       <AlertDialog open={completeOpen} onOpenChange={setCompleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Complete Loading?</AlertDialogTitle>
+            <AlertDialogTitle>اكتمال التحميل؟</AlertDialogTitle>
             <AlertDialogDescription>
-              All {manifest.total_products} products have been processed.
-              The trip will move to <strong>Dispatch Gate</strong> for formal driver acceptance
-              and vehicle dispatch authorization.
+              تمت معالجة جميع {manifest.total_products} منتج.
+              ستنتقل الرحلة إلى <strong>بوابة الإرسال</strong> لقبول السائق رسمياً
+              والحصول على ترخيص إرسال المركبة.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
                 completeManifest.mutate(undefined, { onSuccess: () => setCompleteOpen(false) })
               }
             >
-              Complete Loading
+              اكتمال التحميل
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

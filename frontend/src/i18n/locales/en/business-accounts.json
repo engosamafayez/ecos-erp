@@ -1,0 +1,62 @@
+{
+  "title": "Business Accounts",
+  "subtitle": "Manage marketing platform accounts and ad spend.",
+  "search": "Search accounts…",
+  "actions": {
+    "new": "Connect Account",
+    "edit": "Edit Account",
+    "disconnect": "Disconnect",
+    "sync": "Sync Now",
+    "viewInsights": "View Insights"
+  },
+  "columns": {
+    "name": "Account Name",
+    "platform": "Platform",
+    "accountId": "Account ID",
+    "currency": "Currency",
+    "status": "Status",
+    "lastSync": "Last Sync"
+  },
+  "platforms": {
+    "meta": "Meta (Facebook & Instagram)",
+    "google": "Google Ads",
+    "tiktok": "TikTok Ads",
+    "snapchat": "Snapchat Ads"
+  },
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "error": "Error",
+    "syncing": "Syncing"
+  },
+  "form": {
+    "name": { "label": "Display Name", "placeholder": "My Meta Business Account" },
+    "platform": { "label": "Platform", "placeholder": "Select platform…" },
+    "accountId": { "label": "Account ID", "placeholder": "act_123456789" },
+    "active": "Active"
+  },
+  "drawer": {
+    "createTitle": "Connect Business Account",
+    "editTitle": "Edit Business Account",
+    "createSubtitle": "Link an advertising account to track spend and performance.",
+    "editSubtitle": "Update account details below.",
+    "submitCreate": "Connect Account",
+    "submitEdit": "Save Changes",
+    "saving": "Saving…",
+    "errorTitle": "Unable to save"
+  },
+  "insights": {
+    "title": "Account Insights",
+    "spend": "Total Spend",
+    "impressions": "Impressions",
+    "clicks": "Clicks",
+    "conversions": "Conversions",
+    "roas": "ROAS",
+    "cpa": "CPA"
+  },
+  "disconnect": {
+    "title": "Disconnect Account",
+    "description": "Disconnect {{name}}? Historical data will be retained.",
+    "confirm": "Disconnect"
+  }
+}

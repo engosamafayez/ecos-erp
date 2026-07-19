@@ -18,7 +18,7 @@ type Props = {
 export function RawMaterialCategorySelect({
   value,
   onChange,
-  placeholder = 'Select category…',
+  placeholder = 'اختر الفئة…',
   disabled,
   className,
 }: Props) {
@@ -41,8 +41,8 @@ export function RawMaterialCategorySelect({
       onChange={onChange}
       loading={isLoading}
       placeholder={placeholder}
-      searchPlaceholder="Search categories…"
-      emptyText="No material categories found"
+      searchPlaceholder="بحث في الفئات…"
+      emptyText="لا توجد فئات مواد"
       disabled={disabled}
       className={className}
     />
