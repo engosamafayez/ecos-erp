@@ -55,7 +55,7 @@ final class ShipOrderInventoryAction
         $companyId   = $order->assignedWarehouse->company_id;
         $warehouseId = $order->assigned_warehouse_id;
 
-        DB::transaction(function () use ($order, $companyId, $warehouseId, $lineQuantities): void {
+        DB::transaction(function () use ($order, $companyId, $warehouseId, $lineQuantities, $previousReservationStatus): void {
             $totalCogs = 0.0;
 
             foreach ($order->lines as $line) {
@@ -115,19 +115,20 @@ final class ShipOrderInventoryAction
                 'actual_margin_percent' => $marginPct,
                 'reservation_status'    => ReservationStatus::Transferred->value,
             ]);
-        });
 
-        // Audit the transfer (vehicle_id not available at this layer — caller can add it)
-        OrderReservationAudit::record(
-            orderId:     $order->id,
-            fromStatus:  $previousReservationStatus,
-            toStatus:    ReservationStatus::Transferred->value,
-            reason:      'Inventory transferred to vehicle during loading',
-            warehouseId: $order->assigned_warehouse_id,
-            meta:        ['line_count' => $order->lines->count()],
-            actorId:     Auth::id(),
-            actorType:   Auth::check() ? 'user' : 'system',
-        );
+            // Audit inside the transaction so the record commits or rolls back
+            // atomically with the shipment (F-INV-H6 fix).
+            OrderReservationAudit::record(
+                orderId:     $order->id,
+                fromStatus:  $previousReservationStatus,
+                toStatus:    ReservationStatus::Transferred->value,
+                reason:      'Inventory transferred to vehicle during loading',
+                warehouseId: $order->assigned_warehouse_id,
+                meta:        ['line_count' => $order->lines->count()],
+                actorId:     Auth::id(),
+                actorType:   Auth::check() ? 'user' : 'system',
+            );
+        });
     }
 
     private function refreshFifoCost(string $productId, string $warehouseId): void

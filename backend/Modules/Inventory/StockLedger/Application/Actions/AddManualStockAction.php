@@ -10,26 +10,34 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\CostManagement\Domain\Enums\CostUpdateSource;
 use Modules\CostManagement\Domain\Services\MaterialCostService;
+use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentInAction;
+use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
+use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Inventory\StockLedger\Domain\Enums\MovementType;
-use Modules\Inventory\StockLedger\Domain\Models\StockMovement;
+use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 
 /**
- * Records a manual stock adjustment (adjustment_in) for a raw material.
+ * Manual stock addition — the single authoritative write path for operator-initiated
+ * inventory increases.
  *
- * Creates an immutable StockMovement ledger entry and, when a unit cost is
- * provided, delegates to MaterialCostService to update the material cost and
- * trigger the full downstream cascade (recipe_cost → product_cost → pricing review).
+ * Every call atomically:
+ *   1. Increases InventoryItem.on_hand_qty and records a StockLedgerEntry (AdjustmentIn)
+ *   2. Creates an InventoryReceiptLayer so the quantity enters the FIFO queue
+ *   3. Updates the material cost cascade when a unit cost is supplied
+ *
+ * The legacy stock_movements table is no longer written by this action.
  */
 final class AddManualStockAction extends BaseAction
 {
     public function __construct(
+        private readonly AdjustmentInAction $adjustmentIn,
+        private readonly InventoryItemRepositoryInterface $inventory,
         private readonly MaterialCostService $materialCostService,
     ) {}
 
     /**
-     * @param  mixed ...$arguments [Product, Warehouse, float $quantity, array $meta]
+     * @param  mixed ...$arguments  [Product, Warehouse, float $quantity, array $meta]
      * @param  array{
      *   unit_cost?: float|null,
      *   notes?: string|null,
@@ -49,37 +57,48 @@ final class AddManualStockAction extends BaseAction
             throw new InvalidArgumentException('Quantity must be greater than zero.');
         }
 
-        $movement = DB::transaction(function () use ($product, $warehouse, $quantity, $meta): StockMovement {
-            // Derive running balance from the last ledger entry for this product+warehouse
-            $last = StockMovement::query()
-                ->where('product_id', $product->id)
-                ->where('warehouse_id', $warehouse->id)
-                ->orderByDesc('created_at')
-                ->lockForUpdate()
-                ->first();
+        $companyId = (string) $warehouse->company_id;
+        $unitCost  = isset($meta['unit_cost']) && is_numeric($meta['unit_cost'])
+            ? (float) $meta['unit_cost'] : null;
 
-            $balanceBefore = $last !== null ? (float) $last->balance_after : 0.0;
-            $balanceAfter  = $balanceBefore + $quantity;
+        // Fall back to the best available cost signal on the product
+        $layerCost = $unitCost
+            ?? (float) ($product->average_cost
+                ?? $product->last_purchase_cost
+                ?? $product->current_fifo_cost
+                ?? 0);
 
-            $movement = StockMovement::query()->create([
-                'product_id'     => $product->id,
-                'warehouse_id'   => $warehouse->id,
-                'movement_type'  => MovementType::AdjustmentIn,
-                'quantity'       => round($quantity, 4),
-                'balance_before' => round($balanceBefore, 4),
-                'balance_after'  => round($balanceAfter, 4),
-                'reference_type' => null,
-                'reference_id'   => null,
-                'movement_date'  => now()->toDateString(),
-                'notes'          => $meta['notes'] ?? null,
+        $dto = new StockOperationDTO(
+            warehouse_id:   $warehouse->id,
+            product_id:     $product->id,
+            company_id:     $companyId,
+            quantity:       $quantity,
+            reference_type: 'manual_adjustment',
+            reference_id:   null,
+            notes:          $meta['notes'] ?? null,
+        );
+
+        DB::transaction(function () use ($product, $warehouse, $dto, $quantity, $layerCost, $companyId, $unitCost, $meta): void {
+            // Step 1: update InventoryItem + write StockLedgerEntry + fire domain event
+            // (runs inside a savepoint because we are already inside a transaction)
+            $this->adjustmentIn->execute($dto);
+
+            // Step 2: add the quantity to the FIFO queue
+            InventoryReceiptLayer::query()->create([
+                'company_id'            => $companyId,
+                'supplier_id'           => $product->last_supplier_id,
+                'product_id'            => $product->id,
+                'goods_receipt_id'      => null,
+                'goods_receipt_line_id' => null,
+                'warehouse_id'          => $warehouse->id,
+                'received_qty'          => $quantity,
+                'remaining_qty'         => $quantity,
+                'landed_unit_cost'      => $layerCost,
+                'sale_price_snapshot'   => $product->sale_price,
+                'receipt_date'          => now()->toDateString(),
             ]);
 
-            // When a unit cost is supplied, update the material's active cost and
-            // trigger the cascade (recipe_cost → product_cost → pricing review).
-            $unitCost = isset($meta['unit_cost']) && is_numeric($meta['unit_cost'])
-                ? (float) $meta['unit_cost']
-                : null;
-
+            // Step 3: cost cascade — only when cost is explicitly supplied by the operator
             if ($unitCost !== null && $unitCost >= 0) {
                 $this->materialCostService->update(
                     $product,
@@ -88,10 +107,10 @@ final class AddManualStockAction extends BaseAction
                     ['updated_by' => $meta['updated_by'] ?? null],
                 );
             }
-
-            return $movement;
         });
 
-        return OperationResult::success($movement->load(['warehouse', 'product']));
+        $item = $this->inventory->findByWarehouseAndProduct($warehouse->id, $product->id);
+
+        return OperationResult::success($item, 'Manual stock adjustment applied successfully.');
     }
 }

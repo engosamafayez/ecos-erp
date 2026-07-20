@@ -70,6 +70,7 @@ final class CreateReceiptLayersAction
 
             // ── Create receipt layer ──────────────────────────────────────────
             InventoryReceiptLayer::query()->create([
+                'company_id'            => $companyId,
                 'supplier_id'           => $supplierId,
                 'product_id'            => $line->product_id,
                 'goods_receipt_id'      => $receipt->id,

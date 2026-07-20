@@ -91,6 +91,12 @@ export function ProductsView({
   const { data, isLoading, isError, isFetching, refetch } = useProductsQuery(params);
   const deleteProduct = useDeleteProduct();
 
+  const productTypeLabel: Record<ProductType, string> = {
+    finished_good: t('types.finished_good'),
+    raw_material: t('types.raw_material'),
+    packaging_material: t('types.packaging_material'),
+  };
+
   const items = data?.items ?? [];
   const meta = data?.meta;
 
@@ -172,7 +178,7 @@ export function ProductsView({
       sortable: true,
       cell: (p) => (
         <Badge variant="outline">
-          {t(`types.${p.product_type}`)}
+          {productTypeLabel[p.product_type]}
         </Badge>
       ),
     },

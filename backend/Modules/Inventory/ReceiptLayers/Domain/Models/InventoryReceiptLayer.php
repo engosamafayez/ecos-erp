@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
+use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceipt;
 use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceiptLine;
 use Modules\Purchasing\Suppliers\Domain\Models\Supplier;
@@ -20,6 +21,7 @@ use Modules\Purchasing\Suppliers\Domain\Models\Supplier;
  * decreases as inventory is shipped (future FIFO implementation).
  *
  * @property string $id
+ * @property string|null $company_id
  * @property string $supplier_id
  * @property string $product_id
  * @property string $goods_receipt_id
@@ -41,6 +43,7 @@ class InventoryReceiptLayer extends Model
 
     /** @var list<string> */
     protected $fillable = [
+        'company_id',
         'supplier_id',
         'product_id',
         'goods_receipt_id',
@@ -63,6 +66,12 @@ class InventoryReceiptLayer extends Model
             'sale_price_snapshot' => 'decimal:2',
             'receipt_date'        => 'date:Y-m-d',
         ];
+    }
+
+    /** @return BelongsTo<Company, $this> */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     /** @return BelongsTo<Supplier, $this> */
