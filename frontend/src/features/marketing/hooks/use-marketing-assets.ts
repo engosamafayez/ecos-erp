@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type {
   AssetRelationship,
   MarketingAsset,
@@ -7,7 +7,7 @@ import type {
   RelationshipGraph,
 } from '../types/marketing';
 
-const BASE = '/api/marketing';
+const BASE = '/marketing';
 
 export function useMarketingAssets(params?: {
   company_id?: string;

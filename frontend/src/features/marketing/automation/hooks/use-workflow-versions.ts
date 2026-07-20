@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type { VersionCompare, WorkflowVersion } from '../types/automation';
 import { automationKeys } from './use-automation-workflows';
 
@@ -14,7 +14,7 @@ export function useWorkflowVersions(workflowId: string) {
     queryKey: versionKeys.list(workflowId),
     queryFn:  async () => {
       const { data } = await axios.get<{ data: WorkflowVersion[] }>(
-        `/api/marketing/automation/workflows/${workflowId}/versions`,
+        `/marketing/automation/workflows/${workflowId}/versions`,
       );
       return data.data ?? data;
     },
@@ -27,7 +27,7 @@ export function useCompareVersions(workflowId: string, versionA: string, version
     queryKey: versionKeys.compare(workflowId, versionA, versionB),
     queryFn:  async () => {
       const { data } = await axios.get<VersionCompare>(
-        `/api/marketing/automation/workflows/${workflowId}/versions/compare/${versionA}/${versionB}`,
+        `/marketing/automation/workflows/${workflowId}/versions/compare/${versionA}/${versionB}`,
       );
       return data;
     },
@@ -40,7 +40,7 @@ export function useRestoreVersion(workflowId: string) {
   return useMutation({
     mutationFn: async (versionId: string) => {
       const { data } = await axios.post(
-        `/api/marketing/automation/workflows/${workflowId}/versions/${versionId}/restore`,
+        `/marketing/automation/workflows/${workflowId}/versions/${versionId}/restore`,
       );
       return data.data ?? data;
     },

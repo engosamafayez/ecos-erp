@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type { PaginatedResponse, WorkflowExecution } from '../types/automation';
 import { automationKeys } from './use-automation-workflows';
 
@@ -17,7 +17,7 @@ export function useWorkflowExecutions(workflowId: string, filters?: { status?: s
     queryKey: executionKeys.list(workflowId, filters),
     queryFn:  async () => {
       const { data } = await axios.get<PaginatedResponse<WorkflowExecution>>(
-        `/api/marketing/automation/workflows/${workflowId}/executions`,
+        `/marketing/automation/workflows/${workflowId}/executions`,
         { params: filters },
       );
       return data;
@@ -31,7 +31,7 @@ export function useWorkflowExecution(workflowId: string, executionId: string) {
     queryKey: executionKeys.one(workflowId, executionId),
     queryFn:  async () => {
       const { data } = await axios.get<{ data: WorkflowExecution }>(
-        `/api/marketing/automation/workflows/${workflowId}/executions/${executionId}`,
+        `/marketing/automation/workflows/${workflowId}/executions/${executionId}`,
       );
       return data.data ?? data;
     },
@@ -44,7 +44,7 @@ export function useExecutionStats(workflowId: string) {
     queryKey: executionKeys.stats(workflowId),
     queryFn:  async () => {
       const { data } = await axios.get(
-        `/api/marketing/automation/workflows/${workflowId}/executions/stats`,
+        `/marketing/automation/workflows/${workflowId}/executions/stats`,
       );
       return data;
     },
@@ -57,7 +57,7 @@ export function useCancelExecution() {
   return useMutation({
     mutationFn: async ({ workflowId, executionId }: { workflowId: string; executionId: string }) => {
       const { data } = await axios.post(
-        `/api/marketing/automation/workflows/${workflowId}/executions/${executionId}/cancel`,
+        `/marketing/automation/workflows/${workflowId}/executions/${executionId}/cancel`,
       );
       return data.data ?? data;
     },
@@ -72,7 +72,7 @@ export function useRetryExecution() {
   return useMutation({
     mutationFn: async ({ workflowId, executionId }: { workflowId: string; executionId: string }) => {
       const { data } = await axios.post(
-        `/api/marketing/automation/workflows/${workflowId}/executions/${executionId}/retry`,
+        `/marketing/automation/workflows/${workflowId}/executions/${executionId}/retry`,
       );
       return data.data ?? data;
     },

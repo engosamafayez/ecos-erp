@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type {
   Campaign,
   CampaignAdSet,
@@ -12,7 +12,7 @@ import type {
   CampaignBusinessContext,
 } from '../types/campaign';
 
-const BASE = '/api/marketing';
+const BASE = '/marketing';
 
 // ─── Campaigns ────────────────────────────────────────────────────────────────
 

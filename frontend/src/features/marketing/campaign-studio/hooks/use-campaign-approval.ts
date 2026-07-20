@@ -1,9 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type { CampaignApproval } from '../types/campaign-studio';
 import { campaignStudioKeys } from './use-campaign-studio';
 
-const BASE = '/api/marketing/studio';
+const BASE = '/marketing/studio';
 
 export function useCampaignApproval(draftId: string) {
   return useQuery({

@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 
-const BASE = '/api/marketing';
+const BASE = '/marketing';
 
 export interface MetaCallbackResponse {
   message: string;

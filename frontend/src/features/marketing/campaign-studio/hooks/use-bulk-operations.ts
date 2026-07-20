@@ -1,9 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type { BulkOperationType, CampaignBulkJob } from '../types/campaign-studio';
 import { campaignStudioKeys } from './use-campaign-studio';
 
-const BASE = '/api/marketing/studio';
+const BASE = '/marketing/studio';
 
 export function useBulkJobStatus(jobId: string | null) {
   return useQuery({

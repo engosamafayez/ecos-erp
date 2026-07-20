@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useQuery } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type {
   ExecutiveDashboardResponse,
   AnalyticsResponse,
@@ -13,7 +13,7 @@ import type {
   TrendsFilters,
 } from '../types/intelligence';
 
-const BASE = '/api/marketing/intelligence';
+const BASE = '/marketing/intelligence';
 
 const STALE = 15 * 60 * 1000; // 15-min cache matches backend TTL
 

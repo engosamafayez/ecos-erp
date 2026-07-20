@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type { AutomationGovernancePolicy, PaginatedResponse } from '../types/automation';
 import { automationKeys } from './use-automation-workflows';
 
@@ -14,7 +14,7 @@ export function useGovernancePolicies(filters?: { company_id?: string }) {
     queryKey: governanceKeys.list(filters),
     queryFn:  async () => {
       const { data } = await axios.get<PaginatedResponse<AutomationGovernancePolicy>>(
-        '/api/marketing/automation/governance',
+        '/marketing/automation/governance',
         { params: filters },
       );
       return data;
@@ -27,7 +27,7 @@ export function useCreateGovernancePolicy() {
   return useMutation({
     mutationFn: async (payload: Partial<AutomationGovernancePolicy> & { name: string }) => {
       const { data } = await axios.post<{ data: AutomationGovernancePolicy }>(
-        '/api/marketing/automation/governance',
+        '/marketing/automation/governance',
         payload,
       );
       return data.data ?? data;
@@ -41,7 +41,7 @@ export function useUpdateGovernancePolicy(id: string) {
   return useMutation({
     mutationFn: async (payload: Partial<AutomationGovernancePolicy>) => {
       const { data } = await axios.put<{ data: AutomationGovernancePolicy }>(
-        `/api/marketing/automation/governance/${id}`,
+        `/marketing/automation/governance/${id}`,
         payload,
       );
       return data.data ?? data;
@@ -57,7 +57,7 @@ export function useDeleteGovernancePolicy() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await axios.delete(`/api/marketing/automation/governance/${id}`);
+      await axios.delete(`/marketing/automation/governance/${id}`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: governanceKeys.all() }),
   });

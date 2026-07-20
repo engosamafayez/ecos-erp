@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 
-const BASE = '/api/marketing';
+const BASE = '/marketing';
 
 export function useSyncCampaigns(connectionId: string) {
   const qc = useQueryClient();

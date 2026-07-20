@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type { AutomationWorkflow, AutomationWorkflowTemplate, PaginatedResponse, WorkflowTemplateCategory } from '../types/automation';
 import { automationKeys } from './use-automation-workflows';
 
@@ -14,7 +14,7 @@ export function useWorkflowTemplates(filters?: { category?: WorkflowTemplateCate
     queryKey: templateKeys.list(filters),
     queryFn:  async () => {
       const { data } = await axios.get<PaginatedResponse<AutomationWorkflowTemplate>>(
-        '/api/marketing/automation/templates',
+        '/marketing/automation/templates',
         { params: filters },
       );
       return data;
@@ -26,7 +26,7 @@ export function useCreateWorkflowTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<AutomationWorkflowTemplate> & { name: string; category: string; trigger_type: string; nodes_graph: unknown }) => {
-      const { data } = await axios.post<{ data: AutomationWorkflowTemplate }>('/api/marketing/automation/templates', payload);
+      const { data } = await axios.post<{ data: AutomationWorkflowTemplate }>('/marketing/automation/templates', payload);
       return data.data ?? data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: templateKeys.all() }),
@@ -38,7 +38,7 @@ export function useCreateWorkflowFromTemplate() {
   return useMutation({
     mutationFn: async ({ templateId, overrides }: { templateId: string; overrides: { name?: string; company_id?: string; brand_id?: string } }) => {
       const { data } = await axios.post<{ data: AutomationWorkflow }>(
-        `/api/marketing/automation/templates/${templateId}/create-workflow`,
+        `/marketing/automation/templates/${templateId}/create-workflow`,
         overrides,
       );
       return data.data ?? data;

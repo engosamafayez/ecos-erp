@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type { WorkflowExecution } from '../types/automation';
 import { automationKeys } from './use-automation-workflows';
 
@@ -8,7 +8,7 @@ export function useTriggerWorkflow(workflowId: string) {
   return useMutation({
     mutationFn: async (payload: { entity_type: string; entity_id: string; payload?: Record<string, unknown> }) => {
       const { data } = await axios.post<{ data: WorkflowExecution }>(
-        `/api/marketing/automation/workflows/${workflowId}/trigger`,
+        `/marketing/automation/workflows/${workflowId}/trigger`,
         payload,
       );
       return data.data ?? data;

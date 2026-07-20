@@ -10,58 +10,67 @@ use Illuminate\Support\Facades\Schema;
 /*
  * IDEMPOTENT MIGRATION — safe to run in any of these states:
  *
- *  A) Table does not exist               → creates it normally.
- *  B) Table exists + FK present          → skips (already fully migrated).
- *  C) Table exists + FK missing + empty  → drops & recreates automatically.
- *     This is the typical local-dev corruption: a prior migration run created
- *     the table body before `marketing_connections` existed, then failed on the
- *     FK line. No manual SQL required in this case.
- *  D) Table exists + FK missing + has rows → adds only the missing FK.
- *     This covers a rare production scenario where data arrived before the FK
- *     could be enforced. No data is deleted.
+ *  A) Table does not exist                       → creates it normally.
+ *  B) Table exists, FK present, unique present   → skips (fully migrated).
+ *  C) Table exists, partial state, empty         → drops & recreates cleanly.
+ *  D) Table exists, FK missing, has rows         → adds only the missing FK.
  *
- * ONE-TIME MANUAL ACTION (state D only, local dev):
- *   If your local DB hit state D because you seeded `meta_webhooks` rows that
- *   point to non-existent connections, the FK add will fail with a constraint
- *   violation.  Run the following to clear stale rows, then re-run migrate:
+ * MySQL note: DATABASE() is used instead of current_schema() (MySQL does not
+ * implement current_schema() as a built-in function; it throws FUNCTION
+ * ecos_erp.current_schema does not exist at runtime).
  *
- *     DELETE FROM meta_webhooks
- *      WHERE marketing_connection_id NOT IN (SELECT id FROM marketing_connections);
- *     php artisan migrate
- *
- *   This situation cannot occur in CI (empty DB) or production (migrations run
- *   in order before seeding), so no automated recovery is needed there.
+ * MySQL note: the compound unique index uses an explicit short name to stay
+ * within MySQL's 64-character identifier limit.
  */
 return new class extends Migration
 {
+    private const UNIQUE_IDX = 'mw_conn_objtype_objid_unique';
+
     public function up(): void
     {
         if (Schema::hasTable('meta_webhooks')) {
-            // current_schema() is PostgreSQL-standard (ECOS runs PostgreSQL-only).
             $hasFk = (bool) DB::selectOne(
                 "SELECT COUNT(*) AS cnt
                    FROM information_schema.TABLE_CONSTRAINTS
                   WHERE CONSTRAINT_TYPE = 'FOREIGN KEY'
-                    AND TABLE_SCHEMA    = current_schema()
+                    AND TABLE_SCHEMA    = DATABASE()
                     AND TABLE_NAME      = 'meta_webhooks'
                     AND CONSTRAINT_NAME LIKE 'meta_webhooks_marketing_connection%'"
             )?->cnt;
 
-            if ($hasFk) {
+            $hasUnique = (bool) DB::selectOne(
+                "SELECT COUNT(*) AS cnt
+                   FROM information_schema.TABLE_CONSTRAINTS
+                  WHERE CONSTRAINT_TYPE = 'UNIQUE'
+                    AND TABLE_SCHEMA    = DATABASE()
+                    AND TABLE_NAME      = 'meta_webhooks'
+                    AND CONSTRAINT_NAME = '" . self::UNIQUE_IDX . "'"
+            )?->cnt;
+
+            if ($hasFk && $hasUnique) {
                 return; // Already fully migrated — nothing to do.
             }
 
-            // Corrupted state: table present but FK is absent.
+            // Partial state: drop if empty, otherwise patch selectively.
             if (DB::table('meta_webhooks')->count() === 0) {
-                // Empty table — safe to drop and recreate cleanly.
                 Schema::drop('meta_webhooks');
+                // Falls through to Schema::create below.
             } else {
-                // Data present — only add the missing FK (see header comment for D).
-                Schema::table('meta_webhooks', static function (Blueprint $table): void {
-                    $table->foreign('marketing_connection_id')
-                        ->references('id')->on('marketing_connections')
-                        ->onDelete('cascade');
-                });
+                if (!$hasFk) {
+                    Schema::table('meta_webhooks', static function (Blueprint $table): void {
+                        $table->foreign('marketing_connection_id')
+                            ->references('id')->on('marketing_connections')
+                            ->onDelete('cascade');
+                    });
+                }
+                if (!$hasUnique) {
+                    Schema::table('meta_webhooks', static function (Blueprint $table): void {
+                        $table->unique(
+                            ['marketing_connection_id', 'object_type', 'object_id'],
+                            self::UNIQUE_IDX
+                        );
+                    });
+                }
                 return;
             }
         }
@@ -92,7 +101,10 @@ return new class extends Migration
                 ->references('id')->on('marketing_connections')
                 ->onDelete('cascade');
 
-            $table->unique(['marketing_connection_id', 'object_type', 'object_id']);
+            $table->unique(
+                ['marketing_connection_id', 'object_type', 'object_id'],
+                'mw_conn_objtype_objid_unique'
+            );
         });
     }
 

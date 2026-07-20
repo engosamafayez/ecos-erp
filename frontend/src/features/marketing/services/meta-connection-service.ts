@@ -1,7 +1,7 @@
-import axios from 'axios';
-import type { MarketingAsset, MarketingConnection } from '../types/marketing';
+﻿import { api as axios } from '@/lib/axios';
+import type { MarketingAsset } from '../types/marketing';
 
-const BASE = '/api/marketing';
+const BASE = '/marketing';
 
 // ── Response shapes ───────────────────────────────────────────────────────────
 

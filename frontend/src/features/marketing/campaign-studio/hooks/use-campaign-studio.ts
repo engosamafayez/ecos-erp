@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type {
   CampaignDraft,
   DraftFilters,
@@ -8,7 +8,7 @@ import type {
   StudioKpis,
 } from '../types/campaign-studio';
 
-const BASE = '/api/marketing/studio';
+const BASE = '/marketing/studio';
 
 export const campaignStudioKeys = {
   all:       ['campaign-studio'] as const,

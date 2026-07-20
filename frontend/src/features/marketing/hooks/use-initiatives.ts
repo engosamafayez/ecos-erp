@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api as axios } from '@/lib/axios';
 import type {
   MarketingInitiative,
   InitiativeTemplate,
@@ -8,7 +8,7 @@ import type {
   InitiativeListResponse,
 } from '../types/initiative';
 
-const BASE = '/api/marketing';
+const BASE = '/marketing';
 
 // ─── Initiatives ──────────────────────────────────────────────────────────────
 
