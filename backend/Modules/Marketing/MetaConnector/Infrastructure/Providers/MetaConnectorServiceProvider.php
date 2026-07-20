@@ -37,66 +37,69 @@ final class MetaConnectorServiceProvider extends ServiceProvider
 
         $this->app->bind(MetaApiClient::class, function ($app): MetaApiClient {
             $companyId = $this->resolveCompanyId($app);
-            $service   = $app->make(ProviderCredentialService::class);
-            $cred      = $companyId ? $service->find($companyId, 'meta') : null;
+            $service = $app->make(ProviderCredentialService::class);
+            $cred = $companyId ? $service->find($companyId, 'meta') : null;
 
             return new MetaApiClient(
-                appId:     (string) ($cred?->app_id ?? ''),
+                appId: (string) ($cred?->app_id ?? ''),
                 appSecret: (string) ($cred?->app_secret ?? ''),
             );
         });
 
         $this->app->bind(MetaOAuthService::class, function ($app): MetaOAuthService {
             $companyId = $this->resolveCompanyId($app);
-            $service   = $app->make(ProviderCredentialService::class);
-            $cred      = $companyId ? $service->find($companyId, 'meta') : null;
-            $uri       = (string) ($cred?->redirect_uri ?? $service->defaultRedirectUri('meta'));
+            $service = $app->make(ProviderCredentialService::class);
+            $cred = $companyId ? $service->find($companyId, 'meta') : null;
+            $uri = (string) ($cred?->redirect_uri ?? $service->defaultRedirectUri('meta'));
 
             return new MetaOAuthService(
-                apiClient:            $app->make(MetaApiClient::class),
-                redirectUri:          $uri,
-                events:               $app->make(ProviderEventPublisher::class),
-                providerCredentials:  $app->make(ProviderCredentialService::class),
-                disconnectAction:     $app->make(DisconnectConnectionAction::class),
+                apiClient: $app->make(MetaApiClient::class),
+                redirectUri: $uri,
+                events: $app->make(ProviderEventPublisher::class),
+                providerCredentials: $app->make(ProviderCredentialService::class),
+                disconnectAction: $app->make(DisconnectConnectionAction::class),
             );
         });
 
         $this->app->bind(MetaConnector::class, function ($app): MetaConnector {
             $companyId = $this->resolveCompanyId($app);
-            $service   = $app->make(ProviderCredentialService::class);
-            $cred      = $companyId ? $service->find($companyId, 'meta') : null;
-            $uri       = (string) ($cred?->redirect_uri ?? $service->defaultRedirectUri('meta'));
+            $service = $app->make(ProviderCredentialService::class);
+            $cred = $companyId ? $service->find($companyId, 'meta') : null;
+            $uri = (string) ($cred?->redirect_uri ?? $service->defaultRedirectUri('meta'));
 
             return new MetaConnector(
-                apiClient:    $app->make(MetaApiClient::class),
+                apiClient: $app->make(MetaApiClient::class),
                 oauthService: $app->make(MetaOAuthService::class),
-                redirectUri:  $uri,
+                redirectUri: $uri,
             );
         });
 
         $this->app->bind(MetaWebhookService::class, function ($app): MetaWebhookService {
             return new MetaWebhookService(
                 apiClient: $app->make(MetaApiClient::class),
-                events:    $app->make(ProviderEventPublisher::class),
+                events: $app->make(ProviderEventPublisher::class),
             );
         });
 
         $this->app->bind(MetaPermissionsService::class, function ($app): MetaPermissionsService {
             return new MetaPermissionsService(
-                apiClient:     $app->make(MetaApiClient::class),
+                apiClient: $app->make(MetaApiClient::class),
                 healthMonitor: $app->make(ProviderHealthMonitor::class),
-                events:        $app->make(ProviderEventPublisher::class),
+                events: $app->make(ProviderEventPublisher::class),
             );
         });
     }
 
     public function boot(): void
     {
-        $registry  = $this->app->make(ConnectorRegistry::class);
-        $connector = $this->app->make(MetaConnector::class);
-        $registry->register($connector);
+        // Defer connector registration until ConnectorRegistry is first resolved so that
+        // resolveCompanyId() runs after the authenticated request user is available, not
+        // during the boot phase when $request->user() is always null.
+        $this->callAfterResolving(ConnectorRegistry::class, function (ConnectorRegistry $registry): void {
+            $registry->register($this->app->make(MetaConnector::class));
+        });
 
-        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
 
         $this->commands([
             DispatchMetaSyncCommand::class,
@@ -162,7 +165,7 @@ final class MetaConnectorServiceProvider extends ServiceProvider
      */
     private function resolveCompanyId($app): string
     {
-        $context  = $app->make(ProviderCredentialContext::class);
+        $context = $app->make(ProviderCredentialContext::class);
         $explicit = $context->get();
 
         if ($explicit !== null) {
