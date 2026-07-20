@@ -169,6 +169,9 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
     e.target.style.boxShadow = 'none';
   };
 
+  const { onBlur: emailOnBlur, ...emailReg } = register('email');
+  const { onBlur: pwOnBlur, ...pwReg }       = register('password');
+
   return (
     <>
       <style>{`
@@ -303,10 +306,10 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
                 className="ecos-input"
                 style={errors.email ? inputErrorStyle : inputBase}
                 onFocus={handleFocus}
-                onBlur={(e) => handleBlur(e, !!errors.email)}
+                onBlur={(e) => { void emailOnBlur(e); handleBlur(e, !!errors.email); }}
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? 'email-error' : undefined}
-                {...register('email')}
+                {...emailReg}
               />
             </div>
             {errors.email ? (
@@ -339,10 +342,10 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
                   paddingInlineEnd: '42px',
                 }}
                 onFocus={handleFocus}
-                onBlur={(e) => handleBlur(e, !!errors.password)}
+                onBlur={(e) => { void pwOnBlur(e); handleBlur(e, !!errors.password); }}
                 aria-invalid={!!errors.password}
                 aria-describedby={errors.password ? 'password-error' : undefined}
-                {...register('password')}
+                {...pwReg}
               />
               <button
                 type="button"

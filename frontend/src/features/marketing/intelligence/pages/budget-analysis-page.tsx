@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle, DollarSign } from 'lucide-react';
+import { AlertTriangle, DollarSign } from 'lucide-react';
 import { useIntelligenceBudget } from '../../hooks/use-intelligence';
 import { IntelligenceFilterBar } from '../components/intelligence-filter-bar';
 import { KpiCard, KpiCardSkeleton } from '../components/kpi-card';

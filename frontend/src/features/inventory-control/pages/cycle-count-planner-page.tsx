@@ -12,11 +12,15 @@ import { ROUTES } from '@/router/routes';
 
 const PER_PAGE = 50;
 
-const FREQ_MAP: Record<number, string> = { 30: '30', 90: '90', 180: '180' };
-
 export function CycleCountPlannerPage() {
   const { t } = useTranslation('inventory-control');
   const { t: tCommon } = useTranslation('common');
+
+  const freqLabel: Partial<Record<number, string>> = {
+    30:  t('cyclePlanner.frequencies.30'),
+    90:  t('cyclePlanner.frequencies.90'),
+    180: t('cyclePlanner.frequencies.180'),
+  };
 
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [classFilter, setClassFilter] = useState<AbcClass | undefined>(undefined);
@@ -117,9 +121,7 @@ export function CycleCountPlannerPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-2 text-center text-xs">
-                      {FREQ_MAP[plan.frequency_days]
-                        ? t(`cyclePlanner.frequencies.${FREQ_MAP[plan.frequency_days]}`)
-                        : `${plan.frequency_days}d`}
+                      {freqLabel[plan.frequency_days] ?? `${plan.frequency_days}d`}
                     </td>
                     <td className="text-muted-foreground px-4 py-2 text-xs">
                       {plan.last_counted_at ?? t('cyclePlanner.neverCounted')}

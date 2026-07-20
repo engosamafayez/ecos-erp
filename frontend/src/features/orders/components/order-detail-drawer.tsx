@@ -2256,7 +2256,7 @@ export function OrderDetailDrawer({ order, open, onOpenChange, onEdit }: OrderDe
     { key: 'timeline',  label: 'الجدول الزمني',            content: <TimelineTab order={displayOrder} /> },
     { key: 'payment',   label: t('drawer.tabs.payment'),    content: <PaymentTab order={displayOrder} t={t} /> },
     { key: 'shipping',  label: t('drawer.tabs.shipping'),   content: <ShippingTab order={displayOrder} t={t} /> },
-    { key: 'notes',     label: t('drawer.tabs.notes'),      content: <OrderNotesTab order={displayOrder} t={t} /> },
+    { key: 'notes',     label: t('drawer.tabs.notes'),      content: <OrderNotesTab order={displayOrder} /> },
     { key: 'location',  label: t('drawer.tabs.location'),   content: <LocationTab order={displayOrder} t={t} /> },
   ];
 

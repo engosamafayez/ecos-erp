@@ -23,11 +23,10 @@ export function LineChart({
   showLabels = true,
   showGrid = true,
   className,
-  formatValue,
 }: LineChartProps) {
   const points = data.filter((d) => d.value != null) as Array<{ label: string; value: number }>;
 
-  const { path, areaPath, minY, maxY, coords } = useMemo(() => {
+  const { path, areaPath, coords } = useMemo(() => {
     if (points.length < 2) return { path: '', areaPath: '', minY: 0, maxY: 0, coords: [] };
 
     const values = points.map((p) => p.value);

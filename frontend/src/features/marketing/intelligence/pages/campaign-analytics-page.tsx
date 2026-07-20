@@ -3,7 +3,6 @@ import { Download, TrendingUp } from 'lucide-react';
 import { useIntelligenceCampaigns, useIntelligenceCampaignTrend, buildExportUrl } from '../../hooks/use-intelligence';
 import { IntelligenceFilterBar } from '../components/intelligence-filter-bar';
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
-import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

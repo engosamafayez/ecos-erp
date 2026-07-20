@@ -1,15 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/crud';
-import type { CbWorker } from '@/features/claude-bridge/types';
 
 export function BridgeSettingsPage() {
-  const worker: CbWorker | null = null;
   const [defaultRepo, setDefaultRepo]     = useState(
     () => localStorage.getItem('cb_last_repo_path') ?? '',
   );
@@ -29,47 +26,17 @@ export function BridgeSettingsPage() {
           <CardTitle className="text-base">Worker</CardTitle>
         </CardHeader>
         <CardContent>
-          {worker ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`h-2 w-2 rounded-full ${worker.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`}
-                />
-                <span className="font-medium">{worker.name}</span>
-                <span className="text-muted-foreground text-sm capitalize">{worker.status}</span>
-              </div>
-              {worker.last_seen_at && (
-                <p className="text-muted-foreground text-sm">
-                  Last seen: {worker.last_seen_at}
-                </p>
-              )}
-              {worker.claude_version && (
-                <p className="text-muted-foreground text-sm">
-                  Claude version: {worker.claude_version}
-                </p>
-              )}
-              <div className="flex gap-2 pt-2">
-                <Button size="sm" variant="outline" disabled>
-                  Regenerate API Token
-                </Button>
-                <Button size="sm" variant="destructive" disabled>
-                  Deactivate Worker
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <p className="text-muted-foreground text-sm mb-3">
-                No worker registered. Register one to start using Claude Bridge.
-              </p>
-              <Button size="sm" disabled>
-                Register Worker
-              </Button>
-              <p className="text-muted-foreground text-xs mt-2">
-                Worker registration available in Sprint 2.
-              </p>
-            </div>
-          )}
+          <div>
+            <p className="text-muted-foreground text-sm mb-3">
+              No worker registered. Register one to start using Claude Bridge.
+            </p>
+            <Button size="sm" disabled>
+              Register Worker
+            </Button>
+            <p className="text-muted-foreground text-xs mt-2">
+              Worker registration available in Sprint 2.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

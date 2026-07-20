@@ -354,7 +354,6 @@ function WooCommerceNotesSection({ order }: { order: Order }) {
 
 type OrderNotesTabProps = {
   order: Order;
-  t: (k: string) => string;
 };
 
 export function OrderNotesTab({ order }: OrderNotesTabProps) {
