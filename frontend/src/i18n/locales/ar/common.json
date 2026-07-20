@@ -78,5 +78,12 @@
   "loading": "جار التحميل…",
   "dialogs": {
     "softDeleteMessage": "سيتم حذف {{name}} بشكل مؤقت. يمكن استعادته لاحقاً."
+  },
+  "pagination": {
+    "previous": "السابق",
+    "next": "التالي",
+    "pageOf": "صفحة {{page}} من {{lastPage}} · {{total}} إجمالي",
+    "noResults": "لا توجد نتائج",
+    "refresh": "تحديث"
   }
 }

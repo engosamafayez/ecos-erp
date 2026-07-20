@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import type { PaginationMeta } from '@/components/crud/types';
@@ -9,10 +10,8 @@ type PaginationProps = {
   onPageChange: (page: number) => void;
 };
 
-/**
- * Reusable pagination control (previous / next + summary).
- */
 export function Pagination({ meta, onPageChange }: PaginationProps) {
+  const { t } = useTranslation('common');
   const { page, total, lastPage } = meta;
   const canPrevious = page > 1;
   const canNext = page < lastPage;
@@ -23,7 +22,9 @@ export function Pagination({ meta, onPageChange }: PaginationProps) {
   return (
     <div className="text-muted-foreground flex flex-col items-center justify-between gap-2 text-sm sm:flex-row">
       <span>
-        {total === 0 ? 'No results' : `Page ${page} of ${Math.max(lastPage, 1)} · ${total} total`}
+        {total === 0
+          ? t('pagination.noResults')
+          : t('pagination.pageOf', { page, lastPage: Math.max(lastPage, 1), total })}
       </span>
       <div className="flex items-center gap-2">
         <Button
@@ -33,7 +34,7 @@ export function Pagination({ meta, onPageChange }: PaginationProps) {
           onClick={() => onPageChange(page - 1)}
         >
           <PrevIcon className="size-4" aria-hidden />
-          Previous
+          {t('pagination.previous')}
         </Button>
         <Button
           variant="outline"
@@ -41,7 +42,7 @@ export function Pagination({ meta, onPageChange }: PaginationProps) {
           disabled={!canNext}
           onClick={() => onPageChange(page + 1)}
         >
-          Next
+          {t('pagination.next')}
           <NextIcon className="size-4" aria-hidden />
         </Button>
       </div>

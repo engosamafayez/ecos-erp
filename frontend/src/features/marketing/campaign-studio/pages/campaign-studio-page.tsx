@@ -9,7 +9,7 @@ import type { CampaignDraft, CampaignInternalStatus, DraftFilters } from '../typ
 import { useMarketingLabels, CAMPAIGN_INTERNAL_STATUS_COLORS } from '@/features/marketing/hooks/use-marketing-labels';
 
 export function CampaignStudioPage() {
-  const { internalStatusLabel, internalStatusTabLabel } = useMarketingLabels();
+  const { internalStatusTabLabel } = useMarketingLabels();
   const [activeTab, setActiveTab]     = useState<CampaignInternalStatus | 'all'>('all');
   const [search, setSearch]           = useState('');
   const [selectedDraft, setSelected]  = useState<CampaignDraft | null>(null);
@@ -163,6 +163,7 @@ function DraftCard({ draft, onOpen, onDuplicate, onDelete }: {
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const { internalStatusLabel } = useMarketingLabels();
   return (
     <div className="border rounded-lg p-4 hover:border-primary/40 transition-colors cursor-pointer group" onClick={onOpen}>
       <div className="flex items-start justify-between gap-2 mb-3">

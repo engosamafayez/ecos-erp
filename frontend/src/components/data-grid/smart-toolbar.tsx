@@ -44,6 +44,8 @@ type SmartToolbarProps = {
   selectedCount?: number;
   onRefresh?: () => void;
   isFetching?: boolean;
+  /** Accessible label for the Refresh icon button (pass translated string from the caller). */
+  refreshLabel?: string;
   /** Slot for right-side view controls: Column Manager, Saved Views, etc. */
   viewControls?: ReactNode;
 };
@@ -61,6 +63,7 @@ export function SmartToolbar({
   selectedCount = 0,
   onRefresh,
   isFetching = false,
+  refreshLabel = 'Refresh',
   viewControls,
 }: SmartToolbarProps) {
   const hasSelection = selectedCount > 0;
@@ -137,7 +140,7 @@ export function SmartToolbar({
             className="size-8"
             onClick={onRefresh}
             disabled={isFetching}
-            aria-label="Refresh"
+            aria-label={refreshLabel}
           >
             <RefreshCw className={cn('size-3.5', isFetching && 'animate-spin')} />
           </Button>

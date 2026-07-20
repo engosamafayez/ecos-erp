@@ -176,6 +176,7 @@ export function OrderListToolbar({
       bulkActionsLabel={t('actions.bulkActions')}
       selectedCount={selectedCount}
       onRefresh={onRefresh}
+      refreshLabel={t('actions.refresh')}
       isFetching={isFetching}
       viewControls={
         <>

@@ -78,5 +78,12 @@
   "loading": "Loading…",
   "dialogs": {
     "softDeleteMessage": "This will soft-delete {{name}}. It can be restored later."
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{page}} of {{lastPage}} · {{total}} total",
+    "noResults": "No results",
+    "refresh": "Refresh"
   }
 }

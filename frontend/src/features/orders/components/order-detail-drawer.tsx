@@ -88,6 +88,10 @@ import { cn } from '@/lib/utils';
 // (k: string) => string to this type previously violated strictFunctionTypes.
 type OrdersT = ReturnType<typeof useTranslation<'orders'>>['t'];
 
+// i18next strict types reject Parameters<OrdersT>[0] (union includes TemplateStringsArray).
+// This cast helper provides a controlled escape for dynamic-key lookups with a defaultValue.
+type TDynamic = (key: string, opts?: { defaultValue?: string }) => string;
+
 // ── Helper primitives ─────────────────────────────────────────────────────────
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -420,16 +424,16 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         </div>
         <div className="p-4">
           <DetailGrid cols={2}>
-            <DetailRow label="Name">
+            <DetailRow label={t('drawer.customer.name')}>
               <span className="font-medium">{cust?.name ?? '—'}</span>
             </DetailRow>
-            <DetailRow label="Code">
+            <DetailRow label={t('drawer.customer.code')}>
               <span className="flex items-center gap-1 font-mono text-xs">
                 <Hash className="size-3 text-muted-foreground" />
                 {cust?.code ?? '—'}
               </span>
             </DetailRow>
-            <DetailRow label="Primary Phone">
+            <DetailRow label={t('drawer.customer.primaryPhone')}>
               {primaryPhone ? (
                 <a href={`tel:${primaryPhone}`} className="flex items-center gap-1 text-sm hover:underline">
                   <Phone className="size-3 shrink-0 text-muted-foreground" />
@@ -437,7 +441,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 </a>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="Secondary Phone">
+            <DetailRow label={t('drawer.customer.secondaryPhone')}>
               {secondaryPhone ? (
                 <a href={`tel:${secondaryPhone}`} className="flex items-center gap-1 text-sm hover:underline">
                   <Phone className="size-3 shrink-0 text-muted-foreground" />
@@ -445,7 +449,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 </a>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="Email">
+            <DetailRow label={t('drawer.customer.email')}>
               {email ? (
                 <a href={`mailto:${email}`} className="flex min-w-0 items-center gap-1 text-sm text-primary hover:underline">
                   <Mail className="size-3 shrink-0" />
@@ -453,12 +457,12 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 </a>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="Customer Since">
+            <DetailRow label={t('drawer.customer.since')}>
               {cust?.created_at
                 ? formatDate(cust.created_at)
                 : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="Status">
+            <DetailRow label={t('drawer.customer.status')}>
               {cust?.is_active !== undefined ? (
                 <span className={cn(
                   'inline-flex items-center gap-1 text-sm font-medium',
@@ -467,11 +471,11 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                   {cust.is_active
                     ? <CheckCircle2 className="size-3" />
                     : <XCircle className="size-3" />}
-                  {cust.is_active ? 'Active' : 'Inactive'}
+                  {cust.is_active ? t('drawer.customer.active') : t('drawer.customer.inactive')}
                 </span>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="Last Order">
+            <DetailRow label={t('drawer.customer.lastOrder')}>
               {stats?.last_order_date
                 ? formatDate(stats.last_order_date)
                 : <span className="text-muted-foreground">—</span>}
@@ -485,23 +489,23 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         <div className="rounded-lg border overflow-hidden">
           <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2.5">
             <Activity className="size-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer Summary</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('drawer.customer.summary')}</span>
           </div>
           <div className="grid grid-cols-2 divide-x divide-y">
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Lifetime Value</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t('drawer.customer.lifetimeValue')}</p>
               <p className="text-sm font-semibold tabular-nums">{fmtCur(stats.lifetime_value, true)}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Avg. Order Value</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t('drawer.customer.avgOrderValue')}</p>
               <p className="text-sm font-semibold tabular-nums">{aov != null ? fmtCur(aov, true) : '—'}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Total Orders</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t('drawer.customer.totalOrders')}</p>
               <p className="text-sm font-semibold">{stats.total_orders.toLocaleString()}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">First Order</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t('drawer.customer.firstOrder')}</p>
               <p className="text-sm">{stats.first_order_date ? formatDate(stats.first_order_date) : '—'}</p>
             </div>
           </div>
@@ -514,11 +518,11 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2.5">
           <div className="flex items-center gap-2">
             <MapPin className="size-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Delivery Address</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('drawer.customer.deliveryAddress')}</span>
             {hasLocation && (
               <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
                 <BadgeCheck className="size-2.5" />
-                GPS Pinned
+                {t('drawer.customer.gpsPinned')}
               </span>
             )}
           </div>
@@ -527,14 +531,14 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
               <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" asChild>
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="size-3" />
-                  Map
+                  {t('drawer.customer.map')}
                 </a>
               </Button>
             ) : null}
             {(hasAddrData || hasMapsData) ? (
               <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copyAddress}>
                 <Copy className="size-3" />
-                Copy
+                {t('drawer.customer.copy')}
               </Button>
             ) : null}
           </div>
@@ -546,33 +550,33 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
           {/* Top-left: Location */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              📍 Location
+              📍 {t('drawer.customer.location')}
             </p>
             <div className="flex flex-col gap-3">
-              <AddrField icon={<Globe className="size-3.5" />}      label="Governorate" value={order.governorate} />
-              <AddrField icon={<Building className="size-3.5" />}   label="City"        value={order.city} />
-              <AddrField icon={<LayoutGrid className="size-3.5" />} label="District"    value={order.delivery_zone} />
-              <AddrField icon={<Navigation className="size-3.5" />} label="Street"      value={order.shipping_address} />
+              <AddrField icon={<Globe className="size-3.5" />}      label={t('drawer.customer.governorate')} value={order.governorate} />
+              <AddrField icon={<Building className="size-3.5" />}   label={t('drawer.customer.city')}        value={order.city} />
+              <AddrField icon={<LayoutGrid className="size-3.5" />} label={t('drawer.customer.district')}    value={order.delivery_zone} />
+              <AddrField icon={<Navigation className="size-3.5" />} label={t('drawer.customer.street')}      value={order.shipping_address} />
             </div>
           </div>
 
           {/* Top-right: Building Details */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              🏢 Building Details
+              🏢 {t('drawer.customer.buildingDetails')}
             </p>
             <div className="flex flex-col gap-3">
-              <AddrField icon={<Building2 className="size-3.5" />} label="Building"  value={order.building} />
-              <AddrField icon={<Layers className="size-3.5" />}    label="Floor"     value={order.floor} />
-              <AddrField icon={<Home className="size-3.5" />}      label="Apartment" value={order.apartment} />
-              <AddrField icon={<Flag className="size-3.5" />}      label="Landmark"  value={order.landmark} />
+              <AddrField icon={<Building2 className="size-3.5" />} label={t('drawer.customer.building')}  value={order.building} />
+              <AddrField icon={<Layers className="size-3.5" />}    label={t('drawer.customer.floor')}     value={order.floor} />
+              <AddrField icon={<Home className="size-3.5" />}      label={t('drawer.customer.apartment')} value={order.apartment} />
+              <AddrField icon={<Flag className="size-3.5" />}      label={t('drawer.customer.landmark')}  value={order.landmark} />
             </div>
           </div>
 
           {/* Bottom-left: Full Address */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              📋 Full Address
+              📋 {t('drawer.customer.fullAddress')}
             </p>
             {fullAddressParts.length > 0 ? (
               <p className="text-sm leading-relaxed whitespace-pre-line">{fullAddress}</p>
@@ -581,7 +585,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
             )}
             {order.address_notes ? (
               <div className="mt-3 border-t pt-3">
-                <p className="mb-1 text-[10px] font-medium text-muted-foreground">Address Notes</p>
+                <p className="mb-1 text-[10px] font-medium text-muted-foreground">{t('drawer.customer.addressNotes')}</p>
                 <p className="text-xs leading-relaxed text-muted-foreground">{order.address_notes}</p>
               </div>
             ) : null}
@@ -593,7 +597,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
               >
                 <ExternalLink className="size-3" />
-                View on Google Maps
+                {t('drawer.customer.viewOnGoogleMaps')}
               </a>
             ) : null}
           </div>
@@ -601,7 +605,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
           {/* Bottom-right: Map Preview */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              🗺 Map Preview
+              🗺 {t('drawer.customer.mapPreview')}
             </p>
             {order.location ? (
               <div className="flex flex-col gap-2">
@@ -625,12 +629,12 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                   <Button variant="outline" size="sm" className="h-7 flex-1 text-xs" asChild>
                     <a href={mapsUrl!} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="mr-1 size-3" />
-                      Open
+                      {t('drawer.customer.open')}
                     </a>
                   </Button>
                   <Button variant="outline" size="sm" className="h-7 flex-1 text-xs" onClick={copyMapsLink}>
                     <Copy className="mr-1 size-3" />
-                    Copy
+                    {t('drawer.customer.copy')}
                   </Button>
                 </div>
               </div>
@@ -639,13 +643,13 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 <div className="flex aspect-video items-center justify-center rounded-md border bg-muted/30">
                   <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
                     <MapIcon className="size-5" />
-                    <p className="text-[10px]">URL only — no GPS coordinates</p>
+                    <p className="text-[10px]">{t('drawer.customer.urlOnlyNoGps')}</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm" className="h-7 w-full text-xs" asChild>
                   <a href={mapsUrl!} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="mr-1 size-3" />
-                    Open Maps
+                    {t('drawer.customer.openMap')}
                   </a>
                 </Button>
               </div>
@@ -653,7 +657,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
               <div className="flex aspect-video items-center justify-center rounded-md border border-dashed bg-muted/20">
                 <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
                   <MapIcon className="size-5" />
-                  <p className="text-[10px]">No location data</p>
+                  <p className="text-[10px]">{t('drawer.customer.noLocationData')}</p>
                 </div>
               </div>
             )}
@@ -665,25 +669,25 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
       {/* ── 4. Notes (3 independent cards) ── */}
       {(cust?.notes || internalNoteContent || order.customer_note) ? (
         <div className="flex flex-col gap-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('drawer.customer.notes')}</h3>
           {cust?.notes ? (
             <NoteCard
               icon={<User className="size-3.5" />}
-              title="Customer Notes"
+              title={t('drawer.customer.customerNotes')}
               content={cust.notes}
             />
           ) : null}
           {internalNoteContent ? (
             <NoteCard
               icon={<Lock className="size-3.5" />}
-              title="Internal Notes"
+              title={t('drawer.customer.internalNotes')}
               content={internalNoteContent}
             />
           ) : null}
           {order.customer_note ? (
             <NoteCard
               icon={<StickyNote className="size-3.5" />}
-              title="WooCommerce Notes"
+              title={t('drawer.customer.woocommerceNotes')}
               content={order.customer_note}
             />
           ) : null}
@@ -748,9 +752,8 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
       <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30 px-3 py-2 flex items-start gap-2">
         <Lock className="h-3 w-3 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
         <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-          <span className="font-semibold">Order Price Lock Active —</span>{' '}
-          All unit prices below are permanently frozen at the time this order was created.
-          Catalogue price changes do not affect this order.
+          <span className="font-semibold">{t('drawer.products_tab.priceLockTitle')} —</span>{' '}
+          {t('drawer.products_tab.priceLockDesc')}
         </p>
       </div>
 
@@ -777,7 +780,7 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
                   <p className="text-xs text-muted-foreground">{line.quantity} × EGP {formatMoney(line.unit_price)}</p>
                   <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                     <Lock className="h-2.5 w-2.5" />
-                    Locked
+                    {t('drawer.products_tab.locked')}
                   </span>
                 </div>
               </div>
@@ -826,7 +829,7 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
   const hasRemaining = order.remaining_balance > 0;
   const isPartial  = !isPaid && hasDeposit;
 
-  const paymentStatusLabel = isPaid ? 'Paid' : isPartial ? 'Partially Paid' : 'Unpaid';
+  const paymentStatusLabel = isPaid ? t('drawer.payment.paid') : isPartial ? t('drawer.payment.partiallyPaid') : t('drawer.payment.unpaid');
   const paymentStatusCls   = isPaid
     ? 'text-emerald-600 dark:text-emerald-400'
     : isPartial
@@ -841,7 +844,7 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
   if (!hasAnyPayment) {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-center p-4">
-        <p className="text-sm text-muted-foreground">No payment information available.</p>
+        <p className="text-sm text-muted-foreground">{t('drawer.payment.noInfo')}</p>
       </div>
     );
   }
@@ -851,7 +854,7 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── Payment Status ── */}
       <div>
-        <SectionTitle>Payment Status</SectionTitle>
+        <SectionTitle>{t('drawer.payment.statusSection')}</SectionTitle>
         <div className="rounded-md border bg-muted/20 px-4 py-3 flex items-center gap-3">
           {isPaid
             ? <ShieldCheck className="size-4 text-emerald-500 shrink-0" />
@@ -860,7 +863,7 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
           <div className="flex-1 min-w-0">
             <p className={cn('text-sm font-semibold', paymentStatusCls)}>{paymentStatusLabel}</p>
             {isPaid && order.date_paid ? (
-              <p className="text-xs text-muted-foreground">Verified {formatDateTime(order.date_paid)}</p>
+              <p className="text-xs text-muted-foreground">{t('drawer.payment.verifiedAt', { date: formatDateTime(order.date_paid) })}</p>
             ) : null}
           </div>
         </div>
@@ -868,25 +871,25 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── Payment Details ── */}
       <div>
-        <SectionTitle>Payment Details</SectionTitle>
+        <SectionTitle>{t('drawer.payment.detailsSection')}</SectionTitle>
         <DetailGrid cols={1}>
           {paymentLabel ? (
-            <DetailRow label="Payment Method">
+            <DetailRow label={t('drawer.payment.method')}>
               <span className="font-medium">{paymentLabel}</span>
             </DetailRow>
           ) : null}
           {order.transaction_id ? (
-            <DetailRow label="Transaction ID">
+            <DetailRow label={t('drawer.payment.transactionId')}>
               <span className="font-mono text-xs">{order.transaction_id}</span>
             </DetailRow>
           ) : null}
-          <DetailRow label="Verification Status">
+          <DetailRow label={t('drawer.payment.verificationStatus')}>
             <span className={cn('font-medium', isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
-              {isPaid ? 'Verified' : 'Awaiting Verification'}
+              {isPaid ? t('drawer.payment.verified') : t('drawer.payment.awaitingVerification')}
             </span>
           </DetailRow>
           {order.date_paid ? (
-            <DetailRow label="Verification Date">{formatDateTime(order.date_paid)}</DetailRow>
+            <DetailRow label={t('drawer.payment.verificationDate')}>{formatDateTime(order.date_paid)}</DetailRow>
           ) : null}
         </DetailGrid>
       </div>
@@ -935,23 +938,23 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── Payment Proof ── */}
       <div>
-        <SectionTitle>Payment Proof</SectionTitle>
+        <SectionTitle>{t('drawer.payment.proofSection')}</SectionTitle>
         {order.payment_proof_path ? (
           <MediaViewer
             path={order.payment_proof_path}
-            title="Payment Proof"
+            title={t('drawer.payment.proofSection')}
             trigger={
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
               >
                 <Paperclip className="size-3.5" />
-                Payment Proof
+                {t('drawer.payment.proofSection')}
               </button>
             }
           />
         ) : (
-          <p className="text-sm text-muted-foreground">No payment proof uploaded.</p>
+          <p className="text-sm text-muted-foreground">{t('drawer.payment.noProof')}</p>
         )}
       </div>
 
@@ -960,13 +963,13 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
         <>
           <Separator />
           <div>
-            <SectionTitle>WooCommerce Reference</SectionTitle>
+            <SectionTitle>{t('drawer.payment.woocommerceRef')}</SectionTitle>
             <DetailGrid>
-              <DetailRow label="Gateway Code">
+              <DetailRow label={t('drawer.payment.gatewayCode')}>
                 <span className="font-mono text-xs text-muted-foreground">{order.payment_method}</span>
               </DetailRow>
               {order.payment_method_title ? (
-                <DetailRow label="Gateway Name">{order.payment_method_title}</DetailRow>
+                <DetailRow label={t('drawer.payment.gatewayName')}>{order.payment_method_title}</DetailRow>
               ) : null}
             </DetailGrid>
           </div>
@@ -1034,7 +1037,7 @@ function VerificationBadge({
   );
 }
 
-function ShippingTab({ order }: { order: Order; t: OrdersT }) {
+function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
   const fullAddress  = buildFullAddress(order);
   const loc          = order.location;
   const hasMapsData  = !!(loc || order.google_maps_url);
@@ -1044,7 +1047,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
   const coordsStr    = loc ? `${loc.lat},${loc.lng}` : '';
 
   const attemptsLabel = (order.shipping_attempts ?? 0) > 0
-    ? `${order.shipping_attempts} delivery attempt(s)`
+    ? String(order.shipping_attempts)
     : null;
 
   return (
@@ -1052,7 +1055,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 1. Delivery Address ── */}
       <div>
-        <SectionTitle>Delivery Address</SectionTitle>
+        <SectionTitle>{t('drawer.shipping.deliveryAddress')}</SectionTitle>
 
         {/* 2-column grid: Location | Building Details */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-0">
@@ -1060,37 +1063,37 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
           {/* Column 1 — Location */}
           <div className="flex flex-col gap-1 mb-1">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5 mb-1">
-              <MapPin className="size-3" />Location
+              <MapPin className="size-3" />{t('drawer.shipping.location')}
             </p>
-            <DetailRow label="Governorate">{order.governorate}</DetailRow>
-            <DetailRow label="City">{order.city}</DetailRow>
-            <DetailRow label="District">{order.delivery_zone}</DetailRow>
-            <DetailRow label="Street">{order.shipping_address}</DetailRow>
+            <DetailRow label={t('drawer.shipping.governorate')}>{order.governorate}</DetailRow>
+            <DetailRow label={t('drawer.shipping.city')}>{order.city}</DetailRow>
+            <DetailRow label={t('drawer.shipping.district')}>{order.delivery_zone}</DetailRow>
+            <DetailRow label={t('drawer.shipping.street')}>{order.shipping_address}</DetailRow>
           </div>
 
           {/* Column 2 — Building Details */}
           <div className="flex flex-col gap-1 mb-1">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5 mb-1">
-              <Building2 className="size-3" />Building Details
+              <Building2 className="size-3" />{t('drawer.shipping.buildingDetails')}
             </p>
-            <DetailRow label="Building">{order.building}</DetailRow>
-            <DetailRow label="Floor">{order.floor}</DetailRow>
-            <DetailRow label="Apartment">{order.apartment}</DetailRow>
-            <DetailRow label="Landmark">{order.landmark}</DetailRow>
+            <DetailRow label={t('drawer.shipping.building')}>{order.building}</DetailRow>
+            <DetailRow label={t('drawer.shipping.floor')}>{order.floor}</DetailRow>
+            <DetailRow label={t('drawer.shipping.apartment')}>{order.apartment}</DetailRow>
+            <DetailRow label={t('drawer.shipping.landmark')}>{order.landmark}</DetailRow>
           </div>
         </div>
 
         {/* Column 3 — Address Summary */}
         <div className="mt-4 rounded-md border bg-muted/20 px-3 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">Address Summary</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">{t('drawer.shipping.addressSummary')}</p>
           <dl className="flex flex-col gap-2">
-            <DetailRow label="Full Address">
+            <DetailRow label={t('drawer.shipping.fullAddress')}>
               {fullAddress || null}
             </DetailRow>
-            <DetailRow label="Address Notes">
+            <DetailRow label={t('drawer.shipping.addressNotes')}>
               {order.address_notes}
             </DetailRow>
-            <DetailRow label="Google Maps Link">
+            <DetailRow label={t('drawer.shipping.googleMapsLink')}>
               {order.google_maps_url ? (
                 <a
                   href={order.google_maps_url}
@@ -1128,18 +1131,18 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
               <Button variant="outline" size="sm" asChild>
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                   <MapPin className="size-3.5" />
-                  Open Map
+                  {t('drawer.shipping.openMap')}
                 </a>
               </Button>
               <Button variant="outline" size="sm" asChild>
                 <a href={`https://www.waze.com/ul?ll=${loc.lat}%2C${loc.lng}&navigate=yes`} target="_blank" rel="noopener noreferrer">
                   <Navigation className="size-3.5" />
-                  Waze
+                  {t('drawer.shipping.waze')}
                 </a>
               </Button>
               {loc.set_by ? (
                 <span className="ms-auto self-center text-[10px] text-muted-foreground">
-                  Added by: {loc.set_by}
+                  {t('drawer.shipping.addedBy', { name: loc.set_by })}
                 </span>
               ) : null}
             </div>
@@ -1147,7 +1150,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
         ) : hasMapsData ? (
           <div className="mt-4 rounded-lg border border-dashed bg-muted/10 flex items-center justify-center gap-2 py-6 text-muted-foreground">
             <MapIcon className="size-5" />
-            <span className="text-xs">No GPS coordinates — map link only</span>
+            <span className="text-xs">{t('drawer.shipping.noGpsMapLinkOnly')}</span>
           </div>
         ) : null}
       </div>
@@ -1156,14 +1159,14 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 2. Delivery Schedule ── */}
       <div>
-        <SectionTitle>Delivery Schedule</SectionTitle>
+        <SectionTitle>{t('drawer.shipping.schedule')}</SectionTitle>
         <DetailGrid>
-          <DetailRow label="Requested Delivery">{formatDate(order.requested_delivery_date)}</DetailRow>
-          <DetailRow label="Delivery Window">{order.delivery_window}</DetailRow>
-          <DetailRow label="Preferred Time">{order.preferred_delivery_time}</DetailRow>
-          <DetailRow label="ETA">{null}</DetailRow>
-          <DetailRow label="Priority">{null}</DetailRow>
-          <DetailRow label="Service Level">{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.requestedDelivery')}>{formatDate(order.requested_delivery_date)}</DetailRow>
+          <DetailRow label={t('drawer.shipping.deliveryWindow')}>{order.delivery_window}</DetailRow>
+          <DetailRow label={t('drawer.shipping.preferredTime')}>{order.preferred_delivery_time}</DetailRow>
+          <DetailRow label={t('drawer.shipping.eta')}>{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.priority')}>{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.serviceLevel')}>{null}</DetailRow>
         </DetailGrid>
       </div>
 
@@ -1171,16 +1174,16 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 3. Shipping Assignment ── */}
       <div>
-        <SectionTitle>Shipping Assignment</SectionTitle>
+        <SectionTitle>{t('drawer.shipping.assignment')}</SectionTitle>
         <DetailGrid>
-          <DetailRow label="Shipping Company">{order.shipping_company_name}</DetailRow>
-          <DetailRow label="Carrier">{order.shipping_method}</DetailRow>
-          <DetailRow label="Driver">{null}</DetailRow>
-          <DetailRow label="Vehicle">{null}</DetailRow>
-          <DetailRow label="Vehicle Code">{null}</DetailRow>
-          <DetailRow label="Route">{null}</DetailRow>
-          <DetailRow label="Wave">{null}</DetailRow>
-          <DetailRow label="Loading Batch">{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.shippingCompany')}>{order.shipping_company_name}</DetailRow>
+          <DetailRow label={t('drawer.shipping.carrier')}>{order.shipping_method}</DetailRow>
+          <DetailRow label={t('drawer.shipping.driver')}>{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.vehicle')}>{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.vehicleCode')}>{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.route')}>{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.wave')}>{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.loadingBatch')}>{null}</DetailRow>
         </DetailGrid>
       </div>
 
@@ -1188,15 +1191,15 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 4. Tracking ── */}
       <div>
-        <SectionTitle>Tracking</SectionTitle>
+        <SectionTitle>{t('drawer.shipping.tracking')}</SectionTitle>
         <DetailGrid>
-          <DetailRow label="Tracking Number">
+          <DetailRow label={t('drawer.shipping.trackingNumber')}>
             {order.tracking_number
               ? <span className="font-mono text-xs">{order.tracking_number}</span>
               : null}
           </DetailRow>
-          <DetailRow label="Tracking Link">{null}</DetailRow>
-          <DetailRow label="Shipment Status">
+          <DetailRow label={t('drawer.shipping.trackingLink')}>{null}</DetailRow>
+          <DetailRow label={t('drawer.shipping.shipmentStatus')}>
             {attemptsLabel}
           </DetailRow>
         </DetailGrid>
@@ -1206,41 +1209,41 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 5. Delivery Verification ── */}
       <div>
-        <SectionTitle>Delivery Verification</SectionTitle>
+        <SectionTitle>{t('drawer.shipping.verification')}</SectionTitle>
         <div className="grid grid-cols-2 gap-2">
           <VerificationBadge
-            label="Location Pinned"
+            label={t('drawer.shipping.locationPinned')}
             icon={MapPin}
             verified={hasMapsData}
           />
           <VerificationBadge
-            label="Address Complete"
+            label={t('drawer.shipping.addressComplete')}
             icon={Building2}
             verified={!!(order.governorate && order.city)}
           />
           <VerificationBadge
-            label="Phone Registered"
+            label={t('drawer.shipping.phoneRegistered')}
             icon={Phone}
             verified={!!order.billing_phone}
             detail={order.billing_phone}
           />
           <VerificationBadge
-            label="Customer Confirmation"
+            label={t('drawer.shipping.customerConfirmation')}
             icon={UserCheck}
             verified={order.confirmation_result === 'confirmed'}
             detail={
               order.confirmation_result === 'confirmed' && order.customer_confirmed_at
                 ? formatDate(order.customer_confirmed_at)
                 : order.confirmation_result && order.confirmation_result !== 'confirmed'
-                ? (order.customer_confirmed_by ? `By: ${order.customer_confirmed_by}` : null)
+                ? (order.customer_confirmed_by ? `${t('drawer.customer.copy')}: ${order.customer_confirmed_by}` : null)
                 : null
             }
             statusText={
-              order.confirmation_result === 'confirmed'   ? 'Confirmed' :
-              order.confirmation_result === 'not_answered'? 'No Answer' :
-              order.confirmation_result === 'rejected'    ? 'Rejected'  :
-              order.confirmation_result === 'postponed'   ? 'Postponed' :
-              'Pending'
+              order.confirmation_result === 'confirmed'   ? t('drawer.shipping.confirmed') :
+              order.confirmation_result === 'not_answered'? t('drawer.shipping.noAnswer') :
+              order.confirmation_result === 'rejected'    ? t('drawer.shipping.rejected')  :
+              order.confirmation_result === 'postponed'   ? t('drawer.shipping.postponed') :
+              t('drawer.shipping.pending')
             }
             statusColor={
               order.confirmation_result === 'confirmed'   ? 'text-emerald-600 dark:text-emerald-400' :
@@ -1257,13 +1260,13 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 6. Shipping Actions ── */}
       <div>
-        <SectionTitle>Shipping Actions</SectionTitle>
+        <SectionTitle>{t('drawer.shipping.shippingActions')}</SectionTitle>
         <div className="flex flex-wrap gap-2">
           {hasMapsData && (
             <Button variant="outline" size="sm" asChild>
               <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                 <MapPin className="size-3.5" />
-                Open Map
+                {t('drawer.shipping.openMap')}
               </a>
             </Button>
           )}
@@ -1274,7 +1277,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
               onClick={() => void navigator.clipboard.writeText(fullAddress)}
             >
               <Copy className="size-3.5" />
-              Copy Address
+              {t('drawer.shipping.copyAddress')}
             </Button>
           )}
           {coordsStr && (
@@ -1284,13 +1287,13 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
               onClick={() => void navigator.clipboard.writeText(coordsStr)}
             >
               <Navigation className="size-3.5" />
-              Copy Coordinates
+              {t('drawer.shipping.copyCoordinates')}
             </Button>
           )}
           {order.tracking_number ? (
             <Button variant="outline" size="sm" disabled>
               <ExternalLink className="size-3.5" />
-              Track Shipment
+              {t('drawer.shipping.trackShipment')}
             </Button>
           ) : null}
         </div>
@@ -1448,6 +1451,7 @@ const WORKFLOW_ACTIONS: Record<string, WorkflowAction[]> = {
 };
 
 function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) {
+  const { t } = useTranslation('orders');
   const confirm          = useOrderWorkflowConfirm();
   const moveToPrep       = useOrderWorkflowMoveToPreparation();
   const completeDeliv    = useOrderWorkflowCompleteDelivery();
@@ -1499,21 +1503,40 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
     );
   }
 
+  const actionLabel = (key: string): string => {
+    const map: Record<string, string> = {
+      confirm:            t('drawer.workflow.actions.confirm'),
+      cancel:             t('drawer.workflow.actions.cancel'),
+      prepare:            t('drawer.workflow.actions.prepare'),
+      awaiting_stock:     t('drawer.workflow.actions.awaiting_stock'),
+      review:             t('drawer.workflow.actions.review'),
+      resume:             t('drawer.workflow.actions.resume'),
+      dispatch:           t('drawer.workflow.actions.dispatch'),
+      complete_delivery:  t('drawer.workflow.actions.complete_delivery'),
+      complete:           t('drawer.workflow.actions.complete'),
+      return:             t('drawer.workflow.actions.return'),
+      reschedule:         t('drawer.workflow.actions.reschedule'),
+      return_to_confirmed: t('drawer.workflow.actions.return_to_confirmed'),
+      resume_confirmed:   t('drawer.workflow.actions.resume_confirmed'),
+    };
+    return map[key] ?? key;
+  };
+
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
-        <SectionTitle>Current Status</SectionTitle>
+        <SectionTitle>{t('drawer.workflow.currentStatus')}</SectionTitle>
         <OrderStatusBadge status={order.status} />
       </div>
       {actions.length > 0 ? (
         <div>
-          <SectionTitle>Available Actions</SectionTitle>
+          <SectionTitle>{t('drawer.workflow.availableActions')}</SectionTitle>
           <div className="flex flex-col gap-2">
             {actions.map((action) => {
               if (action.key === 'reschedule' && showRescheduleForm) {
                 return (
                   <div key="reschedule-form" className="flex flex-col gap-2 rounded-md border p-3">
-                    <label className="text-xs font-medium text-muted-foreground">New Delivery Date</label>
+                    <label className="text-xs font-medium text-muted-foreground">{t('drawer.workflow.newDeliveryDate')}</label>
                     <input
                       type="date"
                       value={rescheduleDate}
@@ -1529,10 +1552,10 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
                         className="gap-1.5"
                       >
                         {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
-                        Confirm Reschedule
+                        {t('drawer.workflow.confirmReschedule')}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setShowRescheduleForm(false)}>
-                        Cancel
+                        {t('drawer.workflow.cancel')}
                       </Button>
                     </div>
                   </div>
@@ -1548,14 +1571,14 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
                   className="justify-start gap-2"
                 >
                   <action.icon className="size-4" />
-                  {action.label}
+                  {actionLabel(action.key)}
                 </Button>
               );
             })}
           </div>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">No actions available for this status.</p>
+        <p className="text-sm text-muted-foreground">{t('drawer.workflow.noActions')}</p>
       )}
     </div>
   );
@@ -1564,6 +1587,7 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
 // ── Inventory Tab ─────────────────────────────────────────────────────────────
 
 function InventoryTab({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const inv = order as Order & {
     inventory_reserved_at?: string | null;
     inventory_shipped_at?: string | null;
@@ -1573,14 +1597,14 @@ function InventoryTab({ order }: { order: Order }) {
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
-        <SectionTitle>Reservation Status</SectionTitle>
+        <SectionTitle>{t('drawer.inventory_tab.reservationStatus')}</SectionTitle>
         <DetailGrid>
-          <DetailRow label="Reserved At">
+          <DetailRow label={t('drawer.inventory_tab.reservedAt')}>
             {inv.inventory_reserved_at ? formatDate(inv.inventory_reserved_at) : (
-              <span className="text-amber-600 text-sm font-medium">Not Reserved</span>
+              <span className="text-amber-600 text-sm font-medium">{t('drawer.inventory_tab.notReserved')}</span>
             )}
           </DetailRow>
-          <DetailRow label="Shipped At">
+          <DetailRow label={t('drawer.inventory_tab.shippedAt')}>
             {inv.inventory_shipped_at ? formatDate(inv.inventory_shipped_at) : (
               <span className="text-muted-foreground text-sm">—</span>
             )}
@@ -1589,19 +1613,19 @@ function InventoryTab({ order }: { order: Order }) {
       </div>
       <Separator />
       <div>
-        <SectionTitle>Fulfillment</SectionTitle>
+        <SectionTitle>{t('drawer.inventory_tab.fulfillment')}</SectionTitle>
         <DetailGrid>
-          <DetailRow label="Assigned Warehouse">
+          <DetailRow label={t('drawer.inventory_tab.assignedWarehouse')}>
             {inv.assigned_warehouse_id ?? '—'}
           </DetailRow>
-          <DetailRow label="Line Items">
-            {(order.lines ?? []).length} item(s)
+          <DetailRow label={t('drawer.inventory_tab.lineItems')}>
+            {t('drawer.inventory_tab.itemCount', { count: (order.lines ?? []).length })}
           </DetailRow>
         </DetailGrid>
       </div>
       <Separator />
       <div>
-        <SectionTitle>Inventory Items</SectionTitle>
+        <SectionTitle>{t('drawer.inventory_tab.inventoryItems')}</SectionTitle>
         <div className="flex flex-col gap-2">
           {(order.lines ?? []).map((line) => (
             <div key={line.id} className="flex items-center gap-3 rounded-md border bg-muted/20 px-3 py-2 text-sm">
@@ -1623,50 +1647,38 @@ function InventoryTab({ order }: { order: Order }) {
 
 type TColor = 'primary' | 'green' | 'amber' | 'blue' | 'cyan' | 'muted' | 'red';
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pending', awaiting_payment: 'Awaiting Payment',
-  processing: 'Processing', awaiting_stock: 'Awaiting Stock',
-  confirmed: 'Confirmed', preparing: 'Preparing',
-  out_for_delivery: 'Out for Delivery', delivered: 'Delivered',
-  completed: 'Completed', cancelled: 'Cancelled',
-  review: 'Under Review', rescheduled: 'Rescheduled', returned: 'Returned',
-};
-
-const ADDRESS_FIELD_LABELS: Record<string, string> = {
-  governorate: 'Governorate', city: 'City', shipping_address: 'Street',
-  building: 'Building', floor: 'Floor', apartment: 'Apartment',
-  landmark: 'Landmark', area: 'District', address_notes: 'Address Notes',
-  billing_phone: 'Customer Phone', customer_secondary_phone: 'Secondary Phone',
-  customer_name: 'Customer Name',
-};
+const ADDRESS_FIELD_KEYS = new Set([
+  'governorate','city','shipping_address','building','floor','apartment',
+  'landmark','area','address_notes','billing_phone','customer_secondary_phone','customer_name',
+]);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function fmtRelative(d: Date): string {
+function fmtRelative(d: Date, t: OrdersT): string {
   const diff = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (diff < 60)    return 'Just now';
-  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 60)    return t('drawer.timeline_tab.justNow');
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   return '';
 }
 
-function fmtDayLabel(d: Date): string {
+function fmtDayLabel(d: Date, t: OrdersT): string {
   const today = new Date();
-  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === today.toDateString()) return t('drawer.timeline_tab.today');
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
+  if (d.toDateString() === yesterday.toDateString()) return t('drawer.timeline_tab.yesterday');
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
 }
 
 type DayGroup = { label: string; events: OrderActivity[] };
 
-function groupByDay(events: OrderActivity[]): DayGroup[] {
+function groupByDay(events: OrderActivity[], t: OrdersT): DayGroup[] {
   const map = new Map<string, DayGroup>();
   for (const ev of events) {
     const d = new Date(ev.created_at);
     const key = d.toDateString();
-    if (!map.has(key)) map.set(key, { label: fmtDayLabel(d), events: [] });
+    if (!map.has(key)) map.set(key, { label: fmtDayLabel(d, t), events: [] });
     map.get(key)!.events.push(ev);
   }
   return Array.from(map.values());
@@ -1674,39 +1686,41 @@ function groupByDay(events: OrderActivity[]): DayGroup[] {
 
 // ── Event classification ──────────────────────────────────────────────────────
 
-function resolveEventMeta(ev: OrderActivity): { title: string; color: TColor; icon: React.ReactNode } {
+function resolveEventMeta(ev: OrderActivity, t: OrdersT): { title: string; color: TColor; icon: React.ReactNode } {
   const p     = (ev.payload  ?? {}) as Record<string, unknown>;
   const field = (p.field as string | undefined)
     ?? (ev.previous_value ? Object.keys(ev.previous_value)[0] : undefined);
 
+  const ev_ = (k: string): string => (t as unknown as TDynamic)(`drawer.timeline_tab.events.${k}`);
+
   switch (ev.event_type) {
-    case 'order_created':    return { title: 'Order Created',           color: 'primary', icon: <ShoppingBag className="size-3.5" /> };
-    case 'order_updated':    return { title: 'Order Updated',           color: 'blue',    icon: <Edit className="size-3.5" /> };
-    case 'customer_confirmed': return { title: 'Customer Confirmed',    color: 'green',   icon: <UserCheck className="size-3.5" /> };
-    case 'customer_created': return { title: 'Customer Created',        color: 'cyan',    icon: <UserPlus className="size-3.5" /> };
-    case 'customer_reused':  return { title: 'Customer Matched',        color: 'cyan',    icon: <User className="size-3.5" /> };
-    case 'discount_applied': return { title: 'Discount Applied',        color: 'amber',   icon: <Percent className="size-3.5" /> };
-    case 'discount_updated': return { title: 'Discount Updated',        color: 'amber',   icon: <Percent className="size-3.5" /> };
-    case 'deposit_recorded': return { title: 'Deposit Recorded',        color: 'cyan',    icon: <Banknote className="size-3.5" /> };
-    case 'deposit_updated':  return { title: 'Deposit Updated',         color: 'cyan',    icon: <Banknote className="size-3.5" /> };
-    case 'note_added':       return { title: 'Internal Note Added',     color: 'primary', icon: <MessageSquare className="size-3.5" /> };
-    case 'note_updated':     return { title: 'Internal Note Updated',   color: 'primary', icon: <PenLine className="size-3.5" /> };
-    case 'note_deleted':     return { title: 'Internal Note Deleted',   color: 'muted',   icon: <Trash2 className="size-3.5" /> };
-    case 'proof_uploaded':   return { title: 'Payment Proof Uploaded',  color: 'green',   icon: <FileCheck className="size-3.5" /> };
-    case 'awaiting_payment': return { title: 'Awaiting Payment',        color: 'amber',   icon: <Clock className="size-3.5" /> };
-    case 'delivery_date_set': return { title: 'Delivery Date Set',      color: 'blue',    icon: <CalendarClock className="size-3.5" /> };
-    case 'shipping_override': return { title: 'Shipping Cost Overridden', color: 'amber', icon: <Truck className="size-3.5" /> };
-    case 'order_zone_updated': return { title: 'Zone Updated',          color: 'blue',    icon: <MapIcon className="size-3.5" /> };
-    case 'location_set':     return { title: 'Location Set',            color: 'blue',    icon: <Navigation className="size-3.5" /> };
-    case 'status_changed':   return { title: 'Status Changed',          color: 'blue',    icon: <Activity className="size-3.5" /> };
+    case 'order_created':     return { title: ev_('order_created'),    color: 'primary', icon: <ShoppingBag className="size-3.5" /> };
+    case 'order_updated':     return { title: ev_('order_updated'),    color: 'blue',    icon: <Edit className="size-3.5" /> };
+    case 'customer_confirmed':return { title: ev_('customer_confirmed'),color:'green',   icon: <UserCheck className="size-3.5" /> };
+    case 'customer_created':  return { title: ev_('customer_created'), color: 'cyan',   icon: <UserPlus className="size-3.5" /> };
+    case 'customer_reused':   return { title: ev_('customer_reused'),  color: 'cyan',   icon: <User className="size-3.5" /> };
+    case 'discount_applied':  return { title: ev_('discount_applied'), color: 'amber',  icon: <Percent className="size-3.5" /> };
+    case 'discount_updated':  return { title: ev_('discount_updated'), color: 'amber',  icon: <Percent className="size-3.5" /> };
+    case 'deposit_recorded':  return { title: ev_('deposit_recorded'), color: 'cyan',   icon: <Banknote className="size-3.5" /> };
+    case 'deposit_updated':   return { title: ev_('deposit_updated'),  color: 'cyan',   icon: <Banknote className="size-3.5" /> };
+    case 'note_added':        return { title: ev_('note_added'),       color: 'primary',icon: <MessageSquare className="size-3.5" /> };
+    case 'note_updated':      return { title: ev_('note_updated'),     color: 'primary',icon: <PenLine className="size-3.5" /> };
+    case 'note_deleted':      return { title: ev_('note_deleted'),     color: 'muted',  icon: <Trash2 className="size-3.5" /> };
+    case 'proof_uploaded':    return { title: ev_('proof_uploaded'),   color: 'green',  icon: <FileCheck className="size-3.5" /> };
+    case 'awaiting_payment':  return { title: ev_('awaiting_payment'), color: 'amber',  icon: <Clock className="size-3.5" /> };
+    case 'delivery_date_set': return { title: ev_('delivery_date_set'),color: 'blue',   icon: <CalendarClock className="size-3.5" /> };
+    case 'shipping_override': return { title: ev_('shipping_override'),color: 'amber',  icon: <Truck className="size-3.5" /> };
+    case 'order_zone_updated':return { title: ev_('order_zone_updated'),color:'blue',   icon: <MapIcon className="size-3.5" /> };
+    case 'location_set':      return { title: ev_('location_set'),     color: 'blue',   icon: <Navigation className="size-3.5" /> };
+    case 'status_changed':    return { title: ev_('status_changed'),   color: 'blue',   icon: <Activity className="size-3.5" /> };
     case 'field_updated': {
       if (field === 'status')
-        return { title: 'Status Changed', color: 'blue', icon: <Activity className="size-3.5" /> };
-      if (field && field in ADDRESS_FIELD_LABELS && !['billing_phone','customer_secondary_phone'].includes(field))
-        return { title: 'Address Updated', color: 'blue', icon: <MapPin className="size-3.5" /> };
+        return { title: ev_('status_changed'), color: 'blue', icon: <Activity className="size-3.5" /> };
+      if (field && ADDRESS_FIELD_KEYS.has(field) && !['billing_phone','customer_secondary_phone'].includes(field))
+        return { title: ev_('address_updated'), color: 'blue', icon: <MapPin className="size-3.5" /> };
       if (field && ['billing_phone','customer_secondary_phone'].includes(field))
-        return { title: 'Phone Updated', color: 'blue', icon: <Phone className="size-3.5" /> };
-      return { title: 'Data Updated', color: 'muted', icon: <Edit className="size-3.5" /> };
+        return { title: ev_('phone_updated'), color: 'blue', icon: <Phone className="size-3.5" /> };
+      return { title: ev_('data_updated'), color: 'muted', icon: <Edit className="size-3.5" /> };
     }
     default:
       if (ev.event_type.includes('cancel') || ev.event_type.includes('return'))
@@ -1721,20 +1735,20 @@ function resolveEventMeta(ev: OrderActivity): { title: string; color: TColor; ic
 
 
 /** Vertical card diff — per-field card matching spec layout. */
-function FieldChange({ label, oldVal, newVal }: { label: string; oldVal: string; newVal: string }) {
+function FieldChange({ label, oldVal, newVal, t }: { label: string; oldVal: string; newVal: string; t: OrdersT }) {
   return (
     <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
       <p className="font-semibold text-foreground mb-2">{label}</p>
       <div className="space-y-1.5">
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Before</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{t('drawer.timeline_tab.before')}</p>
           <p className={cn('font-mono break-all', oldVal ? 'line-through text-rose-600 dark:text-rose-400' : 'text-muted-foreground italic')}>{oldVal || '—'}</p>
         </div>
         <div className="flex justify-center">
           <ArrowDown className="size-3 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">After</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{t('drawer.timeline_tab.after')}</p>
           <p className={cn('font-mono break-all font-medium', newVal ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground italic')}>{newVal || '—'}</p>
         </div>
       </div>
@@ -1744,9 +1758,9 @@ function FieldChange({ label, oldVal, newVal }: { label: string; oldVal: string;
 
 /** Status transition card — for workflow/status events. */
 function StatusTransitionCard({
-  oldStatus, newStatus, byName, reason,
+  oldStatus, newStatus, byName, reason, t,
 }: {
-  oldStatus: string; newStatus: string; byName?: string | null; reason?: string | null;
+  oldStatus: string; newStatus: string; byName?: string | null; reason?: string | null; t: OrdersT;
 }) {
   const STATUS_COLOR: Record<string, string> = {
     pending: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
@@ -1773,21 +1787,21 @@ function StatusTransitionCard({
     <div className="rounded-md border border-border bg-muted/20 p-3 text-xs space-y-2.5">
       <div className="space-y-1.5">
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Previous Status</p>
-          <span className={badgeCls(oldStatus)}>{STATUS_LABELS[oldStatus] ?? oldStatus}</span>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.previousStatus')}</p>
+          <span className={badgeCls(oldStatus)}>{(t as unknown as TDynamic)(`status.${oldStatus}`, { defaultValue: oldStatus })}</span>
         </div>
         <div className="flex justify-center">
           <ArrowDown className="size-3 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">New Status</p>
-          <span className={badgeCls(newStatus)}>{STATUS_LABELS[newStatus] ?? newStatus}</span>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.newStatus')}</p>
+          <span className={badgeCls(newStatus)}>{(t as unknown as TDynamic)(`status.${newStatus}`, { defaultValue: newStatus })}</span>
         </div>
       </div>
       {(byName || reason) ? (
         <div className="border-t border-border pt-2 space-y-1">
-          {byName  ? <p className="text-muted-foreground">By <span className="font-medium text-foreground">{byName}</span></p> : null}
-          {reason  ? <p className="text-muted-foreground">Reason <span className="font-medium text-foreground">{reason}</span></p> : null}
+          {byName  ? <p className="text-muted-foreground">{t('drawer.timeline_tab.by')} <span className="font-medium text-foreground">{byName}</span></p> : null}
+          {reason  ? <p className="text-muted-foreground">{t('drawer.timeline_tab.reason')} <span className="font-medium text-foreground">{reason}</span></p> : null}
         </div>
       ) : null}
     </div>
@@ -1796,7 +1810,7 @@ function StatusTransitionCard({
 
 // ── Per-event structured details ──────────────────────────────────────────────
 
-function EventDetails({ ev }: { ev: OrderActivity }) {
+function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
   const meta = (ev.metadata      ?? {}) as Record<string, unknown>;
   const pl   = (ev.payload       ?? {}) as Record<string, unknown>;
   const prev = ev.previous_value as Record<string, unknown> | null;
@@ -1806,9 +1820,9 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
     case 'order_created':
       return (
         <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-          {meta.channel       ? <span>Channel: <span className="font-medium text-foreground">{String(meta.channel)}</span></span> : null}
-          {meta.customer_name ? <span>Customer: <span className="font-medium text-foreground">{String(meta.customer_name)}</span></span> : null}
-          {meta.order_total != null ? <span>Total: <span className="font-medium text-foreground">{fmtCur(Number(meta.order_total))}</span></span> : null}
+          {meta.channel       ? <span>{t('drawer.timeline_tab.channel')}: <span className="font-medium text-foreground">{String(meta.channel)}</span></span> : null}
+          {meta.customer_name ? <span>{t('drawer.timeline_tab.customer')}: <span className="font-medium text-foreground">{String(meta.customer_name)}</span></span> : null}
+          {meta.order_total != null ? <span>{t('drawer.timeline_tab.total')}: <span className="font-medium text-foreground">{fmtCur(Number(meta.order_total))}</span></span> : null}
         </div>
       );
 
@@ -1818,9 +1832,9 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const notes  = String(meta.notes  ?? pl.notes  ?? '');
       return (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-1">
-          {method ? <p className="text-muted-foreground">Method <span className="font-medium text-foreground capitalize">{method}</span></p> : null}
+          {method ? <p className="text-muted-foreground">{t('drawer.timeline_tab.method')} <span className="font-medium text-foreground capitalize">{method}</span></p> : null}
           {result ? (
-            <p className="text-muted-foreground">Result{' '}
+            <p className="text-muted-foreground">{t('drawer.timeline_tab.result')}{' '}
               <span className={cn('font-semibold', result === 'confirmed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
                 {result}
               </span>
@@ -1838,11 +1852,12 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const calcVal = meta.calculated_value ?? pl.calculated_value;
 
       if (prev?.discount_amount !== undefined && next?.discount_amount !== undefined) {
-        const fmt_ = (a: unknown, t: unknown) => String(t) === 'percentage' ? `${a}%` : fmtCur(Number(a ?? 0));
+        const fmt_ = (a: unknown, ty: unknown) => String(ty) === 'percentage' ? `${a}%` : fmtCur(Number(a ?? 0));
         return (
           <div className="space-y-2">
             <FieldChange
-              label="Discount"
+              t={t}
+              label={t('drawer.timeline_tab.discount')}
               oldVal={fmt_(prev.discount_amount, prev.discount_type)}
               newVal={fmt_(next.discount_amount, next.discount_type)}
             />
@@ -1852,15 +1867,15 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
 
       return (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-1">
-          {type_  ? <p className="text-muted-foreground">Type <span className="font-medium text-foreground capitalize">{type_}</span></p> : null}
+          {type_  ? <p className="text-muted-foreground">{t('drawer.timeline_tab.type')} <span className="font-medium text-foreground capitalize">{type_}</span></p> : null}
           {amount != null ? (
             <p className="text-muted-foreground">
-              Value <span className="font-medium text-foreground">{type_ === 'percentage' ? `${amount}%` : fmtCur(Number(amount))}</span>
+              {t('drawer.timeline_tab.value')} <span className="font-medium text-foreground">{type_ === 'percentage' ? `${amount}%` : fmtCur(Number(amount))}</span>
             </p>
           ) : null}
           {calcVal != null ? (
             <p className="text-muted-foreground border-t border-border pt-1 mt-1">
-              Calculated <span className="font-semibold text-amber-600 dark:text-amber-400">{fmtCur(Number(calcVal))}</span>
+              {t('drawer.timeline_tab.calculated')} <span className="font-semibold text-amber-600 dark:text-amber-400">{fmtCur(Number(calcVal))}</span>
             </p>
           ) : null}
         </div>
@@ -1878,9 +1893,9 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       if (prevDep !== undefined && nextDep !== undefined) {
         return (
           <div className="space-y-2">
-            <FieldChange label="Deposit" oldVal={fmtCur(Number(prevDep))} newVal={fmtCur(Number(nextDep))} />
+            <FieldChange t={t} label={t('drawer.timeline_tab.deposit')} oldVal={fmtCur(Number(prevDep))} newVal={fmtCur(Number(nextDep))} />
             {prevRem !== undefined && nextRem !== undefined
-              ? <FieldChange label="Remaining Balance" oldVal={fmtCur(Number(prevRem))} newVal={fmtCur(Number(nextRem))} />
+              ? <FieldChange t={t} label={t('drawer.timeline_tab.remainingBalance')} oldVal={fmtCur(Number(prevRem))} newVal={fmtCur(Number(nextRem))} />
               : null}
           </div>
         );
@@ -1889,8 +1904,8 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const amount = pl.amount ?? meta.amount;
       return (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-1">
-          {amount != null ? <p className="text-muted-foreground">Deposit <span className="font-medium text-foreground">{fmtCur(Number(amount))}</span></p> : null}
-          {grandTotal != null ? <p className="text-muted-foreground">Grand Total <span className="font-medium text-foreground">{fmtCur(Number(grandTotal))}</span></p> : null}
+          {amount != null ? <p className="text-muted-foreground">{t('drawer.timeline_tab.deposit')} <span className="font-medium text-foreground">{fmtCur(Number(amount))}</span></p> : null}
+          {grandTotal != null ? <p className="text-muted-foreground">{t('drawer.timeline_tab.grandTotal')} <span className="font-medium text-foreground">{fmtCur(Number(grandTotal))}</span></p> : null}
         </div>
       );
     }
@@ -1899,7 +1914,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const content = String(meta.content ?? pl.preview ?? '');
       return content ? (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Content</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.content')}</p>
           <p className="text-foreground whitespace-pre-wrap line-clamp-4">{content}</p>
         </div>
       ) : null;
@@ -1913,7 +1928,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
           <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-2">
             {oldContent ? (
               <div>
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Previous</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.previous')}</p>
                 <p className="text-muted-foreground line-through whitespace-pre-wrap line-clamp-3">{oldContent}</p>
               </div>
             ) : null}
@@ -1921,7 +1936,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
               <ArrowDown className="size-3 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Current</p>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.current')}</p>
               <p className="text-foreground whitespace-pre-wrap line-clamp-3">{newContent || '—'}</p>
             </div>
           </div>
@@ -1934,7 +1949,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const preview = String(meta.content_preview ?? '');
       return preview ? (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Deleted Content</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.deletedContent')}</p>
           <p className="text-muted-foreground line-through whitespace-pre-wrap line-clamp-3">{preview}</p>
         </div>
       ) : null;
@@ -1945,6 +1960,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const newVal = String(next?.status ?? pl.new_value ?? '');
       return (
         <StatusTransitionCard
+          t={t}
           oldStatus={oldVal}
           newStatus={newVal}
           byName={ev.actor_name}
@@ -1960,6 +1976,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       if (f === 'status') {
         return (
           <StatusTransitionCard
+            t={t}
             oldStatus={oldVal}
             newStatus={newVal}
             byName={ev.actor_name}
@@ -1967,38 +1984,47 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
           />
         );
       }
-      return <FieldChange label={ADDRESS_FIELD_LABELS[f] ?? f.replace(/_/g, ' ')} oldVal={oldVal} newVal={newVal} />;
+      const fieldLabel = ADDRESS_FIELD_KEYS.has(f)
+        ? (t as unknown as TDynamic)(`drawer.timeline_tab.addressFields.${f}`, { defaultValue: f.replace(/_/g, ' ') })
+        : f.replace(/_/g, ' ');
+      return <FieldChange t={t} label={fieldLabel} oldVal={oldVal} newVal={newVal} />;
     }
 
     case 'order_updated':
       if (prev && next && Object.keys(next).length > 0) {
         return (
           <div className="flex flex-col gap-2">
-            {Object.keys(next).map((f) => (
-              <FieldChange
-                key={f}
-                label={ADDRESS_FIELD_LABELS[f] ?? f.replace(/_/g, ' ')}
-                oldVal={String(prev[f] ?? '')}
-                newVal={String(next[f] ?? '')}
-              />
-            ))}
+            {Object.keys(next).map((f) => {
+              const fieldLabel = ADDRESS_FIELD_KEYS.has(f)
+                ? (t as unknown as TDynamic)(`drawer.timeline_tab.addressFields.${f}`, { defaultValue: f.replace(/_/g, ' ') })
+                : f.replace(/_/g, ' ');
+              return (
+                <FieldChange
+                  key={f}
+                  t={t}
+                  label={fieldLabel}
+                  oldVal={String(prev[f] ?? '')}
+                  newVal={String(next[f] ?? '')}
+                />
+              );
+            })}
           </div>
         );
       }
       return ev.changed_fields?.length ? (
-        <p className="text-xs text-muted-foreground">Modified: {ev.changed_fields.join(', ')}</p>
+        <p className="text-xs text-muted-foreground">{t('drawer.timeline_tab.modified')} {ev.changed_fields.join(', ')}</p>
       ) : null;
 
     case 'order_zone_updated': {
       const prev_ = String(pl.previous_zone ?? '');
       const next_ = String(pl.new_zone ?? '');
-      return prev_ || next_ ? <FieldChange label="Delivery Zone" oldVal={prev_} newVal={next_} /> : null;
+      return prev_ || next_ ? <FieldChange t={t} label={t('drawer.timeline_tab.deliveryZone')} oldVal={prev_} newVal={next_} /> : null;
     }
 
     case 'shipping_override':
       return pl.cost != null ? (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
-          <p className="text-muted-foreground">Custom cost <span className="font-semibold text-foreground">{fmtCur(Number(pl.cost))}</span></p>
+          <p className="text-muted-foreground">{t('drawer.timeline_tab.customCost')} <span className="font-semibold text-foreground">{fmtCur(Number(pl.cost))}</span></p>
         </div>
       ) : null;
 
@@ -2010,10 +2036,11 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
 // ── Actor + Timestamp block ───────────────────────────────────────────────────
 
 function ActorBlock({ ev }: { ev: OrderActivity }) {
+  const { t } = useTranslation('orders');
   const d     = new Date(ev.created_at);
   const date  = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
   const time  = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit' }).format(d);
-  const rel   = fmtRelative(d);
+  const rel   = fmtRelative(d, t);
 
   const name   = ev.actor_name;
   const email  = ev.actor_email;
@@ -2027,10 +2054,10 @@ function ActorBlock({ ev }: { ev: OrderActivity }) {
     <div className="mt-1.5 space-y-1 text-xs">
       {/* Identity */}
       <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
-        {name     ? <><span className="text-muted-foreground">By</span><span className="font-medium text-foreground">{name}</span></> : null}
-        {username ? <><span className="text-muted-foreground">User</span><span className="font-mono text-foreground">{username}</span></> : null}
-        {role     ? <><span className="text-muted-foreground">Role</span><span className="text-foreground">{role}</span></> : null}
-        {branch   ? <><span className="text-muted-foreground">Branch</span><span className="text-foreground">{branch}</span></> : null}
+        {name     ? <><span className="text-muted-foreground">{t('drawer.actor.by')}</span><span className="font-medium text-foreground">{name}</span></> : null}
+        {username ? <><span className="text-muted-foreground">{t('drawer.actor.user')}</span><span className="font-mono text-foreground">{username}</span></> : null}
+        {role     ? <><span className="text-muted-foreground">{t('drawer.actor.role')}</span><span className="text-foreground">{role}</span></> : null}
+        {branch   ? <><span className="text-muted-foreground">{t('drawer.actor.branch')}</span><span className="text-foreground">{branch}</span></> : null}
       </div>
       {/* Exact timestamp */}
       <div className="flex items-baseline gap-2 text-muted-foreground">
@@ -2045,6 +2072,7 @@ function ActorBlock({ ev }: { ev: OrderActivity }) {
 // ── Timeline Tab ─────────────────────────────────────────────────────────────
 
 function TimelineTab({ order }: { order: Order }) {
+  const { t }                           = useTranslation('orders');
   const { data: activities, isLoading } = useOrderActivities(order.id);
 
   const DOT_CLS: Record<TColor, string> = {
@@ -2080,12 +2108,12 @@ function TimelineTab({ order }: { order: Order }) {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-center p-4">
         <Activity className="size-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">No recorded events yet.</p>
+        <p className="text-sm text-muted-foreground">{t('drawer.timeline_tab.noEvents')}</p>
       </div>
     );
   }
 
-  const groups = groupByDay(events);
+  const groups = groupByDay(events, t);
 
   return (
     <div className="p-4 space-y-6">
@@ -2102,7 +2130,7 @@ function TimelineTab({ order }: { order: Order }) {
             <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
             <div className="flex flex-col gap-0">
               {group.events.map((ev) => {
-                const { title, color, icon } = resolveEventMeta(ev);
+                const { title, color, icon } = resolveEventMeta(ev, t);
                 return (
                   <div key={ev.id} className="flex items-start gap-3 py-3 relative">
                     {/* Icon dot — event ID surfaced as tooltip for debug/support */}
@@ -2121,7 +2149,7 @@ function TimelineTab({ order }: { order: Order }) {
                       <p className="text-sm font-semibold leading-tight">{title}</p>
                       <ActorBlock ev={ev} />
                       <div className="mt-2">
-                        <EventDetails ev={ev} />
+                        <EventDetails ev={ev} t={t} />
                       </div>
                     </div>
                   </div>
@@ -2138,6 +2166,7 @@ function TimelineTab({ order }: { order: Order }) {
 // ── Workflow History Tab ──────────────────────────────────────────────────────
 
 function WorkflowHistoryTab({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const typedOrder = order as Order & {
     status_entered_at?: string | null;
     status_entered_by?: string | null;
@@ -2148,7 +2177,7 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
     <div className="flex flex-col gap-6 p-4">
       {/* Current status */}
       <div>
-        <SectionTitle>Current Status</SectionTitle>
+        <SectionTitle>{t('drawer.history_tab.currentStatus')}</SectionTitle>
         <div className="rounded-md border bg-muted/20 px-4 py-3 flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -2156,14 +2185,14 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
             </div>
             {typedOrder.status_entered_at ? (
               <p className="text-xs text-muted-foreground">
-                Entered at:{' '}
-                {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(
+                {t('drawer.history_tab.enteredAt')}{' '}
+                {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
                   new Date(typedOrder.status_entered_at),
                 )}
               </p>
             ) : null}
             {typedOrder.status_entered_by ? (
-              <p className="text-xs text-muted-foreground">By: {typedOrder.status_entered_by}</p>
+              <p className="text-xs text-muted-foreground">{t('drawer.history_tab.by')} {typedOrder.status_entered_by}</p>
             ) : null}
           </div>
         </div>
@@ -2172,10 +2201,10 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
       {/* Previous status */}
       {typedOrder.previous_status ? (
         <div>
-          <SectionTitle>Previous Status</SectionTitle>
+          <SectionTitle>{t('drawer.history_tab.previousStatus')}</SectionTitle>
           <div className="rounded-md border px-4 py-3">
             <p className="text-sm font-medium capitalize text-muted-foreground">
-              {STATUS_LABELS[String(typedOrder.previous_status)] ?? String(typedOrder.previous_status).replace(/_/g, ' ')}
+              {(t as unknown as TDynamic)(`status.${String(typedOrder.previous_status)}`, { defaultValue: String(typedOrder.previous_status).replace(/_/g, ' ') })}
             </p>
           </div>
         </div>
@@ -2183,28 +2212,28 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
 
       {/* Key dates */}
       <div>
-        <SectionTitle>Key Dates</SectionTitle>
+        <SectionTitle>{t('drawer.history_tab.keyDates')}</SectionTitle>
         <DetailGrid>
-          <DetailRow label="Created At">
+          <DetailRow label={t('drawer.history_tab.createdAt')}>
             {formatDate(order.created_at)}
           </DetailRow>
           {order.date_paid ? (
-            <DetailRow label="Payment Confirmed">
+            <DetailRow label={t('drawer.history_tab.paymentConfirmed')}>
               {formatDate(order.date_paid)}
             </DetailRow>
           ) : null}
           {order.inventory_reserved_at ? (
-            <DetailRow label="Reserved">
+            <DetailRow label={t('drawer.history_tab.reserved')}>
               {formatDate(order.inventory_reserved_at)}
             </DetailRow>
           ) : null}
           {order.inventory_shipped_at ? (
-            <DetailRow label="Shipped">
+            <DetailRow label={t('drawer.history_tab.shipped')}>
               {formatDate(order.inventory_shipped_at)}
             </DetailRow>
           ) : null}
           {order.requested_delivery_date ? (
-            <DetailRow label="Requested Delivery">
+            <DetailRow label={t('drawer.history_tab.requestedDelivery')}>
               {formatDate(order.requested_delivery_date)}
             </DetailRow>
           ) : null}
@@ -2213,12 +2242,12 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
 
       {/* Order source */}
       <div>
-        <SectionTitle>Order Source</SectionTitle>
-        <p className="text-sm capitalize">{order.source ?? 'Manual'}</p>
+        <SectionTitle>{t('drawer.history_tab.orderSource')}</SectionTitle>
+        <p className="text-sm capitalize">{order.source ?? t('drawer.history_tab.manual')}</p>
       </div>
 
       <p className="text-xs text-muted-foreground border-t pt-3">
-        The full audit log is available via the activity log endpoint. Key dates are shown above.
+        {t('drawer.history_tab.auditLogNote')}
       </p>
     </div>
   );
@@ -2248,12 +2277,12 @@ export function OrderDetailDrawer({ order, open, onOpenChange, onEdit }: OrderDe
 
   const tabs = [
     { key: 'summary',   label: t('drawer.tabs.summary'),   content: <SummaryTab order={displayOrder} t={t} /> },
-    { key: 'workflow',  label: 'Workflow',                   content: <WorkflowTab order={displayOrder} onClose={() => onOpenChange(false)} /> },
-    { key: 'history',   label: 'History',                  content: <WorkflowHistoryTab order={displayOrder} /> },
+    { key: 'workflow',  label: t('drawer.tabs.workflow'),   content: <WorkflowTab order={displayOrder} onClose={() => onOpenChange(false)} /> },
+    { key: 'history',   label: t('drawer.tabs.history'),   content: <WorkflowHistoryTab order={displayOrder} /> },
     { key: 'customer',  label: t('drawer.tabs.customer'),   content: <CustomerTab order={displayOrder} t={t} /> },
     { key: 'products',  label: t('drawer.tabs.products'),   content: <ProductsTab order={displayOrder} t={t} />, badge: (displayOrder.lines ?? []).length },
-    { key: 'inventory', label: 'Inventory',                  content: <InventoryTab order={displayOrder} /> },
-    { key: 'timeline',  label: 'Timeline',                  content: <TimelineTab order={displayOrder} /> },
+    { key: 'inventory', label: t('drawer.tabs.inventory'),  content: <InventoryTab order={displayOrder} /> },
+    { key: 'timeline',  label: t('drawer.tabs.timeline'),   content: <TimelineTab order={displayOrder} /> },
     { key: 'payment',   label: t('drawer.tabs.payment'),    content: <PaymentTab order={displayOrder} t={t} /> },
     { key: 'shipping',  label: t('drawer.tabs.shipping'),   content: <ShippingTab order={displayOrder} t={t} /> },
     { key: 'notes',     label: t('drawer.tabs.notes'),      content: <OrderNotesTab order={displayOrder} /> },
