@@ -11,6 +11,11 @@
 # includes:
 #     - vendor/larastan/larastan/extension.neon
 
+includes:
+    # Baseline captures pre-Larastan Eloquent errors. Remove entries here as
+    # each model gets @property/@method annotations or Larastan is added.
+    - phpstan-baseline.neon
+
 parameters:
     level: 6
 
