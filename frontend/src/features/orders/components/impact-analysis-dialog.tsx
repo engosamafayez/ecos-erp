@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, MapPin, Route, Truck, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   AlertDialog,
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props) {
+  const { t } = useTranslation('orders');
   const isCritical = stage.trip_status === 'out_for_delivery';
   const isWarning  = ['loading', 'loading_completed', 'driver_accepted', 'dispatch_blocked'].includes(stage.trip_status);
 
@@ -37,7 +39,7 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Icon className={`size-5 ${iconClass}`} />
-            Order Is In Active Distribution
+            {t('impactDialog.title')}
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-sm text-foreground">
@@ -57,7 +59,7 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
                   {stage.wave_number ? (
                     <span className="flex items-center gap-1">
                       <Route className="size-3" />
-                      Wave {stage.wave_number}
+                      {t('impactDialog.wave', { number: stage.wave_number })}
                     </span>
                   ) : null}
                   {stage.governorate ? (
@@ -73,7 +75,7 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
               {stage.impact_list.length > 0 ? (
                 <div>
                   <p className="font-medium text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
-                    What will happen
+                    {t('impactDialog.whatWillHappen')}
                   </p>
                   <ul className="space-y-1">
                     {stage.impact_list.map((item) => (
@@ -89,7 +91,7 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
               {/* Manifest note */}
               {stage.manifest_exists ? (
                 <p className="text-xs text-muted-foreground border-t pt-2">
-                  A loading manifest exists for this trip. You may need to regenerate it from the Dispatch Gate after saving.
+                  {t('impactDialog.manifestNote')}
                 </p>
               ) : null}
             </div>
@@ -97,12 +99,12 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>{t('statusSelector.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className={isCritical ? 'bg-red-600 hover:bg-red-700' : ''}
           >
-            {isCritical ? 'Save Anyway' : 'Confirm & Save'}
+            {isCritical ? t('impactDialog.saveAnyway') : t('impactDialog.confirmSave')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

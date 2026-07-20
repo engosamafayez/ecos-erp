@@ -119,7 +119,7 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           className="inline-flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors outline-none"
-          aria-label="Order actions"
+          aria-label={t('actions.orderActions')}
         >
           <MoreVertical className="size-3.5" />
         </button>

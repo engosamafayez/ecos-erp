@@ -135,7 +135,7 @@ export function OrderInlineStatusCell({ orderId, status }: OrderInlineStatusCell
           </DropdownMenuItem>
         ))}
         {(WORKFLOW_TRANSITIONS[status] ?? []).length === 0 ? (
-          <DropdownMenuItem disabled>No transitions available</DropdownMenuItem>
+          <DropdownMenuItem disabled>{t('statusSelector.noTransitions')}</DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>

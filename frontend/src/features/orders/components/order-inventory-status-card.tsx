@@ -1,4 +1,5 @@
 import { AlertTriangle, BadgeCheck, Info, Package } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import type { BrandOrderPolicy } from '@/features/orders/types/order';
@@ -48,11 +49,19 @@ function deriveScenario(
 
 // ── Scenario config ───────────────────────────────────────────────────────────
 
+type InventoryCardKey =
+  | 'inventoryCard.title'
+  | 'inventoryCard.warningTitle'
+  | 'inventoryCard.policyTitle'
+  | 'inventoryCard.autoPolicy'
+  | 'inventoryCard.manualPolicy'
+  | 'inventoryCard.shortageWarning';
+
 type ScenarioConfig = {
   icon: React.ElementType;
-  title: string;
-  policy?: string;
-  sub?: string;
+  titleKey: InventoryCardKey;
+  policyKey?: InventoryCardKey;
+  subKey?: InventoryCardKey;
   border: string;
   bg: string;
   iconColor: string;
@@ -62,8 +71,8 @@ type ScenarioConfig = {
 const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   auto_reserve: {
     icon: BadgeCheck,
-    title: 'Inventory Status',
-    policy: 'Automatic Reservation',
+    titleKey: 'inventoryCard.title',
+    policyKey: 'inventoryCard.autoPolicy',
     border: 'border-emerald-200 dark:border-emerald-800/50',
     bg: 'bg-emerald-50/60 dark:bg-emerald-950/20',
     iconColor: 'text-emerald-600 dark:text-emerald-400',
@@ -71,8 +80,8 @@ const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   },
   shortage: {
     icon: AlertTriangle,
-    title: 'Inventory Warning',
-    sub: 'The order may move to Awaiting Stock.',
+    titleKey: 'inventoryCard.warningTitle',
+    subKey: 'inventoryCard.shortageWarning',
     border: 'border-amber-300 dark:border-amber-700/50',
     bg: 'bg-amber-50 dark:bg-amber-950/30',
     iconColor: 'text-amber-600 dark:text-amber-400',
@@ -80,7 +89,7 @@ const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   },
   negative: {
     icon: Info,
-    title: 'Inventory Policy',
+    titleKey: 'inventoryCard.policyTitle',
     border: 'border-sky-200 dark:border-sky-800/50',
     bg: 'bg-sky-50/60 dark:bg-sky-950/20',
     iconColor: 'text-sky-600 dark:text-sky-400',
@@ -88,8 +97,8 @@ const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   },
   manual: {
     icon: Info,
-    title: 'Inventory Status',
-    policy: 'Manual Reservation',
+    titleKey: 'inventoryCard.title',
+    policyKey: 'inventoryCard.manualPolicy',
     border: 'border-border',
     bg: 'bg-muted/30',
     iconColor: 'text-muted-foreground',
@@ -97,7 +106,7 @@ const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   },
   idle: {
     icon: Package,
-    title: 'Inventory Status',
+    titleKey: 'inventoryCard.title',
     border: 'border-border',
     bg: 'bg-muted/20',
     iconColor: 'text-muted-foreground',
@@ -120,6 +129,7 @@ export function OrderInventoryStatusCard({
   allProductMap,
   onViewPolicy,
 }: OrderInventoryStatusCardProps) {
+  const { t } = useTranslation('orders');
   if (!orderPolicy) return null;
 
   const selectedProducts = (lines ?? [])
@@ -143,7 +153,7 @@ export function OrderInventoryStatusCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Icon className={`size-4 shrink-0 ${cfg.iconColor}`} />
-          <span className={`font-semibold ${cfg.titleColor}`}>{cfg.title}</span>
+          <span className={`font-semibold ${cfg.titleColor}`}>{t(cfg.titleKey)}</span>
         </div>
         <Button
           type="button"
@@ -152,16 +162,16 @@ export function OrderInventoryStatusCard({
           className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
           onClick={onViewPolicy}
         >
-          View Policy
+          {t('inventoryCard.viewPolicy')}
         </Button>
       </div>
 
       {/* Body */}
       <div className="mt-2 space-y-1.5 text-xs">
-        {cfg.policy && (
+        {cfg.policyKey && (
           <div>
-            <span className="text-muted-foreground">Reservation Policy</span>
-            <span className="ml-1.5 font-medium">{cfg.policy}</span>
+            <span className="text-muted-foreground">{t('inventoryCard.reservationPolicy')}</span>
+            <span className="ml-1.5 font-medium">{t(cfg.policyKey)}</span>
           </div>
         )}
 
@@ -171,7 +181,7 @@ export function OrderInventoryStatusCard({
             {entryStatuses.length > 0 ? (
               <div className="space-y-0.5">
                 <p className="text-muted-foreground">
-                  Products will be automatically reserved when the order enters:
+                  {t('inventoryCard.autoReserveOnEnter')}
                 </p>
                 <ul className="mt-1 space-y-0.5">
                   {entryStatuses.map((s) => (
@@ -187,7 +197,7 @@ export function OrderInventoryStatusCard({
               </div>
             ) : (
               <p className="text-muted-foreground">
-                Products will be automatically reserved when this order is created.
+                {t('inventoryCard.autoReserveOnCreate')}
               </p>
             )}
           </>
@@ -196,41 +206,41 @@ export function OrderInventoryStatusCard({
         {/* Manual reservation */}
         {scenario === 'manual' && (
           <p className="text-muted-foreground">
-            Inventory will be reviewed and reserved manually before fulfillment.
+            {t('inventoryCard.manualReserveDesc')}
           </p>
         )}
 
         {/* Idle */}
         {scenario === 'idle' && (
           <p className="text-muted-foreground">
-            Add products to see real-time inventory availability.
+            {t('inventoryCard.idleDesc')}
           </p>
         )}
 
         {/* Negative stock */}
         {scenario === 'negative' && (
           <p className="text-muted-foreground">
-            Negative stock is enabled for eligible products according to Brand Policy.
+            {t('inventoryCard.negativeDesc')}
           </p>
         )}
 
         {/* Shortage product list */}
         {shortageItems.length > 0 && (
           <>
-            <p className="text-muted-foreground">Some products are currently unavailable.</p>
+            <p className="text-muted-foreground">{t('inventoryCard.unavailableProducts')}</p>
             <ul className="space-y-0.5">
               {shortageItems.map((p) => (
                 <li key={p.id} className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
                   <AlertTriangle className="size-2.5 shrink-0" />
                   <span className="font-medium">{p.name}</span>
-                  <span className="text-muted-foreground">— out of stock</span>
+                  <span className="text-muted-foreground">— {t('inventoryCard.outOfStock')}</span>
                 </li>
               ))}
             </ul>
           </>
         )}
 
-        {cfg.sub && <p className="font-medium text-amber-700 dark:text-amber-400">{cfg.sub}</p>}
+        {cfg.subKey && <p className="font-medium text-amber-700 dark:text-amber-400">{t(cfg.subKey)}</p>}
       </div>
     </div>
   );

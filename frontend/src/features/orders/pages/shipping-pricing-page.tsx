@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ const emptyForm = (): RuleFormState => ({
 });
 
 export function ShippingPricingPage() {
+  const { t } = useTranslation('orders');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [formState, setFormState] = useState<RuleFormState | null>(null);
@@ -57,9 +59,9 @@ export function ShippingPricingPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [RULES_KEY] });
       setFormState(null);
-      toast({ type: 'success', title: 'Rule created.' });
+      toast({ type: 'success', title: t('shippingPricing.ruleCreated') });
     },
-    onError: () => toast({ type: 'error', title: 'Failed to save rule.' }),
+    onError: () => toast({ type: 'error', title: t('shippingPricing.saveFailed') }),
   });
 
   const remove = useMutation({
@@ -67,9 +69,9 @@ export function ShippingPricingPage() {
       fetch(`/api/shipping-pricing/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [RULES_KEY] });
-      toast({ type: 'success', title: 'Rule deleted.' });
+      toast({ type: 'success', title: t('shippingPricing.ruleDeleted') });
     },
-    onError: () => toast({ type: 'error', title: 'Failed to delete rule.' }),
+    onError: () => toast({ type: 'error', title: t('shippingPricing.deleteFailed') }),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,16 +91,16 @@ export function ShippingPricingPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Shipping Pricing"
-        subtitle="Configure shipping costs by governorate, city, and area"
+        title={t('shippingPricing.title')}
+        subtitle={t('shippingPricing.subtitle')}
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Shipping Pricing' },
+          { label: t('shippingPricing.breadcrumbHome'), to: ROUTES.dashboard },
+          { label: t('shippingPricing.breadcrumbTitle') },
         ]}
         actions={
           <Button onClick={() => setFormState(emptyForm())}>
             <Plus className="size-4" />
-            Add Rule
+            {t('shippingPricing.addRule')}
           </Button>
         }
       />
@@ -109,7 +111,7 @@ export function ShippingPricingPage() {
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <label className="mb-1 block text-sm font-medium">Governorate *</label>
+                <label className="mb-1 block text-sm font-medium">{t('shippingPricing.governorateLabel')}</label>
                 <Input
                   required
                   value={formState.governorate}
@@ -118,23 +120,23 @@ export function ShippingPricingPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">City</label>
+                <label className="mb-1 block text-sm font-medium">{t('shippingPricing.cityLabel')}</label>
                 <Input
                   value={formState.city}
                   onChange={(e) => setFormState((s) => s && { ...s, city: e.target.value })}
-                  placeholder="Leave blank for governorate-level"
+                  placeholder={t('shippingPricing.cityPlaceholder')}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Area</label>
+                <label className="mb-1 block text-sm font-medium">{t('shippingPricing.areaLabel')}</label>
                 <Input
                   value={formState.area}
                   onChange={(e) => setFormState((s) => s && { ...s, area: e.target.value })}
-                  placeholder="Leave blank for city-level"
+                  placeholder={t('shippingPricing.areaPlaceholder')}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Standard Cost *</label>
+                <label className="mb-1 block text-sm font-medium">{t('shippingPricing.standardCostLabel')}</label>
                 <Input
                   type="number"
                   min="0"
@@ -146,22 +148,22 @@ export function ShippingPricingPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Express Cost</label>
+                <label className="mb-1 block text-sm font-medium">{t('shippingPricing.expressCostLabel')}</label>
                 <Input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formState.express_cost}
                   onChange={(e) => setFormState((s) => s && { ...s, express_cost: e.target.value })}
-                  placeholder="Optional"
+                  placeholder={t('shippingPricing.optional')}
                 />
               </div>
               <div className="flex items-end gap-2">
                 <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? 'Saving…' : 'Save Rule'}
+                  {create.isPending ? t('shippingPricing.saving') : t('shippingPricing.saveRule')}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setFormState(null)}>
-                  Cancel
+                  {t('shippingPricing.cancel')}
                 </Button>
               </div>
             </form>
@@ -173,20 +175,20 @@ export function ShippingPricingPage() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+            <p className="p-6 text-sm text-muted-foreground">{t('shippingPricing.loading')}</p>
           ) : rules.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">No shipping pricing rules yet.</p>
+            <p className="p-6 text-sm text-muted-foreground">{t('shippingPricing.noRules')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-start text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">Governorate</th>
-                    <th className="px-4 py-3 font-medium">City</th>
-                    <th className="px-4 py-3 font-medium">Area</th>
-                    <th className="px-4 py-3 font-medium">Standard Cost</th>
-                    <th className="px-4 py-3 font-medium">Express Cost</th>
-                    <th className="px-4 py-3 font-medium">Active</th>
+                    <th className="px-4 py-3 font-medium">{t('shippingPricing.colGovernorate')}</th>
+                    <th className="px-4 py-3 font-medium">{t('shippingPricing.colCity')}</th>
+                    <th className="px-4 py-3 font-medium">{t('shippingPricing.colArea')}</th>
+                    <th className="px-4 py-3 font-medium">{t('shippingPricing.colStandardCost')}</th>
+                    <th className="px-4 py-3 font-medium">{t('shippingPricing.colExpressCost')}</th>
+                    <th className="px-4 py-3 font-medium">{t('shippingPricing.colActive')}</th>
                     <th className="w-20 px-4 py-3" />
                   </tr>
                 </thead>
@@ -208,7 +210,7 @@ export function ShippingPricingPage() {
                               : 'bg-muted text-muted-foreground'
                           }`}
                         >
-                          {rule.is_active ? 'Active' : 'Inactive'}
+                          {rule.is_active ? t('shippingPricing.active') : t('shippingPricing.inactive')}
                         </span>
                       </td>
                       <td className="px-4 py-3">

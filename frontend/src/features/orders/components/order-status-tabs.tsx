@@ -120,7 +120,7 @@ export function OrderStatusTabs({ activeStatus, counts, onChange }: OrderStatusT
       <button
         type="button"
         onClick={() => scrollBy('left')}
-        aria-label="Scroll left"
+        aria-label={t('statusTabs.scrollLeft')}
         className="shrink-0 flex items-center justify-center px-1.5 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors z-10 border-r"
       >
         <ChevronLeft className="size-4" />
@@ -192,7 +192,7 @@ export function OrderStatusTabs({ activeStatus, counts, onChange }: OrderStatusT
       <button
         type="button"
         onClick={() => scrollBy('right')}
-        aria-label="Scroll right"
+        aria-label={t('statusTabs.scrollRight')}
         className="shrink-0 flex items-center justify-center px-1.5 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors z-10 border-l"
       >
         <ChevronRight className="size-4" />

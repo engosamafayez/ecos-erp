@@ -83,9 +83,9 @@ export function OrderItemsPreview({ lines }: Props) {
               {/* Column headers */}
               <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b bg-muted/40 px-3 py-1.5 text-[10px] font-medium text-muted-foreground">
                 <span className="w-7" />
-                <span>Product</span>
-                <span className="text-end">Qty × Price</span>
-                <span className="w-16 text-end">Total</span>
+                <span>{t('itemsPreview.colProduct')}</span>
+                <span className="text-end">{t('itemsPreview.colQtyPrice')}</span>
+                <span className="w-16 text-end">{t('itemsPreview.colTotal')}</span>
               </div>
 
               {/* Lines */}
@@ -133,7 +133,7 @@ export function OrderItemsPreview({ lines }: Props) {
               {/* Products Total footer */}
               <div className="flex items-center justify-between border-t bg-muted/20 px-3 py-2">
                 <span className="text-xs font-medium text-muted-foreground">
-                  {t('itemsPreview.productsTotal', 'Products Total')}
+                  {t('itemsPreview.productsTotal')}
                 </span>
                 <span className="text-sm font-bold tabular-nums">{fmt(grandTotal)}</span>
               </div>

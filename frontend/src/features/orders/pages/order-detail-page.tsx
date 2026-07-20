@@ -207,24 +207,25 @@ function KpiCard({ label, value, sub, highlight }: {
 }
 
 function KpiRow({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const totalQty = order.lines.reduce((s, l) => s + l.quantity, 0);
   const remaining = order.remaining_balance;
   const reservedCount = order.inventory_reserved_at ? order.lines.length : 0;
 
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-      <KpiCard label="Products" value={order.lines.length} sub={`${totalQty} units`} />
-      <KpiCard label="Quantity" value={totalQty.toLocaleString()} />
-      <KpiCard label="Reserved" value={reservedCount} highlight={reservedCount === order.lines.length ? 'success' : reservedCount > 0 ? 'warning' : undefined} />
-      <KpiCard label="Shipping" value={`${fmtMoney(order.shipping_amount)} EGP`} />
-      <KpiCard label="Grand Total" value={`${fmtMoney(order.grand_total)} EGP`} highlight="success" />
+      <KpiCard label={t('orderDetail.kpiProducts')} value={order.lines.length} sub={`${totalQty} units`} />
+      <KpiCard label={t('orderDetail.kpiQuantity')} value={totalQty.toLocaleString()} />
+      <KpiCard label={t('orderDetail.kpiReserved')} value={reservedCount} highlight={reservedCount === order.lines.length ? 'success' : reservedCount > 0 ? 'warning' : undefined} />
+      <KpiCard label={t('orderDetail.kpiShipping')} value={`${fmtMoney(order.shipping_amount)} EGP`} />
+      <KpiCard label={t('orderDetail.kpiGrandTotal')} value={`${fmtMoney(order.grand_total)} EGP`} highlight="success" />
       <KpiCard
-        label="Remaining"
+        label={t('orderDetail.kpiRemaining')}
         value={`${fmtMoney(remaining)} EGP`}
         highlight={remaining > 0 ? 'warning' : 'success'}
       />
       <KpiCard
-        label="Progress"
+        label={t('orderDetail.kpiProgress')}
         value={order.status_label ?? order.status.replace(/_/g, ' ')}
         sub={order.order_date ? fmtDate(order.order_date) : undefined}
       />
@@ -246,6 +247,7 @@ function OrderHeader({
   onPrint: () => void;
 }) {
   const navigate = useNavigate();
+  const { t } = useTranslation('orders');
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border bg-card px-5 py-4">
@@ -256,7 +258,7 @@ function OrderHeader({
           size="icon"
           className="size-7 shrink-0"
           onClick={() => navigate(ROUTES.orders)}
-          aria-label="Back to orders"
+          aria-label={t('orderDetail.backToOrders')}
         >
           <ArrowLeft className="size-4" />
         </Button>
@@ -271,15 +273,15 @@ function OrderHeader({
         <div className="ms-auto flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onPrint}>
             <Printer className="size-3.5" />
-            Print
+            {t('orderDetail.print')}
           </Button>
           <Button variant="outline" size="sm" onClick={onConfirmCustomer}>
             <UserCheck className="size-3.5" />
-            Confirm Customer
+            {t('orderDetail.confirmCustomer')}
           </Button>
           <Button size="sm" onClick={onEdit}>
             <Edit className="size-3.5" />
-            Edit
+            {t('orderDetail.edit')}
           </Button>
         </div>
       </div>
@@ -308,11 +310,11 @@ function OrderHeader({
         {order.inventory_reserved_at ? (
           <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300 dark:border-emerald-800 dark:text-emerald-400">
             <CheckCircle2 className="size-2.5 mr-0.5" />
-            Reserved {fmtDate(order.inventory_reserved_at)}
+            {t('orderDetail.headerReserved', { date: fmtDate(order.inventory_reserved_at) })}
           </Badge>
         ) : (
           <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 dark:border-amber-800 dark:text-amber-400">
-            Not Reserved
+            {t('orderDetail.headerNotReserved')}
           </Badge>
         )}
         {order.tracking_number ? (
@@ -327,10 +329,10 @@ function OrderHeader({
           datePaid={order.date_paid}
         />
         {order.created_at ? (
-          <span>Created {fmtDateTime(order.created_at)}</span>
+          <span>{t('orderDetail.created', { datetime: fmtDateTime(order.created_at) })}</span>
         ) : null}
         {order.status_entered_by ? (
-          <span>By {order.status_entered_by}</span>
+          <span>{t('orderDetail.by', { name: order.status_entered_by })}</span>
         ) : null}
       </div>
     </div>
@@ -340,18 +342,19 @@ function OrderHeader({
 // ── Part 2 — Financial Summary ────────────────────────────────────────────────
 
 function FinancialSummaryCard({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const remaining = order.remaining_balance;
 
-  const rows: Array<{ label: string; value: number; color?: string; always?: boolean }> = [
-    { label: 'Products Total', value: order.products_total, always: true },
-    { label: 'Shipping',       value: order.shipping_amount },
-    { label: 'Discount',       value: -order.discount_amount },
-    { label: 'Tax',            value: order.tax_amount },
-    { label: 'Deposit Paid',   value: -order.deposit_paid },
+  const rows: Array<{ label: string; value: number; always?: boolean }> = [
+    { label: t('orderDetail.productsTotal'), value: order.products_total, always: true },
+    { label: t('orderDetail.shippingRow'),   value: order.shipping_amount },
+    { label: t('orderDetail.discountRow'),   value: -order.discount_amount },
+    { label: t('orderDetail.taxRow'),        value: order.tax_amount },
+    { label: t('orderDetail.depositPaidRow'),value: -order.deposit_paid },
   ];
 
   return (
-    <InfoCard title="Financial Summary" icon={ShoppingBag}>
+    <InfoCard title={t('orderDetail.financialSummaryTitle')} icon={ShoppingBag}>
       <div className="flex flex-col gap-1.5 text-sm">
         {rows.map(({ label, value, always }) => {
           if (!always && (!value || value === 0)) return null;
@@ -367,12 +370,12 @@ function FinancialSummaryCard({ order }: { order: Order }) {
         })}
         <Separator className="my-1" />
         <div className="flex items-center justify-between gap-4 font-semibold">
-          <span>Grand Total</span>
+          <span>{t('orderDetail.grandTotal')}</span>
           <span className="tabular-nums">{fmtMoney(order.grand_total)} EGP</span>
         </div>
         {remaining > 0 && (
           <div className="flex items-center justify-between gap-4 rounded-md bg-amber-50 px-2 py-1.5 dark:bg-amber-950/30">
-            <span className="text-amber-700 dark:text-amber-400 text-xs font-medium">Remaining Balance</span>
+            <span className="text-amber-700 dark:text-amber-400 text-xs font-medium">{t('orderDetail.remainingBalance')}</span>
             <span className="tabular-nums font-semibold text-amber-700 dark:text-amber-400">
               {fmtMoney(remaining)} EGP
             </span>
@@ -381,7 +384,7 @@ function FinancialSummaryCard({ order }: { order: Order }) {
         {remaining <= 0 && (
           <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1.5 dark:bg-emerald-950/30">
             <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-emerald-700 dark:text-emerald-400 text-xs font-medium">Fully Paid</span>
+            <span className="text-emerald-700 dark:text-emerald-400 text-xs font-medium">{t('orderDetail.fullyPaid')}</span>
           </div>
         )}
       </div>
@@ -392,13 +395,14 @@ function FinancialSummaryCard({ order }: { order: Order }) {
 // ── Part 3 — Customer 360 Card ────────────────────────────────────────────────
 
 function CustomerCard({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const customer = order.customer;
   const { data: stats, isLoading } = useCustomerOrderStats(customer?.id ?? null);
 
   if (!customer) {
     return (
-      <InfoCard title="Customer" icon={UserCheck}>
-        <EmptyState icon={UserCheck} message="No customer linked to this order." />
+      <InfoCard title={t('orderDetail.customerTitle')} icon={UserCheck}>
+        <EmptyState icon={UserCheck} message={t('orderDetail.noCustomer')} />
       </InfoCard>
     );
   }
@@ -411,7 +415,7 @@ function CustomerCard({ order }: { order: Order }) {
   const hasReturned = false; // not in stats yet
 
   return (
-    <InfoCard title="Customer 360" icon={UserCheck}>
+    <InfoCard title={t('orderDetail.customer360Title')} icon={UserCheck}>
       <div className="flex flex-col gap-4">
         {/* Identity */}
         <div className="flex items-start justify-between gap-2">
@@ -425,17 +429,17 @@ function CustomerCard({ order }: { order: Order }) {
               )}
               {!isVip && isReturning && (
                 <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                  Returning
+                  {t('orderDetail.returning')}
                 </span>
               )}
               {hasRejected && (
                 <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                  Rejected Before
+                  {t('orderDetail.rejectedBefore')}
                 </span>
               )}
               {hasReturned && (
                 <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-                  Returned Before
+                  {t('orderDetail.returnedBefore')}
                 </span>
               )}
             </div>
@@ -446,13 +450,13 @@ function CustomerCard({ order }: { order: Order }) {
             className="inline-flex shrink-0 items-center gap-1 text-xs text-primary hover:underline"
           >
             <ExternalLink className="size-3" />
-            Open
+            {t('orderDetail.open')}
           </a>
         </div>
 
         {/* Contact */}
         <FieldGrid cols={2}>
-          <Field label="Primary Phone">
+          <Field label={t('orderDetail.primaryPhone')}>
             {primaryPhone ? (
               <div className="flex items-center gap-1.5">
                 <span className="font-mono text-xs">{primaryPhone}</span>
@@ -470,15 +474,15 @@ function CustomerCard({ order }: { order: Order }) {
               </div>
             ) : null}
           </Field>
-          <Field label="Secondary Phone">
+          <Field label={t('orderDetail.secondaryPhone')}>
             {customer.mobile && customer.mobile !== primaryPhone ? (
               <span className="font-mono text-xs">{customer.mobile}</span>
             ) : null}
           </Field>
-          <Field label="Email">{order.billing_email}</Field>
-          <Field label="Governorate">{order.governorate ?? order.shipping_state}</Field>
-          <Field label="City">{order.city ?? order.shipping_city ?? order.billing_city}</Field>
-          <Field label="Street">{order.shipping_address ?? order.shipping_address_1 ?? order.billing_address_1}</Field>
+          <Field label={t('orderDetail.email')}>{order.billing_email}</Field>
+          <Field label={t('orderDetail.governorate')}>{order.governorate ?? order.shipping_state}</Field>
+          <Field label={t('orderDetail.city')}>{order.city ?? order.shipping_city ?? order.billing_city}</Field>
+          <Field label={t('orderDetail.street')}>{order.shipping_address ?? order.shipping_address_1 ?? order.billing_address_1}</Field>
         </FieldGrid>
 
         {/* Intelligence Stats */}
@@ -490,13 +494,13 @@ function CustomerCard({ order }: { order: Order }) {
         ) : stats ? (
           <>
             <Separator />
-            <SectionLabel>Customer Intelligence</SectionLabel>
+            <SectionLabel>{t('orderDetail.customerIntelligence')}</SectionLabel>
             <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: 'Orders', value: stats.total, colorCls: '' },
-                { label: 'Delivered', value: stats.completed, colorCls: 'text-emerald-600 dark:text-emerald-400' },
-                { label: 'Cancelled', value: stats.cancelled, colorCls: stats.cancelled > 0 ? 'text-red-500 dark:text-red-400' : '' },
-              ].map(({ label, value, colorCls }) => (
+              {([
+                { label: t('orderDetail.statsOrders'),    value: stats.total,     colorCls: '' },
+                { label: t('orderDetail.statsDelivered'), value: stats.completed, colorCls: 'text-emerald-600 dark:text-emerald-400' },
+                { label: t('orderDetail.statsCancelled'), value: stats.cancelled, colorCls: stats.cancelled > 0 ? 'text-red-500 dark:text-red-400' : '' },
+              ] as Array<{ label: string; value: number; colorCls: string }>).map(({ label, value, colorCls }) => (
                 <div key={label} className="rounded-md border bg-muted/20 px-2 py-1.5 text-center">
                   <p className={cn('text-base font-semibold tabular-nums', colorCls)}>{value}</p>
                   <p className="text-[10px] text-muted-foreground">{label}</p>
@@ -504,15 +508,15 @@ function CustomerCard({ order }: { order: Order }) {
               ))}
             </div>
             <FieldGrid cols={2}>
-              <Field label="Lifetime Value">
+              <Field label={t('orderDetail.lifetimeValue')}>
                 <span className="font-semibold tabular-nums">{fmtMoney(stats.totalSpend)} EGP</span>
               </Field>
-              <Field label="Avg Order Value">
+              <Field label={t('orderDetail.avgOrderValue')}>
                 {stats.aov !== null ? <span className="tabular-nums">{fmtMoney(stats.aov)} EGP</span> : null}
               </Field>
-              <Field label="First Order">{fmtDate(stats.firstOrderDate)}</Field>
-              <Field label="Last Order">{fmtDate(stats.lastOrderDate)}</Field>
-              <Field label="Preferred Zone">{stats.preferredGovernorate}</Field>
+              <Field label={t('orderDetail.firstOrder')}>{fmtDate(stats.firstOrderDate)}</Field>
+              <Field label={t('orderDetail.lastOrder')}>{fmtDate(stats.lastOrderDate)}</Field>
+              <Field label={t('orderDetail.preferredZone')}>{stats.preferredGovernorate}</Field>
             </FieldGrid>
           </>
         ) : null}
@@ -524,6 +528,7 @@ function CustomerCard({ order }: { order: Order }) {
 // ── Part 5 — Address Card ─────────────────────────────────────────────────────
 
 function AddressCard({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const loc = order.location;
   const mapsUrl = loc?.lat && loc?.lng
     ? `https://www.google.com/maps?q=${loc.lat},${loc.lng}`
@@ -536,56 +541,56 @@ function AddressCard({ order }: { order: Order }) {
 
   if (!hasAddress && !loc) {
     return (
-      <InfoCard title="Delivery Address" icon={MapPin}>
-        <EmptyState icon={MapPin} message="No address recorded for this order." />
+      <InfoCard title={t('orderDetail.deliveryAddressTitle')} icon={MapPin}>
+        <EmptyState icon={MapPin} message={t('orderDetail.noAddress')} />
       </InfoCard>
     );
   }
 
   return (
-    <InfoCard title="Delivery Address" icon={MapPin}>
+    <InfoCard title={t('orderDetail.deliveryAddressTitle')} icon={MapPin}>
       <div className="flex flex-col gap-4">
         <FieldGrid cols={2}>
-          <Field label="Governorate">{order.governorate ?? order.shipping_state}</Field>
-          <Field label="City">{order.city ?? order.shipping_city ?? order.billing_city}</Field>
-          <Field label="Zone / Area">{order.delivery_zone ?? order.area}</Field>
-          <Field label="Street">{order.shipping_address ?? order.shipping_address_1 ?? order.billing_address_1}</Field>
-          {order.building ? <Field label="Building">{order.building}</Field> : null}
-          {order.floor ? <Field label="Floor">{order.floor}</Field> : null}
-          {order.apartment ? <Field label="Apartment">{order.apartment}</Field> : null}
-          {order.landmark ? <Field label="Landmark">{order.landmark}</Field> : null}
-          {!order.building && order.shipping_address_2 ? <Field label="Building / Unit">{order.shipping_address_2}</Field> : null}
+          <Field label={t('orderDetail.governorate')}>{order.governorate ?? order.shipping_state}</Field>
+          <Field label={t('orderDetail.city')}>{order.city ?? order.shipping_city ?? order.billing_city}</Field>
+          <Field label={t('orderDetail.zoneArea')}>{order.delivery_zone ?? order.area}</Field>
+          <Field label={t('orderDetail.street')}>{order.shipping_address ?? order.shipping_address_1 ?? order.billing_address_1}</Field>
+          {order.building ? <Field label={t('orderDetail.building')}>{order.building}</Field> : null}
+          {order.floor ? <Field label={t('orderDetail.floor')}>{order.floor}</Field> : null}
+          {order.apartment ? <Field label={t('orderDetail.apartment')}>{order.apartment}</Field> : null}
+          {order.landmark ? <Field label={t('orderDetail.landmark')}>{order.landmark}</Field> : null}
+          {!order.building && order.shipping_address_2 ? <Field label={t('orderDetail.buildingUnit')}>{order.shipping_address_2}</Field> : null}
         </FieldGrid>
 
         {coordsText ? (
           <>
             <Separator />
             <div className="flex flex-col gap-2">
-              <SectionLabel>GPS Coordinates</SectionLabel>
+              <SectionLabel>{t('orderDetail.gpsCoords')}</SectionLabel>
               <div className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
                 <MapPin className="size-3 shrink-0" />
                 {coordsText}
-                {loc?.set_by ? <span className="ml-1 capitalize">· Set by {loc.set_by}</span> : null}
+                {loc?.set_by ? <span className="ml-1 capitalize">{t('orderDetail.setBy', { name: loc.set_by })}</span> : null}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {mapsUrl ? (
                   <Button variant="outline" size="sm" asChild className="h-7 text-xs">
                     <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                       <Navigation className="size-3" />
-                      Open Maps
+                      {t('orderDetail.openMaps')}
                     </a>
                   </Button>
                 ) : null}
                 {mapsUrl ? (
                   <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void navigator.clipboard.writeText(mapsUrl)}>
                     <Copy className="size-3" />
-                    Copy Link
+                    {t('orderDetail.copyLink')}
                   </Button>
                 ) : null}
                 {coordsText ? (
                   <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void navigator.clipboard.writeText(coordsText)}>
                     <Copy className="size-3" />
-                    Copy Coords
+                    {t('orderDetail.copyCoords')}
                   </Button>
                 ) : null}
                 {loc?.lat && loc?.lng ? (
@@ -596,7 +601,7 @@ function AddressCard({ order }: { order: Order }) {
                       rel="noopener noreferrer"
                     >
                       <Navigation className="size-3" />
-                      Waze
+                      {t('orderDetail.waze')}
                     </a>
                   </Button>
                 ) : null}
@@ -612,50 +617,51 @@ function AddressCard({ order }: { order: Order }) {
 // ── Part 4 — Shipping Card ────────────────────────────────────────────────────
 
 function ShippingCard({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const hasMeaningfulShipping = order.shipping_company_name || order.shipping_method ||
     order.tracking_number || order.requested_delivery_date || order.delivery_window;
 
   if (!hasMeaningfulShipping) {
     return (
-      <InfoCard title="Shipping" icon={Truck}>
-        <EmptyState icon={Truck} message="No shipment information recorded." />
+      <InfoCard title={t('orderDetail.shippingTitle')} icon={Truck}>
+        <EmptyState icon={Truck} message={t('orderDetail.noShipping')} />
       </InfoCard>
     );
   }
 
   return (
-    <InfoCard title="Shipping" icon={Truck}>
+    <InfoCard title={t('orderDetail.shippingTitle')} icon={Truck}>
       <FieldGrid cols={2}>
-        <Field label="Carrier / Company">{order.shipping_company_name}</Field>
-        <Field label="Shipping Method">{order.shipping_method}</Field>
-        <Field label="Tracking Number">
+        <Field label={t('orderDetail.carrierCompany')}>{order.shipping_company_name}</Field>
+        <Field label={t('orderDetail.shippingMethod')}>{order.shipping_method}</Field>
+        <Field label={t('orderDetail.trackingNumber')}>
           {order.tracking_number ? (
             <span className="font-mono text-xs">{order.tracking_number}</span>
           ) : null}
         </Field>
-        <Field label="Delivery Attempts">
+        <Field label={t('orderDetail.deliveryAttempts')}>
           <span className={cn('font-semibold', order.shipping_attempts > 0 && 'text-amber-600 dark:text-amber-400')}>
             {order.shipping_attempts ?? 0}
           </span>
         </Field>
-        <Field label="Delivery Window">{order.delivery_window}</Field>
-        <Field label="Requested Delivery">{fmtDate(order.requested_delivery_date)}</Field>
-        <Field label="Preferred Time">
+        <Field label={t('orderDetail.deliveryWindow')}>{order.delivery_window}</Field>
+        <Field label={t('orderDetail.requestedDelivery')}>{fmtDate(order.requested_delivery_date)}</Field>
+        <Field label={t('orderDetail.preferredTime')}>
           {order.preferred_delivery_time ? (
             <span className="capitalize">{order.preferred_delivery_time}</span>
           ) : null}
         </Field>
-        <Field label="Delivery Zone">{order.delivery_zone}</Field>
-        <Field label="Shipping Cost">
+        <Field label={t('orderDetail.deliveryZone')}>{order.delivery_zone}</Field>
+        <Field label={t('orderDetail.shippingCost')}>
           {order.shipping_cost != null ? `${fmtMoney(order.shipping_cost)} EGP` : null}
         </Field>
-        <Field label="Cost Source">
+        <Field label={t('orderDetail.costSource')}>
           {order.shipping_cost_source ? (
             <span className="capitalize">{order.shipping_cost_source}</span>
           ) : null}
         </Field>
         {order.inventory_shipped_at ? (
-          <Field label="Dispatched At">{fmtDateTime(order.inventory_shipped_at)}</Field>
+          <Field label={t('orderDetail.dispatchedAt')}>{fmtDateTime(order.inventory_shipped_at)}</Field>
         ) : null}
       </FieldGrid>
     </InfoCard>
@@ -665,32 +671,33 @@ function ShippingCard({ order }: { order: Order }) {
 // ── Part 6 — Inventory Card ───────────────────────────────────────────────────
 
 function InventoryCard({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const isReserved = Boolean(order.inventory_reserved_at);
   const isShipped = Boolean(order.inventory_shipped_at);
 
   return (
-    <InfoCard title="Inventory & Fulfillment" icon={Warehouse}>
+    <InfoCard title={t('orderDetail.inventoryTitle')} icon={Warehouse}>
       <div className="flex flex-col gap-4">
         <FieldGrid cols={2}>
-          <Field label="Reservation Status">
+          <Field label={t('orderDetail.reservationStatus')}>
             {isReserved ? (
               <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="size-3.5" />
-                Reserved
+                {t('orderDetail.reservedStatus')}
               </span>
             ) : (
-              <span className="text-sm font-medium text-amber-600 dark:text-amber-400">Not Reserved</span>
+              <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t('orderDetail.notReservedStatus')}</span>
             )}
           </Field>
-          <Field label="Reserved At">{fmtDateTime(order.inventory_reserved_at)}</Field>
-          <Field label="Warehouse">{order.assigned_warehouse_id ?? '—'}</Field>
-          <Field label="Dispatched At">{isShipped ? fmtDateTime(order.inventory_shipped_at) : null}</Field>
+          <Field label={t('orderDetail.reservedAt')}>{fmtDateTime(order.inventory_reserved_at)}</Field>
+          <Field label={t('orderDetail.warehouse')}>{order.assigned_warehouse_id ?? '—'}</Field>
+          <Field label={t('orderDetail.dispatchedAt')}>{isShipped ? fmtDateTime(order.inventory_shipped_at) : null}</Field>
         </FieldGrid>
         <Separator />
-        <SectionLabel>Lines ({order.lines.length})</SectionLabel>
+        <SectionLabel>{t('orderDetail.linesTitle', { count: order.lines.length })}</SectionLabel>
         <div className="flex flex-col gap-1.5">
           {order.lines.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No lines.</p>
+            <p className="text-sm text-muted-foreground">{t('orderDetail.noLines')}</p>
           ) : order.lines.map((line) => (
             <div key={line.id} className="flex items-center gap-2.5 rounded-md border bg-muted/20 px-3 py-2 text-sm">
               <Box className="size-3.5 shrink-0 text-muted-foreground" />
@@ -712,31 +719,33 @@ function InventoryCard({ order }: { order: Order }) {
 // ── Part 7 — Products Grid ────────────────────────────────────────────────────
 
 function ProductsGrid({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
+
   if (order.lines.length === 0) {
     return (
-      <InfoCard title="Products" icon={Package}>
-        <EmptyState icon={Package} message="No products on this order." />
+      <InfoCard title={t('orderDetail.productsTitle')} icon={Package}>
+        <EmptyState icon={Package} message={t('orderDetail.noProducts')} />
       </InfoCard>
     );
   }
 
   return (
-    <InfoCard title={`Products (${order.lines.length})`} icon={Package}>
+    <InfoCard title={t('orderDetail.productsTitleCount', { count: order.lines.length })} icon={Package}>
       <div className="flex flex-col gap-0 -mx-4">
         {/* Price protection banner */}
         <div className="mx-4 mb-3 flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900/50 dark:bg-emerald-950/30">
           <Lock className="mt-0.5 size-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-            <span className="font-semibold">Price Protection Active — </span>
-            All unit prices are frozen at the moment this order was placed.
+            <span className="font-semibold">{t('orderDetail.priceProtectionActive')}</span>
+            {t('orderDetail.priceProtectionDesc')}
           </p>
         </div>
         {/* Header */}
         <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-2 border-b px-4 pb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          <span>Product</span>
-          <span className="text-center">Qty</span>
-          <span className="text-end">Unit Price</span>
-          <span className="text-end">Line Total</span>
+          <span>{t('orderDetail.colProduct')}</span>
+          <span className="text-center">{t('orderDetail.colQty')}</span>
+          <span className="text-end">{t('orderDetail.colUnitPrice')}</span>
+          <span className="text-end">{t('orderDetail.colLineTotal')}</span>
         </div>
         {/* Rows */}
         {order.lines.map((line) => (
@@ -770,7 +779,7 @@ function ProductsGrid({ order }: { order: Order }) {
         ))}
         {/* Totals row */}
         <div className="flex items-center justify-between gap-4 border-t px-4 pt-3 text-sm">
-          <span className="text-muted-foreground">Subtotal</span>
+          <span className="text-muted-foreground">{t('orderDetail.subtotalRow')}</span>
           <span className="font-semibold tabular-nums">{fmtMoney(order.products_total)} EGP</span>
         </div>
         {order.fees.length > 0 ? order.fees.map((f) => (
@@ -793,34 +802,35 @@ function ProductsGrid({ order }: { order: Order }) {
 // ── Part 8 — Payment Card ─────────────────────────────────────────────────────
 
 function PaymentCard({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const method = order.payment_method_manual ?? order.payment_method;
   const remaining = order.remaining_balance;
 
   return (
-    <InfoCard title="Payment" icon={ShoppingBag}>
+    <InfoCard title={t('orderDetail.paymentTitle')} icon={ShoppingBag}>
       <FieldGrid cols={2}>
-        <Field label="Method">
+        <Field label={t('orderDetail.paymentMethod')}>
           <OrderPaymentBadge
             method={method}
             methodTitle={order.payment_method_title}
             datePaid={order.date_paid}
           />
         </Field>
-        <Field label="Transaction ID">
+        <Field label={t('orderDetail.transactionId')}>
           {order.transaction_id ? (
             <span className="font-mono text-xs">{order.transaction_id}</span>
           ) : null}
         </Field>
-        <Field label="Payment Date">{fmtDate(order.date_paid)}</Field>
-        <Field label="Payment Status">
+        <Field label={t('orderDetail.paymentDate')}>{fmtDate(order.date_paid)}</Field>
+        <Field label={t('orderDetail.paymentStatus')}>
           {order.date_paid ? (
-            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Verified</span>
+            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{t('orderDetail.paymentVerifiedStatus')}</span>
           ) : (
-            <span className="text-sm font-medium text-amber-600 dark:text-amber-400">Pending</span>
+            <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t('orderDetail.paymentPendingStatus')}</span>
           )}
         </Field>
         {order.payment_proof_path ? (
-          <Field label="Proof Uploaded">
+          <Field label={t('orderDetail.proofUploaded')}>
             <a
               href={getMediaUrl(order.payment_proof_path) ?? '#'}
               target="_blank"
@@ -828,18 +838,18 @@ function PaymentCard({ order }: { order: Order }) {
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
             >
               <ExternalLink className="size-3" />
-              View Proof
+              {t('orderDetail.viewProof')}
             </a>
           </Field>
         ) : null}
         {order.deposit_amount ? (
-          <Field label="Deposit Paid">
+          <Field label={t('orderDetail.depositPaidField')}>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               {fmtMoney(order.deposit_amount)} EGP
             </span>
           </Field>
         ) : null}
-        <Field label="Remaining Balance">
+        <Field label={t('orderDetail.remainingBalanceField')}>
           <span className={cn('font-semibold tabular-nums', remaining > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
             {fmtMoney(remaining)} EGP
           </span>
@@ -855,15 +865,25 @@ function PaymentCard({ order }: { order: Order }) {
 
 type AuditFilter = OrderActivityActionType | 'all';
 
-const AUDIT_FILTERS: Array<{ key: AuditFilter; label: string }> = [
-  { key: 'all',       label: 'All' },
-  { key: 'workflow',  label: 'Workflow' },
-  { key: 'payment',   label: 'Payment' },
-  { key: 'inventory', label: 'Inventory' },
-  { key: 'shipping',  label: 'Shipping' },
-  { key: 'customer',  label: 'Customer' },
-  { key: 'system',    label: 'System' },
-  { key: 'note',      label: 'Notes' },
+type AuditFilterLabelKey =
+  | 'orderDetail.filterAll'
+  | 'orderDetail.filterWorkflow'
+  | 'orderDetail.filterPayment'
+  | 'orderDetail.filterInventory'
+  | 'orderDetail.filterShipping'
+  | 'orderDetail.filterCustomer'
+  | 'orderDetail.filterSystem'
+  | 'orderDetail.filterNotes';
+
+const AUDIT_FILTERS: Array<{ key: AuditFilter; labelKey: AuditFilterLabelKey }> = [
+  { key: 'all',       labelKey: 'orderDetail.filterAll' },
+  { key: 'workflow',  labelKey: 'orderDetail.filterWorkflow' },
+  { key: 'payment',   labelKey: 'orderDetail.filterPayment' },
+  { key: 'inventory', labelKey: 'orderDetail.filterInventory' },
+  { key: 'shipping',  labelKey: 'orderDetail.filterShipping' },
+  { key: 'customer',  labelKey: 'orderDetail.filterCustomer' },
+  { key: 'system',    labelKey: 'orderDetail.filterSystem' },
+  { key: 'note',      labelKey: 'orderDetail.filterNotes' },
 ];
 
 type EventIconConfig = { Icon: React.ComponentType<{ className?: string }>; bg: string; ring: string; text: string };
@@ -893,31 +913,33 @@ function getEventConfig(actionType: string | null): EventIconConfig {
 }
 
 function AuditSourceBadge({ source }: { source: string | null }) {
+  const { t } = useTranslation('orders');
   if (!source) return null;
-  const labels: Record<string, string> = {
-    dashboard:  'Dashboard',
-    mobile_app: 'Mobile',
-    api:        'API',
-    woocommerce:'WooCommerce',
-    automation: 'Automation',
-    cron:       'Scheduled',
-    webhook:    'Webhook',
+  const labelMap: Record<string, string> = {
+    dashboard:  t('orderDetail.sourceDashboard'),
+    mobile_app: t('orderDetail.sourceMobile'),
+    api:        t('orderDetail.sourceApi'),
+    woocommerce:t('orderDetail.sourceWooCommerce'),
+    automation: t('orderDetail.sourceAutomation'),
+    cron:       t('orderDetail.sourceCron'),
+    webhook:    t('orderDetail.sourceWebhook'),
   };
   return (
     <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal">
-      {labels[source] ?? source}
+      {labelMap[source] ?? source}
     </Badge>
   );
 }
 
 function AuditActorBadge({ actorType }: { actorType: string | null }) {
+  const { t } = useTranslation('orders');
   if (!actorType || actorType === 'user') return null;
   const cfg: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }>; cls: string }> = {
-    system:      { label: 'System',     Icon: Bot,       cls: 'text-slate-500' },
-    api:         { label: 'API',        Icon: Globe,     cls: 'text-slate-500' },
-    automation:  { label: 'Auto',       Icon: RefreshCw, cls: 'text-violet-600' },
-    woocommerce: { label: 'WooCommerce',Icon: Store,     cls: 'text-orange-600' },
-    webhook:     { label: 'Webhook',    Icon: Globe,     cls: 'text-slate-500' },
+    system:      { label: t('orderDetail.actorSystem'),       Icon: Bot,       cls: 'text-slate-500' },
+    api:         { label: t('orderDetail.actorApi'),          Icon: Globe,     cls: 'text-slate-500' },
+    automation:  { label: t('orderDetail.actorAuto'),         Icon: RefreshCw, cls: 'text-violet-600' },
+    woocommerce: { label: t('orderDetail.actorWooCommerce'),  Icon: Store,     cls: 'text-orange-600' },
+    webhook:     { label: t('orderDetail.actorWebhook'),      Icon: Globe,     cls: 'text-slate-500' },
   };
   const c = cfg[actorType];
   if (!c) return null;
@@ -934,11 +956,12 @@ function ChangeDiff({ prev, next, fields }: {
   next: Record<string, unknown> | null;
   fields: string[] | null;
 }) {
+  const { t } = useTranslation('orders');
   const keys = fields?.length ? fields : prev ? Object.keys(prev) : next ? Object.keys(next) : [];
   if (keys.length === 0) return null;
   return (
     <div className="mt-2 rounded-md border bg-muted/30 px-3 py-2">
-      <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Changed Fields</p>
+      <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{t('orderDetail.changedFields')}</p>
       <div className="flex flex-col gap-1">
         {keys.map(k => (
           <div key={k} className="flex items-baseline gap-1.5 text-xs font-mono">
@@ -990,6 +1013,7 @@ function auditExportCSV(events: OrderActivity[], orderId: string) {
 }
 
 function EnterpriseAuditTimeline({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const { data: events = [], isLoading } = useOrderActivities(order.id);
   const [filter, setFilter] = useState<AuditFilter>('all');
   const [search, setSearch] = useState('');
@@ -1019,7 +1043,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
 
   return (
     <InfoCard
-      title="Audit Timeline"
+      title={t('orderDetail.timelineTitle')}
       icon={Activity}
       headerExtra={
         <div className="flex items-center gap-1.5">
@@ -1058,7 +1082,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80',
             )}
           >
-            {f.label}
+            {t(f.labelKey)}
           </button>
         ))}
       </div>
@@ -1069,7 +1093,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
         <Input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search events…"
+          placeholder={t('orderDetail.searchEvents')}
           className="pl-8 h-8 text-sm"
         />
       </div>
@@ -1088,7 +1112,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={Activity} message={search || filter !== 'all' ? 'No events match your filter.' : 'No audit events recorded yet.'} />
+        <EmptyState icon={Activity} message={search || filter !== 'all' ? t('orderDetail.noEventsFilter') : t('orderDetail.noEvents')} />
       ) : (
         <div className="relative mt-3">
           <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
@@ -1154,7 +1178,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
                     <div className="ml-11 mb-2 rounded-md border bg-muted/20 px-3 py-2.5 text-sm">
                       {ev.reason && (
                         <div className="mb-2">
-                          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Reason</span>
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t('orderDetail.reason')}</span>
                           <p className="text-sm mt-0.5">{ev.reason}</p>
                         </div>
                       )}
@@ -1167,7 +1191,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
 
                       {(ev.payload && Object.keys(ev.payload).length > 0 && !ev.previous_value && !ev.new_value) && (
                         <div className="mt-2 rounded-md border bg-muted/30 px-3 py-2">
-                          <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Details</p>
+                          <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{t('orderDetail.details')}</p>
                           <div className="flex flex-col gap-1">
                             {Object.entries(ev.payload).map(([k, v]) => (
                               <div key={k} className="flex items-baseline gap-1.5 text-xs font-mono">
@@ -1200,36 +1224,37 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
 // ── Part 10 — Workflow History ────────────────────────────────────────────────
 
 function WorkflowHistoryCard({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   return (
-    <InfoCard title="Workflow History" icon={GitBranch}>
+    <InfoCard title={t('orderDetail.workflowHistoryTitle')} icon={GitBranch}>
       <div className="flex flex-col gap-4">
         <div className="rounded-md border bg-muted/20 px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs text-muted-foreground">Current Status</span>
+            <span className="text-xs text-muted-foreground">{t('orderDetail.currentStatus')}</span>
             <OrderStatusBadge status={order.status} />
           </div>
           {order.status_entered_at ? (
-            <p className="text-xs text-muted-foreground">Entered: {fmtDateTime(order.status_entered_at)}</p>
+            <p className="text-xs text-muted-foreground">{t('orderDetail.enteredAt', { datetime: fmtDateTime(order.status_entered_at) })}</p>
           ) : null}
           {order.status_entered_by ? (
-            <p className="text-xs text-muted-foreground">By: {order.status_entered_by}</p>
+            <p className="text-xs text-muted-foreground">{t('orderDetail.byUser', { name: order.status_entered_by })}</p>
           ) : null}
         </div>
         {order.previous_status ? (
           <div className="rounded-md border px-4 py-2">
-            <p className="text-xs text-muted-foreground mb-0.5">Previous Status</p>
+            <p className="text-xs text-muted-foreground mb-0.5">{t('orderDetail.previousStatus')}</p>
             <p className="text-sm font-medium capitalize">{String(order.previous_status).replace(/_/g, ' ')}</p>
           </div>
         ) : null}
         <FieldGrid cols={2}>
-          <Field label="Created">{fmtDate(order.created_at)}</Field>
-          {order.date_paid ? <Field label="Payment Verified">{fmtDate(order.date_paid)}</Field> : null}
-          {order.inventory_reserved_at ? <Field label="Reserved">{fmtDate(order.inventory_reserved_at)}</Field> : null}
-          {order.inventory_shipped_at ? <Field label="Dispatched">{fmtDate(order.inventory_shipped_at)}</Field> : null}
-          {order.requested_delivery_date ? <Field label="Requested Delivery">{fmtDate(order.requested_delivery_date)}</Field> : null}
+          <Field label={t('orderDetail.wfDateCreated')}>{fmtDate(order.created_at)}</Field>
+          {order.date_paid ? <Field label={t('orderDetail.wfDatePaymentVerified')}>{fmtDate(order.date_paid)}</Field> : null}
+          {order.inventory_reserved_at ? <Field label={t('orderDetail.wfDateReserved')}>{fmtDate(order.inventory_reserved_at)}</Field> : null}
+          {order.inventory_shipped_at ? <Field label={t('orderDetail.wfDateDispatched')}>{fmtDate(order.inventory_shipped_at)}</Field> : null}
+          {order.requested_delivery_date ? <Field label={t('orderDetail.wfDateRequestedDelivery')}>{fmtDate(order.requested_delivery_date)}</Field> : null}
         </FieldGrid>
         <div className="rounded-md border px-3 py-2 text-xs text-muted-foreground">
-          Full audit trail available via activity log. Key milestone dates shown above.
+          {t('orderDetail.auditNote')}
         </div>
       </div>
     </InfoCard>
@@ -1239,17 +1264,18 @@ function WorkflowHistoryCard({ order }: { order: Order }) {
 // ── Part 11 — Related Records ─────────────────────────────────────────────────
 
 function RelatedRecordsCard({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
   const records: Array<{ label: string; value: string | null | undefined; href?: string; icon: React.ComponentType<{ className?: string }> }> = [
-    { label: 'Customer', value: order.customer?.name, href: order.customer ? `/app/customers/${order.customer.id}` : undefined, icon: UserCheck },
-    { label: 'Channel', value: order.channel?.name, icon: Store },
-    { label: 'Warehouse', value: order.assigned_warehouse_id, icon: Warehouse },
+    { label: t('orderDetail.relatedCustomer'), value: order.customer?.name, href: order.customer ? `/app/customers/${order.customer.id}` : undefined, icon: UserCheck },
+    { label: t('orderDetail.relatedChannel'), value: order.channel?.name, icon: Store },
+    { label: t('orderDetail.relatedWarehouse'), value: order.assigned_warehouse_id, icon: Warehouse },
   ];
 
   const filled = records.filter((r) => r.value);
   if (filled.length === 0) return null;
 
   return (
-    <InfoCard title="Related Records" icon={ExternalLink}>
+    <InfoCard title={t('orderDetail.relatedTitle')} icon={ExternalLink}>
       <div className="flex flex-col gap-2">
         {filled.map(({ label, value, href, icon: Icon }) => (
           <div key={label} className="flex items-center gap-2.5 rounded-md border px-3 py-2 text-sm">
@@ -1272,71 +1298,87 @@ function RelatedRecordsCard({ order }: { order: Order }) {
 
 // ── Part 12 — Quick Actions + Workflow ───────────────────────────────────────
 
+type WorkflowLabelKey =
+  | 'orderDetail.wfConfirmOrder'
+  | 'orderDetail.wfCancelOrder'
+  | 'orderDetail.wfMoveToPrep'
+  | 'orderDetail.wfMarkAwaitingStock'
+  | 'orderDetail.wfSendToReview'
+  | 'orderDetail.wfResume'
+  | 'orderDetail.wfReschedule'
+  | 'orderDetail.wfDispatch'
+  | 'orderDetail.wfMarkDelivered'
+  | 'orderDetail.wfProcessReturn'
+  | 'orderDetail.wfCompleteReview'
+  | 'orderDetail.wfResumeToConfirmed'
+  | 'orderDetail.wfReturnToConfirmed'
+  | 'orderDetail.wfMoveToReview';
+
 type WorkflowAction = {
   key: string;
-  label: string;
+  labelKey: WorkflowLabelKey;
   icon: React.ComponentType<{ className?: string }>;
   variant: 'default' | 'outline' | 'destructive';
 };
 
 const WORKFLOW_ACTIONS: Record<string, WorkflowAction[]> = {
   pending: [
-    { key: 'confirm',          label: 'Confirm Order',        icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
+    { key: 'confirm',          labelKey: 'orderDetail.wfConfirmOrder',      icon: CheckCircle2,     variant: 'default'     },
+    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
   ],
   awaiting_payment: [
-    { key: 'confirm',          label: 'Confirm Order',        icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
+    { key: 'confirm',          labelKey: 'orderDetail.wfConfirmOrder',      icon: CheckCircle2,     variant: 'default'     },
+    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
   ],
   processing: [
-    { key: 'prepare',          label: 'Move To Preparing',    icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'awaiting_stock',   label: 'Mark Awaiting Stock',  icon: Box,              variant: 'outline'     },
-    { key: 'review',           label: 'Send To Review',       icon: Activity,         variant: 'outline'     },
-    { key: 'cancel',           label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
+    { key: 'prepare',          labelKey: 'orderDetail.wfMoveToPrep',        icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'awaiting_stock',   labelKey: 'orderDetail.wfMarkAwaitingStock', icon: Box,              variant: 'outline'     },
+    { key: 'review',           labelKey: 'orderDetail.wfSendToReview',      icon: Activity,         variant: 'outline'     },
+    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
   ],
   awaiting_stock: [
-    { key: 'resume',           label: 'Resume Processing',    icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'cancel',           label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
+    { key: 'resume',           labelKey: 'orderDetail.wfResume',            icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
   ],
   confirmed: [
-    { key: 'prepare',          label: 'Move To Preparing',    icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule',       label: 'Reschedule',           icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
+    { key: 'prepare',          labelKey: 'orderDetail.wfMoveToPrep',        icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'reschedule',       labelKey: 'orderDetail.wfReschedule',        icon: Clock,            variant: 'outline'     },
+    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
   ],
   preparing: [
-    { key: 'dispatch',         label: 'Dispatch',             icon: Truck,            variant: 'default'     },
-    { key: 'review',           label: 'Send To Review',       icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',       label: 'Reschedule',           icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
+    { key: 'dispatch',         labelKey: 'orderDetail.wfDispatch',          icon: Truck,            variant: 'default'     },
+    { key: 'review',           labelKey: 'orderDetail.wfSendToReview',      icon: Activity,         variant: 'outline'     },
+    { key: 'reschedule',       labelKey: 'orderDetail.wfReschedule',        icon: Clock,            variant: 'outline'     },
+    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
   ],
   out_for_delivery: [
-    { key: 'complete_delivery', label: 'Mark Delivered',      icon: CheckCircle2,     variant: 'default'     },
-    { key: 'return',            label: 'Process Return',      icon: RotateCcw,        variant: 'outline'     },
-    { key: 'review',            label: 'Send To Review',      icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',        label: 'Reschedule',          icon: Clock,            variant: 'outline'     },
+    { key: 'complete_delivery', labelKey: 'orderDetail.wfMarkDelivered',    icon: CheckCircle2,     variant: 'default'     },
+    { key: 'return',            labelKey: 'orderDetail.wfProcessReturn',    icon: RotateCcw,        variant: 'outline'     },
+    { key: 'review',            labelKey: 'orderDetail.wfSendToReview',     icon: Activity,         variant: 'outline'     },
+    { key: 'reschedule',        labelKey: 'orderDetail.wfReschedule',       icon: Clock,            variant: 'outline'     },
   ],
   delivered: [
-    { key: 'complete',          label: 'Complete Review',     icon: CheckCircle2,     variant: 'default'     },
-    { key: 'review',            label: 'Send To Review',      icon: Activity,         variant: 'outline'     },
-    { key: 'resume',            label: 'Resume Processing',   icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'resume_confirmed',  label: 'Resume To Confirmed', icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'reschedule',        label: 'Reschedule',          icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',            label: 'Cancel Order',        icon: XCircle,          variant: 'destructive' },
+    { key: 'complete',          labelKey: 'orderDetail.wfCompleteReview',   icon: CheckCircle2,     variant: 'default'     },
+    { key: 'review',            labelKey: 'orderDetail.wfSendToReview',     icon: Activity,         variant: 'outline'     },
+    { key: 'resume',            labelKey: 'orderDetail.wfResume',           icon: ArrowRightCircle, variant: 'outline'     },
+    { key: 'resume_confirmed',  labelKey: 'orderDetail.wfResumeToConfirmed',icon: ArrowRightCircle, variant: 'outline'     },
+    { key: 'reschedule',        labelKey: 'orderDetail.wfReschedule',       icon: Clock,            variant: 'outline'     },
+    { key: 'cancel',            labelKey: 'orderDetail.wfCancelOrder',      icon: XCircle,          variant: 'destructive' },
   ],
   returned: [
-    { key: 'return_to_confirmed', label: 'Return To Confirmed', icon: RotateCcw,      variant: 'default'     },
-    { key: 'review',              label: 'Move To Review',      icon: Activity,        variant: 'outline'     },
-    { key: 'cancel',              label: 'Cancel Order',        icon: XCircle,         variant: 'destructive' },
+    { key: 'return_to_confirmed', labelKey: 'orderDetail.wfReturnToConfirmed', icon: RotateCcw,     variant: 'default'     },
+    { key: 'review',              labelKey: 'orderDetail.wfMoveToReview',      icon: Activity,      variant: 'outline'     },
+    { key: 'cancel',              labelKey: 'orderDetail.wfCancelOrder',        icon: XCircle,      variant: 'destructive' },
   ],
   review: [
-    { key: 'resume',    label: 'Resume Processing', icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule', label: 'Reschedule',       icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',    label: 'Cancel Order',      icon: XCircle,         variant: 'destructive' },
+    { key: 'resume',    labelKey: 'orderDetail.wfResume',     icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'reschedule', labelKey: 'orderDetail.wfReschedule', icon: Clock,           variant: 'outline'     },
+    { key: 'cancel',    labelKey: 'orderDetail.wfCancelOrder', icon: XCircle,         variant: 'destructive' },
   ],
   rescheduled: [
-    { key: 'resume',    label: 'Resume Processing', icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule', label: 'Reschedule',       icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',    label: 'Cancel Order',      icon: XCircle,         variant: 'destructive' },
+    { key: 'resume',    labelKey: 'orderDetail.wfResume',     icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'reschedule', labelKey: 'orderDetail.wfReschedule', icon: Clock,           variant: 'outline'     },
+    { key: 'cancel',    labelKey: 'orderDetail.wfCancelOrder', icon: XCircle,         variant: 'destructive' },
   ],
   completed: [],
   cancelled: [],
@@ -1353,6 +1395,7 @@ function QuickActionsPanel({
   onConfirmCustomer: () => void;
   onPrint: () => void;
 }) {
+  const { t } = useTranslation('orders');
   const confirm          = useOrderWorkflowConfirm();
   const moveToPrep       = useOrderWorkflowMoveToPreparation();
   const completeDeliv    = useOrderWorkflowCompleteDelivery();
@@ -1407,30 +1450,30 @@ function QuickActionsPanel({
   return (
     <Card className="gap-0">
       <CardHeader className="px-4 py-3 border-b">
-        <CardTitle className="text-sm font-semibold">Quick Actions</CardTitle>
+        <CardTitle className="text-sm font-semibold">{t('orderDetail.quickActionsTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 px-4 py-4">
         {/* Static actions */}
         <Button variant="outline" size="sm" className="justify-start gap-2" onClick={onEdit}>
-          <Edit className="size-4" /> Edit Order
+          <Edit className="size-4" /> {t('orderDetail.editOrderBtn')}
         </Button>
         <Button variant="outline" size="sm" className="justify-start gap-2" onClick={onPrint}>
-          <Printer className="size-4" /> Print Invoice
+          <Printer className="size-4" /> {t('orderDetail.printInvoice')}
         </Button>
         <Button variant="outline" size="sm" className="justify-start gap-2" onClick={onConfirmCustomer}>
-          <UserCheck className="size-4" /> Confirm Customer
+          <UserCheck className="size-4" /> {t('orderDetail.confirmCustomerBtn')}
         </Button>
         {order.customer ? (
           <Button variant="outline" size="sm" className="justify-start gap-2" asChild>
             <a href={`/app/customers/${order.customer.id}`}>
-              <ExternalLink className="size-4" /> Open Customer
+              <ExternalLink className="size-4" /> {t('orderDetail.openCustomer')}
             </a>
           </Button>
         ) : null}
         {order.assigned_warehouse_id ? (
           <Button variant="outline" size="sm" className="justify-start gap-2" asChild>
             <a href={ROUTES.warehouses}>
-              <Warehouse className="size-4" /> Open Warehouse
+              <Warehouse className="size-4" /> {t('orderDetail.openWarehouse')}
             </a>
           </Button>
         ) : null}
@@ -1439,12 +1482,12 @@ function QuickActionsPanel({
         {actions.length > 0 ? (
           <>
             <Separator className="my-1" />
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Workflow</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('orderDetail.workflowSection')}</p>
             {actions.map((action) => {
               if (action.key === 'reschedule' && showReschedule) {
                 return (
                   <div key="reschedule-form" className="flex flex-col gap-2 rounded-md border p-3">
-                    <label className="text-xs font-medium text-muted-foreground">New Delivery Date</label>
+                    <label className="text-xs font-medium text-muted-foreground">{t('orderDetail.newDeliveryDate')}</label>
                     <input
                       type="date"
                       value={rescheduleDate}
@@ -1460,10 +1503,10 @@ function QuickActionsPanel({
                         className="gap-1.5"
                       >
                         {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
-                        Confirm
+                        {t('orderDetail.confirmBtn')}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setShowReschedule(false)}>
-                        Cancel
+                        {t('orderDetail.cancelBtn')}
                       </Button>
                     </div>
                   </div>
@@ -1479,7 +1522,7 @@ function QuickActionsPanel({
                   className="justify-start gap-2"
                 >
                   {isPending ? <Loader2 className="size-4 animate-spin" /> : <action.icon className="size-4" />}
-                  {action.label}
+                  {t(action.labelKey)}
                 </Button>
               );
             })}
@@ -1514,9 +1557,9 @@ export function OrderDetailPage() {
     return (
       <div className="flex flex-col items-center gap-4 py-20 text-center">
         <Package className="size-12 text-destructive/40" />
-        <p className="text-lg font-medium">Failed to load order</p>
-        <p className="text-sm text-muted-foreground">Could not retrieve order data. Check your connection and try again.</p>
-        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>Retry</Button>
+        <p className="text-lg font-medium">{t('orderDetail.failedToLoad')}</p>
+        <p className="text-sm text-muted-foreground">{t('orderDetail.failedToLoadDesc')}</p>
+        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>{t('orderDetail.retry')}</Button>
       </div>
     );
   }
@@ -1596,17 +1639,17 @@ export function OrderDetailPage() {
 
           {/* Notes (contextual) */}
           {(order.notes || order.customer_note) ? (
-            <InfoCard title="Notes" icon={Building2}>
+            <InfoCard title={t('orderDetail.notesTitle')} icon={Building2}>
               <div className="flex flex-col gap-3">
                 {order.notes ? (
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Internal</p>
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t('orderDetail.notesInternal')}</p>
                     <p className="text-sm whitespace-pre-wrap">{order.notes}</p>
                   </div>
                 ) : null}
                 {order.customer_note ? (
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Customer Note</p>
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t('orderDetail.notesCustomer')}</p>
                     <p className="rounded-md border bg-muted/30 px-3 py-2 text-sm italic">{order.customer_note}</p>
                   </div>
                 ) : null}

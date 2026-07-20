@@ -149,13 +149,13 @@ export function OrderCustomerBadge({ order }: Props) {
             </div>
             {data.aov !== null ? (
               <div>
-                <dt className="text-muted-foreground">AOV</dt>
+                <dt className="text-muted-foreground">{t('customerBadge.aov')}</dt>
                 <dd className="font-semibold tabular-nums">{fmt(data.aov)}</dd>
               </div>
             ) : null}
             {data.firstOrderDate ? (
               <div>
-                <dt className="text-muted-foreground">First Order</dt>
+                <dt className="text-muted-foreground">{t('customerBadge.firstOrder')}</dt>
                 <dd className="font-medium">{fmtDate(data.firstOrderDate)}</dd>
               </div>
             ) : null}

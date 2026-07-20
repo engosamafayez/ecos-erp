@@ -31,6 +31,7 @@ import type enMarketing        from '@/i18n/locales/en/marketing.json';
 import type enOperations       from '@/i18n/locales/en/operations.json';
 import type enOrders          from '@/i18n/locales/en/orders.json';
 import type enProducts        from '@/i18n/locales/en/products.json';
+import type enProductMappings from '@/i18n/locales/en/product-mappings.json';
 import type enPurchaseOrders  from '@/i18n/locales/en/purchase-orders.json';
 import type enSettings        from '@/i18n/locales/en/settings.json';
 import type enStockLedger     from '@/i18n/locales/en/stock-ledger.json';
@@ -62,6 +63,7 @@ declare module 'i18next' {
       operations:        typeof enOperations;
       orders:            typeof enOrders;
       products:          typeof enProducts;
+      'product-mappings': typeof enProductMappings;
       'purchase-orders': typeof enPurchaseOrders;
       settings:          typeof enSettings;
       'stock-ledger':    typeof enStockLedger;

@@ -1,4 +1,5 @@
 import { useWatch, useFormContext } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import type { OrderFormValues } from '@/features/orders/components/order-form-schema';
 
@@ -7,6 +8,7 @@ function fmt(n: number) {
 }
 
 export function OrderTotalsLive() {
+  const { t } = useTranslation('orders');
   const { control } = useFormContext<OrderFormValues>();
   const lines = useWatch({ control, name: 'lines' });
 
@@ -18,11 +20,11 @@ export function OrderTotalsLive() {
   return (
     <div className="flex flex-col items-end gap-1 border-t pt-3 text-sm">
       <div className="flex gap-8">
-        <span className="text-muted-foreground">Subtotal</span>
+        <span className="text-muted-foreground">{t('detail.subtotal')}</span>
         <span className="w-28 text-end font-medium">{fmt(subtotal)}</span>
       </div>
       <div className="flex gap-8 text-base font-semibold">
-        <span>Total</span>
+        <span>{t('detail.total')}</span>
         <span className="w-28 text-end">{fmt(subtotal)}</span>
       </div>
     </div>
