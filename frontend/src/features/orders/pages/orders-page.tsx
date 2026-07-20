@@ -829,7 +829,7 @@ export function OrdersPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" size="sm" onClick={() => setPendingBulkAction(null)}>
-                  {tCommon('cancel')}
+                  {tCommon('common.cancel')}
                 </Button>
                 <Button
                   size="sm"
@@ -864,7 +864,7 @@ export function OrdersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setBulkRescheduleOpen(false)}>
-              {tCommon('cancel')}
+              {tCommon('common.cancel')}
             </Button>
             <Button
               size="sm"
