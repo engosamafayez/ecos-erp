@@ -433,7 +433,7 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
                     id="dz-name-ar"
                     value={form.name_ar}
                     onChange={(e) => set('name_ar', e.target.value)}
-                    placeholder="اسم المنطقة بالعربية"
+                    placeholder="Arabic zone name"
                     dir="rtl"
                     maxLength={100}
                     disabled={isPending}

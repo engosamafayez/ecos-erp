@@ -29,6 +29,9 @@ interface InventoryItemRepositoryInterface
 
     public function findByWarehouseAndProduct(string $warehouseId, string $productId): ?InventoryItem;
 
+    /** Company-scoped lookup — enforces tenant isolation at the query level. */
+    public function findByWarehouseProductAndCompany(string $warehouseId, string $productId, string $companyId): ?InventoryItem;
+
     /** @return LengthAwarePaginator<InventoryItem> */
     public function paginate(array $filters): LengthAwarePaginator;
 }

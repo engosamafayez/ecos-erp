@@ -6,32 +6,10 @@ import { ColumnVisibilityMenu } from '@/components/data-grid/column-visibility-m
 import { SavedViewsMenu } from '@/components/data-grid/saved-views-menu';
 import { SmartToolbar, type SmartToolbarBulkAction } from '@/components/data-grid/smart-toolbar';
 import type { ColumnMeta, ColumnVisibilityState } from '@/components/data-grid/types';
-import type { Order, OrderStatus } from '@/features/orders/types/order';
+import type { BulkActionKey, Order, OrderStatus } from '@/features/orders/types/order';
+import { useOrderBulkLabels } from '@/features/orders/hooks/use-order-labels';
 
-export type BulkActionKey =
-  | 'confirm'
-  | 'move_to_awaiting_payment'
-  | 'verify_payment'
-  | 'move_to_preparation'
-  | 'return_to_preparation'
-  | 'awaiting_stock'
-  | 'retry_reservation'
-  | 'start_manufacturing'
-  | 'purchase_materials'
-  | 'resume'
-  | 'resume_confirmed'
-  | 'dispatch'
-  | 'complete_delivery'
-  | 'complete'
-  | 'delivery_failed'
-  | 'reschedule'
-  | 'review'
-  | 'return'
-  | 'return_to_confirmed'
-  | 'inspect_return'
-  | 'return_to_stock'
-  | 'scrap'
-  | 'cancel';
+export type { BulkActionKey };
 
 // ── Part 1: Context-Aware Transition Matrix ───────────────────────────────────
 // Maps each order status to the set of bulk operations valid from that state.
@@ -172,34 +150,10 @@ export function OrderListToolbar({
   onBulkAction,
 }: OrderListToolbarProps) {
   const { t } = useTranslation('orders');
+  const { bulkLabel } = useOrderBulkLabels();
 
   const bulkActions = useMemo<SmartToolbarBulkAction[]>(() => {
     if (!onBulkAction) return [];
-    const bulkLabel: Record<BulkActionKey, string> = {
-      confirm:                  t('bulk.confirm'),
-      move_to_awaiting_payment: t('bulk.move_to_awaiting_payment'),
-      verify_payment:           t('bulk.verify_payment'),
-      move_to_preparation:      t('bulk.move_to_preparation'),
-      return_to_preparation:    t('bulk.return_to_preparation'),
-      awaiting_stock:           t('bulk.awaiting_stock'),
-      retry_reservation:        t('bulk.retry_reservation'),
-      start_manufacturing:      t('bulk.start_manufacturing'),
-      purchase_materials:       t('bulk.purchase_materials'),
-      resume:                   t('bulk.resume'),
-      resume_confirmed:         t('bulk.resume_confirmed'),
-      dispatch:                 t('bulk.dispatch'),
-      complete_delivery:        t('bulk.complete_delivery'),
-      complete:                 t('bulk.complete'),
-      delivery_failed:          t('bulk.delivery_failed'),
-      reschedule:               t('bulk.reschedule'),
-      review:                   t('bulk.review'),
-      return:                   t('bulk.return'),
-      return_to_confirmed:      t('bulk.return_to_confirmed'),
-      inspect_return:           t('bulk.inspect_return'),
-      return_to_stock:          t('bulk.return_to_stock'),
-      scrap:                    t('bulk.scrap'),
-      cancel:                   t('bulk.cancel'),
-    };
     const validKeys = computeDynamicBulkActions(selectedOrders);
     return validKeys.map((key) => ({
       key,
@@ -207,7 +161,7 @@ export function OrderListToolbar({
       onClick: () => onBulkAction(key),
       ...BULK_ACTION_DISPLAY[key],
     }));
-  }, [selectedOrders, onBulkAction, t]);
+  }, [selectedOrders, onBulkAction, bulkLabel]);
 
   return (
     <SmartToolbar
@@ -215,8 +169,8 @@ export function OrderListToolbar({
       secondaryActions={[
         ...(onImport            ? [{ key: 'import', label: t('actions.import'),           onClick: onImport,            icon: Upload,    hideOnMobile: true }] : []),
         ...(onExport            ? [{ key: 'export', label: t('actions.export'),           onClick: onExport,            icon: Download,  hideOnMobile: true }] : []),
-        ...(onCopyToClipboard   ? [{ key: 'copy',   label: t('actions.copyClipboard', 'Copy'), onClick: onCopyToClipboard, icon: Clipboard, hideOnMobile: true }] : []),
-        ...(onPrint             ? [{ key: 'print',  label: t('actions.print', 'Print'),   onClick: onPrint,             icon: Printer,   hideOnMobile: true }] : []),
+        ...(onCopyToClipboard   ? [{ key: 'copy',   label: t('actions.copyClipboard'), onClick: onCopyToClipboard, icon: Clipboard, hideOnMobile: true }] : []),
+        ...(onPrint             ? [{ key: 'print',  label: t('actions.print'),          onClick: onPrint,           icon: Printer,   hideOnMobile: true }] : []),
       ]}
       bulkActions={bulkActions}
       bulkActionsLabel={t('actions.bulkActions')}
@@ -232,7 +186,7 @@ export function OrderListToolbar({
             onReset={onColumnReset}
             label={t('toolbar.columns')}
           />
-          <SavedViewsMenu />
+          <SavedViewsMenu label={t('toolbar.views')} />
         </>
       }
     />

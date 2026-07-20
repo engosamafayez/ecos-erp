@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('preparation_waves')) {
+            return;
+        }
+
         Schema::create('preparation_waves', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->constrained('companies')->restrictOnDelete();

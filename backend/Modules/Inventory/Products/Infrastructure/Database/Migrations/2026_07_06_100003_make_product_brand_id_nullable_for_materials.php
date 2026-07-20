@@ -16,9 +16,17 @@ return new class extends Migration
     public function up(): void
     {
         // Drop the existing RESTRICT FK, change column to nullable, re-add FK.
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->dropForeign(['brand_id']);
         });
+
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
 
         Schema::table('products', function (Blueprint $table): void {
             $table->uuid('brand_id')->nullable()->change();
@@ -29,9 +37,17 @@ return new class extends Migration
     public function down(): void
     {
         // Reverse: make NOT NULL again (only safe if no nulls exist).
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->dropForeign(['brand_id']);
         });
+
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
 
         Schema::table('products', function (Blueprint $table): void {
             $table->uuid('brand_id')->nullable(false)->change();

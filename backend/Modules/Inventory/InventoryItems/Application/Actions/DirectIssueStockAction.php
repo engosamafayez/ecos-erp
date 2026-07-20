@@ -8,6 +8,8 @@ use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
+use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
@@ -22,11 +24,15 @@ use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementE
  *
  * Decreases on_hand_qty only. Does NOT touch reserved_qty.
  * Throws InsufficientStockException if on_hand_qty < requested quantity.
+ *
+ * Publishes InventoryStockAdjusted (type=out) via afterCommit, guaranteeing the
+ * event fires only after the outermost transaction commits.
  */
 final class DirectIssueStockAction extends BaseAction
 {
     public function __construct(
         private readonly InventoryItemRepositoryInterface $inventory,
+        private readonly DomainEventBus $eventBus,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -41,10 +47,13 @@ final class DirectIssueStockAction extends BaseAction
             throw new InvalidInventoryMovementException('Quantity must be greater than zero');
         }
 
-        $result = DB::transaction(function () use ($dto) {
-            $item = $this->inventory->findByWarehouseAndProduct(
+        $event = null;
+
+        $result = DB::transaction(function () use ($dto, &$event) {
+            $item = $this->inventory->findByWarehouseProductAndCompany(
                 $dto->warehouse_id,
                 $dto->product_id,
+                $dto->company_id,
             );
 
             if ($item === null) {
@@ -71,6 +80,15 @@ final class DirectIssueStockAction extends BaseAction
 
             $onHandAfter = $onHandBefore - $dto->quantity;
 
+            // F-INV-H1: prevent reducing on_hand_qty below reserved_qty.
+            // Mirrors the same invariant enforced by AdjustmentOutAction.
+            if ($onHandAfter < $reservedBefore) {
+                throw new InvalidInventoryMovementException(
+                    "Cannot directly issue {$dto->quantity} units: on_hand_qty would fall below reserved_qty ({$reservedBefore}). " .
+                    'Release or fulfil reserved orders first.'
+                );
+            }
+
             $locked->on_hand_qty = $onHandAfter;
             $this->inventory->save($locked);
 
@@ -92,7 +110,26 @@ final class DirectIssueStockAction extends BaseAction
 
             $locked->refresh();
 
+            $event = new InventoryStockAdjusted(
+                inventoryItemId: $locked->id,
+                warehouseId:     $dto->warehouse_id,
+                productId:       $dto->product_id,
+                companyId:       $dto->company_id,
+                adjustmentType:  InventoryStockAdjusted::TYPE_OUT,
+                quantity:        $dto->quantity,
+                onHandBefore:    $onHandBefore,
+                onHandAfter:     $onHandAfter,
+                referenceType:   $dto->reference_type,
+                referenceId:     $dto->reference_id,
+            );
+
             return $locked;
+        });
+
+        // L-03: publish event after outermost commit — channel sync now receives
+        // direct-issue movements alongside adjustments.
+        DB::connection()->afterCommit(function () use ($event): void {
+            $this->eventBus->publish($event);
         });
 
         return OperationResult::success($result, 'Stock issued directly.');

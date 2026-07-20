@@ -109,7 +109,7 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <div className="flex items-center gap-2">
           <RotateCcw className="size-4 text-amber-500" />
-          <h2 className="text-base font-semibold">معالجة المرتجع</h2>
+          <h2 className="text-base font-semibold">Process Return</h2>
         </div>
         <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose} aria-label="Close return panel">
           <X className="size-4" />
@@ -121,12 +121,12 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
         {/* Sale lookup */}
         <div>
-          <Label className="mb-2 text-xs">رقم فاتورة البيع الأصلية</Label>
+          <Label className="mb-2 text-xs">Original Sale ID</Label>
           <div className="flex gap-2">
             <Input
               value={saleSearch}
               onChange={(e) => setSaleSearch(e.target.value)}
-              placeholder="أدخل رقم الفاتورة..."
+              placeholder="Enter sale ID..."
               onKeyDown={(e) => e.key === 'Enter' && loadSale()}
               aria-label="Original sale ID"
             />
@@ -141,16 +141,16 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
           <>
             <div className="rounded-lg bg-muted p-3 text-xs space-y-1">
               <div className="flex justify-between font-medium">
-                <span>إيصال #{sale.receipt_number}</span>
+                <span>Receipt #{sale.receipt_number}</span>
                 <span>{currency} {sale.total.amount}</span>
               </div>
               <div className="text-muted-foreground">
-                {new Date(sale.created_at).toLocaleDateString('ar-EG')} · {sale.lines.length} أصناف
+                {new Date(sale.created_at).toLocaleDateString()} · {sale.lines.length} items
               </div>
             </div>
 
             <Button variant="outline" className="w-full" size="sm" onClick={addAllLines}>
-              إرجاع جميع الأصناف
+              Return All Items
             </Button>
 
             {/* Lines to return */}
@@ -158,7 +158,7 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
               {/* Lines section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs">الأصناف المرتجعة</Label>
+                  <Label className="text-xs">Items to Return</Label>
                   {linesError && (
                     <span className="flex items-center gap-1 text-[10px] text-destructive">
                       <AlertCircle className="size-3" />{linesError}
@@ -168,7 +168,7 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
 
                 {fields.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic">
-                    استخدم "إرجاع جميع الأصناف" أو أضف بنوداً بشكل فردي.
+                    Use "Return All Items" or add lines individually.
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -219,10 +219,10 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
 
               {/* Refund method */}
               <div className="space-y-1.5">
-                <Label className="text-xs">طريقة الاسترداد</Label>
+                <Label className="text-xs">Refund Method</Label>
                 <Input
                   {...form.register('refund_method')}
-                  placeholder="نقد"
+                  placeholder="Cash"
                   aria-invalid={!!form.formState.errors.refund_method}
                   aria-describedby={form.formState.errors.refund_method ? 'refund-method-error' : undefined}
                   className={cn(form.formState.errors.refund_method && 'border-destructive')}
@@ -236,8 +236,8 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">ملاحظات</Label>
-                <Input {...form.register('notes')} placeholder="ملاحظات اختيارية..." />
+                <Label className="text-xs">Notes</Label>
+                <Input {...form.register('notes')} placeholder="Optional notes..." />
               </div>
             </form>
           </>
@@ -253,7 +253,7 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
           className="w-full"
           disabled={!sale || processReturn.isPending}
         >
-          {processReturn.isPending ? 'جارٍ المعالجة...' : 'معالجة المرتجع'}
+          {processReturn.isPending ? 'Processing...' : 'Process Return'}
         </Button>
       </div>
     </div>

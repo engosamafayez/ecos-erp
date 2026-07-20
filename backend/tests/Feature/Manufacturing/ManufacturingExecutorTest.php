@@ -6,7 +6,7 @@ namespace Tests\Feature\Manufacturing;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\InventoryItems\Domain\Models\StockLedgerEntry;
@@ -50,7 +50,7 @@ use Tests\TestCase;
  */
 class ManufacturingExecutorTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private ManufacturingExecutor $executor;
     private ExecutionPipeline $pipeline;

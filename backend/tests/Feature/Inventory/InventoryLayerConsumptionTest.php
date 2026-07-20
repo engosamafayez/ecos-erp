@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Inventory;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Application\Actions\ShipOrderInventoryAction;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
@@ -29,7 +29,7 @@ use Tests\TestCase;
  */
 class InventoryLayerConsumptionTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private Company $company;
     private Warehouse $warehouse;
@@ -75,6 +75,7 @@ class InventoryLayerConsumptionTest extends TestCase
         ]);
 
         return InventoryReceiptLayer::query()->create([
+            'company_id'            => $this->company->id,
             'supplier_id'           => $this->supplier->id,
             'product_id'            => $item->product_id,
             'goods_receipt_id'      => $gr->id,

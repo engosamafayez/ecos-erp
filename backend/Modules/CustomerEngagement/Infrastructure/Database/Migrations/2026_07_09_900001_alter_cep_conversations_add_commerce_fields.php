@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('cep_conversations', 'intent')) {
+            return;
+        }
+
         Schema::table('cep_conversations', function (Blueprint $table) {
             $table->string('intent')->default('general')->after('status');
             $table->boolean('is_vip')->default(false)->after('intent');

@@ -6,46 +6,10 @@ import { Input } from '@/components/ui/input';
 import { useCampaignDrafts, useStudioKpis, useDeleteCampaignDraft, useDuplicateCampaignDraft } from '../hooks/use-campaign-studio';
 import { CampaignDraftDrawer } from '../drawers/campaign-draft-drawer';
 import type { CampaignDraft, CampaignInternalStatus, DraftFilters } from '../types/campaign-studio';
-
-const STATUS_TABS: Array<{ value: CampaignInternalStatus | 'all'; label: string }> = [
-  { value: 'all',            label: 'All' },
-  { value: 'draft',          label: 'Drafts' },
-  { value: 'pending_review', label: 'Pending Approval' },
-  { value: 'approved',       label: 'Approved' },
-  { value: 'scheduled',      label: 'Scheduled' },
-  { value: 'published',      label: 'Active' },
-  { value: 'paused',         label: 'Paused' },
-  { value: 'archived',       label: 'Archived' },
-  { value: 'failed',         label: 'Failed' },
-];
-
-const STATUS_COLORS: Record<CampaignInternalStatus, string> = {
-  draft:          'bg-gray-100 text-gray-700',
-  pending_review: 'bg-yellow-100 text-yellow-800',
-  approved:       'bg-blue-100 text-blue-700',
-  scheduled:      'bg-purple-100 text-purple-700',
-  publishing:     'bg-indigo-100 text-indigo-700',
-  published:      'bg-green-100 text-green-800',
-  paused:         'bg-orange-100 text-orange-700',
-  archived:       'bg-gray-100 text-gray-500',
-  failed:         'bg-red-100 text-red-700',
-  rejected:       'bg-red-100 text-red-700',
-};
-
-const STATUS_LABELS: Record<CampaignInternalStatus, string> = {
-  draft:          'Draft',
-  pending_review: 'Pending Review',
-  approved:       'Approved',
-  scheduled:      'Scheduled',
-  publishing:     'Publishing…',
-  published:      'Active',
-  paused:         'Paused',
-  archived:       'Archived',
-  failed:         'Failed',
-  rejected:       'Rejected',
-};
+import { useMarketingLabels, CAMPAIGN_INTERNAL_STATUS_COLORS } from '@/features/marketing/hooks/use-marketing-labels';
 
 export function CampaignStudioPage() {
+  const { internalStatusLabel, internalStatusTabLabel } = useMarketingLabels();
   const [activeTab, setActiveTab]     = useState<CampaignInternalStatus | 'all'>('all');
   const [search, setSearch]           = useState('');
   const [selectedDraft, setSelected]  = useState<CampaignDraft | null>(null);
@@ -114,17 +78,17 @@ export function CampaignStudioPage() {
 
       {/* Status Tabs */}
       <div className="border-b px-6 flex gap-1 shrink-0 overflow-x-auto">
-        {STATUS_TABS.map((tab) => (
+        {(['all', 'draft', 'pending_review', 'approved', 'scheduled', 'published', 'paused', 'archived', 'failed'] as const).map((value) => (
           <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
+            key={value}
+            onClick={() => setActiveTab(value)}
             className={`px-3 py-2.5 text-sm border-b-2 whitespace-nowrap transition-colors ${
-              activeTab === tab.value
+              activeTab === value
                 ? 'border-primary text-primary font-medium'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
-            {tab.label}
+            {internalStatusTabLabel[value] ?? value}
           </button>
         ))}
       </div>
@@ -203,8 +167,8 @@ function DraftCard({ draft, onOpen, onDuplicate, onDelete }: {
     <div className="border rounded-lg p-4 hover:border-primary/40 transition-colors cursor-pointer group" onClick={onOpen}>
       <div className="flex items-start justify-between gap-2 mb-3">
         <p className="font-medium text-sm leading-tight line-clamp-2">{draft.name}</p>
-        <Badge className={`shrink-0 text-xs ${STATUS_COLORS[draft.internal_status]}`}>
-          {STATUS_LABELS[draft.internal_status]}
+        <Badge className={`shrink-0 text-xs ${CAMPAIGN_INTERNAL_STATUS_COLORS[draft.internal_status]}`}>
+          {internalStatusLabel[draft.internal_status]}
         </Badge>
       </div>
       <div className="space-y-1 text-xs text-muted-foreground mb-3">

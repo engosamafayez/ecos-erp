@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('distribution_loading_manifest_items')) {
+            return;
+        }
+
         Schema::create('distribution_loading_manifest_items', function (Blueprint $table): void {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('loading_manifest_id');

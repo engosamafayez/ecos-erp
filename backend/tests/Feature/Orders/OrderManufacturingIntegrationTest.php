@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Orders;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Modules\Commerce\Orders\Application\Actions\PrepareOrderAction;
 use Modules\Commerce\Orders\Domain\Enums\OrderLineManufacturingState;
@@ -46,7 +46,7 @@ use Tests\TestCase;
  */
 class OrderManufacturingIntegrationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private PrepareOrderAction $action;
     private Company $company;

@@ -21,7 +21,7 @@ export function ManagerPanel() {
     <div className="flex flex-col gap-4 p-4">
       <div className="flex items-center gap-2">
         <Settings className="size-5 text-muted-foreground" />
-        <h2 className="text-base font-semibold">لوحة المدير</h2>
+        <h2 className="text-base font-semibold">Manager Panel</h2>
       </div>
 
       <Separator />
@@ -29,12 +29,12 @@ export function ManagerPanel() {
       {/* Session section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">الجلسة</span>
+          <span className="text-sm font-medium">Session</span>
           <Badge
             variant={session?.status === 'open' ? 'default' : 'secondary'}
             className="text-[10px]"
           >
-            {session?.status ?? 'لا توجد جلسة'}
+            {session?.status ?? 'No session'}
           </Badge>
         </div>
 
@@ -45,7 +45,7 @@ export function ManagerPanel() {
             onClick={() => setSessionDialogMode('open')}
           >
             <Clock className="size-4" />
-            فتح جلسة
+            Open Session
           </Button>
         ) : (
           <div className="space-y-1.5">
@@ -56,7 +56,7 @@ export function ManagerPanel() {
               onClick={() => setSessionDialogMode('close')}
             >
               <LogOut className="size-4" />
-              إغلاق الجلسة
+              Close Session
             </Button>
           </div>
         )}
@@ -67,12 +67,12 @@ export function ManagerPanel() {
       {/* Shift section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">الوردية</span>
+          <span className="text-sm font-medium">Shift</span>
           <Badge
             variant={shift?.status === 'open' ? 'default' : 'secondary'}
             className="text-[10px]"
           >
-            {shift?.status ?? 'لا توجد وردية'}
+            {shift?.status ?? 'No shift'}
           </Badge>
         </div>
 
@@ -84,19 +84,19 @@ export function ManagerPanel() {
             onClick={() => setShiftDialogMode('open')}
           >
             <DollarSign className="size-4" />
-            فتح وردية
+            Open Shift
           </Button>
         ) : (
           <div className="space-y-1.5">
             {shift && (
               <div className="rounded bg-muted p-2 text-xs space-y-0.5">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">النقد الافتتاحي</span>
+                  <span className="text-muted-foreground">Opening Cash</span>
                   <span className="tabular-nums">{shift.opening_cash.amount}</span>
                 </div>
                 {shift.closing_count && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">العدّ الختامي</span>
+                    <span className="text-muted-foreground">Closing Count</span>
                     <span className="tabular-nums">{shift.closing_count.amount}</span>
                   </div>
                 )}
@@ -110,7 +110,7 @@ export function ManagerPanel() {
                 disabled={shift?.status !== 'open'}
               >
                 <RotateCcw className="size-4" />
-                إغلاق
+                Close
               </Button>
               <Button
                 variant="outline"
@@ -119,7 +119,7 @@ export function ManagerPanel() {
                 disabled={shift?.status !== 'closing'}
               >
                 <Settings className="size-4" />
-                اعتماد
+                Approve
               </Button>
             </div>
           </div>

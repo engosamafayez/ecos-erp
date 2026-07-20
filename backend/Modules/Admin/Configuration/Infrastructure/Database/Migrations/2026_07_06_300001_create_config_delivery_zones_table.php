@@ -7,15 +7,19 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * ASK-CONFIG-OS-001 — Delivery Zones within a Governorate.
+ * ASK-CONFIG-OS-001 â€” Delivery Zones within a Governorate.
  *
  * Simple zone names only. No streets, no polygons, no GIS.
- * Example: Cairo → Nasr City, Maadi, Heliopolis, New Cairo
+ * Example: Cairo â†’ Nasr City, Maadi, Heliopolis, New Cairo
  */
 return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('config_delivery_zones')) {
+            return;
+        }
+
         Schema::create('config_delivery_zones', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('delivery_geography_id')

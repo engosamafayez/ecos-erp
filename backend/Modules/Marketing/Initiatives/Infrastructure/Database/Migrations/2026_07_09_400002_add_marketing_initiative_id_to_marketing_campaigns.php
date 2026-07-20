@@ -17,6 +17,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('marketing_campaigns', 'marketing_initiative_id')) {
+            return;
+        }
+
         Schema::table('marketing_campaigns', function (Blueprint $table): void {
             $table->string('marketing_initiative_id', 36)
                 ->nullable()
@@ -27,6 +31,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('marketing_campaigns', 'marketing_initiative_id')) {
+            return;
+        }
+
         Schema::table('marketing_campaigns', function (Blueprint $table): void {
             $table->dropIndex('mkt_camp_initiative_idx');
             $table->dropColumn('marketing_initiative_id');

@@ -86,10 +86,16 @@ final class ReceiveStockAction extends BaseAction
             return $locked;
         });
 
-        // ── Publish after commit ─────────────────────────────────────────────
-        // DB::transaction() returns only after a successful COMMIT.
-        // If the transaction threw, execution never reaches here.
-        $this->eventBus->publish(new InventoryStockReceived(
+        // ── F-INV-H5: Guarantee post-outermost-commit dispatch ──────────────
+        // DB::connection()->afterCommit() defers the callback until the outermost
+        // transaction commits. When ReceiveStockAction runs standalone its own
+        // DB::transaction() is the outermost, so the callback fires immediately
+        // after commit (level 0 → no pending transaction → immediate execution).
+        // When called as a nested savepoint inside PostGoodsReceiptAction, the
+        // callback is held in the TransactionsManager until the outer transaction
+        // commits — rollback of the outer transaction silently discards the callback,
+        // guaranteeing zero events on rollback and exactly one event on success.
+        $event = new InventoryStockReceived(
             inventoryItemId:  $result->id,
             warehouseId:      $dto->warehouse_id,
             productId:        $dto->product_id,
@@ -99,7 +105,11 @@ final class ReceiveStockAction extends BaseAction
             onHandAfter:      (float) $result->on_hand_qty,
             referenceType:    $dto->reference_type,
             referenceId:      $dto->reference_id,
-        ));
+        );
+
+        DB::connection()->afterCommit(function () use ($event): void {
+            $this->eventBus->publish($event);
+        });
 
         return OperationResult::success($result, 'Stock received successfully.');
     }

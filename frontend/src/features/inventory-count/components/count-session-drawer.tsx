@@ -39,13 +39,13 @@ import { CountStatusBadge } from './count-status-badge';
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const DAMAGE_REASONS = [
-  'منتهي الصلاحية',
-  'مكسور',
-  'تلف التغليف',
-  'خسارة تصنيعية',
-  'تلف أثناء التداول',
-  'غير معروف',
-  'أخرى',
+  'Expired',
+  'Broken',
+  'Packaging Damage',
+  'Manufacturing Loss',
+  'Handling Damage',
+  'Unknown',
+  'Other',
 ] as const;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ function fmtDateTime(d: string | null | undefined): string {
 
 function VariancePill({ qty }: { qty: number | null }) {
   if (qty == null) return <span className="text-muted-foreground text-xs">—</span>;
-  if (qty === 0) return <span className="text-xs text-emerald-600 font-medium">✓ مطابق</span>;
+  if (qty === 0) return <span className="text-xs text-emerald-600 font-medium">✓ Match</span>;
   return (
     <span className={`text-xs font-mono font-medium ${qty < 0 ? 'text-destructive' : 'text-amber-600'}`}>
       {qty > 0 ? '+' : ''}{qty.toFixed(2)}
@@ -108,7 +108,7 @@ function AttachmentThumbnail({
         <button
           onClick={onDelete}
           className="absolute inset-0 bg-destructive/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-          title="إزالة المرفق"
+          title="Remove Attachment"
         >
           <X className="size-4 text-white" />
         </button>
@@ -158,8 +158,8 @@ function CountLineRow({
     uploadMutation.mutate(
       { lineId: line.id, file },
       {
-        onSuccess: () => toast.success('تم إضافة المرفق.'),
-        onError:   () => toast.error('فشل الرفع.'),
+        onSuccess: () => toast.success('Attachment added.'),
+        onError:   () => toast.error('Upload failed.'),
       },
     );
     e.target.value = '';
@@ -252,19 +252,19 @@ function CountLineRow({
               }}
               className={`h-7 rounded border ${reasonRequired ? 'border-destructive' : 'border-input'} bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring`}
             >
-              <option value="">{damagedVal > 0 ? 'مطلوب ▾' : '—'}</option>
+              <option value="">{damagedVal > 0 ? 'Required ▾' : '—'}</option>
               {DAMAGE_REASONS.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
             {reasonRequired && (
-              <p className="text-[10px] text-destructive">مطلوب عند وجود كمية تالفة</p>
+              <p className="text-[10px] text-destructive">Required when damaged qty &gt; 0</p>
             )}
             {showOtherNotes && (
               <textarea
                 rows={2}
                 value={localNotes}
-                placeholder="وصف التلف…"
+                placeholder="Damage description…"
                 onChange={(e) => {
                   setLocalNotes(e.target.value);
                   onChange?.(line.id, { damage_notes: e.target.value || null });
@@ -310,8 +310,8 @@ function CountLineRow({
               onDelete={() => deleteMutation.mutate(
                 { lineId: line.id, attachmentId: a.id },
                 {
-                  onSuccess: () => toast.success('تم إزالة المرفق.'),
-                  onError:   () => toast.error('فشل إزالة المرفق.'),
+                  onSuccess: () => toast.success('Attachment removed.'),
+                  onError:   () => toast.error('Remove failed.'),
                 },
               )}
             />
@@ -322,7 +322,7 @@ function CountLineRow({
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploadMutation.isPending}
-                title="إرفاق صورة / PDF / فيديو"
+                title="Attach image / PDF / video"
                 className="w-14 h-14 rounded border border-dashed border-input flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary transition-colors disabled:opacity-50"
               >
                 {uploadMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
@@ -346,15 +346,15 @@ function CountLineRow({
 
 function Timeline({ session }: { session: CountSession }) {
   const steps: { label: string; ts: string | null; done: boolean }[] = [
-    { label: 'تم إنشاء الجلسة',    ts: session.created_at,   done: true },
-    { label: 'بدأ الجرد',          ts: session.started_at,   done: !!session.started_at },
-    { label: 'انتهى الجرد',        ts: session.completed_at, done: !!session.completed_at },
-    { label: 'معتمد ومُقيَّد',     ts: session.approved_by ? session.updated_at : null, done: session.status === 'approved' },
+    { label: 'Session created',  ts: session.created_at,   done: true },
+    { label: 'Count started',    ts: session.started_at,   done: !!session.started_at },
+    { label: 'Count completed',  ts: session.completed_at, done: !!session.completed_at },
+    { label: 'Approved & posted', ts: session.approved_by ? session.updated_at : null, done: session.status === 'approved' },
   ];
 
   return (
     <div className="px-6 py-4 border-t">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">الجدول الزمني</p>
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Timeline</p>
       <ol className="relative border-l border-border ml-2 space-y-3">
         {steps.map((step, i) => (
           <li key={i} className="pl-4 relative">
@@ -372,7 +372,7 @@ function Timeline({ session }: { session: CountSession }) {
               <p className="text-[10px] text-muted-foreground mt-0.5">{fmtDateTime(step.ts)}</p>
             )}
             {!step.done && !step.ts && (
-              <p className="text-[10px] text-muted-foreground/50 mt-0.5">قيد الانتظار</p>
+              <p className="text-[10px] text-muted-foreground/50 mt-0.5">Pending</p>
             )}
           </li>
         ))}
@@ -385,11 +385,11 @@ function Timeline({ session }: { session: CountSession }) {
 
 function DecisionBadge({ decision }: { decision: CountReportData['product_details'][0]['decision'] }) {
   const map: Record<string, { label: string; cls: string }> = {
-    match:              { label: '✓ مطابق',          cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    overstock:          { label: '↑ زيادة',          cls: 'bg-blue-100 text-blue-700 border-blue-200' },
-    shortage:           { label: '↓ عجز',            cls: 'bg-red-100 text-red-700 border-red-200' },
-    waste:              { label: '⚠ هدر',            cls: 'bg-amber-100 text-amber-700 border-amber-200' },
-    shortage_and_waste: { label: 'عجز + هدر',        cls: 'bg-orange-100 text-orange-700 border-orange-200' },
+    match:              { label: '✓ Match',           cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    overstock:          { label: '↑ Overstock',       cls: 'bg-blue-100 text-blue-700 border-blue-200' },
+    shortage:           { label: '↓ Shortage',        cls: 'bg-red-100 text-red-700 border-red-200' },
+    waste:              { label: '⚠ Waste',           cls: 'bg-amber-100 text-amber-700 border-amber-200' },
+    shortage_and_waste: { label: 'Shortage + Waste',  cls: 'bg-orange-100 text-orange-700 border-orange-200' },
   };
   const cfg = map[decision] ?? { label: decision, cls: '' };
   return <Badge variant="outline" className={`text-[10px] ${cfg.cls}`}>{cfg.label}</Badge>;
@@ -407,29 +407,29 @@ function CountReport({ sessionId, currency, locale }: { sessionId: string; curre
     <div className="flex-1 overflow-auto p-6 space-y-6">
       {/* Header */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-sm font-semibold mb-2">تقرير جرد المخزون</p>
+        <p className="text-sm font-semibold mb-2">Inventory Count Report</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-          <div className="text-muted-foreground">رقم الجلسة</div><div className="font-mono">{report.session.count_number}</div>
-          <div className="text-muted-foreground">المستودع</div><div>{report.session.warehouse?.name ?? '—'}</div>
-          <div className="text-muted-foreground">بدأ</div><div>{fmtDateTime(report.session.started_at)}</div>
-          <div className="text-muted-foreground">اكتمل</div><div>{fmtDateTime(report.session.completed_at)}</div>
-          <div className="text-muted-foreground">اعتمد بواسطة</div><div>{report.session.approved_by ?? '—'}</div>
-          <div className="text-muted-foreground">تاريخ الاعتماد</div><div>{fmtDateTime(report.session.approved_at)}</div>
+          <div className="text-muted-foreground">Session #</div><div className="font-mono">{report.session.count_number}</div>
+          <div className="text-muted-foreground">Warehouse</div><div>{report.session.warehouse?.name ?? '—'}</div>
+          <div className="text-muted-foreground">Started</div><div>{fmtDateTime(report.session.started_at)}</div>
+          <div className="text-muted-foreground">Completed</div><div>{fmtDateTime(report.session.completed_at)}</div>
+          <div className="text-muted-foreground">Approved By</div><div>{report.session.approved_by ?? '—'}</div>
+          <div className="text-muted-foreground">Approval Date</div><div>{fmtDateTime(report.session.approved_at)}</div>
         </div>
       </div>
 
       {/* Inventory Summary */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">ملخص المخزون</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Inventory Summary</p>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'كمية النظام',   value: fmt(report.inventory_summary.system_qty, 0) },
-            { label: 'الكمية المحسوبة',  value: fmt(report.inventory_summary.counted_qty, 0) },
-            { label: 'الكمية التالفة',  value: fmt(report.inventory_summary.damaged_qty, 0) },
-            { label: 'كمية العجز', value: fmt(report.inventory_summary.shortage_qty, 0) },
-            { label: 'البنود',        value: `${report.inventory_summary.counted_lines}/${report.inventory_summary.total_lines}` },
+            { label: 'System Qty',   value: fmt(report.inventory_summary.system_qty, 0) },
+            { label: 'Counted Qty',  value: fmt(report.inventory_summary.counted_qty, 0) },
+            { label: 'Damaged Qty',  value: fmt(report.inventory_summary.damaged_qty, 0) },
+            { label: 'Shortage Qty', value: fmt(report.inventory_summary.shortage_qty, 0) },
+            { label: 'Lines',        value: `${report.inventory_summary.counted_lines}/${report.inventory_summary.total_lines}` },
             {
-              label: 'الدقة',
+              label: 'Accuracy',
               value: report.inventory_summary.inventory_accuracy != null
                 ? `${report.inventory_summary.inventory_accuracy.toFixed(1)}%`
                 : '—',
@@ -445,18 +445,18 @@ function CountReport({ sessionId, currency, locale }: { sessionId: string; curre
 
       {/* Financial Summary */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">الملخص المالي</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Financial Summary</p>
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-md border bg-card p-2.5">
-            <p className="text-[10px] text-muted-foreground">قيمة العجز</p>
+            <p className="text-[10px] text-muted-foreground">Shortage Value</p>
             <p className="text-sm font-semibold text-destructive tabular-nums mt-0.5">{fmtMoney(report.financial_summary.shortage_value)}</p>
           </div>
           <div className="rounded-md border bg-card p-2.5">
-            <p className="text-[10px] text-muted-foreground">قيمة الهدر</p>
+            <p className="text-[10px] text-muted-foreground">Waste Value</p>
             <p className="text-sm font-semibold text-amber-600 tabular-nums mt-0.5">{fmtMoney(report.financial_summary.waste_value)}</p>
           </div>
           <div className="rounded-md border bg-card p-2.5">
-            <p className="text-[10px] text-muted-foreground">إجمالي التسوية</p>
+            <p className="text-[10px] text-muted-foreground">Total Adjustment</p>
             <p className="text-sm font-semibold tabular-nums mt-0.5">{fmtMoney(report.financial_summary.total_adjustment)}</p>
           </div>
         </div>
@@ -465,39 +465,39 @@ function CountReport({ sessionId, currency, locale }: { sessionId: string; curre
       {/* Investigation & Liability Summary */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">تحقيقات الهدر</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Waste Investigations</p>
           <div className="rounded-md border bg-card p-3 text-xs space-y-1">
-            <div className="flex justify-between"><span className="text-muted-foreground">معلّقة</span><span className="font-medium">{report.investigation_summary.pending}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">محلولة</span><span className="font-medium">{report.investigation_summary.resolved}</span></div>
-            <div className="flex justify-between border-t pt-1 mt-1"><span className="text-muted-foreground">القيمة المعلّقة</span><span className="font-medium text-amber-600">{fmtMoney(report.investigation_summary.pending_value)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Pending</span><span className="font-medium">{report.investigation_summary.pending}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Resolved</span><span className="font-medium">{report.investigation_summary.resolved}</span></div>
+            <div className="flex justify-between border-t pt-1 mt-1"><span className="text-muted-foreground">Pending Value</span><span className="font-medium text-amber-600">{fmtMoney(report.investigation_summary.pending_value)}</span></div>
           </div>
         </div>
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">مسؤوليات المستودع</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Warehouse Liabilities</p>
           <div className="rounded-md border bg-card p-3 text-xs space-y-1">
-            <div className="flex justify-between"><span className="text-muted-foreground">معلّقة</span><span className="font-medium">{report.liability_summary.pending}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">معتمدة</span><span className="font-medium">{report.liability_summary.approved}</span></div>
-            <div className="flex justify-between border-t pt-1 mt-1"><span className="text-muted-foreground">القيمة المعلّقة</span><span className="font-medium text-destructive">{fmtMoney(report.liability_summary.pending_value)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Pending</span><span className="font-medium">{report.liability_summary.pending}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Approved</span><span className="font-medium">{report.liability_summary.approved}</span></div>
+            <div className="flex justify-between border-t pt-1 mt-1"><span className="text-muted-foreground">Pending Value</span><span className="font-medium text-destructive">{fmtMoney(report.liability_summary.pending_value)}</span></div>
           </div>
         </div>
       </div>
 
       {/* Product Details */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">تفاصيل المنتجات</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Product Details</p>
         <div className="rounded-md border overflow-hidden">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b bg-muted/40">
-                <th className="px-3 py-2 text-start font-medium text-muted-foreground">المنتج</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">النظام</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">المحسوب</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">التالف</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">العجز</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">تكلفة الوحدة</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">القيمة الإجمالية</th>
-                <th className="px-3 py-2 text-start font-medium text-muted-foreground">السبب</th>
-                <th className="px-3 py-2 text-start font-medium text-muted-foreground">القرار</th>
+                <th className="px-3 py-2 text-start font-medium text-muted-foreground">Product</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">System</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">Counted</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">Damaged</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">Shortage</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">Unit Cost</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">Total Value</th>
+                <th className="px-3 py-2 text-start font-medium text-muted-foreground">Reason</th>
+                <th className="px-3 py-2 text-start font-medium text-muted-foreground">Decision</th>
               </tr>
             </thead>
             <tbody>
@@ -574,20 +574,20 @@ export function CountSessionDrawer({ sessionId, open, onOpenChange }: Props) {
         lines: Object.entries(pendingLineUpdates).map(([id, upd]) => ({ id, ...upd })),
       });
       setPendingLineUpdates({});
-      toast.success('تم حفظ الجرد.');
+      toast.success('Count saved.');
     } catch {
-      toast.error('فشل حفظ الجرد. حاول مرة أخرى.');
+      toast.error('Save failed. Please try again.');
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleAction(action: () => Promise<unknown>, label: string) {
+  async function handleAction(action: () => Promise<unknown>, successMsg: string, errorMsg: string) {
     try {
       await action();
-      toast.success(`تم ${label} الجلسة بنجاح.`);
+      toast.success(successMsg);
     } catch {
-      toast.error(`فشل تنفيذ ${label}.`);
+      toast.error(errorMsg);
     }
   }
 
@@ -609,10 +609,10 @@ export function CountSessionDrawer({ sessionId, open, onOpenChange }: Props) {
             onViewChange={setView}
             onLineChange={handleLineChange}
             onSaveLines={handleSaveLines}
-            onStart={() => handleAction(() => startMutation.mutateAsync(session.id), 'بدء')}
-            onComplete={() => handleAction(() => completeMutation.mutateAsync(session.id), 'إنهاء')}
-            onApprove={() => handleAction(() => approveMutation.mutateAsync({ id: session.id }), 'اعتماد')}
-            onCancel={() => handleAction(() => cancelMutation.mutateAsync(session.id), 'إلغاء')}
+            onStart={() => handleAction(() => startMutation.mutateAsync(session.id), 'Count session started.', 'Failed to start session.')}
+            onComplete={() => handleAction(() => completeMutation.mutateAsync(session.id), 'Count session completed.', 'Failed to complete session.')}
+            onApprove={() => handleAction(() => approveMutation.mutateAsync({ id: session.id }), 'Count session approved.', 'Failed to approve session.')}
+            onCancel={() => handleAction(() => cancelMutation.mutateAsync(session.id), 'Count session cancelled.', 'Failed to cancel session.')}
           />
         )}
       </SheetContent>
@@ -682,13 +682,13 @@ function SessionContent({
                 onClick={() => onViewChange('count')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === 'count' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-accent'}`}
               >
-                <PackageSearch className="size-3.5 inline mr-1" />الجرد
+                <PackageSearch className="size-3.5 inline mr-1" />Count
               </button>
               <button
                 onClick={() => onViewChange('report')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === 'report' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-accent'}`}
               >
-                <FileText className="size-3.5 inline mr-1" />التقرير
+                <FileText className="size-3.5 inline mr-1" />Report
               </button>
             </div>
           )}
@@ -699,7 +699,7 @@ function SessionContent({
       {(session.status === 'in_progress' || session.status === 'completed') && (
         <Alert className="mx-6 mt-3 shrink-0 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
           <AlertDescription className="text-xs text-amber-800 dark:text-amber-200">
-            <strong>جرد أعمى نشط</strong> — كميات النظام والفوارق والأثر المالي مخفية حتى اعتماد الجلسة، للحد من التحيز أثناء الجرد الفعلي.
+            <strong>Blind Count Active</strong> — System quantities, variances, and financial impact are hidden until the session is approved to minimize bias during the actual count.
           </AlertDescription>
         </Alert>
       )}
@@ -712,20 +712,20 @@ function SessionContent({
           {/* Meta strip */}
           <div className="px-6 py-3 border-b shrink-0 grid grid-cols-4 gap-4 text-xs">
             <div>
-              <p className="text-muted-foreground">بدأ</p>
+              <p className="text-muted-foreground">Started</p>
               <p className="font-medium mt-0.5">{session.started_at ? fmtDateTime(session.started_at) : '—'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">اكتمل</p>
+              <p className="text-muted-foreground">Completed</p>
               <p className="font-medium mt-0.5">{session.completed_at ? fmtDateTime(session.completed_at) : '—'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">البنود</p>
+              <p className="text-muted-foreground">Lines</p>
               <p className="font-medium mt-0.5">{lines.length}</p>
             </div>
             {session.status === 'approved' && session.approved_by && (
               <div>
-                <p className="text-muted-foreground">اعتمد بواسطة</p>
+                <p className="text-muted-foreground">Approved By</p>
                 <p className="font-medium mt-0.5">{session.approved_by}</p>
               </div>
             )}
@@ -735,23 +735,23 @@ function SessionContent({
           {vs && showSystemQty && (
             <div className="px-6 py-3 border-b shrink-0 grid grid-cols-4 gap-3 text-xs">
               <div className="rounded-md border bg-card p-2.5">
-                <p className="text-muted-foreground">الدقة</p>
+                <p className="text-muted-foreground">Accuracy</p>
                 <p className="text-base font-semibold mt-0.5 text-emerald-600">
                   {vs.inventory_accuracy_pct != null ? `${vs.inventory_accuracy_pct.toFixed(1)}%` : '—'}
                 </p>
               </div>
               <div className="rounded-md border bg-card p-2.5">
-                <p className="text-muted-foreground">بنود العجز</p>
+                <p className="text-muted-foreground">Shortage Lines</p>
                 <p className="text-base font-semibold mt-0.5 text-destructive">{totalShortageLines}</p>
               </div>
               <div className="rounded-md border bg-card p-2.5">
-                <p className="text-muted-foreground">قيمة العجز</p>
+                <p className="text-muted-foreground">Shortage Value</p>
                 <p className="text-sm font-semibold mt-0.5 text-destructive tabular-nums">
                   {session.shortage_value != null ? formatMoney(session.shortage_value, currency, locale) : '—'}
                 </p>
               </div>
               <div className="rounded-md border bg-card p-2.5">
-                <p className="text-muted-foreground">قيمة الهدر</p>
+                <p className="text-muted-foreground">Waste Value</p>
                 <p className="text-sm font-semibold mt-0.5 text-amber-600 tabular-nums">
                   {session.waste_value != null ? formatMoney(session.waste_value, currency, locale) : '—'}
                 </p>
@@ -763,8 +763,8 @@ function SessionContent({
           {session.status === 'approved' && (totalShortageLines > 0 || totalDamagedLines > 0) && (
             <Alert className="mx-6 my-3 shrink-0">
               <AlertDescription className="text-xs">
-                {totalShortageLines > 0 && `تم إنشاء ${totalShortageLines} مسؤولية مستودع من العجز. `}
-                {totalDamagedLines > 0 && `${totalDamagedLines} بنود تالفة تحتاج تحقيق هدر.`}
+                {totalShortageLines > 0 && `${totalShortageLines} warehouse liabilities created from shortages. `}
+                {totalDamagedLines > 0 && `${totalDamagedLines} damaged lines require waste investigation.`}
               </AlertDescription>
             </Alert>
           )}
@@ -779,25 +779,25 @@ function SessionContent({
           {/* Lines table */}
           <div className="flex-1 overflow-auto">
             {lines.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-12">لا توجد بنود في هذه الجلسة.</p>
+              <p className="text-muted-foreground text-sm text-center py-12">No lines in this session.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-background z-10 shadow-sm">
                   <tr className="border-b">
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">المنتج</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">Product</th>
                     {showSystemQty && (
-                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">كمية النظام</th>
+                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">System Qty</th>
                     )}
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">الكمية المحسوبة</th>
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">الكمية التالفة</th>
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">سبب التلف</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">Counted Qty</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">Damaged Qty</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">Damage Reason</th>
                     {showSystemQty && (
-                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">العجز</th>
+                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">Shortage</th>
                     )}
                     {showSystemQty && (
-                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">الفارق</th>
+                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">Variance</th>
                     )}
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">المرفقات</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">Attachments</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -824,26 +824,26 @@ function SessionContent({
             {isEditable && hasPending && (
               <Button size="sm" onClick={onSaveLines} disabled={isBusy} className="gap-1.5">
                 {isBusy ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                حفظ الجرد
+                Save Count
               </Button>
             )}
 
             {session.status === 'draft' && (
               <Button size="sm" variant="default" onClick={onStart} disabled={isBusy} className="gap-1.5">
                 <PlayCircle className="size-3.5" />
-                بدء الجرد
+                Start Count
               </Button>
             )}
             {session.status === 'in_progress' && (
               <Button size="sm" variant="default" onClick={onComplete} disabled={isBusy} className="gap-1.5">
                 <CheckCircle className="size-3.5" />
-                إنهاء الجرد
+                Complete Count
               </Button>
             )}
             {session.status === 'completed' && (
               <Button size="sm" variant="default" onClick={onApprove} disabled={isBusy} className="gap-1.5">
                 <CheckCircle2 className="size-3.5" />
-                اعتماد وقيد
+                Approve & Post
               </Button>
             )}
             {(session.status === 'draft' || session.status === 'in_progress' || session.status === 'completed') && (
@@ -855,19 +855,19 @@ function SessionContent({
                 className="gap-1.5 text-destructive hover:text-destructive ms-auto"
               >
                 <XCircle className="size-3.5" />
-                إلغاء
+                Cancel
               </Button>
             )}
             {session.status === 'approved' && (
               <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium ms-auto">
                 <Check className="size-3.5" />
-                معتمد — تم قيد التسويات
+                Approved — adjustments posted
               </div>
             )}
             {session.status === 'cancelled' && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground ms-auto">
                 <RotateCcw className="size-3.5" />
-                تم إلغاء هذه الجلسة
+                This session was cancelled
               </div>
             )}
           </div>

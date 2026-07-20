@@ -16,6 +16,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('price_approvals')) {
+            return;
+        }
+
         Schema::create('price_approvals', function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('order_lines', 'reserved_qty')) {
+            return;
+        }
+
         Schema::table('order_lines', function (Blueprint $table) {
             $table->float('reserved_qty')->default(0)->after('line_total');
             $table->float('available_qty')->default(0)->after('reserved_qty');
@@ -26,6 +30,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('order_lines', 'reserved_qty')) {
+            return;
+        }
+
         Schema::table('order_lines', function (Blueprint $table) {
             $table->dropColumn([
                 'reserved_qty', 'available_qty', 'prepared_qty', 'packed_qty',

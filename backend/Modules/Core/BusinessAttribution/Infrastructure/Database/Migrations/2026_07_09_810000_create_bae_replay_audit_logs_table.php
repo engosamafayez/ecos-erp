@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('bae_replay_audit_logs')) {
+            return;
+        }
+
         Schema::create('bae_replay_audit_logs', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('user_id')->nullable();

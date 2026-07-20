@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('inventory_receipt_layers')) {
+            return;
+        }
+
         Schema::create('inventory_receipt_layers', function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

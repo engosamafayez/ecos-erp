@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('logistics_city_aliases')) {
+            return;
+        }
+
         Schema::create('logistics_city_aliases', function (Blueprint $table) {
             $table->id();
             $table->foreignId('city_id')

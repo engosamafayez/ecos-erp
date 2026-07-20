@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('preparation_exceptions')) {
+            return;
+        }
+
         Schema::create('preparation_exceptions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('company_id');

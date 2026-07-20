@@ -228,7 +228,7 @@ function CitiesTab({ gov }: { gov: Governorate }) {
               className="h-8 text-sm"
             />
             <Input
-              placeholder="اسم (عربي)"
+              placeholder="Arabic name"
               value={newNameAr}
               onChange={(e) => setNewNameAr(e.target.value)}
               className="h-8 text-sm"

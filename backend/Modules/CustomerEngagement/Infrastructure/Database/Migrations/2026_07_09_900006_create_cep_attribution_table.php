@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('cep_attribution')) {
+            return;
+        }
+
         Schema::create('cep_attribution', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('conversation_id')->index();

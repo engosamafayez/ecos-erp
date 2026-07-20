@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('supplier_invoices')) {
+            return;
+        }
+
         Schema::create('supplier_invoices', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('invoice_number', 100)->unique();

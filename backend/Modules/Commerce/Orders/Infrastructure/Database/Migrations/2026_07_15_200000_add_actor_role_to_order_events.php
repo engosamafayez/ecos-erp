@@ -9,6 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('order_events', 'actor_role')) {
+            return;
+        }
+
         Schema::table('order_events', function ($table) {
             $table->string('actor_role', 100)->nullable()->after('actor_name');
         });
@@ -16,6 +20,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('order_events', 'actor_role')) {
+            return;
+        }
+
         Schema::table('order_events', function ($table) {
             $table->dropColumn('actor_role');
         });

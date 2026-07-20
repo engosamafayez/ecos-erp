@@ -18,6 +18,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('orders', 'warehouse_assigned_at')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table): void {
             $table->timestampTz('warehouse_assigned_at')->nullable()->after('assigned_warehouse_id');
             $table->string('warehouse_assignment_source', 50)->nullable()->after('warehouse_assigned_at');
@@ -39,6 +43,10 @@ return new class extends Migration
         DB::statement('ALTER TABLE orders DROP CONSTRAINT IF EXISTS chk_orders_warehouse_assignment_source');
         DB::statement('DROP INDEX IF EXISTS idx_orders_warehouse_assignment_source');
         DB::statement('DROP INDEX IF EXISTS idx_orders_warehouse_assigned_at');
+
+        if (Schema::hasColumn('orders', 'warehouse_assigned_at')) {
+            return;
+        }
 
         Schema::table('orders', function (Blueprint $table): void {
             $table->dropColumn(['warehouse_assigned_at', 'warehouse_assignment_source']);

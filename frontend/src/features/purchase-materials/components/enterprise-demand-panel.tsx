@@ -67,9 +67,9 @@ function TrendIcon({ trend }: { trend: string }) {
 function PriceTrendBadge({ trend }: { trend: string | null }) {
   if (!trend) return <span className="text-xs text-muted-foreground">—</span>;
   const map = {
-    rising:  { cls: 'text-red-600', icon: TrendingUp, label: 'ارتفاع' },
-    falling: { cls: 'text-emerald-600', icon: TrendingDown, label: 'انخفاض' },
-    stable:  { cls: 'text-blue-600', icon: BarChart2, label: 'مستقر' },
+    rising:  { cls: 'text-red-600', icon: TrendingUp, label: 'Rising' },
+    falling: { cls: 'text-emerald-600', icon: TrendingDown, label: 'Falling' },
+    stable:  { cls: 'text-blue-600', icon: BarChart2, label: 'Stable' },
   };
   const cfg = map[trend as keyof typeof map];
   if (!cfg) return null;
@@ -101,12 +101,12 @@ function RecommendationCard({ rec }: { rec: ProcurementPanelRecommendation }) {
 function BusinessImpactSection({ bi }: { bi: BusinessImpact }) {
   return (
     <section>
-      <SectionLabel>الأثر على الأعمال</SectionLabel>
+      <SectionLabel>Business Impact</SectionLabel>
       <div className="grid grid-cols-3 gap-1.5 mb-2">
         {[
-          { label: 'مبيعات 7أيام', value: fmt(bi.sales_last_7d, 0) },
-          { label: 'مبيعات 30يوم', value: fmt(bi.sales_last_30d, 0) },
-          { label: 'إيرادات 30يوم', value: bi.revenue_last_30d != null ? fmt(bi.revenue_last_30d, 0) : '—' },
+          { label: 'Sales 7d', value: fmt(bi.sales_last_7d, 0) },
+          { label: 'Sales 30d', value: fmt(bi.sales_last_30d, 0) },
+          { label: 'Revenue 30d', value: bi.revenue_last_30d != null ? fmt(bi.revenue_last_30d, 0) : '—' },
         ].map(({ label, value }) => (
           <div key={label} className="rounded-md border bg-background px-2 py-1.5 text-center">
             <p className="text-[10px] text-muted-foreground">{label}</p>
@@ -115,12 +115,12 @@ function BusinessImpactSection({ bi }: { bi: BusinessImpact }) {
         ))}
       </div>
       <div className="rounded-md border bg-background divide-y">
-        <StatRow label="المستودعات الحاملة" value={bi.warehouses_carrying} highlight />
-        <StatRow label="إجمالي قيمة المخزون" value={bi.total_inventory_value > 0 ? fmt(bi.total_inventory_value, 0) : '—'} highlight />
-        <StatRow label="الكمية المحجوزة" value={fmt(bi.reserved_qty, 0)} />
-        <StatRow label="الطلبات المفتوحة" value={bi.open_orders ?? '—'} />
-        <StatRow label="المتأخر في التسليم" value={bi.backordered_qty ?? '—'} />
-        <StatRow label="تاريخ نفاد المخزون" value={bi.estimated_stockout_date ?? '—'} />
+        <StatRow label="Carrying Warehouses" value={bi.warehouses_carrying} highlight />
+        <StatRow label="Total Inventory Value" value={bi.total_inventory_value > 0 ? fmt(bi.total_inventory_value, 0) : '—'} highlight />
+        <StatRow label="Reserved Qty" value={fmt(bi.reserved_qty, 0)} />
+        <StatRow label="Open Orders" value={bi.open_orders ?? '—'} />
+        <StatRow label="Backordered" value={bi.backordered_qty ?? '—'} />
+        <StatRow label="Stockout Date" value={bi.estimated_stockout_date ?? '—'} />
       </div>
     </section>
   );
@@ -135,12 +135,12 @@ function InventoryHealthSection({ health }: { health: InventoryHealth }) {
 
   return (
     <section>
-      <SectionLabel>صحة المخزون</SectionLabel>
+      <SectionLabel>Inventory Health</SectionLabel>
       <div className="grid grid-cols-3 gap-1.5 mb-2">
         {[
-          { label: 'الرصيد الفعلي', value: fmt(health.on_hand, 0) },
-          { label: 'المحجوز', value: fmt(health.reserved, 0) },
-          { label: 'المتاح', value: fmt(health.available, 0), hi: true },
+          { label: 'On Hand', value: fmt(health.on_hand, 0) },
+          { label: 'Reserved', value: fmt(health.reserved, 0) },
+          { label: 'Available', value: fmt(health.available, 0), hi: true },
         ].map(({ label, value, hi }) => (
           <div key={label} className={`rounded-md border px-2 py-1.5 text-center ${hi ? 'bg-background border-primary/30' : 'bg-background'}`}>
             <p className="text-[10px] text-muted-foreground">{label}</p>
@@ -153,16 +153,16 @@ function InventoryHealthSection({ health }: { health: InventoryHealth }) {
           <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
             <div className={`h-full rounded-full ${healthColor}`} style={{ width: `${Math.min(100, healthPct)}%` }} />
           </div>
-          <span className="text-[10px] text-muted-foreground">{Math.round(healthPct)}% متاح</span>
+          <span className="text-[10px] text-muted-foreground">{Math.round(healthPct)}% available</span>
         </div>
       )}
       <div className="rounded-md border bg-background divide-y">
-        <StatRow label="قادم" value={health.incoming > 0 ? fmt(health.incoming, 0) : '—'} highlight={health.incoming > 0} />
-        <StatRow label="قيد النقل" value={health.in_transfer > 0 ? fmt(health.in_transfer, 0) : '—'} />
-        <StatRow label="تالف" value={health.damaged ?? '—'} />
-        <StatRow label="منتهي الصلاحية" value={health.expired ?? '—'} />
-        <StatRow label="قرب انتهاء الصلاحية" value={health.near_expiry ?? '—'} />
-        <StatRow label="في الحجر" value={health.quarantine ?? '—'} />
+        <StatRow label="Incoming" value={health.incoming > 0 ? fmt(health.incoming, 0) : '—'} highlight={health.incoming > 0} />
+        <StatRow label="In Transit" value={health.in_transfer > 0 ? fmt(health.in_transfer, 0) : '—'} />
+        <StatRow label="Damaged" value={health.damaged ?? '—'} />
+        <StatRow label="Expired" value={health.expired ?? '—'} />
+        <StatRow label="Near Expiry" value={health.near_expiry ?? '—'} />
+        <StatRow label="Quarantine" value={health.quarantine ?? '—'} />
       </div>
     </section>
   );
@@ -174,17 +174,17 @@ function DemandIntelligenceSection({ demand }: { demand: DemandIntelligence }) {
   return (
     <section>
       <div className="flex items-center justify-between mb-2">
-        <SectionLabel>ذكاء الطلب</SectionLabel>
+        <SectionLabel>Demand Intelligence</SectionLabel>
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground -mt-1">
           <TrendIcon trend={demand.trend} />
-          <span>{demand.trend === 'normal' ? 'اتجاه طبيعي' : demand.trend === 'higher' ? 'أعلى من المتوسط' : 'أقل من المتوسط'}</span>
+          <span>{demand.trend === 'normal' ? 'Normal Trend' : demand.trend === 'higher' ? 'Above Average' : 'Below Average'}</span>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-1.5 mb-2">
         {[
-          { label: 'يومي', value: fmt(demand.daily_avg, 2) },
-          { label: 'أسبوعي', value: fmt(demand.weekly_avg, 1) },
-          { label: 'شهري', value: fmt(demand.monthly_avg, 0) },
+          { label: 'Daily', value: fmt(demand.daily_avg, 2) },
+          { label: 'Weekly', value: fmt(demand.weekly_avg, 1) },
+          { label: 'Monthly', value: fmt(demand.monthly_avg, 0) },
         ].map(({ label, value }) => (
           <div key={label} className="rounded-md border bg-background px-2 py-1.5 text-center">
             <p className="text-[10px] text-muted-foreground">{label}</p>
@@ -193,9 +193,9 @@ function DemandIntelligenceSection({ demand }: { demand: DemandIntelligence }) {
         ))}
       </div>
       <div className="rounded-md border bg-background divide-y">
-        <StatRow label="متوسط 90 يومًا المتحرك" value={fmt(demand.rolling_90d_avg, 2)} />
-        <StatRow label="أعلى استهلاك" value={fmt(demand.peak_consumption, 2)} />
-        <StatRow label="التذبذب" value={demand.volatility != null ? fmt(demand.volatility, 2) : '—'} />
+        <StatRow label="90d Rolling Avg" value={fmt(demand.rolling_90d_avg, 2)} />
+        <StatRow label="Peak Consumption" value={fmt(demand.peak_consumption, 2)} />
+        <StatRow label="Volatility" value={demand.volatility != null ? fmt(demand.volatility, 2) : '—'} />
       </div>
     </section>
   );
@@ -206,23 +206,23 @@ function DemandIntelligenceSection({ demand }: { demand: DemandIntelligence }) {
 function CoverageIntelligenceSection({ coverage }: { coverage: CoverageIntelligence }) {
   return (
     <section>
-      <SectionLabel>ذكاء التغطية</SectionLabel>
+      <SectionLabel>Coverage Intelligence</SectionLabel>
       <div className="flex items-center justify-between rounded-md border bg-background px-3 py-2 mb-2">
         <div>
-          <p className="text-[10px] text-muted-foreground">التغطية الحالية</p>
+          <p className="text-[10px] text-muted-foreground">Current Coverage</p>
           <p className="font-semibold text-base tabular-nums">
-            {coverage.current_coverage_days != null ? `${fmt(coverage.current_coverage_days, 1)} يوم` : '—'}
+            {coverage.current_coverage_days != null ? `${fmt(coverage.current_coverage_days, 1)} days` : '—'}
           </p>
         </div>
         <RiskBadge risk={coverage.risk} />
       </div>
       <div className="rounded-md border bg-background divide-y">
-        <StatRow label="تاريخ النفاد" value={coverage.stockout_date ?? '—'} highlight={coverage.risk === 'critical' || coverage.risk === 'high'} />
-        <StatRow label="تاريخ الشراء المقترح" value={coverage.suggested_purchase_date ?? '—'} />
-        <StatRow label="مخزون الأمان" value={coverage.safety_stock ?? '—'} />
-        <StatRow label="الحد الأدنى" value={coverage.min_stock ?? '—'} />
-        <StatRow label="الحد الأقصى" value={coverage.max_stock ?? '—'} />
-        <StatRow label="نقطة إعادة الطلب" value={coverage.reorder_point ?? '—'} />
+        <StatRow label="Stockout Date" value={coverage.stockout_date ?? '—'} highlight={coverage.risk === 'critical' || coverage.risk === 'high'} />
+        <StatRow label="Suggested Purchase Date" value={coverage.suggested_purchase_date ?? '—'} />
+        <StatRow label="Safety Stock" value={coverage.safety_stock ?? '—'} />
+        <StatRow label="Min Stock" value={coverage.min_stock ?? '—'} />
+        <StatRow label="Max Stock" value={coverage.max_stock ?? '—'} />
+        <StatRow label="Reorder Point" value={coverage.reorder_point ?? '—'} />
       </div>
     </section>
   );
@@ -233,10 +233,10 @@ function CoverageIntelligenceSection({ coverage }: { coverage: CoverageIntellige
 function ProcurementIntelligenceSection({ proc }: { proc: ProcurementIntelligence }) {
   return (
     <section>
-      <SectionLabel>ذكاء المشتريات</SectionLabel>
+      <SectionLabel>Procurement Intelligence</SectionLabel>
       {proc.last_purchase && (
         <div className="rounded-md border bg-background px-3 py-2 mb-2">
-          <p className="text-[10px] text-muted-foreground mb-0.5">آخر عملية شراء</p>
+          <p className="text-[10px] text-muted-foreground mb-0.5">Last Purchase</p>
           <p className="font-medium text-sm">{proc.last_purchase.supplier_name ?? '—'}</p>
           <div className="flex items-center justify-between text-xs text-muted-foreground mt-0.5">
             <span>{fmtDate(proc.last_purchase.purchase_date)}</span>
@@ -247,19 +247,19 @@ function ProcurementIntelligenceSection({ proc }: { proc: ProcurementIntelligenc
         </div>
       )}
       <div className="rounded-md border bg-background divide-y mb-2">
-        <StatRow label="آخر تكلفة" value={proc.last_cost != null ? fmt(proc.last_cost, 2) : '—'} highlight />
-        <StatRow label="متوسط التكلفة" value={proc.avg_cost != null ? fmt(proc.avg_cost, 2) : '—'} />
-        <StatRow label="أدنى تكلفة" value={proc.lowest_cost != null ? fmt(proc.lowest_cost, 2) : '—'} />
-        <StatRow label="أعلى تكلفة" value={proc.highest_cost != null ? fmt(proc.highest_cost, 2) : '—'} />
-        <StatRow label="اتجاه السعر" value={<PriceTrendBadge trend={proc.price_trend} />} />
-        <StatRow label="تكرار الشراء" value={proc.purchase_frequency != null ? `${fmt(proc.purchase_frequency, 1)}×/شهر` : '—'} />
-        <StatRow label="مدة التوريد" value={proc.lead_time_days != null ? `${proc.lead_time_days} أيام` : '—'} />
+        <StatRow label="Last Cost" value={proc.last_cost != null ? fmt(proc.last_cost, 2) : '—'} highlight />
+        <StatRow label="Avg Cost" value={proc.avg_cost != null ? fmt(proc.avg_cost, 2) : '—'} />
+        <StatRow label="Lowest Cost" value={proc.lowest_cost != null ? fmt(proc.lowest_cost, 2) : '—'} />
+        <StatRow label="Highest Cost" value={proc.highest_cost != null ? fmt(proc.highest_cost, 2) : '—'} />
+        <StatRow label="Price Trend" value={<PriceTrendBadge trend={proc.price_trend} />} />
+        <StatRow label="Purchase Frequency" value={proc.purchase_frequency != null ? `${fmt(proc.purchase_frequency, 1)}×/month` : '—'} />
+        <StatRow label="Lead Time" value={proc.lead_time_days != null ? `${proc.lead_time_days} days` : '—'} />
         <StatRow label="MOQ" value={proc.moq != null ? fmt(proc.moq, 0) : '—'} />
       </div>
       {proc.alternative_suppliers.length > 0 && (
         <>
           <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">
-            موردون بديلون ({proc.alternative_suppliers.length})
+            Alternative Suppliers ({proc.alternative_suppliers.length})
           </p>
           <div className="flex flex-col gap-1">
             {proc.alternative_suppliers.map((s) => (
@@ -267,7 +267,7 @@ function ProcurementIntelligenceSection({ proc }: { proc: ProcurementIntelligenc
                 <div>
                   <p className="font-medium text-xs leading-tight">{s.supplier_name}</p>
                   {s.last_delivery_date && (
-                    <p className="text-muted-foreground text-[10px]">آخر تسليم: {fmtDate(s.last_delivery_date)}</p>
+                    <p className="text-muted-foreground text-[10px]">Last delivery: {fmtDate(s.last_delivery_date)}</p>
                   )}
                 </div>
                 <div className="text-end">
@@ -275,7 +275,7 @@ function ProcurementIntelligenceSection({ proc }: { proc: ProcurementIntelligenc
                     <p className="font-mono text-xs font-semibold">{fmt(s.last_price, 2)}</p>
                   )}
                   {s.lead_time_days != null && (
-                    <p className="text-muted-foreground text-[10px]">{s.lead_time_days}أيام توريد</p>
+                    <p className="text-muted-foreground text-[10px]">{s.lead_time_days}d lead time</p>
                   )}
                 </div>
               </div>
@@ -293,17 +293,17 @@ function RecommendationsSection({ recs }: { recs: ProcurementPanelRecommendation
   if (recs.length === 0) {
     return (
       <section>
-        <SectionLabel>التوصيات</SectionLabel>
+        <SectionLabel>Recommendations</SectionLabel>
         <div className="flex items-center gap-2 text-xs text-emerald-700 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
           <CheckCircle className="size-3.5 shrink-0" />
-          لا توجد مشكلات. المخزون في حالة جيدة.
+          No issues. Inventory is in good shape.
         </div>
       </section>
     );
   }
   return (
     <section>
-      <SectionLabel>التوصيات ({recs.length})</SectionLabel>
+      <SectionLabel>Recommendations ({recs.length})</SectionLabel>
       <div className="flex flex-col gap-1.5">
         {recs.map((rec, i) => (
           <RecommendationCard key={i} rec={rec} />
@@ -320,7 +320,7 @@ function TimelineSection({ events }: { events: DemandTimelineEvent[] }) {
 
   return (
     <section>
-      <SectionLabel>الجدول الزمني</SectionLabel>
+      <SectionLabel>Timeline</SectionLabel>
       <div className="relative flex flex-col gap-0">
         <div className="absolute left-[13px] top-3 bottom-3 w-px bg-border" />
         {events.slice(0, 10).map((ev, i) => {
@@ -359,12 +359,12 @@ function TimelineSection({ events }: { events: DemandTimelineEvent[] }) {
 function QuickActions({ productId }: { productId: string }) {
   return (
     <div className="sticky bottom-0 bg-background border-t pt-2 -mx-0.5 px-0.5">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">إجراءات سريعة</p>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Quick Actions</p>
       <div className="flex flex-wrap gap-1.5">
         {[
-          { label: 'عرض المنتج', path: `/products?highlight=${productId}` },
-          { label: 'سجل المخزون', path: `/stock-ledger?product=${productId}` },
-          { label: 'سجل الشراء', path: `/purchasing/purchase-materials?product=${productId}` },
+          { label: 'View Product', path: `/products?highlight=${productId}` },
+          { label: 'Stock Ledger', path: `/stock-ledger?product=${productId}` },
+          { label: 'Purchase History', path: `/purchasing/purchase-materials?product=${productId}` },
         ].map(({ label, path }) => (
           <a
             key={label}
@@ -402,7 +402,7 @@ export function EnterpriseDemandPanel({ productId, warehouseId, showQuickActions
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2 text-sm text-muted-foreground text-center px-4">
         <Info className="size-8 text-muted-foreground/40" />
-        <p>اختر مادة لعرض ذكاء الطلب وتوصيات المشتريات.</p>
+        <p>Select a material to view demand intelligence and procurement recommendations.</p>
       </div>
     );
   }
@@ -410,7 +410,7 @@ export function EnterpriseDemandPanel({ productId, warehouseId, showQuickActions
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32 gap-2 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> جارٍ التحميل…
+        <Loader2 className="size-4 animate-spin" /> Loading…
       </div>
     );
   }
@@ -418,7 +418,7 @@ export function EnterpriseDemandPanel({ productId, warehouseId, showQuickActions
   if (isError || !data) {
     return (
       <div className="flex items-center justify-center h-32 gap-2 text-sm text-muted-foreground">
-        <AlertCircle className="size-4 text-destructive" /> فشل تحميل بيانات الطلب.
+        <AlertCircle className="size-4 text-destructive" /> Failed to load demand data.
       </div>
     );
   }

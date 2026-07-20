@@ -52,6 +52,7 @@ return [
     Modules\Inventory\WasteInvestigations\Infrastructure\Providers\WasteInvestigationServiceProvider::class,
     Modules\Inventory\WarehouseLiabilities\Infrastructure\Providers\WarehouseLiabilityServiceProvider::class,
     Modules\Inventory\InventoryControl\Infrastructure\Providers\InventoryControlServiceProvider::class,
+    Modules\Inventory\Transfer\Infrastructure\Providers\TransferServiceProvider::class,
     Modules\Core\UserPreferences\Infrastructure\Providers\UserPreferenceServiceProvider::class,
     Modules\Core\DemandAnalysis\Infrastructure\Providers\DemandAnalysisServiceProvider::class,
     Modules\Core\BusinessAttribution\Infrastructure\Providers\BusinessAttributionServiceProvider::class,

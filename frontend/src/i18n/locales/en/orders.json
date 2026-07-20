@@ -6,11 +6,21 @@
     "new": "New Order",
     "import": "Import",
     "export": "Export",
+    "copyClipboard": "Copy",
+    "print": "Print",
     "bulkActions": "Bulk Actions",
     "view": "View",
     "edit": "Edit",
     "delete": "Delete",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "viewOrder": "View Order",
+    "editOrder": "Edit Order",
+    "customerProfile": "Customer Profile",
+    "timeline": "Timeline",
+    "invoicePrint": "Invoice / Print",
+    "copyLink": "Copy Order Link",
+    "linkCopied": "Copied!",
+    "cancelOrder": "Cancel Order"
   },
   "bulk": {
     "confirm": "Confirm Orders",
@@ -63,6 +73,8 @@
     "allStatuses": "All statuses",
     "channel": "Channel",
     "allChannels": "All Channels",
+    "filterSingular": "filter",
+    "filterPlural": "filters",
     "product": "Product",
     "allProducts": "All Products",
     "searchProduct": "Search product…",
@@ -163,17 +175,22 @@
     "address": "Address",
     "zone": "Zone",
     "location": "GPS Location",
-    "customerConfirmed": "Confirmation",
     "inventoryExecution": "Inventory Execution",
     "reservationStatus": "Reservation",
     "editZone": "Edit delivery zone",
     "addZone": "Add zone",
-    "deliveryWindow": "Delivery",
+    "deliveryWindow": "Delivery Window",
     "shippingAttempts": "Attempts",
     "shippingCompany": "Carrier",
     "createdAt": "Created",
     "updatedAt": "Updated",
-    "actions": "Actions"
+    "salesRep": "Sales Rep",
+    "driver": "Driver",
+    "manualOrder": "Manual",
+    "proofReceived": "Proof Received",
+    "actions": "Actions",
+    "noProof": "No Proof",
+    "noGps": "No GPS"
   },
   "itemsPreview": {
     "title": "{{count}} items",
@@ -189,7 +206,8 @@
     "notes": "Notes"
   },
   "toolbar": {
-    "columns": "Columns"
+    "columns": "Columns",
+    "views": "Views"
   },
   "mobileCard": {
     "item": "item",
@@ -310,7 +328,30 @@
     "manualPayment": "Manual Payment",
     "onlinePayment": "Online Payment",
     "paymentProof": "Payment Proof",
-    "discount": "Discount"
+    "discount": "Discount",
+    "productsTotal": "Products Total",
+    "shipping": "Shipping",
+    "tax": "Tax",
+    "grandTotal": "Grand Total",
+    "deposit": "Deposit",
+    "discountTotal": "Total Discount",
+    "formula": "Formula"
+  },
+  "statusSelector": {
+    "currentStatus": "Current Status",
+    "moveTo": "Move Order To",
+    "noTransitions": "No workflow actions available.",
+    "finalState": "This order is in a final workflow state.",
+    "dialogTitle": "Change Order Status",
+    "dialogDesc": "This will run the appropriate workflow and update the order timeline.",
+    "from": "From",
+    "to": "To",
+    "reason": "Reason",
+    "reasonOptional": "(Optional)",
+    "reasonPlaceholder": "Enter reason…",
+    "transitionFailed": "Transition failed — please try again or contact support.",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
   },
   "workspace": {
     "newTitle": "New Order",

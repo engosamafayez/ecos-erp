@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('purchase_material_lines', 'supplier_id')) {
+            return;
+        }
+
         Schema::table('purchase_material_lines', function (Blueprint $table): void {
             // Supplier selection (set by Procurement team, never by Warehouse)
             $table->uuid('supplier_id')->nullable()->after('notes')
@@ -24,6 +28,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('purchase_material_lines', 'supplier_id')) {
+            return;
+        }
+
         Schema::table('purchase_material_lines', function (Blueprint $table): void {
             $table->dropForeign(['supplier_id']);
             $table->dropColumn([

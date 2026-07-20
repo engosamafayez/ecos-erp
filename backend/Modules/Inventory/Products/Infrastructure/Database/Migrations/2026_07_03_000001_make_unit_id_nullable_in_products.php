@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('products', 'unit_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->foreignUuid('unit_id')->nullable()->change();
         });
@@ -17,6 +21,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('products', 'unit_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->foreignUuid('unit_id')->nullable(false)->change();
         });

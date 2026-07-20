@@ -12,17 +12,9 @@ import { CountStatusBadge } from '../components/count-status-badge';
 import { CountSessionDrawer } from '../components/count-session-drawer';
 import { NewCountDialog } from '../components/new-count-dialog';
 import { useCountSessionsQuery, useDeleteCountSession } from '../hooks/use-inventory-count';
+import { useInventoryCountLabels } from '../hooks/use-inventory-count-labels';
 import type { CountSession, CountSessionStatus } from '../types/inventory-count';
 import { toast } from '@/components/ds/use-toast';
-
-const STATUSES: { value: CountSessionStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'الكل' },
-  { value: 'draft', label: 'مسودة' },
-  { value: 'in_progress', label: 'قيد التنفيذ' },
-  { value: 'completed', label: 'مكتمل' },
-  { value: 'approved', label: 'معتمد' },
-  { value: 'cancelled', label: 'ملغى' },
-];
 
 const PER_PAGE = 15;
 
@@ -55,6 +47,7 @@ function AccuracyBadge({ pct }: { pct: number | null | undefined }) {
 }
 
 export function InventoryCountPage() {
+  const { countStatusFilter } = useInventoryCountLabels();
   const [statusFilter, setStatusFilter] = useState<CountSessionStatus | 'all'>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -92,29 +85,29 @@ export function InventoryCountPage() {
 
   async function handleDelete(session: CountSession, e: React.MouseEvent) {
     e.stopPropagation();
-    if (!confirm(`حذف جلسة الجرد ${session.count_number}?`)) return;
+    if (!confirm(`Delete count session ${session.count_number}?`)) return;
     try {
       await deleteMutation.mutateAsync(session.id);
-      toast.success('تم حذف الجلسة.');
+      toast.success('Session deleted.');
     } catch {
-      toast.error('فشل حذف الجلسة.');
+      toast.error('Failed to delete session.');
     }
   }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="جرد المخزون"
-        subtitle="إدارة جلسات الجرد الفعلية للمخزون."
-        breadcrumbs={[{ label: 'الرئيسية', to: ROUTES.dashboard }, { label: 'جرد المخزون' }]}
+        title="Inventory Count"
+        subtitle="Manage physical inventory count sessions."
+        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Inventory Count' }]}
         actions={
-          <Button onClick={() => setNewDialogOpen(true)}>+ جلسة جديدة</Button>
+          <Button onClick={() => setNewDialogOpen(true)}>+ New Session</Button>
         }
       />
 
       {/* Status filter chips */}
       <div className="flex flex-wrap gap-2">
-        {STATUSES.map((s) => (
+        {countStatusFilter.map((s) => (
           <button
             key={s.value}
             onClick={() => { setStatusFilter(s.value); setPage(1); }}
@@ -135,7 +128,7 @@ export function InventoryCountPage() {
           {/* Toolbar */}
           <div className="flex items-center gap-3 flex-wrap">
             <Input
-              placeholder="بحث برقم الجلسة أو المستودع…"
+              placeholder="Search by session number or warehouse…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 w-56 text-sm"
@@ -147,10 +140,10 @@ export function InventoryCountPage() {
               disabled={isFetching}
               className="h-8"
             >
-              تحديث
+              Refresh
             </Button>
             <span className="ms-auto text-xs text-muted-foreground">
-              {meta ? `${meta.total} جلسة` : ''}
+              {meta ? `${meta.total} sessions` : ''}
             </span>
           </div>
 
@@ -159,15 +152,15 @@ export function InventoryCountPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">رقم الجلسة</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">المستودع</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">الحالة</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">تاريخ البدء</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">تاريخ الاكتمال</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">الدقة</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">قيمة العجز</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">قيمة الهدر</th>
-                  <th className="px-4 py-2.5 text-center text-xs font-medium text-muted-foreground">المرفقات</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Session #</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Warehouse</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Status</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Start Date</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Completion Date</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Accuracy</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Shortage Value</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Waste Value</th>
+                  <th className="px-4 py-2.5 text-center text-xs font-medium text-muted-foreground">Attachments</th>
                   <th className="px-4 py-2.5" />
                 </tr>
               </thead>
@@ -175,13 +168,13 @@ export function InventoryCountPage() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                      جارٍ التحميل…
+                      Loading…
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                      {search ? 'لا توجد جلسات مطابقة.' : 'لا توجد جلسات جرد بعد. أنشئ جلسة للبدء.'}
+                      {search ? 'No matching sessions.' : 'No count sessions yet. Create a session to get started.'}
                     </td>
                   </tr>
                 ) : (
@@ -219,7 +212,7 @@ export function InventoryCountPage() {
                             onClick={(e) => void handleDelete(session, e)}
                             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                           >
-                            حذف
+                            Delete
                           </button>
                         )}
                       </td>
@@ -234,7 +227,7 @@ export function InventoryCountPage() {
           {meta && meta.last_page > 1 && (
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                صفحة {meta.current_page} من {meta.last_page} — {meta.total} إجمالاً
+                Page {meta.current_page} of {meta.last_page} — {meta.total} total
               </span>
               <div className="flex gap-2">
                 <Button
@@ -244,7 +237,7 @@ export function InventoryCountPage() {
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                 >
-                  السابق
+                  Previous
                 </Button>
                 <Button
                   variant="outline"
@@ -253,7 +246,7 @@ export function InventoryCountPage() {
                   disabled={page >= meta.last_page}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  التالي
+                  Next
                 </Button>
               </div>
             </div>

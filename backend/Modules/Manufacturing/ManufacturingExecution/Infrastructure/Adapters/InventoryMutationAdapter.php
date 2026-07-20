@@ -70,12 +70,13 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
             'notes'             => "Consumed for manufacturing execution {$executionUuid}",
         ]);
 
-        // 4. FIFO layer tracking — consume up to available, never throw for negative-stock
-        $this->consumeFifoLayers(
-            component:     $component,
-            warehouseId:   $warehouseId,
+        // 4. FIFO layer tracking — consume up to available, never throw for negative-stock.
+        //    Returns the total FIFO cost consumed from layers for this component.
+        $fifoCost = $this->consumeFifoLayers(
+            component:       $component,
+            warehouseId:     $warehouseId,
             inventoryItemId: $lockedItem->id,
-            companyId:     $companyId,
+            companyId:       $companyId,
         );
 
         return new ComponentConsumptionRecord(
@@ -88,6 +89,7 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
             on_hand_after:   $onHandAfter,
             went_negative:   $onHandAfter < 0.0,
             ledger_entry_id: $entry->id,
+            fifo_cost:       $fifoCost,
         );
     }
 
@@ -98,6 +100,7 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
         string $planId,
         string $companyId,
         string $executionUuid,
+        float $unitCost,
     ): string {
         // 1. Find (or lazy-create) the finished goods inventory record, then lock it
         $item       = $this->inventoryItems->findOrCreate($warehouseId, $productId, $companyId);
@@ -127,6 +130,24 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
             'notes'             => "Finished goods produced by execution {$executionUuid}",
         ]);
 
+        // 4. Create FIFO receipt layer for the manufactured FG.
+        //    This restores the invariant: on_hand_qty == Σ(remaining_qty of open layers).
+        //    $unitCost is the weighted-average component cost passed by the Executor.
+        //    When all raw materials went negative (zero FIFO layers consumed), $unitCost = 0.0.
+        InventoryReceiptLayer::query()->create([
+            'company_id'            => $companyId,
+            'supplier_id'           => null,
+            'product_id'            => $productId,
+            'goods_receipt_id'      => null,
+            'goods_receipt_line_id' => null,
+            'warehouse_id'          => $warehouseId,
+            'received_qty'          => $qty,
+            'remaining_qty'         => $qty,
+            'landed_unit_cost'      => $unitCost,
+            'sale_price_snapshot'   => null,
+            'receipt_date'          => now(),
+        ]);
+
         return $entry->id;
     }
 
@@ -136,13 +157,16 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
      * For components with allow_negative_stock = true, layers are consumed
      * only up to what is available (partial), preventing InsufficientStockException
      * while maintaining accurate FIFO cost records for the consumed portion.
+     *
+     * Returns the total FIFO cost consumed (from ConsumptionResult::totalCost),
+     * or 0.0 when no layers exist to consume.
      */
     private function consumeFifoLayers(
         ComponentConsumptionPlan $component,
         string $warehouseId,
         string $inventoryItemId,
         string $companyId,
-    ): void {
+    ): float {
         // Compute available FIFO qty without loading full rows.
         // lockForUpdate ensures the sum is consistent within this transaction.
         $availableInLayers = (float) InventoryReceiptLayer::query()
@@ -155,15 +179,17 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
         $layerQtyToConsume = min($component->qty_to_consume, $availableInLayers);
 
         if ($layerQtyToConsume <= 0.0) {
-            return; // No layers to consume (stock went negative or no receipts yet)
+            return 0.0; // No layers to consume (stock went negative or no receipts yet)
         }
 
-        $this->layerService->consume(
+        $result = $this->layerService->consume(
             inventoryItemId: $inventoryItemId,
             productId:       $component->component_id,
             warehouseId:     $warehouseId,
             companyId:       $companyId,
             quantity:        $layerQtyToConsume,
         );
+
+        return $result->totalCost;
     }
 }

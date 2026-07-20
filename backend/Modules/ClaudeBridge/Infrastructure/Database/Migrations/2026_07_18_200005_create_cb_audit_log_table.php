@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('cb_audit_log')) {
+            return;
+        }
+
         Schema::create('cb_audit_log', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->uuid('company_id');

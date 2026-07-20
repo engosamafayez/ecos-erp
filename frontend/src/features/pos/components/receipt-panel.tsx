@@ -21,18 +21,18 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
   if (!id) return null;
 
   const RECEIPT_TYPE_LABELS: Record<string, string> = {
-    sale:     'بيع',
-    return:   'مرتجع',
-    exchange: 'استبدال',
-    void:     'ملغى',
-    reprint:  'إعادة طباعة',
+    sale:     'Sale',
+    return:   'Return',
+    exchange: 'Exchange',
+    void:     'Voided',
+    reprint:  'Reprint',
   };
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
-        <h2 className="text-base font-semibold">الإيصال</h2>
+        <h2 className="text-base font-semibold">Receipt</h2>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -54,18 +54,18 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
 
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-          جارٍ تحميل الإيصال...
+          Loading receipt...
         </div>
       ) : !receipt ? (
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-          الإيصال غير موجود
+          Receipt not found
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 font-mono text-sm">
           {/* Store header */}
           <div className="text-center space-y-0.5">
             <p className="font-bold text-base">ECOS ERP</p>
-            <p className="text-xs text-muted-foreground">الطرفية: {receipt.terminal_id}</p>
+            <p className="text-xs text-muted-foreground">Terminal: {receipt.terminal_id}</p>
             <Badge variant="outline" className="text-[10px]">
               {RECEIPT_TYPE_LABELS[receipt.type] ?? receipt.type}
             </Badge>
@@ -76,22 +76,22 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
           {/* Receipt info */}
           <div className="space-y-0.5 text-xs text-muted-foreground">
             <div className="flex justify-between">
-              <span>إيصال #</span>
+              <span>Receipt #</span>
               <span>{receipt.receipt_number}</span>
             </div>
             <div className="flex justify-between">
-              <span>التاريخ</span>
-              <span>{new Date(receipt.issued_at).toLocaleString('ar-EG')}</span>
+              <span>Date</span>
+              <span>{new Date(receipt.issued_at).toLocaleString()}</span>
             </div>
             {receipt.cashier_name && (
               <div className="flex justify-between">
-                <span>الكاشير</span>
+                <span>Cashier</span>
                 <span>{receipt.cashier_name}</span>
               </div>
             )}
             {receipt.customer_name && (
               <div className="flex justify-between">
-                <span>العميل</span>
+                <span>Customer</span>
                 <span>{receipt.customer_name}</span>
               </div>
             )}
@@ -119,23 +119,23 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
           {/* Totals */}
           <div className="space-y-0.5 text-xs">
             <div className="flex justify-between text-muted-foreground">
-              <span>المجموع الجزئي</span>
+              <span>Subtotal</span>
               <span className="tabular-nums">{receipt.totals.subtotal.amount}</span>
             </div>
             {parseFloat(receipt.totals.discount.amount) > 0 && (
               <div className="flex justify-between text-emerald-600">
-                <span>الخصم</span>
+                <span>Discount</span>
                 <span className="tabular-nums">-{receipt.totals.discount.amount}</span>
               </div>
             )}
             {parseFloat(receipt.totals.tax.amount) > 0 && (
               <div className="flex justify-between text-muted-foreground">
-                <span>الضريبة</span>
+                <span>Tax</span>
                 <span className="tabular-nums">{receipt.totals.tax.amount}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-sm">
-              <span>الإجمالي</span>
+              <span>Total</span>
               <span className="tabular-nums">{receipt.currency} {receipt.totals.total.amount}</span>
             </div>
           </div>
@@ -151,11 +151,11 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
               </div>
             ))}
             <div className="flex justify-between">
-              <span>المبلغ المدفوع</span>
+              <span>Tendered</span>
               <span className="tabular-nums">{receipt.totals.tendered.amount}</span>
             </div>
             <div className="flex justify-between font-medium text-foreground">
-              <span>الباقي</span>
+              <span>Change</span>
               <span className="tabular-nums">{receipt.totals.change.amount}</span>
             </div>
           </div>
@@ -165,14 +165,14 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
             <>
               <Separator />
               <div className="rounded bg-destructive/10 px-3 py-2 text-center text-xs text-destructive font-semibold">
-                ملغى — {receipt.void_reason}
+                Voided — {receipt.void_reason}
               </div>
             </>
           )}
 
           {/* Reprint notice */}
           {receipt.type === 'reprint' && (
-            <p className="text-center text-[10px] text-muted-foreground">*** إعادة طباعة ***</p>
+            <p className="text-center text-[10px] text-muted-foreground">*** Reprint ***</p>
           )}
         </div>
       )}
@@ -188,7 +188,7 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
               onClick={onNewSale ?? onClose}
             >
               <Plus className="size-4" />
-              بيع جديد
+              New Sale
               <kbd className="ms-auto rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1.5 py-0.5 font-mono text-[10px]">
                 Ctrl+N
               </kbd>

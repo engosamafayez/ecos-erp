@@ -16,6 +16,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('order_reservation_audits')) {
+            return;
+        }
+
         Schema::create('order_reservation_audits', static function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();

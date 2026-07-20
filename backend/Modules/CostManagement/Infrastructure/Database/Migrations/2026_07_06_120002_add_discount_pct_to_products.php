@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('products', 'custom_discount_pct')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table) {
             $table->decimal('custom_discount_pct', 8, 4)->nullable()->after('custom_markup');
         });
@@ -17,6 +21,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('products', 'custom_discount_pct')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table) {
             $table->dropColumn('custom_discount_pct');
         });

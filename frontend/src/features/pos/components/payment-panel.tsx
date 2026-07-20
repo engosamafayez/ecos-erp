@@ -100,7 +100,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
-        <h2 className="text-base font-semibold">الدفع</h2>
+        <h2 className="text-base font-semibold">Payment</h2>
         <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={onClose} aria-label="Close payment panel">
           <X className="size-4" />
         </Button>
@@ -113,20 +113,20 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
         {wasRestored.current && (
           <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
             <RotateCcw className="size-3.5 shrink-0" />
-            تم استعادة تفاصيل الدفع من الجلسة السابقة.
+            Payment details restored from previous session.
           </div>
         )}
 
         {/* Total due */}
         <div className="rounded-lg bg-muted p-3">
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>الإجمالي المستحق</span>
+            <span>Total Due</span>
             <span>{currency} {total.toFixed(2)}</span>
           </div>
           {tendered > 0 && (
             <>
               <div className="flex justify-between text-sm text-muted-foreground">
-                <span>المبلغ المدفوع</span>
+                <span>Amount Tendered</span>
                 <span>{currency} {tendered.toFixed(2)}</span>
               </div>
               <Separator className="my-2" />
@@ -134,7 +134,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
                 'flex justify-between text-base font-bold',
                 remaining > 0 ? 'text-destructive' : 'text-emerald-600',
               )}>
-                <span>{remaining > 0 ? 'المتبقي' : 'الباقي'}</span>
+                <span>{remaining > 0 ? 'Remaining' : 'Change'}</span>
                 <span>{currency} {remaining > 0 ? remaining.toFixed(2) : change.toFixed(2)}</span>
               </div>
             </>
@@ -143,7 +143,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
 
         {/* Method selector — min 44px touch targets */}
         <div>
-          <Label className="mb-2 text-xs">طريقة الدفع</Label>
+          <Label className="mb-2 text-xs">Payment Method</Label>
           <div className="grid grid-cols-2 gap-2">
             {PAYMENT_METHODS.map(({ method: m, label, icon: Icon }) => (
               <button
@@ -165,7 +165,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
 
         {/* Amount */}
         <div>
-          <Label className="mb-2 text-xs">المبلغ</Label>
+          <Label className="mb-2 text-xs">Amount</Label>
           <Input
             ref={amountInputRef}
             type="number"
@@ -209,14 +209,14 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
         {/* Add tender (for split payments) */}
         {tendered < total && (
           <Button variant="outline" className="w-full" onClick={addTender}>
-            + إضافة دفعة
+            + Add Payment
           </Button>
         )}
 
         {/* Tenders list */}
         {tenders.length > 0 && (
           <div className="space-y-1">
-            <Label className="text-xs">الدفعات</Label>
+            <Label className="text-xs">Payments</Label>
             {tenders.map((t, i) => (
               <div key={i} className="flex items-center justify-between rounded bg-muted px-3 py-1.5 text-sm">
                 <span className="capitalize">{t.method.replace('_', ' ')}</span>
@@ -238,7 +238,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
         {processSale.isError && (
           <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
             <AlertCircle className="size-4 shrink-0" />
-            <span>فشل الدفع. يرجى التحقق من المبلغ والمحاولة مرة أخرى.</span>
+            <span>Payment failed. Please check the amount and try again.</span>
           </div>
         )}
       </div>
@@ -254,11 +254,11 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
           onClick={handlePay}
         >
           {processSale.isPending ? (
-            'جارٍ المعالجة...'
+            'Processing...'
           ) : (
             <>
               <Check className="size-4" />
-              تأكيد الدفع
+              Confirm Payment
               {isSufficient && (
                 <kbd className="ms-auto rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1.5 py-0.5 font-mono text-[10px]">
                   Enter

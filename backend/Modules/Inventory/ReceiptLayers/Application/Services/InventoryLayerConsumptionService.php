@@ -56,22 +56,24 @@ final class InventoryLayerConsumptionService
             throw new InsufficientStockException($productId, $warehouseId, $quantity, $available);
         }
 
-        $remaining       = $quantity;
-        $consumedLayers  = [];
-        $totalCost       = 0.0;
+        $remaining      = (string) $quantity;
+        $consumedLayers = [];
+        $totalCost      = '0';
 
         foreach ($layers as $layer) {
-            if ($remaining <= 0) {
+            if (bccomp($remaining, '0', 4) <= 0) {
                 break;
             }
 
-            $layerRemaining = (float) $layer->remaining_qty;
-            $consume        = min($remaining, $layerRemaining);
-            $unitCost       = (float) $layer->landed_unit_cost;
-            $sliceCost      = round($consume * $unitCost, 4);
+            $layerRemaining = (string) $layer->remaining_qty;
+            $consume        = bccomp($remaining, $layerRemaining, 4) <= 0
+                ? $remaining
+                : $layerRemaining;
+            $unitCost       = (string) $layer->landed_unit_cost;
+            $sliceCost      = bcmul($consume, $unitCost, 4);
 
             // Decrement the layer
-            $layer->remaining_qty = round($layerRemaining - $consume, 4);
+            $layer->remaining_qty = bcsub($layerRemaining, $consume, 4);
             $layer->save();
 
             // Audit record
@@ -90,21 +92,23 @@ final class InventoryLayerConsumptionService
 
             $consumedLayers[] = new ConsumedLayerDTO(
                 layerId:   $layer->id,
-                quantity:  $consume,
-                unitCost:  $unitCost,
-                totalCost: $sliceCost,
+                quantity:  (float) $consume,
+                unitCost:  (float) $unitCost,
+                totalCost: (float) $sliceCost,
             );
 
-            $totalCost += $sliceCost;
-            $remaining  = round($remaining - $consume, 4);
+            $totalCost = bcadd($totalCost, $sliceCost, 4);
+            $remaining = bcsub($remaining, $consume, 4);
         }
 
-        $weightedCost = $quantity > 0 ? round($totalCost / $quantity, 4) : 0.0;
+        $weightedCost = $quantity > 0
+            ? bcdiv($totalCost, (string) $quantity, 4)
+            : '0.0000';
 
         return new ConsumptionResult(
             totalQuantity:  $quantity,
-            totalCost:      round($totalCost, 4),
-            weightedCost:   $weightedCost,
+            totalCost:      (float) $totalCost,
+            weightedCost:   (float) $weightedCost,
             consumedLayers: $consumedLayers,
         );
     }

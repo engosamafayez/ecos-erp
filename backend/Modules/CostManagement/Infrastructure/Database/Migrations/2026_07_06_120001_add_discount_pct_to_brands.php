@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('brands', 'default_discount_pct')) {
+            return;
+        }
+
         Schema::table('brands', function (Blueprint $table) {
             $table->decimal('default_discount_pct', 8, 4)->nullable()->after('default_markup');
         });
@@ -17,6 +21,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('brands', 'default_discount_pct')) {
+            return;
+        }
+
         Schema::table('brands', function (Blueprint $table) {
             $table->dropColumn('default_discount_pct');
         });

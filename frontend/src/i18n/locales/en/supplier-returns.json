@@ -19,12 +19,20 @@
     "status": "Status"
   },
   "status": {
-    "draft": "Draft",
-    "submitted": "Submitted",
-    "approved": "Approved",
-    "rejected": "Rejected",
-    "completed": "Completed",
-    "cancelled": "Cancelled"
+    "draft":            "Draft",
+    "waiting_approval": "Waiting Approval",
+    "approved":         "Approved",
+    "sent":             "Sent to Supplier",
+    "credit_pending":   "Credit Pending",
+    "completed":        "Completed",
+    "cancelled":        "Cancelled",
+    "rejected":         "Rejected"
+  },
+  "statusTab": {
+    "draft":          "Draft",
+    "waiting":        "Waiting",
+    "credit_pending": "Credit Pending",
+    "completed":      "Completed"
   },
   "reason": {
     "damaged": "Damaged Goods",

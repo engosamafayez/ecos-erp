@@ -27,6 +27,10 @@ return new class extends Migration
     {
         Schema::dropIfExists('role_permission');
 
+        if (Schema::hasTable('role_permissions')) {
+            return;
+        }
+
         Schema::create('role_permissions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

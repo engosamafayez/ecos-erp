@@ -49,13 +49,16 @@ final class ApproveWarehouseLiabilityAction
             $quantity    = (float) $liability->quantity;
 
             $dto = new StockOperationDTO(
-                warehouse_id:   $warehouseId,
-                product_id:     $productId,
-                company_id:     $companyId,
-                quantity:       $quantity,
-                reference_type: 'warehouse_liability',
-                reference_id:   $liability->id,
-                notes:          "Inventory shortage deduction — liability {$liability->id}",
+                warehouse_id:       $warehouseId,
+                product_id:         $productId,
+                company_id:         $companyId,
+                quantity:           $quantity,
+                reference_type:     'warehouse_liability',
+                reference_id:       $liability->id,
+                notes:              "Inventory shortage deduction — liability {$liability->id}",
+                // M-03: confirmed shortages must be written off regardless of active
+                // reservations — physical stock does not exist; the guard must not block.
+                bypassReserveGuard: true,
             );
 
             $this->adjustmentOut->execute($dto);

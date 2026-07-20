@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('pricing_reviews', 'publish_status')) {
+            return;
+        }
+
         Schema::table('pricing_reviews', function (Blueprint $table) {
             // publish_status: null = pre-feature or rejected; pending_publish = approved but not yet live;
             //                 published = prices written to product catalog

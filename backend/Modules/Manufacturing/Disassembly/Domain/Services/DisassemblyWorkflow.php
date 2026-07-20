@@ -54,7 +54,7 @@ final class DisassemblyWorkflow
 
         // ── Stage 2: Check finished goods availability ────────────────────────
         // Use on_hand - reserved (same as manufacturing availability checks)
-        $available = $this->inventoryReader->availableQty($request->warehouse_id, $request->product_id);
+        $available = $this->inventoryReader->availableQty($request->warehouse_id, $request->product_id, $request->company_id);
 
         if ($available < $request->quantity) {
             return DisassemblyWorkflowResult::blocked(

@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('bae_attribution_configs')) {
+            return;
+        }
+
         Schema::create('bae_attribution_configs', static function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

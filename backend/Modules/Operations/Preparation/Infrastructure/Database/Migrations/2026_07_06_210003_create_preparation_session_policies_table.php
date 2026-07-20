@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * CR-PREP-001 — Daily Preparation Session Policy.
+ * CR-PREP-001 â€” Daily Preparation Session Policy.
  *
  * Controls when and how Preparation Sessions are auto-created per warehouse.
  * A null warehouse_id means this policy applies to ALL warehouses in the company.
@@ -17,6 +17,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('preparation_session_policies')) {
+            return;
+        }
+
         Schema::create('preparation_session_policies', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->constrained('companies')->restrictOnDelete();

@@ -175,13 +175,13 @@ export interface DeliveryStopDetail {
 }
 
 export const STOP_STATUS_LABELS: Record<DeliveryStopStatus, string> = {
-  pending:     'قيد الانتظار',
-  in_progress: 'جارٍ',
-  delivered:   'تم التوصيل',
-  partial:     'جزئي',
-  failed:      'فاشل',
-  returned:    'مُعاد',
-  skipped:     'متجاوز',
+  pending:     'Pending',
+  in_progress: 'In Progress',
+  delivered:   'Delivered',
+  partial:     'Partial',
+  failed:      'Failed',
+  returned:    'Returned',
+  skipped:     'Skipped',
 };
 
 export const STOP_STATUS_COLORS: Record<DeliveryStopStatus, string> = {
@@ -195,26 +195,40 @@ export const STOP_STATUS_COLORS: Record<DeliveryStopStatus, string> = {
 };
 
 export const ACTION_TYPE_LABELS: Record<DeliveryActionType, string> = {
-  completed:     'تم التوصيل',
-  partial:       'توصيل جزئي',
-  refused:       'رفض العميل',
-  not_available: 'غير متاح',
-  delay:         'تأجيل مطلوب',
-  wrong_address: 'عنوان خاطئ',
-  unreachable:   'لا يمكن الوصول',
+  completed:     'Delivered',
+  partial:       'Partial Delivery',
+  refused:       'Customer Refused',
+  not_available: 'Not Available',
+  delay:         'Delay Requested',
+  wrong_address: 'Wrong Address',
+  unreachable:   'Unreachable',
 };
 
 export const EXCEPTION_TYPE_LABELS: Record<ExceptionType, string> = {
-  damaged:       'منتج تالف',
-  missing:       'منتج مفقود',
-  wrong_product: 'منتج خاطئ',
-  complaint:     'شكوى عميل',
-  packaging:     'مشكلة تغليف',
-  other:         'أخرى',
+  damaged:       'Damaged Item',
+  missing:       'Missing Item',
+  wrong_product: 'Wrong Product',
+  complaint:     'Customer Complaint',
+  packaging:     'Packaging Issue',
+  other:         'Other',
 };
 
 export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
-  cash:          'نقداً',
-  bank_transfer: 'تحويل بنكي',
-  already_paid:  'مدفوع مسبقاً',
+  cash:          'Cash',
+  bank_transfer: 'Bank Transfer',
+  already_paid:  'Pre-Paid',
+};
+
+export const SETTLEMENT_STATUS_LABELS: Record<SettlementStatus, string> = {
+  draft:     'Draft',
+  submitted: 'Submitted',
+  verified:  'Verified',
+  closed:    'Closed',
+};
+
+export const SETTLEMENT_STATUS_COLORS: Record<SettlementStatus, string> = {
+  draft:     'bg-gray-100 text-gray-700',
+  submitted: 'bg-blue-100 text-blue-700',
+  verified:  'bg-green-100 text-green-700',
+  closed:    'bg-gray-100 text-gray-500',
 };

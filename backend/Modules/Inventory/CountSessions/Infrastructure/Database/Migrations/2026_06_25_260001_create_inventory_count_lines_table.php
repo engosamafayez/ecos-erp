@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('inventory_count_lines')) {
+            return;
+        }
+
         Schema::create('inventory_count_lines', function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

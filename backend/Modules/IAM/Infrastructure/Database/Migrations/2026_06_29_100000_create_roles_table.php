@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('roles')) {
+            return;
+        }
+
         Schema::create('roles', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('name');           // display name  e.g. "Warehouse Manager"

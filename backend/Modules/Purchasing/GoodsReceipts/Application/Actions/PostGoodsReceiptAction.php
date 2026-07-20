@@ -52,6 +52,10 @@ final class PostGoodsReceiptAction extends BaseAction
             throw new GoodsReceiptAlreadyPostedException($receipt->receipt_number);
         }
 
+        // Eager-load all relationships used in this action to avoid N+1 and
+        // ensure data is available before the transaction opens.
+        $receipt->loadMissing(['purchaseOrder', 'lines', 'warehouse']);
+
         // ── Guard 2: PO must be in a receivable state ─────────────────────────
         $po = $receipt->purchaseOrder;
 

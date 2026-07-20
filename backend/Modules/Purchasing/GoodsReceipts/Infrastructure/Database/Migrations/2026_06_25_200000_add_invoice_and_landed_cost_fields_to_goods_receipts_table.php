@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('goods_receipts', 'supplier_invoice_number')) {
+            return;
+        }
+
         Schema::table('goods_receipts', function (Blueprint $table): void {
             $table->string('supplier_invoice_number')->nullable()->after('notes');
             $table->date('supplier_invoice_date')->nullable()->after('supplier_invoice_number');
@@ -22,6 +26,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('goods_receipts', 'supplier_invoice_number')) {
+            return;
+        }
+
         Schema::table('goods_receipts', function (Blueprint $table): void {
             $table->dropColumn([
                 'supplier_invoice_number',

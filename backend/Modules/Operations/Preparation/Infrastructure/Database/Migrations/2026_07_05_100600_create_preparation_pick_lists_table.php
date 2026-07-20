@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('preparation_pick_lists')) {
+            return;
+        }
+
         Schema::create('preparation_pick_lists', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('company_id');

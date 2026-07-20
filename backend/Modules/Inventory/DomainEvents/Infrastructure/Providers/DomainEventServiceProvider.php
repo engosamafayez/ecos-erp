@@ -25,6 +25,12 @@ use Modules\Inventory\DomainEvents\Infrastructure\Bus\LaravelDomainEventBus;
  *
  * Phase B will add InventorySyncJob dispatch inside the listener.
  * Phase C will remove StockMovementObserver.
+ *
+ * Transfer events (InventoryTransferred, WarehouseTransferCompleted):
+ *   These events are published by TransferStockAction but have no listener here.
+ *   This is intentional in Phase A — see ADR-026 (docs/adr/ADR-026-transfer-events-phase-b.md).
+ *   Listeners will be added in Phase B once InventoryChannelSynchronizationListener
+ *   is upgraded to queue-dispatch to avoid blocking the transfer request thread.
  */
 final class DomainEventServiceProvider extends ServiceProvider
 {

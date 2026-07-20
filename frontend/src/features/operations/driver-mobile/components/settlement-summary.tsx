@@ -1,3 +1,4 @@
+import { SETTLEMENT_STATUS_COLORS, SETTLEMENT_STATUS_LABELS } from '../types/driver-mobile';
 import type { TripSettlement } from '../types/driver-mobile';
 
 interface SettlementSummaryProps {
@@ -10,34 +11,21 @@ function fmt(v: number | null | undefined) {
 
 export function SettlementSummary({ settlement }: SettlementSummaryProps) {
   const rows = [
-    { label: 'النقد المحصّل',                value: fmt(settlement.cash_collected),         highlight: false },
-    { label: 'تحويلات بنكية (بانتظار تحقق)', value: fmt(settlement.bank_transfers_pending), highlight: false },
-    { label: 'مدفوع مسبقاً (مستثنى)',       value: fmt(settlement.already_paid),           highlight: false },
-    { label: 'إجمالي المحصّل',             value: fmt(settlement.total_collected),        highlight: true  },
-    { label: 'النقد المتوقع',               value: fmt(settlement.cash_expected),          highlight: false },
-    { label: 'المقدَّم من السائق',          value: fmt(settlement.driver_cash_submitted),  highlight: false },
-    { label: 'الفارق',                      value: fmt(settlement.discrepancy),            highlight: settlement.discrepancy !== null && settlement.discrepancy !== 0 },
+    { label: 'Cash Collected',                    value: fmt(settlement.cash_collected),         highlight: false },
+    { label: 'Bank Transfers (Pending Verification)', value: fmt(settlement.bank_transfers_pending), highlight: false },
+    { label: 'Pre-Paid (Excluded)',               value: fmt(settlement.already_paid),           highlight: false },
+    { label: 'Total Collected',                   value: fmt(settlement.total_collected),        highlight: true  },
+    { label: 'Expected Cash',                     value: fmt(settlement.cash_expected),          highlight: false },
+    { label: 'Driver Cash Submitted',             value: fmt(settlement.driver_cash_submitted),  highlight: false },
+    { label: 'Discrepancy',                       value: fmt(settlement.discrepancy),            highlight: settlement.discrepancy !== null && settlement.discrepancy !== 0 },
   ];
-
-  const statusLabels: Record<string, string> = {
-    draft:     'مسودة',
-    submitted: 'مقدَّم',
-    verified:  'محقَّق',
-    closed:    'مغلق',
-  };
-  const statusColors: Record<string, string> = {
-    draft:     'bg-gray-100 text-gray-700',
-    submitted: 'bg-blue-100 text-blue-700',
-    verified:  'bg-green-100 text-green-700',
-    closed:    'bg-gray-100 text-gray-500',
-  };
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="font-semibold text-sm">ملخص التسوية</p>
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColors[settlement.status] ?? ''}`}>
-          {statusLabels[settlement.status] ?? settlement.status}
+        <p className="font-semibold text-sm">Settlement Summary</p>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${SETTLEMENT_STATUS_COLORS[settlement.status] ?? ''}`}>
+          {SETTLEMENT_STATUS_LABELS[settlement.status] ?? settlement.status}
         </span>
       </div>
 

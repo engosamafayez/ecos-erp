@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasColumn('bae_business_events', 'schema_version')) {
+            return;
+        }
+
         Schema::table('bae_business_events', function (Blueprint $table): void {
             // Semantic version of the event schema (distinct from the event's own 'version' field)
             $table->string('schema_version', 20)->default('1.0.0')->after('version');
@@ -28,6 +32,10 @@ return new class extends Migration {
 
     public function down(): void
     {
+        if (Schema::hasColumn('bae_business_events', 'schema_version')) {
+            return;
+        }
+
         Schema::table('bae_business_events', function (Blueprint $table): void {
             $table->dropIndex('bae_be_causation_idx');
             $table->dropIndex('bae_be_replay_idx');

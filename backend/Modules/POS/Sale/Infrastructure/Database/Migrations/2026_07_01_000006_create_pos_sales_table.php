@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('pos_sales')) {
+            return;
+        }
+
         Schema::create('pos_sales', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('cart_id')->unique();

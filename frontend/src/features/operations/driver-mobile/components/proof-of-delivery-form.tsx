@@ -44,22 +44,22 @@ export function ProofOfDeliveryForm({ onSubmit, onCancel, isLoading }: ProofOfDe
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>رابط صورة التوقيع</Label>
+        <Label>Signature Image URL</Label>
         <Input
           value={signature}
           onChange={(e) => setSignature(e.target.value)}
-          placeholder="https://... (رابط الرفع)"
+          placeholder="https://... (upload link)"
         />
       </div>
 
       <div className="space-y-2">
-        <Label>الصور</Label>
+        <Label>Photos</Label>
         {photos.map((photo, idx) => (
           <div key={idx} className="flex gap-2">
             <Input
               value={photo}
               onChange={(e) => updatePhoto(idx, e.target.value)}
-              placeholder={`رابط الصورة ${idx + 1}...`}
+              placeholder={`Photo URL ${idx + 1}...`}
               className="flex-1"
             />
             {photos.length > 1 && (
@@ -76,26 +76,26 @@ export function ProofOfDeliveryForm({ onSubmit, onCancel, isLoading }: ProofOfDe
         ))}
         <Button type="button" variant="outline" size="sm" onClick={addPhoto} className="gap-1">
           <PlusCircle className="h-4 w-4" />
-          إضافة صورة
+          Add Photo
         </Button>
       </div>
 
       <div className="space-y-1.5">
-        <Label>ملاحظات</Label>
+        <Label>Notes</Label>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="ملاحظات التوصيل..."
+          placeholder="Delivery notes..."
           rows={2}
         />
       </div>
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          إلغاء
+          Cancel
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'جارٍ الحفظ...' : 'حفظ إثبات التوصيل'}
+          {isLoading ? 'Saving...' : 'Save Proof of Delivery'}
         </Button>
       </div>
     </form>

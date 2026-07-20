@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('prepared_products_pool', 'shipping_gate_opened')) {
+            return;
+        }
+
         Schema::table('prepared_products_pool', function (Blueprint $table): void {
             // false = gate closed (session not yet approved)
             // true  = gate open (session approved, Loading OS may consume)
@@ -30,6 +34,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('prepared_products_pool', 'shipping_gate_opened')) {
+            return;
+        }
+
         Schema::table('prepared_products_pool', function (Blueprint $table): void {
             $table->dropColumn(['shipping_gate_opened', 'gate_opened_by', 'gate_opened_at']);
         });

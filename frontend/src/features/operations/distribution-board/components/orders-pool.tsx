@@ -42,7 +42,7 @@ export function OrdersPool({ orders, isLoading, selectedZoneName, onOrderClick }
       <div className="px-3 py-2.5 border-b flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <Package className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">طلبات غير مُعيَّنة</span>
+          <span className="text-sm font-medium">Unassigned Orders</span>
         </div>
         {!isLoading && (
           <Badge variant={orders.length > 0 ? 'secondary' : 'outline'} className="text-xs tabular-nums">
@@ -60,7 +60,7 @@ export function OrdersPool({ orders, isLoading, selectedZoneName, onOrderClick }
           ) : orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <Package className="h-8 w-8 text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">جميع الطلبات مُعيَّنة</p>
+              <p className="text-sm text-muted-foreground">All orders assigned</p>
               <p className="text-xs text-muted-foreground/60 mt-1">{selectedZoneName}</p>
             </div>
           ) : (

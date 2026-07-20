@@ -9,6 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         // Pivot: tracks all orders/quotes created from a conversation
+        if (Schema::hasTable('cep_conversation_orders')) {
+            return;
+        }
+
         Schema::create('cep_conversation_orders', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('conversation_id')->index();

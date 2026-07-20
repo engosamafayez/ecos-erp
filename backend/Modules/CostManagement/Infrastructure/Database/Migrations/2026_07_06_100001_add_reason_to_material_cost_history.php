@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('material_cost_history', 'reason')) {
+            return;
+        }
+
         Schema::table('material_cost_history', function (Blueprint $table): void {
             $table->string('reason', 500)->nullable()->after('updated_by');
         });
@@ -17,6 +21,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('material_cost_history', 'reason')) {
+            return;
+        }
+
         Schema::table('material_cost_history', function (Blueprint $table): void {
             $table->dropColumn('reason');
         });

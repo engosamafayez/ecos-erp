@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('orders', 'billing_first_name')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table): void {
             // Billing name
             $table->string('billing_first_name')->nullable()->after('notes');
@@ -46,6 +50,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('orders', 'billing_first_name')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table): void {
             $table->dropColumn([
                 'billing_first_name',

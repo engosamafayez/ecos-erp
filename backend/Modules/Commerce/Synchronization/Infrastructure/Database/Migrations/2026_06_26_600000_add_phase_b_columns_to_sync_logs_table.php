@@ -17,6 +17,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('sync_logs', 'correlation_id')) {
+            return;
+        }
+
         Schema::table('sync_logs', function (Blueprint $table): void {
             // Correlation ID that ties the domain event → listener → service → job → log.
             $table->string('correlation_id', 36)->nullable()->after('action');
@@ -37,6 +41,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('sync_logs', 'correlation_id')) {
+            return;
+        }
+
         Schema::table('sync_logs', function (Blueprint $table): void {
             $table->dropIndex(['correlation_id']);
             $table->dropColumn(['correlation_id', 'event_name', 'event_version', 'warehouse_id', 'duration_ms']);

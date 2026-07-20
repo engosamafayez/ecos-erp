@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('master_governorates')) {
+            return;
+        }
+
         Schema::create('master_governorates', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('name', 150)->unique();

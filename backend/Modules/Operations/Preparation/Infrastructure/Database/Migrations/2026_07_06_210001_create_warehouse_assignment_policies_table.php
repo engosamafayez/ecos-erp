@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * CR-PREP-001 — Warehouse Assignment Engine.
+ * CR-PREP-001 â€” Warehouse Assignment Engine.
  *
  * Defines how an incoming order is mapped to a specific warehouse.
  * Rules are evaluated in priority order (lower number = higher priority).
@@ -24,6 +24,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('warehouse_assignment_policies')) {
+            return;
+        }
+
         Schema::create('warehouse_assignment_policies', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->constrained('companies')->restrictOnDelete();

@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('orders', 'delivery_window')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table) {
             // Delivery window label — e.g. "12:00 PM – 03:00 PM" from config_delivery_windows
             $table->string('delivery_window', 100)->nullable()->after('preferred_delivery_time');
@@ -30,6 +34,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('orders', 'delivery_window')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table) {
             $table->dropIndex(['delivery_zone_id']);
             $table->dropIndex(['delivery_window_id']);

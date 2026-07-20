@@ -113,19 +113,19 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>إغلاق الجلسة</DialogTitle>
+            <DialogTitle>Close Session</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            سيؤدي هذا إلى إغلاق جلسة نقاط البيع الحالية. تأكد من اعتماد جميع الورديات أولاً.
+            This will close the current POS session. Make sure all shifts are approved first.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button
               variant="destructive"
               disabled={closeSession.isPending}
               onClick={handleClose}
             >
-              {closeSession.isPending ? 'جارٍ الإغلاق...' : 'إغلاق الجلسة'}
+              {closeSession.isPending ? 'Closing...' : 'Close Session'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -147,29 +147,29 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Building2 className="size-5" />
-            <DialogTitle>فتح جلسة نقاط البيع</DialogTitle>
+            <DialogTitle>Open POS Session</DialogTitle>
           </div>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Cashier — read-only, resolved from authenticated user */}
           <div className="space-y-1.5">
-            <Label>الكاشير</Label>
+            <Label>Cashier</Label>
             <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm">
               <User className="size-4 shrink-0 text-muted-foreground" />
               <span className="font-medium">{authUser?.name ?? '—'}</span>
-              <span className="ms-auto shrink-0 text-xs text-muted-foreground">مسجل الدخول</span>
+              <span className="ms-auto shrink-0 text-xs text-muted-foreground">Signed in</span>
             </div>
           </div>
 
           {/* Company */}
           <div className="space-y-1.5">
             <Label htmlFor="company-select">
-              الشركة <span className="text-destructive">*</span>
+              Company <span className="text-destructive">*</span>
             </Label>
             {isLoading ? (
               <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                جارٍ التحميل...
+                Loading...
               </div>
             ) : singleCompany ? (
               <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
@@ -178,7 +178,7 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
             ) : (
               <Select value={companyId} onValueChange={setCompanyId}>
                 <SelectTrigger id="company-select">
-                  <SelectValue placeholder="اختر الشركة..." />
+                  <SelectValue placeholder="Select company..." />
                 </SelectTrigger>
                 <SelectContent>
                   {companies.map((c) => (
@@ -192,7 +192,7 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
           {/* Warehouse */}
           <div className="space-y-1.5">
             <Label htmlFor="warehouse-select">
-              المستودع <span className="text-destructive">*</span>
+              Warehouse <span className="text-destructive">*</span>
             </Label>
             {singleWarehouse ? (
               <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
@@ -202,7 +202,7 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
               <Select value={warehouseId} onValueChange={setWarehouseId} disabled={!companyId}>
                 <SelectTrigger id="warehouse-select">
                   <SelectValue
-                    placeholder={companyId ? 'اختر المستودع...' : 'اختر الشركة أولاً'}
+                    placeholder={companyId ? 'Select warehouse...' : 'Select company first'}
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -218,15 +218,15 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
           {channels.length > 0 && (
             <div className="space-y-1.5">
               <Label htmlFor="channel-select">
-                قناة المبيعات
-                <span className="ml-1.5 text-xs font-normal text-muted-foreground">(اختياري)</span>
+                Sales Channel
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">(optional)</span>
               </Label>
               <Select value={channelId} onValueChange={setChannelId}>
                 <SelectTrigger id="channel-select">
-                  <SelectValue placeholder="عميل مباشر / بدون قناة" />
+                  <SelectValue placeholder="Walk-in / No channel" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">عميل مباشر / بدون قناة</SelectItem>
+                  <SelectItem value="">Walk-in / No channel</SelectItem>
                   {channels.map((ch) => (
                     <SelectItem key={ch.id} value={ch.id}>
                       {ch.name}
@@ -240,24 +240,24 @@ export function SessionDialog({ open, mode, onOpenChange }: SessionDialogProps) 
 
           {/* Device — auto-detected, read-only */}
           <div className="space-y-1.5">
-            <Label>الجهاز</Label>
+            <Label>Device</Label>
             <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
               <span className="font-medium">{deviceLabel}</span>
-              <span className="ml-2 text-xs text-muted-foreground">تلقائي</span>
+              <span className="ml-2 text-xs text-muted-foreground">Auto-detected</span>
             </div>
           </div>
         </div>
 
         <DialogFooter className="pt-2">
           <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-            إلغاء
+            Cancel
           </Button>
           <Button
             type="button"
             disabled={!canOpen}
             onClick={handleOpen}
           >
-            {openSession.isPending ? 'جارٍ الفتح...' : 'فتح الجلسة'}
+            {openSession.isPending ? 'Opening...' : 'Open Session'}
           </Button>
         </DialogFooter>
       </DialogContent>

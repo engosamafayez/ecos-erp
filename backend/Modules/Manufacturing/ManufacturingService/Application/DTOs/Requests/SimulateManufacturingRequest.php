@@ -16,6 +16,7 @@ final readonly class SimulateManufacturingRequest
     public function __construct(
         public string $product_id,
         public string $warehouse_id,
+        public string $company_id,
         public float $required_qty,
         public string $actor_id,
         public string $trigger_type = 'manual',

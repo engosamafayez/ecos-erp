@@ -15,6 +15,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('config_brand_shipping_rules', 'delivery_window_id')) {
+            return;
+        }
+
         Schema::table('config_brand_shipping_rules', function (Blueprint $table): void {
             $table->foreignUuid('delivery_window_id')
                 ->nullable()
@@ -26,6 +30,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('config_brand_shipping_rules', 'delivery_window_id')) {
+            return;
+        }
+
         Schema::table('config_brand_shipping_rules', function (Blueprint $table): void {
             $table->dropConstrainedForeignId('delivery_window_id');
         });

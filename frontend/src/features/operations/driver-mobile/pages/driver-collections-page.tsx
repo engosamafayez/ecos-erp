@@ -38,16 +38,16 @@ export function DriverCollectionsPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base">التحصيلات</h1>
+        <h1 className="font-semibold text-base">Collections</h1>
       </div>
 
       <div className="p-4 space-y-4">
         {/* Summary */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: 'نقداً',          value: totals.cash, color: 'text-green-600' },
-            { label: 'تحويل بنكي',    value: totals.bank, color: 'text-blue-600'  },
-            { label: 'مدفوع مسبقاً',  value: totals.paid, color: 'text-gray-600'  },
+            { label: 'Cash',          value: totals.cash, color: 'text-green-600' },
+            { label: 'Bank Transfer', value: totals.bank, color: 'text-blue-600'  },
+            { label: 'Pre-Paid',      value: totals.paid, color: 'text-gray-600'  },
           ].map((t) => (
             <div key={t.label} className="rounded-lg border p-3 text-center">
               <p className={`font-bold text-sm ${t.color}`}>
@@ -78,7 +78,7 @@ export function DriverCollectionsPage() {
                     </span>
                   </div>
                   {col.reference_number && (
-                    <p className="text-xs text-muted-foreground">مرجع: {col.reference_number}</p>
+                    <p className="text-xs text-muted-foreground">Ref: {col.reference_number}</p>
                   )}
                   <div className="flex items-center justify-between mt-0.5">
                     <Badge variant="outline" className="text-xs">
@@ -93,7 +93,7 @@ export function DriverCollectionsPage() {
             ))
           ) : (
             <p className="text-center text-sm text-muted-foreground py-10">
-              لا توجد دفعات محصّلة بعد.
+              No collections recorded yet.
             </p>
           )}
         </div>

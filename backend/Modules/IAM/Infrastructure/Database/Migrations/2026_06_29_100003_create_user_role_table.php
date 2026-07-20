@@ -14,6 +14,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('user_role')) {
+            return;
+        }
+
         Schema::create('user_role', function (Blueprint $table): void {
             $table->unsignedBigInteger('user_id');
             $table->uuid('role_id');

@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('cep_message_templates')) {
+            return;
+        }
+
         Schema::create('cep_message_templates', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('company_id');

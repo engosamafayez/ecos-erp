@@ -24,6 +24,9 @@ final readonly class ManufacturingWorkflowRequest
         /** UUID of the target warehouse for both input consumption and FG production. */
         public string $warehouse_id,
 
+        /** UUID of the owning company — required for company-scoped inventory reads (F-INV-H2). */
+        public string $company_id,
+
         /** Gross quantity of the finished good requested (before RC-1 partial adjustment). */
         public float $required_qty,
 

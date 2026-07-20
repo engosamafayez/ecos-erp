@@ -28,6 +28,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('brand_delivery_time_slots')) {
+            return;
+        }
+
         Schema::create('brand_delivery_time_slots', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('brand_id')->constrained('brands')->cascadeOnDelete();

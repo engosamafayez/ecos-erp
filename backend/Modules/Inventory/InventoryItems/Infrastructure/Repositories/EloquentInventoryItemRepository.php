@@ -69,6 +69,15 @@ final class EloquentInventoryItemRepository implements InventoryItemRepositoryIn
             ->first();
     }
 
+    public function findByWarehouseProductAndCompany(string $warehouseId, string $productId, string $companyId): ?InventoryItem
+    {
+        return InventoryItem::query()
+            ->where('warehouse_id', $warehouseId)
+            ->where('product_id', $productId)
+            ->where('company_id', $companyId)
+            ->first();
+    }
+
     public function paginate(array $filters): LengthAwarePaginator
     {
         $query = InventoryItem::query()->with(['warehouse', 'product', 'company']);

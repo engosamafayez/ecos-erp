@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('customer_return_lines')) {
+            return;
+        }
+
         Schema::create('customer_return_lines', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('customer_return_id')->index();

@@ -62,6 +62,33 @@ export const STATUS_TAB_ORDER: Array<OrderStatus | 'all'> = [
   'completed',
 ];
 
+// ── Bulk action keys ─────────────────────────────────────────────────────────
+// Canonical definition — shared by order-list-toolbar, use-order-labels, and orders-page.
+export type BulkActionKey =
+  | 'confirm'
+  | 'move_to_awaiting_payment'
+  | 'verify_payment'
+  | 'move_to_preparation'
+  | 'return_to_preparation'
+  | 'awaiting_stock'
+  | 'retry_reservation'
+  | 'start_manufacturing'
+  | 'purchase_materials'
+  | 'resume'
+  | 'resume_confirmed'
+  | 'dispatch'
+  | 'complete_delivery'
+  | 'complete'
+  | 'delivery_failed'
+  | 'reschedule'
+  | 'review'
+  | 'return'
+  | 'return_to_confirmed'
+  | 'inspect_return'
+  | 'return_to_stock'
+  | 'scrap'
+  | 'cancel';
+
 // ── Sub-types ─────────────────────────────────────────────────────────────────
 export type OrderChannel  = { id: string; name: string; type: string | null; brand_id: string | null };
 export type CustomerStats = {

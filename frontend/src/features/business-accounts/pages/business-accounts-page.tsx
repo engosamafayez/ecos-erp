@@ -34,11 +34,11 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 15;
 
 const OPTIONAL_COLS = [
-  { key: 'code',       label: 'الكود' },
-  { key: 'company',    label: 'الشركة' },
-  { key: 'brand',      label: 'العلامة التجارية' },
-  { key: 'provider',   label: 'المزوّد' },
-  { key: 'updated_at', label: 'تاريخ التحديث' },
+  { key: 'code',       label: 'Code' },
+  { key: 'company',    label: 'Company' },
+  { key: 'brand',      label: 'Brand' },
+  { key: 'provider',   label: 'Provider' },
+  { key: 'updated_at', label: 'Updated At' },
 ] as const;
 
 const STATUS_BADGE_VARIANT: Record<
@@ -117,32 +117,32 @@ export function BusinessAccountsPage() {
   const columns: ColumnDef<BusinessAccount>[] = [
     {
       key: 'code',
-      header: 'الكود',
+      header: 'Code',
       cell: (a) => <span className="font-mono text-xs font-medium">{a.code}</span>,
     },
     {
       key: 'name',
-      header: 'الاسم',
+      header: 'Name',
       cell: (a) => <span className="font-medium">{a.name}</span>,
     },
     {
       key: 'company',
-      header: 'الشركة',
+      header: 'Company',
       cell: (a) => <span className="text-muted-foreground">{a.company?.name ?? '—'}</span>,
     },
     {
       key: 'brand',
-      header: 'العلامة التجارية',
+      header: 'Brand',
       cell: (a) => <span className="text-muted-foreground">{a.brand?.name ?? '—'}</span>,
     },
     {
       key: 'provider',
-      header: 'المزوّد',
+      header: 'Provider',
       cell: (a) => <Badge variant="secondary">{a.provider}</Badge>,
     },
     {
       key: 'status',
-      header: 'الحالة',
+      header: 'Status',
       cell: (a) => (
         <Badge variant={STATUS_BADGE_VARIANT[a.status] ?? 'secondary'}>
           {a.status.charAt(0).toUpperCase() + a.status.slice(1)}
@@ -151,7 +151,7 @@ export function BusinessAccountsPage() {
     },
     {
       key: 'updated_at',
-      header: 'تاريخ التحديث',
+      header: 'Updated At',
       cell: (a) => (
         <span className="text-muted-foreground text-xs">
           {a.updated_at ? new Date(a.updated_at).toLocaleDateString() : '—'}
@@ -168,17 +168,17 @@ export function BusinessAccountsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="الحسابات التجارية"
-        subtitle="إدارة حسابات المنصات والأسواق المتصلة بمؤسستك."
+        title="Business Accounts"
+        subtitle="Manage platform and marketplace accounts connected to your organization."
         breadcrumbs={[
-          { label: 'الرئيسية', to: ROUTES.dashboard },
-          { label: 'المؤسسة', to: ROUTES.organization },
-          { label: 'الحسابات التجارية' },
+          { label: 'Home', to: ROUTES.dashboard },
+          { label: 'Organization', to: ROUTES.organization },
+          { label: 'Business Accounts' },
         ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            حساب تجاري جديد
+            New Business Account
           </Button>
         }
       />
@@ -187,13 +187,13 @@ export function BusinessAccountsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">إجمالي الحسابات</div>
+            <div className="text-muted-foreground text-sm">Total Accounts</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : totalCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">نشط</div>
+            <div className="text-muted-foreground text-sm">Active</div>
             <div className="text-2xl font-bold text-emerald-600">
               {isLoading ? '—' : activeCount}
             </div>
@@ -201,7 +201,7 @@ export function BusinessAccountsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">غير نشط</div>
+            <div className="text-muted-foreground text-sm">Inactive</div>
             <div className="text-2xl font-bold text-slate-400">
               {isLoading ? '—' : inactiveCount}
             </div>
@@ -209,7 +209,7 @@ export function BusinessAccountsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">موقوف</div>
+            <div className="text-muted-foreground text-sm">Suspended</div>
             <div className="text-2xl font-bold text-red-500">
               {isLoading ? '—' : suspendedCount}
             </div>
@@ -217,9 +217,9 @@ export function BusinessAccountsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">متصل</div>
+            <div className="text-muted-foreground text-sm">Connected</div>
             <div className="text-2xl font-bold text-slate-400">0</div>
-            <div className="text-muted-foreground/60 text-xs">مقاييس التكامل قادمة قريبًا</div>
+            <div className="text-muted-foreground/60 text-xs">Integration metrics coming soon</div>
           </CardContent>
         </Card>
       </div>
@@ -227,7 +227,7 @@ export function BusinessAccountsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="ابحث عن حساب تجاري…"
+            searchPlaceholder="Search business accounts…"
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -241,18 +241,18 @@ export function BusinessAccountsPage() {
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">الشركة</span>
+                  <span className="text-sm font-medium">Company</span>
                   <CompanySelect
                     value={companyFilter}
                     onChange={(value) => {
                       setCompanyFilter(value);
                       setPage(1);
                     }}
-                    placeholder="جميع الشركات"
+                    placeholder="All Companies"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">المزوّد</span>
+                  <span className="text-sm font-medium">Provider</span>
                   <select
                     value={providerFilter}
                     onChange={(e) => {
@@ -261,7 +261,7 @@ export function BusinessAccountsPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">جميع المزوّدين</option>
+                    <option value="">All Providers</option>
                     {['Meta', 'WooCommerce', 'Shopify', 'Amazon', 'TikTok', 'Google', 'Noon', 'Snapchat', 'Custom'].map(
                       (p) => (
                         <option key={p} value={p}>
@@ -272,7 +272,7 @@ export function BusinessAccountsPage() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">الحالة</span>
+                  <span className="text-sm font-medium">Status</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => {
@@ -281,10 +281,10 @@ export function BusinessAccountsPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">جميع الحالات</option>
-                    <option value="active">نشط</option>
-                    <option value="inactive">غير نشط</option>
-                    <option value="suspended">موقوف</option>
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
                   </select>
                 </div>
               </>
@@ -294,11 +294,11 @@ export function BusinessAccountsPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <SlidersHorizontal className="size-4" />
-                  الأعمدة
+                  Columns
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuLabel>إظهار/إخفاء الأعمدة</DropdownMenuLabel>
+                <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {OPTIONAL_COLS.map(({ key, label }) => (
                   <DropdownMenuCheckboxItem
@@ -323,11 +323,11 @@ export function BusinessAccountsPage() {
               <ActionMenu
                 label={`Actions for ${account.name}`}
                 items={[
-                  { key: 'view', label: 'عرض', icon: Eye, onSelect: () => openDetail(account) },
-                  { key: 'edit', label: 'تعديل', icon: Pencil, onSelect: () => openEdit(account) },
+                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openDetail(account) },
+                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(account) },
                   {
                     key: 'delete',
-                    label: 'حذف',
+                    label: 'Delete',
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(account),
@@ -375,9 +375,9 @@ export function BusinessAccountsPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title="حذف الحساب التجاري"
-        description={`هل أنت متأكد من حذف "${deleting?.name ?? ''}"؟ يمكن التراجع عن هذا الإجراء.`}
-        confirmLabel="حذف الحساب التجاري"
+        title="Delete Business Account"
+        description={`Are you sure you want to delete "${deleting?.name ?? ''}"? This action can be undone.`}
+        confirmLabel="Delete Business Account"
         variant="destructive"
         loading={deleteAccount.isPending}
         onConfirm={confirmDelete}

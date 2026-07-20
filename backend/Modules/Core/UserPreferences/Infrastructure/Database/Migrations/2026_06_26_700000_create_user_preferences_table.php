@@ -29,6 +29,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('user_preferences')) {
+            return;
+        }
+
         Schema::create('user_preferences', function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

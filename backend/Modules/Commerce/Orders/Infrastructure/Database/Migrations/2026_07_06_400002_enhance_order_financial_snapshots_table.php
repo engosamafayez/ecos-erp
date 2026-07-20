@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('order_financial_snapshots', 'previous_snapshot_id')) {
+            return;
+        }
+
         Schema::table('order_financial_snapshots', function (Blueprint $table) {
             // PART 2 — Snapshot versioning chain
             $table->uuid('previous_snapshot_id')->nullable()->after('snapshot_version');

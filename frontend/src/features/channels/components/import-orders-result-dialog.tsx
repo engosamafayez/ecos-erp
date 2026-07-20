@@ -27,27 +27,27 @@ export function ImportOrdersResultDialog({ open, onOpenChange, result, channelNa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>اكتمل استيراد الطلبات</DialogTitle>
+          <DialogTitle>Order Import Complete</DialogTitle>
           <DialogDescription>
-            {channelName ? `نتائج "${channelName}"` : 'نتائج استيراد الطلبات'}
+            {channelName ? `Results for "${channelName}"` : 'Order import results'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2">
-            <Stat label="الطلبات المعالَجة" value={result.imported_orders} />
-            <Stat label="العملاء المنشأون" value={result.created_customers} />
-            <Stat label="الطلبات المنشأة" value={result.created_orders} />
-            <Stat label="البنود المنشأة" value={result.created_lines} />
-            <Stat label="الطلبات المتخطاة" value={result.skipped_orders} highlight={result.skipped_orders > 0} />
-            <Stat label="البنود الفاشلة" value={result.failed_lines} highlight={result.failed_lines > 0} />
+            <Stat label="Orders Processed" value={result.imported_orders} />
+            <Stat label="Customers Created" value={result.created_customers} />
+            <Stat label="Orders Created" value={result.created_orders} />
+            <Stat label="Lines Created" value={result.created_lines} />
+            <Stat label="Orders Skipped" value={result.skipped_orders} highlight={result.skipped_orders > 0} />
+            <Stat label="Failed Lines" value={result.failed_lines} highlight={result.failed_lines > 0} />
           </div>
 
           {hasErrors && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-1.5 text-sm font-medium text-rose-600">
                 <XCircle className="size-4" />
-                أخطاء
+                Errors
               </div>
               <ul className="text-muted-foreground max-h-32 overflow-y-auto rounded-md border p-2 text-xs">
                 {result.errors.map((err, i) => (
@@ -62,13 +62,13 @@ export function ImportOrdersResultDialog({ open, onOpenChange, result, channelNa
           {!hasErrors && result.created_orders > 0 && (
             <div className="flex items-center gap-1.5 text-sm text-emerald-600">
               <CheckCircle2 className="size-4" />
-              تم استيراد جميع الطلبات بنجاح.
+              All orders imported successfully.
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>إغلاق</Button>
+          <Button onClick={() => onOpenChange(false)}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

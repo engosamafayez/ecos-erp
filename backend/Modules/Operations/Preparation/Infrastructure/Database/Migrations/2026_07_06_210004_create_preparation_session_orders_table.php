@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * CR-PREP-001 — Session ↔ Order junction (auto-managed).
+ * CR-PREP-001 â€” Session â†” Order junction (auto-managed).
  *
  * When an order is assigned to a warehouse that has an active Preparation Session,
  * it is automatically attached here. Operators never select orders manually.
@@ -18,6 +18,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('preparation_session_orders')) {
+            return;
+        }
+
         Schema::create('preparation_session_orders', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('preparation_session_id')

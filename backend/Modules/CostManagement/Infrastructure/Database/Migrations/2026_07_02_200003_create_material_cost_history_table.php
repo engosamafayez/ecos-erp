@@ -16,6 +16,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('material_cost_history')) {
+            return;
+        }
+
         Schema::create('material_cost_history', function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

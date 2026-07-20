@@ -16,6 +16,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('marketing_connections', 'api_status')) {
+            return;
+        }
+
         Schema::table('marketing_connections', function (Blueprint $table): void {
             // Health fields
             $table->string('api_status', 30)->nullable()->after('last_synced_at');         // 'available' | 'unavailable' | 'rate_limited'

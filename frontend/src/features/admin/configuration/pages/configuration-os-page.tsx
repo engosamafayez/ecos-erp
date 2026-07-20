@@ -264,13 +264,13 @@ export function ConfigurationOsPage() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Settings className="h-4 w-4 text-muted-foreground" />
-                إعدادات العلامة التجارية
+                Brand Settings
                 <Badge className="text-xs bg-primary/10 text-primary border-0">
                   {brands.find((b) => b.id === selectedBrandId)?.name}
                 </Badge>
               </h2>
               <Input
-                placeholder="ابحث في التصنيفات…"
+                placeholder="Search categories…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-8 w-48 text-xs"

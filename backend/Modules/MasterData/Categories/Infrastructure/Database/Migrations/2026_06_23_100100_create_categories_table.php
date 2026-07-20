@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('categories')) {
+            return;
+        }
+
         Schema::create('categories', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('parent_id')->nullable()->constrained('categories')->nullOnDelete();

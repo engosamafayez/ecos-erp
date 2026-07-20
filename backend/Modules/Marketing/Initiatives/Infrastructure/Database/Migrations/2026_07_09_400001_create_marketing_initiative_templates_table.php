@@ -18,6 +18,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('marketing_initiative_templates')) {
+            return;
+        }
+
         Schema::create('marketing_initiative_templates', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('name', 255);

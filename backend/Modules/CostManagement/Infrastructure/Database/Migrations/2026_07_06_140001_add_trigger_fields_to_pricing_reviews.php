@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('pricing_reviews', 'trigger_reason')) {
+            return;
+        }
+
         Schema::table('pricing_reviews', function (Blueprint $table): void {
             if (! Schema::hasColumn('pricing_reviews', 'trigger_reason')) {
                 $table->string('trigger_reason', 100)->nullable()->after('triggered_by_cost_history_id');

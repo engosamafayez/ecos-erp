@@ -17,6 +17,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('order_business_context_snapshots')) {
+            return;
+        }
+
         Schema::create('order_business_context_snapshots', static function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('order_id')->unique();

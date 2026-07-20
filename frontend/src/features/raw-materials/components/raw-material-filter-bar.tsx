@@ -32,14 +32,14 @@ function ColumnManagerPanel({ visibleColumns, onToggleColumn, onRestoreDefaults,
   return (
     <PopoverContent align="end" className="w-56 p-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium">الأعمدة</p>
+        <p className="text-sm font-medium">Columns</p>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onShowAll}>
-            إظهار الكل
+            Show All
           </Button>
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onRestoreDefaults}>
             <RotateCcw className="size-3 mr-1" />
-            إعادة التعيين
+            Reset
           </Button>
         </div>
       </div>
@@ -109,16 +109,16 @@ export function RawMaterialFilterBar({
   const suppliers  = suppliersResult?.items  ?? [];
   const warehouses = warehousesResult?.items ?? [];
 
-  const newLabel = materialType === 'packaging_material' ? 'مادة تغليف جديدة'
-    : materialType === 'raw_material' ? 'مادة خام جديدة'
-    : 'مادة جديدة';
+  const newLabel = materialType === 'packaging_material' ? 'New Packaging Material'
+    : materialType === 'raw_material' ? 'New Raw Material'
+    : 'New Material';
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Search */}
       <div className="relative flex-1 min-w-52 max-w-80">
         <Input
-          placeholder="بحث بالاسم، SKU…"
+          placeholder="Search by name, SKU…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           className="h-9"
@@ -131,9 +131,9 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="All Materials" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">جميع المواد</SelectItem>
-          <SelectItem value="raw_material">مواد خام</SelectItem>
-          <SelectItem value="packaging_material">مواد تغليف</SelectItem>
+          <SelectItem value="_all">All Materials</SelectItem>
+          <SelectItem value="raw_material">Raw Materials</SelectItem>
+          <SelectItem value="packaging_material">Packaging Materials</SelectItem>
         </SelectContent>
       </Select>
 
@@ -143,7 +143,7 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="All Categories" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">جميع الفئات</SelectItem>
+          <SelectItem value="_all">All Categories</SelectItem>
           {categories.map((c) => (
             <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
           ))}
@@ -156,7 +156,7 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="All Suppliers" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">جميع الموردين</SelectItem>
+          <SelectItem value="_all">All Suppliers</SelectItem>
           {suppliers.map((s) => (
             <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
           ))}
@@ -169,7 +169,7 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="All Warehouses" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">جميع المستودعات</SelectItem>
+          <SelectItem value="_all">All Warehouses</SelectItem>
           {warehouses.map((w) => (
             <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
           ))}
@@ -182,9 +182,9 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="Stock Status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">الكل</SelectItem>
-          <SelectItem value="available">متوفر</SelectItem>
-          <SelectItem value="out_of_stock">نفد المخزون</SelectItem>
+          <SelectItem value="_all">All</SelectItem>
+          <SelectItem value="available">In Stock</SelectItem>
+          <SelectItem value="out_of_stock">Out of Stock</SelectItem>
         </SelectContent>
       </Select>
 
@@ -194,9 +194,9 @@ export function RawMaterialFilterBar({
           <SelectValue placeholder="Neg. Stock" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">الكل</SelectItem>
-          <SelectItem value="allowed">السالب مسموح</SelectItem>
-          <SelectItem value="blocked">السالب محظور</SelectItem>
+          <SelectItem value="_all">All</SelectItem>
+          <SelectItem value="allowed">Negative Allowed</SelectItem>
+          <SelectItem value="blocked">Negative Blocked</SelectItem>
         </SelectContent>
       </Select>
 
@@ -211,7 +211,7 @@ export function RawMaterialFilterBar({
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
               <Columns3 className="size-4" />
-              الأعمدة
+              Columns
             </Button>
           </PopoverTrigger>
           <ColumnManagerPanel
@@ -230,12 +230,12 @@ export function RawMaterialFilterBar({
           className="gap-1.5"
         >
           <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          تحديث
+          Refresh
         </Button>
 
         <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5">
           <Download className="size-4" />
-          تصدير
+          Export
         </Button>
       </div>
     </div>

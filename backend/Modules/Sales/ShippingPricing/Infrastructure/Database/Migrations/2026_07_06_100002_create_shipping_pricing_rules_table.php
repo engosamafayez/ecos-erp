@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('shipping_pricing_rules')) {
+            return;
+        }
+
         Schema::create('shipping_pricing_rules', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->nullable()->constrained('companies')->nullOnDelete();

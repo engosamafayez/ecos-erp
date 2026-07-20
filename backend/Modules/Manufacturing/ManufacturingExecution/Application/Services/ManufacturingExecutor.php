@@ -94,7 +94,20 @@ final class ManufacturingExecutor
                 // Lifecycle hook: after all components consumed (still inside transaction)
                 $this->hooks?->onAfterInventoryConsumption($context, $consumptionRecords, $ledgerIds);
 
-                // Step 2 — Produce finished goods
+                // Step 2 — Derive FG unit cost from consumed component FIFO costs.
+                //   totalFifoCost = Σ(component.fifo_cost) across all consumed components.
+                //   unitCost      = totalFifoCost / qty_to_manufacture (BCMath for precision).
+                //   When all RMs had no FIFO layers (e.g. all went negative), unitCost = 0.0.
+                $totalFifoCost = array_reduce(
+                    $consumptionRecords,
+                    fn (string $carry, $r): string => bcadd($carry, (string) $r->fifo_cost, 4),
+                    '0',
+                );
+                $unitCost = $context->plan->qty_to_manufacture > 0
+                    ? (float) bcdiv($totalFifoCost, (string) $context->plan->qty_to_manufacture, 4)
+                    : 0.0;
+
+                // Step 3 — Produce finished goods (creates on_hand_qty increment + FIFO receipt layer)
                 $fgLedgerEntryId = $this->inventory->produceFinishedGoods(
                     productId:    $context->plan->product_id,
                     qty:          $context->plan->qty_to_manufacture,
@@ -102,13 +115,14 @@ final class ManufacturingExecutor
                     planId:       $context->plan->plan_id,
                     companyId:    $companyId,
                     executionUuid: $context->execution_uuid,
+                    unitCost:     $unitCost,
                 );
                 $ledgerIds[] = $fgLedgerEntryId;
 
                 // Lifecycle hook: after finished goods created (still inside transaction)
                 $this->hooks?->onAfterFinishedGoodsCreated($context, $fgLedgerEntryId);
 
-                // Step 3 — Record the manufacturing transaction (source of truth)
+                // Step 4 — Record the manufacturing transaction (source of truth)
                 $executedAt = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
                 $durationMs = (int) (microtime(true) * 1000) - $startMs;
 

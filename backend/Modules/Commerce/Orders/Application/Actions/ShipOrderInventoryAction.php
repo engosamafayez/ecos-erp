@@ -82,8 +82,10 @@ final class ShipOrderInventoryAction
                     notes:          "Shipped for order #{$order->order_number}",
                 ));
 
-                // 2. FIFO layer consumption (within same transaction)
-                $inventoryItem = $this->inventory->findByWarehouseAndProduct($warehouseId, $line->product_id);
+                // 2. FIFO layer consumption (within same transaction).
+                //    C-002: use company-scoped lookup so the audit record's inventory_item_id
+                //    always references this tenant's InventoryItem, not another company's.
+                $inventoryItem = $this->inventory->findByWarehouseProductAndCompany($warehouseId, $line->product_id, $companyId);
 
                 if ($inventoryItem !== null) {
                     $result = $this->layerConsumption->consume(

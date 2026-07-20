@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('automation_governance_policies')) {
+            return;
+        }
+
         Schema::create('automation_governance_policies', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('company_id', 36)->nullable()->index();

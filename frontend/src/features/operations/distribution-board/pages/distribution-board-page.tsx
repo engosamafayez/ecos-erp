@@ -105,7 +105,7 @@ export function DistributionBoardPage() {
   if (isError) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-sm text-muted-foreground">فشل تحميل لوحة التوزيع. يرجى تحديث الصفحة.</p>
+        <p className="text-sm text-muted-foreground">Failed to load distribution board. Please refresh the page.</p>
       </div>
     );
   }
@@ -117,9 +117,9 @@ export function DistributionBoardPage() {
           <Truck className="h-10 w-10 text-muted-foreground" />
         </div>
         <div className="text-center">
-          <h3 className="font-semibold text-lg mb-1">لا توجد موجة نشطة</h3>
+          <h3 className="font-semibold text-lg mb-1">No Active Wave</h3>
           <p className="text-sm text-muted-foreground max-w-sm">
-            لا توجد موجة تحضير نشطة. أنشئ موجة في نظام التحضير لبدء تخطيط التوزيع.
+            No active preparation wave found. Create a wave in the preparation system to start distribution planning.
           </p>
         </div>
       </div>
@@ -160,7 +160,7 @@ export function DistributionBoardPage() {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2.5 border-b shrink-0">
             <span className="text-sm font-medium">
-              رحلات اليوم
+              Today's Trips
               {allTrips.length > 0 && (
                 <span className="ml-2 text-xs text-muted-foreground">({allTrips.length})</span>
               )}
@@ -172,7 +172,7 @@ export function DistributionBoardPage() {
               onClick={() => { setEditingTrip(null); setTripDrawerOpen(true); }}
             >
               <Plus className="h-3.5 w-3.5" />
-              إضافة رحلة
+              Add Trip
             </Button>
           </div>
 
@@ -181,9 +181,9 @@ export function DistributionBoardPage() {
               {trips.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <Truck className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                  <p className="text-sm text-muted-foreground font-medium">لا توجد رحلات بعد</p>
+                  <p className="text-sm text-muted-foreground font-medium">No trips yet</p>
                   <p className="text-xs text-muted-foreground/60 mt-1 mb-4">
-                    أنشئ رحلة وأضف إليها الطلبات من هذه المنطقة تلقائياً.
+                    Create a trip and orders from this zone will be added automatically.
                   </p>
                   <Button
                     size="sm"
@@ -192,7 +192,7 @@ export function DistributionBoardPage() {
                     onClick={() => { setEditingTrip(null); setTripDrawerOpen(true); }}
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    إنشاء أول رحلة
+                    Create First Trip
                   </Button>
                 </div>
               ) : (
@@ -230,20 +230,20 @@ export function DistributionBoardPage() {
       <AlertDialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>تأكيد جميع الرحلات المتبقية؟</AlertDialogTitle>
+            <AlertDialogTitle>Finalize All Remaining Trips?</AlertDialogTitle>
             <AlertDialogDescription>
-              سيتم نقل جميع رحلات التخطيط إلى نظام التحميل دفعة واحدة.
-              يمكنك أيضاً اعتماد كل رحلة على حدة باستخدام زر <strong>اعتماد</strong>.
+              All planning trips will be moved to the loading system at once.
+              You can also approve each trip individually using the <strong>Approve</strong> button.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 finalize.mutate(undefined, { onSuccess: () => setFinalizeOpen(false) });
               }}
             >
-              نعم، تأكيد الكل
+              Yes, Finalize All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('marketing_connections', 'last_synced_at')) {
+            return;
+        }
+
         Schema::table('marketing_connections', function (Blueprint $table): void {
             $table->timestamp('last_synced_at')->nullable()->after('last_validated_at');
         });
@@ -17,6 +21,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('marketing_connections', 'last_synced_at')) {
+            return;
+        }
+
         Schema::table('marketing_connections', function (Blueprint $table): void {
             $table->dropColumn('last_synced_at');
         });

@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('purchase_materials', 'review_notes')) {
+            return;
+        }
+
         Schema::table('purchase_materials', function (Blueprint $table): void {
             $table->text('review_notes')->nullable()->after('rejection_reason');
             $table->uuid('merged_into')->nullable()->after('review_notes')
@@ -21,6 +25,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('purchase_materials', 'review_notes')) {
+            return;
+        }
+
         Schema::table('purchase_materials', function (Blueprint $table): void {
             $table->dropForeign(['merged_into']);
             $table->dropColumn([

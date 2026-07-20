@@ -43,15 +43,13 @@ final class ShipStockAction extends BaseAction
             throw new InvalidInventoryMovementException('Quantity must be greater than zero');
         }
 
-        $onHandBefore   = null;
-        $onHandAfter    = null;
-        $reservedBefore = null;
-        $reservedAfter  = null;
+        $event = null;
 
-        $result = DB::transaction(function () use ($dto, &$onHandBefore, &$onHandAfter, &$reservedBefore, &$reservedAfter) {
-            $item = $this->inventory->findByWarehouseAndProduct(
+        $result = DB::transaction(function () use ($dto, &$event) {
+            $item = $this->inventory->findByWarehouseProductAndCompany(
                 $dto->warehouse_id,
                 $dto->product_id,
+                $dto->company_id,
             );
 
             if ($item === null) {
@@ -107,23 +105,27 @@ final class ShipStockAction extends BaseAction
 
             $locked->refresh();
 
+            $event = new InventoryStockShipped(
+                inventoryItemId: $locked->id,
+                warehouseId:     $dto->warehouse_id,
+                productId:       $dto->product_id,
+                companyId:       $dto->company_id,
+                quantityShipped: $dto->quantity,
+                onHandBefore:    $onHandBefore,
+                onHandAfter:     $onHandAfter,
+                reservedBefore:  $reservedBefore,
+                reservedAfter:   $reservedAfter,
+                referenceType:   $dto->reference_type,
+                referenceId:     $dto->reference_id,
+            );
+
             return $locked;
         });
 
-        // ── Publish after commit ─────────────────────────────────────────────
-        $this->eventBus->publish(new InventoryStockShipped(
-            inventoryItemId: $result->id,
-            warehouseId:     $dto->warehouse_id,
-            productId:       $dto->product_id,
-            companyId:       $dto->company_id,
-            quantityShipped: $dto->quantity,
-            onHandBefore:    $onHandBefore    ?? 0.0,
-            onHandAfter:     $onHandAfter     ?? 0.0,
-            reservedBefore:  $reservedBefore  ?? 0.0,
-            reservedAfter:   $reservedAfter   ?? 0.0,
-            referenceType:   $dto->reference_type,
-            referenceId:     $dto->reference_id,
-        ));
+        // ── Guarantee publish fires only after the outermost transaction commits ─
+        DB::connection()->afterCommit(function () use ($event): void {
+            $this->eventBus->publish($event);
+        });
 
         return OperationResult::success($result, 'Stock shipped successfully.');
     }

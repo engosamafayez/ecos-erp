@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('master_zones')) {
+            return;
+        }
+
         Schema::create('master_zones', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('master_governorate_id')

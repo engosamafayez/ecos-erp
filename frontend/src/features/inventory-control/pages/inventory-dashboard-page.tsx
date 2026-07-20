@@ -87,14 +87,14 @@ function VarianceTable({ rows, title }: { rows: VarianceProductRow[]; title: str
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-xs">
-              <th className="px-4 py-2 text-start font-medium">المنتج</th>
-              <th className="px-4 py-2 text-end font-medium">الفارق (الكمية)</th>
-              <th className="px-4 py-2 text-end font-medium">الفارق (القيمة)</th>
+              <th className="px-4 py-2 text-start font-medium">Product</th>
+              <th className="px-4 py-2 text-end font-medium">Variance (Qty)</th>
+              <th className="px-4 py-2 text-end font-medium">Variance (Value)</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={3} className="text-muted-foreground px-4 py-6 text-center text-xs">لا توجد بيانات</td></tr>
+              <tr><td colSpan={3} className="text-muted-foreground px-4 py-6 text-center text-xs">No data available</td></tr>
             ) : rows.map((r) => (
               <tr key={r.product_id} className="hover:bg-muted/50 border-b last:border-0 transition-colors">
                 <td className="px-4 py-2">
@@ -145,25 +145,25 @@ export function InventoryDashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title="لوحة تحكم المخزون"
-        subtitle="صحة المخزون الفورية وتحليلات الجرد."
-        breadcrumbs={[{ label: 'الرئيسية', to: ROUTES.dashboard }, { label: 'لوحة التحكم' }]}
+        title="Inventory Dashboard"
+        subtitle="Real-time inventory health and count analytics."
+        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Dashboard' }]}
       />
 
       {/* ── Section 1: Inventory Value ─────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
-        <SectionLabel>قيمة المخزون</SectionLabel>
+        <SectionLabel>Inventory Value</SectionLabel>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <ValueKpiCard
-            title="إجمالي قيمة المخزون"
+            title="Total Inventory Value"
             value={allStats.data ? `${fmtCurrency(allStats.data.total_inventory_value)} EGP` : '—'}
-            sub={allStats.data ? `${fmtQty(allStats.data.total_on_hand)} وحدة في المخزن` : undefined}
+            sub={allStats.data ? `${fmtQty(allStats.data.total_on_hand)} units on hand` : undefined}
             icon={BarChart3}
             iconColor="text-primary"
             loading={statsLoading}
           />
           <ValueKpiCard
-            title="قيمة المواد الخام"
+            title="Raw Materials Value"
             value={rmStats.data ? `${fmtCurrency(rmStats.data.total_inventory_value)} EGP` : '—'}
             sub={rmStats.data ? `${rmStats.data.total_count} SKU` : undefined}
             icon={FlaskConical}
@@ -172,7 +172,7 @@ export function InventoryDashboardPage() {
             onClick={() => navigate(ROUTES.rawMaterials)}
           />
           <ValueKpiCard
-            title="قيمة المنتجات النهائية"
+            title="Finished Goods Value"
             value={fgStats.data ? `${fmtCurrency(fgStats.data.total_inventory_value)} EGP` : '—'}
             sub={fgStats.data ? `${fgStats.data.total_count} SKU` : undefined}
             icon={Package}
@@ -181,7 +181,7 @@ export function InventoryDashboardPage() {
             onClick={() => navigate(ROUTES.products)}
           />
           <ValueKpiCard
-            title="قيمة مواد التغليف"
+            title="Packaging Materials Value"
             value={pkgStats.data ? `${fmtCurrency(pkgStats.data.total_inventory_value)} EGP` : '—'}
             sub={pkgStats.data ? `${pkgStats.data.total_count} SKU` : undefined}
             icon={Archive}
@@ -189,9 +189,9 @@ export function InventoryDashboardPage() {
             loading={statsLoading}
           />
           <ValueKpiCard
-            title="الوحدات المتاحة"
+            title="Available Units"
             value={allStats.data ? fmtQty(allStats.data.total_available) : '—'}
-            sub={allStats.data ? `${fmtQty(allStats.data.total_reserved)} محجوز` : undefined}
+            sub={allStats.data ? `${fmtQty(allStats.data.total_reserved)} reserved` : undefined}
             icon={ShoppingBag}
             iconColor="text-purple-500"
             loading={statsLoading}
@@ -208,39 +208,39 @@ export function InventoryDashboardPage() {
         <>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <SectionLabel>صحة جلسات الجرد</SectionLabel>
+              <SectionLabel>Count Session Health</SectionLabel>
               <Badge variant={healthVariant(countData.kpis.health)} className="text-xs">
-                {countData.kpis.health === 'excellent' ? 'ممتاز' : countData.kpis.health === 'good' ? 'جيد' : countData.kpis.health === 'warning' ? 'تحذير' : 'حرج'}
+                {countData.kpis.health === 'excellent' ? 'Excellent' : countData.kpis.health === 'good' ? 'Good' : countData.kpis.health === 'warning' ? 'Warning' : 'Critical'}
               </Badge>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               <ValueKpiCard
-                title="دقة المخزون"
+                title="Inventory Accuracy"
                 value={fmtPct(countData.kpis.accuracy_pct)}
-                sub={`${countData.kpis.matched_products}/${countData.kpis.total_counted_products} مطابق`}
+                sub={`${countData.kpis.matched_products}/${countData.kpis.total_counted_products} matched`}
                 icon={BarChart3}
                 iconColor="text-emerald-500"
               />
               <ValueKpiCard
-                title="جلسات مفتوحة"
+                title="Open Sessions"
                 value={String(countData.kpis.open_sessions)}
                 icon={ClipboardList}
                 iconColor="text-blue-500"
                 onClick={() => navigate(ROUTES.inventoryCount)}
               />
               <ValueKpiCard
-                title="منتجات بفوارق"
+                title="Products with Variance"
                 value={String(countData.kpis.products_with_variance)}
                 icon={TrendingDown}
                 iconColor="text-amber-500"
               />
               <ValueKpiCard
-                title="تسويات الشهر"
+                title="Month Adjustments"
                 value={`${fmtCurrency(countData.kpis.adjustment_value_month)} EGP`}
                 icon={Package}
               />
               <ValueKpiCard
-                title="الانكماش (الشهر)"
+                title="Shrinkage (Month)"
                 value={`${fmtCurrency(countData.kpis.shrinkage_value_month)} EGP`}
                 icon={PackageX}
                 iconColor="text-destructive"
@@ -250,37 +250,37 @@ export function InventoryDashboardPage() {
 
           {/* Variance tables */}
           <div className="flex flex-col gap-3">
-            <SectionLabel>أعلى الفوارق</SectionLabel>
+            <SectionLabel>Top Variances</SectionLabel>
             <div className="flex flex-col gap-4 md:flex-row">
-              <VarianceTable rows={countData.top_negative} title="أعلى فوارق سلبية (عجز)" />
-              <VarianceTable rows={countData.top_positive} title="أعلى فوارق إيجابية (زيادة)" />
+              <VarianceTable rows={countData.top_negative} title="Top Negative Variances (Shortage)" />
+              <VarianceTable rows={countData.top_positive} title="Top Positive Variances (Surplus)" />
             </div>
           </div>
 
           {/* Recent sessions */}
           <div className="flex flex-col gap-3">
-            <SectionLabel>جلسات الجرد الأخيرة</SectionLabel>
+            <SectionLabel>Recent Count Sessions</SectionLabel>
             <Card>
               <CardContent className="p-0">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-muted-foreground border-b text-xs">
-                      <th className="px-4 py-2 text-start font-medium">الجلسة</th>
-                      <th className="px-4 py-2 text-start font-medium">المستودع</th>
-                      <th className="px-4 py-2 text-start font-medium">تاريخ الاكتمال</th>
-                      <th className="px-4 py-2 text-end font-medium">الدقة</th>
+                      <th className="px-4 py-2 text-start font-medium">Session</th>
+                      <th className="px-4 py-2 text-start font-medium">Warehouse</th>
+                      <th className="px-4 py-2 text-start font-medium">Completion Date</th>
+                      <th className="px-4 py-2 text-end font-medium">Accuracy</th>
                     </tr>
                   </thead>
                   <tbody>
                     {countData.recent_sessions.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="text-muted-foreground px-4 py-6 text-center text-xs">
-                          لا توجد جلسات بعد.{' '}
+                          No sessions yet.{' '}
                           <button
                             onClick={() => navigate(ROUTES.inventoryCount)}
                             className="text-primary underline underline-offset-2"
                           >
-                            أنشئ جلسة
+                            Create a session
                           </button>
                         </td>
                       </tr>

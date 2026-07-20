@@ -47,9 +47,9 @@ export function CartRecoveryDialog({
               <RotateCcw className="size-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <DialogTitle>يوجد بيع غير مكتمل</DialogTitle>
+              <DialogTitle>Unfinished Sale Found</DialogTitle>
               <DialogDescription className="mt-0.5">
-                تمت مقاطعة عملية بيع سابقة. ماذا تريد أن تفعل؟
+                A previous sale was interrupted. What would you like to do?
               </DialogDescription>
             </div>
           </div>
@@ -60,7 +60,7 @@ export function CartRecoveryDialog({
             <div className="flex items-center gap-2 text-sm">
               <ShoppingCart className="size-4 text-muted-foreground" />
               <span className="text-muted-foreground">
-                {lineCount} {lineCount === 1 ? 'صنف' : 'أصناف'}
+                {lineCount} {lineCount === 1 ? 'item' : 'items'}
               </span>
             </div>
             <span className="text-base font-semibold tabular-nums">
@@ -73,7 +73,7 @@ export function CartRecoveryDialog({
               <Separator className="my-2.5" />
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="size-4" />
-                <span>{customerName ?? 'عميل مخصص'}</span>
+                <span>{customerName ?? 'Assigned Customer'}</span>
               </div>
             </>
           )}
@@ -82,7 +82,7 @@ export function CartRecoveryDialog({
             <>
               <Separator className="my-2.5" />
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                سيتم استعادة تفاصيل الدفع المُدخَلة سابقاً.
+                Previously entered payment details will be restored.
               </p>
             </>
           )}
@@ -96,11 +96,11 @@ export function CartRecoveryDialog({
             disabled={isDiscarding}
           >
             <Trash2 className="size-4" />
-            {isDiscarding ? 'جارٍ الحذف...' : 'بدء بيع جديد'}
+            {isDiscarding ? 'Discarding...' : 'Start New Sale'}
           </Button>
           <Button className="gap-2" onClick={onResume} disabled={isDiscarding}>
             <RotateCcw className="size-4" />
-            استئناف البيع
+            Resume Sale
           </Button>
         </DialogFooter>
       </DialogContent>

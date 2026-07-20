@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('preparation_exceptions', 'issue_type')) {
+            return;
+        }
+
         Schema::table('preparation_exceptions', function (Blueprint $table): void {
             // Typed enum column alongside legacy free-text exception_type for backward compat.
             $table->string('issue_type', 50)->nullable()->after('exception_type');

@@ -135,7 +135,7 @@ function GovDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Name (Arabic)</Label>
-            <Input value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder="القاهرة" dir="rtl" />
+            <Input value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder="Arabic name" dir="rtl" />
           </div>
           {!isEdit && (
             <div className="space-y-1.5">

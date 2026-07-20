@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('products', 'last_purchase_cost')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->decimal('last_purchase_cost', 15, 4)->nullable()->after('sale_price');
             $table->decimal('average_cost', 15, 4)->nullable()->after('last_purchase_cost');
@@ -21,6 +25,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('products', 'last_purchase_cost')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->dropColumn(['last_purchase_cost', 'average_cost', 'last_purchase_date', 'last_supplier_id']);
         });

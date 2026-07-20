@@ -11,6 +11,7 @@
 
 import { useState } from 'react';
 import { ArrowRight, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ import {
 } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useOrderWorkflowTransition } from '@/features/orders/hooks/use-orders';
+import { useOrderStatusLabels } from '@/features/orders/hooks/use-order-labels';
 import type { Order } from '@/features/orders/types/order';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -66,6 +68,8 @@ type Props = {
 };
 
 export function SmartStatusSelector({ order, onSuccess }: Props) {
+  const { t } = useTranslation('orders');
+  const { statusLabel } = useOrderStatusLabels();
   const transition = useOrderWorkflowTransition();
   const [pending, setPending] = useState<StatusTransition | null>(null);
   const [reason, setReason] = useState('');
@@ -74,9 +78,8 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
   const transitions: StatusTransition[] = order.allowed_status_transitions ?? [];
   const hasTransitions = transitions.length > 0;
 
-  // Use the API-resolved labels — never derive locally
-  const currentStatus      = order.current_status      ?? order.status;
-  const currentStatusLabel = order.current_status_label ?? order.status_label ?? order.status;
+  const currentStatus      = order.current_status ?? order.status;
+  const currentStatusLabel = statusLabel[currentStatus as keyof typeof statusLabel] ?? order.current_status_label ?? order.status;
   const currentColor       = STATUS_COLOR[currentStatus] ?? 'text-foreground';
 
   function handleSelect(targetStatus: string) {
@@ -125,7 +128,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
         {/* ── Current Status group ─────────────────────────────────────────── */}
         <SelectGroup>
           <SelectLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Current Status
+            {t('statusSelector.currentStatus')}
           </SelectLabel>
           <SelectItem
             value={currentStatus}
@@ -142,19 +145,19 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
         {hasTransitions ? (
           <SelectGroup>
             <SelectLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Move Order To
+              {t('statusSelector.moveTo')}
             </SelectLabel>
-            {transitions.map((t) => (
-              <SelectItem key={t.target_status} value={t.target_status}>
-                <span className={STATUS_COLOR[t.target_status] ?? 'text-foreground'}>
-                  {t.label}
+            {transitions.map((tr) => (
+              <SelectItem key={tr.target_status} value={tr.target_status}>
+                <span className={STATUS_COLOR[tr.target_status] ?? 'text-foreground'}>
+                  {statusLabel[tr.target_status as keyof typeof statusLabel] ?? tr.label}
                 </span>
               </SelectItem>
             ))}
           </SelectGroup>
         ) : (
           <SelectItem value="__no_transitions__" disabled className="text-muted-foreground italic text-xs">
-            No workflow actions available.
+            {t('statusSelector.noTransitions')}
           </SelectItem>
         )}
       </SelectContent>
@@ -172,7 +175,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
               <span className="block">{selectEl}</span>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-48 text-center text-xs">
-              This order is in a final workflow state.
+              {t('statusSelector.finalState')}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -184,9 +187,9 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
       <Dialog open={!!pending} onOpenChange={(open) => { if (!open) handleCancel(); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Change Order Status</DialogTitle>
+            <DialogTitle>{t('statusSelector.dialogTitle')}</DialogTitle>
             <DialogDescription>
-              This will run the appropriate workflow and update the order timeline.
+              {t('statusSelector.dialogDesc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -194,16 +197,16 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
             {/* From → To */}
             <div className="flex items-center justify-center gap-3 rounded-lg border bg-muted/40 px-4 py-3">
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">From</span>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t('statusSelector.from')}</span>
                 <span className={cn('text-sm font-semibold', currentColor)}>
                   {currentStatusLabel}
                 </span>
               </div>
               <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">To</span>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t('statusSelector.to')}</span>
                 <span className={cn('text-sm font-semibold', STATUS_COLOR[pending?.target_status ?? ''] ?? 'text-foreground')}>
-                  {pending?.label}
+                  {statusLabel[pending?.target_status as keyof typeof statusLabel] ?? pending?.label}
                 </span>
               </div>
             </div>
@@ -212,11 +215,11 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
             {pending?.requires_reason && (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground/80">
-                  Reason <span className="text-muted-foreground">(Optional)</span>
+                  {t('statusSelector.reason')} <span className="text-muted-foreground">{t('statusSelector.reasonOptional')}</span>
                 </label>
                 <Input
                   autoFocus
-                  placeholder="Enter reason…"
+                  placeholder={t('statusSelector.reasonPlaceholder')}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   onKeyDown={(e) => {
@@ -230,7 +233,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
 
           {transition.isError && (
             <p className="text-center text-xs text-destructive">
-              Transition failed — please try again or contact support.
+              {t('statusSelector.transitionFailed')}
             </p>
           )}
 
@@ -241,7 +244,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
               onClick={(e) => { e.stopPropagation(); handleCancel(); }}
               disabled={transition.isPending}
             >
-              Cancel
+              {t('statusSelector.cancel')}
             </Button>
             <Button
               type="button"
@@ -249,7 +252,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
               disabled={transition.isPending}
             >
               {transition.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-              Confirm
+              {t('statusSelector.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

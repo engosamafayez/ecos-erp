@@ -37,9 +37,17 @@ return new class extends Migration
         }
 
         // Re-create FK as RESTRICT: brand deletion blocked while it owns products.
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->dropForeign(['brand_id']);
         });
+
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
 
         Schema::table('products', function (Blueprint $table): void {
             $table->uuid('brand_id')->nullable(false)->change();
@@ -52,9 +60,17 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->dropForeign(['brand_id']);
         });
+
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
 
         Schema::table('products', function (Blueprint $table): void {
             $table->uuid('brand_id')->nullable()->change();

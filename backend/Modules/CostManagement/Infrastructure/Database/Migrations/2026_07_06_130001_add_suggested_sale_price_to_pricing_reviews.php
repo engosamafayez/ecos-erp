@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('pricing_reviews', 'suggested_sale_price')) {
+            return;
+        }
+
         Schema::table('pricing_reviews', function (Blueprint $table) {
             $table->decimal('suggested_sale_price', 15, 4)->nullable()->after('suggested_selling_price');
         });
@@ -17,6 +21,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('pricing_reviews', 'suggested_sale_price')) {
+            return;
+        }
+
         Schema::table('pricing_reviews', function (Blueprint $table) {
             $table->dropColumn('suggested_sale_price');
         });

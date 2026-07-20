@@ -33,10 +33,10 @@ export function DriverExceptionsPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base flex-1">الاستثناءات</h1>
+        <h1 className="font-semibold text-base flex-1">Exceptions</h1>
         <Button size="sm" variant="outline" onClick={() => setSheetOpen(true)}>
           <PlusCircle className="mr-1.5 h-4 w-4" />
-          إضافة
+          Add
         </Button>
       </div>
 
@@ -55,12 +55,12 @@ export function DriverExceptionsPage() {
                 {ex.resolved_at ? (
                   <span className="flex items-center gap-1 text-xs text-green-600">
                     <CheckCircle className="h-3.5 w-3.5" />
-                    تم الحل
+                    Resolved
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <AlertTriangle className="h-3.5 w-3.5" />
-                    مفتوح
+                    Open
                   </span>
                 )}
               </div>
@@ -73,7 +73,7 @@ export function DriverExceptionsPage() {
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">لا توجد استثناءات مبلَّغ عنها.</p>
+            <p className="text-sm">No exceptions reported.</p>
           </div>
         )}
       </div>
@@ -82,10 +82,10 @@ export function DriverExceptionsPage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom">
           <SheetHeader>
-            <SheetTitle>إضافة استثناء</SheetTitle>
+            <SheetTitle>Add Exception</SheetTitle>
           </SheetHeader>
           <p className="text-sm text-muted-foreground mt-4">
-            لتبليغ عن استثناء، افتح محطة التوصيل المحددة واستخدم زر الاستثناء.
+            To report an exception, open the relevant delivery stop and use the exception button.
           </p>
           <Button
             className="w-full mt-4"
@@ -94,7 +94,7 @@ export function DriverExceptionsPage() {
               navigate(ROUTES.driverTripStops.replace(':tripId', tripId));
             }}
           >
-            الذهاب إلى المحطات
+            Go to Stops
           </Button>
         </SheetContent>
       </Sheet>

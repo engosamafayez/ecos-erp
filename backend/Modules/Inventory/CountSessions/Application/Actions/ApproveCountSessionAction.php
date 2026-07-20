@@ -139,7 +139,7 @@ final class ApproveCountSessionAction
                         'receipt_date'          => now()->toDateString(),
                     ]);
 
-                    [$oldFifo, $newFifo] = $this->refreshFifoCost($line->product_id);
+                    [$oldFifo, $newFifo] = $this->refreshFifoCost($line->product_id, $warehouseId, $companyId);
                     if ($oldFifo !== $newFifo) {
                         $fifoCostChanges[] = [
                             'product_id' => $line->product_id,
@@ -153,8 +153,7 @@ final class ApproveCountSessionAction
 
                 // ── Case B: Shortage > 0 → WarehouseLiability (pending)
                 if (bccomp($shortageStr, '0', self::SCALE_QTY) > 0) {
-                    $shortageQty   = (float) $shortageStr;
-                    $shortageTotal = round($shortageQty * $unitCost, 2);
+                    $shortageTotal = bcmul($shortageStr, (string) $unitCost, self::SCALE_VALUE);
 
                     WarehouseLiability::query()->create([
                         'company_id'        => $companyId,
@@ -163,7 +162,7 @@ final class ApproveCountSessionAction
                         'count_session_id'  => $session->id,
                         'count_line_id'     => $line->id,
                         'liability_type'    => 'inventory_shortage',
-                        'quantity'          => $shortageQty,
+                        'quantity'          => $shortageStr,
                         'unit_cost'         => $unitCost,
                         'total_cost'        => $shortageTotal,
                         'status'            => 'pending',
@@ -175,8 +174,7 @@ final class ApproveCountSessionAction
 
                 // ── Case C: Damaged > 0 → WasteInvestigation (pending)
                 if (bccomp($damagedStr, '0', self::SCALE_QTY) > 0) {
-                    $damagedQty   = (float) $damagedStr;
-                    $damagedTotal = round($damagedQty * $unitCost, 2);
+                    $damagedTotal = bcmul($damagedStr, (string) $unitCost, self::SCALE_VALUE);
 
                     WasteInvestigation::query()->create([
                         'company_id'       => $companyId,
@@ -184,7 +182,7 @@ final class ApproveCountSessionAction
                         'count_session_id' => $session->id,
                         'count_line_id'    => $line->id,
                         'product_id'       => $line->product_id,
-                        'quantity'         => $damagedQty,
+                        'quantity'         => $damagedStr,
                         'unit_cost'        => $unitCost,
                         'total_cost'       => $damagedTotal,
                         'damage_reason'    => $line->damage_reason,
@@ -204,46 +202,56 @@ final class ApproveCountSessionAction
             return $session->refresh();
         });
 
-        $this->eventBus->publish(new InventoryCountApproved(
-            countSessionId: $result->id,
-            countNumber:    $result->count_number,
-            warehouseId:    $result->warehouse_id,
-            companyId:      $companyId,
-            linesAdjusted:  $linesAdjusted,
-            approvedBy:     $approvedBy,
-        ));
+        // ── Guarantee all events fire only after the outermost transaction commits ─
+        DB::connection()->afterCommit(function () use ($result, $companyId, $linesAdjusted, $approvedBy, $fifoCostChanges): void {
+            $this->eventBus->publish(new InventoryCountApproved(
+                countSessionId: $result->id,
+                countNumber:    $result->count_number,
+                warehouseId:    $result->warehouse_id,
+                companyId:      $companyId,
+                linesAdjusted:  $linesAdjusted,
+                approvedBy:     $approvedBy,
+            ));
 
-        foreach ($fifoCostChanges as $change) {
-            $old  = (float) $change['old_cost'];
-            $new  = (float) $change['new_cost'];
-            $diff = round($new - $old, 4);
-            $pct  = $old > 0 ? round(($diff / $old) * 100, 4) : 0.0;
+            foreach ($fifoCostChanges as $change) {
+                $old  = (string) $change['old_cost'];
+                $new  = (string) $change['new_cost'];
+                $diff = bcsub($new, $old, 4);
+                $pct  = bccomp($old, '0', 4) > 0
+                    ? bcmul(bcdiv($diff, $old, 8), '100', 4)
+                    : '0.0000';
 
-            FinishedProductCostChanged::dispatch(
-                productId:         $change['product_id'],
-                companyId:         $change['company_id'],
-                oldCost:           $old,
-                newCost:           $new,
-                difference:        $diff,
-                differencePercent: $pct,
-                triggerReason:     PricingTriggerReason::Other,
-                triggerSource:     'inventory_count',
-                occurredAt:        now()->toIso8601String(),
-            );
-        }
+                FinishedProductCostChanged::dispatch(
+                    productId:         $change['product_id'],
+                    companyId:         $change['company_id'],
+                    oldCost:           (float) $old,
+                    newCost:           (float) $new,
+                    difference:        (float) $diff,
+                    differencePercent: (float) $pct,
+                    triggerReason:     PricingTriggerReason::Other,
+                    triggerSource:     'inventory_count',
+                    occurredAt:        now()->toIso8601String(),
+                );
+            }
+        });
 
         return $result;
     }
 
     /**
      * @return array{float, float} [oldFifoCost, newFifoCost]
+     *
+     * F-INV-H3: scope by warehouse_id + company_id so the FIFO cost reflects
+     * the specific warehouse being counted, not the globally oldest layer.
      */
-    private function refreshFifoCost(string $productId): array
+    private function refreshFifoCost(string $productId, string $warehouseId, string $companyId): array
     {
         $oldCost = (float) (Product::query()->where('id', $productId)->value('current_fifo_cost') ?? 0);
 
         $oldestLayer = InventoryReceiptLayer::query()
             ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->where('company_id', $companyId)
             ->where('remaining_qty', '>', 0)
             ->orderBy('created_at')
             ->orderBy('id')

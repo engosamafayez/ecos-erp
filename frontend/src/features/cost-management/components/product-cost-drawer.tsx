@@ -55,23 +55,23 @@ function CostBreakdownTab({ review }: { review: PricingReview; detailLoading: bo
   const totalPrevious = review.previous_product_cost;
 
   const rows = [
-    { label: 'المواد الخام',     current: totalCurrent * 0.72, previous: totalPrevious * 0.72, category: 'raw_material' as const },
-    { label: 'التغليف',          current: totalCurrent * 0.18, previous: totalPrevious * 0.18, category: 'packaging' as const },
-    { label: 'تكاليف أخرى',     current: totalCurrent * 0.10, previous: totalPrevious * 0.10, category: 'other' as const },
+    { label: 'Raw Materials',     current: totalCurrent * 0.72, previous: totalPrevious * 0.72, category: 'raw_material' as const },
+    { label: 'Packaging',          current: totalCurrent * 0.18, previous: totalPrevious * 0.18, category: 'packaging' as const },
+    { label: 'Other Costs',     current: totalCurrent * 0.10, previous: totalPrevious * 0.10, category: 'other' as const },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <SectionLabel>تفصيل المكوّنات</SectionLabel>
+        <SectionLabel>Component Breakdown</SectionLabel>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-start text-muted-foreground">
-              <th className="pb-2 pe-4 font-medium">المكوّن</th>
-              <th className="pb-2 pe-4 text-end font-medium">السابق</th>
-              <th className="pb-2 pe-4 text-end font-medium">الحالي</th>
-              <th className="pb-2 pe-4 text-end font-medium">التغيير</th>
-              <th className="pb-2 text-end font-medium">% من الإجمالي</th>
+              <th className="pb-2 pe-4 font-medium">Component</th>
+              <th className="pb-2 pe-4 text-end font-medium">Previous</th>
+              <th className="pb-2 pe-4 text-end font-medium">Current</th>
+              <th className="pb-2 pe-4 text-end font-medium">Change</th>
+              <th className="pb-2 text-end font-medium">% of Total</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -104,7 +104,7 @@ function CostBreakdownTab({ review }: { review: PricingReview; detailLoading: bo
           </tbody>
           <tfoot>
             <tr className="border-t font-semibold">
-              <td className="py-2.5 pe-4">إجمالي الوصفة</td>
+              <td className="py-2.5 pe-4">Recipe Total</td>
               <td className="py-2.5 pe-4 text-end tabular-nums text-muted-foreground">{fmt(totalPrevious)}</td>
               <td className="py-2.5 pe-4 text-end tabular-nums">{fmt(totalCurrent)}</td>
               <td className="py-2.5 pe-4 text-end">
@@ -118,10 +118,10 @@ function CostBreakdownTab({ review }: { review: PricingReview; detailLoading: bo
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'تكلفة المنتج السابقة', value: fmt(totalPrevious), muted: true },
-          { label: 'تكلفة المنتج', value: fmt(totalCurrent) },
+          { label: 'Previous Product Cost', value: fmt(totalPrevious), muted: true },
+          { label: 'Product Cost', value: fmt(totalCurrent) },
           {
-            label: 'صافي التغيير',
+            label: 'Net Change',
             value: `${totalCurrent >= totalPrevious ? '+' : ''}${fmt(totalCurrent - totalPrevious)}`,
             red: totalCurrent > totalPrevious,
             green: totalCurrent < totalPrevious,
@@ -149,7 +149,7 @@ function RecipeChangesTab({ review }: { review: PricingReview }) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <BookOpen className="size-8 text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground">لا توجد تغييرات في الوصفة لهذا المنتج.</p>
+        <p className="text-sm text-muted-foreground">No recipe changes for this product.</p>
       </div>
     );
   }
@@ -161,7 +161,7 @@ function RecipeChangesTab({ review }: { review: PricingReview }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionLabel>مواد بتغييرات في الأسعار</SectionLabel>
+      <SectionLabel>Materials with Price Changes</SectionLabel>
       <div className="flex flex-col divide-y rounded-lg border overflow-hidden">
         {mockChanges.map((change) => {
           const diff = change.new_price - change.old_price;
@@ -170,16 +170,16 @@ function RecipeChangesTab({ review }: { review: PricingReview }) {
             <div key={change.sku} className="flex items-center justify-between p-3 gap-4">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{change.material_name}</p>
-                <p className="text-xs text-muted-foreground">{change.sku} · الكمية {change.quantity}</p>
+                <p className="text-xs text-muted-foreground">{change.sku} · Qty {change.quantity}</p>
               </div>
               <div className="flex items-center gap-6 flex-shrink-0 text-sm">
                 <div className="text-end">
-                  <p className="text-xs text-muted-foreground">السابق</p>
+                  <p className="text-xs text-muted-foreground">Previous</p>
                   <p className="tabular-nums">{fmt(change.old_price)}</p>
                 </div>
                 <div className="text-muted-foreground">→</div>
                 <div className="text-end">
-                  <p className="text-xs text-muted-foreground">الجديد</p>
+                  <p className="text-xs text-muted-foreground">New</p>
                   <p className="tabular-nums font-medium">{fmt(change.new_price)}</p>
                 </div>
                 <div className="w-16 text-end">
@@ -204,15 +204,15 @@ function PriceHistoryTab({ review }: { review: PricingReview }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionLabel>الجدول الزمني لسعر البيع</SectionLabel>
+      <SectionLabel>Selling Price Timeline</SectionLabel>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b text-start text-muted-foreground">
-            <th className="pb-2 pe-4 font-medium">التاريخ</th>
-            <th className="pb-2 pe-4 text-end font-medium">سعر البيع</th>
-            <th className="pb-2 pe-4 text-end font-medium">التكلفة</th>
-            <th className="pb-2 pe-4 text-end font-medium">الهامش</th>
-            <th className="pb-2 font-medium">بواسطة</th>
+            <th className="pb-2 pe-4 font-medium">Date</th>
+            <th className="pb-2 pe-4 text-end font-medium">Selling Price</th>
+            <th className="pb-2 pe-4 text-end font-medium">Cost</th>
+            <th className="pb-2 pe-4 text-end font-medium">Margin</th>
+            <th className="pb-2 font-medium">By</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -252,13 +252,13 @@ function MarginSimulationTab({ review }: { review: PricingReview }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <SectionLabel>آلة حساب الهامش التفاعلية</SectionLabel>
+        <SectionLabel>Interactive Margin Calculator</SectionLabel>
         <p className="text-xs text-muted-foreground mb-4">
-          عدّل سعر البيع لمعرفة الأثر على الهامش والربح دون حفظ.
+          Adjust the selling price to see the impact on margin and profit without saving.
         </p>
 
         <div className="max-w-xs">
-          <Label className="text-sm mb-1.5 block">سعر البيع المطلوب</Label>
+          <Label className="text-sm mb-1.5 block">Target Selling Price</Label>
           <Input
             type="number"
             min="0"
@@ -273,21 +273,21 @@ function MarginSimulationTab({ review }: { review: PricingReview }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
           {
-            label: 'الهامش المتوقع',
+            label: 'Expected Margin',
             value: `${margin.toFixed(2)}%`,
-            sub: `${marginDelta >= 0 ? '+' : ''}${marginDelta.toFixed(2)}% مقارنةً بالحالي`,
+            sub: `${marginDelta >= 0 ? '+' : ''}${marginDelta.toFixed(2)}% vs current`,
             good: margin >= review.target_margin,
           },
           {
-            label: 'الربح لكل وحدة',
+            label: 'Profit per Unit',
             value: fmt(profit),
-            sub: `التكلفة: ${fmt(cost)}`,
+            sub: `Cost: ${fmt(cost)}`,
             good: profit > 0,
           },
           {
-            label: 'مقارنةً بالهامش المستهدف',
+            label: 'vs Target Margin',
             value: `${targetDelta >= 0 ? '+' : ''}${targetDelta.toFixed(2)}%`,
-            sub: `المستهدف: ${review.target_margin.toFixed(1)}%`,
+            sub: `Target: ${review.target_margin.toFixed(1)}%`,
             good: margin >= review.target_margin,
           },
         ].map((card) => (
@@ -311,12 +311,12 @@ function MarginSimulationTab({ review }: { review: PricingReview }) {
       <Separator />
 
       <div>
-        <SectionLabel>نقاط مرجعية</SectionLabel>
+        <SectionLabel>Reference Points</SectionLabel>
         <div className="flex flex-col gap-2 text-sm">
           {[
-            { label: 'سعر البيع الحالي', value: review.selling_price, note: `هامش ${currentMargin.toFixed(1)}%` },
-            { label: 'السعر المقترح', value: review.suggested_selling_price, note: 'يحافظ على الهامش المستهدف' },
-            { label: 'سعر التعادل', value: cost, note: 'هامش 0%' },
+            { label: 'Current Selling Price', value: review.selling_price, note: `Margin ${currentMargin.toFixed(1)}%` },
+            { label: 'Suggested Price', value: review.suggested_selling_price, note: 'Maintains target margin' },
+            { label: 'Break-even Price', value: cost, note: 'Margin 0%' },
           ].map((ref) => (
             <button
               key={ref.label}
@@ -339,11 +339,11 @@ function MarginSimulationTab({ review }: { review: PricingReview }) {
 
 function ApprovalHistoryTab({ review }: { review: PricingReview }) {
   const ACTION_LABELS: Record<string, string> = {
-    approved: 'اعتماد السعر المقترح',
-    kept: 'الإبقاء على السعر الحالي',
-    custom_price: 'تحديد سعر مخصص',
-    snoozed: 'تأجيل المراجعة',
-    assigned: 'تعيين مراجع',
+    approved: 'Approved Suggested Price',
+    kept: 'Kept Current Price',
+    custom_price: 'Set Custom Price',
+    snoozed: 'Snoozed Review',
+    assigned: 'Assigned Reviewer',
   };
 
   const ACTION_COLORS: Record<string, string> = {
@@ -358,7 +358,7 @@ function ApprovalHistoryTab({ review }: { review: PricingReview }) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <BookOpen className="size-8 text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground">لا يوجد سجل موافقات بعد. هذه المراجعة معلّقة.</p>
+        <p className="text-sm text-muted-foreground">No approval history yet. This review is pending.</p>
       </div>
     );
   }
@@ -369,7 +369,7 @@ function ApprovalHistoryTab({ review }: { review: PricingReview }) {
       action: review.status === 'snoozed' ? 'snoozed' : review.status,
       old_price: review.previous_product_cost + 10,
       new_price: review.selling_price,
-      reason: review.status === 'kept' ? 'ضغط تنافسي على التسعير — سيُراجع الربع القادم' : null,
+      reason: review.status === 'kept' ? 'Competitive pricing pressure — will be reviewed next quarter' : null,
       actor: { id: 'u1', name: 'Ahmed Hassan' },
       created_at: review.updated_at,
     },
@@ -377,7 +377,7 @@ function ApprovalHistoryTab({ review }: { review: PricingReview }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <SectionLabel>سجل الموافقات</SectionLabel>
+      <SectionLabel>Approval History</SectionLabel>
       {mockHistory.map((entry) => (
         <div key={entry.id} className="rounded-lg border p-3">
           <div className="flex items-start justify-between gap-2">
@@ -391,7 +391,7 @@ function ApprovalHistoryTab({ review }: { review: PricingReview }) {
           <p className="mt-2 text-sm font-medium">{entry.actor.name}</p>
           {entry.old_price && entry.new_price && (
             <p className="text-xs text-muted-foreground mt-0.5">
-              السعر: {fmt(entry.old_price)} → {fmt(entry.new_price)}
+              Price: {fmt(entry.old_price)} → {fmt(entry.new_price)}
             </p>
           )}
           {entry.reason && (
@@ -421,28 +421,28 @@ export function ProductCostDrawer({ review, open, onOpenChange }: ProductCostDra
   const tabs = [
     {
       key: 'cost-breakdown',
-      label: 'تفصيل التكلفة',
+      label: 'Cost Breakdown',
       content: <CostBreakdownTab review={review} detailLoading={false} />,
     },
     {
       key: 'recipe-changes',
-      label: 'تغييرات الوصفة',
+      label: 'Recipe Changes',
       badge: review.impacts.includes('recipe_changed') ? '!' : undefined,
       content: <RecipeChangesTab review={review} />,
     },
     {
       key: 'price-history',
-      label: 'سجل الأسعار',
+      label: 'Price History',
       content: <PriceHistoryTab review={review} />,
     },
     {
       key: 'simulation',
-      label: 'محاكاة الهامش',
+      label: 'Margin Simulation',
       content: <MarginSimulationTab review={review} />,
     },
     {
       key: 'approval-history',
-      label: 'سجل الموافقات',
+      label: 'Approval History',
       content: <ApprovalHistoryTab review={review} />,
     },
   ];
@@ -463,7 +463,7 @@ export function ProductCostDrawer({ review, open, onOpenChange }: ProductCostDra
               </p>
             </div>
             <div className="flex flex-col items-end gap-1 flex-shrink-0">
-              <span className="text-xs text-muted-foreground">تكلفة المنتج</span>
+              <span className="text-xs text-muted-foreground">Product Cost</span>
               <span className="text-lg font-semibold tabular-nums">{fmt(review.product_cost)}</span>
             </div>
           </div>

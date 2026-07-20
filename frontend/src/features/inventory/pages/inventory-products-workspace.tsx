@@ -32,9 +32,9 @@ export function InventoryProductsWorkspace() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="المنتجات"
-        subtitle="إدارة المنتجات النهائية والمواد الخام والتصنيفات ووحدات القياس"
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: 'المنتجات' }]}
+        title="Products"
+        subtitle="Manage finished goods, raw materials, categories, and units of measure"
+        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: 'Products' }]}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -43,7 +43,7 @@ export function InventoryProductsWorkspace() {
           title={tProd('finishedGoods.title')}
           description={tProd('finishedGoods.subtitle')}
           count={finishedData?.meta.total}
-          countLabel="إجمالي"
+          countLabel="Total"
           href={ROUTES.products}
           isLoading={finishedLoading}
           newLabel={tProd('actions.new')}
@@ -54,7 +54,7 @@ export function InventoryProductsWorkspace() {
           title={tProd('rawMaterials.title')}
           description={tProd('rawMaterials.subtitle')}
           count={rawData?.meta.total}
-          countLabel="إجمالي"
+          countLabel="Total"
           href={ROUTES.rawMaterials}
           isLoading={rawLoading}
           newLabel={tProd('actions.new')}
@@ -65,7 +65,7 @@ export function InventoryProductsWorkspace() {
           title={tCat('title')}
           description={tCat('subtitle')}
           count={categoriesData?.meta.total}
-          countLabel="إجمالي"
+          countLabel="Total"
           href={ROUTES.categories}
           isLoading={categoriesLoading}
         />
@@ -74,7 +74,7 @@ export function InventoryProductsWorkspace() {
           title={tUnit('title')}
           description={tUnit('subtitle')}
           count={unitsData?.meta.total}
-          countLabel="إجمالي"
+          countLabel="Total"
           href={ROUTES.units}
           isLoading={unitsLoading}
         />

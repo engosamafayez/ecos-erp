@@ -23,6 +23,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('permissions', 'resource')) {
+            return;
+        }
+
         Schema::table('permissions', function (Blueprint $table): void {
             // Nullable during the transition window; the seeder re-seeds with
             // proper values, after which every row will have a resource value.
@@ -36,6 +40,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('permissions', 'resource')) {
+            return;
+        }
+
         Schema::table('permissions', function (Blueprint $table): void {
             $table->dropIndex(['module', 'resource', 'action']);
             $table->dropIndex(['module', 'resource']);

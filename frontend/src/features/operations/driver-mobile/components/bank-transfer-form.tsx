@@ -31,7 +31,7 @@ export function BankTransferForm({ onSubmit, onCancel, isLoading }: BankTransfer
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>المبلغ (EGP) *</Label>
+        <Label>Amount (EGP) *</Label>
         <Input
           type="number"
           min="0"
@@ -44,43 +44,43 @@ export function BankTransferForm({ onSubmit, onCancel, isLoading }: BankTransfer
       </div>
 
       <div className="space-y-1.5">
-        <Label>رقم المرجع *</Label>
+        <Label>Reference Number *</Label>
         <Input
           value={reference}
           onChange={(e) => setReference(e.target.value)}
-          placeholder="مرجع معاملة بنكية..."
+          placeholder="Bank transaction reference..."
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label>رابط صورة الإيصال</Label>
+        <Label>Receipt Image URL</Label>
         <Input
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://... (رابط الرفع)"
+          placeholder="https://... (upload link)"
         />
         <p className="text-xs text-muted-foreground">
-          أدخل رابط صورة الإيصال المرفوعة.
+          Enter the URL of the uploaded receipt image.
         </p>
       </div>
 
       <div className="space-y-1.5">
-        <Label>ملاحظات</Label>
+        <Label>Notes</Label>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="ملاحظات اختيارية..."
+          placeholder="Optional notes..."
           rows={2}
         />
       </div>
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          إلغاء
+          Cancel
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'جارٍ التسجيل...' : 'تسجيل التحويل'}
+          {isLoading ? 'Saving...' : 'Record Transfer'}
         </Button>
       </div>
     </form>

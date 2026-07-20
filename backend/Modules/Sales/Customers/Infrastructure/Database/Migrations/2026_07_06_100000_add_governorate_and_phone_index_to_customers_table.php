@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('customers', 'governorate')) {
+            return;
+        }
+
         Schema::table('customers', function (Blueprint $table): void {
             $table->string('governorate')->nullable()->after('city');
             $table->string('area')->nullable()->after('governorate');
@@ -20,6 +24,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('customers', 'governorate')) {
+            return;
+        }
+
         Schema::table('customers', function (Blueprint $table): void {
             $table->dropIndex(['phone']);
             $table->dropIndex(['mobile']);

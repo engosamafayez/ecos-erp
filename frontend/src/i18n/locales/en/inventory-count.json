@@ -22,10 +22,12 @@
       "createdBy": "Created By"
     },
     "status": {
-      "open": "Open",
-      "frozen": "Frozen",
-      "finalized": "Finalized",
-      "cancelled": "Cancelled"
+      "all":         "All",
+      "draft":       "Draft",
+      "in_progress": "In Progress",
+      "completed":   "Pending Approval",
+      "approved":    "Approved",
+      "cancelled":   "Cancelled"
     },
     "form": {
       "name": { "label": "Session Name", "placeholder": "Monthly Count — July 2026" },

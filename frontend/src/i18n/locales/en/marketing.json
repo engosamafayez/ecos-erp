@@ -37,12 +37,37 @@
       "startDate": "Start Date",
       "endDate": "End Date"
     },
+    "externalStatus": {
+      "ACTIVE":      "Active",
+      "PAUSED":      "Paused",
+      "DELETED":     "Deleted",
+      "ARCHIVED":    "Archived",
+      "IN_PROCESS":  "In Process",
+      "WITH_ISSUES": "With Issues"
+    },
     "status": {
-      "active": "Active",
-      "paused": "Paused",
-      "completed": "Completed",
-      "draft": "Draft",
-      "archived": "Archived"
+      "draft":          "Draft",
+      "pending_review": "Pending Review",
+      "approved":       "Approved",
+      "scheduled":      "Scheduled",
+      "publishing":     "Publishing…",
+      "published":      "Active",
+      "paused":         "Paused",
+      "archived":       "Archived",
+      "failed":         "Failed",
+      "rejected":       "Rejected",
+      "all":            "All"
+    },
+    "statusTab": {
+      "all":            "All",
+      "draft":          "Drafts",
+      "pending_review": "Pending Approval",
+      "approved":       "Approved",
+      "scheduled":      "Scheduled",
+      "published":      "Active",
+      "paused":         "Paused",
+      "archived":       "Archived",
+      "failed":         "Failed"
     }
   },
   "audiences": {

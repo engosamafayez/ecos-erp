@@ -9,6 +9,7 @@ use Modules\Inventory\Products\Domain\Enums\CostSource;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\MasterData\Categories\Domain\Models\Category;
 use Modules\MasterData\Units\Domain\Models\Unit;
+use Modules\Organization\Companies\Domain\Models\Company;
 
 /**
  * @extends Factory<Product>
@@ -30,6 +31,7 @@ final class ProductFactory extends Factory
             'barcode' => (string) $this->faker->ean13(),
             'name' => ucwords($this->faker->unique()->words(2, true)),
             'description' => $this->faker->sentence(),
+            'company_id' => Company::factory(),
             'category_id' => Category::factory(),
             'unit_id' => Unit::factory(),
             'product_type' => $this->faker->randomElement(Product::TYPES),

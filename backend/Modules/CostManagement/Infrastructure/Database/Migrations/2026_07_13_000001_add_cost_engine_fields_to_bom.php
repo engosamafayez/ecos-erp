@@ -17,6 +17,10 @@ return new class extends Migration
         });
 
         // Immutable audit log: every recalculation of a recipe's material cost.
+        if (Schema::hasTable('recipe_cost_histories')) {
+            return;
+        }
+
         Schema::create('recipe_cost_histories', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('bom_id')->constrained('bills_of_materials')->cascadeOnDelete();

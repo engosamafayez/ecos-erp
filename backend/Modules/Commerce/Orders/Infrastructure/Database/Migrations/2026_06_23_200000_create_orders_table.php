@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('orders')) {
+            return;
+        }
+
         Schema::create('orders', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('channel_id')->nullable()->constrained('channels')->nullOnDelete();

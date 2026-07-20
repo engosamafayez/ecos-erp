@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('products', 'cost_source')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             // MFG-M001: cost_source — determines which mechanism updates current_cost.
             // 'purchase' = updated by GR posting only (default for all existing products).

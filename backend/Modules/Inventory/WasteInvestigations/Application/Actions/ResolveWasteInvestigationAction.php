@@ -59,13 +59,16 @@ final class ResolveWasteInvestigationAction
             $consumptionResult = null;
             if ($outcome->requiresInventoryDeduction()) {
                 $dto = new StockOperationDTO(
-                    warehouse_id:   $warehouseId,
-                    product_id:     $productId,
-                    company_id:     $companyId,
-                    quantity:       $quantity,
-                    reference_type: 'waste_investigation',
-                    reference_id:   $investigation->id,
-                    notes:          "Waste deduction: {$outcome->label()} — investigation {$investigation->id}",
+                    warehouse_id:       $warehouseId,
+                    product_id:         $productId,
+                    company_id:         $companyId,
+                    quantity:           $quantity,
+                    reference_type:     'waste_investigation',
+                    reference_id:       $investigation->id,
+                    notes:              "Waste deduction: {$outcome->label()} — investigation {$investigation->id}",
+                    // M-03: confirmed waste/damage must be written off regardless of
+                    // active reservations — physical stock is gone; the guard must not block.
+                    bypassReserveGuard: true,
                 );
 
                 $this->adjustmentOut->execute($dto);

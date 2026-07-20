@@ -23,7 +23,7 @@ export function DriverTripTimelinePage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base">الجدول الزمني للرحلة</h1>
+        <h1 className="font-semibold text-base">Trip Timeline</h1>
       </div>
 
       <div className="p-4">
@@ -37,7 +37,7 @@ export function DriverTripTimelinePage() {
           <DriverTripTimeline events={timeline.events} />
         ) : (
           <p className="text-center text-sm text-muted-foreground py-12">
-            لا توجد أحداث بعد.
+            No events yet.
           </p>
         )}
       </div>

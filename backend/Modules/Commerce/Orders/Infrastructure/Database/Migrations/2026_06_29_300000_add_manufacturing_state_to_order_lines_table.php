@@ -19,6 +19,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('order_lines', 'manufacturing_state')) {
+            return;
+        }
+
         Schema::table('order_lines', function (Blueprint $table): void {
             $table->string('manufacturing_state', 30)->nullable()->after('line_total');
             $table->json('manufacturing_result')->nullable()->after('manufacturing_state');
@@ -31,6 +35,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('order_lines', 'manufacturing_state')) {
+            return;
+        }
+
         Schema::table('order_lines', function (Blueprint $table): void {
             $table->dropIndex(['manufacturing_state']);
             $table->dropColumn([

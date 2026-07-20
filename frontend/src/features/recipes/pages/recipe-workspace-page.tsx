@@ -64,7 +64,7 @@ const FORM_ID = 'recipe-form';
 function extractMessage(error: unknown): string {
   return axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
     ? error.response.data.message
-    : 'حدث خطأ. يرجى المحاولة مرة أخرى.';
+    : 'An error occurred. Please try again.';
 }
 
 function fmt(value: number, decimals = 2): string {
@@ -82,13 +82,13 @@ function MaterialTypeBadge({ type }: { type: string }) {
   if (type === 'packaging_material') {
     return (
       <Badge variant="outline" className="text-xs border-violet-300 text-violet-700 dark:border-violet-700 dark:text-violet-400">
-        تغليف
+        Packaging
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="text-xs border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400">
-      مادة خام
+      Raw Material
     </Badge>
   );
 }
@@ -146,9 +146,9 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
   }
 
   function handleSave() {
-    if (!name.trim())    { setError('الاسم مطلوب.');          return; }
-    if (!categoryId)     { setError('التصنيف مطلوب.');       return; }
-    if (!unitId)         { setError('الوحدة مطلوبة.');       return; }
+    if (!name.trim())    { setError('Name is required.');      return; }
+    if (!categoryId)     { setError('Category is required.'); return; }
+    if (!unitId)         { setError('Unit is required.');     return; }
 
     setError('');
     createMaterial.mutate(
@@ -176,7 +176,7 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>إنشاء مادة</DialogTitle>
+          <DialogTitle>Create Material</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-1">
@@ -186,7 +186,7 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
 
           {/* Type */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">نوع المادة</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Material Type</Label>
             <div className="flex gap-2">
               {(['raw_material', 'packaging_material'] as const).map((t) => (
                 <button
@@ -200,7 +200,7 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
                       : 'border-border hover:bg-muted',
                   )}
                 >
-                  {t === 'raw_material' ? 'مادة خام' : 'تغليف'}
+                  {t === 'raw_material' ? 'Raw Material' : 'Packaging'}
                 </button>
               ))}
             </div>
@@ -208,24 +208,24 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
 
           {/* Name */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">الاسم *</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Name *</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="اسم المادة…"
+              placeholder="Material name…"
               autoFocus
             />
           </div>
 
           {/* Category */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">التصنيف *</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Category *</Label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
             >
-              <option value="">اختر التصنيف…</option>
+              <option value="">Select category…</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -234,13 +234,13 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
 
           {/* Unit */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">الوحدة *</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Unit *</Label>
             <select
               value={unitId}
               onChange={(e) => setUnitId(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
             >
-              <option value="">اختر الوحدة…</option>
+              <option value="">Select unit…</option>
               {units.map((u) => (
                 <option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>
               ))}
@@ -249,9 +249,9 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleClose(false)}>إلغاء</Button>
+          <Button variant="outline" onClick={() => handleClose(false)}>Cancel</Button>
           <Button onClick={handleSave} disabled={createMaterial.isPending}>
-            {createMaterial.isPending ? 'جارٍ الإنشاء…' : 'إنشاء المادة'}
+            {createMaterial.isPending ? 'Creating…' : 'Create Material'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -304,14 +304,14 @@ function MaterialPicker({
       <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setSearch(''); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>إضافة مادة</DialogTitle>
+            <DialogTitle>Add Material</DialogTitle>
           </DialogHeader>
 
           <div className="relative">
             <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
             <Input
               className="pl-8"
-              placeholder="بحث بالاسم أو SKU…"
+              placeholder="Search by name or SKU…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -320,16 +320,16 @@ function MaterialPicker({
 
           <div className="max-h-[360px] overflow-y-auto divide-y">
             {isLoading ? (
-              <p className="text-muted-foreground py-6 text-center text-sm">جارٍ تحميل المواد…</p>
+              <p className="text-muted-foreground py-6 text-center text-sm">Loading materials…</p>
             ) : filtered.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-muted-foreground text-sm mb-3">لا توجد مواد</p>
+                <p className="text-muted-foreground text-sm mb-3">No materials</p>
                 <div className="flex gap-2 justify-center">
                   <Button type="button" size="sm" variant="outline" onClick={() => handleOpenCreate('raw_material')}>
-                    <Plus className="size-3.5 mr-1" /> مادة خام
+                    <Plus className="size-3.5 mr-1" /> Raw Material
                   </Button>
                   <Button type="button" size="sm" variant="outline" onClick={() => handleOpenCreate('packaging_material')}>
-                    <Plus className="size-3.5 mr-1" /> تغليف
+                    <Plus className="size-3.5 mr-1" /> Packaging
                   </Button>
                 </div>
               </div>
@@ -340,10 +340,10 @@ function MaterialPicker({
                   <>
                     <div className="px-3 py-1.5 bg-muted/40 flex items-center justify-between">
                       <span className="text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                        مواد خام
+                        Raw Materials
                       </span>
                       <Button type="button" size="sm" variant="ghost" className="h-5 px-1.5 text-xs" onClick={() => handleOpenCreate('raw_material')}>
-                        <Plus className="size-3" /> جديد
+                        <Plus className="size-3" /> New
                       </Button>
                     </div>
                     {rawMaterials.map((m) => <MaterialRow key={m.id} m={m} alreadySelected={alreadySelected} onSelect={onSelect} onClose={() => { onOpenChange(false); setSearch(''); }} />)}
@@ -355,10 +355,10 @@ function MaterialPicker({
                   <>
                     <div className="px-3 py-1.5 bg-muted/40 flex items-center justify-between">
                       <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                        مواد التغليف
+                        Packaging Materials
                       </span>
                       <Button type="button" size="sm" variant="ghost" className="h-5 px-1.5 text-xs" onClick={() => handleOpenCreate('packaging_material')}>
-                        <Plus className="size-3" /> جديد
+                        <Plus className="size-3" /> New
                       </Button>
                     </div>
                     {pkgMaterials.map((m) => <MaterialRow key={m.id} m={m} alreadySelected={alreadySelected} onSelect={onSelect} onClose={() => { onOpenChange(false); setSearch(''); }} />)}
@@ -372,10 +372,10 @@ function MaterialPicker({
           {!isLoading && filtered.length > 0 && (
             <div className="border-t pt-3 flex gap-2">
               <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => handleOpenCreate('raw_material')}>
-                <Plus className="size-3.5 mr-1" /> إنشاء مادة خام
+                <Plus className="size-3.5 mr-1" /> Create Raw Material
               </Button>
               <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => handleOpenCreate('packaging_material')}>
-                <Plus className="size-3.5 mr-1" /> إنشاء تغليف
+                <Plus className="size-3.5 mr-1" /> Create Packaging
               </Button>
             </div>
           )}
@@ -426,11 +426,11 @@ function MaterialRow({
           <span className="text-xs font-medium tabular-nums">{fmtCost(m.material_cost, currency, locale)}</span>
         ) : (
           <span className="text-xs text-amber-500 flex items-center gap-0.5">
-            <TriangleAlert className="size-3" />بدون تكلفة
+            <TriangleAlert className="size-3" />No cost
           </span>
         )}
       </div>
-      {added && <Badge variant="secondary" className="text-xs ml-1">مُضاف</Badge>}
+      {added && <Badge variant="secondary" className="text-xs ml-1">Added</Badge>}
     </button>
   );
 }
@@ -487,14 +487,14 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
       <PageHeader
         title={recipe.product?.name ?? recipe.bom_number}
         breadcrumbs={[
-          { label: 'الرئيسية', to: ROUTES.dashboard },
-          { label: 'الوصفات', to: ROUTES.recipes },
+          { label: 'Home',    to: ROUTES.dashboard },
+          { label: 'Recipes', to: ROUTES.recipes },
           { label: recipe.product?.name ?? recipe.bom_number },
         ]}
         actions={
           <Button onClick={() => navigate(`${ROUTES.recipes}/${recipe.id}/edit`)}>
             <Pencil className="size-4" />
-            تعديل الوصفة
+            Edit Recipe
           </Button>
         }
       />
@@ -502,39 +502,39 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-6">
           {/* Details */}
-          <WorkspaceCard title="التفاصيل">
+          <WorkspaceCard title="Details">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <LabelValue label="رقم الوصفة" value={<span className="font-mono text-xs">{recipe.bom_number}</span>} />
-              <LabelValue label="المنتج"      value={recipe.product?.name} />
+              <LabelValue label="Recipe #" value={<span className="font-mono text-xs">{recipe.bom_number}</span>} />
+              <LabelValue label="Product"  value={recipe.product?.name} />
               <LabelValue
-                label="الحالة"
+                label="Status"
                 value={
                   recipe.is_active
-                    ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">نشط</Badge>
-                    : <Badge variant="outline" className="text-xs text-muted-foreground">مسودة</Badge>
+                    ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">Active</Badge>
+                    : <Badge variant="outline" className="text-xs text-muted-foreground">Draft</Badge>
                 }
               />
             </div>
           </WorkspaceCard>
 
           {/* Materials — grouped */}
-          <WorkspaceCard title="المواد">
+          <WorkspaceCard title="Materials">
             {recipe.lines.length === 0 ? (
-              <p className="text-muted-foreground text-sm">لا توجد مواد محددة.</p>
+              <p className="text-muted-foreground text-sm">No materials defined.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-muted-foreground border-b text-start">
-                      <th className="pb-2 pe-3 font-medium">المادة</th>
-                      <th className="pb-2 pe-3 font-medium w-24">النوع</th>
-                      <th className="pb-2 pe-3 font-medium w-24">التصنيف</th>
-                      <th className="pb-2 pe-3 font-medium w-14">الوحدة</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-20">الكمية المطلوبة</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-16">هدر%</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-20">الكمية الفعلية</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-28">التكلفة الحالية</th>
-                      <th className="pb-2 text-end font-medium w-28">إجمالي التكلفة</th>
+                      <th className="pb-2 pe-3 font-medium">Material</th>
+                      <th className="pb-2 pe-3 font-medium w-24">Type</th>
+                      <th className="pb-2 pe-3 font-medium w-24">Category</th>
+                      <th className="pb-2 pe-3 font-medium w-14">Unit</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-20">Req. Qty</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-16">Waste%</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-20">Eff. Qty</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-28">Unit Cost</th>
+                      <th className="pb-2 text-end font-medium w-28">Total Cost</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -544,7 +544,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                         <tr>
                           <td colSpan={9} className="py-1.5 px-0">
                             <span className="text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                              مواد خام
+                              Raw Materials
                             </span>
                           </td>
                         </tr>
@@ -552,7 +552,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                           <MaterialViewRow key={line.id} line={line} onOpenDrawer={(p) => setDrawerMaterial(p)} />
                         ))}
                         <tr className="bg-muted/30">
-                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">مجموع المواد الخام</td>
+                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">Raw Materials Subtotal</td>
                           <td className="py-1.5 text-end text-xs font-semibold tabular-nums">{fmtCost(rawSubtotal, currency, locale)}</td>
                         </tr>
                       </>
@@ -564,7 +564,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                         <tr>
                           <td colSpan={9} className="py-1.5 px-0">
                             <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                              مواد التغليف
+                              Packaging Materials
                             </span>
                           </td>
                         </tr>
@@ -572,7 +572,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                           <MaterialViewRow key={line.id} line={line} onOpenDrawer={(p) => setDrawerMaterial(p)} />
                         ))}
                         <tr className="bg-muted/30">
-                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">مجموع مواد التغليف</td>
+                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">Packaging Subtotal</td>
                           <td className="py-1.5 text-end text-xs font-semibold tabular-nums">{fmtCost(pkgSubtotal, currency, locale)}</td>
                         </tr>
                       </>
@@ -585,14 +585,14 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
 
           {/* Recipe Notes */}
           {recipe.notes && (
-            <WorkspaceCard title="ملاحظات الوصفة">
+            <WorkspaceCard title="Recipe Notes">
               <p className="text-sm whitespace-pre-wrap">{recipe.notes}</p>
             </WorkspaceCard>
           )}
 
           {/* Execution Instructions */}
           {recipe.execution_instructions && (
-            <WorkspaceCard title="تعليمات التنفيذ">
+            <WorkspaceCard title="Execution Instructions">
               <p className="text-sm whitespace-pre-wrap font-mono text-muted-foreground">{recipe.execution_instructions}</p>
             </WorkspaceCard>
           )}
@@ -600,30 +600,30 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
 
         {/* Cost Summary */}
         <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-          <WorkspaceCard title="ملخص التكلفة">
+          <WorkspaceCard title="Cost Summary">
             <div className="flex flex-col gap-3">
-              <LabelValue label="إجمالي المواد" value={recipe.lines.length} />
+              <LabelValue label="Total Materials" value={recipe.lines.length} />
               <Separator />
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">مواد خام</span>
+                <span className="text-muted-foreground">Raw Materials</span>
                 <span className="tabular-nums">{fmtCost(rawMaterialCost, currency, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">تغليف</span>
+                <span className="text-muted-foreground">Packaging</span>
                 <span className="tabular-nums">{fmtCost(packagingCost, currency, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">تصنيع</span>
+                <span className="text-muted-foreground">Manufacturing</span>
                 <span className="tabular-nums">{fmtCost(manufacturingCost, currency, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">تكاليف أخرى</span>
+                <span className="text-muted-foreground">Other Costs</span>
                 <span className="tabular-nums">{fmtCost(otherCosts, currency, locale)}</span>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-sm font-semibold">
-                  تكلفة الوصفة
+                  Recipe Cost
                   <LiveCostBadge />
                 </span>
                 <span className="text-sm font-bold tabular-nums">{fmtCost(recipeCost, currency, locale)}</span>
@@ -705,7 +705,7 @@ function MaterialViewRow({ line, onOpenDrawer }: { line: LineCostRow; onOpenDraw
           <span className="tabular-nums">{fmtCost(line.unitCost as number, currency, locale)}</span>
         ) : (
           <span className="text-amber-500 text-xs flex items-center justify-end gap-1">
-            <TriangleAlert className="size-3" />بدون تكلفة
+            <TriangleAlert className="size-3" />No cost
           </span>
         )}
       </td>
@@ -732,14 +732,14 @@ function DuplicateDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>الوصفة موجودة مسبقًا</DialogTitle>
+          <DialogTitle>Recipe Already Exists</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          توجد وصفة بالفعل لـ <strong>{productName}</strong>. هل تريد استبدال الوصفة الحالية؟
+          A recipe already exists for <strong>{productName}</strong>. Do you want to replace the current recipe?
         </p>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>إلغاء</Button>
-          <Button variant="destructive" onClick={onReplace}>استبدال</Button>
+          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button variant="destructive" onClick={onReplace}>Replace</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -1039,16 +1039,16 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
 
   const isPending = createRecipe.isPending || updateRecipe.isPending;
   const title = mode === 'create'
-    ? 'إنشاء وصفة منتج'
-    : `تعديل: ${recipe?.product?.name ?? recipe?.bom_number ?? ''}`;
+    ? 'Create Product Recipe'
+    : `Edit: ${recipe?.product?.name ?? recipe?.bom_number ?? ''}`;
 
   return (
     <div className="flex flex-col gap-6 pb-24">
       <PageHeader
         title={title}
         breadcrumbs={[
-          { label: 'الرئيسية', to: ROUTES.dashboard },
-          { label: 'الوصفات', to: ROUTES.recipes },
+          { label: 'Home',    to: ROUTES.dashboard },
+          { label: 'Recipes', to: ROUTES.recipes },
           { label: title },
         ]}
       />
@@ -1056,7 +1056,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
       {serverError && (
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
-          <AlertTitle>خطأ</AlertTitle>
+          <AlertTitle>Error</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       )}
@@ -1066,11 +1066,11 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
             <div className="flex flex-col gap-6">
               {/* Product selection */}
-              <WorkspaceCard title="المنتج">
+              <WorkspaceCard title="Product">
                 {/* Company filter */}
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    الشركة <span className="font-normal">(اختياري — يضيق قائمة المنتجات)</span>
+                    Company <span className="font-normal">(optional — narrows the product list)</span>
                   </Label>
                   <Combobox
                     options={companyOptions ?? []}
@@ -1080,7 +1080,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       setSelectedChannelId('');
                       form.setValue('product_id', '');
                     }}
-                    placeholder="كل الشركات…"
+                    placeholder="All Companies…"
                     loading={loadingCompanies}
                   />
                 </div>
@@ -1088,7 +1088,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                 {/* Channel filter */}
                 <div className="mt-3 flex flex-col gap-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    القناة <span className="font-normal">(اختياري)</span>
+                    Channel <span className="font-normal">(optional)</span>
                   </Label>
                   <Combobox
                     options={filteredChannelOptions}
@@ -1097,13 +1097,13 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       setSelectedChannelId(v ?? '');
                       form.setValue('product_id', '');
                     }}
-                    placeholder={selectedCompanyId ? 'كل القنوات…' : 'اختر شركة أولاً…'}
+                    placeholder={selectedCompanyId ? 'All Channels…' : 'Select a company first…'}
                     loading={loadingChannels}
                   />
                 </div>
 
                 <div className="mt-3">
-                  <FormField name="product_id" label="المنتج" required>
+                  <FormField name="product_id" label="Product" required>
                     <Controller
                       control={form.control}
                       name="product_id"
@@ -1112,7 +1112,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                           options={fgOptions}
                           value={field.value || null}
                           onChange={(v) => void handleProductChange(v)}
-                          placeholder="اختر المنتج…"
+                          placeholder="Select a product…"
                           loading={loadingFG || isCheckingDuplicate}
                         />
                       )}
@@ -1123,13 +1123,13 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                 {!watchedProductId && (
                   <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
                     <TriangleAlert className="size-4 flex-shrink-0" />
-                    اختر منتجًا قبل إضافة المواد.
+                    Select a product before adding materials.
                   </div>
                 )}
               </WorkspaceCard>
 
               {/* Materials table */}
-              <WorkspaceCard title="المواد">
+              <WorkspaceCard title="Materials">
                 <div className="flex flex-col gap-4">
                   {typeof form.formState.errors.lines?.message === 'string' && (
                     <Alert variant="destructive">
@@ -1141,9 +1141,9 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   {fields.length === 0 ? (
                     <div className="rounded-lg border-2 border-dashed py-10 text-center">
                       <PackageOpen className="size-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-muted-foreground text-sm">لم تُضَف مواد بعد.</p>
+                      <p className="text-muted-foreground text-sm">No materials added yet.</p>
                       <p className="text-muted-foreground mt-1 text-xs">
-                        انقر "إضافة مادة" لاختيار المواد الخام أو مواد التغليف.
+                        Click "Add Material" to select raw materials or packaging materials.
                       </p>
                     </div>
                   ) : (
@@ -1151,15 +1151,15 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-muted-foreground border-b text-start">
-                            <th className="pb-2 pe-3 font-medium">المادة</th>
-                            <th className="pb-2 pe-3 font-medium w-24">النوع</th>
-                            <th className="pb-2 pe-3 font-medium w-24">التصنيف</th>
-                            <th className="pb-2 pe-3 font-medium w-14">الوحدة</th>
-                            <th className="pb-2 pe-3 font-medium w-24">الكمية المطلوبة</th>
-                            <th className="pb-2 pe-3 font-medium w-20">هدر %</th>
-                            <th className="pb-2 pe-3 text-end font-medium w-20">الكمية الفعلية</th>
-                            <th className="pb-2 pe-3 text-end font-medium w-28">التكلفة الحالية</th>
-                            <th className="pb-2 pe-3 text-end font-medium w-28">إجمالي التكلفة</th>
+                            <th className="pb-2 pe-3 font-medium">Material</th>
+                            <th className="pb-2 pe-3 font-medium w-24">Type</th>
+                            <th className="pb-2 pe-3 font-medium w-24">Category</th>
+                            <th className="pb-2 pe-3 font-medium w-14">Unit</th>
+                            <th className="pb-2 pe-3 font-medium w-24">Req. Qty</th>
+                            <th className="pb-2 pe-3 font-medium w-20">Waste %</th>
+                            <th className="pb-2 pe-3 text-end font-medium w-20">Eff. Qty</th>
+                            <th className="pb-2 pe-3 text-end font-medium w-28">Unit Cost</th>
+                            <th className="pb-2 pe-3 text-end font-medium w-28">Total Cost</th>
                             <th className="pb-2 w-16" />
                           </tr>
                         </thead>
@@ -1170,7 +1170,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                               <tr>
                                 <td colSpan={10} className="py-1.5 px-0">
                                   <span className="text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                                    مواد خام
+                                    Raw Materials
                                   </span>
                                 </td>
                               </tr>
@@ -1188,7 +1188,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                                 />
                               ))}
                               <tr className="bg-muted/30">
-                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">مجموع المواد الخام</td>
+                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">Raw Materials Subtotal</td>
                                 <td className="py-1 pe-3 text-end text-xs font-semibold tabular-nums">{fmtCost(rawSubtotal, currency, locale)}</td>
                                 <td />
                               </tr>
@@ -1201,7 +1201,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                               <tr>
                                 <td colSpan={10} className="py-1.5 px-0">
                                   <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                                    مواد التغليف
+                                    Packaging Materials
                                   </span>
                                 </td>
                               </tr>
@@ -1219,7 +1219,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                                 />
                               ))}
                               <tr className="bg-muted/30">
-                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">مجموع مواد التغليف</td>
+                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">Packaging Subtotal</td>
                                 <td className="py-1 pe-3 text-end text-xs font-semibold tabular-nums">{fmtCost(pkgSubtotal, currency, locale)}</td>
                                 <td />
                               </tr>
@@ -1238,16 +1238,16 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                     disabled={!watchedProductId}
                   >
                     <Plus className="size-4" />
-                    إضافة مادة
+                    Add Material
                   </Button>
                 </div>
               </WorkspaceCard>
 
               {/* Recipe Notes */}
-              <WorkspaceCard title="ملاحظات الوصفة">
+              <WorkspaceCard title="Recipe Notes">
                 <FormField name="notes" label="">
                   <Textarea
-                    placeholder="ملاحظات عامة حول هذه الوصفة…"
+                    placeholder="General notes about this recipe…"
                     rows={3}
                     {...form.register('notes')}
                   />
@@ -1255,17 +1255,17 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
               </WorkspaceCard>
 
               {/* Execution Instructions */}
-              <WorkspaceCard title="تعليمات التنفيذ">
+              <WorkspaceCard title="Execution Instructions">
                 <FormField name="execution_instructions" label="">
                   <Textarea
-                    placeholder={"1. اخلط المكونات\n2. سخّن 5 دقائق\n3. برّد\n4. املأ العبوات\n5. أغلق"}
+                    placeholder={"1. Mix ingredients\n2. Heat 5 minutes\n3. Cool\n4. Fill containers\n5. Seal"}
                     rows={5}
                     className="font-mono text-sm"
                     {...form.register('execution_instructions')}
                   />
                 </FormField>
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  تعليمات التصنيع خطوة بخطوة يستخدمها نظام التصنيع.
+                  Step-by-step manufacturing instructions used by the manufacturing system.
                 </p>
               </WorkspaceCard>
             </div>
@@ -1275,7 +1275,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
 
               {/* Start From — create mode only */}
               {mode === 'create' && (
-                <WorkspaceCard title="ابدأ من">
+                <WorkspaceCard title="Start From">
                   <div className="flex flex-col gap-3">
                     {/* Radio buttons */}
                     <div className="flex flex-col gap-2">
@@ -1290,7 +1290,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                             className="accent-primary size-3.5"
                           />
                           <span className="text-sm font-medium">
-                            {opt === 'blank' ? 'وصفة فارغة' : 'وصفة موجودة'}
+                            {opt === 'blank' ? 'Blank Recipe' : 'Existing Recipe'}
                           </span>
                         </label>
                       ))}
@@ -1301,24 +1301,24 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       <>
                         <Separator />
                         <div className="flex flex-col gap-1.5">
-                          <Label className="text-xs text-muted-foreground">اختر وصفة موجودة</Label>
+                          <Label className="text-xs text-muted-foreground">Select Existing Recipe</Label>
                           <Combobox
                             options={recipeOptions}
                             value={sourceRecipeId || null}
                             onChange={(v) => setSourceRecipeId(v ?? '')}
-                            placeholder="بحث في الوصفات…"
+                            placeholder="Search recipes…"
                             loading={false}
                           />
                           {loadingSourceRecipe && (
-                            <p className="text-xs text-muted-foreground">جارٍ تحميل الوصفة…</p>
+                            <p className="text-xs text-muted-foreground">Loading recipe…</p>
                           )}
                           {sourceRecipeId && sourceRecipeDetail && !loadingSourceRecipe && (
                             <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-2 text-xs text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
                               <Copy className="size-3.5 shrink-0 mt-0.5" />
                               <span>
-                                تم نسخ {sourceRecipeDetail.lines?.length ?? 0} مادة
-                                {(sourceRecipeDetail.manufacturing_cost ?? 0) > 0 && `، تصنيع ${fmtCost(sourceRecipeDetail.manufacturing_cost ?? 0, currency, locale)}`}
-                                {' '}من <strong>{sourceRecipeDetail.product?.name ?? sourceRecipeDetail.bom_number}</strong>.
+                                Copied {sourceRecipeDetail.lines?.length ?? 0} material(s)
+                                {(sourceRecipeDetail.manufacturing_cost ?? 0) > 0 && `, manufacturing ${fmtCost(sourceRecipeDetail.manufacturing_cost ?? 0, currency, locale)}`}
+                                {' '}from <strong>{sourceRecipeDetail.product?.name ?? sourceRecipeDetail.bom_number}</strong>.
                               </span>
                             </div>
                           )}
@@ -1330,24 +1330,24 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
               )}
 
               {/* Cost Summary */}
-              <WorkspaceCard title="ملخص التكلفة">
+              <WorkspaceCard title="Cost Summary">
                 <div className="flex flex-col gap-3">
                   {recipe && (
                     <LabelValue
-                      label="رقم الوصفة"
+                      label="Recipe #"
                       value={<span className="font-mono text-xs">{recipe.bom_number}</span>}
                     />
                   )}
-                  <LabelValue label="إجمالي المواد" value={fields.length} />
+                  <LabelValue label="Total Materials" value={fields.length} />
                   <Separator />
 
                   {/* Raw / Packaging live rows */}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">مواد خام</span>
+                    <span className="text-muted-foreground">Raw Materials</span>
                     <span className="tabular-nums">{fmtCost(rawMaterialCost, currency, locale)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">تغليف</span>
+                    <span className="text-muted-foreground">Packaging</span>
                     <span className="tabular-nums">{fmtCost(packagingCost, currency, locale)}</span>
                   </div>
 
@@ -1355,7 +1355,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
 
                   {/* Manufacturing Cost — editable */}
                   <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">تكلفة التصنيع</Label>
+                    <Label className="text-xs text-muted-foreground">Manufacturing Cost</Label>
                     <Input
                       type="number"
                       min="0"
@@ -1367,12 +1367,12 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                     {form.formState.errors.manufacturing_cost && (
                       <p className="text-xs text-destructive">{form.formState.errors.manufacturing_cost.message}</p>
                     )}
-                    <p className="text-[10px] text-muted-foreground">عمالة، مرافق، وقت آلات، مصاريف عامة</p>
+                    <p className="text-[10px] text-muted-foreground">Labor, utilities, machine time, overhead</p>
                   </div>
 
                   {/* Other Costs — editable */}
                   <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">تكاليف أخرى</Label>
+                    <Label className="text-xs text-muted-foreground">Other Costs</Label>
                     <Input
                       type="number"
                       min="0"
@@ -1389,7 +1389,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   <Separator />
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 text-sm font-semibold">
-                      تكلفة الوصفة
+                      Recipe Cost
                       <LiveCostBadge />
                     </span>
                     <span className="text-sm font-bold tabular-nums">{fmtCost(recipeCost, currency, locale)}</span>
@@ -1398,7 +1398,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   {anyMissingCost && (
                     <div className="flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
                       <TriangleAlert className="size-3.5 flex-shrink-0 mt-0.5" />
-                      <span>بعض المواد لا تحتوي على تكلفة محددة. قد تكون تكلفة الوصفة غير مكتملة.</span>
+                      <span>Some materials have no defined cost. Recipe cost may be incomplete.</span>
                     </div>
                   )}
                 </div>
@@ -1416,12 +1416,12 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
             variant="outline"
             onClick={() => navigate(recipe ? `${ROUTES.recipes}/${recipe.id}` : ROUTES.recipes)}
           >
-            إلغاء
+            Cancel
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
             {isPending
-              ? mode === 'create' ? 'جارٍ الإنشاء…' : 'جارٍ الحفظ…'
-              : mode === 'create' ? 'إنشاء الوصفة' : 'حفظ التغييرات'}
+              ? mode === 'create' ? 'Creating…' : 'Saving…'
+              : mode === 'create' ? 'Create Recipe' : 'Save Changes'}
           </Button>
         </div>
       </div>
@@ -1563,7 +1563,7 @@ function MaterialFormRow({
           fmtCost(unitCost as number, currency, locale)
         ) : (
           <span className="text-amber-500 text-xs flex items-center justify-end gap-1">
-            <TriangleAlert className="size-3" />بدون تكلفة
+            <TriangleAlert className="size-3" />No cost
           </span>
         )}
       </td>
@@ -1583,7 +1583,7 @@ function MaterialFormRow({
               size="icon"
               className="size-7"
               onClick={() => onView(product)}
-              title="عرض تفاصيل المادة"
+              title="View Material Details"
             >
               <Eye className="size-3.5" />
             </Button>
@@ -1616,7 +1616,7 @@ export function RecipeWorkspacePage() {
   if (id && isLoading) {
     return (
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        جارٍ تحميل الوصفة…
+        Loading recipe…
       </div>
     );
   }
@@ -1624,9 +1624,9 @@ export function RecipeWorkspacePage() {
   if (id && (isError || (recipe === undefined && !isLoading))) {
     return (
       <div className="flex h-48 flex-col items-center justify-center gap-1">
-        <p className="font-medium">الوصفة غير موجودة</p>
+        <p className="font-medium">Recipe Not Found</p>
         <p className="text-muted-foreground text-sm">
-          ربما تم حذف هذه الوصفة أو المعرّف غير صالح.
+          The recipe may have been deleted or the identifier is invalid.
         </p>
       </div>
     );

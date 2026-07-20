@@ -13,11 +13,11 @@ import { cn } from '@/lib/utils';
 import { SHORTAGE_RESOLUTION_LABELS, type ShortageResolution } from '../types/distribution-board';
 
 const RESOLUTION_DESCRIPTIONS: Record<ShortageResolution, string> = {
-  priority_allocation: 'إعادة توزيع من طلب آخر وفق قواعد الأولوية.',
-  manual_selection:    'يختار المشرف يدوياً الطلبات التي ستحصل على المنتج.',
-  return_preparation:  'إرجاع إلى نظام التحضير لتغطية النقص.',
-  send_manufacturing:  'إرسال أمر إنتاج إلى التصنيع.',
-  delay_orders:        'تحديد الطلبات المتأثرة كمؤجلة وإشعار العملاء.',
+  priority_allocation: 'Redistribute from another order according to priority rules.',
+  manual_selection:    'Supervisor manually selects which orders will receive the product.',
+  return_preparation:  'Return to the preparation system to cover the shortage.',
+  send_manufacturing:  'Send a production order to manufacturing.',
+  delay_orders:        'Mark affected orders as delayed and notify customers.',
 };
 
 interface ShortageResolutionDialogProps {
@@ -53,9 +53,9 @@ export function ShortageResolutionDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-red-600 dark:text-red-400">معالجة النقص</DialogTitle>
+          <DialogTitle className="text-red-600 dark:text-red-400">Resolve Shortage</DialogTitle>
           <DialogDescription>
-            <span className="font-medium">{productName}</span> — نقص مقداره{' '}
+            <span className="font-medium">{productName}</span> — shortage of{' '}
             <span className="font-semibold text-red-600 dark:text-red-400">
               {shortageQty} {unit}
             </span>
@@ -63,7 +63,7 @@ export function ShortageResolutionDialog({
         </DialogHeader>
 
         <div className="space-y-3 py-1">
-          <p className="text-xs text-muted-foreground">اختر كيفية معالجة هذا النقص:</p>
+          <p className="text-xs text-muted-foreground">Select how to resolve this shortage:</p>
 
           <div className="space-y-2">
             {resolutions.map((res) => (
@@ -84,11 +84,11 @@ export function ShortageResolutionDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">ملاحظات (اختياري)</label>
+            <label className="text-xs font-medium text-muted-foreground">Notes (optional)</label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="سياق إضافي أو تعليمات…"
+              placeholder="Additional context or instructions…"
               rows={2}
               className="text-sm resize-none"
             />
@@ -97,14 +97,14 @@ export function ShortageResolutionDialog({
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={onClose} disabled={isPending}>
-            إلغاء
+            Cancel
           </Button>
           <Button
             size="sm"
             disabled={!selected || isPending}
             onClick={handleSubmit}
           >
-            تطبيق الحل
+            Apply Resolution
           </Button>
         </DialogFooter>
       </DialogContent>

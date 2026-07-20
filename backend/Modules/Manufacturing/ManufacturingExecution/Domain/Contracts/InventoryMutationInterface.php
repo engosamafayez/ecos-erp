@@ -51,9 +51,15 @@ interface InventoryMutationInterface
     /**
      * Produce finished goods into warehouse inventory.
      *
-     * Acquires a pessimistic write lock, increments on_hand_qty, and creates
-     * an immutable ProductionOutput ledger entry. Creates the InventoryItem
-     * row if it does not already exist (lazy-initialize pattern).
+     * Acquires a pessimistic write lock, increments on_hand_qty, creates an
+     * immutable ProductionOutput ledger entry, and creates an InventoryReceiptLayer
+     * so that the FIFO invariant (on_hand_qty == Σ remaining_qty) is preserved.
+     * Creates the InventoryItem row if it does not already exist.
+     *
+     * $unitCost is the weighted-average component FIFO cost per finished-goods unit,
+     * derived from the sum of ComponentConsumptionRecord::fifo_cost values divided by
+     * qty_to_manufacture. Pass 0.0 when no component FIFO layers were available (all
+     * raw materials went negative). The receipt layer is always created regardless of cost.
      *
      * MUST be called inside an existing DB::transaction().
      *
@@ -66,5 +72,6 @@ interface InventoryMutationInterface
         string $planId,
         string $companyId,
         string $executionUuid,
+        float $unitCost,
     ): string;
 }

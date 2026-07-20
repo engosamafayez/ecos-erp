@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCheck, Copy, ExternalLink, MapPin, Navigation, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { usePatchOrder } from '@/features/orders/hooks/use-orders';
 
@@ -130,6 +131,7 @@ type Props = {
 };
 
 export function OrderLocationCell({ order, onEdit: _onEdit, onDelete }: Props) {
+  const { t } = useTranslation('orders');
   const loc    = order.location;
   const hasGps = Boolean(loc?.lat && loc?.lng);
   const [copied, setCopied]       = useState(false);
@@ -148,7 +150,7 @@ export function OrderLocationCell({ order, onEdit: _onEdit, onDelete }: Props) {
       <>
         <div className="relative flex items-center gap-1">
           <MapPin className="size-3 text-muted-foreground/40" />
-          <span className="text-xs text-muted-foreground">No GPS</span>
+          <span className="text-xs text-muted-foreground">{t('columns.noGps')}</span>
           <Button
             variant="ghost"
             size="icon"

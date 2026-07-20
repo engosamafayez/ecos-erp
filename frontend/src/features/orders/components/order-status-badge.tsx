@@ -1,6 +1,5 @@
-import { useTranslation } from 'react-i18next';
-
 import type { OrderStatus } from '@/features/orders/types/order';
+import { useOrderStatusLabels } from '@/features/orders/hooks/use-order-labels';
 import { cn } from '@/lib/utils';
 
 const STATUS_CLASS: Record<OrderStatus, string> = {
@@ -29,26 +28,8 @@ type OrderStatusBadgeProps = {
 };
 
 export function OrderStatusBadge({ status, onClick }: OrderStatusBadgeProps) {
-  const { t } = useTranslation('orders');
+  const { statusLabel } = useOrderStatusLabels();
   const cls = STATUS_CLASS[status] ?? STATUS_CLASS.pending;
-
-  const statusLabel: Record<OrderStatus, string> = {
-    scheduled:        t('status.scheduled'),
-    pending:          t('status.pending'),
-    awaiting_payment: t('status.awaiting_payment'),
-    processing:       t('status.processing'),
-    awaiting_stock:   t('status.awaiting_stock'),
-    confirmed:        t('status.confirmed'),
-    preparing:        t('status.preparing'),
-    out_for_delivery: t('status.out_for_delivery'),
-    delivered:        t('status.delivered'),
-    completed:        t('status.completed'),
-    cancelled:        t('status.cancelled'),
-    review:           t('status.review'),
-    rescheduled:      t('status.rescheduled'),
-    returned:         t('status.returned'),
-  };
-
   const label = statusLabel[status];
 
   if (onClick) {

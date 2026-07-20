@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * ASK-CONFIG-OS-001 — Brand-specific Shipping Pricing Rules.
+ * ASK-CONFIG-OS-001 â€” Brand-specific Shipping Pricing Rules.
  *
  * Governs shipping cost per delivery zone.
  * Brand-scoped (unlike the legacy company-scoped shipping_pricing_rules).
@@ -16,6 +16,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('config_brand_shipping_rules')) {
+            return;
+        }
+
         Schema::create('config_brand_shipping_rules', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('brand_id')->constrained('brands')->cascadeOnDelete();

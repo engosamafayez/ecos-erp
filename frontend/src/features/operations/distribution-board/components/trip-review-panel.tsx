@@ -16,7 +16,7 @@ function StatusChip({ status }: { status: string }) {
     pending:   'bg-muted text-muted-foreground',
     skipped:   'bg-slate-100 text-slate-600',
   };
-  const labels: Record<string, string> = { confirmed: 'مؤكد', shortage: 'نقص', pending: 'قيد الانتظار', skipped: 'تجاوز' };
+  const labels: Record<string, string> = { confirmed: 'Confirmed', shortage: 'Shortage', pending: 'Pending', skipped: 'Skipped' };
   return (
     <span className={cn('text-xs px-1.5 py-0.5 rounded-md font-medium', map[status] ?? 'bg-muted text-muted-foreground')}>
       {labels[status] ?? status}
@@ -31,28 +31,28 @@ export function TripReviewPanel({ manifest, custody }: Props) {
       <section>
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <Package className="h-4 w-4 text-muted-foreground" />
-          المنتجات المحمّلة
+          Loaded Products
           {manifest && (
             <Badge variant="outline" className="text-xs ms-auto">
-              {manifest.confirmed_products}/{manifest.total_products} مؤكد
+              {manifest.confirmed_products}/{manifest.total_products} confirmed
             </Badge>
           )}
         </h3>
 
         {!manifest ? (
-          <p className="text-sm text-muted-foreground">لم يتم إنشاء بيان.</p>
+          <p className="text-sm text-muted-foreground">No manifest created.</p>
         ) : manifest.items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">لا توجد منتجات في البيان.</p>
+          <p className="text-sm text-muted-foreground">No products in the manifest.</p>
         ) : (
           <div className="rounded-lg border overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  <th className="px-3 py-2 text-start font-medium text-muted-foreground text-xs">المنتج</th>
-                  <th className="px-3 py-2 text-end font-medium text-muted-foreground text-xs">مطلوب</th>
-                  <th className="px-3 py-2 text-end font-medium text-muted-foreground text-xs">محمّل</th>
-                  <th className="px-3 py-2 text-end font-medium text-muted-foreground text-xs">نقص</th>
-                  <th className="px-3 py-2 text-end font-medium text-muted-foreground text-xs">الحالة</th>
+                  <th className="px-3 py-2 text-start font-medium text-muted-foreground text-xs">Product</th>
+                  <th className="px-3 py-2 text-end font-medium text-muted-foreground text-xs">Required</th>
+                  <th className="px-3 py-2 text-end font-medium text-muted-foreground text-xs">Loaded</th>
+                  <th className="px-3 py-2 text-end font-medium text-muted-foreground text-xs">Shortage</th>
+                  <th className="px-3 py-2 text-end font-medium text-muted-foreground text-xs">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -84,9 +84,9 @@ export function TripReviewPanel({ manifest, custody }: Props) {
       {custody.total > 0 && (
         <section>
           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            العهدة
+            Custody
             <Badge variant="outline" className="text-xs ms-auto">
-              {custody.confirmed}/{custody.total} مؤكدة
+              {custody.confirmed}/{custody.total} confirmed
             </Badge>
           </h3>
 
@@ -101,16 +101,16 @@ export function TripReviewPanel({ manifest, custody }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium">{item.label}</div>
                   <div className="text-xs text-muted-foreground">
-                    {CUSTODY_ITEM_LABELS[item.item_type] ?? item.item_type} · الكمية: {item.quantity}
-                    {item.received_quantity !== null && ` · المستلم: ${item.received_quantity}`}
+                    {CUSTODY_ITEM_LABELS[item.item_type] ?? item.item_type} · Qty: {item.quantity}
+                    {item.received_quantity !== null && ` · Received: ${item.received_quantity}`}
                   </div>
                 </div>
                 {item.is_driver_confirmed ? (
                   <Badge className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-                    مؤكد
+                    Confirmed
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-xs">قيد الانتظار</Badge>
+                  <Badge variant="outline" className="text-xs">Pending</Badge>
                 )}
               </div>
             ))}
@@ -120,8 +120,8 @@ export function TripReviewPanel({ manifest, custody }: Props) {
 
       {custody.total === 0 && (
         <section>
-          <h3 className="text-sm font-semibold mb-2">العهدة</h3>
-          <p className="text-sm text-muted-foreground">لا توجد عهدة مُعيَّنة لهذه الرحلة.</p>
+          <h3 className="text-sm font-semibold mb-2">Custody</h3>
+          <p className="text-sm text-muted-foreground">No custody items assigned to this trip.</p>
         </section>
       )}
     </div>

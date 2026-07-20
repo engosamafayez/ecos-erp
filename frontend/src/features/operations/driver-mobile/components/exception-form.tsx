@@ -36,7 +36,7 @@ export function ExceptionForm({ onSubmit, onCancel, isLoading }: ExceptionFormPr
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>نوع الاستثناء *</Label>
+        <Label>Exception Type *</Label>
         <Select value={exType} onValueChange={(v) => setExType(v as ExceptionType)}>
           <SelectTrigger>
             <SelectValue />
@@ -50,18 +50,18 @@ export function ExceptionForm({ onSubmit, onCancel, isLoading }: ExceptionFormPr
       </div>
 
       <div className="space-y-1.5">
-        <Label>الوصف *</Label>
+        <Label>Description *</Label>
         <Textarea
           value={description}
           onChange={(e) => setDesc(e.target.value)}
-          placeholder="وصف الاستثناء..."
+          placeholder="Exception description..."
           rows={3}
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label>صور (روابط)</Label>
+        <Label>Photos (URLs)</Label>
         {photos.map((photo, idx) => (
           <Input
             key={idx}
@@ -69,7 +69,7 @@ export function ExceptionForm({ onSubmit, onCancel, isLoading }: ExceptionFormPr
             onChange={(e) =>
               setPhotos((prev) => prev.map((p, i) => (i === idx ? e.target.value : p)))
             }
-            placeholder={`رابط الصورة ${idx + 1}...`}
+            placeholder={`Photo URL ${idx + 1}...`}
           />
         ))}
         <Button
@@ -78,16 +78,16 @@ export function ExceptionForm({ onSubmit, onCancel, isLoading }: ExceptionFormPr
           size="sm"
           onClick={() => setPhotos((prev) => [...prev, ''])}
         >
-          + إضافة صورة
+          + Add Photo
         </Button>
       </div>
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          إلغاء
+          Cancel
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'جارٍ الحفظ...' : 'تبليغ عن استثناء'}
+          {isLoading ? 'Saving...' : 'Report Exception'}
         </Button>
       </div>
     </form>

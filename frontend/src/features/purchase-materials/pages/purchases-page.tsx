@@ -29,11 +29,11 @@ import type {
 // ── Source badges ─────────���───────────────────────────────────────────────────
 
 const SOURCE_META: Record<PurchaseSourceType, { label: string; className: string }> = {
-  material_request: { label: 'من طلب',    className: 'bg-blue-50 text-blue-700 border-blue-200' },
-  direct:           { label: 'مباشر',     className: 'bg-slate-50 text-slate-700 border-slate-200' },
-  reorder:          { label: 'إعادة طلب', className: 'bg-violet-50 text-violet-700 border-violet-200' },
-  ai:               { label: 'AI',        className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  manual:           { label: 'يدوي',      className: 'bg-gray-50 text-gray-600 border-gray-200' },
+  material_request: { label: 'From Request', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+  direct:           { label: 'Direct',       className: 'bg-slate-50 text-slate-700 border-slate-200' },
+  reorder:          { label: 'Reorder',      className: 'bg-violet-50 text-violet-700 border-violet-200' },
+  ai:               { label: 'AI',           className: 'bg-amber-50 text-amber-700 border-amber-200' },
+  manual:           { label: 'Manual',       className: 'bg-gray-50 text-gray-600 border-gray-200' },
 };
 
 function SourceBadge({ source }: { source: PurchaseSourceType | null }) {
@@ -59,20 +59,20 @@ const SOURCE_OPTIONS: SourceOption[] = [
   {
     sourceType: 'material_request',
     icon: <FileText className="h-5 w-5" />,
-    title: 'من طلبات المواد',
-    description: 'دمج طلب أو أكثر من الطلبات المعتمدة في عملية شراء واحدة',
+    title: 'From Material Requests',
+    description: 'Merge one or more approved requests into a single purchase order',
   },
   {
     sourceType: 'direct',
     icon: <ShoppingCart className="h-5 w-5" />,
-    title: 'شراء مباشر',
-    description: 'إنشاء عملية شراء لبنود غير مرتبطة بطلب مادة',
+    title: 'Direct Purchase',
+    description: 'Create a purchase for items not linked to a material request',
   },
   {
     sourceType: 'reorder',
     icon: <GitMerge className="h-5 w-5" />,
-    title: 'إعادة طلب',
-    description: 'إعادة الطلب بناءً على نقاط إعادة الطلب أو مستويات الحد الأدنى',
+    title: 'Reorder',
+    description: 'Reorder based on reorder points or minimum stock levels',
   },
 ];
 
@@ -89,7 +89,7 @@ function SourceSelectorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>شراء جديد — اختر المصدر</DialogTitle>
+          <DialogTitle>New Purchase — Select Source</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 pt-1">
           {SOURCE_OPTIONS.map((opt) => (
@@ -117,17 +117,17 @@ function SourceSelectorDialog({
 // ── Status chips ───────────────────────────────────────��──────────────────────
 
 const STATUS_CHIPS: { value: PurchaseMaterialStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'الكل' },
-  { value: 'draft', label: 'مسودة' },
-  { value: 'under_review', label: 'قيد المراجعة' },
-  { value: 'waiting_supplier_selection', label: 'انتظار المورد' },
-  { value: 'approved', label: 'معتمد' },
-  { value: 'purchasing', label: 'قيد الشراء' },
-  { value: 'receiving', label: 'قيد الاستلام' },
-  { value: 'completed', label: 'مكتمل' },
-  { value: 'on_hold', label: 'معلّق' },
-  { value: 'rejected', label: 'مرفوض' },
-  { value: 'cancelled', label: 'ملغى' },
+  { value: 'all', label: 'All' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'under_review', label: 'Under Review' },
+  { value: 'waiting_supplier_selection', label: 'Awaiting Supplier' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'purchasing', label: 'Purchasing' },
+  { value: 'receiving', label: 'Receiving' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'on_hold', label: 'On Hold' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'cancelled', label: 'Cancelled' },
 ];
 
 function fmtDate(d: string | null | undefined): string {
@@ -207,12 +207,12 @@ export function PurchasesPage() {
 
   async function handleDelete(purchase: PurchaseMaterial, e: React.MouseEvent) {
     e.stopPropagation();
-    if (!confirm(`حذف عملية الشراء ${purchase.request_number}؟`)) return;
+    if (!confirm(`Delete purchase ${purchase.request_number}?`)) return;
     try {
       await deleteMutation.mutateAsync(purchase.id);
-      toast.success('تم حذف عملية الشراء.');
+      toast.success('Purchase deleted.');
     } catch {
-      toast.error('فشل حذف عملية الشراء.');
+      toast.error('Failed to delete purchase.');
     }
   }
 
@@ -228,12 +228,12 @@ export function PurchasesPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="المشتريات"
-        subtitle="مساحة عمل قرارات التوريد — اختيار المورد والاعتماد والتنفيذ."
+        title="Purchases"
+        subtitle="Procurement decisions workspace — supplier selection, approval, and execution."
         actions={
           <Button onClick={() => setSourceSelectorOpen(true)} className="gap-1.5">
             <Plus className="h-4 w-4" />
-            شراء جديد
+            New Purchase
           </Button>
         }
       />
@@ -243,16 +243,16 @@ export function PurchasesPage() {
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              التشغيل
+              OPERATIONS
             </p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {[
-                { label: 'مسودة', value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' as const },
-                { label: 'قيد المراجعة', value: op?.under_review ?? 0, color: 'text-blue-700', status: 'under_review' as const },
-                { label: 'انتظار المورد', value: op?.waiting_supplier_selection ?? 0, color: 'text-violet-700', status: 'waiting_supplier_selection' as const },
-                { label: 'معتمد', value: op?.approved ?? 0, color: 'text-emerald-700', status: 'approved' as const },
-                { label: 'قيد الشراء', value: op?.purchasing ?? 0, color: 'text-cyan-700', status: 'purchasing' as const },
-                { label: 'قيد الاستلام', value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' as const },
+                { label: 'Draft', value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' as const },
+                { label: 'Under Review', value: op?.under_review ?? 0, color: 'text-blue-700', status: 'under_review' as const },
+                { label: 'Awaiting Supplier', value: op?.waiting_supplier_selection ?? 0, color: 'text-violet-700', status: 'waiting_supplier_selection' as const },
+                { label: 'Approved', value: op?.approved ?? 0, color: 'text-emerald-700', status: 'approved' as const },
+                { label: 'Purchasing', value: op?.purchasing ?? 0, color: 'text-cyan-700', status: 'purchasing' as const },
+                { label: 'Receiving', value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' as const },
               ].map(({ label, value, color, status }) => (
                 <Card
                   key={label}
@@ -270,14 +270,14 @@ export function PurchasesPage() {
 
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              المالية
+              FINANCIAL
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[
-                { label: 'إجمالي المطلوب', value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
-                { label: 'القيمة المعتمدة', value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
-                { label: 'القيمة المشتراة', value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
-                { label: 'المستحق', value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
+                { label: 'Total Requested', value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
+                { label: 'Approved Value', value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
+                { label: 'Purchased Value', value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
+                { label: 'Outstanding', value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
               ].map(({ label, value, color }) => (
                 <Card key={label} className="border shadow-none">
                   <CardContent className="pt-3 pb-2.5 px-3">
@@ -311,7 +311,7 @@ export function PurchasesPage() {
           <div className="flex flex-wrap gap-2 items-center">
             <Input
               className="w-48 h-8 text-sm"
-              placeholder="بحث برقم الشراء أو الملاحظات…"
+              placeholder="Search by purchase no. or notes…"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
@@ -328,7 +328,7 @@ export function PurchasesPage() {
               onChange={(e) => { setWarehouseFilter(e.target.value); setPage(1); }}
               className="h-8 w-44 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">جميع المستودعات</option>
+              <option value="">All Warehouses</option>
               {(warehouseOptions ?? []).map((w) => (
                 <option key={w.value} value={w.value}>{w.label}</option>
               ))}
@@ -339,22 +339,22 @@ export function PurchasesPage() {
               onChange={(e) => { setPriorityFilter(e.target.value as PurchaseMaterialPriority | 'all'); setPage(1); }}
               className="h-8 w-32 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="all">جميع الأولويات</option>
-              <option value="urgent">عاجلة</option>
-              <option value="high">عالية</option>
-              <option value="normal">عادية</option>
-              <option value="low">منخفضة</option>
+              <option value="all">All Priorities</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="normal">Normal</option>
+              <option value="low">Low</option>
             </select>
 
             <Input
               className="h-8 w-36 text-sm"
-              placeholder="المشتري…"
+              placeholder="Buyer…"
               value={buyerFilter}
               onChange={(e) => { setBuyerFilter(e.target.value); setPage(1); }}
             />
 
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span>مطلوب بحلول:</span>
+              <span>Required by:</span>
               <Input type="date" className="h-8 w-36 text-sm" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} />
               <span>→</span>
               <Input type="date" className="h-8 w-36 text-sm" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
@@ -362,7 +362,7 @@ export function PurchasesPage() {
 
             {(search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter || buyerFilter || dateFrom || dateTo) && (
               <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={resetFilters}>
-                مسح الفلاتر
+                Clear Filters
               </Button>
             )}
           </div>
@@ -375,18 +375,18 @@ export function PurchasesPage() {
               <table className="w-full text-sm whitespace-nowrap">
                 <thead className="bg-muted/40 border-b">
                   <tr>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">رقم الشراء</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">المصدر</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">الشركة</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">المستودع</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">المشتري</th>
-                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">البنود</th>
-                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">القيمة التقديرية</th>
-                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">القيمة المعتمدة</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">الأولوية</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">مطلوب بحلول</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">الحالة</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">آخر تحديث</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Purchase No.</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Source</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Company</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Warehouse</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Buyer</th>
+                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">Items</th>
+                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">Est. Value</th>
+                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">Approved Value</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Priority</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Required By</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Status</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Last Updated</th>
                     <th className="px-3 py-3 w-10" />
                   </tr>
                 </thead>
@@ -394,7 +394,7 @@ export function PurchasesPage() {
                   {isLoading ? (
                     <tr>
                       <td colSpan={13} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                        جارٍ تحميل المشتريات…
+                        Loading purchases…
                       </td>
                     </tr>
                   ) : items.length === 0 ? (
@@ -403,12 +403,12 @@ export function PurchasesPage() {
                         <Truck className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
                         <p className="text-sm text-muted-foreground">
                           {search || statusFilter !== 'all'
-                            ? 'لا توجد مشتريات تطابق الفلاتر.'
-                            : 'لا توجد مشتريات بعد.'}
+                            ? 'No purchases match the current filters.'
+                            : 'No purchases yet.'}
                         </p>
                         {!search && statusFilter === 'all' && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            انقر على "شراء جديد" لإنشاء أول أمر شراء.
+                            Click "New Purchase" to create the first purchase order.
                           </p>
                         )}
                       </td>
@@ -463,7 +463,7 @@ export function PurchasesPage() {
                               onClick={(e) => void handleDelete(purchase, e)}
                               className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                             >
-                              حذف
+                              Delete
                             </button>
                           )}
                         </td>
@@ -479,14 +479,14 @@ export function PurchasesPage() {
         {/* Pagination */}
         {meta && meta.last_page > 1 && (
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{meta.total} عملية شراء إجمالاً</span>
+            <span>{meta.total} total purchases</span>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                السابق
+                Previous
               </Button>
-              <span>صفحة {meta.current_page} من {meta.last_page}</span>
+              <span>Page {meta.current_page} of {meta.last_page}</span>
               <Button size="sm" variant="outline" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
-                التالي
+                Next
               </Button>
             </div>
           </div>

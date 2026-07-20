@@ -9,6 +9,8 @@ namespace Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects;
  *
  * `went_negative` is true when on_hand_after < 0 (RC-2 negative stock materialized).
  * `ledger_entry_id` links back to the StockLedgerEntry created during this execution.
+ * `fifo_cost` is the total FIFO cost consumed from receipt layers for this component;
+ *   used by ManufacturingExecutor to derive the weighted-average unit cost of finished goods.
  */
 final readonly class ComponentConsumptionRecord
 {
@@ -22,6 +24,7 @@ final readonly class ComponentConsumptionRecord
         public float $on_hand_after,
         public bool $went_negative,
         public string $ledger_entry_id,
+        public float $fifo_cost,
     ) {}
 
     /** @return array<string, mixed> */
@@ -37,6 +40,7 @@ final readonly class ComponentConsumptionRecord
             'on_hand_after'   => $this->on_hand_after,
             'went_negative'   => $this->went_negative,
             'ledger_entry_id' => $this->ledger_entry_id,
+            'fifo_cost'       => $this->fifo_cost,
         ];
     }
 }

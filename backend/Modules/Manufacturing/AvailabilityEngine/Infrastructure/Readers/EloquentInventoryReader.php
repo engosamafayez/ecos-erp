@@ -20,9 +20,9 @@ final class EloquentInventoryReader implements InventoryReadInterface
         private readonly InventoryItemRepositoryInterface $repository,
     ) {}
 
-    public function availableQty(string $warehouseId, string $productId): float
+    public function availableQty(string $warehouseId, string $productId, string $companyId): float
     {
-        $item = $this->repository->findByWarehouseAndProduct($warehouseId, $productId);
+        $item = $this->repository->findByWarehouseProductAndCompany($warehouseId, $productId, $companyId);
 
         return $item !== null ? $item->availableQty() : 0.0;
     }

@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('inventory_count_sessions')) {
+            return;
+        }
+
         Schema::create('inventory_count_sessions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

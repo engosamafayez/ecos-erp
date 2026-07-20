@@ -21,7 +21,11 @@ return new class extends Migration
 
         // 2. Drop the old unique constraint [company_id, code]
         try {
-            Schema::table('channels', function (Blueprint $table): void {
+            if (Schema::hasColumn('channels', 'brand_id')) {
+            return;
+        }
+
+        Schema::table('channels', function (Blueprint $table): void {
                 $table->dropUnique(['company_id', 'code']);
             });
         } catch (\Exception) {
@@ -29,9 +33,17 @@ return new class extends Migration
         }
 
         // 3. Make brand_id required (NOT NULL) — must drop SET NULL FK first (MySQL rejects NOT NULL with SET NULL cascade)
+        if (Schema::hasColumn('channels', 'brand_id')) {
+            return;
+        }
+
         Schema::table('channels', function (Blueprint $table): void {
             $table->dropForeign(['brand_id']);
         });
+        if (Schema::hasColumn('channels', 'brand_id')) {
+            return;
+        }
+
         Schema::table('channels', function (Blueprint $table): void {
             $table->uuid('brand_id')->nullable(false)->change();
             $table->foreign('brand_id')->references('id')->on('brands')->cascadeOnDelete();
@@ -39,7 +51,11 @@ return new class extends Migration
 
         // 4. Add unique constraint [brand_id, code]
         try {
-            Schema::table('channels', function (Blueprint $table): void {
+            if (Schema::hasColumn('channels', 'brand_id')) {
+            return;
+        }
+
+        Schema::table('channels', function (Blueprint $table): void {
                 $table->unique(['brand_id', 'code'], 'channels_brand_id_code_unique');
             });
         } catch (\Exception) {
@@ -47,6 +63,10 @@ return new class extends Migration
         }
 
         // 5. Drop company_id foreign key, index, and column
+        if (Schema::hasColumn('channels', 'brand_id')) {
+            return;
+        }
+
         Schema::table('channels', function (Blueprint $table): void {
             $table->dropForeign(['company_id']);
             $table->dropIndex(['company_id']);
@@ -56,13 +76,25 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('channels', 'brand_id')) {
+            return;
+        }
+
         Schema::table('channels', function (Blueprint $table): void {
             $table->dropUnique('channels_brand_id_code_unique');
         });
 
+        if (Schema::hasColumn('channels', 'brand_id')) {
+            return;
+        }
+
         Schema::table('channels', function (Blueprint $table): void {
             $table->uuid('brand_id')->nullable()->change();
         });
+
+        if (Schema::hasColumn('channels', 'brand_id')) {
+            return;
+        }
 
         Schema::table('channels', function (Blueprint $table): void {
             $table->foreignUuid('company_id')
@@ -71,6 +103,10 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->after('id');
         });
+
+        if (Schema::hasColumn('channels', 'brand_id')) {
+            return;
+        }
 
         Schema::table('channels', function (Blueprint $table): void {
             $table->index('company_id');

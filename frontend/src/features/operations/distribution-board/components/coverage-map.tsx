@@ -129,7 +129,7 @@ function DotMap({ orders }: { orders: CoverageOrder[] }) {
           <p className="font-mono font-semibold text-primary">#{hoveredOrder.order_number}</p>
           <p className="text-muted-foreground truncate">{hoveredOrder.city_name}</p>
           {hoveredOrder.isOutlier && (
-            <p className="text-red-500 font-medium mt-0.5">شاذ ({hoveredOrder.distance?.toFixed(1)} كم عن المركز)</p>
+            <p className="text-red-500 font-medium mt-0.5">Outlier ({hoveredOrder.distance?.toFixed(1)} km from center)</p>
           )}
         </div>
       )}
@@ -138,11 +138,11 @@ function DotMap({ orders }: { orders: CoverageOrder[] }) {
       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           <span className="inline-block w-3 h-3 rounded-full bg-blue-500" />
-          <span>عادي</span>
+          <span>Normal</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="inline-block w-3 h-3 rounded-full bg-red-500" />
-          <span>شاذ</span>
+          <span>Outlier</span>
         </div>
       </div>
     </div>
@@ -175,10 +175,10 @@ export function CoverageMap({ tripId, tripNumber }: CoverageMapProps) {
         variant="outline"
         className="h-7 text-xs gap-1 px-2"
         onClick={() => setOpen(true)}
-        title="عرض خريطة التغطية"
+        title="View Coverage Map"
       >
         <MapPin className="h-3 w-3" />
-        خريطة
+        Map
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -186,10 +186,10 @@ export function CoverageMap({ tripId, tripNumber }: CoverageMapProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-primary" />
-              خريطة التغطية — رحلة {tripNumber}
+              Coverage Map — Trip {tripNumber}
               {outliers.length > 0 && (
                 <Badge variant="destructive" className="ml-2 text-xs">
-                  {outliers.length} شاذ
+                  {outliers.length} outlier{outliers.length !== 1 ? 's' : ''}
                 </Badge>
               )}
             </DialogTitle>
@@ -197,12 +197,12 @@ export function CoverageMap({ tripId, tripNumber }: CoverageMapProps) {
 
           {isLoading ? (
             <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-              جارٍ تحميل مواقع الطلبات…
+              Loading order locations…
             </div>
           ) : orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Info className="h-8 w-8 text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">لا توجد طلبات في هذه الرحلة.</p>
+              <p className="text-sm text-muted-foreground">No orders in this trip.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -211,7 +211,7 @@ export function CoverageMap({ tripId, tripNumber }: CoverageMapProps) {
                 <DotMap orders={orders} />
               ) : (
                 <div className="rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground text-center">
-                  لا توجد إحداثيات GPS مخزنة لهذه الطلبات. عرض القائمة بدلاً من ذلك.
+                  No GPS coordinates stored for these orders. Showing list view instead.
                 </div>
               )}
 
@@ -220,7 +220,7 @@ export function CoverageMap({ tripId, tripNumber }: CoverageMapProps) {
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
                     <AlertTriangle className="h-3.5 w-3.5" />
-                    طلبات شاذة — خارج نطاق التوصيل المعتاد
+                    Outlier Orders — Outside Normal Delivery Range
                   </div>
                   <div className="max-h-48 overflow-y-auto space-y-1">
                     {outliers.map((o) => (
@@ -234,10 +234,10 @@ export function CoverageMap({ tripId, tripNumber }: CoverageMapProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground tabular-nums">
-                            {o.distance?.toFixed(1)} كم خارج المركز
+                            {o.distance?.toFixed(1)} km from center
                           </span>
                           <span className="font-semibold tabular-nums">
-                            EGP {Number(o.grand_total).toLocaleString('ar-EG', { maximumFractionDigits: 0 })}
+                            EGP {Number(o.grand_total).toLocaleString('en-US', { maximumFractionDigits: 0 })}
                           </span>
                         </div>
                       </div>
@@ -248,13 +248,13 @@ export function CoverageMap({ tripId, tripNumber }: CoverageMapProps) {
 
               {/* Summary */}
               <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1 border-t">
-                <span>{orders.length} طلب إجمالي</span>
+                <span>{orders.length} total orders</span>
                 <span>·</span>
-                <span>{withCoords.length} بإحداثيات GPS</span>
+                <span>{withCoords.length} with GPS coordinates</span>
                 {outliers.length > 0 && (
                   <>
                     <span>·</span>
-                    <span className="text-red-500">{outliers.length} شاذ</span>
+                    <span className="text-red-500">{outliers.length} outlier{outliers.length !== 1 ? 's' : ''}</span>
                   </>
                 )}
               </div>

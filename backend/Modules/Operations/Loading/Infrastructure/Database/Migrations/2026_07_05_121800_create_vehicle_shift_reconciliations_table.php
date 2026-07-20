@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('vehicle_shift_reconciliations')) {
+            return;
+        }
+
         Schema::create('vehicle_shift_reconciliations', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('company_id');

@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * RC-001 Performance hardening: add composite indexes on marketing_campaign_insights
@@ -17,24 +18,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Covers: WHERE marketing_connection_id = ? AND level = ? AND date_start BETWEEN ?
-        // Used by: all Intelligence queries when a connection_id filter is active.
-        DB::statement('
-            CREATE INDEX IF NOT EXISTS mkt_ins_conn_level_date_idx
-            ON marketing_campaign_insights (marketing_connection_id, level, date_start)
-        ');
-
-        // Covers: WHERE level = ? AND date_start BETWEEN ? AND date_stop BETWEEN ?
-        // Extending the existing level+date_start index to include date_stop for backfill range queries.
-        DB::statement('
-            CREATE INDEX IF NOT EXISTS mkt_ins_level_date_range_idx
-            ON marketing_campaign_insights (level, date_start, date_stop)
-        ');
+        Schema::table('marketing_campaign_insights', function (Blueprint $table): void {
+            $table->index(['marketing_connection_id', 'level', 'date_start'], 'mkt_ins_conn_level_date_idx');
+            $table->index(['level', 'date_start', 'date_stop'], 'mkt_ins_level_date_range_idx');
+        });
     }
 
     public function down(): void
     {
-        DB::statement('DROP INDEX IF EXISTS mkt_ins_conn_level_date_idx');
-        DB::statement('DROP INDEX IF EXISTS mkt_ins_level_date_range_idx');
+        Schema::table('marketing_campaign_insights', function (Blueprint $table): void {
+            $table->dropIndex('mkt_ins_conn_level_date_idx');
+            $table->dropIndex('mkt_ins_level_date_range_idx');
+        });
     }
 };

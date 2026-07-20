@@ -1,4 +1,25 @@
 {
+  "wave": {
+    "status": {
+      "draft":            "Draft",
+      "collecting":       "Collecting",
+      "planning":         "Planning",
+      "shortage_blocked": "Shortage Blocked",
+      "preparing":        "Preparing",
+      "completed":        "Completed",
+      "closed":           "Closed",
+      "cancelled":        "Cancelled"
+    },
+    "columns": {
+      "name":        "Wave Name",
+      "status":      "Status",
+      "planningDate":"Planning Date",
+      "warehouse":   "Warehouse",
+      "orders":      "Orders",
+      "completion":  "Completion",
+      "actions":     "Actions"
+    }
+  },
   "demandAnalysis": {
     "title": "Demand Analysis",
     "subtitle": "Daily Demand Matrix — Operational Day",

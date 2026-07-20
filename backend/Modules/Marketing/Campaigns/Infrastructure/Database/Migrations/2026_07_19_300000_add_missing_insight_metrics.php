@@ -19,6 +19,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('marketing_campaign_insights', 'unique_ctr')) {
+            return;
+        }
+
         Schema::table('marketing_campaign_insights', function (Blueprint $table): void {
             // Unique engagement metrics
             $table->decimal('unique_ctr', 14, 6)->nullable()->after('ctr');
@@ -40,6 +44,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('marketing_campaign_insights', 'unique_ctr')) {
+            return;
+        }
+
         Schema::table('marketing_campaign_insights', function (Blueprint $table): void {
             $table->dropColumn([
                 'unique_ctr', 'unique_clicks',

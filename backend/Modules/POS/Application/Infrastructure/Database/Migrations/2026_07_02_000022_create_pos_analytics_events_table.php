@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('pos_analytics_events')) {
+            return;
+        }
+
         Schema::create('pos_analytics_events', function (Blueprint $table): void {
             // event_id is the primary key — equals eventId() for sale-level events,
             // or a generated UUID for per-product / cashier sub-events.

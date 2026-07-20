@@ -10,29 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { usePreparationWaves } from '../hooks/use-preparation';
-import type { WaveStatus } from '../types/preparation';
-
-const STATUS_COLORS: Record<WaveStatus, string> = {
-  draft:            'bg-gray-100 text-gray-700',
-  collecting:       'bg-cyan-100 text-cyan-700',
-  planning:         'bg-blue-100 text-blue-700',
-  shortage_blocked: 'bg-amber-100 text-amber-700',
-  preparing:        'bg-purple-100 text-purple-700',
-  completed:        'bg-green-100 text-green-700',
-  closed:           'bg-slate-100 text-slate-600',
-  cancelled:        'bg-red-100 text-red-700',
-};
-
-const STATUS_LABELS: Record<WaveStatus, string> = {
-  draft:            'Draft',
-  collecting:       'Collecting',
-  planning:         'Planning',
-  shortage_blocked: 'Blocked',
-  preparing:        'Preparing',
-  completed:        'Completed',
-  closed:           'Closed',
-  cancelled:        'Cancelled',
-};
+import { useWaveStatusLabels, WAVE_STATUS_COLORS } from '../hooks/use-operations-labels';
 
 type Props = {
   className?: string;
@@ -43,6 +21,7 @@ type Props = {
 export function WavePicker({ className, showBadge = true }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const waveId = searchParams.get('wave_id') ?? '';
+  const { waveStatusLabel } = useWaveStatusLabels();
 
   const { data, isLoading } = usePreparationWaves({ per_page: 50 });
   const waves = data?.data ?? [];
@@ -83,8 +62,8 @@ export function WavePicker({ className, showBadge = true }: Props) {
       </Select>
 
       {showBadge && selected && (
-        <Badge className={`text-[10px] h-5 px-1.5 ${STATUS_COLORS[selected.status]}`}>
-          {STATUS_LABELS[selected.status]}
+        <Badge className={`text-[10px] h-5 px-1.5 ${WAVE_STATUS_COLORS[selected.status]}`}>
+          {waveStatusLabel[selected.status]}
         </Badge>
       )}
     </div>

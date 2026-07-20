@@ -59,8 +59,12 @@ final class CreateCountSessionAction
 
     private function nextCountNumber(): string
     {
+        // lockForUpdate prevents concurrent requests from reading the same max and
+        // producing duplicate count numbers. Must be called inside a transaction.
+        // Zero-padded format (CNT-00001…CNT-99999) means lexicographic DESC = numeric DESC.
         $last = InventoryCountSession::query()
-            ->orderByRaw("CAST(REPLACE(count_number, 'CNT-', '') AS UNSIGNED) DESC")
+            ->lockForUpdate()
+            ->orderByDesc('count_number')
             ->value('count_number');
 
         if ($last === null) {

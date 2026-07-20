@@ -63,6 +63,7 @@ final class ManufacturingApplicationService
         $workflowRequest = $this->buildWorkflowRequest(
             productId:    $request->product_id,
             warehouseId:  $request->warehouse_id,
+            companyId:    $request->company_id,
             requiredQty:  $request->required_qty,
             actorId:      $request->actor_id,
             triggerType:  $request->trigger_type,
@@ -94,6 +95,7 @@ final class ManufacturingApplicationService
         $workflowRequest = $this->buildWorkflowRequest(
             productId:    $request->product_id,
             warehouseId:  $request->warehouse_id,
+            companyId:    $request->company_id,
             requiredQty:  $request->required_qty,
             actorId:      $request->actor_id,
             triggerType:  $request->trigger_type,
@@ -121,6 +123,7 @@ final class ManufacturingApplicationService
         $workflowRequest = $this->buildWorkflowRequest(
             productId:    $request->product_id,
             warehouseId:  $request->warehouse_id,
+            companyId:    $request->company_id,
             requiredQty:  $request->required_qty,
             actorId:      $request->actor_id,
             triggerType:  $request->trigger_type,
@@ -167,6 +170,7 @@ final class ManufacturingApplicationService
     private function buildWorkflowRequest(
         string  $productId,
         string  $warehouseId,
+        string  $companyId,
         float   $requiredQty,
         string  $actorId,
         string  $triggerType,
@@ -176,6 +180,7 @@ final class ManufacturingApplicationService
         return new ManufacturingWorkflowRequest(
             product_id:   $productId,
             warehouse_id: $warehouseId,
+            company_id:   $companyId,
             required_qty: $requiredQty,
             trigger:      DecisionTrigger::now(
                 type:     $triggerType,

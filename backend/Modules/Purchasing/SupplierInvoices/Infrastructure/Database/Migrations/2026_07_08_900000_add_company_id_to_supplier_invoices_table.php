@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasColumn('supplier_invoices', 'company_id')) {
+            return;
+        }
+
         Schema::table('supplier_invoices', function (Blueprint $table) {
             $table->uuid('company_id')->nullable()->after('id');
             $table->foreign('company_id')->references('id')->on('companies')->restrictOnDelete();
@@ -27,6 +31,10 @@ return new class extends Migration {
 
     public function down(): void
     {
+        if (Schema::hasColumn('supplier_invoices', 'company_id')) {
+            return;
+        }
+
         Schema::table('supplier_invoices', function (Blueprint $table) {
             $table->dropForeign(['company_id']);
             $table->dropIndex(['company_id']);

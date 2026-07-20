@@ -327,6 +327,10 @@ return new class extends Migration
 
     private function createAuditTable(): void
     {
+        if (Schema::hasTable('geo005_audit_log')) {
+            return;
+        }
+
         Schema::create('geo005_audit_log', function (Blueprint $table) {
             $table->id();
             $table->string('action', 30);

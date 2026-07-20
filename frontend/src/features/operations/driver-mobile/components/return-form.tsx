@@ -41,41 +41,41 @@ export function ReturnForm({ orderId, onSubmit, onCancel, isLoading }: ReturnFor
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>معرف المنتج *</Label>
+        <Label>Product ID *</Label>
         <Input
           type="number"
           value={productId}
           onChange={(e) => setProductId(e.target.value)}
-          placeholder="معرف المنتج..."
+          placeholder="Product ID..."
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label>اسم المنتج *</Label>
+        <Label>Product Name *</Label>
         <Input
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
-          placeholder="اسم المنتج..."
+          placeholder="Product name..."
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label>نوع المرتجع *</Label>
+        <Label>Return Type *</Label>
         <Select value={returnType} onValueChange={setReturnType}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="full">مرتجع كامل</SelectItem>
-            <SelectItem value="partial">مرتجع جزئي</SelectItem>
+            <SelectItem value="full">Full Return</SelectItem>
+            <SelectItem value="partial">Partial Return</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-1.5">
-        <Label>الكمية *</Label>
+        <Label>Quantity *</Label>
         <Input
           type="number"
           min="0.001"
@@ -88,21 +88,21 @@ export function ReturnForm({ orderId, onSubmit, onCancel, isLoading }: ReturnFor
       </div>
 
       <div className="space-y-1.5">
-        <Label>السبب</Label>
+        <Label>Reason</Label>
         <Textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="سبب الإرجاع..."
+          placeholder="Return reason..."
           rows={2}
         />
       </div>
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          إلغاء
+          Cancel
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'جارٍ الحفظ...' : 'تسجيل المرتجع'}
+          {isLoading ? 'Saving...' : 'Record Return'}
         </Button>
       </div>
     </form>

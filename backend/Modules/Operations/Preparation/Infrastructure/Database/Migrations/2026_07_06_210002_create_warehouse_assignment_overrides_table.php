@@ -7,16 +7,20 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * CR-PREP-001 — Manual Override Audit Trail.
+ * CR-PREP-001 â€” Manual Override Audit Trail.
  *
  * Supervisors may override the automatic warehouse assignment.
- * Every override is recorded in full — previous warehouse, new warehouse,
+ * Every override is recorded in full â€” previous warehouse, new warehouse,
  * user, reason, and timestamp. The record is immutable.
  */
 return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('warehouse_assignment_overrides')) {
+            return;
+        }
+
         Schema::create('warehouse_assignment_overrides', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();

@@ -79,15 +79,15 @@ function triggerCsvDownload(items: RawMaterial[], visibleColumns: Set<ColumnKey>
 // ─── Workspace title ──────────────────────────────────────────────────────────
 
 function workspaceTitle(materialType: MaterialType | ''): string {
-  if (materialType === 'raw_material')       return 'المواد الخام';
-  if (materialType === 'packaging_material') return 'مواد التغليف';
-  return 'جميع المواد';
+  if (materialType === 'raw_material')       return 'Raw Materials';
+  if (materialType === 'packaging_material') return 'Packaging Materials';
+  return 'All Materials';
 }
 
 function workspaceSubtitle(materialType: MaterialType | ''): string {
-  if (materialType === 'raw_material')       return 'إدارة مخزون المواد الخام والتكاليف والتوافر.';
-  if (materialType === 'packaging_material') return 'إدارة مواد التغليف المستخدمة في الإنتاج.';
-  return 'إدارة مخزون المواد الخام والتغليف والتكاليف والتوافر.';
+  if (materialType === 'raw_material')       return 'Manage raw material inventory, costs, and availability.';
+  if (materialType === 'packaging_material') return 'Manage packaging materials used in production.';
+  return 'Manage raw material and packaging inventory, costs, and availability.';
 }
 
 // ─── Bulk action bar ──────────────────────────────────────────────────────────
@@ -111,21 +111,21 @@ function BulkActionBar({
 }: BulkBarProps) {
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-2.5 shadow-sm">
-      <span className="text-sm font-medium shrink-0">{selectedCount} محدد</span>
+      <span className="text-sm font-medium shrink-0">{selectedCount} selected</span>
       <div className="w-px h-5 bg-border mx-1" />
 
       <Button variant="outline" size="sm" onClick={onAllowNeg} disabled={isPending} className="gap-1.5 h-8">
-        سماح بالسالب
+        Allow Negative
       </Button>
       <Button variant="outline" size="sm" onClick={onBlockNeg} disabled={isPending} className="gap-1.5 h-8">
-        حظر السالب
+        Block Negative
       </Button>
 
       <Select onValueChange={onChangeCategory}>
         <SelectTrigger className="h-8 w-40 text-sm">
           <div className="flex items-center gap-1.5">
             <Tag className="size-3.5" />
-            <SelectValue placeholder="تغيير الفئة" />
+            <SelectValue placeholder="Change Category" />
           </div>
         </SelectTrigger>
         <SelectContent>
@@ -137,16 +137,16 @@ function BulkActionBar({
 
       <Button variant="outline" size="sm" onClick={onExport} disabled={isPending} className="gap-1.5 h-8">
         <Download className="size-3.5" />
-        تصدير المحدد
+        Export Selected
       </Button>
       <Button variant="destructive" size="sm" onClick={onDelete} disabled={isPending} className="gap-1.5 h-8">
         <Trash2 className="size-3.5" />
-        حذف
+        Delete
       </Button>
 
       <Button variant="ghost" size="sm" onClick={onClear} className="ms-auto h-8 gap-1.5 text-muted-foreground">
         <X className="size-3.5" />
-        مسح
+        Clear
       </Button>
     </div>
   );
@@ -321,8 +321,8 @@ export function RawMaterialsPage() {
         title={title}
         subtitle={subtitle}
         breadcrumbs={[
-          { label: 'الرئيسية',  to: ROUTES.dashboard },
-          { label: 'المخزون',   to: ROUTES.inventory },
+          { label: 'Dashboard', to: ROUTES.dashboard },
+          { label: 'Inventory', to: ROUTES.inventory },
           { label: title },
         ]}
       />
@@ -420,9 +420,9 @@ export function RawMaterialsPage() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        title="حذف المادة"
-        description={`هل أنت متأكد من حذف "${deleteTarget?.name}"؟ لا يمكن التراجع عن هذا الإجراء.`}
-        confirmLabel="حذف"
+        title="Delete Material"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
         onConfirm={handleDelete}
         variant="destructive"
         loading={deleteMut.isPending}
@@ -431,9 +431,9 @@ export function RawMaterialsPage() {
       <ConfirmDialog
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
-        title="حذف المواد المحددة"
-        description={`هل أنت متأكد من حذف ${selectedIds.size} مادة؟ لا يمكن التراجع عن هذا الإجراء.`}
-        confirmLabel={`حذف ${selectedIds.size} عنصر`}
+        title="Delete Selected Materials"
+        description={`Are you sure you want to delete ${selectedIds.size} materials? This action cannot be undone.`}
+        confirmLabel={`Delete ${selectedIds.size} items`}
         onConfirm={handleBulkDelete}
         variant="destructive"
         loading={deleteMut.isPending}

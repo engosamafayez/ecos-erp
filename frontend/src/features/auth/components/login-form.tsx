@@ -253,7 +253,7 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
               lineHeight: 1.15,
             }}
           >
-            {t('login.welcomeBack') || (isRTL ? 'مرحبًا بعودتك' : 'Welcome Back')}
+            {t('login.welcomeBack') || 'Welcome Back'}
           </h2>
           <p style={{ margin: 0, color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
             {t('login.subtitle')}

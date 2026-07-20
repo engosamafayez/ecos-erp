@@ -54,6 +54,14 @@ final class PrepareOrderAction extends BaseAction
 
         $actorId = Auth::id() !== null ? (string) Auth::id() : null;
 
+        // Idempotency: if the order is already Preparing, skip the workflow transition
+        // and proceed directly to (re-)running manufacturing for non-executed lines.
+        if ($order->status === OrderStatus::Preparing) {
+            $this->manufacturing->execute($order);
+            $updated = $this->orders->findById($id) ?? $order->refresh();
+            return OperationResult::success($updated, 'Order already preparing. Manufacturing re-run for eligible lines.');
+        }
+
         // Transition to Preparing via the canonical pipeline.
         // MoveToPreparationWorkflow handles reservation, guard, audit, and AwaitingStock fallback.
         $result = $this->fulfillmentEngine->run(

@@ -117,6 +117,7 @@ final class ReserveOrderInventoryAction
                         $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => 0.0, 'outcome' => 'none'];
                         continue;
                     }
+                    $line->update(['reserved_qty' => $requested]);
                     ++$reservedLines;
                     $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => $requested, 'outcome' => 'full'];
                     continue;
@@ -133,6 +134,7 @@ final class ReserveOrderInventoryAction
                         $line->product_id,
                         $warehouseId,
                         $requested,
+                        $companyId,
                     );
 
                     if ($analysis->eligibility->allowsManufacturing()) {
@@ -154,18 +156,27 @@ final class ReserveOrderInventoryAction
                                 // Manufacturing can still cover the full quantity.
                             }
                         }
+                        // Stamp the full requested quantity as reserved on the line so ShipOrderInventoryAction
+                        // can use it as the shipment quantity (manufacturing will produce the remainder).
+                        $line->update(['reserved_qty' => $requested]);
                         ++$reservedLines;
                         $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => $available, 'outcome' => 'manufacturing'];
                         continue;
                     }
 
+                    // NoRecipe: no active recipe found — defer to ManufacturingPolicy, which is the
+                    // authoritative gate. Reservation counts the line as reserved so the order
+                    // enters Preparing; the manufacturing pipeline will mark the line Skipped.
+                    if ($analysis->eligibility === ManufacturingEligibility::NoRecipe) {
+                        $line->update(['reserved_qty' => $requested]);
+                        ++$reservedLines;
+                        $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => $requested, 'outcome' => 'no_recipe_deferred'];
+                        continue;
+                    }
+
                     // Cases 3 & 4: hard shortage — at least one RM has allow_negative_stock=false
                     ++$skippedLines;
-                    $failReason ??= match ($analysis->eligibility) {
-                        ManufacturingEligibility::CannotManufacture => 'Insufficient Raw Materials',
-                        ManufacturingEligibility::NoRecipe          => 'No Active Recipe',
-                        default                                     => 'Insufficient Inventory',
-                    };
+                    $failReason ??= 'Insufficient Raw Materials';
                     $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => 0.0, 'outcome' => 'none'];
                     continue;
                 }
@@ -192,6 +203,7 @@ final class ReserveOrderInventoryAction
                         reference_id:   $order->id,
                         notes: "Reserved for order #{$order->order_number}",
                     ));
+                    $line->update(['reserved_qty' => $available]);
                     ++$partialLines;
                     $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => $available, 'outcome' => 'partial'];
                 } catch (InsufficientStockException) {

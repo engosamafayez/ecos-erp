@@ -23,6 +23,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->foreignUuid('brand_id')
                 ->nullable()
@@ -62,6 +66,10 @@ return new class extends Migration
         ");
 
         // Drop company_id (FK was made RESTRICT in migration 000003)
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->dropForeign(['company_id']);
             $table->dropColumn('company_id');
@@ -71,6 +79,10 @@ return new class extends Migration
     public function down(): void
     {
         // Restore company_id derived from brand → company
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->foreignUuid('company_id')
                 ->nullable()
@@ -91,6 +103,10 @@ return new class extends Migration
         ");
 
         // Drop brand_id
+        if (Schema::hasColumn('products', 'brand_id')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->dropForeign(['brand_id']);
             $table->dropColumn('brand_id');

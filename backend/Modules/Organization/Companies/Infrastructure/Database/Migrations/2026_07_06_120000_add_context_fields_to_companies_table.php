@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('companies', 'locale')) {
+            return;
+        }
+
         Schema::table('companies', function (Blueprint $table): void {
             // BCP-47 locale tag (e.g. "en-EG", "ar-EG")
             $table->string('locale', 20)->nullable()->after('language');
@@ -27,6 +31,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('companies', 'locale')) {
+            return;
+        }
+
         Schema::table('companies', function (Blueprint $table): void {
             $table->dropColumn([
                 'locale',

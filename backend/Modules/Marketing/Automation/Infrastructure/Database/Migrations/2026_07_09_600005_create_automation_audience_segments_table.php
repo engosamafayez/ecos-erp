@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('automation_audience_segments')) {
+            return;
+        }
+
         Schema::create('automation_audience_segments', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('name', 255);

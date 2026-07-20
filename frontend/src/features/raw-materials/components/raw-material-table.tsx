@@ -44,8 +44,8 @@ function fmtCost(n: number | null | undefined, currency: string, locale: string)
 }
 
 function materialTypeLabel(type: string): string {
-  if (type === 'packaging_material') return 'تغليف';
-  if (type === 'raw_material')       return 'مادة خام';
+  if (type === 'packaging_material') return 'Packaging';
+  if (type === 'raw_material')       return 'Raw Material';
   return type;
 }
 
@@ -77,7 +77,7 @@ function AllowNegativeToggle({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>{switchEl}</TooltipTrigger>
-        <TooltipContent>ليس لديك صلاحية لتعديل سياسة المخزون.</TooltipContent>
+        <TooltipContent>You don't have permission to edit the stock policy.</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -95,7 +95,7 @@ function QtyCell({ qty, colorize }: { qty: number | null | undefined; colorize?:
 
   return (
     <span className={cn('text-sm font-medium tabular-nums', colorClass)}>
-      {qty.toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}
+      {qty.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}
     </span>
   );
 }
@@ -202,46 +202,46 @@ export function RawMaterialTable({
             </TableHead>
 
             {/* 1 — Image */}
-            {show('image') && <TableHead className="w-14">الصورة</TableHead>}
+            {show('image') && <TableHead className="w-14">Image</TableHead>}
 
             {/* 2 — Name (locked) */}
             {show('name') && (
-              <SortableHead field="name" label="الاسم" sort={sort} onSort={onSortChange} />
+              <SortableHead field="name" label="Name" sort={sort} onSort={onSortChange} />
             )}
 
             {/* 3 — Material Type */}
-            {show('material_type') && <TableHead>نوع المادة</TableHead>}
+            {show('material_type') && <TableHead>Material Type</TableHead>}
 
             {/* 4 — Category */}
-            {show('category') && <TableHead>الفئة</TableHead>}
+            {show('category') && <TableHead>Category</TableHead>}
 
             {/* 5 — Unit */}
-            {show('unit') && <TableHead>الوحدة</TableHead>}
+            {show('unit') && <TableHead>Unit</TableHead>}
 
             {/* 6 — Stock Status */}
-            {show('stock_status') && <TableHead>حالة المخزون</TableHead>}
+            {show('stock_status') && <TableHead>Stock Status</TableHead>}
 
             {/* 7 — On Hand */}
             {show('on_hand') && (
-              <SortableHead field="on_hand_qty" label="الرصيد الفعلي" sort={sort} onSort={onSortChange} align="right" />
+              <SortableHead field="on_hand_qty" label="On Hand" sort={sort} onSort={onSortChange} align="right" />
             )}
 
             {/* 8 — Reserved */}
-            {show('reserved') && <TableHead className="text-end">المحجوز</TableHead>}
+            {show('reserved') && <TableHead className="text-end">Reserved</TableHead>}
 
             {/* 9 — Available */}
-            {show('available') && <TableHead className="text-end">المتاح</TableHead>}
+            {show('available') && <TableHead className="text-end">Available</TableHead>}
 
             {/* 10 — Current Cost */}
             {show('current_cost') && (
-              <SortableHead field="material_cost" label="التكلفة الحالية" sort={sort} onSort={onSortChange} align="right" />
+              <SortableHead field="material_cost" label="Current Cost" sort={sort} onSort={onSortChange} align="right" />
             )}
 
             {/* 11 — Inventory Value */}
-            {show('inventory_value') && <TableHead className="text-end">قيمة المخزون</TableHead>}
+            {show('inventory_value') && <TableHead className="text-end">Inventory Value</TableHead>}
 
             {/* 12 — Allow Negative */}
-            {show('allow_negative') && <TableHead>سماح بالسالب</TableHead>}
+            {show('allow_negative') && <TableHead>Allow Negative</TableHead>}
 
             {/* 13 — SKU */}
             {show('sku') && (
@@ -249,7 +249,7 @@ export function RawMaterialTable({
             )}
 
             {/* 14 — Actions (locked) */}
-            {show('actions') && <TableHead className="w-12 text-end">الإجراءات</TableHead>}
+            {show('actions') && <TableHead className="w-12 text-end">Actions</TableHead>}
           </TableRow>
         </TableHeader>
 
@@ -272,8 +272,8 @@ export function RawMaterialTable({
             <TableRow>
               <TableCell colSpan={colCount} className="p-0">
                 <EmptyState
-                  title="لا توجد مواد"
-                  description="أضف أول مادة للبدء، أو عدّل الفلاتر."
+                  title="No materials"
+                  description="Add the first material to get started, or adjust filters."
                 />
               </TableCell>
             </TableRow>
@@ -365,11 +365,11 @@ export function RawMaterialTable({
                     <TableCell>
                       {stockStatus === 'in_stock' ? (
                         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 text-xs">
-                          متوفر
+                          In Stock
                         </Badge>
                       ) : (
                         <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 text-xs">
-                          نفد المخزون
+                          Out of Stock
                         </Badge>
                       )}
                     </TableCell>
@@ -436,12 +436,12 @@ export function RawMaterialTable({
                       <ActionMenu
                         label={`Actions for ${m.name}`}
                         items={[
-                          { key: 'view',          label: 'عرض',           icon: Package,     onSelect: () => onRowClick(m) },
-                          { key: 'edit',          label: 'تعديل',         icon: Edit,        onSelect: () => onEdit(m) },
-                          { key: 'price-history', label: 'سجل الأسعار',   icon: BarChart2,   onSelect: () => onPriceHistory(m) },
-                          { key: 'stock-history', label: 'سجل المخزون',   icon: History,     onSelect: () => onStockHistory(m) },
-                          { key: 'add-stock',     label: 'إضافة مخزون',   icon: PackagePlus, onSelect: () => onAddStock(m) },
-                          { key: 'delete', label: 'حذف', icon: Trash2, onSelect: () => onDelete(m), variant: 'destructive' },
+                          { key: 'view',          label: 'View',          icon: Package,     onSelect: () => onRowClick(m) },
+                          { key: 'edit',          label: 'Edit',          icon: Edit,        onSelect: () => onEdit(m) },
+                          { key: 'price-history', label: 'Price History', icon: BarChart2,   onSelect: () => onPriceHistory(m) },
+                          { key: 'stock-history', label: 'Stock History', icon: History,     onSelect: () => onStockHistory(m) },
+                          { key: 'add-stock',     label: 'Add Stock',     icon: PackagePlus, onSelect: () => onAddStock(m) },
+                          { key: 'delete', label: 'Delete', icon: Trash2, onSelect: () => onDelete(m), variant: 'destructive' },
                         ]}
                       />
                     </TableCell>

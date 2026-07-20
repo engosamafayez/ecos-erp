@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('order_events', 'actor_name')) {
+            return;
+        }
+
         Schema::table('order_events', function (Blueprint $table) {
             $table->string('actor_name')->nullable()->after('actor_id');
             $table->json('previous_value')->nullable()->after('actor_name');
@@ -20,6 +24,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('order_events', 'actor_name')) {
+            return;
+        }
+
         Schema::table('order_events', function (Blueprint $table) {
             $table->dropColumn(['actor_name', 'previous_value', 'new_value', 'module']);
         });

@@ -13,30 +13,30 @@ type Shortcut = { keys: string[]; description: string };
 
 const SHORTCUT_GROUPS: { heading: string; shortcuts: Shortcut[] }[] = [
   {
-    heading: 'المعاملات',
+    heading: 'Transactions',
     shortcuts: [
-      { keys: ['Ctrl', 'N'],  description: 'بيع جديد' },
-      { keys: ['F8'],         description: 'فتح الدفع' },
-      { keys: ['F9'],         description: 'حفظ السلة' },
-      { keys: ['Ctrl', 'H'], description: 'عرض السلات المحفوظة' },
-      { keys: ['Escape'],     description: 'إلغاء / إغلاق اللوحة' },
+      { keys: ['Ctrl', 'N'],  description: 'New Sale' },
+      { keys: ['F8'],         description: 'Open Payment' },
+      { keys: ['F9'],         description: 'Hold Cart' },
+      { keys: ['Ctrl', 'H'], description: 'View Held Carts' },
+      { keys: ['Escape'],     description: 'Cancel / Close Panel' },
     ],
   },
   {
-    heading: 'الأوضاع',
+    heading: 'Modes',
     shortcuts: [
-      { keys: ['Alt', '1'],   description: 'وضع البيع' },
-      { keys: ['Ctrl', 'R'],  description: 'وضع المرتجعات' },
-      { keys: ['Ctrl', 'E'],  description: 'وضع الاستبدال' },
-      { keys: ['Ctrl', 'M'],  description: 'عرض المدير' },
+      { keys: ['Alt', '1'],   description: 'Sale Mode' },
+      { keys: ['Ctrl', 'R'],  description: 'Return Mode' },
+      { keys: ['Ctrl', 'E'],  description: 'Exchange Mode' },
+      { keys: ['Ctrl', 'M'],  description: 'Manager View' },
     ],
   },
   {
-    heading: 'التنقل',
+    heading: 'Navigation',
     shortcuts: [
-      { keys: ['/'],          description: 'البحث عن منتج' },
-      { keys: ['Enter'],      description: 'تأكيد قراءة الباركود' },
-      { keys: ['Shift', '?'], description: 'تبديل لوحة المساعدة' },
+      { keys: ['/'],          description: 'Search for a product' },
+      { keys: ['Enter'],      description: 'Confirm barcode scan' },
+      { keys: ['Shift', '?'], description: 'Toggle help panel' },
     ],
   },
 ];
@@ -50,7 +50,7 @@ export function KeyboardHelp() {
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Keyboard className="size-5" />
-            <DialogTitle>اختصارات لوحة المفاتيح</DialogTitle>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
           </div>
         </DialogHeader>
 
@@ -84,7 +84,7 @@ export function KeyboardHelp() {
         <Separator />
 
         <p className="text-xs text-muted-foreground text-center">
-          اضغط <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-xs">?</kbd> للتبديل
+          Press <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-xs">?</kbd> to toggle
         </p>
       </DialogContent>
     </Dialog>

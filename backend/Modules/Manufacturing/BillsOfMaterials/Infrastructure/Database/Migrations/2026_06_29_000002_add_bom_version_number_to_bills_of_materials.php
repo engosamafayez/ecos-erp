@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('bills_of_materials', 'bom_version_number')) {
+            return;
+        }
+
         Schema::table('bills_of_materials', function (Blueprint $table): void {
             // Integer version counter for copy-on-write versioning (RC-10 architecture).
             // Monotonically increasing per product. Idempotency enforced at the application layer.
@@ -25,6 +29,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('bills_of_materials', 'bom_version_number')) {
+            return;
+        }
+
         Schema::table('bills_of_materials', function (Blueprint $table): void {
             $table->dropIndex('idx_bom_product_version');
             $table->dropColumn('bom_version_number');

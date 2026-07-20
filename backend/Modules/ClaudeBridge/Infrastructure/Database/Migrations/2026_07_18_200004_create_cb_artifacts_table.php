@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('cb_artifacts')) {
+            return;
+        }
+
         Schema::create('cb_artifacts', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('task_id');

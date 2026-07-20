@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('waste_investigations')) {
+            return;
+        }
+
         Schema::create('waste_investigations', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('company_id');
@@ -22,7 +26,7 @@ return new class extends Migration
 
             $table->string('damage_reason', 100)->nullable();
 
-            // pending_investigation → resolved
+            // pending_investigation â†’ resolved
             $table->string('status', 30)->default('pending_investigation');
 
             // operational_waste | warehouse_responsibility | supplier_responsibility | preparation_responsibility

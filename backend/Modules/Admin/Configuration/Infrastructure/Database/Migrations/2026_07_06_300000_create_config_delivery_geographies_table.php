@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * ASK-CONFIG-OS-001 — Delivery Geography: Governorates per Brand.
+ * ASK-CONFIG-OS-001 â€” Delivery Geography: Governorates per Brand.
  *
  * A brand defines which governorates it delivers to. Each governorate
  * is the parent for one or more delivery zones.
@@ -16,6 +16,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('config_delivery_geographies')) {
+            return;
+        }
+
         Schema::create('config_delivery_geographies', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('brand_id')->constrained('brands')->cascadeOnDelete();

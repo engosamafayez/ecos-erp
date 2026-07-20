@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('pos_shifts')) {
+            return;
+        }
+
         Schema::create('pos_shifts', static function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->unsignedInteger('shift_number');

@@ -24,6 +24,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('manufacturing_transactions', 'decision_key')) {
+            return;
+        }
+
         Schema::table('manufacturing_transactions', function (Blueprint $table): void {
             $table->string('decision_key', 64)->nullable()->after('execution_id');
             $table->string('correlation_id', 36)->nullable()->after('decision_key');
@@ -35,6 +39,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('manufacturing_transactions', 'decision_key')) {
+            return;
+        }
+
         Schema::table('manufacturing_transactions', function (Blueprint $table): void {
             $table->dropIndex(['decision_key']);
             $table->dropIndex(['correlation_id']);

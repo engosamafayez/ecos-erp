@@ -7,6 +7,14 @@
     "create": "Create supplier",
     "edit": "Edit Supplier"
   },
+  "status": {
+    "draft":     "Draft",
+    "active":    "Active",
+    "preferred": "Preferred",
+    "on_hold":   "On Hold",
+    "blocked":   "Blocked",
+    "archived":  "Archived"
+  },
   "columns": {
     "code": "Code",
     "name": "Name",

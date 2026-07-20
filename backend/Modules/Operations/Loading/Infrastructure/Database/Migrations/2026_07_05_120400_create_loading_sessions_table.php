@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('loading_sessions')) {
+            return;
+        }
+
         Schema::create('loading_sessions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->constrained('companies')->restrictOnDelete();

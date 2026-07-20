@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('pos_receipt_templates')) {
+            return;
+        }
+
         Schema::create('pos_receipt_templates', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('name', 255);

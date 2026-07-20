@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('marketing_mapping_profile_rules')) {
+            return;
+        }
+
         Schema::create('marketing_mapping_profile_rules', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('mapping_profile_id')->index();

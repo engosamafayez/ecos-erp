@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('channels', 'sync_customers')) {
+            return;
+        }
+
         Schema::table('channels', function (Blueprint $table): void {
             $table->boolean('sync_customers')->default(true)->after('sync_stock');
             $table->string('external_webhook_order_created_id')->nullable()->after('sync_customers');
@@ -19,6 +23,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('channels', 'sync_customers')) {
+            return;
+        }
+
         Schema::table('channels', function (Blueprint $table): void {
             $table->dropColumn([
                 'sync_customers',

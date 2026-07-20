@@ -57,7 +57,7 @@ export function DriverMapPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base">خريطة المسار</h1>
+        <h1 className="font-semibold text-base">Route Map</h1>
       </div>
 
       <div className="p-4 space-y-4">
@@ -66,7 +66,7 @@ export function DriverMapPage() {
           <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/30 p-3 flex items-center gap-2">
             <Navigation className="h-4 w-4 text-blue-600" />
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              موقعك الحالي: {currentPos.lat.toFixed(5)}, {currentPos.lng.toFixed(5)}
+              Your location: {currentPos.lat.toFixed(5)}, {currentPos.lng.toFixed(5)}
             </p>
           </div>
         )}
@@ -74,12 +74,12 @@ export function DriverMapPage() {
         {/* Map placeholder */}
         <div className="rounded-xl border bg-muted/30 h-40 flex items-center justify-center">
           <p className="text-muted-foreground text-sm">
-            الخريطة التفاعلية تتطلب تكامل GPS
+            Interactive map requires GPS integration
           </p>
         </div>
 
         {/* Stop list */}
-        <p className="font-semibold text-sm">محطات التوصيل</p>
+        <p className="font-semibold text-sm">Delivery Stops</p>
 
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -129,7 +129,7 @@ export function DriverMapPage() {
           ))
         ) : (
           <p className="text-center text-sm text-muted-foreground py-8">
-            لا توجد محطات.
+            No stops found.
           </p>
         )}
       </div>

@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('logistics_governorates')) {
+            return;
+        }
+
         Schema::create('logistics_governorates', function (Blueprint $table) {
             $table->id();
             $table->unsignedTinyInteger('country_id')->default(1); // 1 = Egypt

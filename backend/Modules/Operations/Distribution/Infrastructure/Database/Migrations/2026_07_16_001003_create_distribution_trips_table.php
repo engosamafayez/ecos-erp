@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('distribution_trips')) {
+            return;
+        }
+
         Schema::create('distribution_trips', function (Blueprint $table) {
             $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();

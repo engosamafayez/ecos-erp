@@ -11,6 +11,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::dropIfExists('supplier_return_lines');
+        if (Schema::hasTable('supplier_return_lines')) {
+            return;
+        }
+
         Schema::create('supplier_return_lines', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('supplier_return_id')->constrained('supplier_returns')->cascadeOnDelete();

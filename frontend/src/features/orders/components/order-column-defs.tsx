@@ -2,6 +2,7 @@
 import type { TFunction } from 'i18next';
 import { Clock, ExternalLink, FileCheck, MessageCircle, MoreVertical, Printer, User } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { DataGridColumnDef } from '@/components/data-grid/types';
 import { MediaViewer } from '@/components/ui/media-viewer';
@@ -46,10 +47,11 @@ function formatDate(d: string | null): string {
 // ── Payment Proof cell ───────────────────────────────────────────────────────
 
 function PaymentProofCell({ rawPath }: { rawPath: string }) {
+  const { t } = useTranslation('orders');
   return (
     <MediaViewer
       path={rawPath}
-      title="إثبات الدفع"
+      title="Payment Proof"
       trigger={
         <button
           type="button"
@@ -62,7 +64,7 @@ function PaymentProofCell({ rawPath }: { rawPath: string }) {
             hover:ring-emerald-500/40 transition-colors"
         >
           <FileCheck className="size-3" />
-          تم استلام الإثبات
+          {t('columns.proofReceived')}
         </button>
       }
     />
@@ -75,8 +77,8 @@ type IntelligenceBadge = { label: string; cls: string };
 
 function getIntelligenceBadge(totalOrders: number): IntelligenceBadge {
   if (totalOrders >= 10) return { label: '🔵 VIP',    cls: 'text-blue-700 dark:text-blue-400' };
-  if (totalOrders >= 2)  return { label: '🟢 متكرر', cls: 'text-emerald-700 dark:text-emerald-400' };
-  return                        { label: '🟠 جديد',    cls: 'text-orange-600 dark:text-orange-400' };
+  if (totalOrders >= 2)  return { label: '🟢 Repeat', cls: 'text-emerald-700 dark:text-emerald-400' };
+  return                        { label: '🟠 New',     cls: 'text-orange-600 dark:text-orange-400' };
 }
 
 // ── Callbacks ─────────────────────────────────────────────────────────────────
@@ -98,6 +100,7 @@ export type OrderColumnCallbacks = {
 // ── Enterprise Actions Dropdown ───────────────────────────────────────────────
 
 function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: OrderColumnCallbacks }) {
+  const { t } = useTranslation('orders');
   const [copied, setCopied] = useState(false);
   const phone  = order.billing_phone ?? order.customer?.phone ?? order.customer?.mobile;
   const digits = phone?.replace(/\D/g, '') ?? '';
@@ -124,33 +127,33 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
       <DropdownMenuContent align="end" className="w-48" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem onClick={() => callbacks.onView(order)}>
           <ExternalLink className="size-3.5" />
-          View Order
+          {t('actions.viewOrder')}
         </DropdownMenuItem>
         {callbacks.onEdit ? (
           <DropdownMenuItem onClick={() => callbacks.onEdit!(order)}>
             <User className="size-3.5" />
-            Edit Order
+            {t('actions.editOrder')}
           </DropdownMenuItem>
         ) : null}
         {order.customer?.id ? (
           <DropdownMenuItem asChild>
             <a href={`/app/customers/${order.customer.id}`} onClick={(e) => e.stopPropagation()}>
               <User className="size-3.5" />
-              Customer Profile
+              {t('actions.customerProfile')}
             </a>
           </DropdownMenuItem>
         ) : null}
         {callbacks.onTimeline ? (
           <DropdownMenuItem onClick={() => callbacks.onTimeline!(order)}>
             <Clock className="size-3.5" />
-            Timeline
+            {t('actions.timeline')}
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
         {callbacks.onPrint ? (
           <DropdownMenuItem onClick={() => callbacks.onPrint!(order)}>
             <Printer className="size-3.5" />
-            Invoice / Print
+            {t('actions.invoicePrint')}
           </DropdownMenuItem>
         ) : null}
         {phone ? (
@@ -168,7 +171,7 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
         ) : null}
         <DropdownMenuItem onClick={copyOrder}>
           <ExternalLink className="size-3.5" />
-          {copied ? 'Copied!' : 'Copy Order Link'}
+          {copied ? t('actions.linkCopied') : t('actions.copyLink')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {callbacks.onDelete ? (
@@ -177,7 +180,7 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
             onClick={() => callbacks.onDelete!(order)}
           >
             <MoreVertical className="size-3.5" />
-            Cancel Order
+            {t('actions.cancelOrder')}
           </DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>
@@ -224,7 +227,7 @@ export function createOrderColumns(
             </span>
           ) : order.channel?.type?.toLowerCase() === 'manual' ? (
             <span className="text-[10px] text-muted-foreground/70 leading-none italic">
-              Manual Order
+              {t('columns.manualOrder')}
             </span>
           ) : null}
         </div>
@@ -401,7 +404,7 @@ export function createOrderColumns(
       skeletonClassName: 'h-5 w-24',
       cell: (order) => order.payment_proof_path
         ? <PaymentProofCell rawPath={order.payment_proof_path} />
-        : <span className="text-xs text-muted-foreground">No Proof</span>,
+        : <span className="text-xs text-muted-foreground">{t('columns.noProof')}</span>,
     },
 
     // ── Total (Remaining Balance = Grand Total − Deposit) ─────────────────────
@@ -467,7 +470,7 @@ export function createOrderColumns(
     // Manual → creator name | POS → cashier name + chip | WC/API → —
     {
       key: 'sales_rep',
-      label: 'مندوب المبيعات',
+      label: t('columns.salesRep'),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-24',
       cell: (order) => {
@@ -498,7 +501,7 @@ export function createOrderColumns(
     // ── Delivery Driver ───────────────────────────────────────────────────────
     {
       key: 'delivery_driver',
-      label: 'السائق',
+      label: t('columns.driver'),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-20',
       cell: () => (
@@ -514,7 +517,7 @@ export function createOrderColumns(
       skeletonClassName: 'h-4 w-20',
       cell: (order) => {
         const typeMap: Record<string, string> = {
-          woocommerce: 'WooCommerce', pos: 'POS', manual: 'يدوي', public_api: 'API',
+          woocommerce: 'WooCommerce', pos: 'POS', manual: 'Manual', public_api: 'API',
         };
         const src = order.channel?.type
           ? (typeMap[order.channel.type.toLowerCase()] ?? order.channel.type)

@@ -59,10 +59,10 @@ export function DriverCustodyReturnPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base flex-1">مرتجعات العهدة</h1>
+        <h1 className="font-semibold text-base flex-1">Custody Returns</h1>
         <Button size="sm" variant="outline" onClick={() => setSheetOpen(true)}>
           <PlusCircle className="mr-1.5 h-4 w-4" />
-          إضافة
+          Add
         </Button>
       </div>
 
@@ -80,20 +80,20 @@ export function DriverCustodyReturnPage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
           <SheetHeader className="mb-4">
-            <SheetTitle>تسجيل مرتجع عهدة</SheetTitle>
+            <SheetTitle>Record Custody Return</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>نوع العهدة *</Label>
+              <Label>Custody Type *</Label>
               <Input
                 value={custodyType}
                 onChange={(e) => setCustodyType(e.target.value)}
-                placeholder="مثال: حقيبة نقدية، جهاز لوحي..."
+                placeholder="e.g. cash bag, tablet..."
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label>الكمية المُرسَلة *</Label>
+              <Label>Dispatched Qty *</Label>
               <Input
                 type="number"
                 min="0"
@@ -103,7 +103,7 @@ export function DriverCustodyReturnPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>الكمية المُعادة *</Label>
+              <Label>Returned Qty *</Label>
               <Input
                 type="number"
                 min="0"
@@ -113,19 +113,19 @@ export function DriverCustodyReturnPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>ملاحظات</Label>
+              <Label>Notes</Label>
               <Input
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="ملاحظات اختيارية..."
+                placeholder="Optional notes..."
               />
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => setSheetOpen(false)} className="flex-1">
-                إلغاء
+                Cancel
               </Button>
               <Button type="submit" className="flex-1" disabled={recordMutation.isPending}>
-                {recordMutation.isPending ? 'جارٍ الحفظ...' : 'تسجيل'}
+                {recordMutation.isPending ? 'Saving...' : 'Record'}
               </Button>
             </div>
           </form>

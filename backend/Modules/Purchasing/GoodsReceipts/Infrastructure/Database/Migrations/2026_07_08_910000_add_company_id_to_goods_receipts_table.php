@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('goods_receipts', 'company_id')) {
+            return;
+        }
+
         Schema::table('goods_receipts', function (Blueprint $table): void {
             $table->foreignUuid('company_id')
                 ->nullable()
@@ -33,6 +37,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('goods_receipts', 'company_id')) {
+            return;
+        }
+
         Schema::table('goods_receipts', function (Blueprint $table): void {
             $table->dropForeign(['company_id']);
             $table->dropIndex('idx_goods_receipts_company');

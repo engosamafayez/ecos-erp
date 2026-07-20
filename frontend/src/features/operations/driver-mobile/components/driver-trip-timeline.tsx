@@ -38,7 +38,7 @@ export function DriverTripTimeline({ events }: DriverTripTimelineProps) {
     return (
       <div className="flex flex-col items-center py-12 text-muted-foreground">
         <Clock className="h-8 w-8 mb-2 opacity-40" />
-        <p className="text-sm">لا توجد أحداث بعد</p>
+        <p className="text-sm">No events yet</p>
       </div>
     );
   }

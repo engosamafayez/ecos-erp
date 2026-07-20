@@ -7,15 +7,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/router/routes';
 import { useDriverStops } from '../hooks/use-driver-mobile';
 import { DeliveryStopCard } from '../components/delivery-stop-card';
+import { STOP_STATUS_LABELS } from '../types/driver-mobile';
 import type { DeliveryStop, DeliveryStopStatus } from '../types/driver-mobile';
 
 type FilterTab = 'all' | DeliveryStopStatus;
 
 const FILTER_TABS: { key: FilterTab; label: string }[] = [
-  { key: 'all',       label: 'الكل' },
-  { key: 'pending',   label: 'قيد الانتظار' },
-  { key: 'delivered', label: 'تم التوصيل' },
-  { key: 'failed',    label: 'فاشل' },
+  { key: 'all',       label: 'All' },
+  { key: 'pending',   label: STOP_STATUS_LABELS.pending },
+  { key: 'delivered', label: STOP_STATUS_LABELS.delivered },
+  { key: 'failed',    label: STOP_STATUS_LABELS.failed },
 ];
 
 export function DriverStopListPage() {
@@ -51,7 +52,7 @@ export function DriverStopListPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="font-semibold text-base">قائمة المحطات</h1>
+          <h1 className="font-semibold text-base">Stop List</h1>
         </div>
 
         {/* Search */}
@@ -59,7 +60,7 @@ export function DriverStopListPage() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="بحث برقم الطلب أو اسم العميل..."
+            placeholder="Search by order number or customer name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -93,7 +94,7 @@ export function DriverStopListPage() {
           ))
         ) : (
           <div className="text-center py-12 text-muted-foreground">
-            <p className="text-sm">لا توجد محطات تطابق الفلتر.</p>
+            <p className="text-sm">No stops match the filter.</p>
           </div>
         )}
       </div>

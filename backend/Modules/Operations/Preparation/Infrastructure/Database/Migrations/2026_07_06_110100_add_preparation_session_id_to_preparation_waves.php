@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('preparation_waves', 'preparation_session_id')) {
+            return;
+        }
+
         Schema::table('preparation_waves', function (Blueprint $table): void {
             $table->uuid('preparation_session_id')->nullable()->after('id');
             $table->index('preparation_session_id', 'idx_preparation_waves_session_id');
@@ -18,6 +22,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('preparation_waves', 'preparation_session_id')) {
+            return;
+        }
+
         Schema::table('preparation_waves', function (Blueprint $table): void {
             $table->dropIndex('idx_preparation_waves_session_id');
             $table->dropColumn('preparation_session_id');

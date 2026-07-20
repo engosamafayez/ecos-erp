@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+                if (Schema::hasTable('warehouse_liabilities')) {
+            return;
+        }
+
         Schema::create('warehouse_liabilities', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('company_id');

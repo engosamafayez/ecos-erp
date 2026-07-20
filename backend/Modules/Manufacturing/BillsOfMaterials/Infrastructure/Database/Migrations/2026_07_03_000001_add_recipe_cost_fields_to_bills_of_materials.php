@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('bills_of_materials', 'manufacturing_cost')) {
+            return;
+        }
+
         Schema::table('bills_of_materials', function (Blueprint $table): void {
             $table->decimal('manufacturing_cost', 12, 2)->default(0)->after('notes');
             $table->decimal('other_costs', 12, 2)->default(0)->after('manufacturing_cost');
@@ -19,6 +23,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('bills_of_materials', 'manufacturing_cost')) {
+            return;
+        }
+
         Schema::table('bills_of_materials', function (Blueprint $table): void {
             $table->dropColumn(['manufacturing_cost', 'other_costs', 'execution_instructions']);
         });

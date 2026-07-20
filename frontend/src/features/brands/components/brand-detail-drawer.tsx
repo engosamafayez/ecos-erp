@@ -92,9 +92,9 @@ function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: Ove
       {/* KPI metrics strip */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'حسابات التكامل', value: accountsCount },
-          { label: 'قنوات المبيعات',       value: channelsCount },
-          { label: 'المنتجات',              value: productsCount },
+          { label: 'Integration Accounts', value: accountsCount },
+          { label: 'Sales Channels',       value: channelsCount },
+          { label: 'Products',             value: productsCount },
         ].map(({ label, value }) => (
           <div key={label} className="rounded-md border bg-muted/30 p-2.5 text-center">
             <p className="text-lg font-bold">{value}</p>
@@ -106,12 +106,12 @@ function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: Ove
       {/* Detail rows */}
       <dl className="grid gap-3 text-sm">
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">الكود</dt>
+          <dt className="text-muted-foreground">Code</dt>
           <dd className="font-mono font-medium">{brand.code}</dd>
         </div>
         <Separator />
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">الاسم</dt>
+          <dt className="text-muted-foreground">Name</dt>
           <dd className="font-medium">{brand.name}</dd>
         </div>
         {brand.slug && (
@@ -125,28 +125,28 @@ function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: Ove
         )}
         <Separator />
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">الشركة</dt>
-          <dd>{brand.company?.name ?? 'غير مخصص'}</dd>
+          <dt className="text-muted-foreground">Company</dt>
+          <dd>{brand.company?.name ?? 'Unassigned'}</dd>
         </div>
         {brand.description && (
           <>
             <Separator />
             <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">الوصف</dt>
+              <dt className="text-muted-foreground">Description</dt>
               <dd className="text-sm text-muted-foreground/80">{brand.description}</dd>
             </div>
           </>
         )}
         <Separator />
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">تاريخ الإنشاء</dt>
+          <dt className="text-muted-foreground">Created At</dt>
           <dd className="text-muted-foreground text-xs">
             {brand.created_at ? new Date(brand.created_at).toLocaleDateString() : '—'}
           </dd>
         </div>
         {brand.updated_at && (
           <div className="flex items-center justify-between">
-            <dt className="text-muted-foreground">تاريخ التحديث</dt>
+            <dt className="text-muted-foreground">Updated At</dt>
             <dd className="text-muted-foreground text-xs">
               {new Date(brand.updated_at).toLocaleDateString()}
             </dd>
@@ -159,25 +159,25 @@ function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: Ove
         <div className="rounded-md border bg-muted/20 p-3 flex flex-col gap-2">
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
             <Tag className="size-3" />
-            سياسة التسعير
+            Pricing Policy
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             {brand.default_target_margin !== null && (
               <div>
                 <p className="text-sm font-semibold">{brand.default_target_margin}%</p>
-                <p className="text-[10px] text-muted-foreground">أدنى هامش</p>
+                <p className="text-[10px] text-muted-foreground">Min Margin</p>
               </div>
             )}
             {brand.default_markup !== null && (
               <div>
                 <p className="text-sm font-semibold">{brand.default_markup}%</p>
-                <p className="text-[10px] text-muted-foreground">هامش الربح</p>
+                <p className="text-[10px] text-muted-foreground">Markup</p>
               </div>
             )}
             {brand.default_discount_pct !== null && (
               <div>
                 <p className="text-sm font-semibold">{brand.default_discount_pct}%</p>
-                <p className="text-[10px] text-muted-foreground">الخصم</p>
+                <p className="text-[10px] text-muted-foreground">Discount</p>
               </div>
             )}
           </div>
@@ -203,7 +203,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex flex-col overflow-hidden p-0 w-full sm:max-w-xl">
-        <SheetTitle className="sr-only">{brand.name} — تفاصيل العلامة التجارية</SheetTitle>
+        <SheetTitle className="sr-only">{brand.name} — Brand Details</SheetTitle>
 
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-3 border-b px-6 py-5 flex-none pr-14">
@@ -216,7 +216,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
                   variant={brand.is_active ? 'default' : 'secondary'}
                   className="text-[10px] px-1.5 py-0 shrink-0"
                 >
-                  {brand.is_active ? 'نشط' : 'غير نشط'}
+                  {brand.is_active ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
               <SheetDescription className="font-mono text-xs mt-0.5">{brand.code}</SheetDescription>
@@ -225,7 +225,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
           {onEdit && (
             <Button variant="outline" size="sm" className="shrink-0" onClick={() => onEdit(brand)}>
               <Pencil className="size-3.5 mr-1" />
-              تعديل
+              Edit
             </Button>
           )}
         </div>
@@ -235,17 +235,17 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
           <Tabs defaultValue="overview">
             <div className="sticky top-0 z-10 bg-background border-b">
               <TabsList className="w-full rounded-none border-0 bg-transparent h-10 gap-0 p-0">
-                <TabsTrigger value="overview"          className={TAB_CLS}>نظرة عامة</TabsTrigger>
-                <TabsTrigger value="pricing"           className={TAB_CLS}>التسعير</TabsTrigger>
+                <TabsTrigger value="overview"          className={TAB_CLS}>Overview</TabsTrigger>
+                <TabsTrigger value="pricing"           className={TAB_CLS}>Pricing</TabsTrigger>
                 <TabsTrigger value="orders"            className={TAB_CLS}>
-                  <ShoppingCart className="size-3 mr-1" />الطلبات
+                  <ShoppingCart className="size-3 mr-1" />Orders
                 </TabsTrigger>
-                <TabsTrigger value="channels"          className={TAB_CLS}>القنوات</TabsTrigger>
-                <TabsTrigger value="products"          className={TAB_CLS}>المنتجات</TabsTrigger>
+                <TabsTrigger value="channels"          className={TAB_CLS}>Channels</TabsTrigger>
+                <TabsTrigger value="products"          className={TAB_CLS}>Products</TabsTrigger>
                 <TabsTrigger value="shipping"          className={TAB_CLS}>
-                  <Truck className="size-3 mr-1" />الشحن والتوصيل
+                  <Truck className="size-3 mr-1" />Shipping &amp; Delivery
                 </TabsTrigger>
-                <TabsTrigger value="activity"          className={TAB_CLS}>النشاط</TabsTrigger>
+                <TabsTrigger value="activity"          className={TAB_CLS}>Activity</TabsTrigger>
               </TabsList>
             </div>
 
@@ -270,7 +270,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
               {accountsResult.isLoading ? (
                 <RelationshipSkeleton />
               ) : accounts.length === 0 ? (
-                <EmptyRelationship icon={Briefcase} message="لا توجد حسابات تكامل مرتبطة بهذه العلامة التجارية." />
+                <EmptyRelationship icon={Briefcase} message="No integration accounts linked to this brand." />
               ) : (
                 <div className="flex flex-col gap-2">
                   {accounts.map((account) => (
@@ -298,7 +298,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
               {channelsResult.isLoading ? (
                 <RelationshipSkeleton />
               ) : channels.length === 0 ? (
-                <EmptyRelationship icon={Globe} message="لا توجد قنوات مبيعات مرتبطة بهذه العلامة التجارية." />
+                <EmptyRelationship icon={Globe} message="No sales channels linked to this brand." />
               ) : (
                 <div className="flex flex-col gap-2">
                   {channels.map((channel) => (
@@ -326,7 +326,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
               {productsResult.isLoading ? (
                 <RelationshipSkeleton />
               ) : products.length === 0 ? (
-                <EmptyRelationship icon={Package} message="لا توجد منتجات مرتبطة بهذه العلامة التجارية." />
+                <EmptyRelationship icon={Package} message="No products linked to this brand." />
               ) : (
                 <div className="flex flex-col gap-2">
                   {products.map((product) => (
@@ -342,13 +342,13 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
                         <p className="text-[11px] text-muted-foreground font-mono">{product.sku}</p>
                       </div>
                       <Badge variant={product.is_active ? 'default' : 'secondary'} className="text-[10px] shrink-0">
-                        {product.is_active ? 'نشط' : 'غير نشط'}
+                        {product.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
                   ))}
                   {(productsResult.data?.meta.total ?? 0) > products.length && (
                     <p className="text-center text-xs text-muted-foreground pt-1">
-                      عرض {products.length} من {productsResult.data?.meta.total} منتج
+                      Showing {products.length} of {productsResult.data?.meta.total} products
                     </p>
                   )}
                 </div>
@@ -359,8 +359,8 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
               <Tabs defaultValue="general">
                 <div className="border-b px-6">
                   <TabsList className="rounded-none border-0 bg-transparent h-9 gap-0 p-0 -mb-px">
-                    <TabsTrigger value="general"    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">عام</TabsTrigger>
-                    <TabsTrigger value="time-slots" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">فترات التوصيل</TabsTrigger>
+                    <TabsTrigger value="general"    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">General</TabsTrigger>
+                    <TabsTrigger value="time-slots" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">Delivery Windows</TabsTrigger>
                   </TabsList>
                 </div>
                 <TabsContent value="general" className="m-0 px-6 py-5">
@@ -373,7 +373,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
             </TabsContent>
 
             <TabsContent value="activity" className="m-0 px-6 py-5">
-              <EmptyRelationship icon={History} message="سيتوفر سجل النشاط في تحديث قادم." />
+              <EmptyRelationship icon={History} message="Activity log will be available in a future update." />
             </TabsContent>
           </Tabs>
         </div>

@@ -141,20 +141,20 @@ function fmtCur(n: number | null | undefined, allowZero = false): string {
 // ── Payment method labels ─────────────────────────────────────────────────────
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cod:           'الدفع عند الاستلام',
-  cash:          'نقد',
-  visa:          'بطاقة فيزا',
-  mastercard:    'ماستركارد',
-  credit_card:   'بطاقة ائتمان',
-  card:          'بطاقة ائتمان',
-  bank:          'تحويل بنكي',
-  bank_transfer: 'تحويل بنكي',
-  instalment:    'تقسيط',
-  installment:   'تقسيط',
-  wallet:        'محفظة رقمية',
-  online:        'دفع إلكتروني',
-  cheque:        'شيك',
-  check:         'شيك',
+  cod:           'Cash on Delivery',
+  cash:          'Cash',
+  visa:          'Visa Card',
+  mastercard:    'Mastercard',
+  credit_card:   'Credit Card',
+  card:          'Credit Card',
+  bank:          'Bank Transfer',
+  bank_transfer: 'Bank Transfer',
+  instalment:    'Instalment',
+  installment:   'Instalment',
+  wallet:        'Digital Wallet',
+  online:        'Online Payment',
+  cheque:        'Cheque',
+  check:         'Cheque',
 };
 
 /** Converts a technical payment code ("cod", "bank_transfer") to a business label. */
@@ -200,7 +200,7 @@ function FinancialRow({
   let display: React.ReactNode;
 
   if (value === 'not_applicable') {
-    display = <span className="text-muted-foreground italic text-sm">لا ينطبق</span>;
+    display = <span className="text-muted-foreground italic text-sm">N/A</span>;
   } else if (value === 'empty' || (!allowZero && typeof value === 'number' && Math.abs(value) < 0.005)) {
     display = <span className="text-muted-foreground text-sm">—</span>;
   } else {
@@ -241,9 +241,9 @@ function SummaryTab({ order, t }: { order: Order; t: OrdersT }) {
   const hasDiscount = order.discount_amount > 0.005;
   const hasDeposit  = order.deposit_paid > 0.005;
 
-  const formulaParts: string[] = ['إجمالي المنتجات'];
-  if (order.shipping_amount > 0.005) formulaParts.push('الشحن');
-  if (order.tax_amount > 0.005)      formulaParts.push('الضريبة');
+  const formulaParts: string[] = [t('detail.productsTotal')];
+  if (order.shipping_amount > 0.005) formulaParts.push(t('detail.shipping'));
+  if (order.tax_amount > 0.005)      formulaParts.push(t('detail.tax'));
 
   return (
     <div className="flex flex-col gap-6 p-4">
@@ -262,50 +262,50 @@ function SummaryTab({ order, t }: { order: Order; t: OrdersT }) {
       <div>
         <SectionTitle>{t('detail.financialSummary')}</SectionTitle>
         <div className="flex flex-col gap-2">
-          <FinancialRow label="إجمالي المنتجات" value={order.products_total} />
-          <FinancialRow label="الشحن"           value={order.shipping_amount} />
+          <FinancialRow label={t('detail.productsTotal')} value={order.products_total} />
+          <FinancialRow label={t('detail.shipping')}      value={order.shipping_amount} />
           {hasDiscount && (
             <FinancialRow
-              label="الخصم"
+              label={t('detail.discount')}
               pct={order.discount_percentage}
               value={order.discount_amount}
               isDiscount
             />
           )}
           <FinancialRow
-            label="الضريبة"
+            label={t('detail.tax')}
             value={order.tax_amount > 0 ? order.tax_amount : 'not_applicable'}
           />
           <Separator className="my-1" />
-          <FinancialRow label="الإجمالي الكلي" value={order.grand_total} bold allowZero />
+          <FinancialRow label={t('detail.grandTotal')} value={order.grand_total} bold allowZero />
           {hasDeposit && (
             <>
-              <FinancialRow label="دفعة مقدمة"   value={order.deposit_paid} isDiscount />
-              <FinancialRow label="الرصيد المتبقي" value={order.remaining_balance} bold allowZero />
+              <FinancialRow label={t('detail.deposit')}           value={order.deposit_paid} isDiscount />
+              <FinancialRow label={t('detail.remainingBalance')}  value={order.remaining_balance} bold allowZero />
             </>
           )}
         </div>
 
         {/* Calculation transparency footer */}
         <div className="mt-4 rounded-md bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
-          <span className="font-medium">المعادلة: </span>
+          <span className="font-medium">{t('detail.formula')}: </span>
           {formulaParts.join(' + ')}
-          {hasDiscount ? ' − الخصم' : ''}
-          {' = الإجمالي الكلي'}
-          {hasDeposit ? ' | الإجمالي الكلي − الدفعة المقدمة = المتبقي' : ''}
+          {hasDiscount ? ' − ' + t('detail.discount') : ''}
+          {' = ' + t('detail.grandTotal')}
+          {hasDeposit ? ' | ' + t('detail.grandTotal') + ' − ' + t('detail.deposit') + ' = ' + t('detail.remainingBalance') : ''}
         </div>
       </div>
 
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 gap-3">
-        <KpiCard label="إجمالي المنتجات"  value={fmtCur(order.products_total, true)} />
+        <KpiCard label={t('detail.productsTotal')} value={fmtCur(order.products_total, true)} />
         <KpiCard
-          label={order.discount_percentage != null ? `إجمالي الخصم (${order.discount_percentage}%)` : 'إجمالي الخصم'}
+          label={order.discount_percentage != null ? `${t('detail.discountTotal')} (${order.discount_percentage}%)` : t('detail.discountTotal')}
           value={hasDiscount ? fmtCur(order.discount_amount) : '—'}
           variant="discount"
         />
-        <KpiCard label="دفعة مقدمة"      value={hasDeposit ? fmtCur(order.deposit_paid) : '—'} />
-        <KpiCard label="الرصيد المتبقي"   value={fmtCur(order.remaining_balance, true)} />
+        <KpiCard label={t('detail.deposit')}           value={hasDeposit ? fmtCur(order.deposit_paid) : '—'} />
+        <KpiCard label={t('detail.remainingBalance')}  value={fmtCur(order.remaining_balance, true)} />
       </div>
 
       {order.notes ? (
@@ -388,10 +388,10 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
     order.city,
     order.delivery_zone,
     order.shipping_address,
-    order.building  ? `مبنى ${order.building}` : null,
-    order.floor     ? `طابق ${order.floor}` : null,
-    order.apartment ? `شقة ${order.apartment}` : null,
-    order.landmark  ? `بالقرب من: ${order.landmark}` : null,
+    order.building  ? `Bldg. ${order.building}` : null,
+    order.floor     ? `Floor ${order.floor}` : null,
+    order.apartment ? `Apt. ${order.apartment}` : null,
+    order.landmark  ? `Near: ${order.landmark}` : null,
   ].filter(Boolean) as string[];
   const fullAddress = fullAddressParts.join('\n');
 
@@ -420,16 +420,16 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         </div>
         <div className="p-4">
           <DetailGrid cols={2}>
-            <DetailRow label="الاسم">
+            <DetailRow label="Name">
               <span className="font-medium">{cust?.name ?? '—'}</span>
             </DetailRow>
-            <DetailRow label="الكود">
+            <DetailRow label="Code">
               <span className="flex items-center gap-1 font-mono text-xs">
                 <Hash className="size-3 text-muted-foreground" />
                 {cust?.code ?? '—'}
               </span>
             </DetailRow>
-            <DetailRow label="الهاتف الأساسي">
+            <DetailRow label="Primary Phone">
               {primaryPhone ? (
                 <a href={`tel:${primaryPhone}`} className="flex items-center gap-1 text-sm hover:underline">
                   <Phone className="size-3 shrink-0 text-muted-foreground" />
@@ -437,7 +437,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 </a>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="الهاتف الثانوي">
+            <DetailRow label="Secondary Phone">
               {secondaryPhone ? (
                 <a href={`tel:${secondaryPhone}`} className="flex items-center gap-1 text-sm hover:underline">
                   <Phone className="size-3 shrink-0 text-muted-foreground" />
@@ -445,7 +445,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 </a>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="البريد الإلكتروني">
+            <DetailRow label="Email">
               {email ? (
                 <a href={`mailto:${email}`} className="flex min-w-0 items-center gap-1 text-sm text-primary hover:underline">
                   <Mail className="size-3 shrink-0" />
@@ -453,12 +453,12 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 </a>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="عميل منذ">
+            <DetailRow label="Customer Since">
               {cust?.created_at
                 ? formatDate(cust.created_at)
                 : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="الحالة">
+            <DetailRow label="Status">
               {cust?.is_active !== undefined ? (
                 <span className={cn(
                   'inline-flex items-center gap-1 text-sm font-medium',
@@ -467,11 +467,11 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                   {cust.is_active
                     ? <CheckCircle2 className="size-3" />
                     : <XCircle className="size-3" />}
-                  {cust.is_active ? 'نشط' : 'غير نشط'}
+                  {cust.is_active ? 'Active' : 'Inactive'}
                 </span>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label="آخر طلب">
+            <DetailRow label="Last Order">
               {stats?.last_order_date
                 ? formatDate(stats.last_order_date)
                 : <span className="text-muted-foreground">—</span>}
@@ -485,23 +485,23 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         <div className="rounded-lg border overflow-hidden">
           <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2.5">
             <Activity className="size-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">ملخص العميل</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer Summary</span>
           </div>
           <div className="grid grid-cols-2 divide-x divide-y">
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">القيمة الإجمالية</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Lifetime Value</p>
               <p className="text-sm font-semibold tabular-nums">{fmtCur(stats.lifetime_value, true)}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">متوسط قيمة الطلب</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Avg. Order Value</p>
               <p className="text-sm font-semibold tabular-nums">{aov != null ? fmtCur(aov, true) : '—'}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">إجمالي الطلبات</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Total Orders</p>
               <p className="text-sm font-semibold">{stats.total_orders.toLocaleString()}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">أول طلب</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">First Order</p>
               <p className="text-sm">{stats.first_order_date ? formatDate(stats.first_order_date) : '—'}</p>
             </div>
           </div>
@@ -514,11 +514,11 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2.5">
           <div className="flex items-center gap-2">
             <MapPin className="size-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">عنوان التوصيل</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Delivery Address</span>
             {hasLocation && (
               <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
                 <BadgeCheck className="size-2.5" />
-                GPS محدد
+                GPS Pinned
               </span>
             )}
           </div>
@@ -527,14 +527,14 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
               <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" asChild>
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="size-3" />
-                  الخريطة
+                  Map
                 </a>
               </Button>
             ) : null}
             {(hasAddrData || hasMapsData) ? (
               <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copyAddress}>
                 <Copy className="size-3" />
-                نسخ
+                Copy
               </Button>
             ) : null}
           </div>
@@ -546,33 +546,33 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
           {/* Top-left: Location */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              📍 الموقع
+              📍 Location
             </p>
             <div className="flex flex-col gap-3">
-              <AddrField icon={<Globe className="size-3.5" />}      label="المحافظة"     value={order.governorate} />
-              <AddrField icon={<Building className="size-3.5" />}   label="المدينة"      value={order.city} />
-              <AddrField icon={<LayoutGrid className="size-3.5" />} label="المنطقة"      value={order.delivery_zone} />
-              <AddrField icon={<Navigation className="size-3.5" />} label="الشارع"       value={order.shipping_address} />
+              <AddrField icon={<Globe className="size-3.5" />}      label="Governorate" value={order.governorate} />
+              <AddrField icon={<Building className="size-3.5" />}   label="City"        value={order.city} />
+              <AddrField icon={<LayoutGrid className="size-3.5" />} label="District"    value={order.delivery_zone} />
+              <AddrField icon={<Navigation className="size-3.5" />} label="Street"      value={order.shipping_address} />
             </div>
           </div>
 
           {/* Top-right: Building Details */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              🏢 تفاصيل المبنى
+              🏢 Building Details
             </p>
             <div className="flex flex-col gap-3">
-              <AddrField icon={<Building2 className="size-3.5" />} label="المبنى"       value={order.building} />
-              <AddrField icon={<Layers className="size-3.5" />}    label="الطابق"       value={order.floor} />
-              <AddrField icon={<Home className="size-3.5" />}      label="الشقة"        value={order.apartment} />
-              <AddrField icon={<Flag className="size-3.5" />}      label="علامة مميزة" value={order.landmark} />
+              <AddrField icon={<Building2 className="size-3.5" />} label="Building"  value={order.building} />
+              <AddrField icon={<Layers className="size-3.5" />}    label="Floor"     value={order.floor} />
+              <AddrField icon={<Home className="size-3.5" />}      label="Apartment" value={order.apartment} />
+              <AddrField icon={<Flag className="size-3.5" />}      label="Landmark"  value={order.landmark} />
             </div>
           </div>
 
           {/* Bottom-left: Full Address */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              📋 العنوان الكامل
+              📋 Full Address
             </p>
             {fullAddressParts.length > 0 ? (
               <p className="text-sm leading-relaxed whitespace-pre-line">{fullAddress}</p>
@@ -581,7 +581,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
             )}
             {order.address_notes ? (
               <div className="mt-3 border-t pt-3">
-                <p className="mb-1 text-[10px] font-medium text-muted-foreground">ملاحظات العنوان</p>
+                <p className="mb-1 text-[10px] font-medium text-muted-foreground">Address Notes</p>
                 <p className="text-xs leading-relaxed text-muted-foreground">{order.address_notes}</p>
               </div>
             ) : null}
@@ -593,7 +593,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
               >
                 <ExternalLink className="size-3" />
-                عرض على خرائط جوجل
+                View on Google Maps
               </a>
             ) : null}
           </div>
@@ -601,7 +601,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
           {/* Bottom-right: Map Preview */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              🗺 معاينة الخريطة
+              🗺 Map Preview
             </p>
             {order.location ? (
               <div className="flex flex-col gap-2">
@@ -625,12 +625,12 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                   <Button variant="outline" size="sm" className="h-7 flex-1 text-xs" asChild>
                     <a href={mapsUrl!} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="mr-1 size-3" />
-                      فتح
+                      Open
                     </a>
                   </Button>
                   <Button variant="outline" size="sm" className="h-7 flex-1 text-xs" onClick={copyMapsLink}>
                     <Copy className="mr-1 size-3" />
-                    نسخ
+                    Copy
                   </Button>
                 </div>
               </div>
@@ -639,7 +639,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 <div className="flex aspect-video items-center justify-center rounded-md border bg-muted/30">
                   <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
                     <MapIcon className="size-5" />
-                    <p className="text-[10px]">رابط URL فقط — لا يوجد موقع GPS</p>
+                    <p className="text-[10px]">URL only — no GPS coordinates</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm" className="h-7 w-full text-xs" asChild>
@@ -653,7 +653,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
               <div className="flex aspect-video items-center justify-center rounded-md border border-dashed bg-muted/20">
                 <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
                   <MapIcon className="size-5" />
-                  <p className="text-[10px]">لا توجد بيانات موقع</p>
+                  <p className="text-[10px]">No location data</p>
                 </div>
               </div>
             )}
@@ -665,25 +665,25 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
       {/* ── 4. Notes (3 independent cards) ── */}
       {(cust?.notes || internalNoteContent || order.customer_note) ? (
         <div className="flex flex-col gap-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">الملاحظات</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes</h3>
           {cust?.notes ? (
             <NoteCard
               icon={<User className="size-3.5" />}
-              title="ملاحظات العميل"
+              title="Customer Notes"
               content={cust.notes}
             />
           ) : null}
           {internalNoteContent ? (
             <NoteCard
               icon={<Lock className="size-3.5" />}
-              title="ملاحظات داخلية"
+              title="Internal Notes"
               content={internalNoteContent}
             />
           ) : null}
           {order.customer_note ? (
             <NoteCard
               icon={<StickyNote className="size-3.5" />}
-              title="ملاحظات WooCommerce"
+              title="WooCommerce Notes"
               content={order.customer_note}
             />
           ) : null}
@@ -748,9 +748,9 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
       <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30 px-3 py-2 flex items-start gap-2">
         <Lock className="h-3 w-3 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
         <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-          <span className="font-semibold">حماية أسعار الطلب مُفعَّلة —</span>{' '}
-          جميع أسعار الوحدات أدناه مجمَّدة نهائياً عند لحظة إنشاء هذا الطلب.
-          تغييرات أسعار الكتالوج لا تؤثر على هذا الطلب.
+          <span className="font-semibold">Order Price Lock Active —</span>{' '}
+          All unit prices below are permanently frozen at the time this order was created.
+          Catalogue price changes do not affect this order.
         </p>
       </div>
 
@@ -777,7 +777,7 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
                   <p className="text-xs text-muted-foreground">{line.quantity} × EGP {formatMoney(line.unit_price)}</p>
                   <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                     <Lock className="h-2.5 w-2.5" />
-                    محمي
+                    Locked
                   </span>
                 </div>
               </div>
@@ -817,7 +817,7 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
   );
 }
 
-function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
+function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
   const paymentLabel = resolvePaymentLabel(order);
 
   // Derive payment status
@@ -826,7 +826,7 @@ function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
   const hasRemaining = order.remaining_balance > 0;
   const isPartial  = !isPaid && hasDeposit;
 
-  const paymentStatusLabel = isPaid ? 'مدفوع' : isPartial ? 'مدفوع جزئياً' : 'غير مدفوع';
+  const paymentStatusLabel = isPaid ? 'Paid' : isPartial ? 'Partially Paid' : 'Unpaid';
   const paymentStatusCls   = isPaid
     ? 'text-emerald-600 dark:text-emerald-400'
     : isPartial
@@ -841,7 +841,7 @@ function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
   if (!hasAnyPayment) {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-center p-4">
-        <p className="text-sm text-muted-foreground">لا توجد معلومات دفع متاحة.</p>
+        <p className="text-sm text-muted-foreground">No payment information available.</p>
       </div>
     );
   }
@@ -851,7 +851,7 @@ function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
 
       {/* ── Payment Status ── */}
       <div>
-        <SectionTitle>حالة الدفع</SectionTitle>
+        <SectionTitle>Payment Status</SectionTitle>
         <div className="rounded-md border bg-muted/20 px-4 py-3 flex items-center gap-3">
           {isPaid
             ? <ShieldCheck className="size-4 text-emerald-500 shrink-0" />
@@ -860,7 +860,7 @@ function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
           <div className="flex-1 min-w-0">
             <p className={cn('text-sm font-semibold', paymentStatusCls)}>{paymentStatusLabel}</p>
             {isPaid && order.date_paid ? (
-              <p className="text-xs text-muted-foreground">تم التحقق {formatDateTime(order.date_paid)}</p>
+              <p className="text-xs text-muted-foreground">Verified {formatDateTime(order.date_paid)}</p>
             ) : null}
           </div>
         </div>
@@ -868,25 +868,25 @@ function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
 
       {/* ── Payment Details ── */}
       <div>
-        <SectionTitle>تفاصيل الدفع</SectionTitle>
+        <SectionTitle>Payment Details</SectionTitle>
         <DetailGrid cols={1}>
           {paymentLabel ? (
-            <DetailRow label="طريقة الدفع">
+            <DetailRow label="Payment Method">
               <span className="font-medium">{paymentLabel}</span>
             </DetailRow>
           ) : null}
           {order.transaction_id ? (
-            <DetailRow label="رقم المعاملة">
+            <DetailRow label="Transaction ID">
               <span className="font-mono text-xs">{order.transaction_id}</span>
             </DetailRow>
           ) : null}
-          <DetailRow label="حالة التحقق">
+          <DetailRow label="Verification Status">
             <span className={cn('font-medium', isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
-              {isPaid ? 'تم التحقق' : 'بانتظار التحقق'}
+              {isPaid ? 'Verified' : 'Awaiting Verification'}
             </span>
           </DetailRow>
           {order.date_paid ? (
-            <DetailRow label="تاريخ التحقق">{formatDateTime(order.date_paid)}</DetailRow>
+            <DetailRow label="Verification Date">{formatDateTime(order.date_paid)}</DetailRow>
           ) : null}
         </DetailGrid>
       </div>
@@ -895,26 +895,26 @@ function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
 
       {/* ── Financial Details — canonical fields only, no legacy calculations ── */}
       <div>
-        <SectionTitle>التفاصيل المالية</SectionTitle>
+        <SectionTitle>{t('detail.financialSummary')}</SectionTitle>
         <div className="flex flex-col gap-2">
-          <FinancialRow label="إجمالي المنتجات" value={order.products_total} allowZero />
-          <FinancialRow label="الشحن"            value={order.shipping_amount} />
+          <FinancialRow label={t('detail.productsTotal')} value={order.products_total} allowZero />
+          <FinancialRow label={t('detail.shipping')}      value={order.shipping_amount} />
           {order.discount_amount > 0.005 && (
             <FinancialRow
-              label={order.discount_percentage != null ? `الخصم (${order.discount_percentage}%)` : 'الخصم'}
+              label={order.discount_percentage != null ? `${t('detail.discount')} (${order.discount_percentage}%)` : t('detail.discount')}
               value={order.discount_amount}
               isDiscount
             />
           )}
           <FinancialRow
-            label="الضريبة"
+            label={t('detail.tax')}
             value={order.tax_amount > 0.005 ? order.tax_amount : 'not_applicable'}
           />
           <Separator />
-          <FinancialRow label="الإجمالي الكلي" value={order.grand_total} allowZero bold />
+          <FinancialRow label={t('detail.grandTotal')} value={order.grand_total} allowZero bold />
           {hasDeposit && (
             <div className="flex items-baseline justify-between gap-4">
-              <span className="text-sm text-muted-foreground">دفعة مقدمة</span>
+              <span className="text-sm text-muted-foreground">{t('detail.deposit')}</span>
               <span className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400">
                 {fmtCur(order.deposit_paid)}
               </span>
@@ -922,7 +922,7 @@ function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
           )}
           {order.remaining_balance > 0.005 && (
             <div className="flex items-baseline justify-between gap-4">
-              <span className="text-sm text-muted-foreground">الرصيد المتبقي</span>
+              <span className="text-sm text-muted-foreground">{t('detail.remainingBalance')}</span>
               <span className="text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
                 {fmtCur(order.remaining_balance)}
               </span>
@@ -935,23 +935,23 @@ function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
 
       {/* ── Payment Proof ── */}
       <div>
-        <SectionTitle>إثبات الدفع</SectionTitle>
+        <SectionTitle>Payment Proof</SectionTitle>
         {order.payment_proof_path ? (
           <MediaViewer
             path={order.payment_proof_path}
-            title="إثبات الدفع"
+            title="Payment Proof"
             trigger={
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
               >
                 <Paperclip className="size-3.5" />
-                إثبات الدفع
+                Payment Proof
               </button>
             }
           />
         ) : (
-          <p className="text-sm text-muted-foreground">لم يتم رفع إثبات الدفع.</p>
+          <p className="text-sm text-muted-foreground">No payment proof uploaded.</p>
         )}
       </div>
 
@@ -960,13 +960,13 @@ function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
         <>
           <Separator />
           <div>
-            <SectionTitle>مرجع WooCommerce</SectionTitle>
+            <SectionTitle>WooCommerce Reference</SectionTitle>
             <DetailGrid>
-              <DetailRow label="كود البوابة">
+              <DetailRow label="Gateway Code">
                 <span className="font-mono text-xs text-muted-foreground">{order.payment_method}</span>
               </DetailRow>
               {order.payment_method_title ? (
-                <DetailRow label="اسم البوابة">{order.payment_method_title}</DetailRow>
+                <DetailRow label="Gateway Name">{order.payment_method_title}</DetailRow>
               ) : null}
             </DetailGrid>
           </div>
@@ -984,9 +984,9 @@ function buildFullAddress(order: Order): string {
     order.city,
     order.delivery_zone,
     order.shipping_address,
-    order.building   ? `مبنى ${order.building}` : null,
-    order.floor      ? `طابق ${order.floor}`     : null,
-    order.apartment  ? `شقة ${order.apartment}`  : null,
+    order.building   ? `Bldg. ${order.building}` : null,
+    order.floor      ? `Floor ${order.floor}`    : null,
+    order.apartment  ? `Apt. ${order.apartment}` : null,
     order.landmark,
   ].filter((v): v is string => Boolean(v));
   return parts.join(', ');
@@ -1007,7 +1007,7 @@ function VerificationBadge({
   statusText?: string;
   statusColor?: string;
 }) {
-  const resolvedStatus = statusText ?? (verified ? 'مؤكد' : 'غير مؤكد');
+  const resolvedStatus = statusText ?? (verified ? 'Confirmed' : 'Unconfirmed');
   const resolvedColor  = statusColor ?? (verified
     ? 'text-emerald-600 dark:text-emerald-400'
     : 'text-muted-foreground');
@@ -1044,7 +1044,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
   const coordsStr    = loc ? `${loc.lat},${loc.lng}` : '';
 
   const attemptsLabel = (order.shipping_attempts ?? 0) > 0
-    ? `${order.shipping_attempts} محاولة توصيل`
+    ? `${order.shipping_attempts} delivery attempt(s)`
     : null;
 
   return (
@@ -1052,7 +1052,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 1. Delivery Address ── */}
       <div>
-        <SectionTitle>عنوان التوصيل</SectionTitle>
+        <SectionTitle>Delivery Address</SectionTitle>
 
         {/* 2-column grid: Location | Building Details */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-0">
@@ -1060,37 +1060,37 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
           {/* Column 1 — Location */}
           <div className="flex flex-col gap-1 mb-1">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5 mb-1">
-              <MapPin className="size-3" />الموقع
+              <MapPin className="size-3" />Location
             </p>
-            <DetailRow label="المحافظة">{order.governorate}</DetailRow>
-            <DetailRow label="المدينة">{order.city}</DetailRow>
-            <DetailRow label="المنطقة">{order.delivery_zone}</DetailRow>
-            <DetailRow label="الشارع">{order.shipping_address}</DetailRow>
+            <DetailRow label="Governorate">{order.governorate}</DetailRow>
+            <DetailRow label="City">{order.city}</DetailRow>
+            <DetailRow label="District">{order.delivery_zone}</DetailRow>
+            <DetailRow label="Street">{order.shipping_address}</DetailRow>
           </div>
 
           {/* Column 2 — Building Details */}
           <div className="flex flex-col gap-1 mb-1">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5 mb-1">
-              <Building2 className="size-3" />تفاصيل المبنى
+              <Building2 className="size-3" />Building Details
             </p>
-            <DetailRow label="المبنى">{order.building}</DetailRow>
-            <DetailRow label="الطابق">{order.floor}</DetailRow>
-            <DetailRow label="الشقة">{order.apartment}</DetailRow>
-            <DetailRow label="علامة مميزة">{order.landmark}</DetailRow>
+            <DetailRow label="Building">{order.building}</DetailRow>
+            <DetailRow label="Floor">{order.floor}</DetailRow>
+            <DetailRow label="Apartment">{order.apartment}</DetailRow>
+            <DetailRow label="Landmark">{order.landmark}</DetailRow>
           </div>
         </div>
 
         {/* Column 3 — Address Summary */}
         <div className="mt-4 rounded-md border bg-muted/20 px-3 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">ملخص العنوان</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">Address Summary</p>
           <dl className="flex flex-col gap-2">
-            <DetailRow label="العنوان الكامل">
+            <DetailRow label="Full Address">
               {fullAddress || null}
             </DetailRow>
-            <DetailRow label="ملاحظات العنوان">
+            <DetailRow label="Address Notes">
               {order.address_notes}
             </DetailRow>
-            <DetailRow label="رابط خرائط جوجل">
+            <DetailRow label="Google Maps Link">
               {order.google_maps_url ? (
                 <a
                   href={order.google_maps_url}
@@ -1128,7 +1128,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
               <Button variant="outline" size="sm" asChild>
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                   <MapPin className="size-3.5" />
-                  فتح الخريطة
+                  Open Map
                 </a>
               </Button>
               <Button variant="outline" size="sm" asChild>
@@ -1139,7 +1139,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
               </Button>
               {loc.set_by ? (
                 <span className="ms-auto self-center text-[10px] text-muted-foreground">
-                  أُضيف بواسطة: {loc.set_by}
+                  Added by: {loc.set_by}
                 </span>
               ) : null}
             </div>
@@ -1147,7 +1147,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
         ) : hasMapsData ? (
           <div className="mt-4 rounded-lg border border-dashed bg-muted/10 flex items-center justify-center gap-2 py-6 text-muted-foreground">
             <MapIcon className="size-5" />
-            <span className="text-xs">لا توجد إحداثيات GPS — رابط الخريطة فقط</span>
+            <span className="text-xs">No GPS coordinates — map link only</span>
           </div>
         ) : null}
       </div>
@@ -1156,14 +1156,14 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 2. Delivery Schedule ── */}
       <div>
-        <SectionTitle>موعد التوصيل</SectionTitle>
+        <SectionTitle>Delivery Schedule</SectionTitle>
         <DetailGrid>
-          <DetailRow label="التوصيل المطلوب">{formatDate(order.requested_delivery_date)}</DetailRow>
-          <DetailRow label="نافذة التوصيل">{order.delivery_window}</DetailRow>
-          <DetailRow label="الوقت المفضل">{order.preferred_delivery_time}</DetailRow>
-          <DetailRow label="الوصول المتوقع">{null}</DetailRow>
-          <DetailRow label="الأولوية">{null}</DetailRow>
-          <DetailRow label="مستوى الخدمة">{null}</DetailRow>
+          <DetailRow label="Requested Delivery">{formatDate(order.requested_delivery_date)}</DetailRow>
+          <DetailRow label="Delivery Window">{order.delivery_window}</DetailRow>
+          <DetailRow label="Preferred Time">{order.preferred_delivery_time}</DetailRow>
+          <DetailRow label="ETA">{null}</DetailRow>
+          <DetailRow label="Priority">{null}</DetailRow>
+          <DetailRow label="Service Level">{null}</DetailRow>
         </DetailGrid>
       </div>
 
@@ -1171,16 +1171,16 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 3. Shipping Assignment ── */}
       <div>
-        <SectionTitle>تعيين الشحنة</SectionTitle>
+        <SectionTitle>Shipping Assignment</SectionTitle>
         <DetailGrid>
-          <DetailRow label="شركة الشحن">{order.shipping_company_name}</DetailRow>
-          <DetailRow label="ناقل الشحن">{order.shipping_method}</DetailRow>
-          <DetailRow label="السائق">{null}</DetailRow>
-          <DetailRow label="المركبة">{null}</DetailRow>
-          <DetailRow label="كود المركبة">{null}</DetailRow>
-          <DetailRow label="المسار">{null}</DetailRow>
-          <DetailRow label="الموجة">{null}</DetailRow>
-          <DetailRow label="دفعة التحميل">{null}</DetailRow>
+          <DetailRow label="Shipping Company">{order.shipping_company_name}</DetailRow>
+          <DetailRow label="Carrier">{order.shipping_method}</DetailRow>
+          <DetailRow label="Driver">{null}</DetailRow>
+          <DetailRow label="Vehicle">{null}</DetailRow>
+          <DetailRow label="Vehicle Code">{null}</DetailRow>
+          <DetailRow label="Route">{null}</DetailRow>
+          <DetailRow label="Wave">{null}</DetailRow>
+          <DetailRow label="Loading Batch">{null}</DetailRow>
         </DetailGrid>
       </div>
 
@@ -1188,15 +1188,15 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 4. Tracking ── */}
       <div>
-        <SectionTitle>التتبع</SectionTitle>
+        <SectionTitle>Tracking</SectionTitle>
         <DetailGrid>
-          <DetailRow label="رقم التتبع">
+          <DetailRow label="Tracking Number">
             {order.tracking_number
               ? <span className="font-mono text-xs">{order.tracking_number}</span>
               : null}
           </DetailRow>
-          <DetailRow label="رابط التتبع">{null}</DetailRow>
-          <DetailRow label="حالة الشحنة">
+          <DetailRow label="Tracking Link">{null}</DetailRow>
+          <DetailRow label="Shipment Status">
             {attemptsLabel}
           </DetailRow>
         </DetailGrid>
@@ -1206,41 +1206,41 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 5. Delivery Verification ── */}
       <div>
-        <SectionTitle>التحقق من التوصيل</SectionTitle>
+        <SectionTitle>Delivery Verification</SectionTitle>
         <div className="grid grid-cols-2 gap-2">
           <VerificationBadge
-            label="الموقع محدد"
+            label="Location Pinned"
             icon={MapPin}
             verified={hasMapsData}
           />
           <VerificationBadge
-            label="العنوان مكتمل"
+            label="Address Complete"
             icon={Building2}
             verified={!!(order.governorate && order.city)}
           />
           <VerificationBadge
-            label="الهاتف مسجل"
+            label="Phone Registered"
             icon={Phone}
             verified={!!order.billing_phone}
             detail={order.billing_phone}
           />
           <VerificationBadge
-            label="تأكيد العميل"
+            label="Customer Confirmation"
             icon={UserCheck}
             verified={order.confirmation_result === 'confirmed'}
             detail={
               order.confirmation_result === 'confirmed' && order.customer_confirmed_at
                 ? formatDate(order.customer_confirmed_at)
                 : order.confirmation_result && order.confirmation_result !== 'confirmed'
-                ? (order.customer_confirmed_by ? `بواسطة: ${order.customer_confirmed_by}` : null)
+                ? (order.customer_confirmed_by ? `By: ${order.customer_confirmed_by}` : null)
                 : null
             }
             statusText={
-              order.confirmation_result === 'confirmed'   ? 'مؤكد'        :
-              order.confirmation_result === 'not_answered'? 'لم يُجب'     :
-              order.confirmation_result === 'rejected'    ? 'مرفوض'       :
-              order.confirmation_result === 'postponed'   ? 'مؤجل'        :
-              'قيد الانتظار'
+              order.confirmation_result === 'confirmed'   ? 'Confirmed' :
+              order.confirmation_result === 'not_answered'? 'No Answer' :
+              order.confirmation_result === 'rejected'    ? 'Rejected'  :
+              order.confirmation_result === 'postponed'   ? 'Postponed' :
+              'Pending'
             }
             statusColor={
               order.confirmation_result === 'confirmed'   ? 'text-emerald-600 dark:text-emerald-400' :
@@ -1257,13 +1257,13 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
 
       {/* ── 6. Shipping Actions ── */}
       <div>
-        <SectionTitle>إجراءات الشحن</SectionTitle>
+        <SectionTitle>Shipping Actions</SectionTitle>
         <div className="flex flex-wrap gap-2">
           {hasMapsData && (
             <Button variant="outline" size="sm" asChild>
               <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                 <MapPin className="size-3.5" />
-                فتح الخريطة
+                Open Map
               </a>
             </Button>
           )}
@@ -1274,7 +1274,7 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
               onClick={() => void navigator.clipboard.writeText(fullAddress)}
             >
               <Copy className="size-3.5" />
-              نسخ العنوان
+              Copy Address
             </Button>
           )}
           {coordsStr && (
@@ -1284,13 +1284,13 @@ function ShippingTab({ order }: { order: Order; t: OrdersT }) {
               onClick={() => void navigator.clipboard.writeText(coordsStr)}
             >
               <Navigation className="size-3.5" />
-              نسخ الإحداثيات
+              Copy Coordinates
             </Button>
           )}
           {order.tracking_number ? (
             <Button variant="outline" size="sm" disabled>
               <ExternalLink className="size-3.5" />
-              تتبع الشحنة
+              Track Shipment
             </Button>
           ) : null}
         </div>
@@ -1314,7 +1314,7 @@ function LocationTab({ order, t }: { order: Order; t: OrdersT }) {
           <div className="flex items-start gap-3 overflow-hidden rounded-lg border bg-muted/20 px-4 py-3">
             <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">موقع GPS</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">GPS Location</p>
               <p className="font-mono text-sm font-medium tabular-nums">
                 {Number(loc.lat).toFixed(6)}, {Number(loc.lng).toFixed(6)}
               </p>
@@ -1386,62 +1386,62 @@ type WorkflowAction = {
 
 const WORKFLOW_ACTIONS: Record<string, WorkflowAction[]> = {
   pending: [
-    { key: 'confirm',          label: 'تأكيد الطلب',              icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           label: 'إلغاء الطلب',              icon: XCircle,          variant: 'destructive' },
+    { key: 'confirm',          label: 'Confirm Order',          icon: CheckCircle2,     variant: 'default'     },
+    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
   ],
   awaiting_payment: [
-    { key: 'confirm',          label: 'تأكيد الطلب',              icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           label: 'إلغاء الطلب',              icon: XCircle,          variant: 'destructive' },
+    { key: 'confirm',          label: 'Confirm Order',          icon: CheckCircle2,     variant: 'default'     },
+    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
   ],
   processing: [
-    { key: 'prepare',          label: 'نقل إلى التحضير',          icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'awaiting_stock',   label: 'تعليق: بانتظار المخزون',  icon: Box,              variant: 'outline'     },
-    { key: 'review',           label: 'إرسال للمراجعة',           icon: Activity,         variant: 'outline'     },
-    { key: 'cancel',           label: 'إلغاء الطلب',              icon: XCircle,          variant: 'destructive' },
+    { key: 'prepare',          label: 'Move to Preparation',    icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'awaiting_stock',   label: 'Hold: Awaiting Stock',   icon: Box,              variant: 'outline'     },
+    { key: 'review',           label: 'Send to Review',         icon: Activity,         variant: 'outline'     },
+    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
   ],
   awaiting_stock: [
-    { key: 'resume',           label: 'استئناف المعالجة',         icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'cancel',           label: 'إلغاء الطلب',              icon: XCircle,          variant: 'destructive' },
+    { key: 'resume',           label: 'Resume Processing',      icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
   ],
   confirmed: [
-    { key: 'prepare',          label: 'نقل إلى التحضير',          icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule',       label: 'إعادة جدولة',              icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           label: 'إلغاء الطلب',              icon: XCircle,          variant: 'destructive' },
+    { key: 'prepare',          label: 'Move to Preparation',    icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'reschedule',       label: 'Reschedule',             icon: Clock,            variant: 'outline'     },
+    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
   ],
   preparing: [
-    { key: 'dispatch',         label: 'إرسال الطلبات',            icon: Truck,            variant: 'default'     },
-    { key: 'review',           label: 'إرسال للمراجعة',           icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',       label: 'إعادة جدولة',              icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           label: 'إلغاء الطلب',              icon: XCircle,          variant: 'destructive' },
+    { key: 'dispatch',         label: 'Dispatch Orders',        icon: Truck,            variant: 'default'     },
+    { key: 'review',           label: 'Send to Review',         icon: Activity,         variant: 'outline'     },
+    { key: 'reschedule',       label: 'Reschedule',             icon: Clock,            variant: 'outline'     },
+    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
   ],
   out_for_delivery: [
-    { key: 'complete_delivery', label: 'تسليم الطلب',             icon: CheckCircle2,     variant: 'default'     },
-    { key: 'return',            label: 'معالجة الإرجاع',          icon: RotateCcw,        variant: 'outline'     },
-    { key: 'review',            label: 'إرسال للمراجعة',          icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',        label: 'إعادة جدولة',             icon: Clock,            variant: 'outline'     },
+    { key: 'complete_delivery', label: 'Complete Delivery',     icon: CheckCircle2,     variant: 'default'     },
+    { key: 'return',            label: 'Process Return',        icon: RotateCcw,        variant: 'outline'     },
+    { key: 'review',            label: 'Send to Review',        icon: Activity,         variant: 'outline'     },
+    { key: 'reschedule',        label: 'Reschedule',            icon: Clock,            variant: 'outline'     },
   ],
   delivered: [
-    { key: 'complete',          label: 'إتمام مراجعة الحسابات',   icon: CheckCircle2,     variant: 'default'     },
-    { key: 'review',            label: 'إرسال للمراجعة',          icon: Activity,         variant: 'outline'     },
-    { key: 'resume',            label: 'استئناف المعالجة',         icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'resume_confirmed',  label: 'استئناف: مؤكد',           icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'reschedule',        label: 'إعادة جدولة',             icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',            label: 'إلغاء الطلب',             icon: XCircle,          variant: 'destructive' },
+    { key: 'complete',          label: 'Complete Accounts Review', icon: CheckCircle2,  variant: 'default'     },
+    { key: 'review',            label: 'Send to Review',        icon: Activity,         variant: 'outline'     },
+    { key: 'resume',            label: 'Resume Processing',     icon: ArrowRightCircle, variant: 'outline'     },
+    { key: 'resume_confirmed',  label: 'Resume: Confirmed',     icon: ArrowRightCircle, variant: 'outline'     },
+    { key: 'reschedule',        label: 'Reschedule',            icon: Clock,            variant: 'outline'     },
+    { key: 'cancel',            label: 'Cancel Order',          icon: XCircle,          variant: 'destructive' },
   ],
   returned: [
-    { key: 'return_to_confirmed', label: 'إعادة إلى مؤكد',       icon: RotateCcw,        variant: 'default'     },
-    { key: 'review',              label: 'نقل إلى المراجعة',      icon: Activity,         variant: 'outline'     },
-    { key: 'cancel',              label: 'إلغاء الطلب',           icon: XCircle,          variant: 'destructive' },
+    { key: 'return_to_confirmed', label: 'Return to Confirmed', icon: RotateCcw,        variant: 'default'     },
+    { key: 'review',              label: 'Move to Review',      icon: Activity,         variant: 'outline'     },
+    { key: 'cancel',              label: 'Cancel Order',        icon: XCircle,          variant: 'destructive' },
   ],
   review: [
-    { key: 'resume',             label: 'استئناف المعالجة',        icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule',         label: 'إعادة جدولة',             icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',             label: 'إلغاء الطلب',             icon: XCircle,          variant: 'destructive' },
+    { key: 'resume',             label: 'Resume Processing',    icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'reschedule',         label: 'Reschedule',           icon: Clock,            variant: 'outline'     },
+    { key: 'cancel',             label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
   ],
   rescheduled: [
-    { key: 'resume',             label: 'استئناف المعالجة',        icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule',         label: 'إعادة جدولة',             icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',             label: 'إلغاء الطلب',             icon: XCircle,          variant: 'destructive' },
+    { key: 'resume',             label: 'Resume Processing',    icon: ArrowRightCircle, variant: 'default'     },
+    { key: 'reschedule',         label: 'Reschedule',           icon: Clock,            variant: 'outline'     },
+    { key: 'cancel',             label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
   ],
   completed: [],
   cancelled: [],
@@ -1502,18 +1502,18 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
-        <SectionTitle>الحالة الحالية</SectionTitle>
+        <SectionTitle>Current Status</SectionTitle>
         <OrderStatusBadge status={order.status} />
       </div>
       {actions.length > 0 ? (
         <div>
-          <SectionTitle>الإجراءات المتاحة</SectionTitle>
+          <SectionTitle>Available Actions</SectionTitle>
           <div className="flex flex-col gap-2">
             {actions.map((action) => {
               if (action.key === 'reschedule' && showRescheduleForm) {
                 return (
                   <div key="reschedule-form" className="flex flex-col gap-2 rounded-md border p-3">
-                    <label className="text-xs font-medium text-muted-foreground">تاريخ التوصيل الجديد</label>
+                    <label className="text-xs font-medium text-muted-foreground">New Delivery Date</label>
                     <input
                       type="date"
                       value={rescheduleDate}
@@ -1529,10 +1529,10 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
                         className="gap-1.5"
                       >
                         {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
-                        تأكيد إعادة الجدولة
+                        Confirm Reschedule
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setShowRescheduleForm(false)}>
-                        إلغاء
+                        Cancel
                       </Button>
                     </div>
                   </div>
@@ -1555,7 +1555,7 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
           </div>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">لا توجد إجراءات متاحة لهذه الحالة.</p>
+        <p className="text-sm text-muted-foreground">No actions available for this status.</p>
       )}
     </div>
   );
@@ -1573,14 +1573,14 @@ function InventoryTab({ order }: { order: Order }) {
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
-        <SectionTitle>حالة الحجز</SectionTitle>
+        <SectionTitle>Reservation Status</SectionTitle>
         <DetailGrid>
-          <DetailRow label="تاريخ الحجز">
+          <DetailRow label="Reserved At">
             {inv.inventory_reserved_at ? formatDate(inv.inventory_reserved_at) : (
-              <span className="text-amber-600 text-sm font-medium">غير محجوز</span>
+              <span className="text-amber-600 text-sm font-medium">Not Reserved</span>
             )}
           </DetailRow>
-          <DetailRow label="تاريخ الشحن">
+          <DetailRow label="Shipped At">
             {inv.inventory_shipped_at ? formatDate(inv.inventory_shipped_at) : (
               <span className="text-muted-foreground text-sm">—</span>
             )}
@@ -1589,19 +1589,19 @@ function InventoryTab({ order }: { order: Order }) {
       </div>
       <Separator />
       <div>
-        <SectionTitle>التنفيذ</SectionTitle>
+        <SectionTitle>Fulfillment</SectionTitle>
         <DetailGrid>
-          <DetailRow label="المستودع المعيّن">
+          <DetailRow label="Assigned Warehouse">
             {inv.assigned_warehouse_id ?? '—'}
           </DetailRow>
-          <DetailRow label="البنود">
-            {(order.lines ?? []).length} بند
+          <DetailRow label="Line Items">
+            {(order.lines ?? []).length} item(s)
           </DetailRow>
         </DetailGrid>
       </div>
       <Separator />
       <div>
-        <SectionTitle>بنود المخزون</SectionTitle>
+        <SectionTitle>Inventory Items</SectionTitle>
         <div className="flex flex-col gap-2">
           {(order.lines ?? []).map((line) => (
             <div key={line.id} className="flex items-center gap-3 rounded-md border bg-muted/20 px-3 py-2 text-sm">
@@ -1624,39 +1624,39 @@ function InventoryTab({ order }: { order: Order }) {
 type TColor = 'primary' | 'green' | 'amber' | 'blue' | 'cyan' | 'muted' | 'red';
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'قيد الانتظار', awaiting_payment: 'بانتظار الدفع',
-  processing: 'قيد المعالجة', awaiting_stock: 'بانتظار المخزون',
-  confirmed: 'مؤكد', preparing: 'قيد التحضير',
-  out_for_delivery: 'خرج للتوصيل', delivered: 'تم التسليم',
-  completed: 'مكتمل', cancelled: 'ملغى',
-  review: 'قيد المراجعة', rescheduled: 'معاد جدولته', returned: 'مُعاد',
+  pending: 'Pending', awaiting_payment: 'Awaiting Payment',
+  processing: 'Processing', awaiting_stock: 'Awaiting Stock',
+  confirmed: 'Confirmed', preparing: 'Preparing',
+  out_for_delivery: 'Out for Delivery', delivered: 'Delivered',
+  completed: 'Completed', cancelled: 'Cancelled',
+  review: 'Under Review', rescheduled: 'Rescheduled', returned: 'Returned',
 };
 
 const ADDRESS_FIELD_LABELS: Record<string, string> = {
-  governorate: 'المحافظة', city: 'المدينة', shipping_address: 'الشارع',
-  building: 'المبنى', floor: 'الطابق', apartment: 'الشقة',
-  landmark: 'علامة مميزة', area: 'المنطقة', address_notes: 'ملاحظات العنوان',
-  billing_phone: 'هاتف العميل', customer_secondary_phone: 'هاتف ثانوي',
-  customer_name: 'اسم العميل',
+  governorate: 'Governorate', city: 'City', shipping_address: 'Street',
+  building: 'Building', floor: 'Floor', apartment: 'Apartment',
+  landmark: 'Landmark', area: 'District', address_notes: 'Address Notes',
+  billing_phone: 'Customer Phone', customer_secondary_phone: 'Secondary Phone',
+  customer_name: 'Customer Name',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtRelative(d: Date): string {
   const diff = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (diff < 60)   return 'الآن';
-  if (diff < 3600) return `منذ ${Math.floor(diff / 60)} د`;
-  if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} س`;
+  if (diff < 60)    return 'Just now';
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return '';
 }
 
 function fmtDayLabel(d: Date): string {
   const today = new Date();
-  if (d.toDateString() === today.toDateString()) return 'اليوم';
+  if (d.toDateString() === today.toDateString()) return 'Today';
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === yesterday.toDateString()) return 'أمس';
-  return new Intl.DateTimeFormat('ar-EG', { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
 }
 
 type DayGroup = { label: string; events: OrderActivity[] };
@@ -1680,33 +1680,33 @@ function resolveEventMeta(ev: OrderActivity): { title: string; color: TColor; ic
     ?? (ev.previous_value ? Object.keys(ev.previous_value)[0] : undefined);
 
   switch (ev.event_type) {
-    case 'order_created':    return { title: 'إنشاء الطلب',             color: 'primary', icon: <ShoppingBag className="size-3.5" /> };
-    case 'order_updated':    return { title: 'تحديث الطلب',             color: 'blue',    icon: <Edit className="size-3.5" /> };
-    case 'customer_confirmed': return { title: 'تأكيد العميل',          color: 'green',   icon: <UserCheck className="size-3.5" /> };
-    case 'customer_created': return { title: 'إنشاء عميل',              color: 'cyan',    icon: <UserPlus className="size-3.5" /> };
-    case 'customer_reused':  return { title: 'مطابقة عميل',             color: 'cyan',    icon: <User className="size-3.5" /> };
-    case 'discount_applied': return { title: 'تطبيق الخصم',             color: 'amber',   icon: <Percent className="size-3.5" /> };
-    case 'discount_updated': return { title: 'تحديث الخصم',             color: 'amber',   icon: <Percent className="size-3.5" /> };
-    case 'deposit_recorded': return { title: 'تسجيل دفعة مقدمة',        color: 'cyan',    icon: <Banknote className="size-3.5" /> };
-    case 'deposit_updated':  return { title: 'تحديث الدفعة المقدمة',    color: 'cyan',    icon: <Banknote className="size-3.5" /> };
-    case 'note_added':       return { title: 'إضافة ملاحظة داخلية',     color: 'primary', icon: <MessageSquare className="size-3.5" /> };
-    case 'note_updated':     return { title: 'تعديل ملاحظة داخلية',     color: 'primary', icon: <PenLine className="size-3.5" /> };
-    case 'note_deleted':     return { title: 'حذف ملاحظة داخلية',       color: 'muted',   icon: <Trash2 className="size-3.5" /> };
-    case 'proof_uploaded':   return { title: 'رفع إثبات الدفع',         color: 'green',   icon: <FileCheck className="size-3.5" /> };
-    case 'awaiting_payment': return { title: 'بانتظار الدفع',            color: 'amber',   icon: <Clock className="size-3.5" /> };
-    case 'delivery_date_set': return { title: 'تحديد تاريخ التوصيل',    color: 'blue',    icon: <CalendarClock className="size-3.5" /> };
-    case 'shipping_override': return { title: 'تعديل تكلفة الشحن',      color: 'amber',   icon: <Truck className="size-3.5" /> };
-    case 'order_zone_updated': return { title: 'تحديث المنطقة',          color: 'blue',    icon: <MapIcon className="size-3.5" /> };
-    case 'location_set':     return { title: 'تحديد الموقع',             color: 'blue',    icon: <Navigation className="size-3.5" /> };
-    case 'status_changed':   return { title: 'تغيير الحالة',             color: 'blue',    icon: <Activity className="size-3.5" /> };
+    case 'order_created':    return { title: 'Order Created',           color: 'primary', icon: <ShoppingBag className="size-3.5" /> };
+    case 'order_updated':    return { title: 'Order Updated',           color: 'blue',    icon: <Edit className="size-3.5" /> };
+    case 'customer_confirmed': return { title: 'Customer Confirmed',    color: 'green',   icon: <UserCheck className="size-3.5" /> };
+    case 'customer_created': return { title: 'Customer Created',        color: 'cyan',    icon: <UserPlus className="size-3.5" /> };
+    case 'customer_reused':  return { title: 'Customer Matched',        color: 'cyan',    icon: <User className="size-3.5" /> };
+    case 'discount_applied': return { title: 'Discount Applied',        color: 'amber',   icon: <Percent className="size-3.5" /> };
+    case 'discount_updated': return { title: 'Discount Updated',        color: 'amber',   icon: <Percent className="size-3.5" /> };
+    case 'deposit_recorded': return { title: 'Deposit Recorded',        color: 'cyan',    icon: <Banknote className="size-3.5" /> };
+    case 'deposit_updated':  return { title: 'Deposit Updated',         color: 'cyan',    icon: <Banknote className="size-3.5" /> };
+    case 'note_added':       return { title: 'Internal Note Added',     color: 'primary', icon: <MessageSquare className="size-3.5" /> };
+    case 'note_updated':     return { title: 'Internal Note Updated',   color: 'primary', icon: <PenLine className="size-3.5" /> };
+    case 'note_deleted':     return { title: 'Internal Note Deleted',   color: 'muted',   icon: <Trash2 className="size-3.5" /> };
+    case 'proof_uploaded':   return { title: 'Payment Proof Uploaded',  color: 'green',   icon: <FileCheck className="size-3.5" /> };
+    case 'awaiting_payment': return { title: 'Awaiting Payment',        color: 'amber',   icon: <Clock className="size-3.5" /> };
+    case 'delivery_date_set': return { title: 'Delivery Date Set',      color: 'blue',    icon: <CalendarClock className="size-3.5" /> };
+    case 'shipping_override': return { title: 'Shipping Cost Overridden', color: 'amber', icon: <Truck className="size-3.5" /> };
+    case 'order_zone_updated': return { title: 'Zone Updated',          color: 'blue',    icon: <MapIcon className="size-3.5" /> };
+    case 'location_set':     return { title: 'Location Set',            color: 'blue',    icon: <Navigation className="size-3.5" /> };
+    case 'status_changed':   return { title: 'Status Changed',          color: 'blue',    icon: <Activity className="size-3.5" /> };
     case 'field_updated': {
       if (field === 'status')
-        return { title: 'تغيير الحالة', color: 'blue', icon: <Activity className="size-3.5" /> };
+        return { title: 'Status Changed', color: 'blue', icon: <Activity className="size-3.5" /> };
       if (field && field in ADDRESS_FIELD_LABELS && !['billing_phone','customer_secondary_phone'].includes(field))
-        return { title: 'تحديث العنوان', color: 'blue', icon: <MapPin className="size-3.5" /> };
+        return { title: 'Address Updated', color: 'blue', icon: <MapPin className="size-3.5" /> };
       if (field && ['billing_phone','customer_secondary_phone'].includes(field))
-        return { title: 'تحديث الهاتف', color: 'blue', icon: <Phone className="size-3.5" /> };
-      return { title: 'تحديث البيانات', color: 'muted', icon: <Edit className="size-3.5" /> };
+        return { title: 'Phone Updated', color: 'blue', icon: <Phone className="size-3.5" /> };
+      return { title: 'Data Updated', color: 'muted', icon: <Edit className="size-3.5" /> };
     }
     default:
       if (ev.event_type.includes('cancel') || ev.event_type.includes('return'))
@@ -1727,14 +1727,14 @@ function FieldChange({ label, oldVal, newVal }: { label: string; oldVal: string;
       <p className="font-semibold text-foreground mb-2">{label}</p>
       <div className="space-y-1.5">
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">القديم</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Before</p>
           <p className={cn('font-mono break-all', oldVal ? 'line-through text-rose-600 dark:text-rose-400' : 'text-muted-foreground italic')}>{oldVal || '—'}</p>
         </div>
         <div className="flex justify-center">
           <ArrowDown className="size-3 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">الجديد</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">After</p>
           <p className={cn('font-mono break-all font-medium', newVal ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground italic')}>{newVal || '—'}</p>
         </div>
       </div>
@@ -1773,21 +1773,21 @@ function StatusTransitionCard({
     <div className="rounded-md border border-border bg-muted/20 p-3 text-xs space-y-2.5">
       <div className="space-y-1.5">
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">الحالة السابقة</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Previous Status</p>
           <span className={badgeCls(oldStatus)}>{STATUS_LABELS[oldStatus] ?? oldStatus}</span>
         </div>
         <div className="flex justify-center">
           <ArrowDown className="size-3 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">الحالة الجديدة</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">New Status</p>
           <span className={badgeCls(newStatus)}>{STATUS_LABELS[newStatus] ?? newStatus}</span>
         </div>
       </div>
       {(byName || reason) ? (
         <div className="border-t border-border pt-2 space-y-1">
-          {byName  ? <p className="text-muted-foreground">بواسطة <span className="font-medium text-foreground">{byName}</span></p> : null}
-          {reason  ? <p className="text-muted-foreground">السبب <span className="font-medium text-foreground">{reason}</span></p> : null}
+          {byName  ? <p className="text-muted-foreground">By <span className="font-medium text-foreground">{byName}</span></p> : null}
+          {reason  ? <p className="text-muted-foreground">Reason <span className="font-medium text-foreground">{reason}</span></p> : null}
         </div>
       ) : null}
     </div>
@@ -1806,9 +1806,9 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
     case 'order_created':
       return (
         <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-          {meta.channel       ? <span>القناة: <span className="font-medium text-foreground">{String(meta.channel)}</span></span> : null}
-          {meta.customer_name ? <span>العميل: <span className="font-medium text-foreground">{String(meta.customer_name)}</span></span> : null}
-          {meta.order_total != null ? <span>الإجمالي: <span className="font-medium text-foreground">{fmtCur(Number(meta.order_total))}</span></span> : null}
+          {meta.channel       ? <span>Channel: <span className="font-medium text-foreground">{String(meta.channel)}</span></span> : null}
+          {meta.customer_name ? <span>Customer: <span className="font-medium text-foreground">{String(meta.customer_name)}</span></span> : null}
+          {meta.order_total != null ? <span>Total: <span className="font-medium text-foreground">{fmtCur(Number(meta.order_total))}</span></span> : null}
         </div>
       );
 
@@ -1818,9 +1818,9 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const notes  = String(meta.notes  ?? pl.notes  ?? '');
       return (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-1">
-          {method ? <p className="text-muted-foreground">الطريقة <span className="font-medium text-foreground capitalize">{method}</span></p> : null}
+          {method ? <p className="text-muted-foreground">Method <span className="font-medium text-foreground capitalize">{method}</span></p> : null}
           {result ? (
-            <p className="text-muted-foreground">النتيجة{' '}
+            <p className="text-muted-foreground">Result{' '}
               <span className={cn('font-semibold', result === 'confirmed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
                 {result}
               </span>
@@ -1842,7 +1842,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
         return (
           <div className="space-y-2">
             <FieldChange
-              label="الخصم"
+              label="Discount"
               oldVal={fmt_(prev.discount_amount, prev.discount_type)}
               newVal={fmt_(next.discount_amount, next.discount_type)}
             />
@@ -1852,15 +1852,15 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
 
       return (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-1">
-          {type_  ? <p className="text-muted-foreground">النوع <span className="font-medium text-foreground capitalize">{type_}</span></p> : null}
+          {type_  ? <p className="text-muted-foreground">Type <span className="font-medium text-foreground capitalize">{type_}</span></p> : null}
           {amount != null ? (
             <p className="text-muted-foreground">
-              القيمة <span className="font-medium text-foreground">{type_ === 'percentage' ? `${amount}%` : fmtCur(Number(amount))}</span>
+              Value <span className="font-medium text-foreground">{type_ === 'percentage' ? `${amount}%` : fmtCur(Number(amount))}</span>
             </p>
           ) : null}
           {calcVal != null ? (
             <p className="text-muted-foreground border-t border-border pt-1 mt-1">
-              المحسوب <span className="font-semibold text-amber-600 dark:text-amber-400">{fmtCur(Number(calcVal))}</span>
+              Calculated <span className="font-semibold text-amber-600 dark:text-amber-400">{fmtCur(Number(calcVal))}</span>
             </p>
           ) : null}
         </div>
@@ -1878,9 +1878,9 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       if (prevDep !== undefined && nextDep !== undefined) {
         return (
           <div className="space-y-2">
-            <FieldChange label="الدفعة المقدمة" oldVal={fmtCur(Number(prevDep))} newVal={fmtCur(Number(nextDep))} />
+            <FieldChange label="Deposit" oldVal={fmtCur(Number(prevDep))} newVal={fmtCur(Number(nextDep))} />
             {prevRem !== undefined && nextRem !== undefined
-              ? <FieldChange label="الرصيد المتبقي" oldVal={fmtCur(Number(prevRem))} newVal={fmtCur(Number(nextRem))} />
+              ? <FieldChange label="Remaining Balance" oldVal={fmtCur(Number(prevRem))} newVal={fmtCur(Number(nextRem))} />
               : null}
           </div>
         );
@@ -1889,8 +1889,8 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const amount = pl.amount ?? meta.amount;
       return (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-1">
-          {amount != null ? <p className="text-muted-foreground">الدفعة المقدمة <span className="font-medium text-foreground">{fmtCur(Number(amount))}</span></p> : null}
-          {grandTotal != null ? <p className="text-muted-foreground">الإجمالي الكلي <span className="font-medium text-foreground">{fmtCur(Number(grandTotal))}</span></p> : null}
+          {amount != null ? <p className="text-muted-foreground">Deposit <span className="font-medium text-foreground">{fmtCur(Number(amount))}</span></p> : null}
+          {grandTotal != null ? <p className="text-muted-foreground">Grand Total <span className="font-medium text-foreground">{fmtCur(Number(grandTotal))}</span></p> : null}
         </div>
       );
     }
@@ -1899,7 +1899,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const content = String(meta.content ?? pl.preview ?? '');
       return content ? (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">المحتوى</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Content</p>
           <p className="text-foreground whitespace-pre-wrap line-clamp-4">{content}</p>
         </div>
       ) : null;
@@ -1913,7 +1913,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
           <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-2">
             {oldContent ? (
               <div>
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">السابق</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Previous</p>
                 <p className="text-muted-foreground line-through whitespace-pre-wrap line-clamp-3">{oldContent}</p>
               </div>
             ) : null}
@@ -1921,7 +1921,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
               <ArrowDown className="size-3 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">الحالي</p>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Current</p>
               <p className="text-foreground whitespace-pre-wrap line-clamp-3">{newContent || '—'}</p>
             </div>
           </div>
@@ -1934,7 +1934,7 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
       const preview = String(meta.content_preview ?? '');
       return preview ? (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">المحتوى المحذوف</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Deleted Content</p>
           <p className="text-muted-foreground line-through whitespace-pre-wrap line-clamp-3">{preview}</p>
         </div>
       ) : null;
@@ -1986,19 +1986,19 @@ function EventDetails({ ev }: { ev: OrderActivity }) {
         );
       }
       return ev.changed_fields?.length ? (
-        <p className="text-xs text-muted-foreground">تعديل: {ev.changed_fields.join(', ')}</p>
+        <p className="text-xs text-muted-foreground">Modified: {ev.changed_fields.join(', ')}</p>
       ) : null;
 
     case 'order_zone_updated': {
       const prev_ = String(pl.previous_zone ?? '');
       const next_ = String(pl.new_zone ?? '');
-      return prev_ || next_ ? <FieldChange label="منطقة التوصيل" oldVal={prev_} newVal={next_} /> : null;
+      return prev_ || next_ ? <FieldChange label="Delivery Zone" oldVal={prev_} newVal={next_} /> : null;
     }
 
     case 'shipping_override':
       return pl.cost != null ? (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
-          <p className="text-muted-foreground">تكلفة مخصصة <span className="font-semibold text-foreground">{fmtCur(Number(pl.cost))}</span></p>
+          <p className="text-muted-foreground">Custom cost <span className="font-semibold text-foreground">{fmtCur(Number(pl.cost))}</span></p>
         </div>
       ) : null;
 
@@ -2027,10 +2027,10 @@ function ActorBlock({ ev }: { ev: OrderActivity }) {
     <div className="mt-1.5 space-y-1 text-xs">
       {/* Identity */}
       <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
-        {name     ? <><span className="text-muted-foreground">بواسطة</span><span className="font-medium text-foreground">{name}</span></> : null}
-        {username ? <><span className="text-muted-foreground">المستخدم</span><span className="font-mono text-foreground">{username}</span></> : null}
-        {role     ? <><span className="text-muted-foreground">الدور</span><span className="text-foreground">{role}</span></> : null}
-        {branch   ? <><span className="text-muted-foreground">الفرع</span><span className="text-foreground">{branch}</span></> : null}
+        {name     ? <><span className="text-muted-foreground">By</span><span className="font-medium text-foreground">{name}</span></> : null}
+        {username ? <><span className="text-muted-foreground">User</span><span className="font-mono text-foreground">{username}</span></> : null}
+        {role     ? <><span className="text-muted-foreground">Role</span><span className="text-foreground">{role}</span></> : null}
+        {branch   ? <><span className="text-muted-foreground">Branch</span><span className="text-foreground">{branch}</span></> : null}
       </div>
       {/* Exact timestamp */}
       <div className="flex items-baseline gap-2 text-muted-foreground">
@@ -2080,7 +2080,7 @@ function TimelineTab({ order }: { order: Order }) {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-center p-4">
         <Activity className="size-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">لا توجد أحداث مسجلة بعد.</p>
+        <p className="text-sm text-muted-foreground">No recorded events yet.</p>
       </div>
     );
   }
@@ -2148,7 +2148,7 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
     <div className="flex flex-col gap-6 p-4">
       {/* Current status */}
       <div>
-        <SectionTitle>الحالة الحالية</SectionTitle>
+        <SectionTitle>Current Status</SectionTitle>
         <div className="rounded-md border bg-muted/20 px-4 py-3 flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -2156,14 +2156,14 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
             </div>
             {typedOrder.status_entered_at ? (
               <p className="text-xs text-muted-foreground">
-                دخل في:{' '}
-                {new Intl.DateTimeFormat('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }).format(
+                Entered at:{' '}
+                {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(
                   new Date(typedOrder.status_entered_at),
                 )}
               </p>
             ) : null}
             {typedOrder.status_entered_by ? (
-              <p className="text-xs text-muted-foreground">بواسطة: {typedOrder.status_entered_by}</p>
+              <p className="text-xs text-muted-foreground">By: {typedOrder.status_entered_by}</p>
             ) : null}
           </div>
         </div>
@@ -2172,7 +2172,7 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
       {/* Previous status */}
       {typedOrder.previous_status ? (
         <div>
-          <SectionTitle>الحالة السابقة</SectionTitle>
+          <SectionTitle>Previous Status</SectionTitle>
           <div className="rounded-md border px-4 py-3">
             <p className="text-sm font-medium capitalize text-muted-foreground">
               {STATUS_LABELS[String(typedOrder.previous_status)] ?? String(typedOrder.previous_status).replace(/_/g, ' ')}
@@ -2183,28 +2183,28 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
 
       {/* Key dates */}
       <div>
-        <SectionTitle>التواريخ الرئيسية</SectionTitle>
+        <SectionTitle>Key Dates</SectionTitle>
         <DetailGrid>
-          <DetailRow label="تاريخ الإنشاء">
+          <DetailRow label="Created At">
             {formatDate(order.created_at)}
           </DetailRow>
           {order.date_paid ? (
-            <DetailRow label="تأكيد الدفع">
+            <DetailRow label="Payment Confirmed">
               {formatDate(order.date_paid)}
             </DetailRow>
           ) : null}
           {order.inventory_reserved_at ? (
-            <DetailRow label="الحجز">
+            <DetailRow label="Reserved">
               {formatDate(order.inventory_reserved_at)}
             </DetailRow>
           ) : null}
           {order.inventory_shipped_at ? (
-            <DetailRow label="الإرسال">
+            <DetailRow label="Shipped">
               {formatDate(order.inventory_shipped_at)}
             </DetailRow>
           ) : null}
           {order.requested_delivery_date ? (
-            <DetailRow label="التوصيل المطلوب">
+            <DetailRow label="Requested Delivery">
               {formatDate(order.requested_delivery_date)}
             </DetailRow>
           ) : null}
@@ -2213,12 +2213,12 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
 
       {/* Order source */}
       <div>
-        <SectionTitle>مصدر الطلب</SectionTitle>
-        <p className="text-sm capitalize">{order.source ?? 'يدوي'}</p>
+        <SectionTitle>Order Source</SectionTitle>
+        <p className="text-sm capitalize">{order.source ?? 'Manual'}</p>
       </div>
 
       <p className="text-xs text-muted-foreground border-t pt-3">
-        سجل التدقيق الكامل متاح من خلال نقطة نهاية سجل النشاط. التواريخ الرئيسية معروضة أعلاه.
+        The full audit log is available via the activity log endpoint. Key dates are shown above.
       </p>
     </div>
   );
@@ -2248,12 +2248,12 @@ export function OrderDetailDrawer({ order, open, onOpenChange, onEdit }: OrderDe
 
   const tabs = [
     { key: 'summary',   label: t('drawer.tabs.summary'),   content: <SummaryTab order={displayOrder} t={t} /> },
-    { key: 'workflow',  label: 'سير العمل',                 content: <WorkflowTab order={displayOrder} onClose={() => onOpenChange(false)} /> },
-    { key: 'history',   label: 'السجل',                    content: <WorkflowHistoryTab order={displayOrder} /> },
+    { key: 'workflow',  label: 'Workflow',                   content: <WorkflowTab order={displayOrder} onClose={() => onOpenChange(false)} /> },
+    { key: 'history',   label: 'History',                  content: <WorkflowHistoryTab order={displayOrder} /> },
     { key: 'customer',  label: t('drawer.tabs.customer'),   content: <CustomerTab order={displayOrder} t={t} /> },
     { key: 'products',  label: t('drawer.tabs.products'),   content: <ProductsTab order={displayOrder} t={t} />, badge: (displayOrder.lines ?? []).length },
-    { key: 'inventory', label: 'المخزون',                   content: <InventoryTab order={displayOrder} /> },
-    { key: 'timeline',  label: 'الجدول الزمني',            content: <TimelineTab order={displayOrder} /> },
+    { key: 'inventory', label: 'Inventory',                  content: <InventoryTab order={displayOrder} /> },
+    { key: 'timeline',  label: 'Timeline',                  content: <TimelineTab order={displayOrder} /> },
     { key: 'payment',   label: t('drawer.tabs.payment'),    content: <PaymentTab order={displayOrder} t={t} /> },
     { key: 'shipping',  label: t('drawer.tabs.shipping'),   content: <ShippingTab order={displayOrder} t={t} /> },
     { key: 'notes',     label: t('drawer.tabs.notes'),      content: <OrderNotesTab order={displayOrder} /> },

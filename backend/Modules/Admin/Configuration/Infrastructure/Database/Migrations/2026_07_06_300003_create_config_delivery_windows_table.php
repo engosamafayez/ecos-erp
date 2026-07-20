@@ -18,6 +18,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('config_delivery_windows')) {
+            return;
+        }
+
         Schema::create('config_delivery_windows', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('brand_id')->constrained('brands')->cascadeOnDelete();

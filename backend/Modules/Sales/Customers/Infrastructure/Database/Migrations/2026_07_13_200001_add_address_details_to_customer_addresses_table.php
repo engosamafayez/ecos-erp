@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('customer_addresses', 'building')) {
+            return;
+        }
+
         Schema::table('customer_addresses', function (Blueprint $table): void {
             $table->string('building')->nullable()->after('address_line');
             $table->string('floor')->nullable()->after('building');
@@ -21,6 +25,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('customer_addresses', 'building')) {
+            return;
+        }
+
         Schema::table('customer_addresses', function (Blueprint $table): void {
             $table->dropColumn(['building', 'floor', 'apartment', 'landmark', 'address_notes']);
         });

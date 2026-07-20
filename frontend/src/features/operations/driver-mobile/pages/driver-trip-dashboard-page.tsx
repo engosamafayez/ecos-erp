@@ -76,7 +76,7 @@ export function DriverTripDashboardPage() {
   if (!trip) {
     return (
       <div className="p-4 text-center text-muted-foreground">
-        الرحلة غير موجودة.
+        Trip not found.
       </div>
     );
   }
@@ -127,7 +127,7 @@ export function DriverTripDashboardPage() {
         {trip.kpis && (
           <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 text-center">
             <p className="text-4xl font-bold text-primary">{trip.kpis.remaining_stops}</p>
-            <p className="text-sm text-muted-foreground mt-1">محطات متبقية</p>
+            <p className="text-sm text-muted-foreground mt-1">Remaining Stops</p>
           </div>
         )}
 
@@ -143,7 +143,7 @@ export function DriverTripDashboardPage() {
               disabled={startMutation.isPending}
             >
               <Navigation className="mr-2 h-5 w-5" />
-              {startMutation.isPending ? 'جارٍ البدء...' : 'بدء الرحلة'}
+              {startMutation.isPending ? 'Starting...' : 'Start Trip'}
             </Button>
           )}
 
@@ -154,7 +154,7 @@ export function DriverTripDashboardPage() {
                 variant="default"
                 onClick={() => go(ROUTES.driverTripStops.replace(':tripId', tripId))}
               >
-                عرض المحطات ({trip.kpis?.remaining_stops ?? '?'} متبقية)
+                View Stops ({trip.kpis?.remaining_stops ?? '?'} remaining)
               </Button>
               <div className="grid grid-cols-3 gap-2">
                 <Button variant="outline" onClick={() => go(ROUTES.driverTripCollections.replace(':tripId', tripId))}>
@@ -174,7 +174,7 @@ export function DriverTripDashboardPage() {
                 disabled={finishMutation.isPending || (trip.kpis?.remaining_stops ?? 1) > 0}
               >
                 <CheckCircle className="mr-2 h-4 w-4" />
-                إنهاء الرحلة
+                Finish Trip
               </Button>
             </>
           )}
@@ -186,15 +186,15 @@ export function DriverTripDashboardPage() {
                 onClick={() => go(ROUTES.driverTripSettlement.replace(':tripId', tripId))}
               >
                 <DollarSign className="mr-2 h-4 w-4" />
-                التسوية
+                Settlement
               </Button>
               <div className="grid grid-cols-2 gap-2">
                 <Button variant="outline" onClick={() => go(ROUTES.driverTripReturns.replace(':tripId', tripId))}>
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  المرتجعات
+                  Returns
                 </Button>
                 <Button variant="outline" onClick={() => go(ROUTES.driverTripCustody.replace(':tripId', tripId))}>
-                  العهدة
+                  Custody
                 </Button>
               </div>
             </>
@@ -206,15 +206,15 @@ export function DriverTripDashboardPage() {
       <Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>بدء الرحلة؟</DialogTitle>
+            <DialogTitle>Start Trip?</DialogTitle>
             <DialogDescription>
-              سيتم تحديث الرحلة إلى قيد التنفيذ وتسجيل موقعك الحالي عبر GPS.
+              This will update the trip to in-progress and log your current GPS location.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={() => setStartDialogOpen(false)}>إلغاء</Button>
+            <Button variant="outline" onClick={() => setStartDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleStartTrip} disabled={startMutation.isPending}>
-              {startMutation.isPending ? 'جارٍ البدء...' : 'ابدأ الآن'}
+              {startMutation.isPending ? 'Starting...' : 'Start Now'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -224,15 +224,15 @@ export function DriverTripDashboardPage() {
       <Dialog open={finishDialogOpen} onOpenChange={setFinishDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>إنهاء الرحلة؟</DialogTitle>
+            <DialogTitle>Finish Trip?</DialogTitle>
             <DialogDescription>
-              يجب معالجة جميع المحطات قبل الإنهاء. يسجّل هذا الإجراء موقع انتهاء الرحلة.
+              All stops must be processed before finishing. This action logs the trip end location.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={() => setFinishDialogOpen(false)}>إلغاء</Button>
+            <Button variant="outline" onClick={() => setFinishDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleFinishTrip} disabled={finishMutation.isPending}>
-              {finishMutation.isPending ? 'جارٍ الإنهاء...' : 'إنهاء الرحلة'}
+              {finishMutation.isPending ? 'Finishing...' : 'Finish Trip'}
             </Button>
           </DialogFooter>
         </DialogContent>

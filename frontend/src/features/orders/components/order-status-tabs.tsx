@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { OrderStatus } from '@/features/orders/types/order';
 import { STATUS_TAB_ORDER } from '@/features/orders/types/order';
 import type { OrderStatusKpis } from '@/features/orders/hooks/use-orders';
+import { useOrderStatusLabels } from '@/features/orders/hooks/use-order-labels';
 import { formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -92,25 +93,8 @@ type OrderStatusTabsProps = {
  */
 export function OrderStatusTabs({ activeStatus, counts, onChange }: OrderStatusTabsProps) {
   const { t } = useTranslation('orders');
+  const { statusTabLabel } = useOrderStatusLabels();
   const scrollRef  = useRef<HTMLDivElement>(null);
-
-  const statusTabLabel: Record<StatusTab, string> = {
-    all:              t('statusTabs.all'),
-    scheduled:        t('statusTabs.scheduled'),
-    pending:          t('statusTabs.pending'),
-    awaiting_payment: t('statusTabs.awaiting_payment'),
-    processing:       t('statusTabs.processing'),
-    awaiting_stock:   t('statusTabs.awaiting_stock'),
-    confirmed:        t('statusTabs.confirmed'),
-    preparing:        t('statusTabs.preparing'),
-    out_for_delivery: t('statusTabs.out_for_delivery'),
-    delivered:        t('statusTabs.delivered'),
-    completed:        t('statusTabs.completed'),
-    returned:         t('statusTabs.returned'),
-    cancelled:        t('statusTabs.cancelled'),
-    review:           t('statusTabs.review'),
-    rescheduled:      t('statusTabs.rescheduled'),
-  };
   const activeRef  = useRef<HTMLButtonElement>(null);
 
   // Scroll active tab into view whenever the active status changes

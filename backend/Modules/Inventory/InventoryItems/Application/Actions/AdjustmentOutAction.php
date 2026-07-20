@@ -22,9 +22,8 @@ use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementE
  * Decreases on_hand_qty. Records AdjustmentOut movement type.
  * Throws InsufficientStockException if on_hand_qty < quantity.
  *
- * Publishes InventoryStockAdjusted (type=out) AFTER the transaction commits.
- *
- * IMPORTANT — nested transaction caveat (Phase A): see AdjustmentInAction.
+ * Publishes InventoryStockAdjusted (type=out) via afterCommit, guaranteeing the
+ * event fires only after the outermost transaction commits.
  */
 final class AdjustmentOutAction extends BaseAction
 {
@@ -45,13 +44,13 @@ final class AdjustmentOutAction extends BaseAction
             throw new InvalidInventoryMovementException('Quantity must be greater than zero');
         }
 
-        $onHandBefore = null;
-        $onHandAfter  = null;
+        $event = null;
 
-        $result = DB::transaction(function () use ($dto, &$onHandBefore, &$onHandAfter) {
-            $item = $this->inventory->findByWarehouseAndProduct(
+        $result = DB::transaction(function () use ($dto, &$event) {
+            $item = $this->inventory->findByWarehouseProductAndCompany(
                 $dto->warehouse_id,
                 $dto->product_id,
+                $dto->company_id,
             );
 
             if ($item === null) {
@@ -77,11 +76,11 @@ final class AdjustmentOutAction extends BaseAction
             }
 
             // D2/BUG-21 fix: prevent reducing on_hand_qty below reserved_qty.
-            // Without this guard, a direct issue or adjustment-out could bring
-            // on_hand_qty below reserved_qty, causing reserved orders to be
-            // unfulfillable when ShipStockAction checks on_hand_qty >= ship_qty.
+            // bypassReserveGuard=true is only permitted for accountability workflows
+            // (WarehouseLiability / WasteInvestigation) where a confirmed physical
+            // shortage must be written off regardless of active order reservations.
             $onHandAfter = $onHandBefore - $dto->quantity;
-            if ($onHandAfter < $reservedBefore) {
+            if (! $dto->bypassReserveGuard && $onHandAfter < $reservedBefore) {
                 throw new InvalidInventoryMovementException(
                     "Cannot adjust out {$dto->quantity} units: on_hand_qty would fall below reserved_qty ({$reservedBefore}). " .
                     'Release or fulfil reserved orders first.'
@@ -109,22 +108,26 @@ final class AdjustmentOutAction extends BaseAction
 
             $locked->refresh();
 
+            $event = new InventoryStockAdjusted(
+                inventoryItemId: $locked->id,
+                warehouseId:     $dto->warehouse_id,
+                productId:       $dto->product_id,
+                companyId:       $dto->company_id,
+                adjustmentType:  InventoryStockAdjusted::TYPE_OUT,
+                quantity:        $dto->quantity,
+                onHandBefore:    $onHandBefore,
+                onHandAfter:     $onHandAfter,
+                referenceType:   $dto->reference_type,
+                referenceId:     $dto->reference_id,
+            );
+
             return $locked;
         });
 
-        // ── Publish after commit (or savepoint release in nested context) ────
-        $this->eventBus->publish(new InventoryStockAdjusted(
-            inventoryItemId: $result->id,
-            warehouseId:     $dto->warehouse_id,
-            productId:       $dto->product_id,
-            companyId:       $dto->company_id,
-            adjustmentType:  InventoryStockAdjusted::TYPE_OUT,
-            quantity:        $dto->quantity,
-            onHandBefore:    $onHandBefore ?? 0.0,
-            onHandAfter:     $onHandAfter  ?? 0.0,
-            referenceType:   $dto->reference_type,
-            referenceId:     $dto->reference_id,
-        ));
+        // ── Guarantee publish fires only after the outermost transaction commits ─
+        DB::connection()->afterCommit(function () use ($event): void {
+            $this->eventBus->publish($event);
+        });
 
         return OperationResult::success($result, 'Adjustment out applied successfully.');
     }

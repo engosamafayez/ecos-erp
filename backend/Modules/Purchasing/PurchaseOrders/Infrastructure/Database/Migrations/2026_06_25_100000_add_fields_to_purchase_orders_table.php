@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('purchase_orders', 'company_id')) {
+            return;
+        }
+
         Schema::table('purchase_orders', function (Blueprint $table): void {
             // Multi-tenancy
             $table->foreignUuid('company_id')->nullable()->after('id')->constrained('companies')->restrictOnDelete();
@@ -33,6 +37,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('purchase_orders', 'company_id')) {
+            return;
+        }
+
         Schema::table('purchase_orders', function (Blueprint $table): void {
             $table->dropForeign(['company_id']);
             $table->dropForeign(['warehouse_id']);

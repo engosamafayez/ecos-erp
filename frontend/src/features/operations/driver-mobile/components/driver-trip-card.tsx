@@ -19,8 +19,8 @@ export function DriverTripCard({ trip }: DriverTripCardProps) {
   const navigate = useNavigate();
 
   const statusLabel =
-    trip.status === 'out_for_delivery' ? 'خرج للتوصيل' :
-    trip.status === 'in_progress'      ? 'جارٍ' :
+    trip.status === 'out_for_delivery' ? 'Out for Delivery' :
+    trip.status === 'in_progress'      ? 'In Progress' :
     trip.status;
 
   const collected =
@@ -55,7 +55,7 @@ export function DriverTripCard({ trip }: DriverTripCardProps) {
         )}
         <span className="flex items-center gap-1">
           <Package className="h-3.5 w-3.5" />
-          {trip.orders_count} طلب
+          {trip.orders_count} orders
         </span>
         <span className="flex items-center gap-1">
           <DollarSign className="h-3.5 w-3.5" />
@@ -76,7 +76,7 @@ export function DriverTripCard({ trip }: DriverTripCardProps) {
         className="w-full"
         onClick={() => navigate(ROUTES.driverTrip.replace(':tripId', trip.id))}
       >
-        فتح الرحلة
+        Open Trip
       </Button>
     </div>
   );

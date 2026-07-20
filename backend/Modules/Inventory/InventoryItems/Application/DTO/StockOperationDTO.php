@@ -16,25 +16,30 @@ final class StockOperationDTO extends BaseDTO
         public readonly string $product_id,
         public readonly string $company_id,
         public readonly float $quantity,
-        public readonly ?string $reference_type = null,
-        public readonly ?string $reference_id   = null,
-        public readonly ?string $notes          = null,
+        public readonly ?string $reference_type      = null,
+        public readonly ?string $reference_id        = null,
+        public readonly ?string $notes               = null,
+        // M-03: allows accountability workflows (liability/waste approval) to deduct
+        // on_hand_qty below reserved_qty when confirmed shortage leaves no alternative.
+        // Must never be set to true by general adjustment or shipment paths.
+        public readonly bool $bypassReserveGuard     = false,
     ) {}
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
     {
         return new self(
-            warehouse_id:   (string) $data['warehouse_id'],
-            product_id:     (string) $data['product_id'],
-            company_id:     (string) $data['company_id'],
-            quantity:       (float)  $data['quantity'],
-            reference_type: isset($data['reference_type']) && $data['reference_type'] !== ''
-                                ? (string) $data['reference_type'] : null,
-            reference_id:   isset($data['reference_id'])   && $data['reference_id']   !== ''
-                                ? (string) $data['reference_id']   : null,
-            notes:          isset($data['notes'])           && $data['notes']           !== ''
-                                ? (string) $data['notes']           : null,
+            warehouse_id:       (string) $data['warehouse_id'],
+            product_id:         (string) $data['product_id'],
+            company_id:         (string) $data['company_id'],
+            quantity:           (float)  $data['quantity'],
+            reference_type:     isset($data['reference_type']) && $data['reference_type'] !== ''
+                                    ? (string) $data['reference_type'] : null,
+            reference_id:       isset($data['reference_id'])   && $data['reference_id']   !== ''
+                                    ? (string) $data['reference_id']   : null,
+            notes:              isset($data['notes'])           && $data['notes']           !== ''
+                                    ? (string) $data['notes']           : null,
+            bypassReserveGuard: (bool) ($data['bypass_reserve_guard'] ?? false),
         );
     }
 }

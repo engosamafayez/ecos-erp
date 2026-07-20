@@ -18,6 +18,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('bills_of_materials', 'yield_quantity')) {
+            return;
+        }
+
         Schema::table('bills_of_materials', function (Blueprint $table): void {
             $table->decimal('yield_quantity',        10, 4)->default(1.0)->after('notes');
             $table->decimal('recipe_cost',           15, 4)->nullable()->after('yield_quantity');
@@ -27,6 +31,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('bills_of_materials', 'yield_quantity')) {
+            return;
+        }
+
         Schema::table('bills_of_materials', function (Blueprint $table): void {
             $table->dropColumn(['yield_quantity', 'recipe_cost', 'recipe_cost_updated_at']);
         });

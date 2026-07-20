@@ -94,18 +94,18 @@ export function TripFormDrawer({
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="w-96">
         <SheetHeader>
-          <SheetTitle>{isEditing ? 'تعديل الرحلة' : 'إنشاء رحلة'}</SheetTitle>
+          <SheetTitle>{isEditing ? 'Edit Trip' : 'Create Trip'}</SheetTitle>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="name">اسم الرحلة</Label>
-            <Input id="name" {...register('name')} placeholder="مثال: فان القاهرة الشرقية أ" />
+            <Label htmlFor="name">Trip Name</Label>
+            <Input id="name" {...register('name')} placeholder="e.g. East Cairo Van A" />
             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-1.5">
-            <Label>نوع الرحلة</Label>
+            <Label>Trip Type</Label>
             <Select
               value={typeValue}
               onValueChange={(v) => setValue('type', v as TripType)}
@@ -122,19 +122,19 @@ export function TripFormDrawer({
           </div>
 
           <div className="space-y-1.5">
-            <Label>المنطقة</Label>
+            <Label>Zone</Label>
             <Select
               value={watch('distribution_zone_id')?.toString() ?? '__null__'}
               onValueChange={(v) => setValue('distribution_zone_id', v === '__null__' ? null : Number(v))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="اختر منطقة…" />
+                <SelectValue placeholder="Select zone…" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__null__">— بدون منطقة —</SelectItem>
+                <SelectItem value="__null__">— No Zone —</SelectItem>
                 {zones.map((z) => (
                   <SelectItem key={z.zone_id} value={z.zone_id.toString()}>
-                    {z.name_en} ({z.unassigned_orders} غير مُعيَّن)
+                    {z.name_en} ({z.unassigned_orders} unassigned)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -142,7 +142,7 @@ export function TripFormDrawer({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="capacity">الطاقة الاستيعابية (طلبات)</Label>
+            <Label htmlFor="capacity">Capacity (orders)</Label>
             <Input
               id="capacity"
               type="number"
@@ -154,21 +154,21 @@ export function TripFormDrawer({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="notes">ملاحظات</Label>
+            <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
               {...register('notes')}
               rows={3}
-              placeholder="ملاحظات اختيارية…"
+              placeholder="Optional notes…"
             />
           </div>
 
           <SheetFooter className="pt-4 gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-              إلغاء
+              Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'جارٍ الحفظ…' : isEditing ? 'حفظ التغييرات' : 'إنشاء رحلة'}
+              {isPending ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Trip'}
             </Button>
           </SheetFooter>
         </form>

@@ -19,7 +19,7 @@ export function DriverHomePage() {
       <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Smartphone className="h-5 w-5 text-primary" />
-          <h1 className="font-semibold text-lg">السائق المتنقل</h1>
+          <h1 className="font-semibold text-lg">Driver Mobile</h1>
         </div>
         <Button
           variant="ghost"
@@ -35,9 +35,9 @@ export function DriverHomePage() {
       {!isLoading && (
         <div className="grid grid-cols-3 gap-px bg-border mx-0">
           {[
-            { label: 'رحلات نشطة', value: trips?.length ?? 0 },
-            { label: 'إجمالي الطلبات', value: totalOrders },
-            { label: `EGP ${totalCollected.toLocaleString('ar-EG', { minimumFractionDigits: 2 })}`, value: 'المحصّل' },
+            { label: 'Active Trips', value: trips?.length ?? 0 },
+            { label: 'Total Orders', value: totalOrders },
+            { label: `EGP ${totalCollected.toLocaleString('ar-EG', { minimumFractionDigits: 2 })}`, value: 'Collected' },
           ].map((kpi) => (
             <div key={kpi.label} className="bg-background px-3 py-3 text-center">
               <p className="font-bold text-base">{kpi.value}</p>
@@ -58,8 +58,8 @@ export function DriverHomePage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Smartphone className="h-12 w-12 mb-3 opacity-30" />
-            <p className="text-base font-medium">لا توجد رحلات نشطة</p>
-            <p className="text-sm mt-1">ستظهر الرحلات هنا عند إرسالها.</p>
+            <p className="text-base font-medium">No active trips</p>
+            <p className="text-sm mt-1">Trips will appear here once dispatched.</p>
           </div>
         )}
       </div>

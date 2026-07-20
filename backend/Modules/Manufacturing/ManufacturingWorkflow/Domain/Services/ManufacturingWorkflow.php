@@ -129,6 +129,7 @@ final class ManufacturingWorkflow
             productId:   $request->product_id,
             warehouseId: $request->warehouse_id,
             requiredQty: $request->required_qty,
+            companyId:   $request->company_id,
         );
 
         // Block if eligibility prevents manufacturing (CannotManufacture, NoRecipe)

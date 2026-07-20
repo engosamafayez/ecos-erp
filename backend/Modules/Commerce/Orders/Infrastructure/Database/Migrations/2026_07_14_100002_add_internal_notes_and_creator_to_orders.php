@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('orders', 'internal_notes')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table) {
             // Staff-only internal notes — never visible to customers
             $table->text('internal_notes')->nullable()->after('customer_note');

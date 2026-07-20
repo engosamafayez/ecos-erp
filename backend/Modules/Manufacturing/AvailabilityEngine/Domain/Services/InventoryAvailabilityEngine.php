@@ -42,10 +42,11 @@ final class InventoryAvailabilityEngine
         string $productId,
         string $warehouseId,
         float $requiredQty,
+        string $companyId,
     ): AvailabilityResult {
         $evaluatedAt = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 
-        $availableFg = $this->inventory->availableQty($warehouseId, $productId);
+        $availableFg = $this->inventory->availableQty($warehouseId, $productId, $companyId);
 
         // RC-1: partial manufacturing — only manufacture the shortage
         $qtyToManufacture = max(0.0, $requiredQty - $availableFg);
@@ -74,7 +75,7 @@ final class InventoryAvailabilityEngine
             );
         }
 
-        $rawMaterials = $this->analyseComponents($snapshot, $warehouseId, $qtyToManufacture);
+        $rawMaterials = $this->analyseComponents($snapshot, $warehouseId, $companyId, $qtyToManufacture);
         $eligibility  = $this->classifyEligibility($rawMaterials);
 
         return new AvailabilityResult(
@@ -104,12 +105,13 @@ final class InventoryAvailabilityEngine
     private function analyseComponents(
         RecipeSnapshot $snapshot,
         string $warehouseId,
+        string $companyId,
         float $qtyToManufacture,
     ): array {
         $results = [];
 
         foreach ($snapshot->components as $component) {
-            $results[] = $this->analyseComponent($component, $warehouseId, $qtyToManufacture);
+            $results[] = $this->analyseComponent($component, $warehouseId, $companyId, $qtyToManufacture);
         }
 
         return $results;
@@ -118,11 +120,12 @@ final class InventoryAvailabilityEngine
     private function analyseComponent(
         RecipeComponent $component,
         string $warehouseId,
+        string $companyId,
         float $qtyToManufacture,
     ): RawMaterialAvailability {
         // Scale: absolute quantity needed for the full manufacturing run
         $requiredQty  = $component->quantity * $qtyToManufacture;
-        $availableQty = $this->inventory->availableQty($warehouseId, $component->component_id);
+        $availableQty = $this->inventory->availableQty($warehouseId, $component->component_id, $companyId);
         $missingQty   = max(0.0, $requiredQty - $availableQty);
 
         // RC-2: satisfied when stock covers the need OR negative stock is permitted

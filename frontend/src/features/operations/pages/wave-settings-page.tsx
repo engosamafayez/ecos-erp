@@ -25,29 +25,7 @@ import {
   useRecalculateWave,
 } from '../hooks/use-preparation';
 import { useSelectedWaveId } from '../components/wave-picker';
-import type { WaveStatus } from '../types/preparation';
-
-const STATUS_COLORS: Record<WaveStatus, string> = {
-  draft:            'bg-gray-100 text-gray-700',
-  collecting:       'bg-sky-100 text-sky-700',
-  planning:         'bg-blue-100 text-blue-700',
-  shortage_blocked: 'bg-amber-100 text-amber-700',
-  preparing:        'bg-purple-100 text-purple-700',
-  completed:        'bg-green-100 text-green-700',
-  closed:           'bg-slate-100 text-slate-700',
-  cancelled:        'bg-red-100 text-red-700',
-};
-
-const STATUS_LABELS: Record<WaveStatus, string> = {
-  draft:            'Draft',
-  collecting:       'Collecting',
-  planning:         'Planning',
-  shortage_blocked: 'Shortage Blocked',
-  preparing:        'Preparing',
-  completed:        'Completed',
-  closed:           'Closed',
-  cancelled:        'Cancelled',
-};
+import { useWaveStatusLabels, WAVE_STATUS_COLORS } from '../hooks/use-operations-labels';
 
 // ── Coming Soon pill ──────────────────────────────────────────────────────────
 
@@ -117,6 +95,7 @@ function ActionRow({
 export function WaveSettingsPage() {
   const waveId = useSelectedWaveId();
   const toast  = useToastStore((s) => s.toast);
+  const { waveStatusLabel } = useWaveStatusLabels();
 
   const { data: wave, isLoading } = usePreparationWave(waveId);
 
@@ -204,7 +183,7 @@ export function WaveSettingsPage() {
             <TabsContent value="general" className="mt-0 space-y-5">
               <div className="rounded-lg border border-border/60 bg-card px-4 py-1">
                 <InfoRow label="Wave #"         value={<span className="font-mono font-medium">{wave.wave_number}</span>} />
-                <InfoRow label="Status"         value={<Badge className={`text-xs ${STATUS_COLORS[wave.status]}`}>{STATUS_LABELS[wave.status]}</Badge>} />
+                <InfoRow label="Status"         value={<Badge className={`text-xs ${WAVE_STATUS_COLORS[wave.status]}`}>{waveStatusLabel[wave.status]}</Badge>} />
                 <InfoRow label="Planning Date"  value={new Date(wave.planning_date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} />
                 <InfoRow label="Warehouse ID"   value={<span className="font-mono text-xs text-muted-foreground">{wave.warehouse_id}</span>} />
                 <InfoRow label="Orders"         value={wave.orders_count} />

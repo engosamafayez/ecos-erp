@@ -35,8 +35,8 @@ export function DispatchAuthorizationPanel({
       <div className="flex items-center justify-center gap-3 py-8 text-emerald-600 dark:text-emerald-400">
         <Truck className="h-8 w-8" />
         <div>
-          <p className="font-semibold text-base">تم إرسال الرحلة</p>
-          <p className="text-sm text-muted-foreground">السائق في الطريق.</p>
+          <p className="font-semibold text-base">Trip Dispatched</p>
+          <p className="text-sm text-muted-foreground">Driver is on the way.</p>
         </div>
       </div>
     );
@@ -47,13 +47,13 @@ export function DispatchAuthorizationPanel({
       {/* Dispatch conditions checklist */}
       <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-          شروط الإرسال
+          Dispatch Conditions
         </p>
 
-        <ConditionRow ok={issues.every((i) => !i.message.includes('product'))} label="استلم السائق جميع المنتجات" />
-        <ConditionRow ok={issues.every((i) => !i.message.includes('discrepanc'))} label="لا تعارضات معلّقة في المنتجات" />
-        <ConditionRow ok={issues.every((i) => !i.message.includes('custody'))} label="تم تسليم جميع العهدة" />
-        <ConditionRow ok={canDispatch} label="جميع الشروط مستوفاة — جاهز للإرسال" />
+        <ConditionRow ok={issues.every((i) => !i.message.includes('product'))} label="Driver received all products" />
+        <ConditionRow ok={issues.every((i) => !i.message.includes('discrepanc'))} label="No pending product discrepancies" />
+        <ConditionRow ok={issues.every((i) => !i.message.includes('custody'))} label="All custody items handed over" />
+        <ConditionRow ok={canDispatch} label="All conditions met — Ready to dispatch" />
       </div>
 
       {/* Issues */}
@@ -83,24 +83,24 @@ export function DispatchAuthorizationPanel({
             ) : (
               <Truck className="h-4 w-4" />
             )}
-            ترخيص الإرسال
+            Authorize Dispatch
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>ترخيص الإرسال؟</AlertDialogTitle>
+            <AlertDialogTitle>Authorize Dispatch?</AlertDialogTitle>
             <AlertDialogDescription>
-              سيتم إرسال الرحلة <strong>{tripNumber}</strong>. أكّد السائق استلام جميع المنتجات والعهدة.
-              لا يمكن التراجع عن هذا الإجراء.
+              Trip <strong>{tripNumber}</strong> will be dispatched. The driver has confirmed receipt of all products and custody items.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-emerald-600 hover:bg-emerald-700"
               onClick={onDispatch}
             >
-              نعم، إرسال الآن
+              Yes, Dispatch Now
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

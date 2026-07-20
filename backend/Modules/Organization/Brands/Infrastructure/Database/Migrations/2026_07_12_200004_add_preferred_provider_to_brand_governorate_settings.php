@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('brand_governorate_settings', 'preferred_provider')) {
+            return;
+        }
+
         Schema::table('brand_governorate_settings', function (Blueprint $table): void {
             $table->string('preferred_provider', 50)->nullable()
                 ->after('display_order')
@@ -19,6 +23,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('brand_governorate_settings', 'preferred_provider')) {
+            return;
+        }
+
         Schema::table('brand_governorate_settings', function (Blueprint $table): void {
             $table->dropColumn('preferred_provider');
         });

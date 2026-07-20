@@ -26,10 +26,10 @@ import type {
 import { WasteInvestigationDetailDrawer } from '../components/waste-investigation-detail-drawer';
 
 const OUTCOME_OPTIONS: { value: WasteInvestigationOutcome; label: string; description: string }[] = [
-  { value: 'operational_waste', label: 'هدر تشغيلي', description: 'خسارة طبيعية — خصم من المخزون، لا مسؤولية' },
-  { value: 'warehouse_responsibility', label: 'مسؤولية المستودع', description: 'إسناد لمدير المستودع كمسؤولية + خصم من المخزون' },
-  { value: 'supplier_responsibility', label: 'مسؤولية المورد', description: 'تلف بسبب المورد — إنشاء مطالبة موردين، لا خصم' },
-  { value: 'preparation_responsibility', label: 'مسؤولية التحضير', description: 'تلف أثناء التحضير — ترتيب لنظام التحضير، لا خصم الآن' },
+  { value: 'operational_waste', label: 'Operational Waste', description: 'Natural loss — deduct from inventory, no liability' },
+  { value: 'warehouse_responsibility', label: 'Warehouse Responsibility', description: 'Attributed to warehouse manager as liability + deduct from inventory' },
+  { value: 'supplier_responsibility', label: 'Supplier Responsibility', description: 'Supplier-caused damage — create supplier claim, no deduction' },
+  { value: 'preparation_responsibility', label: 'Preparation Responsibility', description: 'Damage during preparation — route to prep system, no deduction now' },
 ];
 
 function SlaChip({ inv }: { inv: WasteInvestigation }) {
@@ -55,13 +55,13 @@ function statusBadge(status: string) {
   if (status === 'resolved') {
     return (
       <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 text-xs">
-        <CheckCircle className="size-3 mr-1" />محلول
+        <CheckCircle className="size-3 mr-1" />Resolved
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-xs">
-      <Clock className="size-3 mr-1" />معلّق
+      <Clock className="size-3 mr-1" />Pending
     </Badge>
   );
 }
@@ -69,10 +69,10 @@ function statusBadge(status: string) {
 function outcomeBadge(outcome: string | null) {
   if (!outcome) return null;
   const map: Record<string, string> = {
-    operational_waste:          'تشغيلي',
-    warehouse_responsibility:   'مستودع',
-    supplier_responsibility:    'مورد',
-    preparation_responsibility: 'تحضير',
+    operational_waste:          'Operational',
+    warehouse_responsibility:   'Warehouse',
+    supplier_responsibility:    'Supplier',
+    preparation_responsibility: 'Preparation',
   };
   return <span className="text-xs text-muted-foreground">{map[outcome] ?? outcome}</span>;
 }
@@ -111,41 +111,41 @@ export function WasteInvestigationsPage() {
           investigator_notes: resolveState.notes || null,
         },
       });
-      toast.success('تم حل التحقيق.');
+      toast.success('Investigation resolved.');
       setResolveState(null);
       setResolvedBy('');
     } catch {
-      toast.error('فشل حل التحقيق.');
+      toast.error('Failed to resolve investigation.');
     }
   }
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
-        title="تحقيقات الهدر"
-        subtitle="مراجعة وحل بنود المخزون التالفة من جلسات الجرد"
+        title="Waste Investigations"
+        subtitle="Review and resolve damaged inventory items from count sessions"
       />
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">معلّقة</p>
+          <p className="text-xs text-muted-foreground">Pending</p>
           <p className="text-2xl font-semibold mt-1 text-amber-600">{summary?.pending ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">متأخرة +3 أيام</p>
+          <p className="text-xs text-muted-foreground">Overdue 3+ Days</p>
           <p className="text-2xl font-semibold mt-1 text-amber-600">{summary?.pending_over_3 ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">متأخرة +7 أيام</p>
+          <p className="text-xs text-muted-foreground">Overdue 7+ Days</p>
           <p className="text-2xl font-semibold mt-1 text-destructive">{summary?.pending_over_7 ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">محلولة</p>
+          <p className="text-xs text-muted-foreground">Resolved</p>
           <p className="text-2xl font-semibold mt-1 text-emerald-600">{summary?.resolved ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">الشهر</p>
+          <p className="text-xs text-muted-foreground">Month</p>
           <input
             type="month"
             value={month}
@@ -167,7 +167,7 @@ export function WasteInvestigationsPage() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {s === 'all' ? 'الكل' : s === 'pending_investigation' ? 'معلّقة' : 'محلولة'}
+            {s === 'all' ? 'All' : s === 'pending_investigation' ? 'Pending' : 'Resolved'}
           </button>
         ))}
       </div>
@@ -181,20 +181,20 @@ export function WasteInvestigationsPage() {
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <AlertTriangle className="size-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">لا توجد تحقيقات هدر</p>
+            <p className="text-sm text-muted-foreground">No waste investigations</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">المنتج</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">الكمية</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">القيمة</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">سبب التلف</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">المستودع</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">الحالة</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">النتيجة</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">الإجراءات</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Product</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Quantity</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Value</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Damage Reason</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Warehouse</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Status</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Outcome</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -232,7 +232,7 @@ export function WasteInvestigationsPage() {
                         size="sm"
                         variant="ghost"
                         className="h-7 w-7 p-0 text-muted-foreground"
-                        title="عرض التفاصيل"
+                        title="View Details"
                         onClick={() => setDetailId(inv.id)}
                       >
                         <Eye className="size-3.5" />
@@ -244,7 +244,7 @@ export function WasteInvestigationsPage() {
                           className="h-7 text-xs"
                           onClick={() => setResolveState({ investigation: inv, outcome: '', notes: '' })}
                         >
-                          حل
+                          Resolve
                         </Button>
                       )}
                     </div>
@@ -267,20 +267,20 @@ export function WasteInvestigationsPage() {
       <Dialog open={!!resolveState} onOpenChange={(o) => { if (!o) setResolveState(null); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>حل تحقيق الهدر</DialogTitle>
+            <DialogTitle>Resolve Waste Investigation</DialogTitle>
           </DialogHeader>
           {resolveState && (
             <div className="space-y-4 py-2">
               <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
                 <p className="font-medium">{resolveState.investigation.product?.name}</p>
                 <p className="text-muted-foreground text-xs mt-0.5">
-                  الكمية: {Number(resolveState.investigation.quantity).toFixed(2)} ·
-                  السبب: {resolveState.investigation.damage_reason ?? '—'}
+                  Quantity: {Number(resolveState.investigation.quantity).toFixed(2)} ·
+                  Reason: {resolveState.investigation.damage_reason ?? '—'}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-medium">النتيجة</Label>
+                <Label className="text-xs font-medium">Outcome</Label>
                 <div className="space-y-2">
                   {OUTCOME_OPTIONS.map((opt) => (
                     <label
@@ -309,23 +309,23 @@ export function WasteInvestigationsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="resolved-by" className="text-xs font-medium">حُلّ بواسطة</Label>
+                <Label htmlFor="resolved-by" className="text-xs font-medium">Resolved By</Label>
                 <input
                   id="resolved-by"
                   value={resolvedBy}
                   onChange={(e) => setResolvedBy(e.target.value)}
-                  placeholder="اسم المحقق"
+                  placeholder="Investigator name"
                   className="h-9 w-full rounded border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="inv-notes" className="text-xs font-medium">ملاحظات المحقق (اختياري)</Label>
+                <Label htmlFor="inv-notes" className="text-xs font-medium">Investigator Notes (optional)</Label>
                 <Textarea
                   id="inv-notes"
                   value={resolveState.notes}
                   onChange={(e) => setResolveState((s) => s ? { ...s, notes: e.target.value } : s)}
-                  placeholder="نتائج التحقيق والأدلة وما إلى ذلك…"
+                  placeholder="Investigation findings, evidence, etc…"
                   rows={3}
                   className="text-sm"
                 />
@@ -333,13 +333,13 @@ export function WasteInvestigationsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveState(null)}>إلغاء</Button>
+            <Button variant="outline" onClick={() => setResolveState(null)}>Cancel</Button>
             <Button
               onClick={handleResolve}
               disabled={!resolveState?.outcome || !resolvedBy.trim() || resolveMutation.isPending}
             >
               {resolveMutation.isPending && <Loader2 className="size-3.5 mr-1.5 animate-spin" />}
-              تأكيد الحل
+              Confirm Resolution
             </Button>
           </DialogFooter>
         </DialogContent>

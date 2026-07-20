@@ -20,6 +20,10 @@ return new class extends Migration
     public function up(): void
     {
         // Step 1: rename cost columns to standard invoice terminology
+        if (Schema::hasColumn('goods_receipts', 'invoice_total_amount')) {
+            return;
+        }
+
         Schema::table('goods_receipts', function (Blueprint $table): void {
             $table->renameColumn('shipping_amount', 'freight_amount');
             $table->renameColumn('taxes_amount', 'tax_amount');
@@ -27,6 +31,10 @@ return new class extends Migration
         });
 
         // Step 2: add invoice financial + payment tracking fields
+        if (Schema::hasColumn('goods_receipts', 'invoice_total_amount')) {
+            return;
+        }
+
         Schema::table('goods_receipts', function (Blueprint $table): void {
             $table->decimal('invoice_total_amount', 15, 2)->default(0)->after('additional_costs');
 
@@ -39,6 +47,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('goods_receipts', 'invoice_total_amount')) {
+            return;
+        }
+
         Schema::table('goods_receipts', function (Blueprint $table): void {
             $table->dropColumn([
                 'invoice_total_amount',
@@ -48,6 +60,10 @@ return new class extends Migration
                 'payment_due_date',
             ]);
         });
+
+        if (Schema::hasColumn('goods_receipts', 'invoice_total_amount')) {
+            return;
+        }
 
         Schema::table('goods_receipts', function (Blueprint $table): void {
             $table->renameColumn('freight_amount', 'shipping_amount');

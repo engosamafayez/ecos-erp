@@ -85,11 +85,11 @@ function InlineStockHint({
 
   return (
     <span className="flex items-center gap-2 text-xs">
-      <span className="text-muted-foreground">{available} متاح</span>
+      <span className="text-muted-foreground">{available} available</span>
       {days !== null && (
         <span className={riskClass}>
           {risk === 'critical' || risk === 'high' ? '⚠ ' : ''}
-          تغطية {days}ي
+          {days}d coverage
         </span>
       )}
     </span>
@@ -121,7 +121,7 @@ function ProductSearchInput({
     <div className="relative">
       <Input
         ref={inputRef}
-        placeholder="بحث عن منتج..."
+        placeholder="Search product..."
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
@@ -136,11 +136,11 @@ function ProductSearchInput({
           {isFetching && (
             <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              جارٍ البحث...
+              Searching...
             </div>
           )}
           {!isFetching && products.length === 0 && (
-            <div className="px-3 py-2 text-xs text-muted-foreground">لا توجد منتجات</div>
+            <div className="px-3 py-2 text-xs text-muted-foreground">No products found</div>
           )}
           {products.map((p) => (
             <button
@@ -215,12 +215,12 @@ function CreateMaterialRequestPanel({
 
   async function handleSave(andSubmit: boolean) {
     if (!warehouseId) {
-      toast.error('المستودع مطلوب');
+      toast.error('Warehouse is required');
       return;
     }
     const validLines = lines.filter((l) => l.product_id && parseFloat(l.requested_qty) > 0);
     if (validLines.length === 0) {
-      toast.error('أضف منتجًا واحدًا على الأقل بكمية');
+      toast.error('Add at least one product with a quantity');
       return;
     }
 
@@ -242,13 +242,13 @@ function CreateMaterialRequestPanel({
 
       if (andSubmit) {
         await submitMutation.mutateAsync(created.id);
-        toast.success('تم إنشاء الطلب وإرساله');
+        toast.success('Request created and submitted');
       } else {
-        toast.success('تم حفظ الطلب كمسودة');
+        toast.success('Request saved as draft');
       }
       onCreated();
     } catch {
-      toast.error('فشل حفظ الطلب');
+      toast.error('Failed to save request');
     }
   }
 
@@ -258,7 +258,7 @@ function CreateMaterialRequestPanel({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <h2 className="text-base font-semibold">طلب مادة جديد</h2>
+        <h2 className="text-base font-semibold">New Material Request</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
@@ -269,16 +269,16 @@ function CreateMaterialRequestPanel({
         {/* Header fields */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">الشركة</Label>
+            <Label className="text-xs">Company</Label>
             <CompanySelect value={companyId} onChange={setCompanyId} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">
-              المستودع <span className="text-destructive">*</span>
+              Warehouse <span className="text-destructive">*</span>
             </Label>
             <Select value={warehouseId} onValueChange={setWarehouseId}>
               <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="اختر المستودع" />
+                <SelectValue placeholder="Select Warehouse" />
               </SelectTrigger>
               <SelectContent>
                 {(warehouseOptions ?? []).map((w) => (
@@ -290,7 +290,7 @@ function CreateMaterialRequestPanel({
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">الأولوية</Label>
+            <Label className="text-xs">Priority</Label>
             <Select
               value={priority}
               onValueChange={(v) => setPriority(v as PurchaseMaterialPriority)}
@@ -299,15 +299,15 @@ function CreateMaterialRequestPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">منخفضة</SelectItem>
-                <SelectItem value="normal">عادية</SelectItem>
-                <SelectItem value="high">عالية</SelectItem>
-                <SelectItem value="urgent">عاجلة</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">تاريخ الحاجة</Label>
+            <Label className="text-xs">Required Date</Label>
             <Input
               type="date"
               className="h-9 text-sm"
@@ -317,9 +317,9 @@ function CreateMaterialRequestPanel({
           </div>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">ملاحظات</Label>
+          <Label className="text-xs">Notes</Label>
           <Textarea
-            placeholder="سياق إضافي لفريق المشتريات..."
+            placeholder="Additional context for the procurement team..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="min-h-[60px] resize-none text-sm"
@@ -329,19 +329,19 @@ function CreateMaterialRequestPanel({
         {/* Product lines */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-medium">المنتجات</Label>
+            <Label className="text-xs font-medium">Products</Label>
             <span className="text-xs text-muted-foreground">
-              اضغط Enter في خانة الكمية لإضافة سطر جديد
+              Press Enter in the quantity field to add a new line
             </span>
           </div>
 
           <div className="rounded-md border">
             {/* Column headers */}
             <div className="grid grid-cols-[1fr_80px_70px_1fr_28px] gap-2 border-b bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-              <span>المنتج</span>
-              <span>الكمية</span>
-              <span>الوحدة</span>
-              <span>ملاحظات</span>
+              <span>Product</span>
+              <span>Qty</span>
+              <span>Unit</span>
+              <span>Notes</span>
               <span />
             </div>
 
@@ -364,20 +364,20 @@ function CreateMaterialRequestPanel({
                     type="number"
                     min="0.0001"
                     step="any"
-                    placeholder="الكمية"
+                    placeholder="Qty"
                     value={line.requested_qty}
                     onChange={(e) => updateLine(line.localId, { requested_qty: e.target.value })}
                     onKeyDown={(e) => handleQtyKeyDown(e, idx)}
                     className="h-8 text-sm"
                   />
                   <Input
-                    placeholder="الوحدة"
+                    placeholder="Unit"
                     value={line.unit_label}
                     onChange={(e) => updateLine(line.localId, { unit_label: e.target.value })}
                     className="h-8 text-sm"
                   />
                   <Input
-                    placeholder="ملاحظات (اختياري)"
+                    placeholder="Notes (optional)"
                     value={line.notes}
                     onChange={(e) => updateLine(line.localId, { notes: e.target.value })}
                     className="h-8 text-sm"
@@ -405,7 +405,7 @@ function CreateMaterialRequestPanel({
 
           <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={addLine}>
             <Plus className="h-3.5 w-3.5" />
-            إضافة منتج
+            Add Product
           </Button>
         </div>
       </div>
@@ -413,7 +413,7 @@ function CreateMaterialRequestPanel({
       {/* Footer */}
       <div className="flex items-center justify-between border-t px-4 py-3">
         <Button variant="ghost" onClick={onClose} disabled={isBusy}>
-          إلغاء
+          Cancel
         </Button>
         <div className="flex gap-2">
           <Button
@@ -424,7 +424,7 @@ function CreateMaterialRequestPanel({
             {createMutation.isPending && !submitAfterSave ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : null}
-            حفظ كمسودة
+            Save as Draft
           </Button>
           <Button
             onClick={() => {
@@ -436,7 +436,7 @@ function CreateMaterialRequestPanel({
             {submitMutation.isPending ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : null}
-            إرسال للمشتريات
+            Submit to Procurement
           </Button>
         </div>
       </div>
@@ -447,11 +447,11 @@ function CreateMaterialRequestPanel({
 // ── Status chip filters ───────────────────────────────────────────────────────
 
 const STATUS_CHIPS: { value: PurchaseMaterialStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'الكل' },
-  { value: 'draft', label: 'مسودة' },
-  { value: 'under_review', label: 'قيد المراجعة' },
-  { value: 'on_hold', label: 'معلّق' },
-  { value: 'cancelled', label: 'ملغى' },
+  { value: 'all', label: 'All' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'under_review', label: 'Under Review' },
+  { value: 'on_hold', label: 'On Hold' },
+  { value: 'cancelled', label: 'Cancelled' },
 ];
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -483,12 +483,12 @@ export function MaterialRequestsPage() {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <PageHeader
-          title="طلبات المواد"
-          subtitle="تقديم احتياجات التوريد من فرق المستودعات والعمليات"
+          title="Material Requests"
+          subtitle="Submit procurement needs from warehouse and operations teams"
           actions={
             <Button onClick={() => setShowCreatePanel(true)} className="gap-1.5">
               <Plus className="h-4 w-4" />
-              طلب جديد
+              New Request
             </Button>
           }
         />
@@ -499,7 +499,7 @@ export function MaterialRequestsPage() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="بحث في الطلبات..."
+                placeholder="Search requests..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -538,28 +538,28 @@ export function MaterialRequestsPage() {
                 <thead>
                   <tr className="border-b bg-muted/30">
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      رقم الطلب
+                      Request No.
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      المستودع
+                      Warehouse
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      المنتجات
+                      Products
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      الأولوية
+                      Priority
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      تاريخ الحاجة
+                      Required Date
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      الحالة
+                      Status
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      طلب بواسطة
+                      Requested By
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      تاريخ الإنشاء
+                      Created At
                     </th>
                   </tr>
                 </thead>
@@ -579,9 +579,9 @@ export function MaterialRequestsPage() {
                     <tr>
                       <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                         <AlertCircle className="mx-auto mb-2 h-6 w-6 opacity-40" />
-                        <p className="text-sm">لا توجد طلبات مواد</p>
+                        <p className="text-sm">No material requests</p>
                         <p className="text-xs mt-1">
-                          أنشئ طلبًا جديدًا للبدء
+                          Create a new request to get started
                         </p>
                       </td>
                     </tr>
@@ -601,7 +601,7 @@ export function MaterialRequestsPage() {
                           {item.warehouse?.name ?? <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          {item.items_count} منتج
+                          {item.items_count} items
                         </td>
                         <td className="px-4 py-3">
                           <PurchaseMaterialPriorityBadge priority={item.priority} />
@@ -631,7 +631,7 @@ export function MaterialRequestsPage() {
               {meta && meta.last_page > 1 && (
                 <div className="flex items-center justify-between border-t px-4 py-3">
                   <span className="text-xs text-muted-foreground">
-                    {meta.total} طلب إجمالاً
+                    {meta.total} total requests
                   </span>
                   <div className="flex gap-1.5">
                     <Button
@@ -640,7 +640,7 @@ export function MaterialRequestsPage() {
                       disabled={page === 1}
                       onClick={() => setPage((p) => p - 1)}
                     >
-                      السابق
+                      Previous
                     </Button>
                     <Button
                       variant="outline"
@@ -648,7 +648,7 @@ export function MaterialRequestsPage() {
                       disabled={page === meta.last_page}
                       onClick={() => setPage((p) => p + 1)}
                     >
-                      التالي
+                      Next
                     </Button>
                   </div>
                 </div>

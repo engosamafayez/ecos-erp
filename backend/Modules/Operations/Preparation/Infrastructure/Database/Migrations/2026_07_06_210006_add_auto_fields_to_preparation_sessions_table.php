@@ -18,6 +18,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('preparation_sessions', 'auto_created')) {
+            return;
+        }
+
         Schema::table('preparation_sessions', function (Blueprint $table): void {
             $table->boolean('auto_created')->default(false)->after('cancellation_reason');
             $table->uuid('policy_id')->nullable()->after('auto_created');
@@ -27,6 +31,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('preparation_sessions', 'auto_created')) {
+            return;
+        }
+
         Schema::table('preparation_sessions', function (Blueprint $table): void {
             $table->dropColumn(['auto_created', 'policy_id', 'orders_count']);
         });

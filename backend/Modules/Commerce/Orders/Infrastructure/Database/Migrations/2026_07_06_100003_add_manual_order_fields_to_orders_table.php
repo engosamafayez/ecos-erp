@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('orders', 'requested_delivery_date')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table): void {
             $table->date('requested_delivery_date')->nullable()->after('order_date');
             $table->string('preferred_delivery_time')->nullable()->after('requested_delivery_date');

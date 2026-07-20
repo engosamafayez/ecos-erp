@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('cep_messages', 'delivery_status')) {
+            return;
+        }
+
         Schema::table('cep_messages', function (Blueprint $table) {
             $table->string('delivery_status')->default('sent')->after('is_read');
             $table->uuid('reply_to_message_id')->nullable()->after('delivery_status');
@@ -22,6 +26,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('cep_messages', 'delivery_status')) {
+            return;
+        }
+
         Schema::table('cep_messages', function (Blueprint $table) {
             $table->dropColumn(['delivery_status', 'reply_to_message_id', 'template_name', 'template_params', 'reaction_emoji', 'provider_error']);
         });

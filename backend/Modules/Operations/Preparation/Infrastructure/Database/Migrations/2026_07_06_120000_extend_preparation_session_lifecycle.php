@@ -19,6 +19,10 @@ return new class extends Migration
         );
 
         // 2. Add the six new lifecycle timestamp/actor columns (nullable, additive).
+        if (Schema::hasColumn('preparation_sessions', 'planned_at')) {
+            return;
+        }
+
         Schema::table('preparation_sessions', function (Blueprint $table): void {
             $table->timestampTz('planned_at')->nullable()->after('started_by');
             $table->uuid('planned_by')->nullable()->after('planned_at');
@@ -31,6 +35,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('preparation_sessions', 'planned_at')) {
+            return;
+        }
+
         Schema::table('preparation_sessions', function (Blueprint $table): void {
             $table->dropColumn(['planned_at', 'planned_by', 'approved_at', 'approved_by', 'closed_at', 'closed_by']);
         });

@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('order_line_snapshots', 'source_recipe_version')) {
+            return;
+        }
+
         Schema::table('order_line_snapshots', function (Blueprint $table) {
             // PART 4 — Source reference: recipe version string (bom_id already stores UUID)
             $table->string('source_recipe_version', 20)->nullable()->after('bom_version_number');
@@ -28,6 +32,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('order_line_snapshots', 'source_recipe_version')) {
+            return;
+        }
+
         Schema::table('order_line_snapshots', function (Blueprint $table) {
             $table->dropColumn([
                 'source_recipe_version',

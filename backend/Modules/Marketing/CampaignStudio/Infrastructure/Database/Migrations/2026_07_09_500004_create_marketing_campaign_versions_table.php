@@ -11,6 +11,10 @@ return new class extends Migration
     public function up(): void
     {
         // Immutable version history — no updated_at
+        if (Schema::hasTable('marketing_campaign_versions')) {
+            return;
+        }
+
         Schema::create('marketing_campaign_versions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('campaign_draft_id')->index();

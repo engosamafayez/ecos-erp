@@ -8,8 +8,8 @@ import type {
 } from '@/features/cost-management/types/pricing-review';
 
 const SOURCE_LABELS: Record<string, string> = {
-  manual:           'تعديل يدوي',
-  purchase_invoice: 'فاتورة شراء',
+  manual:           'Manual Adjustment',
+  purchase_invoice: 'Purchase Invoice',
 };
 
 function formatCost(n: number | null | undefined) {
@@ -74,9 +74,9 @@ export function CostHistoryPage() {
       <div className="flex items-center gap-3">
         <History className="size-5 text-primary" />
         <div>
-          <h1 className="text-lg font-semibold">سجل تكاليف المواد</h1>
+          <h1 className="text-lg font-semibold">Material Cost History</h1>
           <p className="text-sm text-muted-foreground">
-            كل تغيير على تكلفة مادة، بترتيب زمني عكسي
+            Every material cost change, in reverse chronological order
           </p>
         </div>
       </div>
@@ -87,7 +87,7 @@ export function CostHistoryPage() {
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="بحث باسم المادة أو SKU…"
+            placeholder="Search by material name or SKU…"
             value={search}
             onChange={handleSearch}
             className="pl-8 w-64"
@@ -98,9 +98,9 @@ export function CostHistoryPage() {
           onChange={handleSourceFilter}
           defaultValue=""
         >
-          <option value="">جميع المصادر</option>
-          <option value="manual">تعديل يدوي</option>
-          <option value="purchase_invoice">فاتورة شراء</option>
+          <option value="">All Sources</option>
+          <option value="manual">Manual Adjustment</option>
+          <option value="purchase_invoice">Purchase Invoice</option>
         </select>
       </div>
 
@@ -109,14 +109,14 @@ export function CostHistoryPage() {
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr>
-              <th className="px-4 py-2.5 text-start font-medium text-muted-foreground">المادة</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">التكلفة السابقة</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">التكلفة الجديدة</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">الفرق</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">% التغيير</th>
-              <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">المصدر</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">المتأثرون</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">التاريخ</th>
+              <th className="px-4 py-2.5 text-start font-medium text-muted-foreground">Material</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Previous Cost</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">New Cost</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Difference</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Change %</th>
+              <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">Source</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Affected</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Date</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -133,7 +133,7 @@ export function CostHistoryPage() {
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
-                  لا يوجد سجل تكاليف
+                  No cost history
                 </td>
               </tr>
             ) : (
@@ -165,8 +165,8 @@ export function CostHistoryPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-end text-xs text-muted-foreground">
-                    {row.affected_product_count} منتج<br />
-                    {row.affected_recipe_count} وصفة
+                    {row.affected_product_count} products<br />
+                    {row.affected_recipe_count} recipes
                   </td>
                   <td className="px-4 py-3 text-end text-xs text-muted-foreground whitespace-nowrap">
                     {formatDate(row.occurred_at)}
@@ -181,14 +181,14 @@ export function CostHistoryPage() {
       {/* Pagination */}
       {total > (query.per_page ?? 30) && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{total} إدخال إجمالاً</span>
+          <span>{total} total entries</span>
           <div className="flex items-center gap-2">
             <button
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
               className="rounded border px-2 py-1 disabled:opacity-40"
-              aria-label="الصفحة السابقة"
+              aria-label="Previous page"
             >
               ‹
             </button>
@@ -198,7 +198,7 @@ export function CostHistoryPage() {
               disabled={page >= lastPage}
               onClick={() => setPage((p) => p + 1)}
               className="rounded border px-2 py-1 disabled:opacity-40"
-              aria-label="الصفحة التالية"
+              aria-label="Next page"
             >
               ›
             </button>

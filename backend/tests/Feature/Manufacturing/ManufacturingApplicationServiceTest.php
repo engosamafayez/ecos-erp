@@ -152,6 +152,7 @@ class ManufacturingApplicationServiceTest extends TestCase
         return new SimulateManufacturingRequest(
             product_id:   $output->id,
             warehouse_id: $this->warehouse->id,
+            company_id:   $this->company->id,
             required_qty: $qty,
             actor_id:     'test-actor',
         );
@@ -162,6 +163,7 @@ class ManufacturingApplicationServiceTest extends TestCase
         return new ValidateManufacturingRequest(
             product_id:   $output->id,
             warehouse_id: $this->warehouse->id,
+            company_id:   $this->company->id,
             required_qty: $qty,
             actor_id:     'test-actor',
         );

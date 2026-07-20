@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('warehouse_liabilities', 'cost_snapshot_unit_cost')) {
+            return;
+        }
+
         Schema::table('warehouse_liabilities', function (Blueprint $table) {
             // Immutable cost snapshot — set at approval time from FIFO engine
             $table->decimal('cost_snapshot_unit_cost',   15, 4)->nullable()->after('total_cost');
@@ -22,6 +26,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('warehouse_liabilities', 'cost_snapshot_unit_cost')) {
+            return;
+        }
+
         Schema::table('warehouse_liabilities', function (Blueprint $table) {
             $table->dropColumn([
                 'cost_snapshot_unit_cost',

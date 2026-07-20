@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('products', 'image_url')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table): void {
             $table->string('image_url')->nullable()->after('barcode');
             $table->decimal('regular_price', 12, 2)->nullable()->after('image_url');

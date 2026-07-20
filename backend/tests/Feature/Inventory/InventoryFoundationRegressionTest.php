@@ -239,7 +239,8 @@ class InventoryFoundationRegressionTest extends TestCase
             ->first();
 
         $this->assertNotNull($entry);
-        $this->assertEquals('adjustment_in', $entry->movement_type);
+        $movementType = $entry->movement_type instanceof \BackedEnum ? $entry->movement_type->value : (string) $entry->movement_type;
+        $this->assertEquals('adjustment_in', $movementType);
         $this->assertEquals(10.0, (float) $entry->quantity);
         $this->assertEquals($this->company->id, $entry->company_id);
     }

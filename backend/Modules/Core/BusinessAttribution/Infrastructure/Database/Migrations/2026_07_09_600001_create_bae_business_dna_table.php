@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('bae_business_dna')) {
+            return;
+        }
+
         Schema::create('bae_business_dna', static function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

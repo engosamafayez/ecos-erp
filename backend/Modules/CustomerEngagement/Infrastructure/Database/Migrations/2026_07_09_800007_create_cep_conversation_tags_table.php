@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('cep_conversation_tags')) {
+            return;
+        }
+
         Schema::create('cep_conversation_tags', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('conversation_id')->constrained('cep_conversations')->cascadeOnDelete();

@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('pos_exchange_counters')) {
+            return;
+        }
+
         Schema::create('pos_exchange_counters', function (Blueprint $table): void {
             $table->string('terminal_id', 36);
             $table->date('counter_date');

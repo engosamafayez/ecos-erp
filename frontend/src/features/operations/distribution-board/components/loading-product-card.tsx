@@ -17,10 +17,10 @@ import { useProductBreakdown } from '../hooks/use-loading-manifest';
 import { ShortageResolutionDialog } from './shortage-resolution-dialog';
 
 const STATUS_CONFIG = {
-  pending:   { label: 'قيد الانتظار', className: 'bg-muted text-muted-foreground' },
-  confirmed: { label: 'مؤكد',          className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  shortage:  { label: 'نقص',           className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
-  skipped:   { label: 'تجاوز',         className: 'bg-slate-100 text-slate-600 dark:bg-slate-900/30' },
+  pending:   { label: 'Pending',   className: 'bg-muted text-muted-foreground' },
+  confirmed: { label: 'Confirmed', className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  shortage:  { label: 'Shortage',  className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+  skipped:   { label: 'Skipped',   className: 'bg-slate-100 text-slate-600 dark:bg-slate-900/30' },
 };
 
 interface LoadingProductCardProps {
@@ -147,12 +147,12 @@ export function LoadingProductCard({
           <div className="px-3 pb-3 border-t pt-2.5">
             <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2">
               <Users className="h-3.5 w-3.5" />
-              تفاصيل الطلبات
+              Order Breakdown
             </div>
             {breakdown.isLoading ? (
-              <p className="text-xs text-muted-foreground">جارٍ التحميل…</p>
+              <p className="text-xs text-muted-foreground">Loading…</p>
             ) : (breakdown.data?.breakdown ?? []).length === 0 ? (
-              <p className="text-xs text-muted-foreground">لا توجد بنود طلبات.</p>
+              <p className="text-xs text-muted-foreground">No order line items.</p>
             ) : (
               <div className="space-y-1">
                 {(breakdown.data?.breakdown ?? []).map((b) => (
@@ -164,7 +164,7 @@ export function LoadingProductCard({
                   </div>
                 ))}
                 <div className="flex items-center justify-between text-xs px-2 py-1 font-medium border-t mt-1 pt-1">
-                  <span>الإجمالي المطلوب</span>
+                  <span>Total Required</span>
                   <span>{item.required_qty} {item.unit}</span>
                 </div>
               </div>

@@ -23,6 +23,10 @@ return new class extends Migration
             $table->decimal('tax_total', 12, 2)->default(0)->after('discount_total');
         });
 
+        if (Schema::hasTable('order_fees')) {
+            return;
+        }
+
         Schema::create('order_fees', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();

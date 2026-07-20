@@ -35,8 +35,12 @@ final class CreateReceiptLayersAction
         $companyId   = $po->company_id ?? $receipt->warehouse?->company_id;
         $receiptDate = $receipt->receipt_date->toDateString();
 
+        // M-02 fix: include zero-cost lines so every received quantity has a FIFO layer.
+        // Filtering by landed_unit_cost > 0 left on_hand_qty inflated with no backing
+        // layer, causing subsequent FIFO consumption to fail with InsufficientStockException.
+        // Zero-cost stock (free samples, internal allocations) is valid inventory.
         $activeLines = $receipt->lines->filter(
-            fn (GoodsReceiptLine $l) => $l->effectiveReceivedQty() > 0 && (float) ($l->landed_unit_cost ?? 0) > 0
+            fn (GoodsReceiptLine $l) => $l->effectiveReceivedQty() > 0
         );
 
         if ($activeLines->isEmpty()) {

@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('allocation_decisions')) {
+            return;
+        }
+
         Schema::create('allocation_decisions', function (Blueprint $table): void {
             $table->char('id', 26)->primary();
             $table->uuid('company_id');

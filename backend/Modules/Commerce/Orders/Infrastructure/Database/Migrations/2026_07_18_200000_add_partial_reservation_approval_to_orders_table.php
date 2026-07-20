@@ -18,6 +18,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('orders', 'partial_reservation_approved_at')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table): void {
             $table->timestamp('partial_reservation_approved_at')->nullable()->after('reservation_failure_reason');
             $table->string('partial_reservation_approved_by')->nullable()->after('partial_reservation_approved_at');
@@ -27,6 +31,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('orders', 'partial_reservation_approved_at')) {
+            return;
+        }
+
         Schema::table('orders', function (Blueprint $table): void {
             $table->dropColumn([
                 'partial_reservation_approved_at',

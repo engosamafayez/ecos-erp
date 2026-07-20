@@ -7,12 +7,12 @@ interface Props {
 }
 
 const CHECKLIST_ITEMS: { key: keyof Omit<DispatchChecklist, 'can_dispatch'>; label: string }[] = [
-  { key: 'loading_completed',              label: 'اكتمل التحميل' },
-  { key: 'driver_accepted_products',       label: 'قبل السائق المنتجات' },
-  { key: 'driver_accepted_custody',        label: 'قبل السائق العهدة' },
-  { key: 'driver_accepted_equipment',      label: 'قبل السائق المعدات' },
-  { key: 'no_outstanding_shortages',       label: 'لا نواقص معلّقة' },
-  { key: 'no_outstanding_discrepancies',   label: 'لا تعارضات معلّقة' },
+  { key: 'loading_completed',              label: 'Loading Completed' },
+  { key: 'driver_accepted_products',       label: 'Driver Accepted Products' },
+  { key: 'driver_accepted_custody',        label: 'Driver Accepted Custody' },
+  { key: 'driver_accepted_equipment',      label: 'Driver Accepted Equipment' },
+  { key: 'no_outstanding_shortages',       label: 'No Outstanding Shortages' },
+  { key: 'no_outstanding_discrepancies',   label: 'No Outstanding Discrepancies' },
 ];
 
 export function DispatchChecklistPanel({ checklist }: Props) {
@@ -21,12 +21,12 @@ export function DispatchChecklistPanel({ checklist }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">شروط الإرسال</span>
+        <span className="text-muted-foreground">Dispatch Conditions</span>
         <span className={cn(
           'font-semibold tabular-nums',
           passCount === CHECKLIST_ITEMS.length ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400',
         )}>
-          {passCount}/{CHECKLIST_ITEMS.length} مستوفاة
+          {passCount}/{CHECKLIST_ITEMS.length} met
         </span>
       </div>
 

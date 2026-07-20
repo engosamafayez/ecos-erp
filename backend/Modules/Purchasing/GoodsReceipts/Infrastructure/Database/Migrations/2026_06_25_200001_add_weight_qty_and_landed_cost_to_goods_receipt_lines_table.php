@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('goods_receipt_lines', 'gross_received_quantity')) {
+            return;
+        }
+
         Schema::table('goods_receipt_lines', function (Blueprint $table): void {
             // Gross weight measured before deductions; null means same as net
             $table->decimal('gross_received_quantity', 15, 4)->nullable()->after('ordered_quantity');
@@ -29,6 +33,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('goods_receipt_lines', 'gross_received_quantity')) {
+            return;
+        }
+
         Schema::table('goods_receipt_lines', function (Blueprint $table): void {
             $table->dropColumn([
                 'gross_received_quantity',

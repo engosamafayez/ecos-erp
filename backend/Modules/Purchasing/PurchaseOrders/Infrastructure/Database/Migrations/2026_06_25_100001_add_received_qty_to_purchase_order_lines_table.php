@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('purchase_order_lines', 'description')) {
+            return;
+        }
+
         Schema::table('purchase_order_lines', function (Blueprint $table): void {
             $table->string('description')->nullable()->after('product_id');
             // Cumulative quantity received across all posted Goods Receipts for this line.
@@ -20,6 +24,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('purchase_order_lines', 'description')) {
+            return;
+        }
+
         Schema::table('purchase_order_lines', function (Blueprint $table): void {
             $table->dropColumn(['description', 'received_qty']);
         });

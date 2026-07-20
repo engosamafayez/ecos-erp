@@ -8,20 +8,20 @@ export function ConsumablesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="المستهلكات"
-        subtitle="إدارة المواد المستهلكة في الإنتاج والعمليات"
+        title="Consumables"
+        subtitle="Manage materials consumed in production and operations"
         breadcrumbs={[
-          { label: 'الرئيسية', to: ROUTES.dashboard },
-          { label: 'المخزون', to: ROUTES.inventoryProducts },
-          { label: 'المستهلكات' },
+          { label: 'Home', to: ROUTES.dashboard },
+          { label: 'Inventory', to: ROUTES.inventoryProducts },
+          { label: 'Consumables' },
         ]}
       />
       <Card>
         <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <Utensils className="size-10 text-muted-foreground" />
-          <p className="font-medium">المستهلكات</p>
+          <p className="font-medium">Consumables</p>
           <p className="text-muted-foreground text-sm max-w-sm">
-            إدارة المستهلكات قادمة قريبًا. سيتتبع هذا القسم المستلزمات كعوامل التنظيف والزيوت والقفازات وغيرها من العناصر المستهلكة في الإنتاج.
+            Consumables management is coming soon. This section will track supplies such as cleaning agents, oils, gloves, and other items consumed in production.
           </p>
         </CardContent>
       </Card>

@@ -26,6 +26,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('orders', 'reservation_status')) {
+            return;
+        }
+
         Schema::table('orders', static function (Blueprint $table): void {
             $table->string('reservation_status', 30)
                 ->nullable()
@@ -99,6 +103,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('orders', 'reservation_status')) {
+            return;
+        }
+
         Schema::table('orders', static function (Blueprint $table): void {
             $table->dropColumn(['reservation_status', 'reservation_failure_reason']);
         });

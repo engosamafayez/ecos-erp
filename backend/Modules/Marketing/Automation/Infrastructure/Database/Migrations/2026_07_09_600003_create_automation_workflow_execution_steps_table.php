@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('automation_workflow_execution_steps')) {
+            return;
+        }
+
         Schema::create('automation_workflow_execution_steps', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('execution_id')->index();

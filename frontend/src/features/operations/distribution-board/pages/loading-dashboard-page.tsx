@@ -86,7 +86,7 @@ function TripLoadingCard({ trip }: { trip: LoadingDashboardTrip }) {
             onClick={() => navigate(`${ROUTES.loadingWorkspace}/${trip.id}/loading`)}
           >
             <ClipboardList className="h-3 w-3" />
-            فتح
+            Open
           </Button>
         </div>
 
@@ -102,17 +102,17 @@ function TripLoadingCard({ trip }: { trip: LoadingDashboardTrip }) {
         <div className="grid grid-cols-3 gap-3 mb-3">
           <div className="text-center">
             <div className="text-lg font-bold tabular-nums">{trip.orders_count}</div>
-            <div className="text-xs text-muted-foreground">الطلبات</div>
+            <div className="text-xs text-muted-foreground">Orders</div>
           </div>
           <div className="text-center">
             <div className="text-lg font-bold tabular-nums">
-              EGP {trip.collection_amount.toLocaleString('ar-EG', { maximumFractionDigits: 0 })}
+              EGP {trip.collection_amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
             </div>
-            <div className="text-xs text-muted-foreground">التحصيل</div>
+            <div className="text-xs text-muted-foreground">Collection</div>
           </div>
           <div className="text-center">
             <div className="text-lg font-bold tabular-nums">{trip.total_products}</div>
-            <div className="text-xs text-muted-foreground">المنتجات</div>
+            <div className="text-xs text-muted-foreground">Products</div>
           </div>
         </div>
 
@@ -120,7 +120,7 @@ function TripLoadingCard({ trip }: { trip: LoadingDashboardTrip }) {
         {trip.total_products > 0 && (
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">تحميل المستودع</span>
+              <span className="text-muted-foreground">Warehouse Loading</span>
               <span className="tabular-nums">{trip.confirmed_products}/{trip.total_products}</span>
             </div>
             <LoadingProgressBar value={trip.confirmed_products} max={trip.total_products} />
@@ -131,13 +131,13 @@ function TripLoadingCard({ trip }: { trip: LoadingDashboardTrip }) {
         {(trip.loading_status === 'loaded' || trip.loading_status === 'ready_for_dispatch') && trip.total_products > 0 && (
           <div className="space-y-1.5 mt-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">تأكيد السائق</span>
+              <span className="text-muted-foreground">Driver Confirmation</span>
               <span className="tabular-nums">{trip.driver_confirmed}/{trip.total_products}</span>
             </div>
             <LoadingProgressBar value={trip.driver_confirmed} max={trip.total_products} />
             {trip.driver_discrepancies > 0 && (
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                {trip.driver_discrepancies} فارق يحتاج مراجعة
+                {trip.driver_discrepancies} discrepanc{trip.driver_discrepancies !== 1 ? 'ies' : 'y'} need review
               </p>
             )}
           </div>
@@ -147,7 +147,7 @@ function TripLoadingCard({ trip }: { trip: LoadingDashboardTrip }) {
         {trip.custody_total > 0 && (
           <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
             <Package className="h-3 w-3 shrink-0" />
-            <span>العهدة: {trip.custody_confirmed}/{trip.custody_total} مؤكدة</span>
+            <span>Custody: {trip.custody_confirmed}/{trip.custody_total} confirmed</span>
           </div>
         )}
       </div>
@@ -174,7 +174,7 @@ export function LoadingDashboardPage() {
   if (isError) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-sm text-muted-foreground">فشل تحميل لوحة نظام التحميل. يرجى تحديث الصفحة.</p>
+        <p className="text-sm text-muted-foreground">Failed to load loading system dashboard. Please refresh the page.</p>
       </div>
     );
   }
@@ -189,9 +189,9 @@ export function LoadingDashboardPage() {
           <Truck className="h-12 w-12 text-muted-foreground" />
         </div>
         <div className="text-center">
-          <h3 className="font-semibold text-lg mb-1">لا توجد رحلات تحميل نشطة</h3>
+          <h3 className="font-semibold text-lg mb-1">No Active Loading Trips</h3>
           <p className="text-sm text-muted-foreground max-w-sm">
-            ستظهر هنا الرحلات المعتمدة للتحميل. اعتمد رحلة على لوحة التوزيع للبدء.
+            Approved trips will appear here for loading. Approve a trip on the distribution board to get started.
           </p>
         </div>
       </div>
@@ -222,13 +222,13 @@ export function LoadingDashboardPage() {
           <Truck className="h-4 w-4 text-primary" />
         </div>
         <div>
-          <h1 className="font-semibold text-sm">لوحة نظام التحميل</h1>
-          <p className="text-xs text-muted-foreground">جميع رحلات تحميل المستودع النشطة</p>
+          <h1 className="font-semibold text-sm">Loading System Dashboard</h1>
+          <p className="text-xs text-muted-foreground">All active warehouse loading trips</p>
         </div>
         <div className="ms-auto flex items-center gap-2">
           {stats && (
             <Badge variant="outline" className="text-xs">
-              {stats.total} رحلة
+              {stats.total} trips
             </Badge>
           )}
         </div>
@@ -237,10 +237,10 @@ export function LoadingDashboardPage() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-4 gap-3 p-4 pb-0 shrink-0">
-          <StatCard label="بانتظار التحميل"    value={stats.waiting_for_loading} />
-          <StatCard label="جارٍ التحميل"       value={stats.loading}             color="text-blue-600 dark:text-blue-400" />
-          <StatCard label="تسليم السائق"       value={stats.loaded}              color="text-amber-600 dark:text-amber-400" />
-          <StatCard label="جاهز للإرسال"       value={stats.ready_for_dispatch}  color="text-emerald-600 dark:text-emerald-400" />
+          <StatCard label="Waiting for Loading"  value={stats.waiting_for_loading} />
+          <StatCard label="Loading"              value={stats.loading}             color="text-blue-600 dark:text-blue-400" />
+          <StatCard label="Driver Handover"      value={stats.loaded}              color="text-amber-600 dark:text-amber-400" />
+          <StatCard label="Ready to Dispatch"    value={stats.ready_for_dispatch}  color="text-emerald-600 dark:text-emerald-400" />
         </div>
       )}
 

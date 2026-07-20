@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('cep_sla_violations')) {
+            return;
+        }
+
         Schema::create('cep_sla_violations', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('conversation_id')->constrained('cep_conversations')->cascadeOnDelete();

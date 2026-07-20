@@ -17,6 +17,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('pricing_reviews', 'cost_snapshot')) {
+            return;
+        }
+
         Schema::table('pricing_reviews', function (Blueprint $table): void {
             $table->json('cost_snapshot')->nullable()->after('trigger_source');
             $table->text('explanation')->nullable()->after('cost_snapshot');
@@ -25,6 +29,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('pricing_reviews', 'cost_snapshot')) {
+            return;
+        }
+
         Schema::table('pricing_reviews', function (Blueprint $table): void {
             $table->dropColumn(['cost_snapshot', 'explanation']);
         });

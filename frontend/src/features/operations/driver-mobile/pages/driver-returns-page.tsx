@@ -35,10 +35,10 @@ export function DriverReturnsPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base flex-1">المرتجعات</h1>
+        <h1 className="font-semibold text-base flex-1">Returns</h1>
         <Button size="sm" variant="outline" onClick={() => setSheetOpen(true)}>
           <PlusCircle className="mr-1.5 h-4 w-4" />
-          إضافة
+          Add
         </Button>
       </div>
 
@@ -54,7 +54,7 @@ export function DriverReturnsPage() {
                 <div>
                   <p className="font-medium text-sm">{ret.product_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    الكمية: {ret.returned_qty} ·{' '}
+                    Qty: {ret.returned_qty} ·{' '}
                     <Badge variant="outline" className="text-xs">
                       {ret.return_type}
                     </Badge>
@@ -63,7 +63,7 @@ export function DriverReturnsPage() {
                 {ret.warehouse_confirmed_at ? (
                   <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
                 ) : (
-                  <Badge variant="secondary" className="text-xs shrink-0">قيد الانتظار</Badge>
+                  <Badge variant="secondary" className="text-xs shrink-0">Pending</Badge>
                 )}
               </div>
 
@@ -73,7 +73,7 @@ export function DriverReturnsPage() {
 
               {ret.warehouse_confirmed_qty !== null && (
                 <p className="text-xs">
-                  تأكيد المستودع: {ret.warehouse_confirmed_qty}
+                  Warehouse Confirmed: {ret.warehouse_confirmed_qty}
                   {ret.discrepancy_qty !== null && ret.discrepancy_qty !== 0 && (
                     <span className="text-red-600 ml-1">(Δ {ret.discrepancy_qty})</span>
                   )}
@@ -93,14 +93,14 @@ export function DriverReturnsPage() {
                   }
                   disabled={confirmMutation.isPending}
                 >
-                  تأكيد الاستلام
+                  Confirm Receipt
                 </Button>
               )}
             </div>
           ))
         ) : (
           <p className="text-center text-sm text-muted-foreground py-10">
-            لا توجد مرتجعات مسجّلة بعد.
+            No returns recorded yet.
           </p>
         )}
       </div>
@@ -109,7 +109,7 @@ export function DriverReturnsPage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
           <SheetHeader className="mb-4">
-            <SheetTitle>تسجيل مرتجع</SheetTitle>
+            <SheetTitle>Record Return</SheetTitle>
           </SheetHeader>
           <ReturnForm
             orderId={0}

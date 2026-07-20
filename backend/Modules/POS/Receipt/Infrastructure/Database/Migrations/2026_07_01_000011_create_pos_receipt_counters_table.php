@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('pos_receipt_counters')) {
+            return;
+        }
+
         Schema::create('pos_receipt_counters', function (Blueprint $table): void {
             // Composite PK: one counter row per terminal per day
             $table->string('terminal_id', 36);

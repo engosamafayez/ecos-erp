@@ -18,6 +18,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('marketing_campaigns', 'effective_status')) {
+            return;
+        }
+
         Schema::table('marketing_campaigns', function (Blueprint $table): void {
             $table->string('effective_status', 30)->nullable()->after('status');
             $table->json('special_ad_categories')->nullable()->after('effective_status');

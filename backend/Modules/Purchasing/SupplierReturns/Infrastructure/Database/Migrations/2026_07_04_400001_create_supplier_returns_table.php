@@ -11,6 +11,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::dropIfExists('supplier_returns');
+        if (Schema::hasTable('supplier_returns')) {
+            return;
+        }
+
         Schema::create('supplier_returns', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('return_number', 50)->unique();

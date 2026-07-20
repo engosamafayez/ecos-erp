@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('distribution_zones', 'color')) {
+            return;
+        }
+
         Schema::table('distribution_zones', function (Blueprint $table): void {
             $table->string('color', 20)->nullable()->after('description');
         });
@@ -17,6 +21,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasColumn('distribution_zones', 'color')) {
+            return;
+        }
+
         Schema::table('distribution_zones', function (Blueprint $table): void {
             $table->dropColumn('color');
         });

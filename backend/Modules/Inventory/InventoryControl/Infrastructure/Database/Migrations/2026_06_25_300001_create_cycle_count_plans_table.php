@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('cycle_count_plans')) {
+            return;
+        }
+
         Schema::create('cycle_count_plans', function (Blueprint $table): void {
             $table->uuid('id')->primary();
 

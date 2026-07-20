@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('distribution_wave_exceptions')) {
+            return;
+        }
+
         Schema::create('distribution_wave_exceptions', function (Blueprint $table): void {
             $table->bigIncrements('id');
             $table->uuid('preparation_wave_id');

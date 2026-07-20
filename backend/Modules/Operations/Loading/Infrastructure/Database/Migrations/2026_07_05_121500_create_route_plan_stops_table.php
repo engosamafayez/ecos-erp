@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('route_plan_stops')) {
+            return;
+        }
+
         Schema::create('route_plan_stops', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('company_id');

@@ -6,11 +6,21 @@
     "new": "طلب جديد",
     "import": "استيراد",
     "export": "تصدير",
+    "copyClipboard": "نسخ",
+    "print": "طباعة",
     "bulkActions": "إجراءات جماعية",
     "view": "عرض",
     "edit": "تعديل",
     "delete": "حذف",
-    "refresh": "تحديث"
+    "refresh": "تحديث",
+    "viewOrder": "عرض الطلب",
+    "editOrder": "تعديل الطلب",
+    "customerProfile": "ملف العميل",
+    "timeline": "الجدول الزمني",
+    "invoicePrint": "فاتورة / طباعة",
+    "copyLink": "نسخ رابط الطلب",
+    "linkCopied": "تم النسخ!",
+    "cancelOrder": "إلغاء الطلب"
   },
   "bulk": {
     "confirm": "تأكيد الطلبات",
@@ -63,6 +73,8 @@
     "allStatuses": "جميع الحالات",
     "channel": "القناة",
     "allChannels": "جميع القنوات",
+    "filterSingular": "فلتر",
+    "filterPlural": "فلاتر",
     "product": "المنتج",
     "allProducts": "جميع المنتجات",
     "searchProduct": "البحث عن منتج…",
@@ -163,7 +175,6 @@
     "address": "العنوان",
     "zone": "المنطقة",
     "location": "موقع GPS",
-    "customerConfirmed": "التأكيد",
     "inventoryExecution": "تنفيذ المخزون",
     "reservationStatus": "الحجز",
     "editZone": "تعديل منطقة التسليم",
@@ -173,7 +184,13 @@
     "shippingCompany": "شركة الشحن",
     "createdAt": "تاريخ الإنشاء",
     "updatedAt": "آخر تحديث",
-    "actions": "الإجراءات"
+    "salesRep": "مندوب المبيعات",
+    "driver": "السائق",
+    "manualOrder": "يدوي",
+    "proofReceived": "إثبات الاستلام",
+    "actions": "الإجراءات",
+    "noProof": "لا يوجد إثبات",
+    "noGps": "لا يوجد GPS"
   },
   "itemsPreview": {
     "title": "{{count}} عنصر",
@@ -189,7 +206,8 @@
     "notes": "الملاحظات"
   },
   "toolbar": {
-    "columns": "الأعمدة"
+    "columns": "الأعمدة",
+    "views": "المشاهدات"
   },
   "mobileCard": {
     "item": "عنصر",
@@ -277,7 +295,7 @@
     "lineTotal": "إجمالي البند",
     "subtotal": "المجموع الفرعي",
     "shippingTotal": "الشحن",
-    "discountTotal": "الخصم",
+    "discountTotal": "إجمالي الخصم",
     "total": "الإجمالي",
     "back": "رجوع",
     "loading": "جارٍ التحميل…",
@@ -310,7 +328,29 @@
     "manualPayment": "الدفع اليدوي",
     "onlinePayment": "الدفع الإلكتروني",
     "paymentProof": "إثبات الدفع",
-    "discount": "الخصم"
+    "discount": "الخصم",
+    "productsTotal": "إجمالي المنتجات",
+    "shipping": "الشحن",
+    "tax": "الضريبة",
+    "grandTotal": "الإجمالي الكلي",
+    "deposit": "العربون",
+    "formula": "المعادلة"
+  },
+  "statusSelector": {
+    "currentStatus": "الحالة الحالية",
+    "moveTo": "تحويل الطلب إلى",
+    "noTransitions": "لا توجد إجراءات متاحة.",
+    "finalState": "هذا الطلب في حالة نهائية.",
+    "dialogTitle": "تغيير حالة الطلب",
+    "dialogDesc": "سيتم تشغيل سير العمل المناسب وتحديث الجدول الزمني للطلب.",
+    "from": "من",
+    "to": "إلى",
+    "reason": "السبب",
+    "reasonOptional": "(اختياري)",
+    "reasonPlaceholder": "أدخل السبب…",
+    "transitionFailed": "فشل التحويل — يرجى المحاولة مجدداً أو التواصل مع الدعم.",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد"
   },
   "workspace": {
     "newTitle": "طلب جديد",

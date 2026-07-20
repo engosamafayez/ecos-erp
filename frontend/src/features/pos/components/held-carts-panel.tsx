@@ -98,7 +98,7 @@ export function HeldCartsPanel({ onClose, onResumed }: HeldCartsPanelProps) {
       <div className="flex items-center justify-between px-3 py-2 shrink-0">
         <div className="flex items-center gap-2">
           <PauseCircle className="size-4 text-muted-foreground" />
-          <span className="text-sm font-semibold">السلات المحفوظة</span>
+          <span className="text-sm font-semibold">Held Carts</span>
           {sorted.length > 0 && (
             <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
               {sorted.length}
@@ -123,9 +123,9 @@ export function HeldCartsPanel({ onClose, onResumed }: HeldCartsPanelProps) {
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 gap-2 text-center text-muted-foreground">
             <PauseCircle className="size-8 opacity-30" />
-            <p className="text-xs">لا توجد سلات محفوظة</p>
+            <p className="text-xs">No held carts</p>
             <p className="text-[10px] opacity-70">
-              اضغط <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">F9</kbd> لحفظ السلة الحالية
+              Press <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">F9</kbd> to hold the current cart
             </p>
           </div>
         ) : (

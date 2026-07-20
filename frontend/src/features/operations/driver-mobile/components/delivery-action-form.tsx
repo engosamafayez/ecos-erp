@@ -66,12 +66,12 @@ export function DeliveryActionForm({
       {/* Reason */}
       {REQUIRES_REASON.includes(actionType) && (
         <div className="space-y-1.5">
-          <Label htmlFor="reason">السبب *</Label>
+          <Label htmlFor="reason">Reason *</Label>
           <Input
             id="reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="سبب موجز..."
+            placeholder="Brief reason..."
             required
           />
         </div>
@@ -80,7 +80,7 @@ export function DeliveryActionForm({
       {/* Reschedule date */}
       {REQUIRES_DATE.includes(actionType) && (
         <div className="space-y-1.5">
-          <Label htmlFor="new-date">تاريخ التوصيل الجديد *</Label>
+          <Label htmlFor="new-date">New Delivery Date *</Label>
           <Input
             id="new-date"
             type="date"
@@ -94,10 +94,10 @@ export function DeliveryActionForm({
       {/* Payment */}
       {REQUIRES_PAYMENT.includes(actionType) && (
         <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
-          <p className="text-sm font-medium">تحصيل الدفع</p>
+          <p className="text-sm font-medium">Collect Payment</p>
 
           <div className="space-y-1.5">
-            <Label htmlFor="pay-type">طريقة الدفع</Label>
+            <Label htmlFor="pay-type">Payment Method</Label>
             <Select value={paymentType} onValueChange={setPaymentType}>
               <SelectTrigger id="pay-type">
                 <SelectValue />
@@ -111,7 +111,7 @@ export function DeliveryActionForm({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="pay-amount">المبلغ (EGP)</Label>
+            <Label htmlFor="pay-amount">Amount (EGP)</Label>
             <Input
               id="pay-amount"
               type="number"
@@ -125,7 +125,7 @@ export function DeliveryActionForm({
 
           {paymentType === 'bank_transfer' && (
             <div className="space-y-1.5">
-              <Label htmlFor="ref">رقم المرجع</Label>
+              <Label htmlFor="ref">Reference Number</Label>
               <Input
                 id="ref"
                 value={reference}
@@ -139,12 +139,12 @@ export function DeliveryActionForm({
 
       {/* Notes */}
       <div className="space-y-1.5">
-        <Label htmlFor="notes">ملاحظات</Label>
+        <Label htmlFor="notes">Notes</Label>
         <Textarea
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="ملاحظات اختيارية..."
+          placeholder="Optional notes..."
           rows={3}
         />
       </div>
@@ -152,10 +152,10 @@ export function DeliveryActionForm({
       {/* Actions */}
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          إلغاء
+          Cancel
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'جارٍ الحفظ...' : 'تأكيد'}
+          {isLoading ? 'Saving...' : 'Confirm'}
         </Button>
       </div>
     </form>

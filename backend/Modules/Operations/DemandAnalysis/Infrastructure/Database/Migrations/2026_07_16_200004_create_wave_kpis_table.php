@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('wave_kpis')) {
+            return;
+        }
+
         Schema::create('wave_kpis', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('company_id');
