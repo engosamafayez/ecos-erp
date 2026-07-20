@@ -371,6 +371,42 @@
     "externalIdPlaceholder": "e.g. WC-1234",
     "errorTitle": "Unable to save"
   },
+  "confirmationBadge": {
+    "confirmed": "Confirmed",
+    "not_answered": "Not Answered",
+    "rejected": "Rejected",
+    "postponed": "Postponed",
+    "tooltipTitle": "Confirmation: {{label}}",
+    "by": "By:"
+  },
+  "reservationBadge": {
+    "pending": "Pending",
+    "reserved": "Reserved",
+    "partial_reserved": "Partial",
+    "awaiting_stock": "Awaiting Stock",
+    "released": "Released",
+    "transferred": "In Vehicle",
+    "consumed": "Delivered",
+    "failed": "Failed"
+  },
+  "locationCell": {
+    "dialogTitle": "Assign Delivery Location",
+    "googleMapsLink": "Google Maps Link",
+    "placeholder": "https://maps.app.goo.gl/…",
+    "hint": "Paste a Google Maps link (short or full).",
+    "error": "Please enter a valid Google Maps link (or paste coordinates as \"lat, lng\").",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "save": "Save",
+    "tooltipTitle": "GPS Location",
+    "setBy": "Set by:",
+    "openInGoogleMaps": "Open in Google Maps",
+    "openInWaze": "Open in Waze",
+    "copyCoordinates": "Copy Coordinates",
+    "copyMapsUrl": "Copy Maps URL",
+    "replaceLocation": "Replace Location",
+    "deleteLocation": "Delete Location"
+  },
   "delete": {
     "title": "Delete order",
     "confirm": "Delete"

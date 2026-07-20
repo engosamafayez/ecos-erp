@@ -370,6 +370,42 @@
     "externalIdPlaceholder": "مثال: WC-1234",
     "errorTitle": "تعذّر الحفظ"
   },
+  "confirmationBadge": {
+    "confirmed": "تم التأكيد",
+    "not_answered": "لم يُجب",
+    "rejected": "مرفوض",
+    "postponed": "مؤجل",
+    "tooltipTitle": "التأكيد: {{label}}",
+    "by": "بواسطة:"
+  },
+  "reservationBadge": {
+    "pending": "معلق",
+    "reserved": "محجوز",
+    "partial_reserved": "محجوز جزئياً",
+    "awaiting_stock": "في انتظار المخزون",
+    "released": "مُطلق",
+    "transferred": "في المركبة",
+    "consumed": "تم التسليم",
+    "failed": "فشل"
+  },
+  "locationCell": {
+    "dialogTitle": "تعيين موقع التسليم",
+    "googleMapsLink": "رابط Google Maps",
+    "placeholder": "https://maps.app.goo.gl/…",
+    "hint": "الصق رابط Google Maps (قصير أو كامل).",
+    "error": "يرجى إدخال رابط Google Maps صالح (أو الصق الإحداثيات كـ \"خط العرض، خط الطول\").",
+    "cancel": "إلغاء",
+    "saving": "جارٍ الحفظ…",
+    "save": "حفظ",
+    "tooltipTitle": "موقع GPS",
+    "setBy": "تعيين بواسطة:",
+    "openInGoogleMaps": "فتح في Google Maps",
+    "openInWaze": "فتح في Waze",
+    "copyCoordinates": "نسخ الإحداثيات",
+    "copyMapsUrl": "نسخ رابط الخريطة",
+    "replaceLocation": "استبدال الموقع",
+    "deleteLocation": "حذف الموقع"
+  },
   "delete": {
     "title": "حذف الطلب",
     "confirm": "حذف"
