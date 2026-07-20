@@ -132,6 +132,7 @@
     "repeatedSameShippingCo": "Repeated + Same Carrier"
   },
   "status": {
+    "scheduled": "Scheduled",
     "pending": "Pending",
     "awaiting_payment": "Awaiting Payment",
     "processing": "Processing",

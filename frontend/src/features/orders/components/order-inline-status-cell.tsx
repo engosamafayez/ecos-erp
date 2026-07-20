@@ -13,6 +13,7 @@ import { usePatchOrder } from '@/features/orders/hooks/use-orders';
 import type { OrderStatus } from '@/features/orders/types/order';
 
 const STATUS_CLASS: Record<OrderStatus, string> = {
+  scheduled:        'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   pending:          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   awaiting_payment: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   processing:       'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -62,8 +63,25 @@ export function OrderInlineStatusCell({ orderId, status }: OrderInlineStatusCell
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const patch = usePatchOrder();
 
+  const statusLabel: Record<OrderStatus, string> = {
+    scheduled:        t('status.scheduled'),
+    pending:          t('status.pending'),
+    awaiting_payment: t('status.awaiting_payment'),
+    processing:       t('status.processing'),
+    awaiting_stock:   t('status.awaiting_stock'),
+    confirmed:        t('status.confirmed'),
+    preparing:        t('status.preparing'),
+    out_for_delivery: t('status.out_for_delivery'),
+    delivered:        t('status.delivered'),
+    completed:        t('status.completed'),
+    cancelled:        t('status.cancelled'),
+    review:           t('status.review'),
+    rescheduled:      t('status.rescheduled'),
+    returned:         t('status.returned'),
+  };
+
   const cls = STATUS_CLASS[status] ?? STATUS_CLASS.pending;
-  const label = t(`status.${status}`, { defaultValue: status });
+  const label = statusLabel[status];
 
   const handleSelect = (next: OrderStatus) => {
     setOpen(false);
@@ -113,7 +131,7 @@ export function OrderInlineStatusCell({ orderId, status }: OrderInlineStatusCell
                 STATUS_CLASS[s].split(' ')[0],
               )}
             />
-            {t(`status.${s}`, { defaultValue: s })}
+            {statusLabel[s]}
           </DropdownMenuItem>
         ))}
         {(WORKFLOW_TRANSITIONS[status] ?? []).length === 0 ? (

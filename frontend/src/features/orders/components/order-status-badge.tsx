@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 
 const STATUS_CLASS: Record<OrderStatus, string> = {
   // ── Main lifecycle ──────────────────────────────────────────────────────────
+  scheduled:        'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   pending:          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   awaiting_payment: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   processing:       'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -31,7 +32,24 @@ export function OrderStatusBadge({ status, onClick }: OrderStatusBadgeProps) {
   const { t } = useTranslation('orders');
   const cls = STATUS_CLASS[status] ?? STATUS_CLASS.pending;
 
-  const label = t(`status.${status}`, { defaultValue: status });
+  const statusLabel: Record<OrderStatus, string> = {
+    scheduled:        t('status.scheduled'),
+    pending:          t('status.pending'),
+    awaiting_payment: t('status.awaiting_payment'),
+    processing:       t('status.processing'),
+    awaiting_stock:   t('status.awaiting_stock'),
+    confirmed:        t('status.confirmed'),
+    preparing:        t('status.preparing'),
+    out_for_delivery: t('status.out_for_delivery'),
+    delivered:        t('status.delivered'),
+    completed:        t('status.completed'),
+    cancelled:        t('status.cancelled'),
+    review:           t('status.review'),
+    rescheduled:      t('status.rescheduled'),
+    returned:         t('status.returned'),
+  };
+
+  const label = statusLabel[status];
 
   if (onClick) {
     return (

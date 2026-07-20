@@ -131,6 +131,49 @@ export function OrdersPage() {
     completed:        t('statusTabs.completed'),
   };
 
+  const statusLabel: Record<OrderStatus, string> = {
+    scheduled:        t('status.scheduled'),
+    pending:          t('status.pending'),
+    awaiting_payment: t('status.awaiting_payment'),
+    processing:       t('status.processing'),
+    awaiting_stock:   t('status.awaiting_stock'),
+    confirmed:        t('status.confirmed'),
+    preparing:        t('status.preparing'),
+    out_for_delivery: t('status.out_for_delivery'),
+    delivered:        t('status.delivered'),
+    completed:        t('status.completed'),
+    cancelled:        t('status.cancelled'),
+    review:           t('status.review'),
+    rescheduled:      t('status.rescheduled'),
+    returned:         t('status.returned'),
+  };
+
+  const bulkLabel: Record<BulkActionKey, string> = {
+    confirm:                  t('bulk.confirm'),
+    move_to_awaiting_payment: t('bulk.move_to_awaiting_payment'),
+    verify_payment:           t('bulk.verify_payment'),
+    move_to_preparation:      t('bulk.move_to_preparation'),
+    return_to_preparation:    t('bulk.return_to_preparation'),
+    awaiting_stock:           t('bulk.awaiting_stock'),
+    retry_reservation:        t('bulk.retry_reservation'),
+    start_manufacturing:      t('bulk.start_manufacturing'),
+    purchase_materials:       t('bulk.purchase_materials'),
+    resume:                   t('bulk.resume'),
+    resume_confirmed:         t('bulk.resume_confirmed'),
+    dispatch:                 t('bulk.dispatch'),
+    complete_delivery:        t('bulk.complete_delivery'),
+    complete:                 t('bulk.complete'),
+    delivery_failed:          t('bulk.delivery_failed'),
+    reschedule:               t('bulk.reschedule'),
+    review:                   t('bulk.review'),
+    return:                   t('bulk.return'),
+    return_to_confirmed:      t('bulk.return_to_confirmed'),
+    inspect_return:           t('bulk.inspect_return'),
+    return_to_stock:          t('bulk.return_to_stock'),
+    scrap:                    t('bulk.scrap'),
+    cancel:                   t('bulk.cancel'),
+  };
+
   // Load once on mount — initialises state from persisted workspace
   const [savedWorkspace] = useState(loadWorkspace);
 
@@ -794,7 +837,7 @@ export function OrdersPage() {
           <Dialog open onOpenChange={(open) => { if (!open) setPendingBulkAction(null); }}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>{t(`bulk.${action}`, action)}</DialogTitle>
+                <DialogTitle>{bulkLabel[action]}</DialogTitle>
               </DialogHeader>
               <div className="space-y-3 py-1 text-sm">
                 <p className="text-foreground">
@@ -808,7 +851,7 @@ export function OrdersPage() {
                   <div className="flex flex-wrap gap-1.5">
                     {Object.entries(statusDist).map(([status, n]) => (
                       <span key={status} className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                        {n} × {t(`status.${status}`, status)}
+                        {n} × {statusLabel[status as OrderStatus]}
                       </span>
                     ))}
                   </div>

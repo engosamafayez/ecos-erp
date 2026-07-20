@@ -23,6 +23,17 @@ export function OrderCustomerIntelligence({ value, onChange }: Props) {
   const { t } = useTranslation('orders');
   const selected = new Set(value);
 
+  const ciLabel: Record<CustomerIntelligenceFilter, string> = {
+    first_order:   t('customerIntelligence.first_order'),
+    repeated:      t('customerIntelligence.repeated'),
+    more_than_5:   t('customerIntelligence.more_than_5'),
+    more_than_10:  t('customerIntelligence.more_than_10'),
+    has_cancelled: t('customerIntelligence.has_cancelled'),
+    has_returned:  t('customerIntelligence.has_returned'),
+    has_rejected:  t('customerIntelligence.has_rejected'),
+    incomplete:    t('customerIntelligence.incomplete'),
+  };
+
   function toggle(key: CustomerIntelligenceFilter) {
     const next = new Set(selected);
     if (next.has(key)) {
@@ -56,7 +67,7 @@ export function OrderCustomerIntelligence({ value, onChange }: Props) {
               )}
             >
               <span>{emoji}</span>
-              {t(`customerIntelligence.${key}`)}
+              {ciLabel[key]}
             </button>
           );
         })}

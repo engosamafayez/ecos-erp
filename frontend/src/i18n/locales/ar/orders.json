@@ -132,6 +132,7 @@
     "repeatedSameShippingCo": "متكرر + نفس شركة الشحن"
   },
   "status": {
+    "scheduled": "مجدول",
     "pending": "قيد الانتظار",
     "awaiting_payment": "في انتظار الدفع",
     "processing": "قيد المعالجة",

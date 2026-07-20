@@ -14,6 +14,7 @@ type StatusTab = OrderStatus | 'all';
 
 const STATUS_ACCENT: Partial<Record<StatusTab, string>> = {
   all:              'border-primary/60 bg-primary/5',
+  scheduled:        'border-indigo-400/60 bg-indigo-50 dark:border-indigo-600/40 dark:bg-indigo-950/20',
   pending:          'border-yellow-400/60 bg-yellow-50 dark:border-yellow-600/40 dark:bg-yellow-950/20',
   awaiting_payment: 'border-amber-400/60 bg-amber-50 dark:border-amber-600/40 dark:bg-amber-950/20',
   processing:       'border-blue-400/60 bg-blue-50 dark:border-blue-600/40 dark:bg-blue-950/20',
@@ -31,6 +32,7 @@ const STATUS_ACCENT: Partial<Record<StatusTab, string>> = {
 
 const STATUS_DOT: Partial<Record<StatusTab, string>> = {
   all:              'bg-primary',
+  scheduled:        'bg-indigo-400 dark:bg-indigo-500',
   pending:          'bg-yellow-400 dark:bg-yellow-500',
   awaiting_payment: 'bg-amber-400 dark:bg-amber-500',
   processing:       'bg-blue-400 dark:bg-blue-500',
@@ -48,6 +50,7 @@ const STATUS_DOT: Partial<Record<StatusTab, string>> = {
 
 const STATUS_COUNT_COLOR: Partial<Record<StatusTab, string>> = {
   all:              'text-primary',
+  scheduled:        'text-indigo-700 dark:text-indigo-400',
   pending:          'text-yellow-700 dark:text-yellow-400',
   awaiting_payment: 'text-amber-700 dark:text-amber-400',
   processing:       'text-blue-700 dark:text-blue-400',
@@ -90,6 +93,24 @@ type OrderStatusTabsProps = {
 export function OrderStatusTabs({ activeStatus, counts, onChange }: OrderStatusTabsProps) {
   const { t } = useTranslation('orders');
   const scrollRef  = useRef<HTMLDivElement>(null);
+
+  const statusTabLabel: Record<StatusTab, string> = {
+    all:              t('statusTabs.all'),
+    scheduled:        t('statusTabs.scheduled'),
+    pending:          t('statusTabs.pending'),
+    awaiting_payment: t('statusTabs.awaiting_payment'),
+    processing:       t('statusTabs.processing'),
+    awaiting_stock:   t('statusTabs.awaiting_stock'),
+    confirmed:        t('statusTabs.confirmed'),
+    preparing:        t('statusTabs.preparing'),
+    out_for_delivery: t('statusTabs.out_for_delivery'),
+    delivered:        t('statusTabs.delivered'),
+    completed:        t('statusTabs.completed'),
+    returned:         t('statusTabs.returned'),
+    cancelled:        t('statusTabs.cancelled'),
+    review:           t('statusTabs.review'),
+    rescheduled:      t('statusTabs.rescheduled'),
+  };
   const activeRef  = useRef<HTMLButtonElement>(null);
 
   // Scroll active tab into view whenever the active status changes
@@ -162,7 +183,7 @@ export function OrderStatusTabs({ activeStatus, counts, onChange }: OrderStatusT
                   'text-[11px] font-semibold uppercase tracking-wide leading-none',
                   isActive ? 'text-foreground' : 'text-muted-foreground',
                 )}>
-                  {t(`statusTabs.${tab}`)}
+                  {statusTabLabel[tab as StatusTab]}
                 </span>
               </div>
 

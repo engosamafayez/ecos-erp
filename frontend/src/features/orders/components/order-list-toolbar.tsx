@@ -50,6 +50,7 @@ const BULK_TRANSITION_MATRIX: Record<OrderStatus, BulkActionKey[]> = {
   returned:         ['inspect_return', 'return_to_stock', 'scrap'],
   review:           ['resume', 'reschedule', 'cancel'],
   rescheduled:      ['resume', 'reschedule', 'cancel'],
+  scheduled:        [],
   completed:        [],
   cancelled:        [],
 };
@@ -174,10 +175,35 @@ export function OrderListToolbar({
 
   const bulkActions = useMemo<SmartToolbarBulkAction[]>(() => {
     if (!onBulkAction) return [];
+    const bulkLabel: Record<BulkActionKey, string> = {
+      confirm:                  t('bulk.confirm'),
+      move_to_awaiting_payment: t('bulk.move_to_awaiting_payment'),
+      verify_payment:           t('bulk.verify_payment'),
+      move_to_preparation:      t('bulk.move_to_preparation'),
+      return_to_preparation:    t('bulk.return_to_preparation'),
+      awaiting_stock:           t('bulk.awaiting_stock'),
+      retry_reservation:        t('bulk.retry_reservation'),
+      start_manufacturing:      t('bulk.start_manufacturing'),
+      purchase_materials:       t('bulk.purchase_materials'),
+      resume:                   t('bulk.resume'),
+      resume_confirmed:         t('bulk.resume_confirmed'),
+      dispatch:                 t('bulk.dispatch'),
+      complete_delivery:        t('bulk.complete_delivery'),
+      complete:                 t('bulk.complete'),
+      delivery_failed:          t('bulk.delivery_failed'),
+      reschedule:               t('bulk.reschedule'),
+      review:                   t('bulk.review'),
+      return:                   t('bulk.return'),
+      return_to_confirmed:      t('bulk.return_to_confirmed'),
+      inspect_return:           t('bulk.inspect_return'),
+      return_to_stock:          t('bulk.return_to_stock'),
+      scrap:                    t('bulk.scrap'),
+      cancel:                   t('bulk.cancel'),
+    };
     const validKeys = computeDynamicBulkActions(selectedOrders);
     return validKeys.map((key) => ({
       key,
-      label: t(`bulk.${key}`),
+      label: bulkLabel[key],
       onClick: () => onBulkAction(key),
       ...BULK_ACTION_DISPLAY[key],
     }));
