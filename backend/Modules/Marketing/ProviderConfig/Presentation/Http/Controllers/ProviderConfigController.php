@@ -187,8 +187,9 @@ final class ProviderConfigController extends Controller
         }
     }
 
-    private function companyId(Request $request): string
+    private function companyId(Request $request): ?string
     {
-        return (string) ($request->user()?->company_id ?? '');
+        $id = $request->user()?->company_id;
+        return ($id !== null && $id !== '') ? (string) $id : null;
     }
 }

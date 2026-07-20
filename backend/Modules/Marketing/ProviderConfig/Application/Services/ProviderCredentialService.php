@@ -118,7 +118,7 @@ final class ProviderCredentialService
         // SECURITY: never pass $appSecret to audit — use boolean flag only
         $result = $validator->validate($appId, $appSecret);
 
-        if ($companyId !== null) {
+        if (!empty($companyId)) {
             $this->audit->record(
                 companyId: $companyId,
                 module:    'marketing',
