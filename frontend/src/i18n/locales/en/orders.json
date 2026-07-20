@@ -55,6 +55,7 @@
     "returned": "Returned",
     "cancelled": "Cancelled",
     "review": "Review",
+    "scheduled": "Scheduled",
     "rescheduled": "Rescheduled"
   },
   "filters": {

@@ -114,6 +114,23 @@ export function OrdersPage() {
   const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
 
+  const statusTabLabel: Record<OrderStatus, string> = {
+    scheduled:        t('statusTabs.scheduled'),
+    pending:          t('statusTabs.pending'),
+    awaiting_payment: t('statusTabs.awaiting_payment'),
+    processing:       t('statusTabs.processing'),
+    confirmed:        t('statusTabs.confirmed'),
+    preparing:        t('statusTabs.preparing'),
+    out_for_delivery: t('statusTabs.out_for_delivery'),
+    delivered:        t('statusTabs.delivered'),
+    returned:         t('statusTabs.returned'),
+    awaiting_stock:   t('statusTabs.awaiting_stock'),
+    rescheduled:      t('statusTabs.rescheduled'),
+    review:           t('statusTabs.review'),
+    cancelled:        t('statusTabs.cancelled'),
+    completed:        t('statusTabs.completed'),
+  };
+
   // Load once on mount — initialises state from persisted workspace
   const [savedWorkspace] = useState(loadWorkspace);
 
@@ -694,7 +711,7 @@ export function OrdersPage() {
           const contextualEmptyState = search
             ? <EmptyState title={t('table.empty')} description={`No orders matching "${search}". Try a different search term.`} />
             : activeStatus !== 'all'
-              ? <EmptyState title={t('table.empty')} description={`No orders with status "${t(`statusTabs.${activeStatus}`)}".`} />
+              ? <EmptyState title={t('table.empty')} description={`No orders with status "${statusTabLabel[activeStatus as OrderStatus]}".`} />
               : hasFilters
                 ? <EmptyState title={t('table.empty')} description="No orders match the current filters. Try clearing some filters." />
                 : undefined;
