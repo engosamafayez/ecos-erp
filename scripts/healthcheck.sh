@@ -47,7 +47,9 @@ fi
 FAILED=0
 
 # Laravel API endpoint
-API_STATUS="$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$BASE_URL/api/auth/me" 2>/dev/null || echo '000')"
+# -L: follow the HTTP→HTTPS redirect (port 80 redirects everything except /healthz)
+# -k: skip cert validation (cert is for the domain, not localhost)
+API_STATUS="$(curl -skL -o /dev/null -w "%{http_code}" --max-time 10 "$BASE_URL/api/auth/me" 2>/dev/null || echo '000')"
 if [ "$API_STATUS" = "401" ] || [ "$API_STATUS" = "200" ]; then
     pass "/api/auth/me → $API_STATUS (API is responding)"
 else
@@ -55,7 +57,7 @@ else
 fi
 
 # Frontend entry point
-SPA_STATUS="$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$BASE_URL/app/index.html" 2>/dev/null || echo '000')"
+SPA_STATUS="$(curl -skL -o /dev/null -w "%{http_code}" --max-time 10 "$BASE_URL/app/index.html" 2>/dev/null || echo '000')"
 if [ "$SPA_STATUS" = "200" ]; then
     pass "/app/index.html → $SPA_STATUS"
 else
@@ -63,7 +65,7 @@ else
 fi
 
 # Verify the frontend references a JS bundle (not an empty file)
-SPA_BODY="$(curl -s --max-time 10 "$BASE_URL/app/index.html" 2>/dev/null || echo '')"
+SPA_BODY="$(curl -skL --max-time 10 "$BASE_URL/app/index.html" 2>/dev/null || echo '')"
 if echo "$SPA_BODY" | grep -q 'src="/app/assets/'; then
     BUNDLE="$(echo "$SPA_BODY" | grep -o 'index-[^"]*\.js' | head -1)"
     pass "Frontend bundle referenced: $BUNDLE"
