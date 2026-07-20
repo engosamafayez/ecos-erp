@@ -117,29 +117,59 @@ jobs:
           PORT="${DEPLOY_PORT:-22}"
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          # Print resolved connection details.
+          # GitHub Actions auto-masks every string registered as a secret,
+          # so DEPLOY_HOST / DEPLOY_USER / DEPLOY_PORT appear as *** when set.
+          echo "Host : $DEPLOY_HOST"
+          echo "User : $DEPLOY_USER"
+          echo "Port : $PORT"
+
+          # Pin the server host key.
+          # stdout (key entries) → known_hosts; stderr (status/errors) → log.
+          # || true keeps the step alive so the real SSH error is shown below.
+          echo "--- ssh-keyscan ---"
+          ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts || true
           chmod 644 ~/.ssh/known_hosts
+          echo "known_hosts: $(wc -l < ~/.ssh/known_hosts) entries"
 
+          # Export SSH connection flags for later steps.
           echo "SSH_PORT=$PORT" >> "$GITHUB_ENV"
-          echo "SSH_OPTS=-p $PORT -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=10" >> "$GITHUB_ENV"
+          echo "SSH_OPTS=-p $PORT -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=10" \
+               >> "$GITHUB_ENV"
 
-          echo "OpenSSH client:"
+          echo "--- OpenSSH version ---"
           ssh -V
-          echo "Connecting to $DEPLOY_HOST:$PORT..."
+
+          # Test the connection.  Both stdout and stderr are redirected to a temp
+          # file so neither stream is lost if both are written simultaneously.
+          echo "--- SSH connection test ---"
+          SSH_LOG=$(mktemp)
           set +e
-          SSH_OUTPUT=$(ssh -p "$PORT" \
+          ssh -p "$PORT" \
               -o StrictHostKeyChecking=yes \
               -o BatchMode=yes \
               -o ConnectTimeout=10 \
-              "$DEPLOY_USER@$DEPLOY_HOST" \
-              "echo SSH_OK" 2>&1)
-          SSH_STATUS=$?
-          echo "$SSH_OUTPUT"
-          if [ $SSH_STATUS -ne 0 ]; then
-            echo "SSH failed with exit code $SSH_STATUS"
-            exit $SSH_STATUS
-          fi
+              "$DEPLOY_USER@$DEPLOY_HOST" "echo SSH_OK" \
+              >"$SSH_LOG" 2>&1
+          SSH_EXIT=$?
           set -e
+          echo "Exit code: $SSH_EXIT"
+          echo "--- SSH output ---"
+          cat "$SSH_LOG"
+          echo "---"
+
+          if [ "$SSH_EXIT" -ne 0 ]; then
+            # Build the annotation from the log file before removing it.
+            # sed escapes bare % so GitHub does not mis-parse them as %xx sequences.
+            # awk appends %0A (URL-encoded newline) after every line so the
+            # multi-line SSH error renders correctly in the Annotations panel.
+            SSH_ANNOTATION=$(sed 's/%/%25/g' "$SSH_LOG" | awk '{printf "%s%%0A",$0}')
+            rm -f "$SSH_LOG"
+            echo "::error::SSH connection failed (exit $SSH_EXIT)%0A${SSH_ANNOTATION}"
+            exit "$SSH_EXIT"
+          fi
+          rm -f "$SSH_LOG"
 
       # ── Deployment ────────────────────────────────────────────────────────
       # The repository is updated to the exact target SHA before deploy.sh runs.
