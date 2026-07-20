@@ -1,5 +1,6 @@
 import { useState, type ReactNode, type RefObject } from 'react';
 import { Download, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { FilterPanel } from '@/components/crud/filter-panel';
 import { SearchInput } from '@/components/crud/search-input';
@@ -37,6 +38,7 @@ export function EntityToolbar({
   onClearFilters,
   children,
 }: EntityToolbarProps) {
+  const { t } = useTranslation('common');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   return (
@@ -63,7 +65,7 @@ export function EntityToolbar({
               onClick={() => setFiltersOpen((open) => !open)}
             >
               <SlidersHorizontal className="size-4" />
-              Filters
+              {t('toolbar.filters')}
             </Button>
           ) : null}
           {onRefresh ? (
@@ -75,13 +77,13 @@ export function EntityToolbar({
               disabled={isRefreshing}
             >
               <RefreshCw className={cn('size-4', isRefreshing && 'animate-spin')} />
-              Refresh
+              {t('toolbar.refresh')}
             </Button>
           ) : null}
           {onExport ? (
             <Button type="button" variant="outline" size="sm" onClick={onExport}>
               <Download className="size-4" />
-              Export
+              {t('toolbar.export')}
             </Button>
           ) : null}
         </div>

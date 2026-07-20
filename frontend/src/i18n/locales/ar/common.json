@@ -11,6 +11,13 @@
     "search": "بحث…"
   },
   "nav": {
+    "items": {
+      "orders": "الطلبات",
+      "fulfillments": "الشحنات",
+      "customers": "العملاء",
+      "product-mappings": "ربط المنتجات",
+      "sync-logs": "سجلات المزامنة"
+    },
     "groups": {
       "overview": "نظرة عامة",
       "organization": "المنظمة",
@@ -71,8 +78,20 @@
     "unableToSave": "تعذر الحفظ",
     "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
   },
+  "toolbar": {
+    "filters": "تصفية",
+    "refresh": "تحديث",
+    "export": "تصدير"
+  },
   "table": {
-    "empty": "—"
+    "empty": "—",
+    "actions": "الإجراءات",
+    "noRecords": "لا توجد سجلات"
+  },
+  "error": {
+    "title": "حدث خطأ",
+    "description": "تعذّر تحميل البيانات. يرجى المحاولة مرة أخرى.",
+    "retry": "حاول مجدداً"
   },
   "home": "الرئيسية",
   "loading": "جار التحميل…",

@@ -43,11 +43,13 @@ import type { Command } from '../command-types';
  */
 export function useRegisterCommands(namespace: string, commands: Command[]): void {
   const cmdsRef = useRef(commands);
-  cmdsRef.current = commands;
+
+  // Keep the ref current without touching it during render.
+  useEffect(() => {
+    cmdsRef.current = commands;
+  }, [commands]);
 
   useEffect(() => {
     return commandRegistry.register(namespace, cmdsRef.current);
-    // Re-register only when namespace changes. Commands are read from ref on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namespace]);
 }

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { EmptyState } from '@/components/crud/empty-state';
 import { ErrorState } from '@/components/crud/error-state';
@@ -57,6 +58,7 @@ export function EntityTable<T>({
   skeletonRows = 5,
   focusedRowId = null,
 }: EntityTableProps<T>) {
+  const { t } = useTranslation('common');
   const totalColumns = columns.length + (rowActions ? 1 : 0);
 
   return (
@@ -92,7 +94,7 @@ export function EntityTable<T>({
                 </TableHead>
               );
             })}
-            {rowActions ? <TableHead className="w-12 text-end">Actions</TableHead> : null}
+            {rowActions ? <TableHead className="w-12 text-end">{t('table.actions')}</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -115,7 +117,7 @@ export function EntityTable<T>({
           ) : data.length === 0 ? (
             <TableRow>
               <TableCell colSpan={totalColumns} className="p-0">
-                {emptyState ?? <EmptyState title="No records found" />}
+                {emptyState ?? <EmptyState title={t('table.noRecords')} />}
               </TableCell>
             </TableRow>
           ) : (

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { ExternalLink, FileText, Loader2, Upload, X } from 'lucide-react';
 
 import { api } from '@/lib/axios';
@@ -16,13 +17,7 @@ import {
 import type { ManualOrderFormValues } from '@/features/orders/components/order-form-schema';
 import { getMediaUrl } from '@/lib/media';
 
-const DEFAULT_PAYMENT_METHODS = [
-  { value: 'cod',           label: 'Cash on Delivery' },
-  { value: 'instapay',      label: 'Instapay' },
-  { value: 'mobile_wallet', label: 'Mobile Wallet' },
-  { value: 'bank_transfer', label: 'Bank Transfer' },
-  { value: 'credit_card',   label: 'Credit Card' },
-] as const;
+const PAYMENT_METHOD_VALUES = ['cod', 'instapay', 'mobile_wallet', 'bank_transfer', 'credit_card'] as const;
 
 const ACCEPTED = 'image/jpeg,image/jpg,image/png,image/webp,image/gif,application/pdf';
 const MAX_MB = 10;
@@ -33,7 +28,12 @@ type OrderPaymentSectionProps = {
 };
 
 export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: OrderPaymentSectionProps = {}) {
-  const methods = paymentMethods && paymentMethods.length > 0 ? paymentMethods : DEFAULT_PAYMENT_METHODS;
+  const { t } = useTranslation('orders');
+  const defaultMethods = PAYMENT_METHOD_VALUES.map((v) => ({
+    value: v,
+    label: t(`workspace.paymentMethodLabels.${v}`, { defaultValue: v }),
+  }));
+  const methods = paymentMethods && paymentMethods.length > 0 ? paymentMethods : defaultMethods;
   const { control, watch, setValue, formState: { errors } } = useFormContext<ManualOrderFormValues>();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
     if (!file) return;
 
     if (file.size > MAX_MB * 1024 * 1024) {
-      setUploadError(`File must be under ${MAX_MB} MB.`);
+      setUploadError(t('workspace.paymentSection.fileTooLarge', { max: MAX_MB }));
       return;
     }
 
@@ -75,7 +75,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
       );
       setValue('payment_proof_path', data.data.path, { shouldValidate: true });
     } catch {
-      setUploadError('Upload failed. Please try again.');
+      setUploadError(t('workspace.paymentSection.uploadFailed'));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -93,7 +93,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
-        <FormField name="payment_method_manual" label="Payment Method">
+        <FormField name="payment_method_manual" label={t('workspace.paymentSection.methodLabel')}>
           <Controller
             control={control}
             name="payment_method_manual"
@@ -103,7 +103,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
                 onValueChange={(v) => field.onChange(v || undefined)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select payment method…" />
+                  <SelectValue placeholder={t('workspace.paymentSection.selectMethod')} />
                 </SelectTrigger>
                 <SelectContent>
                   {methods.map((m) => (
@@ -120,7 +120,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
 
       {requiresProof && (
         <div className="sm:col-span-2">
-          <FormField name="payment_proof_path" label={`Payment Proof${proofRequirement === 'optional' ? ' (Optional)' : ''}`} required={proofRequirement === 'required'}>
+          <FormField name="payment_proof_path" label={t(proofRequirement === 'optional' ? 'workspace.paymentSection.proofOptional' : 'workspace.paymentSection.proofLabel')} required={proofRequirement === 'required'}>
             {proofPath ? (
               <div className="flex items-center gap-2 rounded-md border px-3 py-2 bg-muted/40">
                 {isPdf ? (
@@ -151,9 +151,9 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
                   <Upload className="size-5 text-muted-foreground" />
                 )}
                 <p className="text-sm text-muted-foreground">
-                  {uploading ? 'Uploading…' : 'Click to upload image or PDF'}
+                  {uploading ? t('workspace.paymentSection.uploading') : t('workspace.paymentSection.uploadCta')}
                 </p>
-                <p className="text-xs text-muted-foreground">Max {MAX_MB} MB · JPEG, PNG, WebP, GIF, PDF</p>
+                <p className="text-xs text-muted-foreground">{t('workspace.paymentSection.uploadMax', { max: MAX_MB })}</p>
               </div>
             )}
             <input
@@ -170,10 +170,10 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
             )}
             <p className="mt-1 text-xs text-muted-foreground">
               {proofRequirement === 'required'
-                ? 'Payment proof is required for this payment method.'
+                ? t('workspace.paymentSection.proofRequired')
                 : proofRequirement === 'optional'
-                ? 'Payment proof is optional but recommended.'
-                : 'Payment proof is not required for this method.'}
+                ? t('workspace.paymentSection.proofOptionalNote')
+                : t('workspace.paymentSection.proofNotRequired')}
             </p>
           </FormField>
         </div>

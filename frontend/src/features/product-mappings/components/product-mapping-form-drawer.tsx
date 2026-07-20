@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { EntityDrawer, EntityForm } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -34,6 +35,8 @@ function extractMessage(error: unknown): string {
 }
 
 export function ProductMappingFormDrawer({ open, onOpenChange, mapping }: Props) {
+  const { t } = useTranslation('product-mappings');
+  const { t: tCommon } = useTranslation('common');
   const isEdit = Boolean(mapping);
   const createMapping = useCreateProductMapping();
   const updateMapping = useUpdateProductMapping();
@@ -76,26 +79,26 @@ export function ProductMappingFormDrawer({ open, onOpenChange, mapping }: Props)
     <EntityDrawer
       open={open}
       onOpenChange={handleOpenChange}
-      title={isEdit ? 'Edit Product Mapping' : 'Create Product Mapping'}
-      description={
-        isEdit
-          ? 'Update the mapping details below.'
-          : 'Map a product to an external channel product.'
-      }
+      title={isEdit ? t('drawer.editTitle') : t('drawer.createTitle')}
+      description={isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle')}
       footer={
         <>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {tCommon('common.cancel')}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
-            {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create mapping'}
+            {isPending
+              ? t('drawer.saving')
+              : isEdit
+                ? t('drawer.submitEdit')
+                : t('drawer.submitCreate')}
           </Button>
         </>
       }
     >
       {serverError ? (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Unable to save</AlertTitle>
+          <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}

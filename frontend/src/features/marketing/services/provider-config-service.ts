@@ -7,6 +7,7 @@ import type {
   RotateSecretResult,
   SaveConfigPayload,
   SaveConfigResult,
+  ValidateConfigPayload,
   ValidationResult,
 } from '../types/provider-config';
 
@@ -18,7 +19,7 @@ export const providerConfigService = {
     return data.data;
   },
 
-  async validateConfig(provider: string, payload: SaveConfigPayload): Promise<ValidationResult> {
+  async validateConfig(provider: string, payload: ValidateConfigPayload): Promise<ValidationResult> {
     const { data } = await api.post<ApiResponse<ValidationResult>>(
       `${BASE}/${provider}/config/validate`,
       payload,

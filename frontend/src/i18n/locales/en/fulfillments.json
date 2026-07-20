@@ -67,6 +67,8 @@
     "subtitle": "Create a fulfillment to ship order items from a warehouse.",
     "fulfillmentDetails": "Fulfillment Details",
     "lineItems": "Line Items",
+    "addLine": "Add Line",
+    "selectProduct": "Select product…",
     "submitCreate": "Create Fulfillment",
     "creating": "Creating…",
     "errorTitle": "Unable to create"

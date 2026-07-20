@@ -29,6 +29,7 @@ const DIRECTIONS: (SyncDirection | 'all')[] = ['all', 'inbound', 'outbound'];
 const STATUSES: (SyncStatus | 'all')[] = ['all', 'pending', 'processing', 'success', 'failed', 'skipped'];
 
 function StatusBadge({ status }: { status: SyncStatus }) {
+  const { t } = useTranslation('sync-logs');
   const variantMap: Record<SyncStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     success: 'default',
     failed: 'destructive',
@@ -36,13 +37,14 @@ function StatusBadge({ status }: { status: SyncStatus }) {
     pending: 'outline',
     skipped: 'outline',
   };
-  return <Badge variant={variantMap[status]}>{status}</Badge>;
+  return <Badge variant={variantMap[status]}>{t(`status.${status}`)}</Badge>;
 }
 
 function DirectionBadge({ direction }: { direction: SyncDirection }) {
+  const { t } = useTranslation('sync-logs');
   return (
     <Badge variant={direction === 'inbound' ? 'secondary' : 'outline'}>
-      {direction}
+      {t(`direction.${direction}`)}
     </Badge>
   );
 }

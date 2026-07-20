@@ -48,10 +48,20 @@
     "success": "اكتملت المزامنة بنجاح.",
     "failed": "فشلت المزامنة. راجع السجلات للتفاصيل."
   },
+  "filters": {
+    "syncStatus": "حالة المزامنة",
+    "allStatuses": "جميع الحالات"
+  },
+  "delete": {
+    "title": "حذف ربط المنتج",
+    "description": "سيتم حذف الربط لـ {{name}}. يمكن استعادته لاحقاً.",
+    "confirm": "حذف"
+  },
   "drawer": {
     "createTitle": "ربط منتج جديد",
     "editTitle": "تعديل الربط",
     "createSubtitle": "ربط منتج داخلي بمعرف قناة خارجية.",
+    "editSubtitle": "تحديث تفاصيل الربط أدناه.",
     "submitCreate": "إنشاء الربط",
     "submitEdit": "حفظ التغييرات",
     "saving": "جارٍ الحفظ…",

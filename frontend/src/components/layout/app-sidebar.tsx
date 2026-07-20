@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ export function AppSidebar({
   className,
 }: AppSidebarProps) {
   const { dir } = useLanguage();
+  const { t } = useTranslation('common');
   if (!activeModule || activeModule.items.length === 0) return null;
 
   // In RTL the sidebar is at the inline-end (physical right), so chevron direction flips.
@@ -61,7 +63,7 @@ export function AppSidebar({
       {/* Sidebar header */}
       <div className="flex h-11 shrink-0 items-center justify-between border-b px-3">
         <span className="truncate text-sm font-semibold text-foreground">
-          {activeModule.label}
+          {t(`nav.groups.${activeModule.id}`, { defaultValue: activeModule.label })}
         </span>
         {onCollapse && (
           <Button
@@ -78,7 +80,7 @@ export function AppSidebar({
 
       {/* Nav items */}
       <nav
-        aria-label={`${activeModule.label} navigation`}
+        aria-label={`${t(`nav.groups.${activeModule.id}`, { defaultValue: activeModule.label })} navigation`}
         className="flex flex-col gap-0.5 overflow-y-auto p-2"
       >
         {activeModule.items.map((item) => {
@@ -86,7 +88,7 @@ export function AppSidebar({
             return (
               <div key={item.key} className="mb-1 mt-4 px-3 first:mt-0">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {item.label}
+                  {t(`nav.items.${item.key}`, { defaultValue: item.label })}
                 </p>
               </div>
             );
@@ -107,7 +109,7 @@ export function AppSidebar({
               }
             >
               <Icon className="size-4 shrink-0" aria-hidden />
-              <span className="truncate">{item.label}</span>
+              <span className="truncate">{t(`nav.items.${item.key}`, { defaultValue: item.label })}</span>
               {item.key === 'price-review' && <PriceReviewBadge />}
             </NavLink>
           );

@@ -74,7 +74,7 @@ final class ProviderConfigController extends Controller
 
         $request->validate([
             'app_id'       => ['required', 'string', 'max:255'],
-            'app_secret'   => ['required', 'string', 'max:500'],
+            'app_secret'   => ['nullable', 'string', 'max:500'],
             'redirect_uri' => ['nullable', 'url', 'max:500', 'starts_with:https://,http://'],
         ]);
 
@@ -84,7 +84,7 @@ final class ProviderConfigController extends Controller
             companyId:   $companyId,
             provider:    $provider,
             appId:       $request->string('app_id')->toString(),
-            appSecret:   $request->string('app_secret')->toString(),
+            appSecret:   $request->filled('app_secret') ? $request->string('app_secret')->toString() : null,
             redirectUri: $request->string('redirect_uri', '')->toString(),
             actorId:     (string) $request->user()->id,
         );

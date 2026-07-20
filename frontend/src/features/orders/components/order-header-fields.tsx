@@ -1,4 +1,5 @@
 import { Controller, useFormContext } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { Combobox } from '@/components/crud/combobox';
 import { FormField } from '@/components/crud';
@@ -7,22 +8,23 @@ import type { OrderFormValues } from '@/features/orders/components/order-form-sc
 import { useCustomerOptions } from '@/features/orders/hooks/use-customer-options';
 import { useChannelOptions } from '@/features/product-mappings/hooks/use-channel-options';
 
-const STATUS_OPTIONS = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'processing', label: 'Processing' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
-] as const;
-
 export function OrderHeaderFields() {
+  const { t } = useTranslation('orders');
   const { register, control } = useFormContext<OrderFormValues>();
   const { data: customerOptions = [], isLoading: loadingCustomers } = useCustomerOptions();
   const { data: channelOptions = [], isLoading: loadingChannels } = useChannelOptions();
 
+  const statusOptions = [
+    { value: 'pending', label: t('status.pending') },
+    { value: 'processing', label: t('status.processing') },
+    { value: 'completed', label: t('status.completed') },
+    { value: 'cancelled', label: t('status.cancelled') },
+  ];
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
-        <FormField name="customer_id" label="Customer" required>
+        <FormField name="customer_id" label={t('columns.customer')} required>
           <Controller
             control={control}
             name="customer_id"
@@ -31,7 +33,7 @@ export function OrderHeaderFields() {
                 options={customerOptions}
                 value={field.value || null}
                 onChange={field.onChange}
-                placeholder="Select customer…"
+                placeholder={t('workspace.selectCustomer')}
                 loading={loadingCustomers}
               />
             )}
@@ -40,7 +42,7 @@ export function OrderHeaderFields() {
       </div>
 
       <div className="sm:col-span-2">
-        <FormField name="channel_id" label="Channel">
+        <FormField name="channel_id" label={t('columns.channel')}>
           <Controller
             control={control}
             name="channel_id"
@@ -49,7 +51,7 @@ export function OrderHeaderFields() {
                 options={channelOptions}
                 value={field.value || null}
                 onChange={field.onChange}
-                placeholder="Select channel (optional)…"
+                placeholder={t('workspace.selectChannel')}
                 loading={loadingChannels}
               />
             )}
@@ -57,16 +59,16 @@ export function OrderHeaderFields() {
         </FormField>
       </div>
 
-      <FormField name="order_date" label="Order Date" required>
+      <FormField name="order_date" label={t('workspace.fields.orderDate')} required>
         <Input type="date" {...register('order_date')} />
       </FormField>
 
-      <FormField name="status" label="Status" required>
+      <FormField name="status" label={t('columns.status')} required>
         <select
           {...register('status')}
           className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs"
         >
-          {STATUS_OPTIONS.map((s) => (
+          {statusOptions.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
             </option>
@@ -75,16 +77,16 @@ export function OrderHeaderFields() {
       </FormField>
 
       <div className="sm:col-span-2">
-        <FormField name="external_order_id" label="External Order ID">
-          <Input placeholder="e.g. WC-1234" {...register('external_order_id')} />
+        <FormField name="external_order_id" label={t('detail.externalOrderId')}>
+          <Input placeholder={t('workspace.externalIdPlaceholder')} {...register('external_order_id')} />
         </FormField>
       </div>
 
       <div className="sm:col-span-2">
-        <FormField name="notes" label="Notes">
+        <FormField name="notes" label={t('detail.notes')}>
           <textarea
             rows={3}
-            placeholder="Optional notes…"
+            placeholder={t('workspace.headerNotesPlaceholder')}
             className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
             {...register('notes')}
           />

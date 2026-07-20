@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { providerConfigService } from '../services/provider-config-service';
-import type { RotateSecretPayload, SaveConfigPayload } from '../types/provider-config';
+import type { RotateSecretPayload, SaveConfigPayload, ValidateConfigPayload } from '../types/provider-config';
 
 function configKey(provider: string) {
   return ['marketing-provider-config', provider];
@@ -30,7 +30,7 @@ export function useProviderHealth(provider: string) {
 
 export function useValidateProviderConfig(provider: string) {
   return useMutation({
-    mutationFn: (payload: SaveConfigPayload) =>
+    mutationFn: (payload: ValidateConfigPayload) =>
       providerConfigService.validateConfig(provider, payload),
   });
 }

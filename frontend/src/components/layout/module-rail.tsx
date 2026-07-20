@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { APP_MODULES, type AppModule } from '@/config/module-navigation';
@@ -9,6 +10,7 @@ type ModuleRailProps = {
 };
 
 export function ModuleRail({ activeModule, className }: ModuleRailProps) {
+  const { t } = useTranslation('common');
   return (
     <nav
       aria-label="Module navigation"
@@ -26,8 +28,8 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
             <Link
               key={mod.id}
               to={mod.defaultPath}
-              title={mod.label}
-              aria-label={mod.label}
+              title={t(`nav.groups.${mod.id}`, { defaultValue: mod.label })}
+              aria-label={t(`nav.groups.${mod.id}`, { defaultValue: mod.label })}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'group flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 transition-colors',
@@ -47,7 +49,7 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
                 <Icon className="size-[18px]" aria-hidden />
               </span>
               <span className="w-full truncate text-center text-[10px] font-medium leading-tight">
-                {mod.railLabel}
+                {t(`nav.groups.${mod.id}`, { defaultValue: mod.railLabel })}
               </span>
             </Link>
           );

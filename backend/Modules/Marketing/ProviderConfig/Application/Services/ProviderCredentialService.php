@@ -92,6 +92,7 @@ final class ProviderCredentialService
             'default_redirect_uri' => $this->defaultRedirectUri($provider),
             'status'               => $cred?->status ?? 'not_configured',
             'validated_at'         => $cred?->validated_at?->toISOString(),
+            'last_updated_at'      => $cred?->updated_at?->toISOString(),
         ];
     }
 
@@ -156,32 +157,54 @@ final class ProviderCredentialService
         string  $companyId,
         string  $provider,
         string  $appId,
-        string  $appSecret,
+        ?string $appSecret,
         string  $redirectUri,
         string  $actorId,
     ): array {
-        $result = $this->validate($provider, $appId, $appSecret, $companyId);
+        $old = $this->find($companyId, $provider);
+
+        // Resolve the effective secret: new value OR stored encrypted secret.
+        // When null on first-time config, there is nothing to fall back to.
+        if ($appSecret === null) {
+            if ($old === null) {
+                return [
+                    'saved'  => false,
+                    'valid'  => false,
+                    'errors' => ['App Secret is required for first-time configuration.'],
+                    'status' => 'not_configured',
+                ];
+            }
+            $effectiveSecret = (string) $old->app_secret;
+        } else {
+            $effectiveSecret = $appSecret;
+        }
+
+        $result = $this->validate($provider, $appId, $effectiveSecret, $companyId);
 
         if (! $result['valid']) {
             return array_merge($result, ['saved' => false, 'status' => 'invalid']);
         }
 
-        $old = $this->find($companyId, $provider);
-
         $effectiveUri = $this->resolveRedirectUri($provider, $redirectUri);
+
+        $credData = [
+            'app_id'       => $appId,
+            'redirect_uri' => $effectiveUri,
+            'status'       => 'ready',
+            'validated_at' => now(),
+            'validated_by' => $actorId,
+            'updated_by'   => $actorId,
+            'created_by'   => $old === null ? $actorId : $old->created_by,
+        ];
+
+        // Only overwrite the stored secret when the user explicitly provided a new one
+        if ($appSecret !== null) {
+            $credData['app_secret'] = $appSecret;
+        }
 
         $cred = MarketingProviderCredential::updateOrCreate(
             ['company_id' => $companyId, 'provider' => $provider],
-            [
-                'app_id'       => $appId,
-                'app_secret'   => $appSecret,
-                'redirect_uri' => $effectiveUri,
-                'status'       => 'ready',
-                'validated_at' => now(),
-                'validated_by' => $actorId,
-                'updated_by'   => $actorId,
-                'created_by'   => $old === null ? $actorId : $old->created_by,
-            ],
+            $credData,
         );
 
         $this->invalidateAllCaches($companyId, $provider);
@@ -196,6 +219,7 @@ final class ProviderCredentialService
                 'provider'       => $provider,
                 'app_id'         => $appId,
                 'has_app_secret' => true,
+                'secret_changed' => $appSecret !== null,
                 'redirect_uri'   => $effectiveUri,
                 'status'         => 'ready',
             ],

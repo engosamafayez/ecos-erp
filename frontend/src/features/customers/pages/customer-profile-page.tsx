@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,6 +10,7 @@ import type { Customer } from '@/features/customers/types/customer';
 import { ROUTES } from '@/router/routes';
 
 export function CustomerProfilePage() {
+  const { t } = useTranslation('customers');
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
 
@@ -38,13 +40,13 @@ export function CustomerProfilePage() {
   if (isError || !customer) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 p-16 text-center">
-        <p className="text-sm font-medium text-destructive">Customer not found</p>
+        <p className="text-sm font-medium text-destructive">{t('profile.notFound')}</p>
         <button
           type="button"
           className="text-xs text-muted-foreground underline"
           onClick={() => navigate(ROUTES.customers)}
         >
-          Back to Customers
+          {t('profile.backToCustomers')}
         </button>
       </div>
     );

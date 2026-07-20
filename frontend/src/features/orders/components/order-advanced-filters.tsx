@@ -178,12 +178,12 @@ export function OrderAdvancedFilters({ values, onChange, onClear }: Props) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
         {/* Governorate */}
         <div>
-          <FieldLabel>Governorate</FieldLabel>
+          <FieldLabel>{t('filters.governorate')}</FieldLabel>
           <input
             type="text"
             value={values.governorate ?? ''}
             onChange={(e) => set('governorate', e.target.value || null)}
-            placeholder="All governorates"
+            placeholder={t('filters.allGovernorates')}
             className={cn(
               'h-8 w-full rounded-md border border-input bg-background px-3 text-sm',
               'placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring',
@@ -202,12 +202,12 @@ export function OrderAdvancedFilters({ values, onChange, onClear }: Props) {
 
         {/* City */}
         <div>
-          <FieldLabel>City</FieldLabel>
+          <FieldLabel>{t('filters.city')}</FieldLabel>
           <input
             type="text"
             value={values.city ?? ''}
             onChange={(e) => set('city', e.target.value || null)}
-            placeholder="All cities"
+            placeholder={t('filters.allCities')}
             className={cn(
               'h-8 w-full rounded-md border border-input bg-background px-3 text-sm',
               'placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring',
@@ -226,12 +226,12 @@ export function OrderAdvancedFilters({ values, onChange, onClear }: Props) {
 
         {/* Zone */}
         <div>
-          <FieldLabel>Zone</FieldLabel>
+          <FieldLabel>{t('filters.zone')}</FieldLabel>
           <input
             type="text"
             value={values.zone ?? ''}
             onChange={(e) => set('zone', e.target.value || null)}
-            placeholder="All zones"
+            placeholder={t('filters.allZones')}
             className={cn(
               'h-8 w-full rounded-md border border-input bg-background px-3 text-sm',
               'placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring',
@@ -241,62 +241,62 @@ export function OrderAdvancedFilters({ values, onChange, onClear }: Props) {
 
         {/* Payment Status */}
         <div>
-          <FieldLabel>Payment Status</FieldLabel>
+          <FieldLabel>{t('filters.paymentStatus')}</FieldLabel>
           <Select
             value={values.paymentStatus ?? ''}
             onValueChange={(v) => set('paymentStatus', (v || null) as AdvancedFilterValues['paymentStatus'])}
           >
             <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder={t('filters.all')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="partial">Partial</SelectItem>
-              <SelectItem value="unpaid">Unpaid</SelectItem>
+              <SelectItem value="">{t('filters.all')}</SelectItem>
+              <SelectItem value="paid">{t('filters.paid')}</SelectItem>
+              <SelectItem value="partial">{t('filters.partial')}</SelectItem>
+              <SelectItem value="unpaid">{t('filters.unpaid')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Reservation Status */}
         <div>
-          <FieldLabel>Inventory</FieldLabel>
+          <FieldLabel>{t('filters.inventory')}</FieldLabel>
           <Select
             value={values.reservationStatus ?? ''}
             onValueChange={(v) => set('reservationStatus', (v || null) as AdvancedFilterValues['reservationStatus'])}
           >
             <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder={t('filters.all')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
-              <SelectItem value="reserved">Reserved</SelectItem>
-              <SelectItem value="not_reserved">Not Reserved</SelectItem>
+              <SelectItem value="">{t('filters.all')}</SelectItem>
+              <SelectItem value="reserved">{t('filters.reserved')}</SelectItem>
+              <SelectItem value="not_reserved">{t('filters.notReserved')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Has Payment Proof */}
         <div>
-          <FieldLabel>Payment Proof</FieldLabel>
+          <FieldLabel>{t('filters.paymentProof')}</FieldLabel>
           <Select
             value={values.hasPaymentProof === null ? '' : values.hasPaymentProof ? 'yes' : 'no'}
             onValueChange={(v) => set('hasPaymentProof', v === '' ? null : v === 'yes')}
           >
             <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Any" />
+              <SelectValue placeholder={t('filters.any')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any</SelectItem>
-              <SelectItem value="yes">With Proof</SelectItem>
-              <SelectItem value="no">Without Proof</SelectItem>
+              <SelectItem value="">{t('filters.any')}</SelectItem>
+              <SelectItem value="yes">{t('filters.withProof')}</SelectItem>
+              <SelectItem value="no">{t('filters.withoutProof')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Amount Range */}
         <div>
-          <FieldLabel>Min Amount (EGP)</FieldLabel>
+          <FieldLabel>{t('filters.minAmount')}</FieldLabel>
           <input
             type="number"
             min={0}
@@ -311,7 +311,7 @@ export function OrderAdvancedFilters({ values, onChange, onClear }: Props) {
         </div>
 
         <div>
-          <FieldLabel>Max Amount (EGP)</FieldLabel>
+          <FieldLabel>{t('filters.maxAmount')}</FieldLabel>
           <input
             type="number"
             min={0}

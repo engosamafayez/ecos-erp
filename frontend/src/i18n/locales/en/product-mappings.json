@@ -48,10 +48,20 @@
     "success": "Sync completed successfully.",
     "failed": "Sync failed. Check logs for details."
   },
+  "filters": {
+    "syncStatus": "Sync Status",
+    "allStatuses": "All statuses"
+  },
+  "delete": {
+    "title": "Delete product mapping",
+    "description": "This will remove the mapping for {{name}}. It can be restored later.",
+    "confirm": "Delete"
+  },
   "drawer": {
     "createTitle": "New Product Mapping",
     "editTitle": "Edit Mapping",
     "createSubtitle": "Link an internal product to a channel identifier.",
+    "editSubtitle": "Update the mapping details below.",
     "submitCreate": "Create Mapping",
     "submitEdit": "Save Changes",
     "saving": "Saving…",

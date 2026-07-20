@@ -111,6 +111,7 @@ export function MetaConnectPage() {
               default_redirect_uri: `${window.location.origin}/api/marketing/meta/auth/callback`,
               status: 'not_configured',
               validated_at: null,
+              last_updated_at: null,
             }}
             onComplete={() => {
               setShowWizard(false);

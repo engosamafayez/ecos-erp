@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Lock, Unlock } from 'lucide-react';
-import { useState } from 'react';
 
 import { FormField } from '@/components/crud';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { useCalculateShipping } from '@/features/orders/hooks/use-orders';
 import type { ManualOrderFormValues } from '@/features/orders/components/order-form-schema';
 
 export function OrderShippingSection() {
+  const { t } = useTranslation('orders');
   const { register, setValue, watch } = useFormContext<ManualOrderFormValues>();
   const [overrideUnlocked, setOverrideUnlocked] = useState(false);
 
@@ -45,24 +46,24 @@ export function OrderShippingSection() {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <FormField name="governorate" label="Governorate" required>
-        <Input placeholder="e.g. Cairo" {...register('governorate')} />
+      <FormField name="governorate" label={t('workspace.fields.governorate')} required>
+        <Input placeholder={t('workspace.governoratePlaceholder')} {...register('governorate')} />
       </FormField>
 
-      <FormField name="city" label="City">
-        <Input placeholder="e.g. Nasr City" {...register('city')} />
+      <FormField name="city" label={t('workspace.fields.city')}>
+        <Input placeholder={t('workspace.cityPlaceholder')} {...register('city')} />
       </FormField>
 
-      <FormField name="area" label="Area">
-        <Input placeholder="e.g. Abbas El Akkad" {...register('area')} />
+      <FormField name="area" label={t('workspace.fields.area')}>
+        <Input placeholder={t('workspace.areaPlaceholder')} {...register('area')} />
       </FormField>
 
-      <FormField name="shipping_address" label="Shipping Address">
-        <Input placeholder="Full street address" {...register('shipping_address')} />
+      <FormField name="shipping_address" label={t('workspace.fields.shippingAddress')}>
+        <Input placeholder={t('workspace.shippingAddressPlaceholder')} {...register('shipping_address')} />
       </FormField>
 
       <div className="sm:col-span-2">
-        <FormField name="shipping_cost" label="Shipping Cost">
+        <FormField name="shipping_cost" label={t('workspace.fields.shippingCost')}>
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Input
@@ -83,18 +84,18 @@ export function OrderShippingSection() {
               variant="outline"
               size="icon"
               onClick={handleOverrideToggle}
-              title={overrideUnlocked ? 'Lock to auto rate' : 'Override shipping cost'}
+              title={overrideUnlocked ? t('workspace.lockToAutoRate') : t('workspace.overrideShippingCost')}
             >
               {overrideUnlocked ? <Lock className="size-4" /> : <Unlock className="size-4" />}
             </Button>
           </div>
           {calc?.found && !overrideUnlocked && (
             <p className="mt-1 text-xs text-muted-foreground">
-              Auto-calculated ({calc.matched_level} rate). Click unlock to override.
+              {t('workspace.autoCalculated', { level: calc.matched_level })}
             </p>
           )}
           {shippingCostSource === 'override' && (
-            <p className="mt-1 text-xs text-amber-600">Manual override active — will be audited.</p>
+            <p className="mt-1 text-xs text-amber-600">{t('workspace.manualOverrideActive')}</p>
           )}
         </FormField>
       </div>

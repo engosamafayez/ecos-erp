@@ -1,4 +1,5 @@
 import { ShoppingCart, CheckCircle, XCircle, TrendingUp, Calendar, ExternalLink, BadgeCheck, RotateCcw, BarChart2, DollarSign } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,8 @@ type Props = {
 };
 
 export function OrderCustomerIntelligencePanel({ stats, customerName, customerId }: Props) {
+  const { t } = useTranslation('orders');
+
   return (
     <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
       <CardContent className="pt-3 pb-3">
@@ -30,7 +33,7 @@ export function OrderCustomerIntelligencePanel({ stats, customerName, customerId
             <span className="truncate text-sm font-semibold">{customerName}</span>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
               <BadgeCheck className="size-2.5" />
-              Existing Customer
+              {t('customerBadge.existingCustomer')}
             </span>
           </div>
           {customerId && (
@@ -44,7 +47,7 @@ export function OrderCustomerIntelligencePanel({ stats, customerName, customerId
               >
                 <a href={`${ROUTES.customers ?? '/app/customers'}/${customerId}`} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="size-2.5 mr-1" />
-                  Open
+                  {t('customerBadge.open')}
                 </a>
               </Button>
             </div>
@@ -55,33 +58,33 @@ export function OrderCustomerIntelligencePanel({ stats, customerName, customerId
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
           <IntelStat
             icon={<ShoppingCart className="size-3.5 text-blue-500" />}
-            label="Total Orders"
+            label={t('customerBadge.totalOrders')}
             value={String(stats.total_orders)}
           />
           <IntelStat
             icon={<CheckCircle className="size-3.5 text-emerald-500" />}
-            label="Delivered"
+            label={t('customerBadge.delivered')}
             value={String(stats.delivered)}
           />
           <IntelStat
             icon={<XCircle className="size-3.5 text-red-500" />}
-            label="Cancelled"
+            label={t('customerBadge.cancelledOrders')}
             value={String(stats.cancelled)}
           />
           <IntelStat
             icon={<RotateCcw className="size-3.5 text-orange-500" />}
-            label="Returned"
+            label={t('customerBadge.returned')}
             value={String(stats.returned ?? 0)}
           />
           <IntelStat
             icon={<BarChart2 className="size-3.5 text-violet-500" />}
-            label="Success Rate"
+            label={t('customerBadge.successRate')}
             value={`${stats.success_rate}%`}
             highlight={stats.success_rate >= 80 ? 'good' : stats.success_rate < 50 ? 'bad' : 'neutral'}
           />
           <IntelStat
             icon={<TrendingUp className="size-3.5 text-amber-500" />}
-            label="Lifetime Value"
+            label={t('customerBadge.lifetimeValue')}
             value={fmt(stats.lifetime_value)}
           />
         </div>
@@ -90,17 +93,17 @@ export function OrderCustomerIntelligencePanel({ stats, customerName, customerId
         <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-3">
           <IntelStat
             icon={<DollarSign className="size-3.5 text-teal-500" />}
-            label="Avg Order"
+            label={t('customerBadge.avgOrder')}
             value={fmt(stats.avg_order_value ?? 0)}
           />
           <IntelStat
             icon={<Calendar className="size-3.5 text-slate-400" />}
-            label="Customer Since"
+            label={t('customerBadge.customerSince')}
             value={fmtDate(stats.first_order_date)}
           />
           <IntelStat
             icon={<Calendar className="size-3.5 text-slate-500" />}
-            label="Last Order"
+            label={t('customerBadge.lastOrder')}
             value={fmtDate(stats.last_order_date)}
           />
         </div>

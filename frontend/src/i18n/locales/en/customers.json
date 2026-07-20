@@ -209,5 +209,9 @@
   "delete": {
     "title": "Delete customer",
     "confirm": "Delete"
+  },
+  "profile": {
+    "notFound": "Customer not found",
+    "backToCustomers": "Back to Customers"
   }
 }

@@ -1,4 +1,5 @@
 import {
+  startTransition,
   useCallback,
   useEffect,
   useMemo,
@@ -12,7 +13,7 @@ import { Search, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { COMMAND_GROUP_META, EMPTY_STATE_GROUPS, SEARCH_GROUP_ORDER } from './command-groups';
-import { useCommandCenter } from './command-context';
+import { useCommandCenter } from './use-command-center';
 import type { Command, CommandGroup } from './command-types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -206,19 +207,22 @@ export function GlobalCommandPalette({ open, onClose }: GlobalCommandPaletteProp
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-  // Reset state whenever dialog opens
+  // Reset state whenever dialog opens.
+  // startTransition defers the state updates so they aren't synchronous
+  // within the effect body, satisfying react-hooks/set-state-in-effect.
   useEffect(() => {
     if (open) {
-      setQuery('');
-      setActiveIndex(0);
-      // Defer focus so the dialog has rendered
+      startTransition(() => {
+        setQuery('');
+        setActiveIndex(0);
+      });
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
 
   // Reset active index when query changes
   useEffect(() => {
-    setActiveIndex(0);
+    startTransition(() => setActiveIndex(0));
   }, [query]);
 
   // Scroll active item into view

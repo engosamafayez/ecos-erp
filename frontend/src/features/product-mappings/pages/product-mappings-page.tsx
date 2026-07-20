@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   ActionMenu,
@@ -28,6 +29,9 @@ import { ROUTES } from '@/router/routes';
 const PER_PAGE = 10;
 
 export function ProductMappingsPage() {
+  const { t } = useTranslation('product-mappings');
+  const { t: tCommon } = useTranslation('common');
+
   const [search, setSearch] = useState('');
   const [syncStatusFilter, setSyncStatusFilter] = useState<SyncStatus | ''>('');
   const [page, setPage] = useState(1);
@@ -82,7 +86,7 @@ export function ProductMappingsPage() {
   const columns: ColumnDef<ProductMapping>[] = [
     {
       key: 'product',
-      header: 'Product',
+      header: t('columns.product'),
       cell: (m) => (
         <div className="flex flex-col">
           <span className="font-medium">{m.product?.name ?? '—'}</span>
@@ -92,7 +96,7 @@ export function ProductMappingsPage() {
     },
     {
       key: 'channel',
-      header: 'Channel',
+      header: t('columns.channel'),
       cell: (m) => (
         <div className="flex flex-col">
           <span>{m.channel?.name ?? '—'}</span>
@@ -102,13 +106,13 @@ export function ProductMappingsPage() {
     },
     {
       key: 'external_product_id',
-      header: 'External Product ID',
+      header: t('columns.externalId'),
       sortable: true,
       cell: (m) => <span className="font-mono text-sm">{m.external_product_id}</span>,
     },
     {
       key: 'external_sku',
-      header: 'External SKU',
+      header: t('columns.externalSku'),
       sortable: true,
       cell: (m) => (
         <span className="text-muted-foreground font-mono text-sm">{m.external_sku ?? '—'}</span>
@@ -116,13 +120,13 @@ export function ProductMappingsPage() {
     },
     {
       key: 'sync_status',
-      header: 'Sync Status',
+      header: t('columns.syncStatus'),
       sortable: true,
       cell: (m) => <SyncStatusBadge status={m.sync_status} />,
     },
     {
       key: 'last_sync_at',
-      header: 'Last Sync',
+      header: t('columns.lastSyncedAt'),
       sortable: true,
       cell: (m) => (
         <span className="text-muted-foreground">
@@ -135,13 +139,16 @@ export function ProductMappingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Product Mapping"
-        subtitle="Map ECOS products to external channel products."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Product Mapping' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: t('title') },
+        ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Mapping
+            {t('actions.new')}
           </Button>
         }
       />
@@ -149,7 +156,7 @@ export function ProductMappingsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search by external ID or SKU…"
+            searchPlaceholder={t('search')}
             onSearchChange={(v) => {
               setSearch(v);
               setPage(1);
@@ -163,7 +170,7 @@ export function ProductMappingsPage() {
             }}
             filterPanel={
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">Sync Status</span>
+                <span className="text-sm font-medium">{t('filters.syncStatus')}</span>
                 <select
                   value={syncStatusFilter}
                   onChange={(e) => {
@@ -172,10 +179,10 @@ export function ProductMappingsPage() {
                   }}
                   className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                 >
-                  <option value="">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="synced">Synced</option>
-                  <option value="error">Error</option>
+                  <option value="">{t('filters.allStatuses')}</option>
+                  <option value="pending">{t('syncStatus.pending')}</option>
+                  <option value="synced">{t('syncStatus.synced')}</option>
+                  <option value="failed">{t('syncStatus.failed')}</option>
                 </select>
               </div>
             }
@@ -193,10 +200,15 @@ export function ProductMappingsPage() {
               <ActionMenu
                 label={`Actions for ${mapping.product?.name ?? mapping.external_product_id}`}
                 items={[
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(mapping) },
+                  {
+                    key: 'edit',
+                    label: tCommon('common.edit'),
+                    icon: Pencil,
+                    onSelect: () => openEdit(mapping),
+                  },
                   {
                     key: 'delete',
-                    label: 'Delete',
+                    label: tCommon('common.delete'),
                     icon: Trash2,
                     variant: 'destructive' as const,
                     onSelect: () => setDeleting(mapping),
@@ -234,17 +246,11 @@ export function ProductMappingsPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title="Delete product mapping"
-        description={
-          <>
-            This will remove the mapping for{' '}
-            <span className="text-foreground font-medium">
-              {deleting?.product?.name ?? deleting?.external_product_id}
-            </span>
-            . It can be restored later.
-          </>
-        }
-        confirmLabel="Delete"
+        title={t('delete.title')}
+        description={t('delete.description', {
+          name: deleting?.product?.name ?? deleting?.external_product_id ?? '',
+        })}
+        confirmLabel={t('delete.confirm')}
         variant="destructive"
         loading={deleteMapping.isPending}
         onConfirm={() => {

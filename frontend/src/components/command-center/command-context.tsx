@@ -1,49 +1,14 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-} from 'react';
+import { useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useHeaderContext } from '@/components/layout/header/header-context';
 
+import { CommandCenterContext } from './command-center-context';
+import type { CommandCenterCtx } from './command-center-context';
 import { createDefaultCommands } from './command-groups';
 import { commandRegistry, useRegisteredCommands } from './command-registry';
 import type { Command } from './command-types';
-
-// ── Context type ──────────────────────────────────────────────────────────────
-
-type CommandCenterCtx = {
-  /** Whether the command palette dialog is open. */
-  isOpen: boolean;
-  open: () => void;
-  close: () => void;
-  toggle: () => void;
-
-  /**
-   * All commands currently available in the palette.
-   * Includes default (navigation + actions + recent + favorites + AI)
-   * and any module-registered commands.
-   */
-  commands: Command[];
-
-  /**
-   * Register a set of commands under a namespace.
-   * Returns an unregister function — call it in useEffect cleanup.
-   *
-   * Example — wire module commands at layout mount:
-   *   const { registerCommands } = useCommandCenter();
-   *   useEffect(() => registerCommands('orders', myCommands), []);
-   *
-   * Prefer the `useRegisterCommands` hook for a one-liner alternative.
-   */
-  registerCommands: (namespace: string, commands: Command[]) => () => void;
-};
-
-const CommandCenterContext = createContext<CommandCenterCtx | null>(null);
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
@@ -70,15 +35,11 @@ export function CommandProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { searchOpen, openSearch, closeSearch } = useHeaderContext();
 
-  // Stable reference to close so navigation commands don't capture stale values
-  const closeRef = useRef(closeSearch);
-  closeRef.current = closeSearch;
-  const stableClose = useCallback(() => closeRef.current(), []);
-
-  // Default command set — regenerated only when navigate or stableClose changes
+  // Default command set — regenerated when navigate or closeSearch change.
+  // closeSearch is a stable useCallback from HeaderContext, so this is infrequent.
   const defaultCommands = useMemo(
-    () => createDefaultCommands(navigate, stableClose),
-    [navigate, stableClose],
+    () => createDefaultCommands(navigate, closeSearch),
+    [navigate, closeSearch],
   );
 
   // Module-registered commands — re-rendered on registry mutations
@@ -119,14 +80,3 @@ export function CommandProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// ── Hooks ─────────────────────────────────────────────────────────────────────
-
-/**
- * Access the Command Center context.
- * Must be used inside <CommandProvider>.
- */
-export function useCommandCenter(): CommandCenterCtx {
-  const ctx = useContext(CommandCenterContext);
-  if (!ctx) throw new Error('useCommandCenter must be used inside CommandProvider');
-  return ctx;
-}

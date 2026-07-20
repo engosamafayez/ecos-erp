@@ -67,6 +67,8 @@
     "subtitle": "إنشاء عملية تنفيذ لشحن عناصر الطلب من مستودع.",
     "fulfillmentDetails": "تفاصيل التنفيذ",
     "lineItems": "بنود الطلب",
+    "addLine": "إضافة بند",
+    "selectProduct": "اختر منتجاً…",
     "submitCreate": "إنشاء التنفيذ",
     "creating": "جارٍ الإنشاء…",
     "errorTitle": "تعذر الإنشاء"

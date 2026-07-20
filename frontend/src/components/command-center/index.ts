@@ -15,7 +15,8 @@
 export { GlobalCommandPalette } from './command-palette';
 export type { GlobalCommandPaletteProps } from './command-palette';
 
-export { CommandProvider, useCommandCenter } from './command-context';
+export { CommandProvider } from './command-context';
+export { useCommandCenter } from './use-command-center';
 
 export { useRegisterCommands } from './hooks/use-register-commands';
 export { commandRegistry, useRegisteredCommands } from './command-registry';

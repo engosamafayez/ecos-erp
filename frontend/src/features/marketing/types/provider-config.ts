@@ -19,6 +19,7 @@ export type ProviderConfig = {
   default_redirect_uri: string;
   status: ProviderStatus;
   validated_at: string | null;
+  last_updated_at: string | null;
 };
 
 export type ValidateConfigPayload = {
@@ -27,7 +28,11 @@ export type ValidateConfigPayload = {
   redirect_uri?: string;
 };
 
-export type SaveConfigPayload = ValidateConfigPayload;
+export type SaveConfigPayload = {
+  app_id: string;
+  app_secret?: string;
+  redirect_uri?: string;
+};
 
 export type RotateSecretPayload = {
   app_id: string;

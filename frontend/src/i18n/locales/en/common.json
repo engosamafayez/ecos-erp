@@ -11,6 +11,13 @@
     "search": "Search…"
   },
   "nav": {
+    "items": {
+      "orders": "Orders",
+      "fulfillments": "Fulfillments",
+      "customers": "Customers",
+      "product-mappings": "Product Mapping",
+      "sync-logs": "Sync Logs"
+    },
     "groups": {
       "overview": "Overview",
       "organization": "Organization",
@@ -71,8 +78,20 @@
     "unableToSave": "Unable to save",
     "generic": "Something went wrong. Please try again."
   },
+  "toolbar": {
+    "filters": "Filters",
+    "refresh": "Refresh",
+    "export": "Export"
+  },
   "table": {
-    "empty": "—"
+    "empty": "—",
+    "actions": "Actions",
+    "noRecords": "No records found"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "description": "We could not load the data. Please try again.",
+    "retry": "Try again"
   },
   "home": "Home",
   "loading": "Loading…",

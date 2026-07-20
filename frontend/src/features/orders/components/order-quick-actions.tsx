@@ -120,32 +120,32 @@ export function OrderQuickActions({
         ) : null}
 
         {onTimeline ? (
-          <IconBtn icon={History} label="Timeline" onClick={() => onTimeline(order)} />
+          <IconBtn icon={History} label={t('drawer.tabs.timeline')} onClick={() => onTimeline(order)} />
         ) : null}
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-6" onClick={copyLink} aria-label="Copy order link">
+            <Button variant="ghost" size="icon" className="size-6" onClick={copyLink} aria-label={t('actions.copyLink')}>
               {copied ? <Check className="size-3 text-emerald-500" /> : <ClipboardCopy className="size-3" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">{copied ? 'Copied!' : 'Copy order link'}</TooltipContent>
+          <TooltipContent side="top" className="text-xs">{copied ? t('actions.linkCopied') : t('actions.copyLink')}</TooltipContent>
         </Tooltip>
 
         {needsPaymentVerify && onVerifyPayment ? (
-          <IconBtn icon={Phone} label="Verify Payment" onClick={() => onVerifyPayment(order)} />
+          <IconBtn icon={Phone} label={t('quickActions.verifyPayment')} onClick={() => onVerifyPayment(order)} />
         ) : null}
 
         {onConfirmCustomer && !order.confirmation_result ? (
           <IconBtn
             icon={Pencil}
-            label="Confirm Customer"
+            label={t('quickActions.confirmCustomer')}
             onClick={() => onConfirmCustomer(order)}
           />
         ) : null}
 
         {onPrint ? (
-          <IconBtn icon={Printer} label="Print Invoice" onClick={() => onPrint(order)} />
+          <IconBtn icon={Printer} label={t('quickActions.printInvoice')} onClick={() => onPrint(order)} />
         ) : null}
       </div>
     </TooltipProvider>

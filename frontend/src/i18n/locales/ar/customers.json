@@ -209,5 +209,9 @@
   "delete": {
     "title": "حذف العميل",
     "confirm": "حذف"
+  },
+  "profile": {
+    "notFound": "العميل غير موجود",
+    "backToCustomers": "العودة إلى العملاء"
   }
 }
