@@ -45,6 +45,9 @@ type OpKey =
   | 'callCustomer'
   | 'codOrders';
 
+type GroupLabelKey = 'groupCustomer' | 'groupShipping' | 'groupProduct';
+type MoreLabelKey  = 'vipCustomers' | 'repeatedSameProduct' | 'repeatedSameShippingCo';
+
 // ── Live count computation — zero extra network requests ──────────────────────
 
 type OpCounts = Partial<Record<OpKey, number>>;
@@ -94,7 +97,7 @@ const CONTEXT_OPS: Record<string, OpKey[]> = {
 
 // ── Default grouped view (All tab + unconfigured status tabs) ─────────────────
 
-type OpGroup = { labelKey: string; ops: OpKey[] };
+type OpGroup = { labelKey: GroupLabelKey; ops: OpKey[] };
 
 const DEFAULT_GROUPS: OpGroup[] = [
   { labelKey: 'groupCustomer', ops: ['repeatedCustomers', 'repeatedSameStatus'] },
@@ -207,11 +210,13 @@ function OpChip({
 
 // ── More menu ─────────────────────────────────────────────────────────────────
 
-type MoreItem = { labelKey: string; separator?: boolean; action: (ctx: ToolbarCtx) => void };
+type MoreItem =
+  | { separator: true;   labelKey?: never;      action: (ctx: ToolbarCtx) => void }
+  | { separator?: false; labelKey: MoreLabelKey; action: (ctx: ToolbarCtx) => void };
 
 const MORE_ITEMS: MoreItem[] = [
   { labelKey: 'vipCustomers',           action: (ctx) => applyCustomer(ctx, 'more_than_10') },
-  { separator: true, labelKey: '',      action: () => {} },
+  { separator: true,                     action: () => {} },
   { labelKey: 'repeatedSameProduct',    action: (ctx) => { applyCustomer(ctx, 'repeated'); const pid = primaryProduct(ctx); if (pid) applyFilter(ctx, { productId: pid }); } },
   { labelKey: 'repeatedSameShippingCo', action: (ctx) => { applyCustomer(ctx, 'repeated'); const co = primaryShippingCompany(ctx); if (co) applyFilter(ctx, { shippingCompany: co }); } },
 ];
@@ -227,6 +232,30 @@ type Props = Omit<ToolbarCtx, never>;
  */
 export function OrderSmartToolbar(ctx: Props) {
   const { t } = useTranslation('orders');
+
+  const opLabel: Record<OpKey, string> = {
+    repeatedCustomers:     t('smartToolbar.repeatedCustomers'),
+    repeatedSameStatus:    t('smartToolbar.repeatedSameStatus'),
+    sameProduct:           t('smartToolbar.sameProduct'),
+    sameShippingCompany:   t('smartToolbar.sameShippingCompany'),
+    ordersWithoutLocation: t('smartToolbar.ordersWithoutLocation'),
+    multipleAttempts:      t('smartToolbar.multipleAttempts'),
+    printOrders:           t('smartToolbar.printOrders'),
+    callCustomer:          t('smartToolbar.callCustomer'),
+    codOrders:             t('smartToolbar.codOrders'),
+  };
+
+  const groupLabel: Record<GroupLabelKey, string> = {
+    groupCustomer: t('smartToolbar.groupCustomer'),
+    groupShipping: t('smartToolbar.groupShipping'),
+    groupProduct:  t('smartToolbar.groupProduct'),
+  };
+
+  const moreLabel: Record<MoreLabelKey, string> = {
+    vipCustomers:           t('smartToolbar.vipCustomers'),
+    repeatedSameProduct:    t('smartToolbar.repeatedSameProduct'),
+    repeatedSameShippingCo: t('smartToolbar.repeatedSameShippingCo'),
+  };
 
   const counts = useMemo(() => computeCounts(ctx.orders), [ctx.orders]);
 
@@ -248,7 +277,7 @@ export function OrderSmartToolbar(ctx: Props) {
             {contextOps.filter(shouldShow).map((op) => (
               <OpChip
                 key={op}
-                label={t(`smartToolbar.${op}`)}
+                label={opLabel[op]}
                 count={ALWAYS_SHOW.has(op) ? undefined : counts[op]}
                 onClick={() => executeOp(op, ctx)}
               />
@@ -262,12 +291,12 @@ export function OrderSmartToolbar(ctx: Props) {
             return (
               <div key={group.labelKey} className="flex items-center gap-1.5">
                 <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {t(`smartToolbar.${group.labelKey}`)}
+                  {groupLabel[group.labelKey]}
                 </span>
                 {visible.map((op) => (
                   <OpChip
                     key={op}
-                    label={t(`smartToolbar.${op}`)}
+                    label={opLabel[op]}
                     count={counts[op]}
                     onClick={() => executeOp(op, ctx)}
                   />
@@ -294,7 +323,7 @@ export function OrderSmartToolbar(ctx: Props) {
                 <DropdownMenuSeparator key={i} />
               ) : (
                 <DropdownMenuItem key={item.labelKey} onClick={() => item.action(ctx)}>
-                  {t(`smartToolbar.${item.labelKey}`)}
+                  {moreLabel[item.labelKey]}
                 </DropdownMenuItem>
               ),
             )}
