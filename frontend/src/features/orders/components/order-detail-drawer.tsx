@@ -83,6 +83,11 @@ import {
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 
+// Typed translator — extracted from the hook so sub-components share the exact
+// same type as the t returned by useTranslation('orders').  Assigning a looser
+// (k: string) => string to this type previously violated strictFunctionTypes.
+type OrdersT = ReturnType<typeof useTranslation<'orders'>>['t'];
+
 // ── Helper primitives ─────────────────────────────────────────────────────────
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -231,7 +236,7 @@ function KpiCard({ label, value, variant }: { label: string; value: string; vari
 
 // ── Tab panels ────────────────────────────────────────────────────────────────
 
-function SummaryTab({ order, t }: { order: Order; t: (k: string) => string }) {
+function SummaryTab({ order, t }: { order: Order; t: OrdersT }) {
   const paymentLabel = resolvePaymentLabel(order);
   const hasDiscount = order.discount_amount > 0.005;
   const hasDeposit  = order.deposit_paid > 0.005;
@@ -359,7 +364,7 @@ function NoteCard({
 
 // ── Customer Tab ──────────────────────────────────────────────────────────────
 
-function CustomerTab({ order, t }: { order: Order; t: (k: string) => string }) {
+function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
   const cust = order.customer;
   const primaryPhone   = order.billing_phone ?? cust?.phone;
   const secondaryPhone = cust?.mobile;
@@ -736,7 +741,7 @@ function CustomerTab({ order, t }: { order: Order; t: (k: string) => string }) {
   );
 }
 
-function ProductsTab({ order, t }: { order: Order; t: (k: string) => string }) {
+function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
   return (
     <div className="flex flex-col gap-0 p-4">
       {/* Price protection banner — prices are frozen at order creation */}
@@ -812,7 +817,7 @@ function ProductsTab({ order, t }: { order: Order; t: (k: string) => string }) {
   );
 }
 
-function PaymentTab({ order, t: _t }: { order: Order; t: (k: string) => string }) {
+function PaymentTab({ order, t: _t }: { order: Order; t: OrdersT }) {
   const paymentLabel = resolvePaymentLabel(order);
 
   // Derive payment status
@@ -1029,7 +1034,7 @@ function VerificationBadge({
   );
 }
 
-function ShippingTab({ order }: { order: Order; t: (k: string) => string }) {
+function ShippingTab({ order }: { order: Order; t: OrdersT }) {
   const fullAddress  = buildFullAddress(order);
   const loc          = order.location;
   const hasMapsData  = !!(loc || order.google_maps_url);
@@ -1298,7 +1303,7 @@ function ShippingTab({ order }: { order: Order; t: (k: string) => string }) {
 /**
  * DD-016 — Single location tab. Shows an interactive map frame when coordinates exist.
  */
-function LocationTab({ order, t }: { order: Order; t: (k: string, opts?: Record<string, unknown>) => string }) {
+function LocationTab({ order, t }: { order: Order; t: OrdersT }) {
   const loc = order.location;
 
   return (
