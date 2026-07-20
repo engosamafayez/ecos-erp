@@ -353,6 +353,8 @@ CMD ["supervisord", "-c", "/etc/supervisor/conf.d/ecos.conf", "-n"]
 # -----------------------------------------------------------------------------
 FROM nginx:1.27-alpine AS nginx
 
+COPY --from=app /var/www/html/public/ /var/www/html/public/
+
 # SPA — Vite content-hashed assets, safe to cache forever
 COPY --from=frontend /backend/public/app      /var/www/html/public/app
 
