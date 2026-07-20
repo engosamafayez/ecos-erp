@@ -101,11 +101,11 @@ export function OrderQuickActions({
     <TooltipProvider delayDuration={300}>
       <div className="flex items-center gap-0.5">
         {onView ? (
-          <IconBtn icon={Eye} label={t('quickActions.open')} onClick={() => onView(order)} />
+          <IconBtn icon={Eye} label={t('actions.view')} onClick={() => onView(order)} />
         ) : null}
 
         {onEdit ? (
-          <IconBtn icon={Pencil} label={t('quickActions.edit')} onClick={() => onEdit(order)} />
+          <IconBtn icon={Pencil} label={t('actions.edit')} onClick={() => onEdit(order)} />
         ) : null}
 
         {phone ? (
