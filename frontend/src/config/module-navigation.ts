@@ -43,6 +43,9 @@ import {
   GitBranch,
   Wifi,
   Zap,
+  ShieldCheck,
+  ListChecks,
+  BarChart2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -64,7 +67,8 @@ export type ModuleId =
   | 'core'
   | 'logistics'
   | 'reports'
-  | 'administration';
+  | 'administration'
+  | 'engineering';
 
 /** A regular navigation link inside a module sidebar. */
 export type ModuleNavLink = {
@@ -305,6 +309,19 @@ export const APP_MODULES: AppModule[] = [
       { key: 'settings', label: 'Settings', path: ROUTES.settings, icon: Settings },
       { key: 'config-section', label: 'Configuration',   isSection: true },
       { key: 'configuration-os', label: 'Configuration OS', path: ROUTES.configurationOs, icon: Cpu },
+    ],
+  },
+  {
+    id: 'engineering',
+    label: 'Engineering OS',
+    railLabel: 'Eng OS',
+    icon: ShieldCheck,
+    defaultPath: ROUTES.engineeringDashboard,
+    items: [
+      { key: 'eng-section',   label: 'Certification',        isSection: true },
+      { key: 'eng-dashboard', label: 'Dashboard',            path: ROUTES.engineeringDashboard, icon: BarChart2 },
+      { key: 'eng-runs',      label: 'Certification Runs',   path: ROUTES.engineeringRuns,      icon: ListChecks },
+      { key: 'eng-findings',  label: 'Findings',             path: ROUTES.engineeringFindings,  icon: AlertTriangle },
     ],
   },
 ];

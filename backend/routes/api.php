@@ -3,119 +3,119 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AdminDashboardController;
-use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\CompanyContextController;
+use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\Infrastructure\HealthController;
 use App\Http\Controllers\MediaController;
 use Illuminate\Support\Facades\Route;
-use Modules\IAM\Presentation\Http\Controllers\AuthController;
-use Modules\Inventory\Products\Presentation\Http\Controllers\ProductController;
-use Modules\Inventory\StockLedger\Presentation\Http\Controllers\StockMovementController;
+use Modules\Admin\Configuration\Presentation\Http\Controllers\BrandConfigurationController;
+use Modules\Admin\Configuration\Presentation\Http\Controllers\CompanyConfigurationController;
+use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterGeographyController;
+use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterZoneController;
+use Modules\Admin\Configuration\Presentation\Http\Controllers\PreparationPolicyController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
+use Modules\System\Engineering\Presentation\Http\Controllers\EngineeringDashboardController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerApiController as CbWorkerApiController;
+use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerController as CbWorkerController;
+use Modules\ClaudeBridge\Presentation\Http\Middleware\VerifyWorkerToken;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
+use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
+use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
 use Modules\Commerce\OrderImport\Presentation\Http\Controllers\OrderImportController;
 use Modules\Commerce\Orders\Presentation\Http\Controllers\OrderController;
-use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
 use Modules\Commerce\ProductImport\Presentation\Http\Controllers\ProductImportController;
 use Modules\Commerce\ProductMappings\Presentation\Http\Controllers\ProductMappingController;
-use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerController;
-use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerAddressController;
-use Modules\MasterData\Categories\Presentation\Http\Controllers\CategoryController;
-use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
-use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
-use Modules\Organization\Brands\Presentation\Http\Controllers\BrandController;
-use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryController;
-use Modules\Organization\Branches\Presentation\Http\Controllers\BranchController;
-use Modules\Organization\BusinessAccounts\Presentation\Http\Controllers\BusinessAccountController;
-use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
-use Modules\Organization\Teams\Presentation\Http\Controllers\TeamController;
-use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
+use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
 use Modules\Commerce\StockSync\Presentation\Http\Controllers\StockSyncController;
-use Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers\GoodsReceiptController;
-use Modules\Purchasing\PurchaseMaterials\Presentation\Http\Controllers\PurchaseMaterialController;
-use Modules\Purchasing\PurchaseOrders\Presentation\Http\Controllers\PurchaseOrderController;
-use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
-use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierAnalyticsController;
-use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierDocumentController;
-use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Controllers\BomController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\WooCommerceWebhookController;
-use Modules\Inventory\ReceiptLayers\Presentation\Http\Controllers\InventoryLayerController;
-use Modules\Inventory\CountSessions\Presentation\Http\Controllers\InventoryCountController;
-use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\InventoryDashboardController;
-use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\AbcClassificationController;
-use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\VarianceAnalyticsController;
-use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\WarehousePerformanceController;
-use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\CycleCountPlanController;
-use Modules\Inventory\WasteInvestigations\Presentation\Http\Controllers\WasteInvestigationController;
-use Modules\Inventory\WarehouseLiabilities\Presentation\Http\Controllers\WarehouseLiabilityController;
-use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
-use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController;
-use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\WaveDemandController;
 use Modules\Core\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController as ProductDemandAnalysisController;
-use Modules\POS\Presentation\Http\Controllers\SessionController as PosSessionController;
-use Modules\POS\Presentation\Http\Controllers\ShiftController as PosShiftController;
-use Modules\POS\Presentation\Http\Controllers\CartController as PosCartController;
-use Modules\POS\Presentation\Http\Controllers\CartLineController as PosCartLineController;
-use Modules\POS\Presentation\Http\Controllers\SaleController as PosSaleController;
-use Modules\POS\Presentation\Http\Controllers\ReturnController as PosReturnController;
-use Modules\POS\Presentation\Http\Controllers\ExchangeController as PosExchangeController;
-use Modules\POS\Presentation\Http\Controllers\ReceiptController as PosReceiptController;
-use Modules\POS\Presentation\Http\Controllers\TerminalController as PosTerminalController;
+use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
 use Modules\CostManagement\Presentation\Http\Controllers\CostManagementDashboardController;
 use Modules\CostManagement\Presentation\Http\Controllers\MaterialCostController;
 use Modules\CostManagement\Presentation\Http\Controllers\PricingReviewController;
-use Modules\Purchasing\SupplierReturns\Presentation\Http\Controllers\SupplierReturnController;
-use Modules\Purchasing\SupplierInvoices\Presentation\Http\Controllers\SupplierInvoiceController;
-use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationWaveController;
-use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationSessionController;
-use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationDashboardController;
-use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparedPoolController;
-use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationStationController;
-use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationWorkerController;
-use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationAnalyticsController;
-use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationEnterpriseController;
-use Modules\Operations\Preparation\Presentation\Http\Controllers\WarehouseAssignmentController;
-use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingDashboardController;
-use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingSessionController;
-use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleAssignmentController;
-use Modules\Operations\Loading\Presentation\Http\Controllers\DriverAssignmentController;
-use Modules\Operations\Loading\Presentation\Http\Controllers\AllocationController;
-use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingExceptionController;
-use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleInventoryController;
-use Modules\Operations\Fulfillment\Presentation\Http\Controllers\FulfillmentController as OrderFulfillmentController;
-use Modules\Operations\Fulfillment\Presentation\Http\Controllers\BulkFulfillmentController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\BrandConfigurationController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\CompanyConfigurationController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\DeliveryWindowController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\PreparationPolicyController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterGeographyController;
-use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterZoneController;
-use Modules\Logistics\Geography\Presentation\Http\Controllers\GovernorateController;
-use Modules\Logistics\Geography\Presentation\Http\Controllers\CityController;
-use Modules\Logistics\Geography\Presentation\Http\Controllers\CityAliasController;
-use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionZoneController;
+use Modules\IAM\Presentation\Http\Controllers\AuthController;
+use Modules\Inventory\CountSessions\Presentation\Http\Controllers\InventoryCountController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\AbcClassificationController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\CycleCountPlanController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\InventoryDashboardController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\VarianceAnalyticsController;
+use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\WarehousePerformanceController;
+use Modules\Inventory\Products\Presentation\Http\Controllers\ProductController;
+use Modules\Inventory\ReceiptLayers\Presentation\Http\Controllers\InventoryLayerController;
+use Modules\Inventory\StockLedger\Presentation\Http\Controllers\StockMovementController;
+use Modules\Inventory\WarehouseLiabilities\Presentation\Http\Controllers\WarehouseLiabilityController;
+use Modules\Inventory\WasteInvestigations\Presentation\Http\Controllers\WasteInvestigationController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionPlanningController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionZoneController;
+use Modules\Logistics\Geography\Presentation\Http\Controllers\CityAliasController;
+use Modules\Logistics\Geography\Presentation\Http\Controllers\CityController;
+use Modules\Logistics\Geography\Presentation\Http\Controllers\GovernorateController;
+use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Controllers\BomController;
+use Modules\MasterData\Categories\Presentation\Http\Controllers\CategoryController;
+use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
+use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
+use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController;
+use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\WaveDemandController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DispatchGateController;
 use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionBoardController;
 use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionLoadingDashboardController;
 use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionTripController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DispatchGateController;
 use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverHandoverController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\OrderDistributionSyncController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverMobileController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverPaymentController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverStopController;
 use Modules\Operations\Distribution\Presentation\Http\Controllers\FleetResourceController;
 use Modules\Operations\Distribution\Presentation\Http\Controllers\LoadingManifestController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverMobileController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverStopController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverPaymentController;
+use Modules\Operations\Distribution\Presentation\Http\Controllers\OrderDistributionSyncController;
 use Modules\Operations\Distribution\Presentation\Http\Controllers\TripSettlementController;
-use Modules\Organization\Brands\Presentation\Http\Controllers\BrandShippingController;
+use Modules\Operations\Fulfillment\Presentation\Http\Controllers\BulkFulfillmentController;
+use Modules\Operations\Fulfillment\Presentation\Http\Controllers\FulfillmentController as OrderFulfillmentController;
+use Modules\Operations\Loading\Presentation\Http\Controllers\AllocationController;
+use Modules\Operations\Loading\Presentation\Http\Controllers\DriverAssignmentController;
+use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingDashboardController;
+use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingExceptionController;
+use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingSessionController;
+use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleAssignmentController;
+use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleInventoryController;
+use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationAnalyticsController;
+use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationDashboardController;
+use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationEnterpriseController;
+use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationSessionController;
+use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationStationController;
+use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationWaveController;
+use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationWorkerController;
+use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparedPoolController;
+use Modules\Operations\Preparation\Presentation\Http\Controllers\WarehouseAssignmentController;
+use Modules\Organization\Branches\Presentation\Http\Controllers\BranchController;
+use Modules\Organization\Brands\Presentation\Http\Controllers\BrandController;
+use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryTimeSlotController;
-use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
-use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
-use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerController as CbWorkerController;
-use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
-use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
-use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerApiController as CbWorkerApiController;
-use Modules\ClaudeBridge\Presentation\Http\Middleware\VerifyWorkerToken;
+use Modules\Organization\Brands\Presentation\Http\Controllers\BrandShippingController;
+use Modules\Organization\BusinessAccounts\Presentation\Http\Controllers\BusinessAccountController;
+use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
+use Modules\Organization\Teams\Presentation\Http\Controllers\TeamController;
+use Modules\POS\Presentation\Http\Controllers\CartController as PosCartController;
+use Modules\POS\Presentation\Http\Controllers\CartLineController as PosCartLineController;
+use Modules\POS\Presentation\Http\Controllers\ExchangeController as PosExchangeController;
+use Modules\POS\Presentation\Http\Controllers\ReceiptController as PosReceiptController;
+use Modules\POS\Presentation\Http\Controllers\ReturnController as PosReturnController;
+use Modules\POS\Presentation\Http\Controllers\SaleController as PosSaleController;
+use Modules\POS\Presentation\Http\Controllers\SessionController as PosSessionController;
+use Modules\POS\Presentation\Http\Controllers\ShiftController as PosShiftController;
+use Modules\POS\Presentation\Http\Controllers\TerminalController as PosTerminalController;
+use Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers\GoodsReceiptController;
+use Modules\Purchasing\PurchaseMaterials\Presentation\Http\Controllers\PurchaseMaterialController;
+use Modules\Purchasing\PurchaseOrders\Presentation\Http\Controllers\PurchaseOrderController;
+use Modules\Purchasing\SupplierInvoices\Presentation\Http\Controllers\SupplierInvoiceController;
+use Modules\Purchasing\SupplierReturns\Presentation\Http\Controllers\SupplierReturnController;
+use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierAnalyticsController;
+use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
+use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierDocumentController;
+use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerAddressController;
+use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -156,28 +156,28 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::apiResource('branches', BranchController::class);
     Route::apiResource('brands', BrandController::class);
     Route::prefix('brands/{brand}')->group(function (): void {
-        Route::get('delivery-geography',   [BrandDeliveryController::class, 'geography']);
-        Route::get('delivery-windows',     [BrandDeliveryController::class, 'windows']);
+        Route::get('delivery-geography', [BrandDeliveryController::class, 'geography']);
+        Route::get('delivery-windows', [BrandDeliveryController::class, 'windows']);
         Route::get('configuration-health', [BrandDeliveryController::class, 'health']);
-        Route::post('transfer/analyze',    [BrandController::class, 'analyze']);
-        Route::post('transfer',            [BrandController::class, 'transfer']);
+        Route::post('transfer/analyze', [BrandController::class, 'analyze']);
+        Route::post('transfer', [BrandController::class, 'transfer']);
 
         // Brand Delivery Time Slots (customer checkout time windows)
         Route::post('delivery-time-slots/seed-defaults', [BrandDeliveryTimeSlotController::class, 'seedDefaults']);
-        Route::patch('delivery-time-slots/reorder',      [BrandDeliveryTimeSlotController::class, 'reorder']);
-        Route::get('delivery-time-slots',                [BrandDeliveryTimeSlotController::class, 'index']);
-        Route::post('delivery-time-slots',               [BrandDeliveryTimeSlotController::class, 'store']);
-        Route::put('delivery-time-slots/{slot}',         [BrandDeliveryTimeSlotController::class, 'update']);
-        Route::delete('delivery-time-slots/{slot}',      [BrandDeliveryTimeSlotController::class, 'destroy']);
+        Route::patch('delivery-time-slots/reorder', [BrandDeliveryTimeSlotController::class, 'reorder']);
+        Route::get('delivery-time-slots', [BrandDeliveryTimeSlotController::class, 'index']);
+        Route::post('delivery-time-slots', [BrandDeliveryTimeSlotController::class, 'store']);
+        Route::put('delivery-time-slots/{slot}', [BrandDeliveryTimeSlotController::class, 'update']);
+        Route::delete('delivery-time-slots/{slot}', [BrandDeliveryTimeSlotController::class, 'destroy']);
 
         // Brand Shipping Configuration (Geography-aware, policy-driven)
-        Route::get('shipping-settings',           [BrandShippingController::class, 'getSettings']);
-        Route::put('shipping-settings',           [BrandShippingController::class, 'updateSettings']);
-        Route::get('shipping/governorates',       [BrandShippingController::class, 'listGovernorates']);
+        Route::get('shipping-settings', [BrandShippingController::class, 'getSettings']);
+        Route::put('shipping-settings', [BrandShippingController::class, 'updateSettings']);
+        Route::get('shipping/governorates', [BrandShippingController::class, 'listGovernorates']);
         Route::put('shipping/governorates/{governorate}', [BrandShippingController::class, 'updateGovernorate']);
-        Route::get('shipping/cities',             [BrandShippingController::class, 'listCities']);
-        Route::put('shipping/cities/{city}',      [BrandShippingController::class, 'updateCity']);
-        Route::get('shipping/calculate',          [BrandShippingController::class, 'calculatePrice']);
+        Route::get('shipping/cities', [BrandShippingController::class, 'listCities']);
+        Route::put('shipping/cities/{city}', [BrandShippingController::class, 'updateCity']);
+        Route::get('shipping/calculate', [BrandShippingController::class, 'calculatePrice']);
     });
     Route::apiResource('business-accounts', BusinessAccountController::class);
     Route::apiResource('teams', TeamController::class);
@@ -240,22 +240,22 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // Explicit per-action permission middleware replaces the bare apiResource call
     // so every endpoint is protected at the appropriate authorization level.
-    Route::get('inventory-counts',                 [InventoryCountController::class, 'index'])   ->middleware('permission:inventory.count.view');
-    Route::post('inventory-counts',                [InventoryCountController::class, 'store'])   ->middleware('permission:inventory.count.create');
-    Route::get('inventory-counts/{inventoryCount}',    [InventoryCountController::class, 'show'])    ->middleware('permission:inventory.count.view');
-    Route::put('inventory-counts/{inventoryCount}',    [InventoryCountController::class, 'update'])  ->middleware('permission:inventory.count.update');
-    Route::patch('inventory-counts/{inventoryCount}',  [InventoryCountController::class, 'update'])  ->middleware('permission:inventory.count.update');
-    Route::delete('inventory-counts/{inventoryCount}', [InventoryCountController::class, 'destroy']) ->middleware('permission:inventory.count.delete');
+    Route::get('inventory-counts', [InventoryCountController::class, 'index'])->middleware('permission:inventory.count.view');
+    Route::post('inventory-counts', [InventoryCountController::class, 'store'])->middleware('permission:inventory.count.create');
+    Route::get('inventory-counts/{inventoryCount}', [InventoryCountController::class, 'show'])->middleware('permission:inventory.count.view');
+    Route::put('inventory-counts/{inventoryCount}', [InventoryCountController::class, 'update'])->middleware('permission:inventory.count.update');
+    Route::patch('inventory-counts/{inventoryCount}', [InventoryCountController::class, 'update'])->middleware('permission:inventory.count.update');
+    Route::delete('inventory-counts/{inventoryCount}', [InventoryCountController::class, 'destroy'])->middleware('permission:inventory.count.delete');
 
-    Route::post('inventory-counts/{inventoryCount}/start',    [InventoryCountController::class, 'start'])    ->middleware('permission:inventory.count.update');
-    Route::post('inventory-counts/{inventoryCount}/complete', [InventoryCountController::class, 'complete']) ->middleware('permission:inventory.count.update');
-    Route::post('inventory-counts/{inventoryCount}/approve',  [InventoryCountController::class, 'approve'])  ->middleware('permission:inventory.count.approve');
-    Route::post('inventory-counts/{inventoryCount}/cancel',   [InventoryCountController::class, 'cancel'])   ->middleware('permission:inventory.count.delete');
-    Route::get('inventory-counts/{inventoryCount}/report',    [InventoryCountController::class, 'report'])   ->middleware('permission:inventory.count.view');
+    Route::post('inventory-counts/{inventoryCount}/start', [InventoryCountController::class, 'start'])->middleware('permission:inventory.count.update');
+    Route::post('inventory-counts/{inventoryCount}/complete', [InventoryCountController::class, 'complete'])->middleware('permission:inventory.count.update');
+    Route::post('inventory-counts/{inventoryCount}/approve', [InventoryCountController::class, 'approve'])->middleware('permission:inventory.count.approve');
+    Route::post('inventory-counts/{inventoryCount}/cancel', [InventoryCountController::class, 'cancel'])->middleware('permission:inventory.count.delete');
+    Route::get('inventory-counts/{inventoryCount}/report', [InventoryCountController::class, 'report'])->middleware('permission:inventory.count.view');
 
     // Line attachments
-    Route::post('inventory-counts/{inventoryCount}/lines/{line}/attachments',                    [InventoryCountController::class, 'storeAttachment'])   ->middleware('permission:inventory.count.update');
-    Route::delete('inventory-counts/{inventoryCount}/lines/{line}/attachments/{attachment}',     [InventoryCountController::class, 'destroyAttachment']) ->middleware('permission:inventory.count.delete');
+    Route::post('inventory-counts/{inventoryCount}/lines/{line}/attachments', [InventoryCountController::class, 'storeAttachment'])->middleware('permission:inventory.count.update');
+    Route::delete('inventory-counts/{inventoryCount}/lines/{line}/attachments/{attachment}', [InventoryCountController::class, 'destroyAttachment'])->middleware('permission:inventory.count.delete');
 });
 
 /*
@@ -264,11 +264,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::get('inventory/waste-investigations/report',                       [WasteInvestigationController::class, 'report']);
-    Route::get('inventory/waste-investigations',                              [WasteInvestigationController::class, 'index']);
-    Route::get('inventory/waste-investigations/{id}',                         [WasteInvestigationController::class, 'show']);
-    Route::post('inventory/waste-investigations/{id}/resolve',                [WasteInvestigationController::class, 'resolve']);
-    Route::post('inventory/waste-investigations/{id}/attachments',            [WasteInvestigationController::class, 'storeAttachment']);
+    Route::get('inventory/waste-investigations/report', [WasteInvestigationController::class, 'report']);
+    Route::get('inventory/waste-investigations', [WasteInvestigationController::class, 'index']);
+    Route::get('inventory/waste-investigations/{id}', [WasteInvestigationController::class, 'show']);
+    Route::post('inventory/waste-investigations/{id}/resolve', [WasteInvestigationController::class, 'resolve']);
+    Route::post('inventory/waste-investigations/{id}/attachments', [WasteInvestigationController::class, 'storeAttachment']);
     Route::delete('inventory/waste-investigations/{id}/attachments/{attachmentId}', [WasteInvestigationController::class, 'destroyAttachment']);
 });
 
@@ -278,11 +278,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::get('inventory/warehouse-liabilities/report',       [WarehouseLiabilityController::class, 'report']);
-    Route::get('inventory/warehouse-liabilities',              [WarehouseLiabilityController::class, 'index']);
-    Route::get('inventory/warehouse-liabilities/{id}',         [WarehouseLiabilityController::class, 'show']);
+    Route::get('inventory/warehouse-liabilities/report', [WarehouseLiabilityController::class, 'report']);
+    Route::get('inventory/warehouse-liabilities', [WarehouseLiabilityController::class, 'index']);
+    Route::get('inventory/warehouse-liabilities/{id}', [WarehouseLiabilityController::class, 'show']);
     Route::post('inventory/warehouse-liabilities/{id}/approve', [WarehouseLiabilityController::class, 'approve']);
-    Route::post('inventory/warehouse-liabilities/{id}/reject',  [WarehouseLiabilityController::class, 'reject']);
+    Route::post('inventory/warehouse-liabilities/{id}/reject', [WarehouseLiabilityController::class, 'reject']);
 });
 
 /*
@@ -309,29 +309,29 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         Route::post('channels/{channel}/import-orders', [OrderImportController::class, 'importOrders']);
     });
     Route::apiResource('product-mappings', ProductMappingController::class);
-    Route::get('orders/statuses',                      [OrderController::class, 'orderStatuses']);
-    Route::get('orders/filter/payment-methods',        [OrderController::class, 'paymentMethods']);
-    Route::get('orders/filter/shipping-companies',     [OrderController::class, 'shippingCompanies']);
-    Route::post('orders/manual',                       [OrderController::class, 'storeManual']);
-    Route::post('orders/maps/resolve-url',             [OrderController::class, 'resolveMapsUrl']);
-    Route::get('orders/pricing/product/{productId}',   [OrderController::class, 'productPricing']);
-    Route::patch('orders/{order}/quick-update',        [OrderController::class, 'quickUpdate']);
-    Route::patch('orders/{order}/zone',                [OrderController::class, 'updateZone']);
-    Route::post('orders/{order}/confirm-customer',     [OrderController::class, 'confirmCustomer']);
-    Route::get('orders/{order}/activities',            [OrderController::class, 'activities']);
-    Route::post('orders/{order}/notes',                [OrderController::class, 'addNote']);
-    Route::patch('orders/{order}/notes/{note}',        [OrderController::class, 'updateNote']);
-    Route::delete('orders/{order}/notes/{note}',       [OrderController::class, 'deleteNote']);
-    Route::get('orders/{order}/snapshot',              [OrderController::class, 'financialSnapshot']);
-    Route::get('orders/{order}/distribution-stage',    [OrderDistributionSyncController::class, 'getOrderStage']);
+    Route::get('orders/statuses', [OrderController::class, 'orderStatuses']);
+    Route::get('orders/filter/payment-methods', [OrderController::class, 'paymentMethods']);
+    Route::get('orders/filter/shipping-companies', [OrderController::class, 'shippingCompanies']);
+    Route::post('orders/manual', [OrderController::class, 'storeManual']);
+    Route::post('orders/maps/resolve-url', [OrderController::class, 'resolveMapsUrl']);
+    Route::get('orders/pricing/product/{productId}', [OrderController::class, 'productPricing']);
+    Route::patch('orders/{order}/quick-update', [OrderController::class, 'quickUpdate']);
+    Route::patch('orders/{order}/zone', [OrderController::class, 'updateZone']);
+    Route::post('orders/{order}/confirm-customer', [OrderController::class, 'confirmCustomer']);
+    Route::get('orders/{order}/activities', [OrderController::class, 'activities']);
+    Route::post('orders/{order}/notes', [OrderController::class, 'addNote']);
+    Route::patch('orders/{order}/notes/{note}', [OrderController::class, 'updateNote']);
+    Route::delete('orders/{order}/notes/{note}', [OrderController::class, 'deleteNote']);
+    Route::get('orders/{order}/snapshot', [OrderController::class, 'financialSnapshot']);
+    Route::get('orders/{order}/distribution-stage', [OrderDistributionSyncController::class, 'getOrderStage']);
     Route::get('orders/{order}/distribution-sync-history', [OrderDistributionSyncController::class, 'getSyncHistory']);
     Route::apiResource('orders', OrderController::class);
-    Route::post('orders/{order}/prepare',              [OrderController::class, 'prepare']);
-    Route::post('orders/{order}/verify-payment',       [OrderController::class, 'verifyPayment']);
+    Route::post('orders/{order}/prepare', [OrderController::class, 'prepare']);
+    Route::post('orders/{order}/verify-payment', [OrderController::class, 'verifyPayment']);
     // CR-PREP-001: Warehouse assignment
-    Route::post('orders/{order}/assign-warehouse',   [WarehouseAssignmentController::class, 'assignWarehouse']);
+    Route::post('orders/{order}/assign-warehouse', [WarehouseAssignmentController::class, 'assignWarehouse']);
     Route::post('orders/{order}/override-warehouse', [WarehouseAssignmentController::class, 'overrideWarehouse']);
-    Route::get('orders/{order}/assignment-history',  [WarehouseAssignmentController::class, 'assignmentHistory']);
+    Route::get('orders/{order}/assignment-history', [WarehouseAssignmentController::class, 'assignmentHistory']);
     Route::apiResource('fulfillments', FulfillmentController::class);
     Route::post('fulfillments/{fulfillment}/fulfill', [FulfillmentController::class, 'fulfill']);
     Route::post('fulfillments/{fulfillment}/cancel', [FulfillmentController::class, 'cancel']);
@@ -402,13 +402,13 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('supplier-returns/stats', [SupplierReturnController::class, 'stats']);
     Route::apiResource('supplier-returns', SupplierReturnController::class);
-    Route::post('supplier-returns/{supplierReturn}/submit',        [SupplierReturnController::class, 'submit']);
-    Route::post('supplier-returns/{supplierReturn}/approve',       [SupplierReturnController::class, 'approve']);
-    Route::post('supplier-returns/{supplierReturn}/reject',        [SupplierReturnController::class, 'reject']);
-    Route::post('supplier-returns/{supplierReturn}/mark-sent',     [SupplierReturnController::class, 'markSent']);
-    Route::post('supplier-returns/{supplierReturn}/credit-pending',[SupplierReturnController::class, 'creditPending']);
-    Route::post('supplier-returns/{supplierReturn}/complete',      [SupplierReturnController::class, 'complete']);
-    Route::post('supplier-returns/{supplierReturn}/cancel',        [SupplierReturnController::class, 'cancel']);
+    Route::post('supplier-returns/{supplierReturn}/submit', [SupplierReturnController::class, 'submit']);
+    Route::post('supplier-returns/{supplierReturn}/approve', [SupplierReturnController::class, 'approve']);
+    Route::post('supplier-returns/{supplierReturn}/reject', [SupplierReturnController::class, 'reject']);
+    Route::post('supplier-returns/{supplierReturn}/mark-sent', [SupplierReturnController::class, 'markSent']);
+    Route::post('supplier-returns/{supplierReturn}/credit-pending', [SupplierReturnController::class, 'creditPending']);
+    Route::post('supplier-returns/{supplierReturn}/complete', [SupplierReturnController::class, 'complete']);
+    Route::post('supplier-returns/{supplierReturn}/cancel', [SupplierReturnController::class, 'cancel']);
 });
 
 /*
@@ -420,8 +420,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('supplier-invoices/stats', [SupplierInvoiceController::class, 'stats']);
     Route::apiResource('supplier-invoices', SupplierInvoiceController::class);
     Route::post('supplier-invoices/{supplierInvoice}/validate', [SupplierInvoiceController::class, 'validate']);
-    Route::post('supplier-invoices/{supplierInvoice}/post',     [SupplierInvoiceController::class, 'post']);
-    Route::post('supplier-invoices/{supplierInvoice}/cancel',   [SupplierInvoiceController::class, 'cancel']);
+    Route::post('supplier-invoices/{supplierInvoice}/post', [SupplierInvoiceController::class, 'post']);
+    Route::post('supplier-invoices/{supplierInvoice}/cancel', [SupplierInvoiceController::class, 'cancel']);
 });
 
 /*
@@ -450,12 +450,12 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::get('inventory/dashboard',             [InventoryDashboardController::class, 'index']);
-    Route::get('inventory/abc-classifications',   [AbcClassificationController::class, 'index']);
+    Route::get('inventory/dashboard', [InventoryDashboardController::class, 'index']);
+    Route::get('inventory/abc-classifications', [AbcClassificationController::class, 'index']);
     Route::post('inventory/abc-classifications/recalculate', [AbcClassificationController::class, 'recalculate']);
-    Route::get('inventory/variance-analytics',    [VarianceAnalyticsController::class, 'index']);
+    Route::get('inventory/variance-analytics', [VarianceAnalyticsController::class, 'index']);
     Route::get('inventory/warehouse-performance', [WarehousePerformanceController::class, 'index']);
-    Route::get('inventory/cycle-count-plans',     [CycleCountPlanController::class, 'index']);
+    Route::get('inventory/cycle-count-plans', [CycleCountPlanController::class, 'index']);
 });
 
 /*
@@ -499,32 +499,32 @@ Route::middleware('auth:sanctum')->prefix('pos')->group(function (): void {
     Route::get('terminals', [PosTerminalController::class, 'index']);
 
     // Sessions
-    Route::post('sessions',           [PosSessionController::class, 'store']);
-    Route::get('sessions/{session}',  [PosSessionController::class, 'show']);
+    Route::post('sessions', [PosSessionController::class, 'store']);
+    Route::get('sessions/{session}', [PosSessionController::class, 'show']);
     Route::delete('sessions/{session}', [PosSessionController::class, 'destroy']);
 
     // Shifts
-    Route::post('shifts',                    [PosShiftController::class, 'store']);
-    Route::get('shifts/{shift}',             [PosShiftController::class, 'show']);
-    Route::delete('shifts/{shift}',          [PosShiftController::class, 'destroy']);
-    Route::put('shifts/{shift}/approve',     [PosShiftController::class, 'approve']);
-    Route::put('shifts/{shift}/reject',      [PosShiftController::class, 'reject']);
+    Route::post('shifts', [PosShiftController::class, 'store']);
+    Route::get('shifts/{shift}', [PosShiftController::class, 'show']);
+    Route::delete('shifts/{shift}', [PosShiftController::class, 'destroy']);
+    Route::put('shifts/{shift}/approve', [PosShiftController::class, 'approve']);
+    Route::put('shifts/{shift}/reject', [PosShiftController::class, 'reject']);
 
     // Carts
-    Route::post('carts',             [PosCartController::class, 'store']);
-    Route::get('carts/{cart}',       [PosCartController::class, 'show']);
-    Route::post('carts/{cart}/hold',         [PosCartController::class, 'hold']);
-    Route::delete('carts/{cart}/hold',       [PosCartController::class, 'resume']);
-    Route::put('carts/{cart}/customer',      [PosCartController::class, 'setCustomer']);
-    Route::delete('carts/{cart}',            [PosCartController::class, 'destroy']);
+    Route::post('carts', [PosCartController::class, 'store']);
+    Route::get('carts/{cart}', [PosCartController::class, 'show']);
+    Route::post('carts/{cart}/hold', [PosCartController::class, 'hold']);
+    Route::delete('carts/{cart}/hold', [PosCartController::class, 'resume']);
+    Route::put('carts/{cart}/customer', [PosCartController::class, 'setCustomer']);
+    Route::delete('carts/{cart}', [PosCartController::class, 'destroy']);
 
     // Cart lines
-    Route::post('carts/{cart}/lines',              [PosCartLineController::class, 'store']);
-    Route::delete('carts/{cart}/lines/{line}',     [PosCartLineController::class, 'destroy']);
+    Route::post('carts/{cart}/lines', [PosCartLineController::class, 'store']);
+    Route::delete('carts/{cart}/lines/{line}', [PosCartLineController::class, 'destroy']);
 
     // Sales
-    Route::post('sales',          [PosSaleController::class, 'store']);
-    Route::get('sales/{sale}',    [PosSaleController::class, 'show']);
+    Route::post('sales', [PosSaleController::class, 'store']);
+    Route::get('sales/{sale}', [PosSaleController::class, 'show']);
 
     // Returns
     Route::post('returns', [PosReturnController::class, 'store']);
@@ -533,9 +533,9 @@ Route::middleware('auth:sanctum')->prefix('pos')->group(function (): void {
     Route::post('exchanges', [PosExchangeController::class, 'store']);
 
     // Receipts
-    Route::get('receipts/{receipt}',              [PosReceiptController::class, 'show']);
-    Route::post('receipts/{receipt}/reprint',     [PosReceiptController::class, 'reprint']);
-    Route::delete('receipts/{receipt}',           [PosReceiptController::class, 'destroy']);
+    Route::get('receipts/{receipt}', [PosReceiptController::class, 'show']);
+    Route::post('receipts/{receipt}/reprint', [PosReceiptController::class, 'reprint']);
+    Route::delete('receipts/{receipt}', [PosReceiptController::class, 'destroy']);
 });
 
 /*
@@ -548,21 +548,21 @@ Route::middleware('auth:sanctum')->prefix('cost-management')->group(function ():
     Route::get('dashboard', [CostManagementDashboardController::class, 'index']);
 
     // Price Review Center
-    Route::get('pricing-reviews',                              [PricingReviewController::class, 'index']);
-    Route::get('pricing-reviews/badge',                        [PricingReviewController::class, 'badge']);
-    Route::get('pricing-reviews/{id}/detail',                  [PricingReviewController::class, 'detail']);
-    Route::post('pricing-reviews/{id}/approve',                [PricingReviewController::class, 'approve']);
-    Route::post('pricing-reviews/{id}/snooze',                 [PricingReviewController::class, 'snooze']);
-    Route::post('pricing-reviews/{id}/assign',                 [PricingReviewController::class, 'assign']);
-    Route::post('pricing-reviews/{id}/publish',                [PricingReviewController::class, 'publish']);
-    Route::post('pricing-reviews/bulk-approve',                [PricingReviewController::class, 'bulkApprove']);
-    Route::patch('pricing-reviews/{id}/inline',                [PricingReviewController::class, 'inline']);
-    Route::post('pricing-reviews/bulk-policy',                 [PricingReviewController::class, 'bulkPolicy']);
+    Route::get('pricing-reviews', [PricingReviewController::class, 'index']);
+    Route::get('pricing-reviews/badge', [PricingReviewController::class, 'badge']);
+    Route::get('pricing-reviews/{id}/detail', [PricingReviewController::class, 'detail']);
+    Route::post('pricing-reviews/{id}/approve', [PricingReviewController::class, 'approve']);
+    Route::post('pricing-reviews/{id}/snooze', [PricingReviewController::class, 'snooze']);
+    Route::post('pricing-reviews/{id}/assign', [PricingReviewController::class, 'assign']);
+    Route::post('pricing-reviews/{id}/publish', [PricingReviewController::class, 'publish']);
+    Route::post('pricing-reviews/bulk-approve', [PricingReviewController::class, 'bulkApprove']);
+    Route::patch('pricing-reviews/{id}/inline', [PricingReviewController::class, 'inline']);
+    Route::post('pricing-reviews/bulk-policy', [PricingReviewController::class, 'bulkPolicy']);
 
     // Material Cost History (global and per-material)
-    Route::get('cost-history',                                 [MaterialCostController::class, 'globalHistory']);
-    Route::get('materials/{productId}/cost-history',           [MaterialCostController::class, 'history']);
-    Route::patch('materials/{productId}/cost',                 [MaterialCostController::class, 'update']);
+    Route::get('cost-history', [MaterialCostController::class, 'globalHistory']);
+    Route::get('materials/{productId}/cost-history', [MaterialCostController::class, 'history']);
+    Route::patch('materials/{productId}/cost', [MaterialCostController::class, 'update']);
 });
 
 /*
@@ -571,75 +571,75 @@ Route::middleware('auth:sanctum')->prefix('cost-management')->group(function ():
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->prefix('preparation')->group(function (): void {
-    Route::get('dashboard',  [PreparationDashboardController::class, 'index']);
-    Route::get('analytics',  [PreparationAnalyticsController::class, 'index']);
+    Route::get('dashboard', [PreparationDashboardController::class, 'index']);
+    Route::get('analytics', [PreparationAnalyticsController::class, 'index']);
 
-    Route::get('waves',                                  [PreparationWaveController::class, 'index']);
-    Route::post('waves',                                 [PreparationWaveController::class, 'store']);
-    Route::get('waves/{waveId}',                         [PreparationWaveController::class, 'show']);
-    Route::post('waves/{waveId}/generate-demand',        [PreparationWaveController::class, 'generateDemand']);
-    Route::post('waves/{waveId}/analyze-materials',      [PreparationWaveController::class, 'analyzeMaterials']);
-    Route::post('waves/{waveId}/start',                  [PreparationWaveController::class, 'start']);
-    Route::post('waves/{waveId}/advance',                [PreparationWaveController::class, 'advance']);
+    Route::get('waves', [PreparationWaveController::class, 'index']);
+    Route::post('waves', [PreparationWaveController::class, 'store']);
+    Route::get('waves/{waveId}', [PreparationWaveController::class, 'show']);
+    Route::post('waves/{waveId}/generate-demand', [PreparationWaveController::class, 'generateDemand']);
+    Route::post('waves/{waveId}/analyze-materials', [PreparationWaveController::class, 'analyzeMaterials']);
+    Route::post('waves/{waveId}/start', [PreparationWaveController::class, 'start']);
+    Route::post('waves/{waveId}/advance', [PreparationWaveController::class, 'advance']);
     Route::patch('waves/{waveId}/items/{itemId}/complete', [PreparationWaveController::class, 'completeItem']);
-    Route::post('waves/{waveId}/complete',               [PreparationWaveController::class, 'complete']);
-    Route::post('waves/{waveId}/cancel',                 [PreparationWaveController::class, 'cancel']);
-    Route::post('waves/{waveId}/recalculate',            [PreparationWaveController::class, 'recalculate']);
-    Route::get('waves/{waveId}/product-queue',                       [PreparationWaveController::class, 'productQueue']);
-    Route::get('waves/{waveId}/items/{itemId}/workspace',            [PreparationWaveController::class, 'productWorkspace']);
-    Route::post('waves/{waveId}/issues',                             [PreparationWaveController::class, 'reportIssue']);
-    Route::post('waves/{waveId}/approve',                            [PreparationWaveController::class, 'approve']);
-    Route::post('waves/{waveId}/workers',                            [PreparationWaveController::class, 'assignWorker']);
-    Route::delete('waves/{waveId}/workers/{userId}',                 [PreparationWaveController::class, 'releaseWorker']);
-    Route::post('waves/{waveId}/resolve-shortage',                   [PreparationWaveController::class, 'resolveShortage']);
-    Route::get('waves/{waveId}/timeline',                            [PreparationWaveController::class, 'timeline']);
-    Route::get('waves/{waveId}/documents',                           [PreparationWaveController::class, 'documents']);
+    Route::post('waves/{waveId}/complete', [PreparationWaveController::class, 'complete']);
+    Route::post('waves/{waveId}/cancel', [PreparationWaveController::class, 'cancel']);
+    Route::post('waves/{waveId}/recalculate', [PreparationWaveController::class, 'recalculate']);
+    Route::get('waves/{waveId}/product-queue', [PreparationWaveController::class, 'productQueue']);
+    Route::get('waves/{waveId}/items/{itemId}/workspace', [PreparationWaveController::class, 'productWorkspace']);
+    Route::post('waves/{waveId}/issues', [PreparationWaveController::class, 'reportIssue']);
+    Route::post('waves/{waveId}/approve', [PreparationWaveController::class, 'approve']);
+    Route::post('waves/{waveId}/workers', [PreparationWaveController::class, 'assignWorker']);
+    Route::delete('waves/{waveId}/workers/{userId}', [PreparationWaveController::class, 'releaseWorker']);
+    Route::post('waves/{waveId}/resolve-shortage', [PreparationWaveController::class, 'resolveShortage']);
+    Route::get('waves/{waveId}/timeline', [PreparationWaveController::class, 'timeline']);
+    Route::get('waves/{waveId}/documents', [PreparationWaveController::class, 'documents']);
 
     // Demand Engine read models (TASK-PREP-INTEGRATION-001)
-    Route::get('waves/{waveId}/kpis',                 [WaveDemandController::class, 'kpis']);
-    Route::get('waves/{waveId}/product-demand',       [WaveDemandController::class, 'productDemand']);
-    Route::get('waves/{waveId}/material-demand',      [WaveDemandController::class, 'materialDemand']);
-    Route::get('waves/{waveId}/missing-materials',    [WaveDemandController::class, 'missingMaterials']);
+    Route::get('waves/{waveId}/kpis', [WaveDemandController::class, 'kpis']);
+    Route::get('waves/{waveId}/product-demand', [WaveDemandController::class, 'productDemand']);
+    Route::get('waves/{waveId}/material-demand', [WaveDemandController::class, 'materialDemand']);
+    Route::get('waves/{waveId}/missing-materials', [WaveDemandController::class, 'missingMaterials']);
     Route::get('waves/{waveId}/manufacturing-demand', [WaveDemandController::class, 'manufacturingDemand']);
-    Route::get('waves/{waveId}/orders',               [WaveDemandController::class, 'waveOrders']);
+    Route::get('waves/{waveId}/orders', [WaveDemandController::class, 'waveOrders']);
 
     // Enterprise Preparation — Phases 6, 8, 9, 13, 14 (TASK-PREPARATION-INTEGRATION-001)
-    Route::get('enterprise/queue',         [PreparationEnterpriseController::class, 'queue']);
-    Route::get('enterprise/capacity',      [PreparationEnterpriseController::class, 'capacity']);
-    Route::get('enterprise/optimization',  [PreparationEnterpriseController::class, 'optimization']);
-    Route::get('enterprise/dashboard',     [PreparationEnterpriseController::class, 'dashboard']);
-    Route::get('enterprise/ai-context',    [PreparationEnterpriseController::class, 'aiContext']);
+    Route::get('enterprise/queue', [PreparationEnterpriseController::class, 'queue']);
+    Route::get('enterprise/capacity', [PreparationEnterpriseController::class, 'capacity']);
+    Route::get('enterprise/optimization', [PreparationEnterpriseController::class, 'optimization']);
+    Route::get('enterprise/dashboard', [PreparationEnterpriseController::class, 'dashboard']);
+    Route::get('enterprise/ai-context', [PreparationEnterpriseController::class, 'aiContext']);
 
     // CR-PREP-001: Today's Preparation (must come before {sessionId} route)
-    Route::get('sessions/today',                             [PreparationSessionController::class, 'today']);
+    Route::get('sessions/today', [PreparationSessionController::class, 'today']);
 
-    Route::get('sessions',                               [PreparationSessionController::class, 'index']);
-    Route::post('sessions',                              [PreparationSessionController::class, 'store']);
-    Route::get('sessions/{sessionId}',                   [PreparationSessionController::class, 'show']);
-    Route::post('sessions/{sessionId}/start',            [PreparationSessionController::class, 'start']);
-    Route::post('sessions/{sessionId}/plan',             [PreparationSessionController::class, 'plan']);
-    Route::post('sessions/{sessionId}/approve',          [PreparationSessionController::class, 'approve']);
-    Route::post('sessions/{sessionId}/close',            [PreparationSessionController::class, 'close']);
-    Route::post('sessions/{sessionId}/complete',         [PreparationSessionController::class, 'complete']);
-    Route::post('sessions/{sessionId}/cancel',           [PreparationSessionController::class, 'cancel']);
-    Route::post('sessions/{sessionId}/waves',            [PreparationSessionController::class, 'addWave']);
-    Route::get('sessions/{sessionId}/consolidation',     [PreparationSessionController::class, 'consolidation']);
+    Route::get('sessions', [PreparationSessionController::class, 'index']);
+    Route::post('sessions', [PreparationSessionController::class, 'store']);
+    Route::get('sessions/{sessionId}', [PreparationSessionController::class, 'show']);
+    Route::post('sessions/{sessionId}/start', [PreparationSessionController::class, 'start']);
+    Route::post('sessions/{sessionId}/plan', [PreparationSessionController::class, 'plan']);
+    Route::post('sessions/{sessionId}/approve', [PreparationSessionController::class, 'approve']);
+    Route::post('sessions/{sessionId}/close', [PreparationSessionController::class, 'close']);
+    Route::post('sessions/{sessionId}/complete', [PreparationSessionController::class, 'complete']);
+    Route::post('sessions/{sessionId}/cancel', [PreparationSessionController::class, 'cancel']);
+    Route::post('sessions/{sessionId}/waves', [PreparationSessionController::class, 'addWave']);
+    Route::get('sessions/{sessionId}/consolidation', [PreparationSessionController::class, 'consolidation']);
     // CR-PREP-001: Freeze + Session Orders + Session Products
-    Route::post('sessions/{sessionId}/freeze',                        [PreparationSessionController::class, 'freeze']);
-    Route::get('sessions/{sessionId}/orders',                         [PreparationSessionController::class, 'sessionOrders']);
-    Route::post('sessions/{sessionId}/attach-order',                  [PreparationSessionController::class, 'attachOrder']);
-    Route::delete('sessions/{sessionId}/orders/{sessionOrderId}',     [PreparationSessionController::class, 'detachOrder']);
-    Route::get('sessions/{sessionId}/products',                       [PreparationSessionController::class, 'sessionProducts']);
+    Route::post('sessions/{sessionId}/freeze', [PreparationSessionController::class, 'freeze']);
+    Route::get('sessions/{sessionId}/orders', [PreparationSessionController::class, 'sessionOrders']);
+    Route::post('sessions/{sessionId}/attach-order', [PreparationSessionController::class, 'attachOrder']);
+    Route::delete('sessions/{sessionId}/orders/{sessionOrderId}', [PreparationSessionController::class, 'detachOrder']);
+    Route::get('sessions/{sessionId}/products', [PreparationSessionController::class, 'sessionProducts']);
 
     // CR-PREP-001: Warehouse Assignment Policies
-    Route::get('warehouse-assignment-policies',           [WarehouseAssignmentController::class, 'indexPolicies']);
-    Route::post('warehouse-assignment-policies',          [WarehouseAssignmentController::class, 'storePolicy']);
-    Route::put('warehouse-assignment-policies/{id}',      [WarehouseAssignmentController::class, 'updatePolicy']);
-    Route::delete('warehouse-assignment-policies/{id}',   [WarehouseAssignmentController::class, 'destroyPolicy']);
+    Route::get('warehouse-assignment-policies', [WarehouseAssignmentController::class, 'indexPolicies']);
+    Route::post('warehouse-assignment-policies', [WarehouseAssignmentController::class, 'storePolicy']);
+    Route::put('warehouse-assignment-policies/{id}', [WarehouseAssignmentController::class, 'updatePolicy']);
+    Route::delete('warehouse-assignment-policies/{id}', [WarehouseAssignmentController::class, 'destroyPolicy']);
 
-    Route::get('pool',                         [PreparedPoolController::class, 'index']);
-    Route::patch('pool/{poolId}/quality',      [PreparedPoolController::class, 'updateQuality']);
-    Route::get('workers',  [PreparationWorkerController::class, 'index']);
+    Route::get('pool', [PreparedPoolController::class, 'index']);
+    Route::patch('pool/{poolId}/quality', [PreparedPoolController::class, 'updateQuality']);
+    Route::get('workers', [PreparationWorkerController::class, 'index']);
     Route::get('stations', [PreparationStationController::class, 'index']);
 });
 
@@ -653,39 +653,39 @@ Route::middleware('auth:sanctum')->prefix('loading')->group(function (): void {
     Route::get('dashboard', [LoadingDashboardController::class, 'index']);
 
     // Loading Sessions
-    Route::get('sessions',                               [LoadingSessionController::class, 'index']);
-    Route::post('sessions',                              [LoadingSessionController::class, 'store']);
-    Route::get('sessions/{sessionId}',                   [LoadingSessionController::class, 'show']);
-    Route::post('sessions/{sessionId}/open',             [LoadingSessionController::class, 'open']);
-    Route::post('sessions/{sessionId}/start-loading',    [LoadingSessionController::class, 'startLoading']);
+    Route::get('sessions', [LoadingSessionController::class, 'index']);
+    Route::post('sessions', [LoadingSessionController::class, 'store']);
+    Route::get('sessions/{sessionId}', [LoadingSessionController::class, 'show']);
+    Route::post('sessions/{sessionId}/open', [LoadingSessionController::class, 'open']);
+    Route::post('sessions/{sessionId}/start-loading', [LoadingSessionController::class, 'startLoading']);
     Route::post('sessions/{sessionId}/complete-loading', [LoadingSessionController::class, 'completeLoading']);
-    Route::post('sessions/{sessionId}/cancel',           [LoadingSessionController::class, 'cancel']);
-    Route::post('sessions/{sessionId}/close',            [LoadingSessionController::class, 'close']);
+    Route::post('sessions/{sessionId}/cancel', [LoadingSessionController::class, 'cancel']);
+    Route::post('sessions/{sessionId}/close', [LoadingSessionController::class, 'close']);
 
     // Vehicle Assignments (within a session)
-    Route::get('sessions/{sessionId}/assignments',                                               [VehicleAssignmentController::class, 'index']);
-    Route::post('sessions/{sessionId}/assignments',                                              [VehicleAssignmentController::class, 'store']);
-    Route::get('sessions/{sessionId}/assignments/{assignmentId}',                                [VehicleAssignmentController::class, 'show']);
-    Route::post('sessions/{sessionId}/assignments/{assignmentId}/load-product',                  [VehicleAssignmentController::class, 'loadProduct']);
-    Route::post('sessions/{sessionId}/assignments/{assignmentId}/dispatch',                      [VehicleAssignmentController::class, 'dispatch']);
+    Route::get('sessions/{sessionId}/assignments', [VehicleAssignmentController::class, 'index']);
+    Route::post('sessions/{sessionId}/assignments', [VehicleAssignmentController::class, 'store']);
+    Route::get('sessions/{sessionId}/assignments/{assignmentId}', [VehicleAssignmentController::class, 'show']);
+    Route::post('sessions/{sessionId}/assignments/{assignmentId}/load-product', [VehicleAssignmentController::class, 'loadProduct']);
+    Route::post('sessions/{sessionId}/assignments/{assignmentId}/dispatch', [VehicleAssignmentController::class, 'dispatch']);
 
     // Driver Assignments
-    Route::post('sessions/{sessionId}/assignments/{assignmentId}/driver',                        [DriverAssignmentController::class, 'store']);
-    Route::get('sessions/{sessionId}/assignments/{assignmentId}/driver',                         [DriverAssignmentController::class, 'show']);
+    Route::post('sessions/{sessionId}/assignments/{assignmentId}/driver', [DriverAssignmentController::class, 'store']);
+    Route::get('sessions/{sessionId}/assignments/{assignmentId}/driver', [DriverAssignmentController::class, 'show']);
 
     // Allocation
-    Route::get('sessions/{sessionId}/assignments/{assignmentId}/allocation',                     [AllocationController::class, 'index']);
-    Route::post('sessions/{sessionId}/start-allocation',                                         [AllocationController::class, 'startAllocation']);
-    Route::post('sessions/{sessionId}/complete-allocation',                                      [AllocationController::class, 'completeAllocation']);
-    Route::post('sessions/{sessionId}/assignments/{assignmentId}/allocation/override',           [AllocationController::class, 'override']);
+    Route::get('sessions/{sessionId}/assignments/{assignmentId}/allocation', [AllocationController::class, 'index']);
+    Route::post('sessions/{sessionId}/start-allocation', [AllocationController::class, 'startAllocation']);
+    Route::post('sessions/{sessionId}/complete-allocation', [AllocationController::class, 'completeAllocation']);
+    Route::post('sessions/{sessionId}/assignments/{assignmentId}/allocation/override', [AllocationController::class, 'override']);
 
     // Vehicle Inventory
-    Route::get('sessions/{sessionId}/assignments/{assignmentId}/inventory',                      [VehicleInventoryController::class, 'show']);
+    Route::get('sessions/{sessionId}/assignments/{assignmentId}/inventory', [VehicleInventoryController::class, 'show']);
 
     // Exceptions
-    Route::get('sessions/{sessionId}/exceptions',                                                [LoadingExceptionController::class, 'index']);
-    Route::post('sessions/{sessionId}/exceptions',                                               [LoadingExceptionController::class, 'store']);
-    Route::post('sessions/{sessionId}/exceptions/{exceptionId}/resolve',                         [LoadingExceptionController::class, 'resolve']);
+    Route::get('sessions/{sessionId}/exceptions', [LoadingExceptionController::class, 'index']);
+    Route::post('sessions/{sessionId}/exceptions', [LoadingExceptionController::class, 'store']);
+    Route::post('sessions/{sessionId}/exceptions/{exceptionId}/resolve', [LoadingExceptionController::class, 'resolve']);
 });
 
 /*
@@ -696,63 +696,63 @@ Route::middleware('auth:sanctum')->prefix('loading')->group(function (): void {
 */
 Route::middleware('auth:sanctum')->prefix('distribution')->group(function (): void {
     // Board — active wave state
-    Route::get('board',                                            [DistributionBoardController::class, 'show']);
-    Route::get('board/zones/{zoneId}/orders',                     [DistributionBoardController::class, 'zoneOrders']);
-    Route::get('board/trips/{tripId}/orders',                     [DistributionBoardController::class, 'tripOrders']);
-    Route::post('board/validate',                                  [DistributionBoardController::class, 'validate']);
-    Route::post('board/finalize',                                  [DistributionBoardController::class, 'finalize']);
-    Route::get('board/exceptions',                                 [DistributionBoardController::class, 'waveExceptions']);
+    Route::get('board', [DistributionBoardController::class, 'show']);
+    Route::get('board/zones/{zoneId}/orders', [DistributionBoardController::class, 'zoneOrders']);
+    Route::get('board/trips/{tripId}/orders', [DistributionBoardController::class, 'tripOrders']);
+    Route::post('board/validate', [DistributionBoardController::class, 'validate']);
+    Route::post('board/finalize', [DistributionBoardController::class, 'finalize']);
+    Route::get('board/exceptions', [DistributionBoardController::class, 'waveExceptions']);
 
     // Trips — full lifecycle
-    Route::post('trips',                                           [DistributionTripController::class, 'store']);
-    Route::put('trips/{id}',                                       [DistributionTripController::class, 'update']);
-    Route::delete('trips/{id}',                                    [DistributionTripController::class, 'destroy']);
-    Route::post('trips/{id}/auto-fill',                            [DistributionTripController::class, 'autoFill']);
-    Route::post('trips/{id}/orders',                               [DistributionTripController::class, 'addOrder']);
-    Route::delete('trips/{id}/orders/{orderId}',                   [DistributionTripController::class, 'removeOrder']);
-    Route::post('trips/{id}/orders/move',                          [DistributionTripController::class, 'moveOrder']);
-    Route::patch('trips/{id}/driver',                              [DistributionTripController::class, 'assignDriver']);
-    Route::patch('trips/{id}/vehicle',                             [DistributionTripController::class, 'assignVehicle']);
-    Route::patch('trips/{id}/carrier',                             [DistributionTripController::class, 'assignCarrier']);
-    Route::post('trips/{id}/custody',                              [DistributionTripController::class, 'addCustody']);
-    Route::delete('trips/{id}/custody/{custodyId}',                [DistributionTripController::class, 'removeCustody']);
-    Route::post('trips/{id}/approve',                              [DistributionTripController::class, 'approve']);
-    Route::post('trips/{id}/orders/{orderId}/return-to-wave',      [DistributionTripController::class, 'returnToWave']);
-    Route::get('trips/{id}/coverage',                              [DistributionTripController::class, 'coverageMap']);
-    Route::get('trips/{id}/manifest',                              [DistributionTripController::class, 'manifest']);
+    Route::post('trips', [DistributionTripController::class, 'store']);
+    Route::put('trips/{id}', [DistributionTripController::class, 'update']);
+    Route::delete('trips/{id}', [DistributionTripController::class, 'destroy']);
+    Route::post('trips/{id}/auto-fill', [DistributionTripController::class, 'autoFill']);
+    Route::post('trips/{id}/orders', [DistributionTripController::class, 'addOrder']);
+    Route::delete('trips/{id}/orders/{orderId}', [DistributionTripController::class, 'removeOrder']);
+    Route::post('trips/{id}/orders/move', [DistributionTripController::class, 'moveOrder']);
+    Route::patch('trips/{id}/driver', [DistributionTripController::class, 'assignDriver']);
+    Route::patch('trips/{id}/vehicle', [DistributionTripController::class, 'assignVehicle']);
+    Route::patch('trips/{id}/carrier', [DistributionTripController::class, 'assignCarrier']);
+    Route::post('trips/{id}/custody', [DistributionTripController::class, 'addCustody']);
+    Route::delete('trips/{id}/custody/{custodyId}', [DistributionTripController::class, 'removeCustody']);
+    Route::post('trips/{id}/approve', [DistributionTripController::class, 'approve']);
+    Route::post('trips/{id}/orders/{orderId}/return-to-wave', [DistributionTripController::class, 'returnToWave']);
+    Route::get('trips/{id}/coverage', [DistributionTripController::class, 'coverageMap']);
+    Route::get('trips/{id}/manifest', [DistributionTripController::class, 'manifest']);
 
     // Loading Manifests — warehouse workspace
-    Route::get('manifests/{id}',                                   [LoadingManifestController::class, 'show']);
-    Route::post('manifests/{id}/start',                            [LoadingManifestController::class, 'start']);
-    Route::post('manifests/{id}/complete',                         [LoadingManifestController::class, 'complete']);
-    Route::post('manifests/{id}/items/{itemId}/confirm',           [LoadingManifestController::class, 'confirmItem']);
-    Route::post('manifests/{id}/items/{itemId}/resolve-shortage',  [LoadingManifestController::class, 'resolveShortage']);
-    Route::get('manifests/{id}/items/{itemId}/breakdown',          [LoadingManifestController::class, 'productBreakdown']);
+    Route::get('manifests/{id}', [LoadingManifestController::class, 'show']);
+    Route::post('manifests/{id}/start', [LoadingManifestController::class, 'start']);
+    Route::post('manifests/{id}/complete', [LoadingManifestController::class, 'complete']);
+    Route::post('manifests/{id}/items/{itemId}/confirm', [LoadingManifestController::class, 'confirmItem']);
+    Route::post('manifests/{id}/items/{itemId}/resolve-shortage', [LoadingManifestController::class, 'resolveShortage']);
+    Route::get('manifests/{id}/items/{itemId}/breakdown', [LoadingManifestController::class, 'productBreakdown']);
 
     // Loading OS Dashboard — all active loading trips
-    Route::get('loading-trips',                                                [DistributionLoadingDashboardController::class, 'index']);
+    Route::get('loading-trips', [DistributionLoadingDashboardController::class, 'index']);
 
     // Driver Handover — ADR-DIST-006
-    Route::get('trips/{id}/handover-status',                                   [DriverHandoverController::class, 'handoverStatus']);
-    Route::post('trips/{id}/dispatch',                                         [DriverHandoverController::class, 'dispatch']);
-    Route::post('trips/{id}/custody/{custodyId}/driver-confirm',               [DriverHandoverController::class, 'confirmCustody']);
-    Route::post('manifests/{id}/items/{itemId}/driver-confirm',                [DriverHandoverController::class, 'confirmProductReceipt']);
-    Route::post('manifests/{id}/items/{itemId}/accept-discrepancy',            [DriverHandoverController::class, 'acceptDiscrepancy']);
+    Route::get('trips/{id}/handover-status', [DriverHandoverController::class, 'handoverStatus']);
+    Route::post('trips/{id}/dispatch', [DriverHandoverController::class, 'dispatch']);
+    Route::post('trips/{id}/custody/{custodyId}/driver-confirm', [DriverHandoverController::class, 'confirmCustody']);
+    Route::post('manifests/{id}/items/{itemId}/driver-confirm', [DriverHandoverController::class, 'confirmProductReceipt']);
+    Route::post('manifests/{id}/items/{itemId}/accept-discrepancy', [DriverHandoverController::class, 'acceptDiscrepancy']);
 
     // Dispatch Gate — ADR-DIST-007
-    Route::get('dispatch-gate',                                                [DispatchGateController::class, 'index']);
-    Route::get('dispatch-gate/{id}',                                           [DispatchGateController::class, 'tripReview']);
-    Route::post('trips/{id}/driver-accept',                                    [DriverHandoverController::class, 'driverAccept']);
-    Route::post('trips/{id}/dispatch-vehicle',                                 [DispatchGateController::class, 'dispatchVehicle']);
-    Route::get('trips/{id}/audit-trail',                                       [DispatchGateController::class, 'auditTrail']);
+    Route::get('dispatch-gate', [DispatchGateController::class, 'index']);
+    Route::get('dispatch-gate/{id}', [DispatchGateController::class, 'tripReview']);
+    Route::post('trips/{id}/driver-accept', [DriverHandoverController::class, 'driverAccept']);
+    Route::post('trips/{id}/dispatch-vehicle', [DispatchGateController::class, 'dispatchVehicle']);
+    Route::get('trips/{id}/audit-trail', [DispatchGateController::class, 'auditTrail']);
 
     // Order SSOT & Distribution Sync — ADR-DIST-008
-    Route::post('trips/{tripId}/regenerate-manifest',                          [OrderDistributionSyncController::class, 'regenerateManifest']);
+    Route::post('trips/{tripId}/regenerate-manifest', [OrderDistributionSyncController::class, 'regenerateManifest']);
 
     // Fleet resource lookups
-    Route::get('fleet/vehicles',                                   [FleetResourceController::class, 'vehicles']);
-    Route::get('fleet/drivers',                                    [FleetResourceController::class, 'drivers']);
-    Route::get('fleet/carriers',                                   [FleetResourceController::class, 'carriers']);
+    Route::get('fleet/vehicles', [FleetResourceController::class, 'vehicles']);
+    Route::get('fleet/drivers', [FleetResourceController::class, 'drivers']);
+    Route::get('fleet/carriers', [FleetResourceController::class, 'carriers']);
 });
 
 /*
@@ -762,39 +762,39 @@ Route::middleware('auth:sanctum')->prefix('distribution')->group(function (): vo
 */
 Route::middleware('auth:sanctum')->prefix('configuration')->group(function (): void {
     // Company-level settings
-    Route::get('company',                    [CompanyConfigurationController::class, 'index']);
-    Route::get('company/audit',              [CompanyConfigurationController::class, 'audit']);
-    Route::get('company/{group}',            [CompanyConfigurationController::class, 'showGroup']);
-    Route::put('company/{group}',            [CompanyConfigurationController::class, 'updateGroup']);
+    Route::get('company', [CompanyConfigurationController::class, 'index']);
+    Route::get('company/audit', [CompanyConfigurationController::class, 'audit']);
+    Route::get('company/{group}', [CompanyConfigurationController::class, 'showGroup']);
+    Route::put('company/{group}', [CompanyConfigurationController::class, 'updateGroup']);
 
     // Brand-level policy groups
-    Route::get('brands/{brandId}/policies',               [BrandConfigurationController::class, 'index']);
-    Route::get('brands/{brandId}/policies/{group}',       [BrandConfigurationController::class, 'show']);
-    Route::put('brands/{brandId}/policies/{group}',       [BrandConfigurationController::class, 'update']);
-    Route::get('brands/{brandId}/audit',                  [BrandConfigurationController::class, 'audit']);
+    Route::get('brands/{brandId}/policies', [BrandConfigurationController::class, 'index']);
+    Route::get('brands/{brandId}/policies/{group}', [BrandConfigurationController::class, 'show']);
+    Route::put('brands/{brandId}/policies/{group}', [BrandConfigurationController::class, 'update']);
+    Route::get('brands/{brandId}/audit', [BrandConfigurationController::class, 'audit']);
 
     // Delivery Windows — REMOVED (moved to Brand OS: /brands/{brand}/delivery-time-slots)
 
     // Preparation Policies (Configuration OS facade over Preparation OS)
-    Route::get('brands/{brandId}/preparation-policies',           [PreparationPolicyController::class, 'index']);
-    Route::post('brands/{brandId}/preparation-policies',          [PreparationPolicyController::class, 'store']);
-    Route::put('brands/{brandId}/preparation-policies/{id}',      [PreparationPolicyController::class, 'update']);
+    Route::get('brands/{brandId}/preparation-policies', [PreparationPolicyController::class, 'index']);
+    Route::post('brands/{brandId}/preparation-policies', [PreparationPolicyController::class, 'store']);
+    Route::put('brands/{brandId}/preparation-policies/{id}', [PreparationPolicyController::class, 'update']);
 
     // Master Geography — governorates
     Route::prefix('master-geography')->group(function (): void {
-        Route::get('/',           [MasterGeographyController::class, 'index']);
-        Route::post('/',          [MasterGeographyController::class, 'store']);
-        Route::get('/{id}',       [MasterGeographyController::class, 'show']);
-        Route::put('/{id}',       [MasterGeographyController::class, 'update']);
-        Route::delete('/{id}',    [MasterGeographyController::class, 'destroy']);
+        Route::get('/', [MasterGeographyController::class, 'index']);
+        Route::post('/', [MasterGeographyController::class, 'store']);
+        Route::get('/{id}', [MasterGeographyController::class, 'show']);
+        Route::put('/{id}', [MasterGeographyController::class, 'update']);
+        Route::delete('/{id}', [MasterGeographyController::class, 'destroy']);
         Route::post('/{id}/archive', [MasterGeographyController::class, 'archive']);
 
         // Master zones nested under a governorate
-        Route::get('/{govId}/zones',              [MasterZoneController::class, 'index']);
-        Route::post('/{govId}/zones',             [MasterZoneController::class, 'store']);
-        Route::put('/{govId}/zones/{id}',         [MasterZoneController::class, 'update']);
-        Route::delete('/{govId}/zones/{id}',      [MasterZoneController::class, 'destroy']);
-        Route::post('/{govId}/zones/{id}/archive',[MasterZoneController::class, 'archive']);
+        Route::get('/{govId}/zones', [MasterZoneController::class, 'index']);
+        Route::post('/{govId}/zones', [MasterZoneController::class, 'store']);
+        Route::put('/{govId}/zones/{id}', [MasterZoneController::class, 'update']);
+        Route::delete('/{govId}/zones/{id}', [MasterZoneController::class, 'destroy']);
+        Route::post('/{govId}/zones/{id}/archive', [MasterZoneController::class, 'archive']);
     });
 });
 
@@ -805,41 +805,41 @@ Route::middleware('auth:sanctum')->prefix('configuration')->group(function (): v
 */
 Route::middleware('auth:sanctum')->prefix('fulfillment')->group(function (): void {
     // Single-order workflow transitions (ADR TASK-ORDER-LIFECYCLE-001)
-    Route::post('orders/{order}/confirm',              [OrderFulfillmentController::class, 'confirm']);
-    Route::post('orders/{order}/cancel',               [OrderFulfillmentController::class, 'cancel']);
-    Route::post('orders/{order}/move-to-preparation',  [OrderFulfillmentController::class, 'moveToPreparation']);
-    Route::post('orders/{order}/complete-delivery',    [OrderFulfillmentController::class, 'completeDelivery']);
-    Route::post('orders/{order}/complete',             [OrderFulfillmentController::class, 'complete']);
-    Route::post('orders/{order}/awaiting-stock',       [OrderFulfillmentController::class, 'markAwaitingStock']);
-    Route::post('orders/{order}/return',               [OrderFulfillmentController::class, 'returnOrder']);
-    Route::post('orders/{order}/reschedule',           [OrderFulfillmentController::class, 'reschedule']);
-    Route::post('orders/{order}/resume',               [OrderFulfillmentController::class, 'resume']);
-    Route::post('orders/{order}/review',               [OrderFulfillmentController::class, 'moveToReview']);
-    Route::post('orders/{order}/dispatch',             [OrderFulfillmentController::class, 'dispatch']);
-    Route::post('orders/{order}/return-to-pending',   [OrderFulfillmentController::class, 'returnToPending']);
+    Route::post('orders/{order}/confirm', [OrderFulfillmentController::class, 'confirm']);
+    Route::post('orders/{order}/cancel', [OrderFulfillmentController::class, 'cancel']);
+    Route::post('orders/{order}/move-to-preparation', [OrderFulfillmentController::class, 'moveToPreparation']);
+    Route::post('orders/{order}/complete-delivery', [OrderFulfillmentController::class, 'completeDelivery']);
+    Route::post('orders/{order}/complete', [OrderFulfillmentController::class, 'complete']);
+    Route::post('orders/{order}/awaiting-stock', [OrderFulfillmentController::class, 'markAwaitingStock']);
+    Route::post('orders/{order}/return', [OrderFulfillmentController::class, 'returnOrder']);
+    Route::post('orders/{order}/reschedule', [OrderFulfillmentController::class, 'reschedule']);
+    Route::post('orders/{order}/resume', [OrderFulfillmentController::class, 'resume']);
+    Route::post('orders/{order}/review', [OrderFulfillmentController::class, 'moveToReview']);
+    Route::post('orders/{order}/dispatch', [OrderFulfillmentController::class, 'dispatch']);
+    Route::post('orders/{order}/return-to-pending', [OrderFulfillmentController::class, 'returnToPending']);
     Route::post('orders/{order}/revert-to-confirmed', [OrderFulfillmentController::class, 'revertToConfirmed']);
-    Route::post('orders/{order}/return-to-processing',[OrderFulfillmentController::class, 'returnToProcessing']);
+    Route::post('orders/{order}/return-to-processing', [OrderFulfillmentController::class, 'returnToProcessing']);
     Route::post('orders/{order}/approve-partial-reservation', [OrderFulfillmentController::class, 'approvePartialReservation']);
     // Generic business-state transition — frontend sends target_status, backend resolves workflow
-    Route::post('orders/{order}/transition',           [OrderFulfillmentController::class, 'transition']);
+    Route::post('orders/{order}/transition', [OrderFulfillmentController::class, 'transition']);
 
     // Return receiving
-    Route::post('returns/{customerReturn}/receive',    [OrderFulfillmentController::class, 'receiveReturn']);
+    Route::post('returns/{customerReturn}/receive', [OrderFulfillmentController::class, 'receiveReturn']);
 
     // Bulk workflow transitions
-    Route::post('bulk/confirm',               [BulkFulfillmentController::class, 'confirmBulk']);
-    Route::post('bulk/cancel',                [BulkFulfillmentController::class, 'cancelBulk']);
-    Route::post('bulk/move-to-preparation',   [BulkFulfillmentController::class, 'moveToPreparationBulk']);
-    Route::post('bulk/complete-delivery',     [BulkFulfillmentController::class, 'completeDeliveryBulk']);
-    Route::post('bulk/complete',              [BulkFulfillmentController::class, 'completeBulk']);
-    Route::post('bulk/dispatch',              [BulkFulfillmentController::class, 'dispatchBulk']);
-    Route::post('bulk/awaiting-stock',        [BulkFulfillmentController::class, 'markAwaitingStockBulk']);
-    Route::post('bulk/resume',                  [BulkFulfillmentController::class, 'resumeBulk']);
-    Route::post('bulk/review',                  [BulkFulfillmentController::class, 'moveToReviewBulk']);
-    Route::post('bulk/reschedule',              [BulkFulfillmentController::class, 'rescheduleBulk']);
-    Route::post('bulk/return',                  [BulkFulfillmentController::class, 'returnBulk']);
-    Route::post('bulk/return-to-confirmed',     [BulkFulfillmentController::class, 'returnToConfirmedBulk']);
-    Route::post('bulk/resume-to-confirmed',     [BulkFulfillmentController::class, 'resumeToConfirmedBulk']);
+    Route::post('bulk/confirm', [BulkFulfillmentController::class, 'confirmBulk']);
+    Route::post('bulk/cancel', [BulkFulfillmentController::class, 'cancelBulk']);
+    Route::post('bulk/move-to-preparation', [BulkFulfillmentController::class, 'moveToPreparationBulk']);
+    Route::post('bulk/complete-delivery', [BulkFulfillmentController::class, 'completeDeliveryBulk']);
+    Route::post('bulk/complete', [BulkFulfillmentController::class, 'completeBulk']);
+    Route::post('bulk/dispatch', [BulkFulfillmentController::class, 'dispatchBulk']);
+    Route::post('bulk/awaiting-stock', [BulkFulfillmentController::class, 'markAwaitingStockBulk']);
+    Route::post('bulk/resume', [BulkFulfillmentController::class, 'resumeBulk']);
+    Route::post('bulk/review', [BulkFulfillmentController::class, 'moveToReviewBulk']);
+    Route::post('bulk/reschedule', [BulkFulfillmentController::class, 'rescheduleBulk']);
+    Route::post('bulk/return', [BulkFulfillmentController::class, 'returnBulk']);
+    Route::post('bulk/return-to-confirmed', [BulkFulfillmentController::class, 'returnToConfirmedBulk']);
+    Route::post('bulk/resume-to-confirmed', [BulkFulfillmentController::class, 'resumeToConfirmedBulk']);
 });
 
 /*
@@ -849,135 +849,135 @@ Route::middleware('auth:sanctum')->prefix('fulfillment')->group(function (): voi
 */
 Route::middleware('auth:sanctum')->prefix('marketing')->group(function (): void {
     // Dashboard
-    Route::get('dashboard', [\Modules\Marketing\Dashboard\Presentation\Http\Controllers\MarketingDashboardController::class, 'index']);
+    Route::get('dashboard', [Modules\Marketing\Dashboard\Presentation\Http\Controllers\MarketingDashboardController::class, 'index']);
 
     // Connector registry
-    Route::get('connectors', [\Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'connectors']);
+    Route::get('connectors', [Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'connectors']);
 
     // Connections
-    Route::get('connections',                                         [\Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'index']);
-    Route::get('connections/{connection}',                            [\Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'show']);
-    Route::post('connections/{connection}/validate',                  [\Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'validatePermissions']);
-    Route::post('connections/{connection}/disconnect',                [\Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'disconnect']);
-    Route::post('connections/{connection}/sync',                      [\Modules\Marketing\Synchronization\Presentation\Http\Controllers\SyncController::class, 'triggerSync']);
-    Route::get('connections/{connection}/sync-logs',                  [\Modules\Marketing\Synchronization\Presentation\Http\Controllers\SyncController::class, 'logs']);
-    Route::get('connections/{connection}/health',                     [\Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectorHealthController::class, 'show']);
+    Route::get('connections', [Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'index']);
+    Route::get('connections/{connection}', [Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'show']);
+    Route::post('connections/{connection}/validate', [Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'validatePermissions']);
+    Route::post('connections/{connection}/disconnect', [Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectionController::class, 'disconnect']);
+    Route::post('connections/{connection}/sync', [Modules\Marketing\Synchronization\Presentation\Http\Controllers\SyncController::class, 'triggerSync']);
+    Route::get('connections/{connection}/sync-logs', [Modules\Marketing\Synchronization\Presentation\Http\Controllers\SyncController::class, 'logs']);
+    Route::get('connections/{connection}/health', [Modules\Marketing\Connections\Presentation\Http\Controllers\ConnectorHealthController::class, 'show']);
 
     // Provider Platform — registry and metrics
-    Route::get('providers',                             [\Modules\Marketing\ProviderPlatform\Presentation\Http\Controllers\ProviderPlatformController::class, 'index']);
-    Route::get('providers/{provider}/metrics',          [\Modules\Marketing\ProviderPlatform\Presentation\Http\Controllers\ProviderPlatformController::class, 'metrics']);
+    Route::get('providers', [Modules\Marketing\ProviderPlatform\Presentation\Http\Controllers\ProviderPlatformController::class, 'index']);
+    Route::get('providers/{provider}/metrics', [Modules\Marketing\ProviderPlatform\Presentation\Http\Controllers\ProviderPlatformController::class, 'metrics']);
 
     // Provider Configuration Wizard (Meta, Google Ads, TikTok, etc.)
-    Route::get('providers/{provider}/config',                  [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'show']);
-    Route::post('providers/{provider}/config',                 [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'save']);
-    Route::post('providers/{provider}/config/validate',        [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'validate']);
-    Route::post('providers/{provider}/config/rotate-secret',   [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'rotateSecret']);
-    Route::get('providers/{provider}/health',                  [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'health']);
-    Route::delete('providers/{provider}/config',               [\Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'destroy']);
+    Route::get('providers/{provider}/config', [Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'show']);
+    Route::post('providers/{provider}/config', [Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'save']);
+    Route::post('providers/{provider}/config/validate', [Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'validate']);
+    Route::post('providers/{provider}/config/rotate-secret', [Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'rotateSecret']);
+    Route::get('providers/{provider}/health', [Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'health']);
+    Route::delete('providers/{provider}/config', [Modules\Marketing\ProviderConfig\Presentation\Http\Controllers\ProviderConfigController::class, 'destroy']);
 
     // Meta OAuth + lifecycle
-    Route::get( 'meta/auth/redirect',                       [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'redirect']);
-    Route::get( 'meta/auth/callback',                       [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'callback']);
-    Route::post('meta/connections/{connection}/disconnect', [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'disconnect']);
+    Route::get('meta/auth/redirect', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'redirect']);
+    Route::get('meta/auth/callback', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'callback']);
+    Route::post('meta/connections/{connection}/disconnect', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'disconnect']);
 
     // Meta — Incoming Webhook (no auth — Meta does not send auth headers)
-    Route::get('meta/webhook',  [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'verify'])->withoutMiddleware(['auth:sanctum']);
-    Route::post('meta/webhook', [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'receive'])->withoutMiddleware(['auth:sanctum']);
+    Route::get('meta/webhook', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'verify'])->withoutMiddleware(['auth:sanctum']);
+    Route::post('meta/webhook', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'receive'])->withoutMiddleware(['auth:sanctum']);
 
     // Meta — Connection Dashboard & Management
-    Route::get( 'meta/connections/{connection}/dashboard',          [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'dashboard']);
-    Route::get( 'meta/connections/{connection}/businesses',         [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'businesses']);
-    Route::post('meta/connections/{connection}/businesses/select',  [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'selectBusinesses']);
-    Route::get( 'meta/connections/{connection}/assets',             [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'assets']);
-    Route::get( 'meta/connections/{connection}/permissions',        [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'permissions']);
-    Route::get( 'meta/permissions/required',                        [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'requiredPermissions']);
-    Route::get( 'meta/connections/{connection}/sync-status',        [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'syncStatus']);
-    Route::post('meta/connections/{connection}/sync',               [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'sync']);
-    Route::get( 'meta/connections/{connection}/recovery',           [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'recovery']);
-    Route::patch('meta/assets/{asset}/toggle',                      [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'toggleAsset']);
+    Route::get('meta/connections/{connection}/dashboard', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'dashboard']);
+    Route::get('meta/connections/{connection}/businesses', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'businesses']);
+    Route::post('meta/connections/{connection}/businesses/select', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'selectBusinesses']);
+    Route::get('meta/connections/{connection}/assets', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'assets']);
+    Route::get('meta/connections/{connection}/permissions', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'permissions']);
+    Route::get('meta/permissions/required', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'requiredPermissions']);
+    Route::get('meta/connections/{connection}/sync-status', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'syncStatus']);
+    Route::post('meta/connections/{connection}/sync', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'sync']);
+    Route::get('meta/connections/{connection}/recovery', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'recovery']);
+    Route::patch('meta/assets/{asset}/toggle', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'toggleAsset']);
 
     // Meta — Webhook Management
-    Route::get( 'meta/connections/{connection}/webhooks',               [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'index']);
-    Route::post('meta/connections/{connection}/webhooks',               [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'register']);
-    Route::post('meta/connections/{connection}/webhooks/register-all',  [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'registerAll']);
-    Route::delete('meta/webhooks/{webhook}',                            [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'remove']);
-    Route::post('meta/webhooks/{webhook}/re-register',                  [\Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'reRegister']);
+    Route::get('meta/connections/{connection}/webhooks', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'index']);
+    Route::post('meta/connections/{connection}/webhooks', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'register']);
+    Route::post('meta/connections/{connection}/webhooks/register-all', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'registerAll']);
+    Route::delete('meta/webhooks/{webhook}', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'remove']);
+    Route::post('meta/webhooks/{webhook}/re-register', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'reRegister']);
 
     // Assets
-    Route::get('assets',                                                [\Modules\Marketing\Assets\Presentation\Http\Controllers\MarketingAssetController::class, 'index']);
-    Route::get('assets/{marketingAsset}',                               [\Modules\Marketing\Assets\Presentation\Http\Controllers\MarketingAssetController::class, 'show']);
-    Route::post('assets/{marketingAsset}/check-health',                 [\Modules\Marketing\Assets\Presentation\Http\Controllers\MarketingAssetController::class, 'checkHealth']);
-    Route::get('assets/{marketingAsset}/graph',                          [\Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'graph']);
+    Route::get('assets', [Modules\Marketing\Assets\Presentation\Http\Controllers\MarketingAssetController::class, 'index']);
+    Route::get('assets/{marketingAsset}', [Modules\Marketing\Assets\Presentation\Http\Controllers\MarketingAssetController::class, 'show']);
+    Route::post('assets/{marketingAsset}/check-health', [Modules\Marketing\Assets\Presentation\Http\Controllers\MarketingAssetController::class, 'checkHealth']);
+    Route::get('assets/{marketingAsset}/graph', [Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'graph']);
 
     // Asset Relationships (M2M mapping)
-    Route::get('assets/{marketingAsset}/relationships',                 [\Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'index']);
-    Route::post('assets/{marketingAsset}/relationships',                [\Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'store']);
-    Route::delete('relationships/{relationship}',                       [\Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'destroy']);
-    Route::post('relationships/{relationship}/accept',                  [\Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'accept']);
-    Route::post('relationships/{relationship}/reject',                  [\Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'reject']);
-    Route::get('suggestions',                                           [\Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'suggestions']);
+    Route::get('assets/{marketingAsset}/relationships', [Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'index']);
+    Route::post('assets/{marketingAsset}/relationships', [Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'store']);
+    Route::delete('relationships/{relationship}', [Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'destroy']);
+    Route::post('relationships/{relationship}/accept', [Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'accept']);
+    Route::post('relationships/{relationship}/reject', [Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'reject']);
+    Route::get('suggestions', [Modules\Marketing\Assets\Presentation\Http\Controllers\AssetRelationshipController::class, 'suggestions']);
 
     // Sync logs
-    Route::get('sync-logs/{syncLog}',                                   [\Modules\Marketing\Synchronization\Presentation\Http\Controllers\SyncController::class, 'show']);
+    Route::get('sync-logs/{syncLog}', [Modules\Marketing\Synchronization\Presentation\Http\Controllers\SyncController::class, 'show']);
 
     // Mapping Profiles
-    Route::get('mapping-profiles',                                      [\Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'index']);
-    Route::post('mapping-profiles',                                     [\Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'store']);
-    Route::get('mapping-profiles/{mappingProfile}',                     [\Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'show']);
-    Route::put('mapping-profiles/{mappingProfile}',                     [\Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'update']);
-    Route::delete('mapping-profiles/{mappingProfile}',                  [\Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'destroy']);
-    Route::post('mapping-profiles/{mappingProfile}/apply',              [\Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'apply']);
+    Route::get('mapping-profiles', [Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'index']);
+    Route::post('mapping-profiles', [Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'store']);
+    Route::get('mapping-profiles/{mappingProfile}', [Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'show']);
+    Route::put('mapping-profiles/{mappingProfile}', [Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'update']);
+    Route::delete('mapping-profiles/{mappingProfile}', [Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'destroy']);
+    Route::post('mapping-profiles/{mappingProfile}/apply', [Modules\Marketing\MappingEngine\Presentation\Http\Controllers\MappingProfileController::class, 'apply']);
 
     // Marketing Initiatives (ERP Business Layer — never synced with Meta)
-    Route::get('initiative-dashboard',                                                   [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeDashboardController::class, 'index']);
-    Route::get('initiatives',                                                             [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'index']);
-    Route::post('initiatives',                                                            [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'store']);
-    Route::get('initiatives/{initiative}',                                                [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'show']);
-    Route::put('initiatives/{initiative}',                                                [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'update']);
-    Route::post('initiatives/{initiative}/archive',                                       [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'archive']);
-    Route::get('initiatives/{initiative}/kpis',                                           [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeDashboardController::class, 'kpis']);
-    Route::get('initiatives/{initiative}/campaigns',                                      [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeCampaignController::class, 'index']);
-    Route::post('initiatives/{initiative}/campaigns',                                     [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeCampaignController::class, 'assign']);
-    Route::delete('initiatives/{initiative}/campaigns/{campaign}',                        [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeCampaignController::class, 'remove']);
+    Route::get('initiative-dashboard', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeDashboardController::class, 'index']);
+    Route::get('initiatives', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'index']);
+    Route::post('initiatives', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'store']);
+    Route::get('initiatives/{initiative}', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'show']);
+    Route::put('initiatives/{initiative}', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'update']);
+    Route::post('initiatives/{initiative}/archive', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeController::class, 'archive']);
+    Route::get('initiatives/{initiative}/kpis', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeDashboardController::class, 'kpis']);
+    Route::get('initiatives/{initiative}/campaigns', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeCampaignController::class, 'index']);
+    Route::post('initiatives/{initiative}/campaigns', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeCampaignController::class, 'assign']);
+    Route::delete('initiatives/{initiative}/campaigns/{campaign}', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeCampaignController::class, 'remove']);
 
     // Initiative Templates
-    Route::get('initiative-templates',                                                    [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'index']);
-    Route::post('initiative-templates',                                                   [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'store']);
-    Route::get('initiative-templates/{initiativeTemplate}',                               [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'show']);
-    Route::put('initiative-templates/{initiativeTemplate}',                               [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'update']);
-    Route::delete('initiative-templates/{initiativeTemplate}',                            [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'destroy']);
-    Route::post('initiative-templates/{initiativeTemplate}/create-initiative',            [\Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'createInitiative']);
+    Route::get('initiative-templates', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'index']);
+    Route::post('initiative-templates', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'store']);
+    Route::get('initiative-templates/{initiativeTemplate}', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'show']);
+    Route::put('initiative-templates/{initiativeTemplate}', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'update']);
+    Route::delete('initiative-templates/{initiativeTemplate}', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'destroy']);
+    Route::post('initiative-templates/{initiativeTemplate}/create-initiative', [Modules\Marketing\Initiatives\Presentation\Http\Controllers\InitiativeTemplateController::class, 'createInitiative']);
 
     // Campaigns — trigger sync per connection
-    Route::post('connections/{connection}/campaigns/sync',              [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignSyncController::class, 'triggerSync']);
+    Route::post('connections/{connection}/campaigns/sync', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignSyncController::class, 'triggerSync']);
     // Insights — async sync per connection (dispatches InsightsSyncJob)
-    Route::post('connections/{connection}/insights/sync',               [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignInsightController::class, 'sync']);
+    Route::post('connections/{connection}/insights/sync', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignInsightController::class, 'sync']);
 
     // Campaign Workspace (Phase 4)
-    Route::get('campaigns',                                             [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignController::class, 'index']);
-    Route::get('campaigns/dashboard',                                   [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignDashboardController::class, 'index']);
+    Route::get('campaigns', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignController::class, 'index']);
+    Route::get('campaigns/dashboard', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignDashboardController::class, 'index']);
 
     // Campaign Ranking (Phase 7)
-    Route::get('campaigns/ranking/campaigns',                           [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topCampaigns']);
-    Route::get('campaigns/ranking/ad-sets',                             [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topAdSets']);
-    Route::get('campaigns/ranking/ads',                                 [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topAds']);
-    Route::get('campaigns/ranking/companies',                           [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topCompanies']);
-    Route::get('campaigns/ranking/brands',                              [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topBrands']);
-    Route::get('campaigns/ranking/channels',                            [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topChannels']);
-    Route::get('campaigns/ranking/owners',                              [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topOwners']);
+    Route::get('campaigns/ranking/campaigns', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topCampaigns']);
+    Route::get('campaigns/ranking/ad-sets', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topAdSets']);
+    Route::get('campaigns/ranking/ads', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topAds']);
+    Route::get('campaigns/ranking/companies', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topCompanies']);
+    Route::get('campaigns/ranking/brands', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topBrands']);
+    Route::get('campaigns/ranking/channels', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topChannels']);
+    Route::get('campaigns/ranking/owners', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignRankingController::class, 'topOwners']);
 
     // Campaign detail + sub-resources
-    Route::get('campaigns/{campaign}',                                  [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignController::class, 'show']);
-    Route::patch('campaigns/{campaign}/business-context',               [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignController::class, 'updateBusinessContext']);
-    Route::post('campaigns/{campaign}/backfill',                        [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignSyncController::class, 'backfill']);
-    Route::get('campaigns/{campaign}/insights',                         [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignInsightController::class, 'index']);
-    Route::get('campaigns/{campaign}/insights/trend',                   [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignInsightController::class, 'trend']);
-    Route::get('campaigns/{campaign}/creatives',                        [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignCreativeController::class, 'index']);
-    Route::get('campaigns/{campaign}/creatives/{creative}',             [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignCreativeController::class, 'show']);
-    Route::get('campaigns/{campaign}/ad-sets',                          [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdSetController::class, 'index']);
-    Route::get('campaigns/{campaign}/ad-sets/{adSet}',                  [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdSetController::class, 'show']);
-    Route::get('campaigns/{campaign}/ad-sets/{adSet}/ads',              [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdController::class, 'index']);
-    Route::get('campaigns/{campaign}/ad-sets/{adSet}/ads/{ad}',         [\Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdController::class, 'show']);
+    Route::get('campaigns/{campaign}', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignController::class, 'show']);
+    Route::patch('campaigns/{campaign}/business-context', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignController::class, 'updateBusinessContext']);
+    Route::post('campaigns/{campaign}/backfill', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignSyncController::class, 'backfill']);
+    Route::get('campaigns/{campaign}/insights', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignInsightController::class, 'index']);
+    Route::get('campaigns/{campaign}/insights/trend', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignInsightController::class, 'trend']);
+    Route::get('campaigns/{campaign}/creatives', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignCreativeController::class, 'index']);
+    Route::get('campaigns/{campaign}/creatives/{creative}', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignCreativeController::class, 'show']);
+    Route::get('campaigns/{campaign}/ad-sets', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdSetController::class, 'index']);
+    Route::get('campaigns/{campaign}/ad-sets/{adSet}', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdSetController::class, 'show']);
+    Route::get('campaigns/{campaign}/ad-sets/{adSet}/ads', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdController::class, 'index']);
+    Route::get('campaigns/{campaign}/ad-sets/{adSet}/ads/{ad}', [Modules\Marketing\Campaigns\Presentation\Http\Controllers\CampaignAdController::class, 'show']);
 });
 
 /*
@@ -987,34 +987,34 @@ Route::middleware('auth:sanctum')->prefix('marketing')->group(function (): void 
 */
 Route::middleware('auth:sanctum')->prefix('marketing/intelligence')->group(function (): void {
     // ─── Executive Dashboard ────────────────────────────────────────────────
-    Route::get('dashboard',                     [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\ExecutiveDashboardController::class, 'index']);
+    Route::get('dashboard', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\ExecutiveDashboardController::class, 'index']);
 
     // ─── Campaign Analytics ─────────────────────────────────────────────────
-    Route::get('campaigns',                     [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'index']);
-    Route::get('campaigns/export',              [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'export']);
-    Route::get('campaigns/{campaignId}/trend',  [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'trend']);
+    Route::get('campaigns', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'index']);
+    Route::get('campaigns/export', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'export']);
+    Route::get('campaigns/{campaignId}/trend', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\CampaignAnalyticsController::class, 'trend']);
 
     // ─── Ad Analytics ───────────────────────────────────────────────────────
-    Route::get('ads',                           [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\AdAnalyticsController::class, 'index']);
-    Route::get('ads/export',                    [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\AdAnalyticsController::class, 'export']);
+    Route::get('ads', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\AdAnalyticsController::class, 'index']);
+    Route::get('ads/export', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\AdAnalyticsController::class, 'export']);
 
     // ─── Creative Analytics ─────────────────────────────────────────────────
-    Route::get('creatives',                     [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CreativeAnalyticsController::class, 'index']);
-    Route::get('creatives/export',              [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\CreativeAnalyticsController::class, 'export']);
+    Route::get('creatives', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\CreativeAnalyticsController::class, 'index']);
+    Route::get('creatives/export', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\CreativeAnalyticsController::class, 'export']);
 
     // ─── Performance Trends ─────────────────────────────────────────────────
-    Route::get('trends',                        [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\PerformanceTrendsController::class, 'index']);
-    Route::get('trends/compare',                [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\PerformanceTrendsController::class, 'compare']);
+    Route::get('trends', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\PerformanceTrendsController::class, 'index']);
+    Route::get('trends/compare', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\PerformanceTrendsController::class, 'compare']);
 
     // ─── Budget Analysis ────────────────────────────────────────────────────
-    Route::get('budget',                        [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\BudgetAnalysisController::class, 'index']);
+    Route::get('budget', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\BudgetAnalysisController::class, 'index']);
 
     // ─── Reports (streaming + history) ─────────────────────────────────────
-    Route::get('reports/export/campaigns',      [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportCampaigns']);
-    Route::get('reports/export/ads',            [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportAds']);
-    Route::get('reports/export/creatives',      [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportCreatives']);
-    Route::get('reports',                       [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'index']);
-    Route::get('reports/{report}',              [\Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'show']);
+    Route::get('reports/export/campaigns', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportCampaigns']);
+    Route::get('reports/export/ads', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportAds']);
+    Route::get('reports/export/creatives', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'exportCreatives']);
+    Route::get('reports', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'index']);
+    Route::get('reports/{report}', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\MarketingReportController::class, 'show']);
 });
 
 /*
@@ -1024,94 +1024,94 @@ Route::middleware('auth:sanctum')->prefix('marketing/intelligence')->group(funct
 */
 Route::middleware('auth:sanctum')->prefix('marketing/studio')->group(function (): void {
     // ─── Studio KPIs & Dashboard ────────────────────────────────────────────────
-    Route::get('kpis',                          [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'kpis']);
-    Route::get('dashboard',                     [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\StudioExecutiveDashboardController::class, 'index']);
-    Route::get('dashboard/pending-approvals',   [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\StudioExecutiveDashboardController::class, 'pendingApprovals']);
-    Route::get('dashboard/publishing-queue',    [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\StudioExecutiveDashboardController::class, 'publishingQueue']);
+    Route::get('kpis', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'kpis']);
+    Route::get('dashboard', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\StudioExecutiveDashboardController::class, 'index']);
+    Route::get('dashboard/pending-approvals', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\StudioExecutiveDashboardController::class, 'pendingApprovals']);
+    Route::get('dashboard/publishing-queue', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\StudioExecutiveDashboardController::class, 'publishingQueue']);
 
     // ─── Campaign Drafts (CRUD) ─────────────────────────────────────────────────
-    Route::get('drafts',                        [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'index']);
-    Route::post('drafts',                       [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'store']);
-    Route::get('drafts/{draft}',                [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'show']);
-    Route::patch('drafts/{draft}',              [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'update']);
-    Route::delete('drafts/{draft}',             [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'destroy']);
-    Route::post('drafts/{draft}/duplicate',     [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'duplicate']);
+    Route::get('drafts', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'index']);
+    Route::post('drafts', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'store']);
+    Route::get('drafts/{draft}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'show']);
+    Route::patch('drafts/{draft}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'update']);
+    Route::delete('drafts/{draft}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'destroy']);
+    Route::post('drafts/{draft}/duplicate', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'duplicate']);
 
     // ─── Audience Builder ────────────────────────────────────────────────────────
-    Route::get('drafts/{draft}/audience',       [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignAudienceController::class, 'show']);
-    Route::put('drafts/{draft}/audience',       [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignAudienceController::class, 'update']);
+    Route::get('drafts/{draft}/audience', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignAudienceController::class, 'show']);
+    Route::put('drafts/{draft}/audience', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignAudienceController::class, 'update']);
 
     // ─── Creative Builder ────────────────────────────────────────────────────────
-    Route::get('drafts/{draft}/creatives',               [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignCreativeController::class, 'index']);
-    Route::post('drafts/{draft}/creatives',              [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignCreativeController::class, 'store']);
-    Route::patch('drafts/{draft}/creatives/{creative}',  [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignCreativeController::class, 'update']);
-    Route::delete('drafts/{draft}/creatives/{creative}', [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignCreativeController::class, 'destroy']);
+    Route::get('drafts/{draft}/creatives', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignCreativeController::class, 'index']);
+    Route::post('drafts/{draft}/creatives', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignCreativeController::class, 'store']);
+    Route::patch('drafts/{draft}/creatives/{creative}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignCreativeController::class, 'update']);
+    Route::delete('drafts/{draft}/creatives/{creative}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignCreativeController::class, 'destroy']);
 
     // ─── Placement Builder ───────────────────────────────────────────────────────
-    Route::get('drafts/{draft}/placements',     [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignPlacementController::class, 'show']);
-    Route::put('drafts/{draft}/placements',     [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignPlacementController::class, 'update']);
+    Route::get('drafts/{draft}/placements', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignPlacementController::class, 'show']);
+    Route::put('drafts/{draft}/placements', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignPlacementController::class, 'update']);
 
     // ─── Version History ─────────────────────────────────────────────────────────
-    Route::get('drafts/{draft}/versions',                                               [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignVersionController::class, 'index']);
-    Route::get('drafts/{draft}/versions/{versionA}/compare/{versionB}',                [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignVersionController::class, 'compare']);
-    Route::post('drafts/{draft}/versions/{version}/restore',                            [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignVersionController::class, 'restore']);
+    Route::get('drafts/{draft}/versions', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignVersionController::class, 'index']);
+    Route::get('drafts/{draft}/versions/{versionA}/compare/{versionB}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignVersionController::class, 'compare']);
+    Route::post('drafts/{draft}/versions/{version}/restore', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignVersionController::class, 'restore']);
 
     // ─── Approval Workflow ───────────────────────────────────────────────────────
-    Route::post('drafts/{draft}/submit-for-approval',   [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'submit']);
-    Route::get('drafts/{draft}/approval',               [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'show']);
-    Route::get('approvals/pending',                     [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'pending']);
-    Route::post('approvals/{approval}/decide',          [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'decide']);
-    Route::delete('approvals/{approval}/cancel',        [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'cancel']);
+    Route::post('drafts/{draft}/submit-for-approval', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'submit']);
+    Route::get('drafts/{draft}/approval', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'show']);
+    Route::get('approvals/pending', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'pending']);
+    Route::post('approvals/{approval}/decide', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'decide']);
+    Route::delete('approvals/{approval}/cancel', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignApprovalController::class, 'cancel']);
 
     // ─── Publishing & Lifecycle ──────────────────────────────────────────────────
-    Route::post('drafts/{draft}/publish',       [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'publish']);
-    Route::post('drafts/{draft}/pause',         [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'pause']);
-    Route::post('drafts/{draft}/resume',        [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'resume']);
-    Route::post('drafts/{draft}/archive',       [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'archive']);
-    Route::get('jobs',                          [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'index']);
-    Route::get('jobs/stats',                    [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'stats']);
-    Route::post('jobs/{job}/retry',             [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'retry']);
+    Route::post('drafts/{draft}/publish', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'publish']);
+    Route::post('drafts/{draft}/pause', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'pause']);
+    Route::post('drafts/{draft}/resume', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'resume']);
+    Route::post('drafts/{draft}/archive', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'archive']);
+    Route::get('jobs', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'index']);
+    Route::get('jobs/stats', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'stats']);
+    Route::post('jobs/{job}/retry', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\PublishingJobController::class, 'retry']);
 
     // ─── Scheduling ──────────────────────────────────────────────────────────────
-    Route::get('drafts/{draft}/schedule',           [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignScheduleController::class, 'pending']);
-    Route::post('drafts/{draft}/schedule',          [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignScheduleController::class, 'store']);
-    Route::delete('schedule-tasks/{task}',          [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignScheduleController::class, 'destroy']);
+    Route::get('drafts/{draft}/schedule', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignScheduleController::class, 'pending']);
+    Route::post('drafts/{draft}/schedule', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignScheduleController::class, 'store']);
+    Route::delete('schedule-tasks/{task}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignScheduleController::class, 'destroy']);
 
     // ─── Validation Engine ───────────────────────────────────────────────────────
-    Route::post('drafts/{draft}/validate',          [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ValidationController::class, 'validate']);
-    Route::get('drafts/{draft}/validation-results', [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ValidationController::class, 'results']);
+    Route::post('drafts/{draft}/validate', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ValidationController::class, 'validate']);
+    Route::get('drafts/{draft}/validation-results', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ValidationController::class, 'results']);
 
     // ─── Commerce Integration ────────────────────────────────────────────────────
-    Route::get('drafts/{draft}/products',              [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CommerceIntegrationController::class, 'index']);
-    Route::post('drafts/{draft}/products',             [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CommerceIntegrationController::class, 'store']);
-    Route::post('drafts/{draft}/products/refresh',     [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CommerceIntegrationController::class, 'refresh']);
-    Route::delete('drafts/{draft}/products/{product}', [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CommerceIntegrationController::class, 'destroy']);
+    Route::get('drafts/{draft}/products', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CommerceIntegrationController::class, 'index']);
+    Route::post('drafts/{draft}/products', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CommerceIntegrationController::class, 'store']);
+    Route::post('drafts/{draft}/products/refresh', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CommerceIntegrationController::class, 'refresh']);
+    Route::delete('drafts/{draft}/products/{product}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CommerceIntegrationController::class, 'destroy']);
 
     // ─── Bulk Operations ─────────────────────────────────────────────────────────
-    Route::post('bulk',                         [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\BulkOperationController::class, 'execute']);
-    Route::get('bulk/{job}',                    [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\BulkOperationController::class, 'status']);
+    Route::post('bulk', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\BulkOperationController::class, 'execute']);
+    Route::get('bulk/{job}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\BulkOperationController::class, 'status']);
 
     // ─── Templates ───────────────────────────────────────────────────────────────
-    Route::get('templates',                             [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'index']);
-    Route::post('templates',                            [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'store']);
-    Route::get('templates/{template}',                  [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'show']);
-    Route::put('templates/{template}',                  [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'update']);
-    Route::delete('templates/{template}',               [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'destroy']);
-    Route::post('templates/{template}/create-campaign', [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'createCampaign']);
+    Route::get('templates', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'index']);
+    Route::post('templates', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'store']);
+    Route::get('templates/{template}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'show']);
+    Route::put('templates/{template}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'update']);
+    Route::delete('templates/{template}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'destroy']);
+    Route::post('templates/{template}/create-campaign', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignTemplateController::class, 'createCampaign']);
 
     // ─── Governance Policies ─────────────────────────────────────────────────────
-    Route::get('governance',                    [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'index']);
-    Route::post('governance',                   [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'store']);
-    Route::get('governance/{policy}',           [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'show']);
-    Route::put('governance/{policy}',           [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'update']);
-    Route::delete('governance/{policy}',        [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'destroy']);
+    Route::get('governance', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'index']);
+    Route::post('governance', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'store']);
+    Route::get('governance/{policy}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'show']);
+    Route::put('governance/{policy}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'update']);
+    Route::delete('governance/{policy}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\GovernancePolicyController::class, 'destroy']);
 
     // ─── Approval Workflow Templates ──────────────────────────────────────────────
-    Route::get('workflows',                     [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'index']);
-    Route::post('workflows',                    [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'store']);
-    Route::get('workflows/{workflow}',          [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'show']);
-    Route::put('workflows/{workflow}',          [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'update']);
-    Route::delete('workflows/{workflow}',       [\Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'destroy']);
+    Route::get('workflows', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'index']);
+    Route::post('workflows', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'store']);
+    Route::get('workflows/{workflow}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'show']);
+    Route::put('workflows/{workflow}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'update']);
+    Route::delete('workflows/{workflow}', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\ApprovalWorkflowController::class, 'destroy']);
 });
 
 /*
@@ -1122,60 +1122,60 @@ Route::middleware('auth:sanctum')->prefix('marketing/studio')->group(function ()
 */
 Route::middleware('auth:sanctum')->prefix('bae')->group(function (): void {
     // ─── Event Bus ────────────────────────────────────────────────────────────
-    Route::get('events/timeline',                [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'timeline']);
-    Route::get('events/for-entity',              [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'forEntity']);
-    Route::get('events/for-dna/{dnaId}',         [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'forDna']);
-    Route::get('events/{businessEvent}',         [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'show']);
-    Route::post('events',                        [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'publish']);
+    Route::get('events/timeline', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'timeline']);
+    Route::get('events/for-entity', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'forEntity']);
+    Route::get('events/for-dna/{dnaId}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'forDna']);
+    Route::get('events/{businessEvent}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'show']);
+    Route::post('events', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'publish']);
 
     // ─── Business DNA ─────────────────────────────────────────────────────────
-    Route::get('dna',                            [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'index']);
-    Route::post('dna',                           [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'store']);
-    Route::get('dna/for-entity',                 [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'forEntity']);
-    Route::get('dna/{businessDna}',              [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'show']);
-    Route::patch('dna/{businessDna}',            [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'update']);
+    Route::get('dna', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'index']);
+    Route::post('dna', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'store']);
+    Route::get('dna/for-entity', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'forEntity']);
+    Route::get('dna/{businessDna}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'show']);
+    Route::patch('dna/{businessDna}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessDnaController::class, 'update']);
 
     // ─── Journey Explorer ─────────────────────────────────────────────────────
-    Route::get('journey/search',                 [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\JourneyExplorerController::class, 'search']);
-    Route::get('journey/{businessDna}',          [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\JourneyExplorerController::class, 'journey']);
-    Route::post('journey/step',                  [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\JourneyExplorerController::class, 'recordStep']);
+    Route::get('journey/search', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\JourneyExplorerController::class, 'search']);
+    Route::get('journey/{businessDna}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\JourneyExplorerController::class, 'journey']);
+    Route::post('journey/step', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\JourneyExplorerController::class, 'recordStep']);
 
     // ─── Attribution Engine ───────────────────────────────────────────────────
-    Route::get('attribution/{businessDna}',      [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\AttributionController::class, 'calculate']);
-    Route::get('attribution/configs',            [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\AttributionController::class, 'configs']);
-    Route::post('attribution/configs',           [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\AttributionController::class, 'saveConfig']);
+    Route::get('attribution/{businessDna}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\AttributionController::class, 'calculate']);
+    Route::get('attribution/configs', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\AttributionController::class, 'configs']);
+    Route::post('attribution/configs', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\AttributionController::class, 'saveConfig']);
 
     // ─── Business Metrics ─────────────────────────────────────────────────────
-    Route::get('metrics/averages',               [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessMetricsController::class, 'aggregateAverages']);
-    Route::get('metrics/{businessDna}',          [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessMetricsController::class, 'forDna']);
+    Route::get('metrics/averages', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessMetricsController::class, 'aggregateAverages']);
+    Route::get('metrics/{businessDna}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessMetricsController::class, 'forDna']);
 
     // ─── Graph Layer ──────────────────────────────────────────────────────────
-    Route::post('graph/nodes',                   [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\GraphController::class, 'upsertNode']);
-    Route::post('graph/relationships',           [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\GraphController::class, 'createRelationship']);
-    Route::get('graph/nodes/{entityNode}',       [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\GraphController::class, 'node']);
-    Route::get('graph/nodes/{entityNode}/subgraph', [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\GraphController::class, 'subgraph']);
+    Route::post('graph/nodes', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\GraphController::class, 'upsertNode']);
+    Route::post('graph/relationships', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\GraphController::class, 'createRelationship']);
+    Route::get('graph/nodes/{entityNode}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\GraphController::class, 'node']);
+    Route::get('graph/nodes/{entityNode}/subgraph', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\GraphController::class, 'subgraph']);
 
     // ─── Event Replay ─────────────────────────────────────────────────────────
-    Route::post('replay',                        [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'replay']);
+    Route::post('replay', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'replay']);
 
     // ─── PATCH-CORE-001: Enhanced Replay Engine ───────────────────────────────
-    Route::get('replay/entity/{entityType}/{entityId}', [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'replayEntity']);
-    Route::post('replay/batch',                  [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'batch']);
-    Route::get('replay/module/{module}',         [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'replayModule']);
-    Route::get('replay/audit',                   [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'auditLogs']);
-    Route::get('replay/audit/stats',             [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'auditStats']);
+    Route::get('replay/entity/{entityType}/{entityId}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'replayEntity']);
+    Route::post('replay/batch', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'batch']);
+    Route::get('replay/module/{module}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'replayModule']);
+    Route::get('replay/audit', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'auditLogs']);
+    Route::get('replay/audit/stats', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\ReplayController::class, 'auditStats']);
 
     // ─── Time Machine ─────────────────────────────────────────────────────────
-    Route::get('time-machine/context',           [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\TimeMachineController::class, 'context']);
-    Route::get('time-machine/{entityType}/{entityId}',       [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\TimeMachineController::class, 'resolveAt']);
-    Route::get('time-machine/{entityType}/{entityId}/view',  [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\TimeMachineController::class, 'historicalView']);
-    Route::get('time-machine/{entityType}/{entityId}/diff',  [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\TimeMachineController::class, 'diff']);
+    Route::get('time-machine/context', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\TimeMachineController::class, 'context']);
+    Route::get('time-machine/{entityType}/{entityId}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\TimeMachineController::class, 'resolveAt']);
+    Route::get('time-machine/{entityType}/{entityId}/view', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\TimeMachineController::class, 'historicalView']);
+    Route::get('time-machine/{entityType}/{entityId}/diff', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\TimeMachineController::class, 'diff']);
 
     // ─── Root Cause Traversal ─────────────────────────────────────────────────
-    Route::get('cause-effect/path',              [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\RootCauseController::class, 'criticalPath']);
-    Route::get('cause-effect/{eventId}',         [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\RootCauseController::class, 'traverse']);
-    Route::get('cause-effect/{eventId}/root-causes', [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\RootCauseController::class, 'rootCauses']);
-    Route::get('cause-effect/{eventId}/effects', [\Modules\Core\BusinessAttribution\Presentation\Http\Controllers\RootCauseController::class, 'effects']);
+    Route::get('cause-effect/path', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\RootCauseController::class, 'criticalPath']);
+    Route::get('cause-effect/{eventId}', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\RootCauseController::class, 'traverse']);
+    Route::get('cause-effect/{eventId}/root-causes', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\RootCauseController::class, 'rootCauses']);
+    Route::get('cause-effect/{eventId}/effects', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\RootCauseController::class, 'effects']);
 });
 
 /*
@@ -1185,54 +1185,54 @@ Route::middleware('auth:sanctum')->prefix('bae')->group(function (): void {
 */
 Route::middleware('auth:sanctum')->prefix('cep')->group(function (): void {
     // ─── Dashboard ────────────────────────────────────────────────────────────
-    Route::get('dashboard/kpis',        [\Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'kpis']);
-    Route::get('dashboard/agents',      [\Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'agentPerformance']);
-    Route::get('dashboard/providers',   [\Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'providerDistribution']);
-    Route::get('dashboard/statuses',    [\Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'statusDistribution']);
-    Route::get('dashboard/unread-count',[\Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'unreadCount']);
+    Route::get('dashboard/kpis', [Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'kpis']);
+    Route::get('dashboard/agents', [Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'agentPerformance']);
+    Route::get('dashboard/providers', [Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'providerDistribution']);
+    Route::get('dashboard/statuses', [Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'statusDistribution']);
+    Route::get('dashboard/unread-count', [Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'unreadCount']);
 
     // ─── Conversations ────────────────────────────────────────────────────────
-    Route::get('conversations',                      [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'index']);
-    Route::post('conversations',                     [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'store']);
-    Route::get('conversations/{conversation}',       [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'show']);
-    Route::patch('conversations/{conversation}',     [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'update']);
-    Route::post('conversations/{conversation}/close',   [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'close']);
-    Route::post('conversations/{conversation}/resolve', [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'resolve']);
-    Route::post('conversations/{conversation}/reopen',  [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'reopen']);
+    Route::get('conversations', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'index']);
+    Route::post('conversations', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'store']);
+    Route::get('conversations/{conversation}', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'show']);
+    Route::patch('conversations/{conversation}', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'update']);
+    Route::post('conversations/{conversation}/close', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'close']);
+    Route::post('conversations/{conversation}/resolve', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'resolve']);
+    Route::post('conversations/{conversation}/reopen', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationController::class, 'reopen']);
 
     // ─── Messages ─────────────────────────────────────────────────────────────
-    Route::get('conversations/{conversation}/messages',       [\Modules\CustomerEngagement\Presentation\Http\Controllers\MessageController::class, 'thread']);
-    Route::post('conversations/{conversation}/messages',      [\Modules\CustomerEngagement\Presentation\Http\Controllers\MessageController::class, 'send']);
-    Route::post('conversations/{conversation}/messages/read', [\Modules\CustomerEngagement\Presentation\Http\Controllers\MessageController::class, 'markRead']);
-    Route::post('messages/ingest',                            [\Modules\CustomerEngagement\Presentation\Http\Controllers\MessageController::class, 'ingest']);
+    Route::get('conversations/{conversation}/messages', [Modules\CustomerEngagement\Presentation\Http\Controllers\MessageController::class, 'thread']);
+    Route::post('conversations/{conversation}/messages', [Modules\CustomerEngagement\Presentation\Http\Controllers\MessageController::class, 'send']);
+    Route::post('conversations/{conversation}/messages/read', [Modules\CustomerEngagement\Presentation\Http\Controllers\MessageController::class, 'markRead']);
+    Route::post('messages/ingest', [Modules\CustomerEngagement\Presentation\Http\Controllers\MessageController::class, 'ingest']);
 
     // ─── Leads ───────────────────────────────────────────────────────────────
-    Route::get('leads',                              [\Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'index']);
-    Route::get('leads/{lead}',                       [\Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'show']);
-    Route::patch('leads/{lead}',                     [\Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'update']);
-    Route::post('leads/{lead}/qualify',              [\Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'qualify']);
-    Route::post('leads/{lead}/disqualify',           [\Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'disqualify']);
-    Route::post('leads/{lead}/convert',              [\Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'convert']);
-    Route::post('conversations/{conversation}/leads',[\Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'createFromConversation']);
+    Route::get('leads', [Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'index']);
+    Route::get('leads/{lead}', [Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'show']);
+    Route::patch('leads/{lead}', [Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'update']);
+    Route::post('leads/{lead}/qualify', [Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'qualify']);
+    Route::post('leads/{lead}/disqualify', [Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'disqualify']);
+    Route::post('leads/{lead}/convert', [Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'convert']);
+    Route::post('conversations/{conversation}/leads', [Modules\CustomerEngagement\Presentation\Http\Controllers\LeadController::class, 'createFromConversation']);
 
     // ─── Notes ───────────────────────────────────────────────────────────────
-    Route::get('conversations/{conversation}/notes',              [\Modules\CustomerEngagement\Presentation\Http\Controllers\NoteController::class, 'index']);
-    Route::post('conversations/{conversation}/notes',             [\Modules\CustomerEngagement\Presentation\Http\Controllers\NoteController::class, 'store']);
-    Route::delete('conversations/{conversation}/notes/{note}',   [\Modules\CustomerEngagement\Presentation\Http\Controllers\NoteController::class, 'destroy']);
+    Route::get('conversations/{conversation}/notes', [Modules\CustomerEngagement\Presentation\Http\Controllers\NoteController::class, 'index']);
+    Route::post('conversations/{conversation}/notes', [Modules\CustomerEngagement\Presentation\Http\Controllers\NoteController::class, 'store']);
+    Route::delete('conversations/{conversation}/notes/{note}', [Modules\CustomerEngagement\Presentation\Http\Controllers\NoteController::class, 'destroy']);
 
     // ─── Assignment ──────────────────────────────────────────────────────────
-    Route::get('conversations/{conversation}/assignments',    [\Modules\CustomerEngagement\Presentation\Http\Controllers\AssignmentController::class, 'history']);
-    Route::post('conversations/{conversation}/assign',        [\Modules\CustomerEngagement\Presentation\Http\Controllers\AssignmentController::class, 'assign']);
-    Route::post('conversations/{conversation}/unassign',      [\Modules\CustomerEngagement\Presentation\Http\Controllers\AssignmentController::class, 'unassign']);
-    Route::post('conversations/{conversation}/round-robin',   [\Modules\CustomerEngagement\Presentation\Http\Controllers\AssignmentController::class, 'roundRobin']);
+    Route::get('conversations/{conversation}/assignments', [Modules\CustomerEngagement\Presentation\Http\Controllers\AssignmentController::class, 'history']);
+    Route::post('conversations/{conversation}/assign', [Modules\CustomerEngagement\Presentation\Http\Controllers\AssignmentController::class, 'assign']);
+    Route::post('conversations/{conversation}/unassign', [Modules\CustomerEngagement\Presentation\Http\Controllers\AssignmentController::class, 'unassign']);
+    Route::post('conversations/{conversation}/round-robin', [Modules\CustomerEngagement\Presentation\Http\Controllers\AssignmentController::class, 'roundRobin']);
 
     // ─── SLA ─────────────────────────────────────────────────────────────────
-    Route::get('sla/policies',                         [\Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'policies']);
-    Route::post('sla/policies',                        [\Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'storePolicy']);
-    Route::patch('sla/policies/{slaPolicy}',           [\Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'updatePolicy']);
-    Route::get('conversations/{conversation}/sla',     [\Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'violations']);
-    Route::get('sla/compliance',                       [\Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'complianceStats']);
-    Route::post('sla/check-breaches',                  [\Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'checkBreaches']);
+    Route::get('sla/policies', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'policies']);
+    Route::post('sla/policies', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'storePolicy']);
+    Route::patch('sla/policies/{slaPolicy}', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'updatePolicy']);
+    Route::get('conversations/{conversation}/sla', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'violations']);
+    Route::get('sla/compliance', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'complianceStats']);
+    Route::post('sla/check-breaches', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'checkBreaches']);
 });
 
 /*
@@ -1243,69 +1243,69 @@ Route::middleware('auth:sanctum')->prefix('cep')->group(function (): void {
 */
 Route::middleware('auth:sanctum')->prefix('marketing/automation')->group(function (): void {
     // ─── Dashboard ────────────────────────────────────────────────────────────
-    Route::get('dashboard',                         [\Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationDashboardController::class, 'index']);
+    Route::get('dashboard', [Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationDashboardController::class, 'index']);
 
     // ─── Workflows ────────────────────────────────────────────────────────────
-    Route::get('kpis',                              [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'kpis']);
-    Route::get('workflows',                         [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'index']);
-    Route::post('workflows',                        [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'store']);
-    Route::get('workflows/{workflow}',              [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'show']);
-    Route::patch('workflows/{workflow}',            [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'update']);
-    Route::delete('workflows/{workflow}',           [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'destroy']);
-    Route::post('workflows/{workflow}/duplicate',   [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'duplicate']);
-    Route::post('workflows/{workflow}/activate',    [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'activate']);
-    Route::post('workflows/{workflow}/pause',       [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'pause']);
-    Route::post('workflows/{workflow}/archive',     [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'archive']);
+    Route::get('kpis', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'kpis']);
+    Route::get('workflows', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'index']);
+    Route::post('workflows', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'store']);
+    Route::get('workflows/{workflow}', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'show']);
+    Route::patch('workflows/{workflow}', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'update']);
+    Route::delete('workflows/{workflow}', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'destroy']);
+    Route::post('workflows/{workflow}/duplicate', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'duplicate']);
+    Route::post('workflows/{workflow}/activate', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'activate']);
+    Route::post('workflows/{workflow}/pause', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'pause']);
+    Route::post('workflows/{workflow}/archive', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowController::class, 'archive']);
 
     // ─── Canvas (nodes_graph) ─────────────────────────────────────────────────
-    Route::put('workflows/{workflow}/canvas',       [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowNodeController::class, 'update']);
+    Route::put('workflows/{workflow}/canvas', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowNodeController::class, 'update']);
 
     // ─── Versions ─────────────────────────────────────────────────────────────
-    Route::get('workflows/{workflow}/versions',                          [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowVersionController::class, 'index']);
-    Route::get('workflows/{workflow}/versions/compare/{versionA}/{versionB}', [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowVersionController::class, 'compare']);
-    Route::post('workflows/{workflow}/versions/{version}/restore',       [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowVersionController::class, 'restore']);
+    Route::get('workflows/{workflow}/versions', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowVersionController::class, 'index']);
+    Route::get('workflows/{workflow}/versions/compare/{versionA}/{versionB}', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowVersionController::class, 'compare']);
+    Route::post('workflows/{workflow}/versions/{version}/restore', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowVersionController::class, 'restore']);
 
     // ─── Executions ───────────────────────────────────────────────────────────
-    Route::get('workflows/{workflow}/executions',                        [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'index']);
-    Route::get('workflows/{workflow}/executions/stats',                  [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'stats']);
-    Route::get('workflows/{workflow}/executions/{execution}',            [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'show']);
-    Route::post('workflows/{workflow}/executions/{execution}/cancel',    [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'cancel']);
-    Route::post('workflows/{workflow}/executions/{execution}/retry',     [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'retry']);
+    Route::get('workflows/{workflow}/executions', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'index']);
+    Route::get('workflows/{workflow}/executions/stats', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'stats']);
+    Route::get('workflows/{workflow}/executions/{execution}', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'show']);
+    Route::post('workflows/{workflow}/executions/{execution}/cancel', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'cancel']);
+    Route::post('workflows/{workflow}/executions/{execution}/retry', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowExecutionController::class, 'retry']);
 
     // ─── Manual Trigger ───────────────────────────────────────────────────────
-    Route::post('workflows/{workflow}/trigger',     [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTriggerController::class, 'trigger']);
+    Route::post('workflows/{workflow}/trigger', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTriggerController::class, 'trigger']);
 
     // ─── Simulation ───────────────────────────────────────────────────────────
-    Route::post('workflows/{workflow}/simulate',    [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowSimulatorController::class, 'simulate']);
+    Route::post('workflows/{workflow}/simulate', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowSimulatorController::class, 'simulate']);
 
     // ─── Templates ────────────────────────────────────────────────────────────
-    Route::get('templates',                         [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'index']);
-    Route::post('templates',                        [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'store']);
-    Route::get('templates/{template}',              [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'show']);
-    Route::put('templates/{template}',              [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'update']);
-    Route::delete('templates/{template}',           [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'destroy']);
-    Route::post('templates/{template}/create-workflow', [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'createWorkflow']);
+    Route::get('templates', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'index']);
+    Route::post('templates', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'store']);
+    Route::get('templates/{template}', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'show']);
+    Route::put('templates/{template}', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'update']);
+    Route::delete('templates/{template}', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'destroy']);
+    Route::post('templates/{template}/create-workflow', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTemplateController::class, 'createWorkflow']);
 
     // ─── Audience Segments ────────────────────────────────────────────────────
-    Route::get('segments',                          [\Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'index']);
-    Route::post('segments',                         [\Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'store']);
-    Route::get('segments/{segment}',                [\Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'show']);
-    Route::put('segments/{segment}',                [\Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'update']);
-    Route::delete('segments/{segment}',             [\Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'destroy']);
-    Route::post('segments/{segment}/recalculate',   [\Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'recalculate']);
-    Route::get('segments/{segment}/memberships',    [\Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'memberships']);
+    Route::get('segments', [Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'index']);
+    Route::post('segments', [Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'store']);
+    Route::get('segments/{segment}', [Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'show']);
+    Route::put('segments/{segment}', [Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'update']);
+    Route::delete('segments/{segment}', [Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'destroy']);
+    Route::post('segments/{segment}/recalculate', [Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'recalculate']);
+    Route::get('segments/{segment}/memberships', [Modules\Marketing\Automation\Presentation\Http\Controllers\AudienceSegmentController::class, 'memberships']);
 
     // ─── Governance Policies ──────────────────────────────────────────────────
-    Route::get('governance',                        [\Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'index']);
-    Route::post('governance',                       [\Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'store']);
-    Route::get('governance/{policy}',               [\Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'show']);
-    Route::put('governance/{policy}',               [\Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'update']);
-    Route::delete('governance/{policy}',            [\Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'destroy']);
+    Route::get('governance', [Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'index']);
+    Route::post('governance', [Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'store']);
+    Route::get('governance/{policy}', [Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'show']);
+    Route::put('governance/{policy}', [Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'update']);
+    Route::delete('governance/{policy}', [Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationGovernanceController::class, 'destroy']);
 });
 
 // Public webhook endpoint (no auth — rate-limited)
 Route::middleware(['throttle:30,1'])->prefix('marketing/automation')->group(function (): void {
-    Route::post('webhook/{workflow}',               [\Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTriggerController::class, 'webhook']);
+    Route::post('webhook/{workflow}', [Modules\Marketing\Automation\Presentation\Http\Controllers\WorkflowTriggerController::class, 'webhook']);
 });
 
 /*
@@ -1315,52 +1315,52 @@ Route::middleware(['throttle:30,1'])->prefix('marketing/automation')->group(func
 */
 Route::middleware('auth:sanctum')->prefix('omnichannel')->group(function (): void {
     // ─── Channel Providers ────────────────────────────────────────────────────
-    Route::get('providers',                          [\Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'index']);
-    Route::post('providers',                         [\Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'store']);
-    Route::get('providers/{channelProvider}',        [\Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'show']);
-    Route::patch('providers/{channelProvider}',      [\Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'update']);
-    Route::delete('providers/{channelProvider}',     [\Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'destroy']);
-    Route::post('providers/{channelProvider}/activate', [\Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'activate']);
+    Route::get('providers', [Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'index']);
+    Route::post('providers', [Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'store']);
+    Route::get('providers/{channelProvider}', [Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'show']);
+    Route::patch('providers/{channelProvider}', [Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'update']);
+    Route::delete('providers/{channelProvider}', [Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'destroy']);
+    Route::post('providers/{channelProvider}/activate', [Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'activate']);
 
     // ─── Outbound Messages ────────────────────────────────────────────────────
-    Route::post('conversations/{conversation}/send',          [\Modules\CustomerEngagement\Presentation\Http\Controllers\OutboundMessageController::class, 'send']);
-    Route::post('conversations/{conversation}/macros/{macro}',[\Modules\CustomerEngagement\Presentation\Http\Controllers\OutboundMessageController::class, 'applyMacro']);
+    Route::post('conversations/{conversation}/send', [Modules\CustomerEngagement\Presentation\Http\Controllers\OutboundMessageController::class, 'send']);
+    Route::post('conversations/{conversation}/macros/{macro}', [Modules\CustomerEngagement\Presentation\Http\Controllers\OutboundMessageController::class, 'applyMacro']);
 
     // ─── Macros ───────────────────────────────────────────────────────────────
-    Route::get('macros',                [\Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'index']);
-    Route::post('macros',               [\Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'store']);
-    Route::get('macros/{macro}',        [\Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'show']);
-    Route::patch('macros/{macro}',      [\Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'update']);
-    Route::delete('macros/{macro}',     [\Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'destroy']);
+    Route::get('macros', [Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'index']);
+    Route::post('macros', [Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'store']);
+    Route::get('macros/{macro}', [Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'show']);
+    Route::patch('macros/{macro}', [Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'update']);
+    Route::delete('macros/{macro}', [Modules\CustomerEngagement\Presentation\Http\Controllers\MacroController::class, 'destroy']);
 
     // ─── Routing Rules ────────────────────────────────────────────────────────
-    Route::get('routing-rules',                      [\Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'index']);
-    Route::post('routing-rules',                     [\Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'store']);
-    Route::get('routing-rules/{rule}',               [\Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'show']);
-    Route::patch('routing-rules/{rule}',             [\Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'update']);
-    Route::delete('routing-rules/{rule}',            [\Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'destroy']);
-    Route::post('conversations/{conversation}/auto-route', [\Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'applyToConversation']);
+    Route::get('routing-rules', [Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'index']);
+    Route::post('routing-rules', [Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'store']);
+    Route::get('routing-rules/{rule}', [Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'show']);
+    Route::patch('routing-rules/{rule}', [Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'update']);
+    Route::delete('routing-rules/{rule}', [Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'destroy']);
+    Route::post('conversations/{conversation}/auto-route', [Modules\CustomerEngagement\Presentation\Http\Controllers\RoutingController::class, 'applyToConversation']);
 
     // ─── Attribution ──────────────────────────────────────────────────────────
-    Route::get('conversations/{conversation}/attribution',    [\Modules\CustomerEngagement\Presentation\Http\Controllers\AttributionController::class, 'show']);
-    Route::post('conversations/{conversation}/attribution',   [\Modules\CustomerEngagement\Presentation\Http\Controllers\AttributionController::class, 'capture']);
+    Route::get('conversations/{conversation}/attribution', [Modules\CustomerEngagement\Presentation\Http\Controllers\AttributionController::class, 'show']);
+    Route::post('conversations/{conversation}/attribution', [Modules\CustomerEngagement\Presentation\Http\Controllers\AttributionController::class, 'capture']);
 
     // ─── Commerce (Order Wizard, Linked Entities) ─────────────────────────────
-    Route::get('conversations/{conversation}/entities',       [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationCommerceController::class, 'linkedEntities']);
-    Route::post('conversations/{conversation}/prepare-order', [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationCommerceController::class, 'prepareOrder']);
-    Route::post('conversations/{conversation}/link-entity',   [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationCommerceController::class, 'linkOrder']);
-    Route::get('commerce/kpis',                               [\Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationCommerceController::class, 'kpis']);
+    Route::get('conversations/{conversation}/entities', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationCommerceController::class, 'linkedEntities']);
+    Route::post('conversations/{conversation}/prepare-order', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationCommerceController::class, 'prepareOrder']);
+    Route::post('conversations/{conversation}/link-entity', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationCommerceController::class, 'linkOrder']);
+    Route::get('commerce/kpis', [Modules\CustomerEngagement\Presentation\Http\Controllers\ConversationCommerceController::class, 'kpis']);
 
     // ─── Product Selector ─────────────────────────────────────────────────────
-    Route::get('products/search',       [\Modules\CustomerEngagement\Presentation\Http\Controllers\ProductSelectorController::class, 'search']);
-    Route::get('products/{productId}',  [\Modules\CustomerEngagement\Presentation\Http\Controllers\ProductSelectorController::class, 'show']);
+    Route::get('products/search', [Modules\CustomerEngagement\Presentation\Http\Controllers\ProductSelectorController::class, 'search']);
+    Route::get('products/{productId}', [Modules\CustomerEngagement\Presentation\Http\Controllers\ProductSelectorController::class, 'show']);
 });
 
 // ─── Omnichannel Webhooks (PUBLIC — provider-to-ECOS, throttled) ─────────────
 Route::middleware(['throttle:100,1'])->prefix('omnichannel/webhook')->group(function (): void {
     // GET = Meta hub.challenge verification; POST = inbound messages + status updates
-    Route::get('{channelProviderId}',  [\Modules\CustomerEngagement\Presentation\Http\Controllers\WebhookController::class, 'verify']);
-    Route::post('{channelProviderId}', [\Modules\CustomerEngagement\Presentation\Http\Controllers\WebhookController::class, 'receive']);
+    Route::get('{channelProviderId}', [Modules\CustomerEngagement\Presentation\Http\Controllers\WebhookController::class, 'verify']);
+    Route::post('{channelProviderId}', [Modules\CustomerEngagement\Presentation\Http\Controllers\WebhookController::class, 'receive']);
 });
 
 /*
@@ -1369,8 +1369,8 @@ Route::middleware(['throttle:100,1'])->prefix('omnichannel/webhook')->group(func
 |--------------------------------------------------------------------------
 */
 Route::middleware(['throttle:60,1'])->group(function (): void {
-    Route::post('webhooks/woocommerce/{channel}/orders',    [WooCommerceWebhookController::class, 'handleOrder']);
-    Route::post('webhooks/woocommerce/{channel}/products',  [WooCommerceWebhookController::class, 'handleProduct']);
+    Route::post('webhooks/woocommerce/{channel}/orders', [WooCommerceWebhookController::class, 'handleOrder']);
+    Route::post('webhooks/woocommerce/{channel}/products', [WooCommerceWebhookController::class, 'handleProduct']);
     Route::post('webhooks/woocommerce/{channel}/customers', [WooCommerceWebhookController::class, 'handleCustomer']);
 });
 
@@ -1381,25 +1381,25 @@ Route::middleware(['throttle:60,1'])->group(function (): void {
 */
 // ── Distribution OS — Master Data ────────────────────────────────────────────
 Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(function (): void {
-    Route::get('/stats',                        [DistributionZoneController::class, 'stats']);
-    Route::get('/next-code',                    [DistributionZoneController::class, 'nextCode']);
-    Route::get('/areas',                        [DistributionZoneController::class, 'areas']);
-    Route::get('/zones',                        [DistributionZoneController::class, 'index']);
-    Route::post('/zones',                       [DistributionZoneController::class, 'store']);
-    Route::get('/zones/{id}',                   [DistributionZoneController::class, 'show']);
-    Route::put('/zones/{id}',                   [DistributionZoneController::class, 'update']);
-    Route::delete('/zones/{id}',                [DistributionZoneController::class, 'destroy']);
-    Route::patch('/zones/{id}/status',          [DistributionZoneController::class, 'toggleStatus']);
+    Route::get('/stats', [DistributionZoneController::class, 'stats']);
+    Route::get('/next-code', [DistributionZoneController::class, 'nextCode']);
+    Route::get('/areas', [DistributionZoneController::class, 'areas']);
+    Route::get('/zones', [DistributionZoneController::class, 'index']);
+    Route::post('/zones', [DistributionZoneController::class, 'store']);
+    Route::get('/zones/{id}', [DistributionZoneController::class, 'show']);
+    Route::put('/zones/{id}', [DistributionZoneController::class, 'update']);
+    Route::delete('/zones/{id}', [DistributionZoneController::class, 'destroy']);
+    Route::patch('/zones/{id}/status', [DistributionZoneController::class, 'toggleStatus']);
 });
 
 // ── Distribution OS — Planning ────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->prefix('logistics/distribution/planning')->group(function (): void {
-    Route::get('/stats',                        [DistributionPlanningController::class, 'stats']);
-    Route::get('/zones',                        [DistributionPlanningController::class, 'zones']);
-    Route::get('/unassigned',                   [DistributionPlanningController::class, 'unassigned']);
-    Route::get('/zones/{zoneId}/detail',        [DistributionPlanningController::class, 'zoneDetail']);
-    Route::patch('/zones/{zoneId}/start',       [DistributionPlanningController::class, 'startPlanning']);
-    Route::patch('/zones/{zoneId}/planned',     [DistributionPlanningController::class, 'markPlanned']);
+    Route::get('/stats', [DistributionPlanningController::class, 'stats']);
+    Route::get('/zones', [DistributionPlanningController::class, 'zones']);
+    Route::get('/unassigned', [DistributionPlanningController::class, 'unassigned']);
+    Route::get('/zones/{zoneId}/detail', [DistributionPlanningController::class, 'zoneDetail']);
+    Route::patch('/zones/{zoneId}/start', [DistributionPlanningController::class, 'startPlanning']);
+    Route::patch('/zones/{zoneId}/planned', [DistributionPlanningController::class, 'markPlanned']);
 });
 
 Route::middleware('auth:sanctum')->prefix('logistics/geography')->group(function (): void {
@@ -1407,27 +1407,39 @@ Route::middleware('auth:sanctum')->prefix('logistics/geography')->group(function
     Route::get('/stats', [GovernorateController::class, 'stats']);
 
     // Governorates
-    Route::get('/governorates',                [GovernorateController::class, 'index']);
-    Route::post('/governorates',               [GovernorateController::class, 'store']);
-    Route::patch('/governorates/reorder',      [GovernorateController::class, 'reorder']);
-    Route::get('/governorates/{id}',           [GovernorateController::class, 'show']);
-    Route::put('/governorates/{id}',           [GovernorateController::class, 'update']);
-    Route::delete('/governorates/{id}',        [GovernorateController::class, 'destroy']);
-    Route::patch('/governorates/{id}/status',  [GovernorateController::class, 'toggleStatus']);
+    Route::get('/governorates', [GovernorateController::class, 'index']);
+    Route::post('/governorates', [GovernorateController::class, 'store']);
+    Route::patch('/governorates/reorder', [GovernorateController::class, 'reorder']);
+    Route::get('/governorates/{id}', [GovernorateController::class, 'show']);
+    Route::put('/governorates/{id}', [GovernorateController::class, 'update']);
+    Route::delete('/governorates/{id}', [GovernorateController::class, 'destroy']);
+    Route::patch('/governorates/{id}/status', [GovernorateController::class, 'toggleStatus']);
 
     // Cities nested under governorate
-    Route::get('/governorates/{govId}/cities',                [CityController::class, 'index']);
-    Route::post('/governorates/{govId}/cities',               [CityController::class, 'store']);
-    Route::get('/governorates/{govId}/cities/{id}',           [CityController::class, 'show']);
-    Route::put('/governorates/{govId}/cities/{id}',           [CityController::class, 'update']);
-    Route::delete('/governorates/{govId}/cities/{id}',        [CityController::class, 'destroy']);
-    Route::patch('/governorates/{govId}/cities/{id}/status',  [CityController::class, 'toggleStatus']);
+    Route::get('/governorates/{govId}/cities', [CityController::class, 'index']);
+    Route::post('/governorates/{govId}/cities', [CityController::class, 'store']);
+    Route::get('/governorates/{govId}/cities/{id}', [CityController::class, 'show']);
+    Route::put('/governorates/{govId}/cities/{id}', [CityController::class, 'update']);
+    Route::delete('/governorates/{govId}/cities/{id}', [CityController::class, 'destroy']);
+    Route::patch('/governorates/{govId}/cities/{id}/status', [CityController::class, 'toggleStatus']);
 
     // Aliases nested under city
-    Route::get('/cities/{cityId}/aliases',          [CityAliasController::class, 'index']);
-    Route::post('/cities/{cityId}/aliases',         [CityAliasController::class, 'store']);
-    Route::put('/cities/{cityId}/aliases/{id}',     [CityAliasController::class, 'update']);
-    Route::delete('/cities/{cityId}/aliases/{id}',  [CityAliasController::class, 'destroy']);
+    Route::get('/cities/{cityId}/aliases', [CityAliasController::class, 'index']);
+    Route::post('/cities/{cityId}/aliases', [CityAliasController::class, 'store']);
+    Route::put('/cities/{cityId}/aliases/{id}', [CityAliasController::class, 'update']);
+    Route::delete('/cities/{cityId}/aliases/{id}', [CityAliasController::class, 'destroy']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Engineering OS — System module (Super Admin / CTO / DevOps only)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('system/engineering')->group(function (): void {
+    Route::get('/dashboard', [EngineeringDashboardController::class, 'dashboard']);
+    Route::get('/runs',      [EngineeringDashboardController::class, 'runs']);
+    Route::get('/runs/{id}', [EngineeringDashboardController::class, 'show']);
+    Route::get('/findings',  [EngineeringDashboardController::class, 'findings']);
 });
 
 /*
@@ -1436,29 +1448,29 @@ Route::middleware('auth:sanctum')->prefix('logistics/geography')->group(function
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->prefix('driver')->group(function (): void {
-    Route::get('trips',                                 [DriverMobileController::class, 'index']);
-    Route::get('trips/{id}',                            [DriverMobileController::class, 'dashboard']);
-    Route::post('trips/{id}/start',                     [DriverMobileController::class, 'startTrip']);
-    Route::post('trips/{id}/finish',                    [DriverMobileController::class, 'finishTrip']);
-    Route::get('trips/{id}/timeline',                   [DriverMobileController::class, 'timeline']);
-    Route::post('trips/{id}/gps',                       [DriverMobileController::class, 'recordGps']);
-    Route::get('trips/{id}/stops',                      [DriverMobileController::class, 'stops']);
-    Route::get('trips/{id}/stops/{stopId}',             [DriverMobileController::class, 'stopDetail']);
-    Route::get('trips/{id}/exceptions',                 [DriverMobileController::class, 'exceptions']);
-    Route::get('trips/{id}/returns',                    [DriverMobileController::class, 'returns']);
-    Route::get('trips/{id}/collections',                [DriverPaymentController::class, 'tripCollections']);
-    Route::get('trips/{id}/settlement',                 [TripSettlementController::class, 'settlement']);
-    Route::post('trips/{id}/settlement/submit',         [TripSettlementController::class, 'submitSettlement']);
-    Route::post('trips/{id}/returns',                   [TripSettlementController::class, 'addReturn']);
-    Route::post('trips/{id}/close',                     [TripSettlementController::class, 'closeTrip']);
-    Route::get('trips/{id}/custody-returns',            [TripSettlementController::class, 'custodyReturns']);
-    Route::post('trips/{id}/custody-returns',           [TripSettlementController::class, 'recordCustodyReturn']);
-    Route::post('stops/{stopId}/action',                [DriverStopController::class, 'action']);
-    Route::post('stops/{stopId}/proof',                 [DriverStopController::class, 'proof']);
-    Route::post('stops/{stopId}/exception',             [DriverStopController::class, 'exception']);
-    Route::get('stops/{stopId}/collections',            [DriverStopController::class, 'collections']);
-    Route::post('stops/{stopId}/payment',               [DriverPaymentController::class, 'collect']);
-    Route::post('returns/{returnId}/confirm',           [TripSettlementController::class, 'confirmReturn']);
+    Route::get('trips', [DriverMobileController::class, 'index']);
+    Route::get('trips/{id}', [DriverMobileController::class, 'dashboard']);
+    Route::post('trips/{id}/start', [DriverMobileController::class, 'startTrip']);
+    Route::post('trips/{id}/finish', [DriverMobileController::class, 'finishTrip']);
+    Route::get('trips/{id}/timeline', [DriverMobileController::class, 'timeline']);
+    Route::post('trips/{id}/gps', [DriverMobileController::class, 'recordGps']);
+    Route::get('trips/{id}/stops', [DriverMobileController::class, 'stops']);
+    Route::get('trips/{id}/stops/{stopId}', [DriverMobileController::class, 'stopDetail']);
+    Route::get('trips/{id}/exceptions', [DriverMobileController::class, 'exceptions']);
+    Route::get('trips/{id}/returns', [DriverMobileController::class, 'returns']);
+    Route::get('trips/{id}/collections', [DriverPaymentController::class, 'tripCollections']);
+    Route::get('trips/{id}/settlement', [TripSettlementController::class, 'settlement']);
+    Route::post('trips/{id}/settlement/submit', [TripSettlementController::class, 'submitSettlement']);
+    Route::post('trips/{id}/returns', [TripSettlementController::class, 'addReturn']);
+    Route::post('trips/{id}/close', [TripSettlementController::class, 'closeTrip']);
+    Route::get('trips/{id}/custody-returns', [TripSettlementController::class, 'custodyReturns']);
+    Route::post('trips/{id}/custody-returns', [TripSettlementController::class, 'recordCustodyReturn']);
+    Route::post('stops/{stopId}/action', [DriverStopController::class, 'action']);
+    Route::post('stops/{stopId}/proof', [DriverStopController::class, 'proof']);
+    Route::post('stops/{stopId}/exception', [DriverStopController::class, 'exception']);
+    Route::get('stops/{stopId}/collections', [DriverStopController::class, 'collections']);
+    Route::post('stops/{stopId}/payment', [DriverPaymentController::class, 'collect']);
+    Route::post('returns/{returnId}/confirm', [TripSettlementController::class, 'confirmReturn']);
 });
 
 /*
@@ -1467,28 +1479,28 @@ Route::middleware('auth:sanctum')->prefix('driver')->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->prefix('cb')->group(function (): void {
-    Route::get('/dashboard',                        [CbDashboardController::class, 'show']);
+    Route::get('/dashboard', [CbDashboardController::class, 'show']);
 
     // Tasks
-    Route::get('/tasks',                            [CbTaskController::class, 'index']);
-    Route::post('/tasks',                           [CbTaskController::class, 'store']);
-    Route::get('/tasks/{id}',                       [CbTaskController::class, 'show']);
-    Route::patch('/tasks/{id}',                     [CbTaskController::class, 'update']);
-    Route::post('/tasks/{id}/queue',                [CbTaskController::class, 'queue']);
-    Route::post('/tasks/{id}/cancel',               [CbTaskController::class, 'cancel']);
-    Route::post('/tasks/{id}/approve',              [CbTaskController::class, 'approve']);
-    Route::post('/tasks/{id}/request-changes',      [CbTaskController::class, 'requestChanges']);
-    Route::post('/tasks/{id}/mark-merged',          [CbTaskController::class, 'markMerged']);
-    Route::get('/tasks/{id}/log',                   [CbTaskController::class, 'log']);
+    Route::get('/tasks', [CbTaskController::class, 'index']);
+    Route::post('/tasks', [CbTaskController::class, 'store']);
+    Route::get('/tasks/{id}', [CbTaskController::class, 'show']);
+    Route::patch('/tasks/{id}', [CbTaskController::class, 'update']);
+    Route::post('/tasks/{id}/queue', [CbTaskController::class, 'queue']);
+    Route::post('/tasks/{id}/cancel', [CbTaskController::class, 'cancel']);
+    Route::post('/tasks/{id}/approve', [CbTaskController::class, 'approve']);
+    Route::post('/tasks/{id}/request-changes', [CbTaskController::class, 'requestChanges']);
+    Route::post('/tasks/{id}/mark-merged', [CbTaskController::class, 'markMerged']);
+    Route::get('/tasks/{id}/log', [CbTaskController::class, 'log']);
 
     // Workers
-    Route::get('/workers',                          [CbWorkerController::class, 'index']);
-    Route::post('/workers',                         [CbWorkerController::class, 'store']);
-    Route::delete('/workers/{id}',                  [CbWorkerController::class, 'destroy']);
-    Route::post('/workers/{id}/regenerate-token',   [CbWorkerController::class, 'regenerateToken']);
+    Route::get('/workers', [CbWorkerController::class, 'index']);
+    Route::post('/workers', [CbWorkerController::class, 'store']);
+    Route::delete('/workers/{id}', [CbWorkerController::class, 'destroy']);
+    Route::post('/workers/{id}/regenerate-token', [CbWorkerController::class, 'regenerateToken']);
 
     // Artifacts
-    Route::get('/artifacts/{id}/download',          [CbArtifactController::class, 'download']);
+    Route::get('/artifacts/{id}/download', [CbArtifactController::class, 'download']);
 });
 
 /*
@@ -1497,14 +1509,12 @@ Route::middleware('auth:sanctum')->prefix('cb')->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(VerifyWorkerToken::class)->prefix('cb/worker')->group(function (): void {
-    Route::post('/heartbeat',                       [CbWorkerApiController::class, 'heartbeat']);
-    Route::get('/my-running-task',                  [CbWorkerApiController::class, 'myRunningTask']);
-    Route::get('/tasks/next',                       [CbWorkerApiController::class, 'nextTask']);
-    Route::post('/tasks/{id}/start',                [CbWorkerApiController::class, 'startTask']);
-    Route::post('/tasks/{id}/log-chunk',            [CbWorkerApiController::class, 'logChunk']);
-    Route::post('/tasks/{id}/artifact',             [CbWorkerApiController::class, 'uploadArtifact']);
-    Route::post('/tasks/{id}/complete',             [CbWorkerApiController::class, 'completeTask']);
-    Route::post('/tasks/{id}/fail',                 [CbWorkerApiController::class, 'failTask']);
+    Route::post('/heartbeat', [CbWorkerApiController::class, 'heartbeat']);
+    Route::get('/my-running-task', [CbWorkerApiController::class, 'myRunningTask']);
+    Route::get('/tasks/next', [CbWorkerApiController::class, 'nextTask']);
+    Route::post('/tasks/{id}/start', [CbWorkerApiController::class, 'startTask']);
+    Route::post('/tasks/{id}/log-chunk', [CbWorkerApiController::class, 'logChunk']);
+    Route::post('/tasks/{id}/artifact', [CbWorkerApiController::class, 'uploadArtifact']);
+    Route::post('/tasks/{id}/complete', [CbWorkerApiController::class, 'completeTask']);
+    Route::post('/tasks/{id}/fail', [CbWorkerApiController::class, 'failTask']);
 });
-
-

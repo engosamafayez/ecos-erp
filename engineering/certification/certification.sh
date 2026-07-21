@@ -64,6 +64,9 @@ declare -A METRICS=()
 # Blocker list for release readiness verdict
 declare -a BLOCKERS=()
 
+# Individual findings for JSON output (Engineering OS import)
+declare -a CERT_FINDINGS_JSON=()
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 # Print a category result line to console (skipped in --json-only mode)
@@ -103,7 +106,7 @@ run_validator() {
 
 # Run an architecture scanner and accumulate finding counts
 # Sets: _CRITICAL _HIGH _MEDIUM _LOW _DETAIL (from FINDING lines)
-# Also accumulates METRIC lines into METRICS[]
+# Also accumulates METRIC lines into METRICS[] and CERT_FINDINGS_JSON[]
 run_scanner() {
   local script="$1"
   _CRITICAL=0; _HIGH=0; _MEDIUM=0; _LOW=0; _DETAIL=""
@@ -121,6 +124,9 @@ run_scanner() {
         if [[ "$f1" == "CRITICAL" ]] || [[ "$f1" == "HIGH" ]]; then
           _DETAIL+="${f1} [${f2}] ${f3}${f4:+:${f4}} — ${f5}"$'\n'
         fi
+        # Collect for JSON findings array
+        local safe_title="${f5//\"/\\\"}" safe_fix="${f6//\"/\\\"}"
+        CERT_FINDINGS_JSON+=("{\"severity\":\"${f1}\",\"category\":\"${f2}\",\"file\":\"${f3}\",\"line\":${f4:-0},\"title\":\"${safe_title:0:200}\",\"description\":\"${safe_title}\",\"fix\":\"${safe_fix}\"}")
         ;;
       METRIC)
         METRICS["$f1"]="$f2"
@@ -131,7 +137,7 @@ run_scanner() {
 
 # Run a certification check script
 # Sets: _CRITICAL _HIGH _MEDIUM _LOW _DETAIL (from FINDING lines)
-# Also accumulates METRIC lines into METRICS[]
+# Also accumulates METRIC lines into METRICS[] and CERT_FINDINGS_JSON[]
 run_check() {
   local script="$1"
   _CRITICAL=0; _HIGH=0; _MEDIUM=0; _LOW=0; _DETAIL=""
@@ -147,6 +153,9 @@ run_check() {
           LOW)      _LOW=$((_LOW+1)) ;;
         esac
         _DETAIL+="${f1} [${f2}] ${f5}"$'\n'
+        # Collect for JSON findings array
+        local safe_title="${f5//\"/\\\"}" safe_fix="${f6//\"/\\\"}"
+        CERT_FINDINGS_JSON+=("{\"severity\":\"${f1}\",\"category\":\"${f2}\",\"file\":\"${f3}\",\"line\":${f4:-0},\"title\":\"${safe_title:0:200}\",\"description\":\"${safe_title}\",\"fix\":\"${safe_fix}\"}")
         ;;
       METRIC)
         METRICS["$f1"]="$f2"
@@ -471,6 +480,19 @@ fi
   printf '    },\n'
   printf '    "overall_score": %d,\n' "$OVERALL_SCORE"
   printf '    "release_ready": %s,\n' "$( [[ $RELEASE_READY -eq 1 ]] && echo 'true' || echo 'false' )"
+  # Individual findings array for Engineering OS import
+  printf '    "findings": ['
+  if [[ ${#CERT_FINDINGS_JSON[@]} -eq 0 ]]; then
+    printf '],\n'
+  else
+    printf '\n'
+    for ((i = 0; i < ${#CERT_FINDINGS_JSON[@]}; i++)); do
+      comma=','
+      [[ $i -eq $(( ${#CERT_FINDINGS_JSON[@]} - 1 )) ]] && comma=''
+      printf '      %s%s\n' "${CERT_FINDINGS_JSON[$i]}" "$comma"
+    done
+    printf '    ],\n'
+  fi
   printf '    "blockers": ['
   if [[ ${#BLOCKERS[@]} -eq 0 ]]; then
     printf ']'

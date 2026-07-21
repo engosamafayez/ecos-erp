@@ -100,4 +100,5 @@ return [
     Modules\Marketing\Automation\Infrastructure\Providers\AutomationServiceProvider::class,
     Modules\CustomerEngagement\Infrastructure\Providers\CustomerEngagementServiceProvider::class,
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
+    Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
 ];

@@ -172,6 +172,10 @@ export const ROUTES = {
   driverTripCustody:      '/driver/trips/:tripId/custody',
   driverTripTimeline:     '/driver/trips/:tripId/timeline',
   driverTripMap:          '/driver/trips/:tripId/map',
+  // Engineering OS (TASK-ENG-005)
+  engineeringDashboard: '/engineering',
+  engineeringRuns:      '/engineering/runs',
+  engineeringFindings:  '/engineering/findings',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

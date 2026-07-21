@@ -1,0 +1,94 @@
+name: Engineering Certification
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Certification mode'
+        type: choice
+        options: [full, fast]
+        default: full
+
+jobs:
+  certify:
+    name: Run Engineering Certification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo, pdo_pgsql, mbstring, xml, curl
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install PHP dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install Node dependencies
+        working-directory: frontend
+        run: npm ci --silent
+
+      - name: Run Engineering Certification
+        id: certify
+        run: |
+          MODE="${{ github.event.inputs.mode || 'full' }}"
+          EXTRA_FLAGS="--no-deploy"
+          if [[ "$MODE" == "fast" ]]; then
+            EXTRA_FLAGS="$EXTRA_FLAGS --fast"
+          fi
+          bash engineering/certification/certification.sh $EXTRA_FLAGS || true
+          # Export the latest report path for subsequent steps
+          REPORT=$(ls -t engineering/certification/reports/cert-*.json 2>/dev/null | head -1)
+          echo "report_file=$REPORT" >> "$GITHUB_OUTPUT"
+
+      - name: Upload certification report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ecos-cert-${{ github.sha }}
+          path: engineering/certification/reports/cert-*.json
+          retention-days: 90
+
+      - name: Import report into database
+        if: steps.certify.outputs.report_file != ''
+        env:
+          APP_ENV: production
+          DB_CONNECTION: pgsql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT || '5432' }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          APP_KEY: ${{ secrets.APP_KEY }}
+        working-directory: backend
+        run: |
+          php artisan engineering:import --file="${{ steps.certify.outputs.report_file }}"
+
+      - name: Check release readiness
+        if: steps.certify.outputs.report_file != ''
+        run: |
+          READY=$(python3 -c "
+          import json, sys
+          with open('${{ steps.certify.outputs.report_file }}') as f:
+              d = json.load(f)
+          cert = d['ecos_certification']
+          print(cert['overall_score'], cert['release_ready'])
+          for b in cert.get('blockers', []):
+              print('BLOCKER:', b)
+          sys.exit(0 if cert['release_ready'] else 1)
+          ")
+          echo "$READY"
