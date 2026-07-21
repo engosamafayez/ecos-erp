@@ -19,6 +19,8 @@ class EngineeringPipelineLog extends Model
     protected $fillable = [
         'pipeline_id',
         'stage',
+        'stage_label',
+        'sort_order',
         'status',
         'started_at',
         'finished_at',
@@ -35,6 +37,7 @@ class EngineeringPipelineLog extends Model
             'finished_at' => 'datetime',
             'payload'     => 'array',
             'retry_count' => 'integer',
+            'sort_order'  => 'integer',
         ];
     }
 
@@ -48,8 +51,8 @@ class EngineeringPipelineLog extends Model
         return StageStatus::from($this->status);
     }
 
-    public function getStageEnum(): PipelineStage
+    public function getStageEnum(): ?PipelineStage
     {
-        return PipelineStage::from($this->stage);
+        return PipelineStage::tryFrom($this->stage);
     }
 }

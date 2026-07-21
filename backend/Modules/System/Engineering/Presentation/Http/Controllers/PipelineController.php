@@ -47,11 +47,13 @@ final class PipelineController extends Controller
         $validated = $request->validate([
             'task_name' => 'nullable|string|max:255',
             'branch'    => 'nullable|string|max:100',
+            'template'  => 'nullable|string|max:100',
         ]);
 
         $pipeline = $this->service->create([
             'task_name'            => $validated['task_name'] ?? 'Manual Run',
             'branch'               => $validated['branch'] ?? 'main',
+            'template'             => $validated['template'] ?? null,
             'initiated_by'         => $request->user()?->name ?? 'Claude',
             'initiated_by_user_id' => $request->user()?->id,
         ]);

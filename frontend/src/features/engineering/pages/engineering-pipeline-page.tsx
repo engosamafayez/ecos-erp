@@ -9,6 +9,7 @@ import {
   Play,
   RefreshCw,
   RotateCcw,
+  SkipForward,
   Zap,
 } from 'lucide-react';
 import { Button }   from '@/components/ui/button';
@@ -21,7 +22,11 @@ import {
   useActivePipeline,
   useCancelPipeline,
   useCreatePipeline,
+  usePipelineTemplates,
+  useResumePipeline,
+  useRestartPipeline,
   useRetryPipeline,
+  useSkipStage,
 } from '../hooks/use-engineering';
 import { PipelineStageTimeline } from '../components/PipelineStageTimeline';
 import type { PipelineStatus } from '../types/engineering';
@@ -34,16 +39,24 @@ const STATUS_BADGE: Record<PipelineStatus, { label: string; className: string }>
   cancelled: { label: 'Cancelled', className: 'bg-muted text-muted-foreground' },
 };
 
+
 export function EngineeringPipelinePage() {
   const { toast } = useToast();
 
-  const [taskName, setTaskName] = useState('');
-  const [branch,   setBranch]   = useState('main');
+  const [taskName,  setTaskName]  = useState('');
+  const [branch,    setBranch]    = useState('main');
+  const [template,  setTemplate]  = useState('release');
+  const [skipStageTarget, setSkipStageTarget] = useState<string | null>(null);
 
   const { data: activePipeline, isLoading } = useActivePipeline();
+  const { data: templates = [] }            = usePipelineTemplates();
+
   const createMutation  = useCreatePipeline();
   const cancelMutation  = useCancelPipeline();
   const retryMutation   = useRetryPipeline();
+  const resumeMutation  = useResumePipeline();
+  const restartMutation = useRestartPipeline();
+  const skipStageMutation = useSkipStage();
 
   const isPipelineRunning = activePipeline?.status === 'running' || activePipeline?.status === 'pending';
 
@@ -51,10 +64,10 @@ export function EngineeringPipelinePage() {
     if (isPipelineRunning) return;
 
     createMutation.mutate(
-      { task_name: taskName || 'Manual Run', branch: branch || 'main' },
+      { task_name: taskName || 'Manual Run', branch: branch || 'main', template },
       {
         onSuccess: (pipeline) => {
-          toast({ title: 'Pipeline queued', description: `Pipeline for "${pipeline.task_name}" is now running.` });
+          toast({ title: 'Pipeline queued', description: `"${pipeline.task_name}" is now running (${template} template).` });
           setTaskName('');
         },
         onError: () => {
@@ -78,9 +91,39 @@ export function EngineeringPipelinePage() {
     });
   }
 
+  function handleResume() {
+    if (!activePipeline) return;
+    resumeMutation.mutate(activePipeline.id, {
+      onSuccess: () => toast({ title: 'Pipeline resumed from failed stage' }),
+      onError:   () => toast({ title: 'Could not resume pipeline', variant: 'destructive' }),
+    });
+  }
+
+  function handleRestart() {
+    if (!activePipeline) return;
+    restartMutation.mutate(activePipeline.id, {
+      onSuccess: () => toast({ title: 'Pipeline restarted from the beginning' }),
+      onError:   () => toast({ title: 'Could not restart pipeline', variant: 'destructive' }),
+    });
+  }
+
+  function handleSkipStage(stage: string) {
+    if (!activePipeline) return;
+    skipStageMutation.mutate(
+      { id: activePipeline.id, stage },
+      {
+        onSuccess: () => { toast({ title: `Stage "${stage}" skipped` }); setSkipStageTarget(null); },
+        onError:   () => toast({ title: 'Could not skip stage', variant: 'destructive' }),
+      },
+    );
+  }
+
   const completedStages = activePipeline?.logs?.filter((l) => l.status === 'success' || l.status === 'skipped').length ?? 0;
   const totalStages     = activePipeline?.logs?.length ?? 11;
   const progress        = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
+
+  const isFailed    = activePipeline?.status === 'failed';
+  const isCancelled = activePipeline?.status === 'cancelled';
 
   return (
     <div className="flex flex-col h-full">
@@ -111,13 +154,39 @@ export function EngineeringPipelinePage() {
               <Play className="h-4 w-4 text-primary" />
               Launch Pipeline
             </h2>
+
+            {/* Template selector */}
+            {templates.length > 0 && (
+              <div className="mb-4">
+                <Label className="text-xs mb-2 block">Pipeline Template</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {templates.map((t) => (
+                    <button
+                      key={t.slug}
+                      type="button"
+                      onClick={() => setTemplate(t.slug)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-lg border text-xs font-medium transition-all',
+                        template === t.slug
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border/60 text-muted-foreground hover:border-border',
+                      )}
+                    >
+                      {t.name}
+                      <span className="ml-1.5 opacity-60">{t.stage_count} stages</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Task Name</Label>
                 <Input
                   value={taskName}
                   onChange={(e) => setTaskName(e.target.value)}
-                  placeholder="e.g. TASK-ENG-006"
+                  placeholder="e.g. TASK-ENG-007"
                   className="h-8 text-sm"
                 />
               </div>
@@ -173,7 +242,7 @@ export function EngineeringPipelinePage() {
                         <GitCommit className="h-3 w-3" /> {activePipeline.commit_sha}
                       </span>
                     )}
-                    {activePipeline.status === 'running' || activePipeline.status === 'pending' ? (
+                    {(activePipeline.status === 'running' || activePipeline.status === 'pending') ? (
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" /> In progress…
                       </span>
@@ -187,37 +256,38 @@ export function EngineeringPipelinePage() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {activePipeline.status === 'running' || activePipeline.status === 'pending' ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancel}
-                    disabled={cancelMutation.isPending}
-                    className="gap-1.5 h-7 text-xs"
-                  >
+                {(activePipeline.status === 'running' || activePipeline.status === 'pending') && (
+                  <Button variant="outline" size="sm" onClick={handleCancel} disabled={cancelMutation.isPending} className="gap-1.5 h-7 text-xs">
                     <Ban className="h-3 w-3" /> Cancel
                   </Button>
-                ) : activePipeline.status === 'failed' ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRetry}
-                    disabled={retryMutation.isPending}
-                    className="gap-1.5 h-7 text-xs"
-                  >
-                    <RotateCcw className="h-3 w-3" /> Retry
+                )}
+
+                {isFailed && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleResume} disabled={resumeMutation.isPending} className="gap-1.5 h-7 text-xs">
+                      <Play className="h-3 w-3" /> Resume
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleRetry} disabled={retryMutation.isPending} className="gap-1.5 h-7 text-xs">
+                      <RotateCcw className="h-3 w-3" /> Retry
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleRestart} disabled={restartMutation.isPending} className="gap-1.5 h-7 text-xs text-muted-foreground">
+                      <RefreshCw className="h-3 w-3" /> Restart
+                    </Button>
+                  </>
+                )}
+
+                {isCancelled && (
+                  <Button variant="outline" size="sm" onClick={handleRestart} disabled={restartMutation.isPending} className="gap-1.5 h-7 text-xs">
+                    <RefreshCw className="h-3 w-3" /> Restart
                   </Button>
-                ) : null}
+                )}
               </div>
             </div>
 
             {/* Progress bar */}
             {(activePipeline.status === 'running' || activePipeline.status === 'pending') && (
               <div className="h-1 bg-muted/40">
-                <div
-                  className="h-full bg-blue-500 transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
+                <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${progress}%` }} />
               </div>
             )}
 
@@ -232,10 +302,50 @@ export function EngineeringPipelinePage() {
             {/* Stage timeline */}
             <div className="p-5">
               {activePipeline.logs && activePipeline.logs.length > 0 ? (
-                <PipelineStageTimeline
-                  logs={activePipeline.logs}
-                  currentStage={activePipeline.current_stage}
-                />
+                <>
+                  <PipelineStageTimeline
+                    logs={activePipeline.logs}
+                    currentStage={activePipeline.current_stage}
+                  />
+
+                  {/* Skip stage controls for failed pipelines */}
+                  {isFailed && activePipeline.current_stage && (
+                    <div className="mt-4 pt-4 border-t border-border/60">
+                      {skipStageTarget === null ? (
+                        <button
+                          type="button"
+                          onClick={() => setSkipStageTarget(activePipeline.current_stage ?? null)}
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5"
+                        >
+                          <SkipForward className="h-3.5 w-3.5" />
+                          Skip failed stage and continue
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">
+                            Skip <strong>{skipStageTarget}</strong> and continue?
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-xs gap-1"
+                            onClick={() => handleSkipStage(skipStageTarget)}
+                            disabled={skipStageMutation.isPending}
+                          >
+                            <SkipForward className="h-3 w-3" /> Confirm Skip
+                          </Button>
+                          <button
+                            type="button"
+                            onClick={() => setSkipStageTarget(null)}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground">Loading stage details...</p>
               )}
@@ -269,7 +379,7 @@ export function EngineeringPipelinePage() {
               <p className="text-sm font-medium text-amber-800 dark:text-amber-400">AUTO_DEPLOY = false</p>
               <p className="text-xs text-amber-700 dark:text-amber-500 mt-0.5">
                 Deployment to production requires manual approval. The Deployment Guardian stage will be automatically skipped.
-                Set <code className="font-mono">AUTO_DEPLOY=true</code> in <code className="font-mono">config/engineering.php</code> to enable automatic deployment.
+                Set <code className="font-mono">ENGINEERING_AUTO_DEPLOY=true</code> in <code className="font-mono">.env</code> to enable automatic deployment.
               </p>
             </div>
           </div>

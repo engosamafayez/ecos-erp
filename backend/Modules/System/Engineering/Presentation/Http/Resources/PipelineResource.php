@@ -18,8 +18,9 @@ class PipelineResource extends JsonResource
             'status'           => $this->status,
             'current_stage'    => $this->current_stage,
             'current_stage_label' => $this->current_stage
-                ? \Modules\System\Engineering\Domain\Enums\PipelineStage::from($this->current_stage)->label()
+                ? (\Modules\System\Engineering\Domain\Enums\PipelineStage::tryFrom($this->current_stage)?->label() ?? $this->current_stage)
                 : null,
+            'template_slug'    => $this->template_slug,
             'started_at'       => $this->started_at?->toISOString(),
             'finished_at'      => $this->finished_at?->toISOString(),
             'duration_seconds' => $this->duration_seconds,

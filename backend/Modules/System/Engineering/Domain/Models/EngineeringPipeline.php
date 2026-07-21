@@ -30,6 +30,8 @@ class EngineeringPipeline extends Model
         'error_message',
         'auto_deploy',
         'metadata',
+        'template_id',
+        'template_slug',
     ];
 
     protected function casts(): array
@@ -45,6 +47,7 @@ class EngineeringPipeline extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(EngineeringPipelineLog::class, 'pipeline_id')
+            ->orderBy('sort_order')
             ->orderBy('created_at');
     }
 

@@ -86,11 +86,12 @@ export function useEngineeringPipelines(page = 1) {
 export function useCreatePipeline() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (params: { task_name?: string; branch?: string }) =>
+    mutationFn: (params: { task_name?: string; branch?: string; template?: string }) =>
       engineeringService.createPipeline(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['engineering', 'pipeline', 'active'] });
       queryClient.invalidateQueries({ queryKey: ['engineering', 'pipelines'] });
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'analytics'] });
     },
   });
 }
@@ -114,6 +115,62 @@ export function useRetryPipeline() {
       queryClient.invalidateQueries({ queryKey: ['engineering', 'pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['engineering', 'pipelines'] });
     },
+  });
+}
+
+// ── Recovery hooks (ENG-007) ──────────────────────────────────────────────
+
+export function useResumePipeline() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => engineeringService.resumePipeline(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipelines'] });
+    },
+  });
+}
+
+export function useRestartPipeline() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => engineeringService.restartPipeline(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipelines'] });
+    },
+  });
+}
+
+export function useSkipStage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, stage }: { id: string; stage: string }) =>
+      engineeringService.skipStage(id, stage),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipeline'] });
+    },
+  });
+}
+
+// ── Template hooks (ENG-007) ──────────────────────────────────────────────
+
+export function usePipelineTemplates() {
+  return useQuery({
+    queryKey: ['engineering', 'templates'],
+    queryFn: () => engineeringService.getTemplates(),
+    staleTime: 60_000,
+  });
+}
+
+// ── Analytics hooks (ENG-007) ─────────────────────────────────────────────
+
+export function usePipelineAnalytics() {
+  return useQuery({
+    queryKey: ['engineering', 'analytics'],
+    queryFn: () => engineeringService.getAnalytics(),
+    staleTime: 60_000,
+    refetchInterval: 60_000,
   });
 }
 

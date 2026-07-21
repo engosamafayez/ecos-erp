@@ -179,6 +179,9 @@ export const ROUTES = {
   engineeringPipeline:          '/engineering/pipeline',
   engineeringPipelineHistory:   '/engineering/pipeline/history',
   engineeringNotifications:     '/engineering/notifications',
+  engineeringAnalytics:         '/engineering/analytics',
+  // Branch Coverage (TASK-BRANCH-COVERAGE-UI-001)
+  branchCoverage: '/settings/branch-coverage',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

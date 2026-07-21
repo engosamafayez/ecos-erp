@@ -9,13 +9,14 @@ use Modules\System\Engineering\Domain\Enums\PipelineStage;
 use Modules\System\Engineering\Domain\Enums\StageStatus;
 use Modules\System\Engineering\Domain\Models\EngineeringPipeline;
 use Modules\System\Engineering\Domain\Models\EngineeringPipelineLog;
+use Modules\System\Engineering\Infrastructure\Registry\ProviderRegistry;
 use Symfony\Component\Process\Process;
 
 class PipelineStageExecutor
 {
     private string $projectRoot;
 
-    public function __construct()
+    public function __construct(private readonly ProviderRegistry $providers)
     {
         $this->projectRoot = base_path('..');
     }
@@ -24,10 +25,15 @@ class PipelineStageExecutor
      * Execute a single stage. Returns true on success, false on failure.
      */
     public function execute(
-        EngineeringPipeline $pipeline,
-        PipelineStage $stage,
+        EngineeringPipeline    $pipeline,
+        PipelineStage          $stage,
         EngineeringPipelineLog $log,
     ): bool {
+        // Honour skipped status set by recovery (skip-stage action)
+        if ($log->status === StageStatus::Skipped->value) {
+            return true;
+        }
+
         return match($stage) {
             PipelineStage::DevelopmentGuardian  => $this->runDevelopmentGuardian($pipeline, $log),
             PipelineStage::ArchitectureGuardian => $this->runArchitectureGuardian($pipeline, $log),
@@ -52,11 +58,9 @@ class PipelineStageExecutor
         );
 
         if (! $result['success']) {
-            // Non-blocking: log warning but don't fail pipeline
             $this->appendMessage($log, 'PHP style issues detected. Pipeline continues — fix Pint errors locally.');
         }
 
-        // Run ESLint check (non-blocking)
         $eslint = $this->shell(
             "cd {$this->projectRoot}/frontend && npx eslint . --max-warnings=0 2>&1 | tail -10",
             $log,
@@ -64,15 +68,17 @@ class PipelineStageExecutor
         );
 
         $passed = $result['success'] && $eslint['success'];
-        $this->appendMessage($log, $passed ? 'Development Guardian: all checks passed.' : 'Development Guardian: style issues found (see payload). Continuing.');
+        $this->appendMessage($log, $passed
+            ? 'Development Guardian: all checks passed.'
+            : 'Development Guardian: style issues found (see payload). Continuing.');
 
-        // Always succeed — Guardian is advisory at this stage
+        // Guardian is advisory — never blocks the pipeline
         return true;
     }
 
     private function runArchitectureGuardian(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
-        $result = $this->shell(
+        $this->shell(
             "cd {$this->projectRoot}/backend && php artisan inspire 2>&1",
             $log,
             timeoutSeconds: 30,
@@ -119,18 +125,13 @@ class PipelineStageExecutor
         $taskName = $pipeline->task_name ?? 'update';
         $message  = "{$taskName} completed\n\nAuto-committed by Engineering AI Release Manager.\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>";
 
-        $add = $this->shell(
-            "cd {$this->projectRoot} && git add -A 2>&1",
-            $log,
-            timeoutSeconds: 30,
-        );
+        $add = $this->shell("cd {$this->projectRoot} && git add -A 2>&1", $log, 30);
 
         if (! $add['success']) {
             $this->appendMessage($log, "git add failed: {$add['output']}");
             return false;
         }
 
-        // Check if there's anything to commit
         $status = $this->shell("cd {$this->projectRoot} && git status --porcelain", $log, 10);
         if (trim($status['output']) === '') {
             $this->appendMessage($log, 'Nothing to commit — working tree clean. Skipping commit.');
@@ -144,7 +145,6 @@ class PipelineStageExecutor
         );
 
         if ($commit['success']) {
-            // Read the new commit SHA
             $sha = $this->shell("cd {$this->projectRoot} && git rev-parse --short HEAD", $log, 10);
             $pipeline->update(['commit_sha' => trim($sha['output'])]);
             $this->appendMessage($log, "Committed: {$commit['output']}");
@@ -174,40 +174,36 @@ class PipelineStageExecutor
 
     private function runGitHubActionsWait(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
-        // Poll GitHub Actions every 30s, max 10 minutes
-        $maxWaitSeconds = 600;
-        $pollInterval   = 30;
-        $elapsed        = 0;
+        $provider = $this->providers->active();
 
-        $this->appendMessage($log, 'Waiting for GitHub Actions workflow to complete...');
-
-        while ($elapsed < $maxWaitSeconds) {
-            $result = $this->shell(
-                "gh run list --branch {$pipeline->branch} --limit 1 --json status,conclusion --jq '.[0]' 2>&1",
-                $log,
-                timeoutSeconds: 30,
-            );
-
-            if ($result['success']) {
-                $data       = json_decode($result['output'], true);
-                $status     = $data['status'] ?? 'unknown';
-                $conclusion = $data['conclusion'] ?? null;
-
-                $this->appendMessage($log, "GH Actions: status={$status}, conclusion={$conclusion}");
-
-                if ($status === 'completed') {
-                    $passed = $conclusion === 'success';
-                    $this->appendMessage($log, $passed ? 'GitHub Actions workflow succeeded.' : "GitHub Actions workflow {$conclusion}.");
-                    return $passed;
-                }
-            }
-
-            sleep($pollInterval);
-            $elapsed += $pollInterval;
+        if (! $provider->supportsCI()) {
+            $this->appendMessage($log, "Provider '{$provider->name()}' does not support CI. Stage skipped.");
+            $log->update(['status' => StageStatus::Skipped->value]);
+            return true;
         }
 
-        $this->appendMessage($log, 'GitHub Actions wait timed out after 10 minutes.');
-        return false;
+        $this->appendMessage($log, "Waiting for {$provider->name()} CI workflow to complete...");
+
+        $providerConfig  = config("engineering.providers.{$provider->name()}", []);
+        $maxWait         = (int) ($providerConfig['max_wait_seconds']      ?? 600);
+        $pollInterval    = (int) ($providerConfig['poll_interval_seconds'] ?? 30);
+
+        $result = $provider->waitForWorkflow(
+            branch:              $pipeline->branch,
+            maxWaitSeconds:      $maxWait,
+            pollIntervalSeconds: $pollInterval,
+            onPoll:              function ($ciResult, $elapsed) use ($log) {
+                $this->appendMessage($log, "CI: status={$ciResult->status}, elapsed={$elapsed}s");
+            },
+        );
+
+        $this->appendMessage($log, $result->message ?? ($result->passed ? 'CI passed.' : 'CI failed.'));
+
+        if ($result->runUrl !== null) {
+            $log->update(['payload' => array_merge($log->payload ?? [], ['ci_run_url' => $result->runUrl])]);
+        }
+
+        return $result->passed;
     }
 
     private function runDeploymentGuardian(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
@@ -226,8 +222,6 @@ class PipelineStageExecutor
 
     private function runCertification(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
-        $reportsDir = base_path('engineering/certification/reports');
-
         $result = $this->shell(
             "bash {$this->projectRoot}/engineering/certification/certification.sh 2>&1",
             $log,
@@ -239,7 +233,6 @@ class PipelineStageExecutor
             : "Certification script error: {$result['output']}"
         );
 
-        // Import the latest report
         $import = $this->shell(
             "cd {$this->projectRoot}/backend && php artisan engineering:import 2>&1",
             $log,
@@ -253,17 +246,11 @@ class PipelineStageExecutor
 
     private function runHealthCheck(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
-        $checks = [
-            'API Health' => config('app.url', 'http://localhost') . '/api/health',
-        ];
+        $checks = ['API Health' => config('app.url', 'http://localhost') . '/api/health'];
 
         $allPassed = true;
         foreach ($checks as $name => $url) {
-            $result = $this->shell(
-                "curl -sf --max-time 10 {$url} 2>&1",
-                $log,
-                timeoutSeconds: 15,
-            );
+            $result = $this->shell("curl -sf --max-time 10 {$url} 2>&1", $log, 15);
 
             $this->appendMessage($log, $result['success']
                 ? "{$name}: ✓ OK"
@@ -284,9 +271,7 @@ class PipelineStageExecutor
         return true;
     }
 
-    /**
-     * @return array{success: bool, output: string, exitCode: int}
-     */
+    /** @return array{success: bool, output: string, exitCode: int} */
     private function shell(string $command, EngineeringPipelineLog $log, int $timeoutSeconds = 120): array
     {
         try {
@@ -294,10 +279,10 @@ class PipelineStageExecutor
             $process->setTimeout($timeoutSeconds);
             $process->run();
 
-            $output = trim($process->getOutput() . $process->getErrorOutput());
+            $output  = trim($process->getOutput() . $process->getErrorOutput());
             $success = $process->isSuccessful();
 
-            $payload = $log->payload ?? [];
+            $payload   = $log->payload ?? [];
             $payload[] = ['cmd' => $command, 'exit' => $process->getExitCode(), 'out' => mb_substr($output, 0, 2000)];
             $log->update(['payload' => $payload]);
 

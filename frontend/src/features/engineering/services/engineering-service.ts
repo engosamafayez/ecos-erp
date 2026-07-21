@@ -7,6 +7,8 @@ import type {
   EngineeringRun,
   NotificationListResponse,
   PaginatedResponse,
+  PipelineAnalytics,
+  PipelineTemplate,
 } from '../types/engineering';
 
 export const engineeringService = {
@@ -63,7 +65,7 @@ export const engineeringService = {
     return { data: res.data.data.data, meta: res.data.data.meta };
   },
 
-  async createPipeline(params: { task_name?: string; branch?: string }): Promise<EngineeringPipeline> {
+  async createPipeline(params: { task_name?: string; branch?: string; template?: string }): Promise<EngineeringPipeline> {
     const res = await api.post<{ data: EngineeringPipeline }>('/system/engineering/pipelines', params);
     return res.data.data;
   },
@@ -80,6 +82,47 @@ export const engineeringService = {
 
   async retryPipeline(id: string): Promise<EngineeringPipeline> {
     const res = await api.post<{ data: EngineeringPipeline }>(`/system/engineering/pipelines/${id}/retry`);
+    return res.data.data;
+  },
+
+  // ── Recovery (ENG-007) ──────────────────────────────────────────────────
+
+  async resumePipeline(id: string): Promise<EngineeringPipeline> {
+    const res = await api.post<{ data: EngineeringPipeline }>(`/system/engineering/pipelines/${id}/resume`);
+    return res.data.data;
+  },
+
+  async restartPipeline(id: string): Promise<EngineeringPipeline> {
+    const res = await api.post<{ data: EngineeringPipeline }>(`/system/engineering/pipelines/${id}/restart`);
+    return res.data.data;
+  },
+
+  async restartStage(id: string, stage: string): Promise<EngineeringPipeline> {
+    const res = await api.post<{ data: EngineeringPipeline }>(`/system/engineering/pipelines/${id}/restart-stage`, { stage });
+    return res.data.data;
+  },
+
+  async skipStage(id: string, stage: string): Promise<EngineeringPipeline> {
+    const res = await api.post<{ data: EngineeringPipeline }>(`/system/engineering/pipelines/${id}/skip-stage`, { stage });
+    return res.data.data;
+  },
+
+  // ── Templates (ENG-007) ─────────────────────────────────────────────────
+
+  async getTemplates(): Promise<PipelineTemplate[]> {
+    const res = await api.get<{ data: PipelineTemplate[] }>('/system/engineering/templates');
+    return res.data.data;
+  },
+
+  async getTemplate(slug: string): Promise<PipelineTemplate> {
+    const res = await api.get<{ data: PipelineTemplate }>(`/system/engineering/templates/${slug}`);
+    return res.data.data;
+  },
+
+  // ── Analytics (ENG-007) ─────────────────────────────────────────────────
+
+  async getAnalytics(): Promise<PipelineAnalytics> {
+    const res = await api.get<{ data: PipelineAnalytics }>('/system/engineering/analytics');
     return res.data.data;
   },
 

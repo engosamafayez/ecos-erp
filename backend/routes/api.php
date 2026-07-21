@@ -16,6 +16,9 @@ use Modules\Admin\Configuration\Presentation\Http\Controllers\PreparationPolicyC
 use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
 use Modules\System\Engineering\Presentation\Http\Controllers\EngineeringDashboardController;
 use Modules\System\Engineering\Presentation\Http\Controllers\PipelineController;
+use Modules\System\Engineering\Presentation\Http\Controllers\PipelineAnalyticsController;
+use Modules\System\Engineering\Presentation\Http\Controllers\PipelineRecoveryController;
+use Modules\System\Engineering\Presentation\Http\Controllers\PipelineTemplateController;
 use Modules\System\Engineering\Presentation\Http\Controllers\EngineeringNotificationController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
@@ -92,6 +95,7 @@ use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationWork
 use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparedPoolController;
 use Modules\Operations\Preparation\Presentation\Http\Controllers\WarehouseAssignmentController;
 use Modules\Organization\Branches\Presentation\Http\Controllers\BranchController;
+use Modules\Organization\Branches\Presentation\Http\Controllers\BranchCoverageController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryTimeSlotController;
@@ -156,6 +160,12 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('context/company', CompanyContextController::class);
     Route::apiResource('companies', CompanyController::class);
     Route::apiResource('branches', BranchController::class);
+    Route::prefix('branches/{branch}')->group(function (): void {
+        Route::get('coverage', [BranchCoverageController::class, 'index']);
+        Route::post('coverage', [BranchCoverageController::class, 'store']);
+        Route::put('coverage/{area}', [BranchCoverageController::class, 'update']);
+        Route::delete('coverage/{area}', [BranchCoverageController::class, 'destroy']);
+    });
     Route::apiResource('brands', BrandController::class);
     Route::prefix('brands/{brand}')->group(function (): void {
         Route::get('delivery-geography', [BrandDeliveryController::class, 'geography']);
@@ -1444,6 +1454,13 @@ Route::middleware('auth:sanctum')->prefix('system/engineering')->group(function 
     Route::get('/runs/{id}', [EngineeringDashboardController::class, 'show']);
     Route::get('/findings',  [EngineeringDashboardController::class, 'findings']);
 
+    // Analytics (ENG-007)
+    Route::get('/analytics', [PipelineAnalyticsController::class, 'index']);
+
+    // Templates (ENG-007)
+    Route::get('/templates',        [PipelineTemplateController::class, 'index']);
+    Route::get('/templates/{slug}', [PipelineTemplateController::class, 'show']);
+
     // Release Manager — pipelines
     Route::get('/pipelines/active',       [PipelineController::class, 'active']);
     Route::get('/pipelines',              [PipelineController::class, 'index']);
@@ -1451,6 +1468,12 @@ Route::middleware('auth:sanctum')->prefix('system/engineering')->group(function 
     Route::get('/pipelines/{id}',         [PipelineController::class, 'show']);
     Route::post('/pipelines/{id}/cancel', [PipelineController::class, 'cancel']);
     Route::post('/pipelines/{id}/retry',  [PipelineController::class, 'retry']);
+
+    // Recovery actions (ENG-007)
+    Route::post('/pipelines/{id}/resume',        [PipelineRecoveryController::class, 'resume']);
+    Route::post('/pipelines/{id}/restart',       [PipelineRecoveryController::class, 'restart']);
+    Route::post('/pipelines/{id}/restart-stage', [PipelineRecoveryController::class, 'restartStage']);
+    Route::post('/pipelines/{id}/skip-stage',    [PipelineRecoveryController::class, 'skipStage']);
 
     // Notifications
     Route::get('/notifications',                    [EngineeringNotificationController::class, 'index']);

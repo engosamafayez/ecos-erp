@@ -192,3 +192,65 @@ export interface NotificationListResponse {
     lastPage: number;
   };
 }
+
+// ── ENG-007: Templates ────────────────────────────────────────────────────────
+
+export interface PipelineTemplateStage {
+  handler: string;
+  label: string;
+  order: number;
+  enabled: boolean;
+  retry_policy: {
+    max_retries: number;
+    backoff_strategy: 'fixed' | 'linear' | 'exponential';
+    retry_delay_seconds: number;
+    timeout_seconds: number;
+  };
+  actions: string[];
+  options: Record<string, unknown>;
+}
+
+export interface PipelineTemplate {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  version: number;
+  is_system: boolean;
+  metadata: { color?: string; icon?: string } | null;
+  stage_count: number;
+  stages?: PipelineTemplateStage[];
+}
+
+// ── ENG-007: Analytics ───────────────────────────────────────────────────────
+
+export interface PipelineStageDuration {
+  avg_seconds: number;
+  max_seconds: number;
+  total_runs: number;
+}
+
+export interface PipelineAnalytics {
+  queue_size: number;
+  running_count: number;
+  total_in_window: number;
+  completed_count: number;
+  failed_count: number;
+  success_rate: number;
+  failure_rate: number;
+  avg_duration_seconds: number;
+  total_retries: number;
+  slowest_stage: { stage: string; avg_seconds: number } | null;
+  stage_durations: Record<string, PipelineStageDuration>;
+  recent_pipelines: Array<{
+    id: string;
+    task_name: string;
+    status: PipelineStatus;
+    branch: string;
+    duration_seconds: number | null;
+    started_at: string | null;
+    finished_at: string | null;
+    initiated_by: string;
+  }>;
+  lookback_days: number;
+}
