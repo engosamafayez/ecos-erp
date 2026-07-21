@@ -46,6 +46,8 @@ import {
   ShieldCheck,
   ListChecks,
   BarChart2,
+  Bell,
+  History,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -318,10 +320,14 @@ export const APP_MODULES: AppModule[] = [
     icon: ShieldCheck,
     defaultPath: ROUTES.engineeringDashboard,
     items: [
-      { key: 'eng-section',   label: 'Certification',        isSection: true },
-      { key: 'eng-dashboard', label: 'Dashboard',            path: ROUTES.engineeringDashboard, icon: BarChart2 },
-      { key: 'eng-runs',      label: 'Certification Runs',   path: ROUTES.engineeringRuns,      icon: ListChecks },
-      { key: 'eng-findings',  label: 'Findings',             path: ROUTES.engineeringFindings,  icon: AlertTriangle },
+      { key: 'eng-section',      label: 'Certification',        isSection: true },
+      { key: 'eng-dashboard',    label: 'Dashboard',            path: ROUTES.engineeringDashboard,       icon: BarChart2 },
+      { key: 'eng-runs',         label: 'Certification Runs',   path: ROUTES.engineeringRuns,            icon: ListChecks },
+      { key: 'eng-findings',     label: 'Findings',             path: ROUTES.engineeringFindings,        icon: AlertTriangle },
+      { key: 'eng-rm-section',   label: 'Release Manager',      isSection: true },
+      { key: 'eng-pipeline',     label: 'Release Manager',      path: ROUTES.engineeringPipeline,        icon: Zap },
+      { key: 'eng-pipeline-h',   label: 'Pipeline History',     path: ROUTES.engineeringPipelineHistory, icon: History },
+      { key: 'eng-notify',       label: 'Notifications',        path: ROUTES.engineeringNotifications,   icon: Bell },
     ],
   },
 ];

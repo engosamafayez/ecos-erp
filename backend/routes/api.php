@@ -15,6 +15,8 @@ use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterZoneControll
 use Modules\Admin\Configuration\Presentation\Http\Controllers\PreparationPolicyController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
 use Modules\System\Engineering\Presentation\Http\Controllers\EngineeringDashboardController;
+use Modules\System\Engineering\Presentation\Http\Controllers\PipelineController;
+use Modules\System\Engineering\Presentation\Http\Controllers\EngineeringNotificationController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerApiController as CbWorkerApiController;
@@ -1436,10 +1438,24 @@ Route::middleware('auth:sanctum')->prefix('logistics/geography')->group(function
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->prefix('system/engineering')->group(function (): void {
+    // Certification data
     Route::get('/dashboard', [EngineeringDashboardController::class, 'dashboard']);
     Route::get('/runs',      [EngineeringDashboardController::class, 'runs']);
     Route::get('/runs/{id}', [EngineeringDashboardController::class, 'show']);
     Route::get('/findings',  [EngineeringDashboardController::class, 'findings']);
+
+    // Release Manager — pipelines
+    Route::get('/pipelines/active',       [PipelineController::class, 'active']);
+    Route::get('/pipelines',              [PipelineController::class, 'index']);
+    Route::post('/pipelines',             [PipelineController::class, 'store']);
+    Route::get('/pipelines/{id}',         [PipelineController::class, 'show']);
+    Route::post('/pipelines/{id}/cancel', [PipelineController::class, 'cancel']);
+    Route::post('/pipelines/{id}/retry',  [PipelineController::class, 'retry']);
+
+    // Notifications
+    Route::get('/notifications',                    [EngineeringNotificationController::class, 'index']);
+    Route::post('/notifications/mark-all-read',     [EngineeringNotificationController::class, 'markAllRead']);
+    Route::patch('/notifications/{id}/read',        [EngineeringNotificationController::class, 'markRead']);
 });
 
 /*

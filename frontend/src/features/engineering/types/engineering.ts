@@ -82,3 +82,113 @@ export interface PaginatedResponse<T> {
     lastPage: number;
   };
 }
+
+// ── Release Manager ─────────────────────────────────────────────────────────
+
+export type PipelineStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type StageStatus    = 'pending' | 'running' | 'success' | 'failed' | 'retrying' | 'skipped' | 'cancelled';
+export type PipelineStage  =
+  | 'development_guardian'
+  | 'architecture_guardian'
+  | 'build'
+  | 'tests'
+  | 'commit'
+  | 'push'
+  | 'github_actions'
+  | 'deployment_guardian'
+  | 'certification'
+  | 'health_check'
+  | 'notifications';
+
+export const STAGE_LABELS: Record<PipelineStage, string> = {
+  development_guardian:  'Development Guardian',
+  architecture_guardian: 'Architecture Guardian',
+  build:                 'Build',
+  tests:                 'Tests',
+  commit:                'Auto Commit',
+  push:                  'Auto Push',
+  github_actions:        'GitHub Actions',
+  deployment_guardian:   'Deployment Guardian',
+  certification:         'Certification',
+  health_check:          'Health Check',
+  notifications:         'Notifications',
+};
+
+export const ORDERED_STAGES: PipelineStage[] = [
+  'development_guardian',
+  'architecture_guardian',
+  'build',
+  'tests',
+  'commit',
+  'push',
+  'github_actions',
+  'deployment_guardian',
+  'certification',
+  'health_check',
+  'notifications',
+];
+
+export interface PipelineLog {
+  id: string;
+  stage: PipelineStage;
+  stage_label: string;
+  status: StageStatus;
+  started_at: string | null;
+  finished_at: string | null;
+  duration_seconds: number | null;
+  message: string | null;
+  payload: unknown[] | null;
+  retry_count: number;
+}
+
+export interface EngineeringPipeline {
+  id: string;
+  task_name: string;
+  branch: string;
+  commit_sha: string | null;
+  status: PipelineStatus;
+  current_stage: PipelineStage | null;
+  current_stage_label: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  duration_seconds: number | null;
+  duration_formatted: string;
+  initiated_by: string;
+  error_message: string | null;
+  auto_deploy: boolean;
+  logs?: PipelineLog[];
+}
+
+export type NotificationSeverity = 'info' | 'warning' | 'error' | 'success';
+export type NotificationType =
+  | 'pipeline_started'
+  | 'pipeline_completed'
+  | 'pipeline_failed'
+  | 'certification_failed'
+  | 'health_check_failed'
+  | 'deployment_pending'
+  | 'deployment_failed';
+
+export interface EngineeringPipelineNotification {
+  id: string;
+  pipeline_id: string | null;
+  type: NotificationType;
+  title: string;
+  message: string;
+  severity: NotificationSeverity;
+  is_read: boolean;
+  read_at: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface NotificationListResponse {
+  data: EngineeringPipelineNotification[];
+  unread_count: number;
+  meta: {
+    page: number;
+    perPage: number;
+    total: number;
+    lastPage: number;
+  };
+}

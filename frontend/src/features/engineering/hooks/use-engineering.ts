@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 import { engineeringService } from '../services/engineering-service';
 
@@ -50,5 +50,113 @@ export function useEngineeringFindings(params: {
     staleTime: 30_000,
     refetchInterval: 30_000,
     placeholderData: (prev) => prev,
+  });
+}
+
+// ── Release Manager hooks ─────────────────────────────────────────────────
+
+export function useActivePipeline() {
+  return useQuery({
+    queryKey: ['engineering', 'pipeline', 'active'],
+    queryFn: () => engineeringService.getActivePipeline(),
+    refetchInterval: 3_000, // poll every 3s for live updates
+    staleTime: 0,
+  });
+}
+
+export function useEngineeringPipeline(id: string | null) {
+  return useQuery({
+    queryKey: ['engineering', 'pipeline', id],
+    queryFn: () => engineeringService.getPipeline(id!),
+    enabled: !!id,
+    refetchInterval: 3_000,
+    staleTime: 0,
+  });
+}
+
+export function useEngineeringPipelines(page = 1) {
+  return useQuery({
+    queryKey: ['engineering', 'pipelines', page],
+    queryFn: () => engineeringService.getPipelines(page),
+    staleTime: 10_000,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useCreatePipeline() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { task_name?: string; branch?: string }) =>
+      engineeringService.createPipeline(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipeline', 'active'] });
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipelines'] });
+    },
+  });
+}
+
+export function useCancelPipeline() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => engineeringService.cancelPipeline(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipelines'] });
+    },
+  });
+}
+
+export function useRetryPipeline() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => engineeringService.retryPipeline(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'pipelines'] });
+    },
+  });
+}
+
+// ── Notification hooks ────────────────────────────────────────────────────
+
+export function useEngineeringNotifications(page = 1) {
+  return useQuery({
+    queryKey: ['engineering', 'notifications', page],
+    queryFn: () => engineeringService.getNotifications({ page }),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useUnreadNotificationCount() {
+  return useQuery({
+    queryKey: ['engineering', 'notifications', 'unread-count'],
+    queryFn: async () => {
+      const res = await engineeringService.getNotifications({ unread: true, page: 1 });
+      return res.unread_count;
+    },
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => engineeringService.markNotificationRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'notifications'] });
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => engineeringService.markAllNotificationsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['engineering', 'notifications'] });
+    },
   });
 }

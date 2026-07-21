@@ -120,9 +120,12 @@ import { BridgeTasksPage }       from '@/features/claude-bridge/pages/bridge-tas
 import { BridgeCreateTaskPage }  from '@/features/claude-bridge/pages/bridge-create-task-page';
 import { BridgeTaskDetailPage }  from '@/features/claude-bridge/pages/bridge-task-detail-page';
 import { BridgeSettingsPage }    from '@/features/claude-bridge/pages/bridge-settings-page';
-import { EngineeringDashboardPage } from '@/features/engineering/pages/engineering-dashboard-page';
-import { EngineeringRunsPage }      from '@/features/engineering/pages/engineering-runs-page';
-import { EngineeringFindingsPage }  from '@/features/engineering/pages/engineering-findings-page';
+import { EngineeringDashboardPage }        from '@/features/engineering/pages/engineering-dashboard-page';
+import { EngineeringRunsPage }             from '@/features/engineering/pages/engineering-runs-page';
+import { EngineeringFindingsPage }         from '@/features/engineering/pages/engineering-findings-page';
+import { EngineeringPipelinePage }         from '@/features/engineering/pages/engineering-pipeline-page';
+import { EngineeringPipelineHistoryPage }  from '@/features/engineering/pages/engineering-pipeline-history-page';
+import { EngineeringNotificationsPage }    from '@/features/engineering/pages/engineering-notifications-page';
 import { OmnichannelInboxPage } from '@/features/conversational-commerce/pages/omnichannel-inbox-page';
 import { MacrosPage } from '@/features/conversational-commerce/pages/macros-page';
 import { RoutingRulesPage } from '@/features/conversational-commerce/pages/routing-rules-page';
@@ -324,10 +327,13 @@ export const router = createBrowserRouter(
             { path: ROUTES.claudeBridgeTasksNew,   Component: BridgeCreateTaskPage },
             { path: ROUTES.claudeBridgeTaskDetail, Component: BridgeTaskDetailPage },
             { path: ROUTES.claudeBridgeSettings,   Component: BridgeSettingsPage },
-            // Engineering OS (TASK-ENG-005)
-            { path: ROUTES.engineeringDashboard, Component: EngineeringDashboardPage },
-            { path: ROUTES.engineeringRuns,      Component: EngineeringRunsPage },
-            { path: ROUTES.engineeringFindings,  Component: EngineeringFindingsPage },
+            // Engineering OS (TASK-ENG-005 / TASK-ENG-006)
+            { path: ROUTES.engineeringDashboard,       Component: EngineeringDashboardPage },
+            { path: ROUTES.engineeringRuns,            Component: EngineeringRunsPage },
+            { path: ROUTES.engineeringFindings,        Component: EngineeringFindingsPage },
+            { path: ROUTES.engineeringPipeline,        Component: EngineeringPipelinePage },
+            { path: ROUTES.engineeringPipelineHistory, Component: EngineeringPipelineHistoryPage },
+            { path: ROUTES.engineeringNotifications,   Component: EngineeringNotificationsPage },
             // Driver Mobile OS (TASK-DIST-005)
             { path: ROUTES.driverHome,            Component: DriverHomePage },
             { path: ROUTES.driverTrip,            Component: DriverTripDashboardPage },
