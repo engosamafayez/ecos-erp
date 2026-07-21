@@ -100,11 +100,37 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
       await login(values);
       navigate(ROUTES.dashboard, { replace: true });
     } catch (error) {
-      const message =
-        axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
-          ? error.response.data.message
-          : t('login.error.message');
-      setFormError(message);
+      if (!axios.isAxiosError(error)) {
+        setFormError(t('login.error.message'));
+        return;
+      }
+
+      const status = error.response?.status;
+      const data = error.response?.data as
+        | { message?: string; errors?: Record<string, string[]> }
+        | null
+        | undefined;
+
+      if (!error.response) {
+        // Network failure — could not reach the server at all
+        setFormError(t('login.error.serverUnavailable'));
+      } else if (status === 429) {
+        setFormError(t('login.error.tooManyAttempts'));
+      } else if (status === 403 || status === 423) {
+        setFormError(typeof data?.message === 'string' ? data.message : t('login.error.accountDisabled'));
+      } else if (status === 422) {
+        const firstFieldError = data?.errors
+          ? Object.values(data.errors)[0]?.[0]
+          : undefined;
+        setFormError(firstFieldError ?? (typeof data?.message === 'string' ? data.message : t('login.error.validation')));
+      } else if (status !== undefined && status >= 500) {
+        setFormError(t('login.error.serverUnavailable'));
+      } else if (typeof data?.message === 'string' && data.message) {
+        // 401 invalid credentials, or any other backend message
+        setFormError(data.message);
+      } else {
+        setFormError(t('login.error.message'));
+      }
     }
   };
 
