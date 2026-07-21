@@ -201,7 +201,7 @@ class ReleasePipelineService
         }
 
         $finished = now();
-        $duration = (int) $finished->diffInSeconds($pipeline->started_at ?? $finished);
+        $duration = abs((int) $finished->diffInSeconds($pipeline->started_at ?? $finished));
 
         $pipeline->update([
             'status'           => PipelineStatus::Completed->value,
@@ -288,7 +288,7 @@ class ReleasePipelineService
     private function failPipeline(EngineeringPipeline $pipeline, string $reason): void
     {
         $finished = now();
-        $duration = (int) $finished->diffInSeconds($pipeline->started_at ?? $finished);
+        $duration = abs((int) $finished->diffInSeconds($pipeline->started_at ?? $finished));
 
         $pipeline->update([
             'status'           => PipelineStatus::Failed->value,

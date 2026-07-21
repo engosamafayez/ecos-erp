@@ -15,10 +15,17 @@ use Symfony\Component\Process\Process;
 class PipelineStageExecutor
 {
     private string $projectRoot;
+    private string $backendRoot;
+    private string $frontendRoot;
 
     public function __construct(private readonly ProviderRegistry $providers)
     {
-        $this->projectRoot = base_path('..');
+        // base_path() = /var/www/html in container (the Laravel root IS the backend root).
+        // ENGINEERING_BACKEND_PATH / FRONTEND_PATH / PROJECT_PATH allow overrides
+        // when the container mounts the whole monorepo under a single parent.
+        $this->backendRoot  = rtrim(env('ENGINEERING_BACKEND_PATH',  base_path()), '/');
+        $this->frontendRoot = rtrim(env('ENGINEERING_FRONTEND_PATH', base_path('../frontend')), '/');
+        $this->projectRoot  = rtrim(env('ENGINEERING_PROJECT_PATH',  dirname(base_path())), '/');
     }
 
     /**
@@ -52,7 +59,7 @@ class PipelineStageExecutor
     private function runDevelopmentGuardian(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
         $result = $this->shell(
-            "cd {$this->projectRoot}/backend && ./vendor/bin/pint --test 2>&1 | tail -5",
+            "cd {$this->backendRoot} && ./vendor/bin/pint --test 2>&1 | tail -5",
             $log,
             timeoutSeconds: 120,
         );
@@ -62,7 +69,7 @@ class PipelineStageExecutor
         }
 
         $eslint = $this->shell(
-            "cd {$this->projectRoot}/frontend && npx eslint . --max-warnings=0 2>&1 | tail -10",
+            "cd {$this->frontendRoot} && npx eslint . --max-warnings=0 2>&1 | tail -10",
             $log,
             timeoutSeconds: 120,
         );
@@ -79,7 +86,7 @@ class PipelineStageExecutor
     private function runArchitectureGuardian(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
         $this->shell(
-            "cd {$this->projectRoot}/backend && php artisan inspire 2>&1",
+            "cd {$this->backendRoot} && php artisan inspire 2>&1",
             $log,
             timeoutSeconds: 30,
         );
@@ -91,7 +98,7 @@ class PipelineStageExecutor
     private function runBuild(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
         $result = $this->shell(
-            "cd {$this->projectRoot}/frontend && npm run build 2>&1 | tail -20",
+            "cd {$this->frontendRoot} && npm run build 2>&1 | tail -20",
             $log,
             timeoutSeconds: 300,
         );
@@ -107,7 +114,7 @@ class PipelineStageExecutor
     private function runTests(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
         $result = $this->shell(
-            "cd {$this->projectRoot}/backend && php artisan test --parallel 2>&1 | tail -20",
+            "cd {$this->backendRoot} && php artisan test --parallel 2>&1 | tail -20",
             $log,
             timeoutSeconds: 300,
         );
