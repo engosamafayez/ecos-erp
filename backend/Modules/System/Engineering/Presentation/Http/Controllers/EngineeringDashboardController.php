@@ -67,15 +67,15 @@ final class EngineeringDashboardController extends Controller
 
         $paginator = $this->repository->paginate($perPage, $page);
 
-        return $this->success(
-            EngineeringRunResource::collection($paginator->items()),
-            [
-                'page'      => $paginator->currentPage(),
-                'perPage'   => $paginator->perPage(),
-                'total'     => $paginator->total(),
-                'lastPage'  => $paginator->lastPage(),
-            ]
-        );
+        return $this->success([
+            'data' => EngineeringRunResource::collection($paginator->items()),
+            'meta' => [
+                'page'     => $paginator->currentPage(),
+                'perPage'  => $paginator->perPage(),
+                'total'    => $paginator->total(),
+                'lastPage' => $paginator->lastPage(),
+            ],
+        ]);
     }
 
     /** GET /api/system/engineering/runs/{id} */
@@ -112,14 +112,14 @@ final class EngineeringDashboardController extends Controller
 
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
 
-        return $this->success(
-            EngineeringFindingResource::collection($paginator->items()),
-            [
+        return $this->success([
+            'data' => EngineeringFindingResource::collection($paginator->items()),
+            'meta' => [
                 'page'     => $paginator->currentPage(),
                 'perPage'  => $paginator->perPage(),
                 'total'    => $paginator->total(),
                 'lastPage' => $paginator->lastPage(),
-            ]
-        );
+            ],
+        ]);
     }
 }
