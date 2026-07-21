@@ -13,11 +13,11 @@ export const engineeringService = {
   },
 
   async getRuns(page = 1, perPage = 15): Promise<PaginatedResponse<EngineeringRun>> {
-    const res = await api.get<{ data: EngineeringRun[]; meta: PaginatedResponse<EngineeringRun>['meta'] }>(
+    const res = await api.get<{ data: { data: EngineeringRun[]; meta: PaginatedResponse<EngineeringRun>['meta'] } }>(
       '/system/engineering/runs',
       { params: { page, per_page: perPage } },
     );
-    return { data: res.data.data, meta: res.data.meta };
+    return { data: res.data.data.data, meta: res.data.data.meta };
   },
 
   async getRun(id: string): Promise<EngineeringRun> {
@@ -31,7 +31,7 @@ export const engineeringService = {
     severity?: string;
     runId?: string;
   } = {}): Promise<PaginatedResponse<EngineeringFinding>> {
-    const res = await api.get<{ data: EngineeringFinding[]; meta: PaginatedResponse<EngineeringFinding>['meta'] }>(
+    const res = await api.get<{ data: { data: EngineeringFinding[]; meta: PaginatedResponse<EngineeringFinding>['meta'] } }>(
       '/system/engineering/findings',
       {
         params: {
@@ -42,6 +42,6 @@ export const engineeringService = {
         },
       },
     );
-    return { data: res.data.data, meta: res.data.meta };
+    return { data: res.data.data.data, meta: res.data.data.meta };
   },
 };
