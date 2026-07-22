@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertCircle,
   CheckCircle2,
@@ -69,6 +70,7 @@ function InvoiceDetailDrawer({
   const validateMutation = useValidateSupplierInvoice();
   const postMutation     = usePostSupplierInvoice();
   const cancelMutation   = useCancelSupplierInvoice();
+  const { t } = useTranslation('supplier-invoices');
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -105,7 +107,7 @@ function InvoiceDetailDrawer({
                     disabled={validateMutation.isPending}
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Validate
+                    {t('detail.validate')}
                   </Button>
                 )}
                 {invoice.status === 'validated' && (
@@ -119,7 +121,7 @@ function InvoiceDetailDrawer({
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       : <Zap className="w-3.5 h-3.5" />
                     }
-                    Post to Inventory
+                    {t('detail.postToInventory')}
                   </Button>
                 )}
                 {['draft', 'validated', 'failed'].includes(invoice.status) && (
@@ -131,7 +133,7 @@ function InvoiceDetailDrawer({
                     disabled={cancelMutation.isPending}
                   >
                     <XCircle className="w-3.5 h-3.5" />
-                    Cancel
+                    {t('detail.cancel')}
                   </Button>
                 )}
               </div>
@@ -140,7 +142,7 @@ function InvoiceDetailDrawer({
                 <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-medium text-red-800">Posting Error</p>
+                    <p className="text-xs font-medium text-red-800">{t('detail.postingError')}</p>
                     <p className="text-xs text-red-600 mt-0.5">{invoice.posting_error}</p>
                   </div>
                 </div>
@@ -150,36 +152,38 @@ function InvoiceDetailDrawer({
             <div className="space-y-4">
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Subtotal</span>
+                  <span className="text-gray-500">{t('detail.financial.subtotal')}</span>
                   <span>SAR {invoice.subtotal.toLocaleString()}</span>
                 </div>
                 {invoice.tax_total > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Tax</span>
+                    <span className="text-gray-500">{t('detail.financial.tax')}</span>
                     <span>SAR {invoice.tax_total.toLocaleString()}</span>
                   </div>
                 )}
                 {invoice.freight_amount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Freight</span>
+                    <span className="text-gray-500">{t('detail.financial.freight')}</span>
                     <span>SAR {invoice.freight_amount.toLocaleString()}</span>
                   </div>
                 )}
                 {invoice.additional_costs > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Additional Costs</span>
+                    <span className="text-gray-500">{t('detail.financial.additionalCosts')}</span>
                     <span>SAR {invoice.additional_costs.toLocaleString()}</span>
                   </div>
                 )}
                 <Separator className="my-1" />
                 <div className="flex justify-between text-sm font-semibold">
-                  <span>Grand Total</span>
+                  <span>{t('detail.financial.grandTotal')}</span>
                   <span className="text-gray-900">SAR {invoice.grand_total.toLocaleString()}</span>
                 </div>
               </div>
 
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-2">ITEMS ({invoice.lines.length})</p>
+                <p className="text-xs font-medium text-gray-500 mb-2 uppercase">
+                  {t('detail.itemsTitle')} ({invoice.lines.length})
+                </p>
                 <div className="space-y-2">
                   {invoice.lines.map(line => (
                     <div key={line.id} className="p-3 border border-gray-100 rounded-lg">
@@ -192,7 +196,7 @@ function InvoiceDetailDrawer({
                           </p>
                           {line.landed_unit_cost !== null && (
                             <p className="text-xs text-blue-600 mt-0.5">
-                              Landed cost: SAR {line.landed_unit_cost}/unit
+                              {t('detail.landedCostFormat', { value: line.landed_unit_cost })}
                             </p>
                           )}
                         </div>
@@ -205,19 +209,21 @@ function InvoiceDetailDrawer({
 
               {(invoice.auto_purchase_id || invoice.auto_receipt_id) && (
                 <div>
-                  <p className="text-xs font-medium text-gray-500 mb-2">AUTO-GENERATED DOCUMENTS</p>
+                  <p className="text-xs font-medium text-gray-500 mb-2 uppercase">
+                    {t('detail.autoDocuments')}
+                  </p>
                   <div className="space-y-1.5">
                     {invoice.auto_purchase_id && (
                       <div className="flex items-center gap-2 text-sm">
                         <FileText className="w-3.5 h-3.5 text-blue-500" />
-                        <span className="text-gray-600">Purchase record created</span>
+                        <span className="text-gray-600">{t('detail.purchaseRecordCreated')}</span>
                         <span className="text-xs text-gray-400 font-mono">{invoice.auto_purchase_id.slice(0, 8)}…</span>
                       </div>
                     )}
                     {invoice.auto_receipt_id && (
                       <div className="flex items-center gap-2 text-sm">
                         <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                        <span className="text-gray-600">Goods receipt created</span>
+                        <span className="text-gray-600">{t('detail.goodsReceiptCreated')}</span>
                         <span className="text-xs text-gray-400 font-mono">{invoice.auto_receipt_id.slice(0, 8)}…</span>
                       </div>
                     )}
@@ -227,7 +233,9 @@ function InvoiceDetailDrawer({
 
               {invoice.posting_log && invoice.posting_log.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-gray-500 mb-2">POSTING LOG</p>
+                  <p className="text-xs font-medium text-gray-500 mb-2 uppercase">
+                    {t('detail.postingLog')}
+                  </p>
                   <div className="bg-gray-900 rounded-lg p-3 space-y-1">
                     {invoice.posting_log.map((entry, i) => (
                       <p key={i} className="text-xs font-mono text-green-400">{entry}</p>
@@ -244,6 +252,7 @@ function InvoiceDetailDrawer({
 }
 
 export function SupplierInvoicesPage() {
+  const { t } = useTranslation('supplier-invoices');
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatus]     = useState<SupplierInvoiceStatus | 'all'>('all');
   const [page, setPage]               = useState(1);
@@ -289,32 +298,32 @@ export function SupplierInvoicesPage() {
     postMutation.mutate(id);
   }, [postMutation]);
 
-  const columns: ColumnDef<SupplierInvoice>[] = [
+  const columns = useMemo<ColumnDef<SupplierInvoice>[]>(() => [
     {
       key: 'invoice_number',
-      header: 'Invoice #',
+      header: t('page.columns.invoiceNo'),
       cell: (inv) => (
         <div>
           <span className="font-mono text-sm font-medium">{inv.invoice_number}</span>
           {inv.supplier_invoice_ref && (
-            <span className="text-xs text-gray-400 block">Ref: {inv.supplier_invoice_ref}</span>
+            <span className="text-xs text-gray-400 block">{t('page.columns.ref')}: {inv.supplier_invoice_ref}</span>
           )}
         </div>
       ),
     },
     {
       key: 'supplier',
-      header: 'Supplier',
+      header: t('page.columns.supplier'),
       cell: (inv) => <span className="text-sm">{inv.supplier?.name ?? '—'}</span>,
     },
     {
       key: 'invoice_date',
-      header: 'Invoice Date',
+      header: t('page.columns.invoiceDate'),
       cell: (inv) => <span className="text-sm text-gray-600">{inv.invoice_date}</span>,
     },
     {
       key: 'due_date',
-      header: 'Due Date',
+      header: t('page.columns.dueDate'),
       cell: (inv) => (
         <span className={`text-sm ${
           inv.due_date && new Date(inv.due_date) < new Date() && inv.status !== 'posted'
@@ -327,14 +336,14 @@ export function SupplierInvoicesPage() {
     },
     {
       key: 'grand_total',
-      header: 'Grand Total',
+      header: t('page.columns.grandTotal'),
       cell: (inv) => (
         <span className="text-sm font-semibold">SAR {inv.grand_total.toLocaleString()}</span>
       ),
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('page.columns.status'),
       cell: (inv) => (
         <div className="flex items-center gap-2">
           <Badge
@@ -354,25 +363,25 @@ export function SupplierInvoicesPage() {
               disabled={postMutation.isPending}
             >
               <Zap className="w-3 h-3" />
-              Post
+              {t('page.actions.postShort')}
             </Button>
           )}
         </div>
       ),
     },
-  ];
+  ], [t, handlePost, postMutation.isPending]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-4">
           <PageHeader
-            title="Supplier Invoices"
-            subtitle="Mode 3 Purchasing — One step from invoice to inventory"
+            title={t('page.title')}
+            subtitle={t('page.subtitle')}
           />
           <Button onClick={() => setCreatingNew(true)} size="sm" className="gap-1.5">
             <Plus className="w-3.5 h-3.5" />
-            New Invoice
+            {t('page.newInvoice')}
           </Button>
         </div>
 
@@ -380,25 +389,25 @@ export function SupplierInvoicesPage() {
           <div className="flex gap-3 flex-wrap">
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs text-gray-600">
               <FileText className="w-3.5 h-3.5" />
-              <span>Draft: <strong>{stats.draft}</strong></span>
+              <span>{t('page.stats.draft')}: <strong>{stats.draft}</strong></span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg text-xs text-blue-700">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Ready to Post: <strong>{stats.validated}</strong></span>
+              <span>{t('page.stats.validated')}: <strong>{stats.validated}</strong></span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-lg text-xs text-green-700">
               <Zap className="w-3.5 h-3.5" />
-              <span>Posted: <strong>{stats.posted}</strong></span>
+              <span>{t('page.stats.posted')}: <strong>{stats.posted}</strong></span>
             </div>
             {stats.failed > 0 && (
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 rounded-lg text-xs text-red-700">
                 <AlertCircle className="w-3.5 h-3.5" />
-                <span>Failed: <strong>{stats.failed}</strong></span>
+                <span>{t('page.stats.failed')}: <strong>{stats.failed}</strong></span>
               </div>
             )}
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs text-gray-600 ms-auto">
               <DollarSign className="w-3.5 h-3.5" />
-              <span>Posted Value: <strong>SAR {(stats.total_value / 1000).toFixed(1)}K</strong></span>
+              <span>{t('page.stats.postedValue')}: <strong>SAR {(stats.total_value / 1000).toFixed(1)}K</strong></span>
             </div>
           </div>
         )}
@@ -408,7 +417,7 @@ export function SupplierInvoicesPage() {
         <Card className="shadow-none border-gray-200">
           <CardContent className="flex flex-col gap-4 pt-6">
             <EntityToolbar
-              searchPlaceholder="Search invoices…"
+              searchPlaceholder={t('page.filters.search')}
               onSearchChange={(v) => { setSearch(v); setPage(1); }}
               onRefresh={() => void refetch()}
               isRefreshing={isFetching}
@@ -416,19 +425,19 @@ export function SupplierInvoicesPage() {
               filterPanel={
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-medium">Status</span>
+                    <span className="text-sm font-medium">{t('page.filters.status')}</span>
                     <select
                       value={statusFilter}
                       onChange={(e) => { setStatus(e.target.value as SupplierInvoiceStatus | 'all'); setPage(1); }}
                       className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                     >
-                      <option value="all">All Statuses</option>
-                      <option value="draft">Draft</option>
-                      <option value="validated">Validated</option>
-                      <option value="auto_processing">Processing</option>
-                      <option value="posted">Posted</option>
-                      <option value="failed">Failed</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="all">{t('page.filters.allStatuses')}</option>
+                      <option value="draft">{t('status.draft')}</option>
+                      <option value="validated">{t('page.stats.validated')}</option>
+                      <option value="auto_processing">{t('page.filters.processing')}</option>
+                      <option value="posted">{t('status.posted')}</option>
+                      <option value="failed">{t('page.stats.failed')}</option>
+                      <option value="cancelled">{t('status.cancelled')}</option>
                     </select>
                   </div>
                 </div>
@@ -445,18 +454,18 @@ export function SupplierInvoicesPage() {
               onSortChange={handleSort}
               rowActions={(inv) => (
                 <ActionMenu
-                  label={`Actions for ${inv.invoice_number}`}
+                  label={t('page.actions.actionsFor', { invoiceNumber: inv.invoice_number })}
                   items={[
                     {
                       key: 'view',
-                      label: 'View Details',
+                      label: t('page.actions.view') as string,
                       icon: FileText,
                       onSelect: () => setSelectedId(inv.id),
                     },
                     ...(inv.status === 'draft' ? [
                       {
                         key: 'validate',
-                        label: 'Validate',
+                        label: t('page.actions.validate') as string,
                         icon: CheckCircle2,
                         onSelect: () => validateMutation.mutate(inv.id),
                       },
@@ -464,7 +473,7 @@ export function SupplierInvoicesPage() {
                     ...(inv.status === 'validated' ? [
                       {
                         key: 'post',
-                        label: 'Post to Inventory',
+                        label: t('page.actions.post') as string,
                         icon: Zap,
                         onSelect: () => handlePost(inv.id),
                       },
@@ -472,7 +481,7 @@ export function SupplierInvoicesPage() {
                     ...(['draft', 'validated', 'failed'].includes(inv.status) ? [
                       {
                         key: 'cancel',
-                        label: 'Cancel',
+                        label: t('page.actions.cancel') as string,
                         icon: XCircle,
                         variant: 'destructive' as const,
                         onSelect: () => cancelMutation.mutate(inv.id),
@@ -481,7 +490,7 @@ export function SupplierInvoicesPage() {
                     ...(inv.status === 'draft' ? [
                       {
                         key: 'delete',
-                        label: 'Delete',
+                        label: t('page.actions.delete') as string,
                         icon: Trash2,
                         variant: 'destructive' as const,
                         onSelect: () => setDeleting(inv),
@@ -518,9 +527,9 @@ export function SupplierInvoicesPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete Invoice"
-        description={`Are you sure you want to delete invoice ${deleting?.invoice_number}? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('page.confirmDelete.title') as string}
+        description={t('page.confirmDelete.description') as string}
+        confirmLabel={t('page.confirmDelete.confirm') as string}
         variant="destructive"
         loading={deleteMutation.isPending}
         onConfirm={() => {

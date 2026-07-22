@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Download, Tag, Trash2, X } from 'lucide-react';
 
 import { PageHeader, Pagination } from '@/components/crud';
@@ -35,30 +36,53 @@ type SortDir   = 'asc' | 'desc';
 
 const PER_PAGE = 25;
 
-// ─── CSV export utility ───────────────────────────────────────────────────────
+// Module-level CSV column definitions — value functions only (no translated headers)
+type CsvColDef = { key: ColumnKey; value: (m: RawMaterial, t: (k: string) => string) => string };
 
-const CSV_COLUMNS: Array<{ key: ColumnKey; header: string; value: (m: RawMaterial) => string }> = [
-  { key: 'image',           header: 'Image URL',       value: (m) => m.image_url ?? '' },
-  { key: 'name',            header: 'Name',            value: (m) => m.name },
-  { key: 'material_type',   header: 'Material Type',   value: (m) => m.product_type === 'packaging_material' ? 'Packaging Material' : 'Raw Material' },
-  { key: 'category',        header: 'Category',        value: (m) => m.category?.name ?? '' },
-  { key: 'unit',            header: 'Unit',            value: (m) => m.unit?.name ?? '' },
-  { key: 'stock_status',    header: 'Stock Status',    value: (m) => resolveMaterialStockStatus(m.available_qty, m.allow_negative_stock) === 'in_stock' ? 'In Stock' : 'Out of Stock' },
-  { key: 'on_hand',         header: 'On Hand',         value: (m) => String(m.on_hand_qty ?? '') },
-  { key: 'reserved',        header: 'Reserved',        value: (m) => String(m.reserved_qty ?? '') },
-  { key: 'available',       header: 'Available',       value: (m) => String(m.available_qty ?? '') },
-  { key: 'current_cost',    header: 'Current Cost',    value: (m) => String(m.material_cost ?? '') },
-  { key: 'inventory_value', header: 'Inventory Value', value: (m) => String(m.inventory_value ?? '') },
-  { key: 'allow_negative',  header: 'Allow Negative',  value: (m) => (m.allow_negative_stock ? 'Yes' : 'No') },
-  { key: 'sku',             header: 'SKU',             value: (m) => m.sku },
+const CSV_COL_DEFS: CsvColDef[] = [
+  { key: 'image',           value: (m)    => m.image_url ?? '' },
+  { key: 'name',            value: (m)    => m.name },
+  { key: 'material_type',   value: (m, t) => m.product_type === 'packaging_material' ? t('csv.packagingMaterial') : t('csv.rawMaterial') },
+  { key: 'category',        value: (m)    => m.category?.name ?? '' },
+  { key: 'unit',            value: (m)    => m.unit?.name ?? '' },
+  { key: 'stock_status',    value: (m, t) => resolveMaterialStockStatus(m.available_qty, m.allow_negative_stock) === 'in_stock' ? t('csv.inStock') : t('csv.outOfStock') },
+  { key: 'on_hand',         value: (m)    => String(m.on_hand_qty ?? '') },
+  { key: 'reserved',        value: (m)    => String(m.reserved_qty ?? '') },
+  { key: 'available',       value: (m)    => String(m.available_qty ?? '') },
+  { key: 'current_cost',    value: (m)    => String(m.material_cost ?? '') },
+  { key: 'inventory_value', value: (m)    => String(m.inventory_value ?? '') },
+  { key: 'allow_negative',  value: (m, t) => (m.allow_negative_stock ? t('csv.yes') : t('csv.no')) },
+  { key: 'sku',             value: (m)    => m.sku },
 ];
 
-function triggerCsvDownload(items: RawMaterial[], visibleColumns: Set<ColumnKey>, materialType: MaterialType | '') {
-  const cols = CSV_COLUMNS.filter((c) => visibleColumns.has(c.key));
+// CSV header key mapping
+const CSV_HEADER_KEYS: Record<string, string> = {
+  image:           'csv.imageUrl',
+  name:            'csv.name',
+  material_type:   'csv.materialType',
+  category:        'csv.category',
+  unit:            'csv.unit',
+  stock_status:    'csv.stockStatus',
+  on_hand:         'csv.onHand',
+  reserved:        'csv.reserved',
+  available:       'csv.available',
+  current_cost:    'csv.currentCost',
+  inventory_value: 'csv.inventoryValue',
+  allow_negative:  'csv.allowNegative',
+  sku:             'csv.sku',
+};
+
+function triggerCsvDownload(
+  items: RawMaterial[],
+  visibleColumns: Set<ColumnKey>,
+  materialType: MaterialType | '',
+  t: (k: string) => string,
+) {
+  const cols = CSV_COL_DEFS.filter((c) => visibleColumns.has(c.key));
   const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
 
-  const header = cols.map((c) => escape(c.header)).join(',');
-  const rows   = items.map((m) => cols.map((c) => escape(c.value(m))).join(','));
+  const header = cols.map((c) => escape(t(CSV_HEADER_KEYS[c.key] ?? c.key))).join(',');
+  const rows   = items.map((m) => cols.map((c) => escape(c.value(m, t))).join(','));
   const csv    = [header, ...rows].join('\n');
 
   const blob     = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -74,20 +98,6 @@ function triggerCsvDownload(items: RawMaterial[], visibleColumns: Set<ColumnKey>
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-}
-
-// ─── Workspace title ──────────────────────────────────────────────────────────
-
-function workspaceTitle(materialType: MaterialType | ''): string {
-  if (materialType === 'raw_material')       return 'Raw Materials';
-  if (materialType === 'packaging_material') return 'Packaging Materials';
-  return 'All Materials';
-}
-
-function workspaceSubtitle(materialType: MaterialType | ''): string {
-  if (materialType === 'raw_material')       return 'Manage raw material inventory, costs, and availability.';
-  if (materialType === 'packaging_material') return 'Manage packaging materials used in production.';
-  return 'Manage raw material and packaging inventory, costs, and availability.';
 }
 
 // ─── Bulk action bar ──────────────────────────────────────────────────────────
@@ -109,23 +119,25 @@ function BulkActionBar({
   onAllowNeg, onBlockNeg, onChangeCategory, onExport, onDelete,
   categories, isPending,
 }: BulkBarProps) {
+  const { t } = useTranslation('raw-materials');
+
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-2.5 shadow-sm">
-      <span className="text-sm font-medium shrink-0">{selectedCount} selected</span>
+      <span className="text-sm font-medium shrink-0">{t('bulk.selected', { count: selectedCount })}</span>
       <div className="w-px h-5 bg-border mx-1" />
 
       <Button variant="outline" size="sm" onClick={onAllowNeg} disabled={isPending} className="gap-1.5 h-8">
-        Allow Negative
+        {t('bulk.allowNegative')}
       </Button>
       <Button variant="outline" size="sm" onClick={onBlockNeg} disabled={isPending} className="gap-1.5 h-8">
-        Block Negative
+        {t('bulk.blockNegative')}
       </Button>
 
       <Select onValueChange={onChangeCategory}>
         <SelectTrigger className="h-8 w-40 text-sm">
           <div className="flex items-center gap-1.5">
             <Tag className="size-3.5" />
-            <SelectValue placeholder="Change Category" />
+            <SelectValue placeholder={t('bulk.changeCategory')} />
           </div>
         </SelectTrigger>
         <SelectContent>
@@ -137,16 +149,16 @@ function BulkActionBar({
 
       <Button variant="outline" size="sm" onClick={onExport} disabled={isPending} className="gap-1.5 h-8">
         <Download className="size-3.5" />
-        Export Selected
+        {t('bulk.exportSelected')}
       </Button>
       <Button variant="destructive" size="sm" onClick={onDelete} disabled={isPending} className="gap-1.5 h-8">
         <Trash2 className="size-3.5" />
-        Delete
+        {t('bulk.delete')}
       </Button>
 
       <Button variant="ghost" size="sm" onClick={onClear} className="ms-auto h-8 gap-1.5 text-muted-foreground">
         <X className="size-3.5" />
-        Clear
+        {t('bulk.clear')}
       </Button>
     </div>
   );
@@ -155,6 +167,8 @@ function BulkActionBar({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function RawMaterialsPage() {
+  const { t } = useTranslation('raw-materials');
+
   // ── Column preferences ────────────────────────────────────────────────────
   const { visibleColumns, toggleColumn, restoreDefaults, showAll } = useColumnPreferences();
 
@@ -193,7 +207,6 @@ export function RawMaterialsPage() {
   const categoryOptions = (rmCategories?.items ?? []).map((c) => ({ id: c.id, name: c.name }));
 
   // ── SHARED QUERY PARAMS ───────────────────────────────────────────────────
-  // Single source of truth for table, stats, and export.
   const sharedFilter = {
     search:       search       || undefined,
     category_id:  categoryId   || undefined,
@@ -217,6 +230,19 @@ export function RawMaterialsPage() {
 
   const materials = data?.items ?? [];
   const meta      = data?.meta;
+
+  // ── Derived title & subtitle ──────────────────────────────────────────────
+  const title = materialType === 'raw_material'
+    ? t('page.titleRaw')
+    : materialType === 'packaging_material'
+    ? t('page.titlePackaging')
+    : t('page.titleAll');
+
+  const subtitle = materialType === 'raw_material'
+    ? t('page.subtitleRaw')
+    : materialType === 'packaging_material'
+    ? t('page.subtitlePackaging')
+    : t('page.subtitleAll');
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const resetPage = useCallback(() => setPage(1), []);
@@ -258,15 +284,12 @@ export function RawMaterialsPage() {
   // ── Export ────────────────────────────────────────────────────────────────
   async function handleExport() {
     if (selectedIds.size > 0) {
-      // Export only selected rows from current page
       const selected = materials.filter((m) => selectedIds.has(m.id));
-      triggerCsvDownload(selected, visibleColumns, materialType);
+      triggerCsvDownload(selected, visibleColumns, materialType, t);
       return;
     }
-
-    // Export all matching records (fetch without pagination)
     const result = await rawMaterialsService.list({ ...queryParams, per_page: 10_000, page: 1 });
-    triggerCsvDownload(result.items, visibleColumns, materialType);
+    triggerCsvDownload(result.items, visibleColumns, materialType, t);
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
@@ -310,10 +333,6 @@ export function RawMaterialsPage() {
     }
   }
 
-  // ── Derived title ─────────────────────────────────────────────────────────
-  const title    = workspaceTitle(materialType);
-  const subtitle = workspaceSubtitle(materialType);
-
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-6">
@@ -321,8 +340,8 @@ export function RawMaterialsPage() {
         title={title}
         subtitle={subtitle}
         breadcrumbs={[
-          { label: 'Dashboard', to: ROUTES.dashboard },
-          { label: 'Inventory', to: ROUTES.inventory },
+          { label: t('page.breadcrumbs.dashboard'), to: ROUTES.dashboard },
+          { label: t('page.breadcrumbs.inventory'), to: ROUTES.inventory },
           { label: title },
         ]}
       />
@@ -420,9 +439,9 @@ export function RawMaterialsPage() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        title="Delete Material"
-        description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('page.deleteDialog.title')}
+        description={t('page.deleteDialog.description', { name: deleteTarget?.name ?? '' })}
+        confirmLabel={t('page.deleteDialog.confirmLabel')}
         onConfirm={handleDelete}
         variant="destructive"
         loading={deleteMut.isPending}
@@ -431,9 +450,9 @@ export function RawMaterialsPage() {
       <ConfirmDialog
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
-        title="Delete Selected Materials"
-        description={`Are you sure you want to delete ${selectedIds.size} materials? This action cannot be undone.`}
-        confirmLabel={`Delete ${selectedIds.size} items`}
+        title={t('page.bulkDeleteDialog.title')}
+        description={t('page.bulkDeleteDialog.description', { count: selectedIds.size })}
+        confirmLabel={t('page.bulkDeleteDialog.confirmLabel', { count: selectedIds.size })}
         onConfirm={handleBulkDelete}
         variant="destructive"
         loading={deleteMut.isPending}

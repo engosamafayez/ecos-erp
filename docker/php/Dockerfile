@@ -341,6 +341,43 @@ CMD ["supervisord", "-c", "/etc/supervisor/conf.d/ecos.conf", "-n"]
 
 
 # -----------------------------------------------------------------------------
+# Stage 3.5 — engineering-dev: runtime + dev tools (development / CI only)
+#
+# Extends the `app` stage to add the tools the Engineering Pipeline stages need:
+#   • Composer binary + dev PHP dependencies (pint, phpunit)
+#   • Node 22 + npm (for `./node_modules/.bin/eslint`)
+#   • frontend/ node_modules (ESLint plugin resolution)
+#
+# .git is expected as a bind-mount at runtime (docker-compose.override.yml).
+# This stage is NEVER referenced by deploy.sh — production always targets `app`.
+# -----------------------------------------------------------------------------
+FROM app AS engineering-dev
+
+# Node 22 via NodeSource (Debian Bookworm)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Composer binary from Stage 1 (no separate download needed)
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
+
+# Re-install vendor WITH dev deps (pint, phpunit, phpstan)
+# vendor/ from Stage 1 was built --no-dev; we add them here.
+WORKDIR /var/www/html
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
+        --prefer-dist \
+        --no-scripts \
+        --no-interaction
+
+# Frontend source + node_modules (for ESLint binary + plugins)
+COPY frontend/ /var/www/frontend/
+WORKDIR /var/www/frontend
+RUN npm ci --prefer-offline
+
+WORKDIR /var/www/html
+
+
+# -----------------------------------------------------------------------------
 # Stage 4 — Nginx: static file server + PHP-FPM proxy
 #
 # Contains ONLY:

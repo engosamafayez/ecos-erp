@@ -59,7 +59,7 @@ class PipelineStageExecutor
     private function runDevelopmentGuardian(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
         $result = $this->shell(
-            "cd {$this->backendRoot} && ./vendor/bin/pint --test 2>&1 | tail -5",
+            "bash -c 'set -o pipefail; cd {$this->backendRoot} && ./vendor/bin/pint --test 2>&1 | tail -5'",
             $log,
             timeoutSeconds: 120,
         );
@@ -69,7 +69,7 @@ class PipelineStageExecutor
         }
 
         $eslint = $this->shell(
-            "cd {$this->frontendRoot} && npx eslint . --max-warnings=0 2>&1 | tail -10",
+            "bash -c 'set -o pipefail; cd {$this->frontendRoot} && ./node_modules/.bin/eslint . --max-warnings=0 2>&1 | tail -10'",
             $log,
             timeoutSeconds: 120,
         );
@@ -98,7 +98,7 @@ class PipelineStageExecutor
     private function runBuild(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
         $result = $this->shell(
-            "cd {$this->frontendRoot} && npm run build 2>&1 | tail -20",
+            "bash -c 'set -o pipefail; cd {$this->frontendRoot} && npm run build 2>&1 | tail -20'",
             $log,
             timeoutSeconds: 300,
         );
@@ -114,7 +114,7 @@ class PipelineStageExecutor
     private function runTests(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
         $result = $this->shell(
-            "cd {$this->backendRoot} && php artisan test --parallel 2>&1 | tail -20",
+            "bash -c 'set -o pipefail; cd {$this->backendRoot} && ./vendor/bin/phpunit --no-coverage --colors=never 2>&1 | tail -30'",
             $log,
             timeoutSeconds: 300,
         );
