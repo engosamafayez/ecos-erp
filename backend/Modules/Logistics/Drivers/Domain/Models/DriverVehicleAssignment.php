@@ -6,6 +6,7 @@ namespace Modules\Logistics\Drivers\Domain\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Logistics\Vehicles\Domain\Models\Vehicle;
 
 /**
  * One row per driver↔vehicle pairing over time.

@@ -7,6 +7,7 @@ namespace Modules\Logistics\Drivers\Presentation\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Logistics\Drivers\Domain\Models\DriverVehicleAssignment;
+use Modules\Logistics\Vehicles\Presentation\Http\Resources\VehicleResource;
 
 /**
  * @mixin DriverVehicleAssignment

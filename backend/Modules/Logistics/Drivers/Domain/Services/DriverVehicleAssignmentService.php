@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Modules\Logistics\Drivers\Domain\Exceptions\VehicleAssignmentException;
 use Modules\Logistics\Drivers\Domain\Models\Driver;
 use Modules\Logistics\Drivers\Domain\Models\DriverVehicleAssignment;
-use Modules\Logistics\Drivers\Domain\Models\Vehicle;
+use Modules\Logistics\Vehicles\Domain\Models\Vehicle;
+use Modules\Logistics\Vehicles\Domain\Services\VehicleService;
 
 /**
  * Owns every transition of the driver↔vehicle pairing.
@@ -19,6 +20,10 @@ use Modules\Logistics\Drivers\Domain\Models\Vehicle;
  */
 class DriverVehicleAssignmentService
 {
+    public function __construct(
+        private readonly VehicleService $vehicleService,
+    ) {}
+
     /**
      * Assign a vehicle to a driver.
      *
@@ -37,7 +42,10 @@ class DriverVehicleAssignmentService
             throw VehicleAssignmentException::driverArchived();
         }
 
-        if ($vehicle->status !== Vehicle::STATUS_ACTIVE) {
+        // BR-3 / vehicle lifecycle: only a vehicle sitting in the pool may be
+        // taken. Archived, in maintenance and out-of-service all fail here.
+        // Re-assigning the driver's own current vehicle is handled below.
+        if (! $vehicle->status->acceptsAssignment() && ! $vehicle->hasActiveDriver()) {
             throw VehicleAssignmentException::vehicleUnavailable($vehicle->plate_number);
         }
 
@@ -72,12 +80,17 @@ class DriverVehicleAssignmentService
                 throw VehicleAssignmentException::alreadyAssignedToSameVehicle($vehicle->plate_number);
             }
 
-            // "Change Vehicle" — close the outgoing pairing first.
+            // "Change Vehicle" — close the outgoing pairing first, and hand the
+            // outgoing vehicle back to the pool so its status stays truthful.
             if ($current !== null) {
                 $this->closeAssignment($current, $actor, 'Replaced by a new vehicle assignment.');
+                $outgoing = Vehicle::find($current->vehicle_id);
+                if ($outgoing !== null) {
+                    $this->vehicleService->markReleased($outgoing, $actor);
+                }
             }
 
-            return DriverVehicleAssignment::create([
+            $assignment = DriverVehicleAssignment::create([
                 'driver_id' => $driver->id,
                 'vehicle_id' => $vehicle->id,
                 'assigned_at' => now(),
@@ -85,6 +98,11 @@ class DriverVehicleAssignmentService
                 'assigned_by' => $actor,
                 'notes' => $notes,
             ]);
+
+            // Reflect the pairing on the vehicle lifecycle (Available → Assigned).
+            $this->vehicleService->markAssigned($vehicle->refresh(), $actor);
+
+            return $assignment;
         });
     }
 
@@ -107,6 +125,11 @@ class DriverVehicleAssignmentService
             }
 
             $this->closeAssignment($current, $actor, $reason);
+
+            $vehicle = Vehicle::find($current->vehicle_id);
+            if ($vehicle !== null) {
+                $this->vehicleService->markReleased($vehicle, $actor);
+            }
 
             return $current->refresh();
         });

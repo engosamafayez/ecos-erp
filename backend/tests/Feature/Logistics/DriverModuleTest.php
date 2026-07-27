@@ -11,7 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Modules\Logistics\Drivers\Domain\Models\Driver;
 use Modules\Logistics\Drivers\Domain\Models\DriverDocument;
-use Modules\Logistics\Drivers\Domain\Models\Vehicle;
+use Modules\Logistics\Vehicles\Domain\Models\Vehicle;
 use Modules\Logistics\Drivers\Domain\Services\DriverVehicleAssignmentService;
 use Modules\Logistics\ShippingCompanies\Domain\Models\ShippingCompany;
 use Tests\TestCase;
@@ -80,10 +80,12 @@ class DriverModuleTest extends TestCase
     private function makeVehicle(array $overrides = []): Vehicle
     {
         return Vehicle::create(array_merge([
+            'vehicle_code' => 'VEH-'.substr(md5($overrides['plate_number'] ?? 'ABC-1234'), 0, 8),
             'plate_number' => 'ABC-1234',
             'type' => 'van',
             'capacity_orders' => 60,
-            'status' => 'active',
+            // TASK-LOG-003 widened the vehicle lifecycle: 'available' replaces 'active'.
+            'status' => 'available',
         ], $overrides));
     }
 
@@ -291,7 +293,7 @@ class DriverModuleTest extends TestCase
         // History is preserved.
         $this->assertSame(1, $driver->assignments()->count());
         // The vehicle is free again.
-        $this->assertFalse($vehicle->fresh()->isAssigned());
+        $this->assertFalse($vehicle->fresh()->hasActiveDriver());
     }
 
     public function test_index_hides_archived_by_default(): void
@@ -429,14 +431,8 @@ class DriverModuleTest extends TestCase
         $this->assertSame(false, $response->json('data.has_vehicle'));
     }
 
-    public function test_unassigned_vehicle_reports_is_assigned_false(): void
-    {
-        $this->makeVehicle(['plate_number' => 'FREE-9']);
-
-        $response = $this->auth()->getJson(self::VEHICLES)->assertOk();
-
-        $this->assertSame(false, $response->json('data.0.is_assigned'));
-    }
+    // The vehicle-side equivalent of this assertion moved to VehicleModuleTest
+    // when TASK-LOG-003 took ownership of the vehicle aggregate.
 
     public function test_archiving_reports_vehicle_released_in_payload(): void
     {
@@ -465,7 +461,7 @@ class DriverModuleTest extends TestCase
         $this->assertSame($second->id, $driver->fresh()->activeAssignment->vehicle_id);
         // History preserved — both pairings survive.
         $this->assertSame(2, $driver->assignments()->count());
-        $this->assertFalse($first->fresh()->isAssigned());
+        $this->assertFalse($first->fresh()->hasActiveDriver());
     }
 
     /** BR-7 */
@@ -504,13 +500,32 @@ class DriverModuleTest extends TestCase
             ->assertJsonPath('message', 'Archived drivers cannot be assigned a vehicle.');
     }
 
-    public function test_inactive_vehicle_cannot_be_assigned(): void
+    public function test_vehicle_not_in_the_pool_cannot_be_assigned(): void
     {
         $driver = $this->makeDriver();
-        $vehicle = $this->makeVehicle(['status' => 'inactive']);
+
+        foreach (['maintenance', 'out_of_service', 'archived'] as $i => $status) {
+            $vehicle = $this->makeVehicle(['plate_number' => "OFF-{$i}", 'status' => $status]);
+
+            $this->auth()->postJson(self::BASE.'/'.$driver->id.'/vehicle', ['vehicle_id' => $vehicle->id])
+                ->assertStatus(422);
+        }
+    }
+
+    /** Assigning a driver moves the vehicle Available → Assigned. */
+    public function test_assignment_marks_the_vehicle_assigned(): void
+    {
+        $driver = $this->makeDriver();
+        $vehicle = $this->makeVehicle();
 
         $this->auth()->postJson(self::BASE.'/'.$driver->id.'/vehicle', ['vehicle_id' => $vehicle->id])
-            ->assertStatus(422);
+            ->assertCreated();
+
+        $this->assertSame('assigned', $vehicle->fresh()->status->value);
+
+        $this->auth()->deleteJson(self::BASE.'/'.$driver->id.'/vehicle')->assertOk();
+
+        $this->assertSame('available', $vehicle->fresh()->status->value);
     }
 
     public function test_release_vehicle(): void
@@ -697,36 +712,26 @@ class DriverModuleTest extends TestCase
     }
 
     // ── Vehicle registry ──────────────────────────────────────────────────────
+    //
+    // The minimal registry seeded here by TASK-LOG-002 was promoted to a full
+    // aggregate by TASK-LOG-003. Its CRUD, uniqueness and availability-filter
+    // coverage now lives in VehicleModuleTest, which owns that contract.
+    // What remains below is the driver-side view of the pairing.
 
-    public function test_vehicle_registry_crud(): void
-    {
-        $this->auth()->postJson(self::VEHICLES, [
-            'plate_number' => 'XYZ-9999', 'type' => 'truck', 'make' => 'Isuzu', 'capacity_orders' => 120,
-        ])->assertCreated()->assertJsonPath('data.plate_number', 'XYZ-9999');
-
-        $this->auth()->getJson(self::VEHICLES)->assertOk()->assertJsonPath('meta.total', 1);
-    }
-
-    public function test_vehicle_plate_must_be_unique(): void
-    {
-        $this->makeVehicle(['plate_number' => 'DUP-001']);
-
-        $this->auth()->postJson(self::VEHICLES, ['plate_number' => 'DUP-001', 'type' => 'van'])
-            ->assertStatus(422)->assertJsonValidationErrors('plate_number');
-    }
-
-    public function test_available_filter_excludes_assigned_vehicles(): void
+    public function test_assigning_from_the_driver_side_engages_the_vehicle(): void
     {
         $free = $this->makeVehicle(['plate_number' => 'FREE-1']);
         $taken = $this->makeVehicle(['plate_number' => 'TAKEN-1']);
         app(DriverVehicleAssignmentService::class)->assign($this->makeDriver(), $taken);
 
-        $response = $this->auth()->getJson(self::VEHICLES.'?available=1')->assertOk();
+        $plates = array_column(
+            $this->auth()->getJson(self::VEHICLES.'?available=1')->assertOk()->json('data'),
+            'plate_number',
+        );
 
-        $plates = array_column($response->json('data'), 'plate_number');
         $this->assertContains('FREE-1', $plates);
         $this->assertNotContains('TAKEN-1', $plates);
-        $this->assertSame($free->id, $response->json('data.0.id'));
+        $this->assertSame($free->plate_number, $plates[0]);
     }
 
     // ── Security ──────────────────────────────────────────────────────────────
