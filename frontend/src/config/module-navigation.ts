@@ -48,7 +48,9 @@ import {
   ListChecks,
   BarChart2,
   Bell,
+  Bot,
   History,
+  Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -57,6 +59,7 @@ import { ROUTES } from '@/router/routes';
 export type ModuleId =
   | 'dashboard'
   | 'commerce'
+  | 'shipping'
   | 'pos'
   | 'inventory'
   | 'purchasing'
@@ -124,11 +127,9 @@ export const APP_MODULES: AppModule[] = [
     icon: ShoppingBag,
     defaultPath: ROUTES.orders,
     items: [
-      { key: 'orders', label: 'Orders', path: ROUTES.orders, icon: ShoppingBag },
-      { key: 'fulfillments', label: 'Fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
+      { key: 'orders',    label: 'Orders',    path: ROUTES.orders,    icon: ShoppingBag  },
+      { key: 'products',  label: 'Products',  path: ROUTES.products,  icon: Package      },
       { key: 'customers', label: 'Customers', path: ROUTES.customers, icon: ShoppingCart },
-      { key: 'product-mappings', label: 'Product Mapping', path: ROUTES.productMappings, icon: Link2 },
-      { key: 'sync-logs', label: 'Sync Logs', path: ROUTES.syncLogs, icon: ArrowLeftRight },
     ],
   },
   {
@@ -139,7 +140,6 @@ export const APP_MODULES: AppModule[] = [
     defaultPath: ROUTES.inventoryDashboard,
     items: [
       { key: 'inv-dashboard', label: 'Dashboard', path: ROUTES.inventoryDashboard, icon: LayoutDashboard },
-      { key: 'products', label: 'Products', path: ROUTES.products, icon: Package },
       { key: 'raw-materials', label: 'Raw Materials', path: ROUTES.rawMaterials, icon: FlaskConical },
       { key: 'recipes', label: 'Recipes', path: ROUTES.recipes, icon: ListTree },
       { key: 'price-review', label: 'Price Review', path: ROUTES.costManagementPriceReview, icon: SearchCheck },
@@ -152,6 +152,37 @@ export const APP_MODULES: AppModule[] = [
       { key: 'master-data-section', label: 'Master Data', isSection: true },
       { key: 'categories', label: 'Categories', path: ROUTES.inventoryCategories, icon: Tag },
       { key: 'units', label: 'Units of Measure', path: ROUTES.inventoryUnits, icon: Ruler },
+    ],
+  },
+  {
+    id: 'operations',
+    label: 'Operations',
+    railLabel: 'Ops.',
+    icon: TrendingUp,
+    defaultPath: ROUTES.waveWorkspace,
+    items: [
+      { key: 'wave-workspace', label: 'Fulfillment Wave Workspace', path: ROUTES.waveWorkspace, icon: Layers2 },
+    ],
+  },
+  {
+    id: 'shipping',
+    label: 'Shipping',
+    railLabel: 'Shipping',
+    icon: PackageCheck,
+    defaultPath: ROUTES.fulfillments,
+    items: [
+      { key: 'fulfillments',                 label: 'Fulfillments',          path: ROUTES.fulfillments,                  icon: PackageCheck },
+      { key: 'carriers-section',             label: 'Carriers',              isSection: true },
+      { key: 'logistics-shipping-companies', label: 'Shipping Companies',    path: ROUTES.logisticsShippingCompanies,    icon: Truck        },
+      { key: 'logistics-drivers',            label: 'Drivers',               path: ROUTES.logisticsDrivers,              icon: UsersIcon    },
+      { key: 'logistics-vehicles',           label: 'Vehicles',              path: ROUTES.logisticsVehicles,             icon: Truck        },
+      { key: 'geo-section',                  label: 'Geography',             isSection: true },
+      { key: 'egypt-geography',              label: 'Egypt Geography',       path: ROUTES.logisticsGeography,            icon: Map          },
+      { key: 'dist-section',                 label: 'Distribution',          isSection: true },
+      { key: 'logistics-distribution-zones', label: 'Distribution Zones',    path: ROUTES.logisticsDistributionZones,    icon: Network      },
+      { key: 'logistics-distribution-plan',  label: 'Distribution Planning', path: ROUTES.logisticsDistributionPlanning, icon: ListOrdered  },
+      { key: 'delivery-section',             label: 'Delivery',              isSection: true },
+      { key: 'logistics-delivery',           label: 'Delivery & Tracking',   path: ROUTES.logisticsDelivery,             icon: MapPin       },
     ],
   },
   {
@@ -179,34 +210,6 @@ export const APP_MODULES: AppModule[] = [
     items: [],
   },
   {
-    id: 'crm',
-    label: 'CRM',
-    railLabel: 'CRM',
-    icon: UsersIcon,
-    defaultPath: ROUTES.crm,
-    items: [],
-  },
-  {
-    id: 'manufacturing',
-    label: 'Manufacturing',
-    railLabel: 'Mfg.',
-    icon: Factory,
-    defaultPath: ROUTES.recipes,
-    items: [
-      { key: 'production-orders', label: 'Production Orders', path: ROUTES.recipes, icon: ClipboardList },
-    ],
-  },
-  {
-    id: 'operations',
-    label: 'Operations',
-    railLabel: 'Ops.',
-    icon: TrendingUp,
-    defaultPath: ROUTES.waveWorkspace,
-    items: [
-      { key: 'wave-workspace', label: 'Fulfillment Wave Workspace', path: ROUTES.waveWorkspace, icon: Layers2 },
-    ],
-  },
-  {
     id: 'marketing',
     label: 'Marketing OS',
     railLabel: 'Mktg.',
@@ -228,6 +231,24 @@ export const APP_MODULES: AppModule[] = [
       { key: 'automation-segs',  label: 'Audience Segments',    path: ROUTES.audienceSegments,         icon: UsersIcon },
       { key: 'automation-dash',  label: 'Automation Dashboard', path: ROUTES.automationDashboard,      icon: Activity },
       { key: 'automation-gov',   label: 'Auto Governance',      path: ROUTES.automationGovernance,     icon: Shield },
+    ],
+  },
+  {
+    id: 'crm',
+    label: 'CRM',
+    railLabel: 'CRM',
+    icon: UsersIcon,
+    defaultPath: ROUTES.crm,
+    items: [],
+  },
+  {
+    id: 'manufacturing',
+    label: 'Manufacturing',
+    railLabel: 'Mfg.',
+    icon: Factory,
+    defaultPath: ROUTES.recipes,
+    items: [
+      { key: 'production-orders', label: 'Production Orders', path: ROUTES.recipes, icon: ClipboardList },
     ],
   },
   {
@@ -275,13 +296,7 @@ export const APP_MODULES: AppModule[] = [
     railLabel: 'Logistics',
     icon: Truck,
     defaultPath: ROUTES.logisticsGeography,
-    items: [
-      { key: 'geo-section',                  label: 'Geography',             isSection: true },
-      { key: 'egypt-geography',              label: 'Egypt Geography',       path: ROUTES.logisticsGeography,            icon: Map          },
-      { key: 'dist-section',                 label: 'Distribution',          isSection: true },
-      { key: 'logistics-distribution-zones', label: 'Distribution Zones',   path: ROUTES.logisticsDistributionZones,    icon: Network      },
-      { key: 'logistics-distribution-plan',  label: 'Distribution Planning', path: ROUTES.logisticsDistributionPlanning, icon: ListOrdered  },
-    ],
+    items: [],
   },
   {
     id: 'reports',
@@ -314,6 +329,9 @@ export const APP_MODULES: AppModule[] = [
       { key: 'settings', label: 'Settings', path: ROUTES.settings, icon: Settings },
       { key: 'config-section', label: 'Configuration',   isSection: true },
       { key: 'configuration-os', label: 'Configuration OS', path: ROUTES.configurationOs, icon: Cpu },
+      { key: 'integrations-section', label: 'External Integrations', isSection: true },
+      { key: 'product-mappings', label: 'Product Mapping', path: ROUTES.productMappings, icon: Link2 },
+      { key: 'sync-logs', label: 'Sync Logs', path: ROUTES.syncLogs, icon: ArrowLeftRight },
     ],
   },
   {
@@ -323,6 +341,8 @@ export const APP_MODULES: AppModule[] = [
     icon: ShieldCheck,
     defaultPath: ROUTES.engineeringDashboard,
     items: [
+      { key: 'eng-ws-section',   label: 'Workspace',            isSection: true },
+      { key: 'eng-workspace',    label: 'Engineering Workspace', path: ROUTES.engineeringWorkspace,      icon: LayoutDashboard },
       { key: 'eng-section',      label: 'Certification',        isSection: true },
       { key: 'eng-dashboard',    label: 'Dashboard',            path: ROUTES.engineeringDashboard,       icon: BarChart2 },
       { key: 'eng-runs',         label: 'Certification Runs',   path: ROUTES.engineeringRuns,            icon: ListChecks },
@@ -332,6 +352,13 @@ export const APP_MODULES: AppModule[] = [
       { key: 'eng-pipeline-h',   label: 'Pipeline History',     path: ROUTES.engineeringPipelineHistory, icon: History },
       { key: 'eng-analytics',    label: 'Pipeline Analytics',   path: ROUTES.engineeringAnalytics,       icon: BarChart2 },
       { key: 'eng-notify',       label: 'Notifications',        path: ROUTES.engineeringNotifications,   icon: Bell },
+      { key: 'eng-releases-section', label: 'Release Orchestrator', isSection: true },
+      { key: 'eng-releases',     label: 'Releases',             path: ROUTES.engineeringReleases,        icon: GitBranch },
+      { key: 'eng-cluster-section', label: 'Execution',         isSection: true },
+      { key: 'eng-cluster',      label: 'Execution Cluster',    path: ROUTES.engineeringCluster,         icon: Cpu },
+      { key: 'eng-ai-section',   label: 'AI Supervisor',        isSection: true },
+      { key: 'eng-ai-supervisor', label: 'AI Supervisor',       path: ROUTES.engineeringAiSupervisor,    icon: Bot },
+      { key: 'eng-repair',       label: 'AI Repair',            path: ROUTES.engineeringRepair,          icon: Wrench },
     ],
   },
 ];

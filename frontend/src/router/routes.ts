@@ -16,7 +16,6 @@ export const ROUTES = {
   categories: '/categories',
   units: '/units',
   suppliers: '/suppliers',
-  supplierDetail: '/suppliers/:id',
   purchaseOrders: '/purchase-orders',
   purchaseOrdersNew: '/purchase-orders/new',
   goodsReceipts: '/goods-receipts',
@@ -30,7 +29,6 @@ export const ROUTES = {
   ordersNew: '/orders/new',
   fulfillments: '/fulfillments',
   fulfillmentsNew: '/fulfillments/new',
-  stockSyncLogs: '/stock-sync-logs',
   syncLogs: '/sync-logs',
   // Legacy BOM routes — kept for redirect compatibility
   boms: '/boms',
@@ -47,12 +45,10 @@ export const ROUTES = {
   inventoryCycleCountPlanner: '/inventory/cycle-count-planner',
   inventoryVarianceAnalytics: '/inventory/variance-analytics',
   inventoryWarehousePerformance: '/inventory/warehouse-performance',
-  costPricingCenter: '/inventory/cost-management',
   costManagement: '/inventory/cost-management',
   costManagementPriceReview: '/inventory/cost-management/price-review',
   costManagementCostHistory: '/inventory/cost-management/cost-history',
   inventory: '/inventory',
-  purchasing: '/purchasing',
   procurementHub: '/purchasing/hub',
   purchaseMaterials: '/purchasing/purchase-materials',
   materialRequests: '/purchasing/material-requests',
@@ -77,7 +73,6 @@ export const ROUTES = {
   loadingWorkspace:       '/operations/distribution/loading',
   loadingOsDashboard:     '/operations/loading/dashboard',
   dispatchGate:           '/operations/dispatch-gate',
-  dispatchGateWorkspace:  '/operations/dispatch-gate/:tripId',
   // Fulfillment Wave Workspace (TASK-PREP-UI-003)
   waveWorkspace:        '/operations/preparation/wave-workspace',
   waveProductDemand:    '/operations/preparation/wave-workspace/products',
@@ -93,7 +88,6 @@ export const ROUTES = {
   inventoryUnits: '/inventory/master-data/units',
   // Inventory Count Sessions
   inventoryCount: '/inventory/count',
-  inventoryCountDetail: '/inventory/count/:id',
   // Waste Investigations & Warehouse Liabilities
   wasteInvestigations: '/inventory/waste-investigations',
   warehouseLiabilities: '/inventory/warehouse-liabilities',
@@ -115,8 +109,10 @@ export const ROUTES = {
   logisticsGeography:            '/logistics/geography',
   logisticsDistributionZones:    '/logistics/distribution/zones',
   logisticsDistributionPlanning: '/logistics/distribution/planning',
-  // Administration Master Data (legacy alias kept for redirect safety)
-  egyptGeography: '/logistics/geography',
+  logisticsShippingCompanies:    '/logistics/shipping-companies',
+  logisticsDrivers:              '/logistics/drivers',
+  logisticsVehicles:             '/logistics/vehicles',
+  logisticsDelivery:             '/logistics/delivery',
   // Marketing OS
   marketing:              '/marketing',
   marketingAssets:        '/marketing/assets',
@@ -138,7 +134,6 @@ export const ROUTES = {
   marketingSettings:           '/marketing/settings',
   // Campaign Studio
   campaignStudio:          '/marketing/studio',
-  campaignStudioDraft:     '/marketing/studio/drafts/:draftId',
   campaignGovernance:      '/marketing/studio/governance',
   campaignStudioDashboard: '/marketing/studio/dashboard',
   // Core Platform — Business Attribution Engine
@@ -180,6 +175,11 @@ export const ROUTES = {
   engineeringPipelineHistory:   '/engineering/pipeline/history',
   engineeringNotifications:     '/engineering/notifications',
   engineeringAnalytics:         '/engineering/analytics',
+  engineeringCluster:           '/engineering/cluster',
+  engineeringReleases:          '/engineering/releases',
+  engineeringAiSupervisor:      '/engineering/ai-supervisor',
+  engineeringRepair:            '/engineering/repair',
+  engineeringWorkspace:         '/engineering/workspace',
   // Branch Coverage (TASK-BRANCH-COVERAGE-UI-001)
   branchCoverage: '/settings/branch-coverage',
 } as const;

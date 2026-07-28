@@ -7,6 +7,7 @@ import { BrandsPage } from '@/features/brands/pages/brands-page';
 import { BusinessAccountsPage } from '@/features/business-accounts/pages/business-accounts-page';
 import { TeamsPage } from '@/features/teams/pages/teams-page';
 import { BranchesPage } from '@/features/branches/pages/branches-page';
+import { BranchCoveragePage } from '@/features/branches/pages/branch-coverage-page';
 import { CategoriesPage } from '@/features/categories/pages/categories-page';
 import { ChannelsPage } from '@/features/channels/pages/channels-page';
 import { CompaniesPage } from '@/features/companies/pages/companies-page';
@@ -70,6 +71,10 @@ import { BrandConfigurationPage } from '@/features/admin/configuration/pages/bra
 import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-geography-page';
 import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
 import { DistributionPlanningPage } from '@/features/logistics/distribution-planning/pages/distribution-planning-page';
+import { ShippingCompaniesPage } from '@/features/logistics/shipping-companies/pages/shipping-companies-page';
+import { DriversPage } from '@/features/logistics/drivers/pages/drivers-page';
+import { VehiclesPage } from '@/features/logistics/vehicles/pages/vehicles-page';
+import { DeliveryPage } from '@/features/logistics/delivery/pages/delivery-page';
 import { DistributionBoardPage } from '@/features/operations/distribution-board/pages/distribution-board-page';
 import { LoadingDashboardPage } from '@/features/operations/distribution-board/pages/loading-dashboard-page';
 import { LoadingWorkspacePage } from '@/features/operations/distribution-board/pages/loading-workspace-page';
@@ -115,6 +120,7 @@ import { BaeTimelinePage } from '@/features/core/business-attribution/pages/bae-
 import { UnifiedInboxPage } from '@/features/customer-engagement/pages/unified-inbox-page';
 import { CepDashboardPage } from '@/features/customer-engagement/pages/cep-dashboard-page';
 import { CepLeadsPage } from '@/features/customer-engagement/pages/cep-leads-page';
+import { NotFoundPage } from '@/features/core/pages/not-found-page';
 import { BridgeDashboardPage }   from '@/features/claude-bridge/pages/bridge-dashboard-page';
 import { BridgeTasksPage }       from '@/features/claude-bridge/pages/bridge-tasks-page';
 import { BridgeCreateTaskPage }  from '@/features/claude-bridge/pages/bridge-create-task-page';
@@ -126,6 +132,12 @@ import { EngineeringFindingsPage }         from '@/features/engineering/pages/en
 import { EngineeringPipelinePage }         from '@/features/engineering/pages/engineering-pipeline-page';
 import { EngineeringPipelineHistoryPage }  from '@/features/engineering/pages/engineering-pipeline-history-page';
 import { EngineeringNotificationsPage }    from '@/features/engineering/pages/engineering-notifications-page';
+import { EngineeringAnalyticsPage }        from '@/features/engineering/pages/engineering-analytics-page';
+import ClusterDashboardPage                from '@/features/engineering/pages/ClusterDashboardPage';
+import ReleaseDashboardPage               from '@/features/engineering/pages/ReleaseDashboardPage';
+import AIEngineeringWorkspacePage         from '@/features/engineering/pages/AIEngineeringWorkspacePage';
+import RepairSessionsPage                 from '@/features/engineering/pages/RepairSessionsPage';
+import EnterpriseWorkspacePage            from '@/features/engineering/pages/EnterpriseWorkspacePage';
 import { OmnichannelInboxPage } from '@/features/conversational-commerce/pages/omnichannel-inbox-page';
 import { MacrosPage } from '@/features/conversational-commerce/pages/macros-page';
 import { RoutingRulesPage } from '@/features/conversational-commerce/pages/routing-rules-page';
@@ -171,6 +183,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.businessAccounts, Component: BusinessAccountsPage },
             { path: ROUTES.teams, Component: TeamsPage },
             { path: ROUTES.branches, Component: BranchesPage },
+            { path: ROUTES.branchCoverage, Component: BranchCoveragePage },
             { path: ROUTES.warehouses, Component: WarehousesPage },
             { path: ROUTES.channels, Component: ChannelsPage },
             // Inventory workspace + sub-pages
@@ -245,6 +258,10 @@ export const router = createBrowserRouter(
             { path: ROUTES.logisticsGeography,            Component: EgyptGeographyPage },
             { path: ROUTES.logisticsDistributionZones,    Component: DistributionZonesPage },
             { path: ROUTES.logisticsDistributionPlanning, Component: DistributionPlanningPage },
+            { path: ROUTES.logisticsShippingCompanies,    Component: ShippingCompaniesPage },
+            { path: ROUTES.logisticsDrivers,              Component: DriversPage },
+            { path: ROUTES.logisticsVehicles,             Component: VehiclesPage },
+            { path: ROUTES.logisticsDelivery,             Component: DeliveryPage },
             // Marketing OS
             { path: ROUTES.marketing,               Component: MarketingDashboardPage },
             { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },
@@ -334,6 +351,12 @@ export const router = createBrowserRouter(
             { path: ROUTES.engineeringPipeline,        Component: EngineeringPipelinePage },
             { path: ROUTES.engineeringPipelineHistory, Component: EngineeringPipelineHistoryPage },
             { path: ROUTES.engineeringNotifications,   Component: EngineeringNotificationsPage },
+            { path: ROUTES.engineeringAnalytics,       Component: EngineeringAnalyticsPage },
+            { path: ROUTES.engineeringCluster,         Component: ClusterDashboardPage },
+            { path: ROUTES.engineeringReleases,        Component: ReleaseDashboardPage },
+            { path: ROUTES.engineeringAiSupervisor,    Component: AIEngineeringWorkspacePage },
+            { path: ROUTES.engineeringRepair,          Component: RepairSessionsPage },
+            { path: ROUTES.engineeringWorkspace,       Component: EnterpriseWorkspacePage },
             // Driver Mobile OS (TASK-DIST-005)
             { path: ROUTES.driverHome,            Component: DriverHomePage },
             { path: ROUTES.driverTrip,            Component: DriverTripDashboardPage },
@@ -347,6 +370,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.driverTripTimeline,    Component: DriverTripTimelinePage },
             { path: ROUTES.driverTripMap,         Component: DriverMapPage },
             ...moduleRoutes,
+            { path: '*', Component: NotFoundPage },
           ],
         },
       ],

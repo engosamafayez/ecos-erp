@@ -89,6 +89,11 @@ use Modules\Logistics\Geography\Presentation\Http\Controllers\GovernorateControl
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DeliveryController as LogisticsDeliveryController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\SettlementController as LogisticsSettlementController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\TripController as LogisticsTripController;
+use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryAttemptController;
+use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryCodController;
+use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryController as DeliveryOsController;
+use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryPodController;
+use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryReturnController as DeliveryOsReturnController;
 use Modules\Logistics\Drivers\Presentation\Http\Controllers\DriverController;
 use Modules\Logistics\Vehicles\Presentation\Http\Controllers\VehicleController;
 use Modules\Logistics\Vehicles\Presentation\Http\Controllers\VehicleMaintenanceController;
@@ -1429,6 +1434,89 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
     Route::patch('/trips/{tripId}/settlement/dispute', [LogisticsSettlementController::class, 'dispute']);
     Route::patch('/trips/{tripId}/settlement/finalize', [LogisticsSettlementController::class, 'finalize']);
     Route::get('/trips/{tripId}/financial-summary', [LogisticsSettlementController::class, 'summary']);
+});
+
+// ── Logistics OS — Delivery & Tracking (TASK-LOG-005) ─────────────────────────
+// Delivery is the aggregate root for one order's journey to the customer,
+// spanning every attempt across every trip. Distribution's DeliveryStop is
+// consumed read-only; nothing here writes to a distribution_* table.
+//
+// COD: these routes report collection and publish events only. Trip cash
+// balances and settlement stay with Distribution — the Single Cash Authority.
+Route::middleware('auth:sanctum')->prefix('logistics/delivery')->group(function (): void {
+    // Reference data + analytics
+    Route::get('/options', [DeliveryOsController::class, 'options'])
+        ->middleware('permission:delivery.view');
+    Route::get('/stats', [DeliveryOsController::class, 'stats'])
+        ->middleware('permission:delivery.analytics.view');
+
+    // Deliveries
+    Route::middleware('permission:delivery.view')->group(function (): void {
+        Route::get('/', [DeliveryOsController::class, 'index']);
+        Route::get('/{id}', [DeliveryOsController::class, 'show']);
+        Route::get('/{id}/retry-eligibility', [DeliveryOsController::class, 'retryEligibility']);
+        Route::get('/{id}/timeline', [DeliveryOsController::class, 'timeline']);
+        Route::get('/{id}/public-timeline', [DeliveryOsController::class, 'publicTimeline']);
+        Route::get('/{deliveryId}/attempts', [DeliveryAttemptController::class, 'index']);
+        Route::get('/{deliveryId}/attempts/{attemptId}', [DeliveryAttemptController::class, 'show']);
+        Route::get('/{deliveryId}/attempts/{attemptId}/pod', [DeliveryPodController::class, 'show']);
+        Route::get('/{deliveryId}/returns', [DeliveryOsReturnController::class, 'index']);
+        Route::get('/{deliveryId}/returns/{returnId}', [DeliveryOsReturnController::class, 'show']);
+        Route::get('/{deliveryId}/cod', [DeliveryCodController::class, 'show']);
+    });
+
+    // Lifecycle
+    Route::middleware('permission:delivery.execute')->group(function (): void {
+        Route::post('/', [DeliveryOsController::class, 'store']);
+        Route::patch('/{id}/status', [DeliveryOsController::class, 'setStatus']);
+        Route::patch('/{id}/escalate', [DeliveryOsController::class, 'escalate']);
+        Route::post('/{deliveryId}/attempts', [DeliveryAttemptController::class, 'store']);
+        Route::patch('/{deliveryId}/attempts/{attemptId}/advance', [DeliveryAttemptController::class, 'advance']);
+        Route::patch('/{deliveryId}/attempts/{attemptId}/succeed', [DeliveryAttemptController::class, 'succeed']);
+        Route::patch('/{deliveryId}/attempts/{attemptId}/fail', [DeliveryAttemptController::class, 'fail']);
+        Route::patch('/{deliveryId}/attempts/{attemptId}/abort', [DeliveryAttemptController::class, 'abort']);
+    });
+
+    // Retry — separate permission from execution: rescheduling a failed
+    // delivery is a supervisor decision, not a driver action.
+    Route::middleware('permission:delivery.retry')->group(function (): void {
+        Route::post('/{id}/retry', [DeliveryOsController::class, 'retry']);
+        Route::patch('/{id}/address-corrected', [DeliveryOsController::class, 'markAddressCorrected']);
+    });
+
+    Route::patch('/{id}/cancel', [DeliveryOsController::class, 'cancel'])
+        ->middleware('permission:delivery.cancel');
+
+    // Proof of delivery — capture and validate are deliberately separate
+    // permissions so evidence is not self-certified.
+    Route::middleware('permission:delivery.pod.capture')->group(function (): void {
+        Route::post('/{deliveryId}/attempts/{attemptId}/pod', [DeliveryPodController::class, 'capture']);
+        Route::post('/{deliveryId}/attempts/{attemptId}/pod/artifacts', [DeliveryPodController::class, 'addArtifact']);
+    });
+    Route::middleware('permission:delivery.pod.validate')->group(function (): void {
+        Route::patch('/{deliveryId}/attempts/{attemptId}/pod/validate', [DeliveryPodController::class, 'validatePod']);
+        Route::patch('/{deliveryId}/attempts/{attemptId}/pod/reject', [DeliveryPodController::class, 'reject']);
+    });
+
+    // Returns
+    Route::middleware('permission:delivery.return.manage')->group(function (): void {
+        Route::post('/{deliveryId}/returns', [DeliveryOsReturnController::class, 'store']);
+        Route::patch('/{deliveryId}/returns/{returnId}/in-transit', [DeliveryOsReturnController::class, 'markInTransit']);
+        Route::patch('/{deliveryId}/returns/{returnId}/receive', [DeliveryOsReturnController::class, 'receive']);
+        Route::patch('/{deliveryId}/returns/{returnId}/verify', [DeliveryOsReturnController::class, 'verify']);
+        Route::patch('/{deliveryId}/returns/{returnId}/discrepancy', [DeliveryOsReturnController::class, 'flagDiscrepancy']);
+    });
+
+    // COD — completion reporting only, never settlement.
+    Route::middleware('permission:delivery.cod.collect')->group(function (): void {
+        Route::post('/{deliveryId}/cod', [DeliveryCodController::class, 'open']);
+        Route::patch('/{deliveryId}/cod/collect', [DeliveryCodController::class, 'collect']);
+    });
+    Route::middleware('permission:delivery.cod.verify')->group(function (): void {
+        Route::patch('/{deliveryId}/cod/verify', [DeliveryCodController::class, 'verify']);
+        Route::patch('/{deliveryId}/cod/dispute', [DeliveryCodController::class, 'dispute']);
+        Route::patch('/{deliveryId}/cod/write-off', [DeliveryCodController::class, 'writeOff']);
+    });
 });
 
 // ── Distribution OS — Planning ────────────────────────────────────────────────
