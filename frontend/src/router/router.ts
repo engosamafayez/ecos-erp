@@ -75,6 +75,7 @@ import { ShippingCompaniesPage } from '@/features/logistics/shipping-companies/p
 import { DriversPage } from '@/features/logistics/drivers/pages/drivers-page';
 import { VehiclesPage } from '@/features/logistics/vehicles/pages/vehicles-page';
 import { DeliveryPage } from '@/features/logistics/delivery/pages/delivery-page';
+import { FleetDashboardPage } from '@/features/logistics/fleet/pages/fleet-dashboard-page';
 import { DistributionBoardPage } from '@/features/operations/distribution-board/pages/distribution-board-page';
 import { LoadingDashboardPage } from '@/features/operations/distribution-board/pages/loading-dashboard-page';
 import { LoadingWorkspacePage } from '@/features/operations/distribution-board/pages/loading-workspace-page';
@@ -262,6 +263,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.logisticsDrivers,              Component: DriversPage },
             { path: ROUTES.logisticsVehicles,             Component: VehiclesPage },
             { path: ROUTES.logisticsDelivery,             Component: DeliveryPage },
+            { path: ROUTES.logisticsFleet,                Component: FleetDashboardPage },
             // Marketing OS
             { path: ROUTES.marketing,               Component: MarketingDashboardPage },
             { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },

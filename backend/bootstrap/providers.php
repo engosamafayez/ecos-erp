@@ -86,6 +86,9 @@ return [
     Modules\Logistics\Drivers\Infrastructure\Providers\LogisticsDriversServiceProvider::class,
     Modules\Logistics\Vehicles\Infrastructure\Providers\LogisticsVehiclesServiceProvider::class,
     Modules\Logistics\Delivery\Infrastructure\Providers\LogisticsDeliveryServiceProvider::class,
+    // Logistics V2 — EPIC-LOG-V2-001
+    Modules\Logistics\Fleet\Infrastructure\Providers\LogisticsFleetServiceProvider::class,
+    Modules\Logistics\Network\Infrastructure\Providers\LogisticsNetworkServiceProvider::class,
     // Marketing OS — connector order matters: Registry must boot before MetaConnector registers into it
     // ProviderPlatform must register before ProviderConfig so ProviderEventPublisher is available.
     // ProviderConfig must register before MetaConnector so credentials are resolvable at boot.

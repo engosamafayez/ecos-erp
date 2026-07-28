@@ -95,6 +95,10 @@ use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryController 
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryPodController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryReturnController as DeliveryOsReturnController;
 use Modules\Logistics\Drivers\Presentation\Http\Controllers\DriverController;
+use Modules\Logistics\Fleet\Presentation\Http\Controllers\FleetUnitController;
+use Modules\Logistics\Fleet\Presentation\Http\Controllers\FuelController as FleetFuelController;
+use Modules\Logistics\Fleet\Presentation\Http\Controllers\InspectionController as FleetInspectionController;
+use Modules\Logistics\Fleet\Presentation\Http\Controllers\MaintenanceController as FleetMaintenanceController;
 use Modules\Logistics\Vehicles\Presentation\Http\Controllers\VehicleController;
 use Modules\Logistics\Vehicles\Presentation\Http\Controllers\VehicleMaintenanceController;
 use Modules\Logistics\ShippingCompanies\Presentation\Http\Controllers\ShippingCompanyController;
@@ -1517,6 +1521,94 @@ Route::middleware('auth:sanctum')->prefix('logistics/delivery')->group(function 
         Route::patch('/{deliveryId}/cod/dispute', [DeliveryCodController::class, 'dispute']);
         Route::patch('/{deliveryId}/cod/write-off', [DeliveryCodController::class, 'writeOff']);
     });
+});
+
+// ── Logistics V2 — Fleet Operations (EPIC-LOG-V2-001, Phase 1) ────────────────
+// Fleet owns vehicle CONDITION; LOG-003 owns vehicle IDENTITY. Nothing here
+// writes logistics_vehicles, and nothing imports Distribution or Delivery —
+// Fleet Operations is independent of Delivery Execution (Directive 3).
+Route::middleware('auth:sanctum')->prefix('logistics/fleet')->group(function (): void {
+    // Reference data + analytics
+    Route::get('/options', [FleetUnitController::class, 'options'])
+        ->middleware('permission:fleet.view');
+    Route::get('/stats', [FleetUnitController::class, 'stats'])
+        ->middleware('permission:fleet.view');
+
+    // Read surface
+    Route::middleware('permission:fleet.view')->group(function (): void {
+        Route::get('/units', [FleetUnitController::class, 'index']);
+        Route::get('/units/{id}', [FleetUnitController::class, 'show']);
+        Route::get('/units/{id}/fitness', [FleetUnitController::class, 'fitness']);
+        Route::get('/units/{id}/health', [FleetUnitController::class, 'health']);
+        Route::get('/units/{id}/odometer', [FleetUnitController::class, 'odometerHistory']);
+        Route::get('/units/{unitId}/maintenance-plans', [FleetMaintenanceController::class, 'plans']);
+        Route::get('/units/{unitId}/maintenance-plans/evaluate', [FleetMaintenanceController::class, 'evaluate']);
+        Route::get('/units/{unitId}/inspections', [FleetInspectionController::class, 'index']);
+        Route::get('/units/{unitId}/inspections/{id}', [FleetInspectionController::class, 'show']);
+        Route::get('/units/{unitId}/fuel/efficiency', [FleetFuelController::class, 'efficiency']);
+        Route::get('/inspection-templates', [FleetInspectionController::class, 'templates']);
+        Route::get('/work-orders', [FleetMaintenanceController::class, 'workOrders']);
+        Route::get('/defects', [FleetInspectionController::class, 'defects']);
+        Route::get('/fuel-transactions', [FleetFuelController::class, 'index']);
+        Route::get('/fuel-transactions/{id}', [FleetFuelController::class, 'show']);
+    });
+
+    // Unit lifecycle
+    Route::middleware('permission:fleet.manage')->group(function (): void {
+        Route::post('/units', [FleetUnitController::class, 'store']);
+        Route::patch('/units/{id}/lifecycle', [FleetUnitController::class, 'setLifecycle']);
+        Route::patch('/units/{id}/group', [FleetUnitController::class, 'moveGroup']);
+        Route::patch('/defects/{id}/acknowledge', [FleetInspectionController::class, 'acknowledgeDefect']);
+        Route::patch('/defects/{id}/repair', [FleetInspectionController::class, 'repairDefect']);
+        Route::patch('/defects/{id}/resolve', [FleetInspectionController::class, 'resolveDefect']);
+    });
+
+    // Maintenance — schedule and complete are separate permissions so work
+    // cannot be marked done that was never scheduled or performed.
+    Route::middleware('permission:fleet.maintenance.schedule')->group(function (): void {
+        Route::post('/units/{unitId}/maintenance-plans', [FleetMaintenanceController::class, 'storePlan']);
+        Route::patch('/units/{unitId}/maintenance-plans/{planId}/reproject', [FleetMaintenanceController::class, 'reprojectPlan']);
+        Route::post('/units/{unitId}/work-orders', [FleetMaintenanceController::class, 'storeWorkOrder']);
+        Route::patch('/work-orders/{id}/schedule', [FleetMaintenanceController::class, 'scheduleWorkOrder']);
+        Route::patch('/work-orders/{id}/start', [FleetMaintenanceController::class, 'startWorkOrder']);
+        Route::patch('/work-orders/{id}/cancel', [FleetMaintenanceController::class, 'cancelWorkOrder']);
+    });
+    Route::patch('/work-orders/{id}/complete', [FleetMaintenanceController::class, 'completeWorkOrder'])
+        ->middleware('permission:fleet.maintenance.complete');
+
+    // Inspections — perform and approve are separate so evidence is not
+    // self-certified (the LOG-005 POD capture/validate precedent).
+    Route::middleware('permission:fleet.inspection.perform')->group(function (): void {
+        Route::post('/units/{unitId}/inspections', [FleetInspectionController::class, 'store']);
+        Route::patch('/units/{unitId}/inspections/{id}/submit', [FleetInspectionController::class, 'submit']);
+        Route::post('/units/{unitId}/defects', [FleetInspectionController::class, 'reportDefect']);
+    });
+    Route::middleware('permission:fleet.inspection.approve')->group(function (): void {
+        Route::patch('/units/{unitId}/inspections/{id}/approve', [FleetInspectionController::class, 'approve']);
+        Route::patch('/units/{unitId}/inspections/{id}/reject', [FleetInspectionController::class, 'reject']);
+    });
+
+    // Dismissing a defect clears a blocker without repairing anything; a
+    // CRITICAL one additionally requires fleet.health.override, checked in the
+    // controller because the requirement depends on the record's severity.
+    Route::patch('/defects/{id}/dismiss', [FleetInspectionController::class, 'dismissDefect'])
+        ->middleware('permission:fleet.manage');
+
+    // Fuel — record and reconcile are separate so the person entering a
+    // purchase cannot clear their own anomaly.
+    Route::middleware('permission:fleet.fuel.record')->group(function (): void {
+        Route::post('/units/{unitId}/fuel-transactions', [FleetFuelController::class, 'store']);
+        Route::post('/units/{id}/odometer', [FleetUnitController::class, 'recordOdometer']);
+    });
+    Route::middleware('permission:fleet.fuel.reconcile')->group(function (): void {
+        Route::patch('/fuel-transactions/{id}/reconcile', [FleetFuelController::class, 'reconcile']);
+        Route::patch('/fuel-transactions/{id}/dispute', [FleetFuelController::class, 'dispute']);
+        Route::patch('/fuel-transactions/{id}/write-off', [FleetFuelController::class, 'writeOff']);
+        Route::patch('/fuel-transactions/{id}/reject', [FleetFuelController::class, 'reject']);
+    });
+
+    Route::get('/units/{id}/costs', [FleetUnitController::class, 'costs'])
+        ->middleware('permission:fleet.cost.view');
 });
 
 // ── Distribution OS — Planning ────────────────────────────────────────────────

@@ -113,6 +113,7 @@ export const ROUTES = {
   logisticsDrivers:              '/logistics/drivers',
   logisticsVehicles:             '/logistics/vehicles',
   logisticsDelivery:             '/logistics/delivery',
+  logisticsFleet:                '/logistics/fleet',
   // Marketing OS
   marketing:              '/marketing',
   marketingAssets:        '/marketing/assets',
