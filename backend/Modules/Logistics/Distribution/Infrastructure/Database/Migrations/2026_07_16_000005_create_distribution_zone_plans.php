@@ -18,8 +18,8 @@ return new class extends Migration
             $table->id();
             $table->date('planning_date');
             $table->foreignId('zone_id')
-                  ->constrained('distribution_zones')
-                  ->cascadeOnDelete();
+                ->constrained('distribution_zones')
+                ->cascadeOnDelete();
             $table->enum('status', ['ready', 'in_planning', 'planned'])->default('ready');
             $table->text('notes')->nullable();
             $table->string('planned_by')->nullable();

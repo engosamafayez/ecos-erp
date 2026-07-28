@@ -20,6 +20,34 @@ use Modules\System\Engineering\Presentation\Http\Controllers\PipelineAnalyticsCo
 use Modules\System\Engineering\Presentation\Http\Controllers\PipelineRecoveryController;
 use Modules\System\Engineering\Presentation\Http\Controllers\PipelineTemplateController;
 use Modules\System\Engineering\Presentation\Http\Controllers\EngineeringNotificationController;
+use Modules\System\Engineering\Presentation\Http\Controllers\InboxTaskController;
+use Modules\System\Engineering\Presentation\Http\Controllers\InboxCommentController;
+use Modules\System\Engineering\Presentation\Http\Controllers\InboxReleaseCandidateController;
+use Modules\System\Engineering\Presentation\Http\Controllers\AgentRegistrationController;
+use Modules\System\Engineering\Presentation\Http\Controllers\ExecutionSessionController;
+use Modules\System\Engineering\Presentation\Http\Controllers\AIReviewController;
+use Modules\System\Engineering\Presentation\Http\Controllers\AIScoreController;
+use Modules\System\Engineering\Presentation\Http\Controllers\AIRiskController;
+use Modules\System\Engineering\Presentation\Http\Controllers\AIRecommendationController;
+use Modules\System\Engineering\Presentation\Http\Controllers\AIDashboardController;
+use Modules\System\Engineering\Presentation\Http\Controllers\AITrendController;
+use Modules\System\Engineering\Presentation\Http\Controllers\AIReleaseReviewController;
+use Modules\System\Engineering\Presentation\Http\Controllers\RepairDashboardController;
+use Modules\System\Engineering\Presentation\Http\Controllers\RepairSessionController;
+use Modules\System\Engineering\Presentation\Http\Controllers\RepairPromptController;
+use Modules\System\Engineering\Presentation\Http\Controllers\RepairResponseController;
+use Modules\System\Engineering\Presentation\Http\Controllers\RepairPatchController;
+use Modules\System\Engineering\Presentation\Http\Controllers\PatchValidationController;
+use Modules\System\Engineering\Presentation\Http\Controllers\ValidationReportController;
+use Modules\System\Engineering\Presentation\Http\Controllers\PatchRollbackController;
+use Modules\System\Engineering\Presentation\Http\Controllers\GuardianDashboardController;
+use Modules\System\Engineering\Presentation\Http\Controllers\GuardianRunController;
+use Modules\System\Engineering\Presentation\Http\Controllers\GuardianPolicyController;
+use Modules\System\Engineering\Presentation\Http\Controllers\IntelAnalyticsController;
+use Modules\System\Engineering\Presentation\Http\Controllers\IntelKnowledgeController;
+use Modules\System\Engineering\Presentation\Http\Controllers\IntelInsightsController;
+use Modules\System\Engineering\Presentation\Http\Controllers\WorkspaceController;
+use Modules\System\Engineering\Presentation\Http\Controllers\WorkspaceViewController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerApiController as CbWorkerApiController;
@@ -58,24 +86,19 @@ use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionZon
 use Modules\Logistics\Geography\Presentation\Http\Controllers\CityAliasController;
 use Modules\Logistics\Geography\Presentation\Http\Controllers\CityController;
 use Modules\Logistics\Geography\Presentation\Http\Controllers\GovernorateController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DeliveryController as LogisticsDeliveryController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\SettlementController as LogisticsSettlementController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\TripController as LogisticsTripController;
+use Modules\Logistics\Drivers\Presentation\Http\Controllers\DriverController;
+use Modules\Logistics\Vehicles\Presentation\Http\Controllers\VehicleController;
+use Modules\Logistics\Vehicles\Presentation\Http\Controllers\VehicleMaintenanceController;
+use Modules\Logistics\ShippingCompanies\Presentation\Http\Controllers\ShippingCompanyController;
 use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Controllers\BomController;
 use Modules\MasterData\Categories\Presentation\Http\Controllers\CategoryController;
 use Modules\MasterData\Units\Presentation\Http\Controllers\UnitController;
 use Modules\MasterData\Warehouses\Presentation\Http\Controllers\WarehouseController;
 use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController;
 use Modules\Operations\DemandAnalysis\Presentation\Http\Controllers\WaveDemandController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DispatchGateController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionBoardController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionLoadingDashboardController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DistributionTripController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverHandoverController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverMobileController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverPaymentController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\DriverStopController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\FleetResourceController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\LoadingManifestController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\OrderDistributionSyncController;
-use Modules\Operations\Distribution\Presentation\Http\Controllers\TripSettlementController;
 use Modules\Operations\Fulfillment\Presentation\Http\Controllers\BulkFulfillmentController;
 use Modules\Operations\Fulfillment\Presentation\Http\Controllers\FulfillmentController as OrderFulfillmentController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\AllocationController;
@@ -335,8 +358,6 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::patch('orders/{order}/notes/{note}', [OrderController::class, 'updateNote']);
     Route::delete('orders/{order}/notes/{note}', [OrderController::class, 'deleteNote']);
     Route::get('orders/{order}/snapshot', [OrderController::class, 'financialSnapshot']);
-    Route::get('orders/{order}/distribution-stage', [OrderDistributionSyncController::class, 'getOrderStage']);
-    Route::get('orders/{order}/distribution-sync-history', [OrderDistributionSyncController::class, 'getSyncHistory']);
     Route::apiResource('orders', OrderController::class);
     Route::post('orders/{order}/prepare', [OrderController::class, 'prepare']);
     Route::post('orders/{order}/verify-payment', [OrderController::class, 'verifyPayment']);
@@ -706,66 +727,6 @@ Route::middleware('auth:sanctum')->prefix('loading')->group(function (): void {
 | ADR-DIST-004: Wave is the single operational container
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('distribution')->group(function (): void {
-    // Board — active wave state
-    Route::get('board', [DistributionBoardController::class, 'show']);
-    Route::get('board/zones/{zoneId}/orders', [DistributionBoardController::class, 'zoneOrders']);
-    Route::get('board/trips/{tripId}/orders', [DistributionBoardController::class, 'tripOrders']);
-    Route::post('board/validate', [DistributionBoardController::class, 'validate']);
-    Route::post('board/finalize', [DistributionBoardController::class, 'finalize']);
-    Route::get('board/exceptions', [DistributionBoardController::class, 'waveExceptions']);
-
-    // Trips — full lifecycle
-    Route::post('trips', [DistributionTripController::class, 'store']);
-    Route::put('trips/{id}', [DistributionTripController::class, 'update']);
-    Route::delete('trips/{id}', [DistributionTripController::class, 'destroy']);
-    Route::post('trips/{id}/auto-fill', [DistributionTripController::class, 'autoFill']);
-    Route::post('trips/{id}/orders', [DistributionTripController::class, 'addOrder']);
-    Route::delete('trips/{id}/orders/{orderId}', [DistributionTripController::class, 'removeOrder']);
-    Route::post('trips/{id}/orders/move', [DistributionTripController::class, 'moveOrder']);
-    Route::patch('trips/{id}/driver', [DistributionTripController::class, 'assignDriver']);
-    Route::patch('trips/{id}/vehicle', [DistributionTripController::class, 'assignVehicle']);
-    Route::patch('trips/{id}/carrier', [DistributionTripController::class, 'assignCarrier']);
-    Route::post('trips/{id}/custody', [DistributionTripController::class, 'addCustody']);
-    Route::delete('trips/{id}/custody/{custodyId}', [DistributionTripController::class, 'removeCustody']);
-    Route::post('trips/{id}/approve', [DistributionTripController::class, 'approve']);
-    Route::post('trips/{id}/orders/{orderId}/return-to-wave', [DistributionTripController::class, 'returnToWave']);
-    Route::get('trips/{id}/coverage', [DistributionTripController::class, 'coverageMap']);
-    Route::get('trips/{id}/manifest', [DistributionTripController::class, 'manifest']);
-
-    // Loading Manifests — warehouse workspace
-    Route::get('manifests/{id}', [LoadingManifestController::class, 'show']);
-    Route::post('manifests/{id}/start', [LoadingManifestController::class, 'start']);
-    Route::post('manifests/{id}/complete', [LoadingManifestController::class, 'complete']);
-    Route::post('manifests/{id}/items/{itemId}/confirm', [LoadingManifestController::class, 'confirmItem']);
-    Route::post('manifests/{id}/items/{itemId}/resolve-shortage', [LoadingManifestController::class, 'resolveShortage']);
-    Route::get('manifests/{id}/items/{itemId}/breakdown', [LoadingManifestController::class, 'productBreakdown']);
-
-    // Loading OS Dashboard — all active loading trips
-    Route::get('loading-trips', [DistributionLoadingDashboardController::class, 'index']);
-
-    // Driver Handover — ADR-DIST-006
-    Route::get('trips/{id}/handover-status', [DriverHandoverController::class, 'handoverStatus']);
-    Route::post('trips/{id}/dispatch', [DriverHandoverController::class, 'dispatch']);
-    Route::post('trips/{id}/custody/{custodyId}/driver-confirm', [DriverHandoverController::class, 'confirmCustody']);
-    Route::post('manifests/{id}/items/{itemId}/driver-confirm', [DriverHandoverController::class, 'confirmProductReceipt']);
-    Route::post('manifests/{id}/items/{itemId}/accept-discrepancy', [DriverHandoverController::class, 'acceptDiscrepancy']);
-
-    // Dispatch Gate — ADR-DIST-007
-    Route::get('dispatch-gate', [DispatchGateController::class, 'index']);
-    Route::get('dispatch-gate/{id}', [DispatchGateController::class, 'tripReview']);
-    Route::post('trips/{id}/driver-accept', [DriverHandoverController::class, 'driverAccept']);
-    Route::post('trips/{id}/dispatch-vehicle', [DispatchGateController::class, 'dispatchVehicle']);
-    Route::get('trips/{id}/audit-trail', [DispatchGateController::class, 'auditTrail']);
-
-    // Order SSOT & Distribution Sync — ADR-DIST-008
-    Route::post('trips/{tripId}/regenerate-manifest', [OrderDistributionSyncController::class, 'regenerateManifest']);
-
-    // Fleet resource lookups
-    Route::get('fleet/vehicles', [FleetResourceController::class, 'vehicles']);
-    Route::get('fleet/drivers', [FleetResourceController::class, 'drivers']);
-    Route::get('fleet/carriers', [FleetResourceController::class, 'carriers']);
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -1404,6 +1365,72 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
     Route::patch('/zones/{id}/status', [DistributionZoneController::class, 'toggleStatus']);
 });
 
+// ── Logistics OS — Distribution: Trips / Delivery / Settlement (TASK-LOG-004B) ──
+// Trip is the aggregate root. Carriers, drivers and vehicles are consumed by
+// reference from LOG-001/002/003 — this module owns none of them.
+Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(function (): void {
+    // Reference data
+    Route::get('/trips/options', [LogisticsTripController::class, 'options']);
+    Route::get('/trips/stats', [LogisticsTripController::class, 'stats']);
+    Route::get('/trips/next-number', [LogisticsTripController::class, 'nextNumber']);
+    Route::get('/delivery/options', [LogisticsDeliveryController::class, 'options']);
+    Route::get('/settlement/options', [LogisticsSettlementController::class, 'options']);
+
+    // Trips
+    Route::get('/trips', [LogisticsTripController::class, 'index']);
+    Route::post('/trips', [LogisticsTripController::class, 'store']);
+    Route::get('/trips/{id}', [LogisticsTripController::class, 'show']);
+    Route::put('/trips/{id}', [LogisticsTripController::class, 'update']);
+    Route::patch('/trips/{id}/status', [LogisticsTripController::class, 'setStatus']);
+    Route::get('/trips/{id}/dispatch-readiness', [LogisticsTripController::class, 'dispatchReadiness']);
+    Route::patch('/trips/{id}/driver-acceptance', [LogisticsTripController::class, 'recordDriverAcceptance']);
+    Route::patch('/trips/{id}/assignment', [LogisticsTripController::class, 'assignDriverVehicle']);
+
+    // Trip orders
+    Route::get('/trips/{id}/orders', [LogisticsTripController::class, 'orders']);
+    Route::post('/trips/{id}/orders', [LogisticsTripController::class, 'addOrder']);
+    Route::delete('/trips/{id}/orders/{orderId}', [LogisticsTripController::class, 'removeOrder']);
+    Route::post('/trips/{id}/orders/move', [LogisticsTripController::class, 'moveOrder']);
+
+    // Custody
+    Route::get('/trips/{id}/custody', [LogisticsTripController::class, 'custody']);
+    Route::post('/trips/{id}/custody', [LogisticsTripController::class, 'addCustody']);
+    Route::patch('/trips/{id}/custody/{custodyId}/confirm', [LogisticsTripController::class, 'confirmCustody']);
+    Route::delete('/trips/{id}/custody/{custodyId}', [LogisticsTripController::class, 'removeCustody']);
+
+    // Delivery execution
+    Route::get('/trips/{tripId}/stops', [LogisticsDeliveryController::class, 'stops']);
+    Route::post('/trips/{tripId}/stops/generate', [LogisticsDeliveryController::class, 'generateStops']);
+    Route::get('/trips/{tripId}/stops/{stopId}', [LogisticsDeliveryController::class, 'showStop']);
+    Route::patch('/trips/{tripId}/stops/{stopId}/start', [LogisticsDeliveryController::class, 'startStop']);
+    Route::patch('/trips/{tripId}/stops/{stopId}/complete', [LogisticsDeliveryController::class, 'completeStop']);
+    Route::post('/trips/{tripId}/stops/{stopId}/actions', [LogisticsDeliveryController::class, 'recordAction']);
+    Route::post('/trips/{tripId}/stops/{stopId}/proof', [LogisticsDeliveryController::class, 'captureProof']);
+
+    // Exceptions
+    Route::get('/trips/{tripId}/exceptions', [LogisticsDeliveryController::class, 'exceptions']);
+    Route::post('/trips/{tripId}/exceptions', [LogisticsDeliveryController::class, 'raiseException']);
+    Route::patch('/trips/{tripId}/exceptions/{exceptionId}/resolve', [LogisticsDeliveryController::class, 'resolveException']);
+
+    // Returns (product + custody, unified)
+    Route::get('/trips/{tripId}/returns', [LogisticsDeliveryController::class, 'returns']);
+    Route::post('/trips/{tripId}/returns', [LogisticsDeliveryController::class, 'recordReturn']);
+    Route::patch('/trips/{tripId}/returns/{returnId}/confirm', [LogisticsDeliveryController::class, 'confirmReturn']);
+
+    // Settlement
+    Route::get('/trips/{tripId}/payments', [LogisticsSettlementController::class, 'payments']);
+    Route::post('/trips/{tripId}/stops/{stopId}/payments', [LogisticsSettlementController::class, 'recordPayment']);
+    Route::patch('/trips/{tripId}/payments/{paymentId}/verify', [LogisticsSettlementController::class, 'verifyPayment']);
+    Route::patch('/trips/{tripId}/payments/{paymentId}/reject', [LogisticsSettlementController::class, 'rejectPayment']);
+    Route::get('/trips/{tripId}/settlement', [LogisticsSettlementController::class, 'show']);
+    Route::post('/trips/{tripId}/settlement', [LogisticsSettlementController::class, 'open']);
+    Route::patch('/trips/{tripId}/settlement/submit-cash', [LogisticsSettlementController::class, 'submitCash']);
+    Route::patch('/trips/{tripId}/settlement/reconcile', [LogisticsSettlementController::class, 'reconcile']);
+    Route::patch('/trips/{tripId}/settlement/dispute', [LogisticsSettlementController::class, 'dispute']);
+    Route::patch('/trips/{tripId}/settlement/finalize', [LogisticsSettlementController::class, 'finalize']);
+    Route::get('/trips/{tripId}/financial-summary', [LogisticsSettlementController::class, 'summary']);
+});
+
 // ── Distribution OS — Planning ────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->prefix('logistics/distribution/planning')->group(function (): void {
     Route::get('/stats', [DistributionPlanningController::class, 'stats']);
@@ -1440,6 +1467,81 @@ Route::middleware('auth:sanctum')->prefix('logistics/geography')->group(function
     Route::post('/cities/{cityId}/aliases', [CityAliasController::class, 'store']);
     Route::put('/cities/{cityId}/aliases/{id}', [CityAliasController::class, 'update']);
     Route::delete('/cities/{cityId}/aliases/{id}', [CityAliasController::class, 'destroy']);
+});
+
+// ── Logistics OS — Shipping Companies (TASK-LOG-001) ─────────────────────────
+Route::middleware('auth:sanctum')->prefix('logistics/shipping-companies')->group(function (): void {
+    Route::get('/stats', [ShippingCompanyController::class, 'stats']);
+    Route::get('/next-code', [ShippingCompanyController::class, 'nextCode']);
+
+    Route::get('/', [ShippingCompanyController::class, 'index']);
+    Route::post('/', [ShippingCompanyController::class, 'store']);
+    Route::get('/{id}', [ShippingCompanyController::class, 'show']);
+    Route::put('/{id}', [ShippingCompanyController::class, 'update']);
+    Route::patch('/{id}/status', [ShippingCompanyController::class, 'setStatus']);
+
+    // Contracts
+    Route::get('/{id}/contracts', [ShippingCompanyController::class, 'contracts']);
+    Route::post('/{id}/contracts', [ShippingCompanyController::class, 'storeContract']);
+    Route::put('/{id}/contracts/{contractId}', [ShippingCompanyController::class, 'updateContract']);
+    Route::delete('/{id}/contracts/{contractId}', [ShippingCompanyController::class, 'destroyContract']);
+    Route::patch('/{id}/contracts/{contractId}/activate', [ShippingCompanyController::class, 'activateContract']);
+
+    // ECOS company mappings
+    Route::get('/{id}/companies', [ShippingCompanyController::class, 'mappings']);
+    Route::post('/{id}/companies', [ShippingCompanyController::class, 'storeMapping']);
+    Route::delete('/{id}/companies/{mappingId}', [ShippingCompanyController::class, 'destroyMapping']);
+});
+
+// ── Logistics OS — Vehicles / Fleet (TASK-LOG-003) ───────────────────────────
+// No destroy route by design: vehicles are archived, never deleted.
+Route::middleware('auth:sanctum')->prefix('logistics/vehicles')->group(function (): void {
+    Route::get('/options', [VehicleController::class, 'options']);
+    Route::get('/stats', [VehicleController::class, 'stats']);
+    Route::get('/next-code', [VehicleController::class, 'nextCode']);
+    Route::get('/maintenance-permissions', [VehicleMaintenanceController::class, 'permissions']);
+
+    Route::get('/', [VehicleController::class, 'index']);
+    Route::post('/', [VehicleController::class, 'store']);
+    Route::get('/{id}', [VehicleController::class, 'show']);
+    Route::put('/{id}', [VehicleController::class, 'update']);
+    Route::patch('/{id}/status', [VehicleController::class, 'setStatus']);
+
+    // Documents
+    Route::get('/{id}/documents', [VehicleController::class, 'documents']);
+    Route::post('/{id}/documents', [VehicleController::class, 'storeDocument']);
+    Route::get('/{id}/documents/{documentId}/download', [VehicleController::class, 'downloadDocument']);
+    Route::delete('/{id}/documents/{documentId}', [VehicleController::class, 'destroyDocument']);
+
+    // Maintenance ledger — amend/delete are permission-gated (BR-8)
+    Route::get('/{id}/maintenance', [VehicleMaintenanceController::class, 'index']);
+    Route::post('/{id}/maintenance', [VehicleMaintenanceController::class, 'store']);
+    Route::put('/{id}/maintenance/{recordId}', [VehicleMaintenanceController::class, 'update']);
+    Route::delete('/{id}/maintenance/{recordId}', [VehicleMaintenanceController::class, 'destroy']);
+});
+
+// ── Logistics OS — Drivers (TASK-LOG-002) ────────────────────────────────────
+// No destroy route by design: drivers are archived, never deleted (BR-4, BR-5).
+Route::middleware('auth:sanctum')->prefix('logistics/drivers')->group(function (): void {
+    Route::get('/stats', [DriverController::class, 'stats']);
+    Route::get('/next-code', [DriverController::class, 'nextCode']);
+
+    Route::get('/', [DriverController::class, 'index']);
+    Route::post('/', [DriverController::class, 'store']);
+    Route::get('/{id}', [DriverController::class, 'show']);
+    Route::put('/{id}', [DriverController::class, 'update']);
+    Route::patch('/{id}/status', [DriverController::class, 'setStatus']);
+
+    // Documents
+    Route::get('/{id}/documents', [DriverController::class, 'documents']);
+    Route::post('/{id}/documents', [DriverController::class, 'storeDocument']);
+    Route::get('/{id}/documents/{documentId}/download', [DriverController::class, 'downloadDocument']);
+    Route::delete('/{id}/documents/{documentId}', [DriverController::class, 'destroyDocument']);
+
+    // Vehicle assignment + history
+    Route::get('/{id}/assignments', [DriverController::class, 'assignmentHistory']);
+    Route::post('/{id}/vehicle', [DriverController::class, 'assignVehicle']);
+    Route::delete('/{id}/vehicle', [DriverController::class, 'releaseVehicle']);
 });
 
 /*
@@ -1479,6 +1581,58 @@ Route::middleware('auth:sanctum')->prefix('system/engineering')->group(function 
     Route::get('/notifications',                    [EngineeringNotificationController::class, 'index']);
     Route::post('/notifications/mark-all-read',     [EngineeringNotificationController::class, 'markAllRead']);
     Route::patch('/notifications/{id}/read',        [EngineeringNotificationController::class, 'markRead']);
+
+    // Inbox KPIs
+    Route::get('/inbox/kpis', [InboxTaskController::class, 'kpis']);
+
+    // Tasks CRUD
+    Route::get('/inbox/tasks', [InboxTaskController::class, 'index']);
+    Route::post('/inbox/tasks', [InboxTaskController::class, 'store']);
+    Route::get('/inbox/tasks/{task}', [InboxTaskController::class, 'show']);
+    Route::put('/inbox/tasks/{task}', [InboxTaskController::class, 'update']);
+    Route::delete('/inbox/tasks/{task}', [InboxTaskController::class, 'destroy']);
+    Route::post('/inbox/tasks/{task}/transition', [InboxTaskController::class, 'transition']);
+
+    // Task relations
+    Route::get('/inbox/tasks/{task}/comments', [InboxCommentController::class, 'index']);
+    Route::post('/inbox/tasks/{task}/comments', [InboxCommentController::class, 'store']);
+    Route::put('/inbox/comments/{comment}', [InboxCommentController::class, 'update']);
+    Route::delete('/inbox/comments/{comment}', [InboxCommentController::class, 'destroy']);
+
+    Route::get('/inbox/tasks/{task}/attachments', [InboxTaskController::class, 'attachments']);
+    Route::post('/inbox/tasks/{task}/attachments', [InboxTaskController::class, 'storeAttachment']);
+    Route::delete('/inbox/attachments/{attachment}', [InboxTaskController::class, 'destroyAttachment']);
+
+    Route::get('/inbox/tasks/{task}/dependencies', [InboxTaskController::class, 'dependencies']);
+    Route::post('/inbox/tasks/{task}/dependencies', [InboxTaskController::class, 'storeDependency']);
+    Route::delete('/inbox/dependencies/{dependency}', [InboxTaskController::class, 'destroyDependency']);
+
+    // Release Candidates
+    Route::get('/inbox/release-candidates', [InboxReleaseCandidateController::class, 'index']);
+    Route::post('/inbox/release-candidates', [InboxReleaseCandidateController::class, 'store']);
+    Route::get('/inbox/release-candidates/{releaseCandidate}', [InboxReleaseCandidateController::class, 'show']);
+    Route::post('/inbox/release-candidates/{releaseCandidate}/transition', [InboxReleaseCandidateController::class, 'transition']);
+    Route::post('/inbox/release-candidates/{releaseCandidate}/tasks', [InboxReleaseCandidateController::class, 'addTask']);
+    Route::delete('/inbox/release-candidates/{releaseCandidate}/tasks', [InboxReleaseCandidateController::class, 'removeTask']);
+
+    // Agents
+    Route::get('/agents/dashboard', [AgentRegistrationController::class, 'dashboard']);
+    Route::get('/agents', [AgentRegistrationController::class, 'index']);
+    Route::post('/agents/register', [AgentRegistrationController::class, 'register']);
+    Route::get('/agents/{agent}', [AgentRegistrationController::class, 'show']);
+    Route::post('/agents/{agent}/deregister', [AgentRegistrationController::class, 'deregister']);
+    Route::post('/agents/{agent}/heartbeat', [AgentRegistrationController::class, 'heartbeat']);
+
+    // Execution Sessions
+    Route::get('/sessions', [ExecutionSessionController::class, 'index']);
+    Route::get('/sessions/{session}', [ExecutionSessionController::class, 'show']);
+    Route::post('/sessions/{session}/progress', [ExecutionSessionController::class, 'updateProgress']);
+    Route::post('/sessions/{session}/complete', [ExecutionSessionController::class, 'complete']);
+    Route::post('/sessions/{session}/fail', [ExecutionSessionController::class, 'fail']);
+    Route::post('/sessions/{session}/abort', [ExecutionSessionController::class, 'abort']);
+    Route::post('/sessions/{session}/log', [ExecutionSessionController::class, 'appendLog']);
+    Route::get('/sessions/{session}/artifacts', [ExecutionSessionController::class, 'artifacts']);
+    Route::post('/sessions/{session}/artifacts', [ExecutionSessionController::class, 'uploadArtifact']);
 });
 
 /*
@@ -1486,31 +1640,6 @@ Route::middleware('auth:sanctum')->prefix('system/engineering')->group(function 
 | Driver Mobile OS — ADR-DIST-009
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('driver')->group(function (): void {
-    Route::get('trips', [DriverMobileController::class, 'index']);
-    Route::get('trips/{id}', [DriverMobileController::class, 'dashboard']);
-    Route::post('trips/{id}/start', [DriverMobileController::class, 'startTrip']);
-    Route::post('trips/{id}/finish', [DriverMobileController::class, 'finishTrip']);
-    Route::get('trips/{id}/timeline', [DriverMobileController::class, 'timeline']);
-    Route::post('trips/{id}/gps', [DriverMobileController::class, 'recordGps']);
-    Route::get('trips/{id}/stops', [DriverMobileController::class, 'stops']);
-    Route::get('trips/{id}/stops/{stopId}', [DriverMobileController::class, 'stopDetail']);
-    Route::get('trips/{id}/exceptions', [DriverMobileController::class, 'exceptions']);
-    Route::get('trips/{id}/returns', [DriverMobileController::class, 'returns']);
-    Route::get('trips/{id}/collections', [DriverPaymentController::class, 'tripCollections']);
-    Route::get('trips/{id}/settlement', [TripSettlementController::class, 'settlement']);
-    Route::post('trips/{id}/settlement/submit', [TripSettlementController::class, 'submitSettlement']);
-    Route::post('trips/{id}/returns', [TripSettlementController::class, 'addReturn']);
-    Route::post('trips/{id}/close', [TripSettlementController::class, 'closeTrip']);
-    Route::get('trips/{id}/custody-returns', [TripSettlementController::class, 'custodyReturns']);
-    Route::post('trips/{id}/custody-returns', [TripSettlementController::class, 'recordCustodyReturn']);
-    Route::post('stops/{stopId}/action', [DriverStopController::class, 'action']);
-    Route::post('stops/{stopId}/proof', [DriverStopController::class, 'proof']);
-    Route::post('stops/{stopId}/exception', [DriverStopController::class, 'exception']);
-    Route::get('stops/{stopId}/collections', [DriverStopController::class, 'collections']);
-    Route::post('stops/{stopId}/payment', [DriverPaymentController::class, 'collect']);
-    Route::post('returns/{returnId}/confirm', [TripSettlementController::class, 'confirmReturn']);
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -1556,4 +1685,244 @@ Route::middleware(VerifyWorkerToken::class)->prefix('cb/worker')->group(function
     Route::post('/tasks/{id}/artifact', [CbWorkerApiController::class, 'uploadArtifact']);
     Route::post('/tasks/{id}/complete', [CbWorkerApiController::class, 'completeTask']);
     Route::post('/tasks/{id}/fail', [CbWorkerApiController::class, 'failTask']);
+});
+
+// ─── Execution Cluster ───────────────────────────────────────────────────────
+Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+
+    // Workers
+    Route::get('workers', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'index']);
+    Route::post('workers', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'store']);
+    Route::get('workers/{worker}', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'show']);
+    Route::post('workers/{worker}/start', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'start']);
+    Route::post('workers/{worker}/stop', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'stop']);
+    Route::post('workers/{worker}/drain', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'drain']);
+    Route::delete('workers/{worker}', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'destroy']);
+    Route::post('workers/{worker}/heartbeat', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'heartbeat']);
+    Route::get('workers/{worker}/sessions', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'sessions']);
+
+    // Queue
+    Route::get('queue', [\Modules\System\Engineering\Presentation\Http\Controllers\QueueController::class, 'index']);
+    Route::post('queue/enqueue', [\Modules\System\Engineering\Presentation\Http\Controllers\QueueController::class, 'enqueue']);
+    Route::get('queue/status', [\Modules\System\Engineering\Presentation\Http\Controllers\QueueController::class, 'status']);
+    Route::post('queue/pause', [\Modules\System\Engineering\Presentation\Http\Controllers\QueueController::class, 'pause']);
+    Route::post('queue/resume', [\Modules\System\Engineering\Presentation\Http\Controllers\QueueController::class, 'resume']);
+    Route::post('queue/drain', [\Modules\System\Engineering\Presentation\Http\Controllers\QueueController::class, 'drain']);
+    Route::post('queue/{entry}/cancel', [\Modules\System\Engineering\Presentation\Http\Controllers\QueueController::class, 'cancel']);
+    Route::post('queue/{entry}/prioritize', [\Modules\System\Engineering\Presentation\Http\Controllers\QueueController::class, 'prioritize']);
+
+    // Cluster
+    Route::get('cluster/dashboard', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterController::class, 'dashboard']);
+    Route::post('cluster/tick', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterController::class, 'tick']);
+    Route::post('cluster/purge-locks', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterController::class, 'purgeExpiredLocks']);
+    Route::post('cluster/recover-stale', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterController::class, 'recoverStaleWorkers']);
+
+    // Health
+    Route::get('cluster/health', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterHealthController::class, 'report']);
+    Route::get('cluster/workers/{worker}/health', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterHealthController::class, 'workerHealth']);
+    Route::post('cluster/workers/{worker}/recover', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterHealthController::class, 'recoverWorker']);
+
+    // Metrics
+    Route::get('cluster/metrics/snapshot', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterMetricsController::class, 'snapshot']);
+    Route::get('cluster/metrics/trend', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterMetricsController::class, 'trend']);
+    Route::get('cluster/metrics/timeseries', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterMetricsController::class, 'timeseries']);
+    Route::delete('cluster/metrics/purge', [\Modules\System\Engineering\Presentation\Http\Controllers\ClusterMetricsController::class, 'purge']);
+});
+
+// ─── Release Orchestrator ───────────────────────────────────────────────────
+Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+
+    // Dashboard
+    Route::get('releases/dashboard', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'dashboard']);
+
+    // Release CRUD
+    Route::get('releases', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'index']);
+    Route::post('releases', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'store']);
+    Route::get('releases/{release}', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'show']);
+    Route::put('releases/{release}', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'update']);
+    Route::delete('releases/{release}', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'destroy']);
+    Route::post('releases/{release}/transition', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'transition']);
+    Route::post('releases/{release}/clone', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'clone']);
+    Route::post('releases/{release}/archive', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'archive']);
+    Route::post('releases/{release}/tasks/add', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'addTasks']);
+    Route::post('releases/{release}/tasks/remove', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'removeTasks']);
+
+    // Validation & Readiness
+    Route::post('releases/{release}/validate', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'validate']);
+    Route::get('releases/{release}/readiness', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'readiness']);
+    Route::post('releases/{release}/analyze-risks', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'analyzeRisks']);
+    Route::post('releases/{release}/analyze-dependencies', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'analyzeDependencies']);
+    Route::get('releases/{release}/audit', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'audit']);
+
+    // Reports
+    Route::get('releases/{release}/reports', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseReportController::class, 'index']);
+    Route::post('releases/{release}/reports/generate', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseReportController::class, 'generate']);
+    Route::get('releases/{release}/risks', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseReportController::class, 'risks']);
+    Route::post('releases/{release}/risks/{risk}/accept', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseReportController::class, 'acceptRisk']);
+    Route::get('releases/{release}/notes', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseReportController::class, 'notes']);
+    Route::post('releases/{release}/notes', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseReportController::class, 'storeNote']);
+
+    // Approvals
+    Route::post('releases/{release}/approvals/initiate', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseApprovalController::class, 'initiate']);
+    Route::get('releases/{release}/approvals/status', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseApprovalController::class, 'status']);
+    Route::post('releases/{release}/approvals/{approval}/decide', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseApprovalController::class, 'decide']);
+    Route::post('releases/{release}/approvals/{approval}/skip', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseApprovalController::class, 'skip']);
+
+    // Pipeline
+    Route::post('releases/{release}/pipeline/build', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleasePipelineController::class, 'build']);
+    Route::post('releases/{release}/pipeline/trigger', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleasePipelineController::class, 'trigger']);
+    Route::get('releases/{release}/pipeline/history', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleasePipelineController::class, 'history']);
+    Route::post('releases/{release}/pipeline/{run}/result', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleasePipelineController::class, 'captureResult']);
+});
+
+// ─── AI Engineering Supervisor (ENG-009) ────────────────────────────────────
+Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+
+    // AI Reviews
+    Route::prefix('ai-reviews')->group(function () {
+        Route::get('/', [AIReviewController::class, 'index']);
+        Route::post('/', [AIReviewController::class, 'store']);
+        Route::get('/dashboard', [AIReviewController::class, 'dashboard']);
+        Route::get('/{id}', [AIReviewController::class, 'show']);
+        Route::delete('/{id}', [AIReviewController::class, 'destroy']);
+        Route::post('/{id}/run', [AIReviewController::class, 'run']);
+        Route::post('/{id}/cancel', [AIReviewController::class, 'cancel']);
+        Route::get('/{id}/results', [AIReviewController::class, 'results']);
+        Route::get('/{id}/scores', [AIScoreController::class, 'forReview']);
+        Route::get('/{id}/architecture-checks', [AIScoreController::class, 'architectureChecks']);
+        Route::get('/{id}/security-checks', [AIScoreController::class, 'securityChecks']);
+        Route::get('/{id}/risks', [AIRiskController::class, 'forReview']);
+        Route::get('/{id}/risks/{riskId}', [AIRiskController::class, 'show']);
+        Route::post('/{id}/risks/{riskId}/acknowledge', [AIRiskController::class, 'acknowledge']);
+        Route::get('/{id}/recommendations', [AIRecommendationController::class, 'forReview']);
+        Route::post('/{id}/recommendations/{recId}/resolve', [AIRecommendationController::class, 'resolve']);
+    });
+
+    // AI Supervisor Dashboard & Trends
+    Route::prefix('ai-supervisor')->group(function () {
+        Route::get('/dashboard', [AIDashboardController::class, 'index']);
+        Route::get('/trends/daily', [AITrendController::class, 'daily']);
+        Route::get('/trends/weekly', [AITrendController::class, 'weekly']);
+        Route::get('/trends/monthly', [AITrendController::class, 'monthly']);
+        Route::get('/trends/score', [AITrendController::class, 'scoreTrend']);
+        Route::get('/learning/recurring-issues', [AITrendController::class, 'recurringIssues']);
+        Route::get('/learning/patterns', [AITrendController::class, 'patterns']);
+        Route::get('/metrics', [AITrendController::class, 'metrics']);
+        Route::get('/recommendations/open', [AIRecommendationController::class, 'openForCompany']);
+    });
+
+    // AI Review hooks on Releases
+    Route::prefix('releases')->group(function () {
+        Route::post('/{releaseId}/ai-review', [AIReleaseReviewController::class, 'trigger']);
+        Route::get('/{releaseId}/ai-review', [AIReleaseReviewController::class, 'show']);
+        Route::get('/{releaseId}/ai-review/recommendation', [AIReleaseReviewController::class, 'recommendation']);
+    });
+});
+
+// ─── AI Repair Platform (ENG-V2-001) ────────────────────────────────────────
+Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+
+    Route::prefix('repair')->group(function () {
+        Route::get('/dashboard', [RepairDashboardController::class, 'index']);
+        Route::prefix('sessions')->group(function () {
+            Route::get('/', [RepairSessionController::class, 'index']);
+            Route::post('/', [RepairSessionController::class, 'store']);
+            Route::get('/{id}', [RepairSessionController::class, 'show']);
+            Route::delete('/{id}', [RepairSessionController::class, 'destroy']);
+            Route::post('/{id}/analyze', [RepairSessionController::class, 'analyze']);
+            Route::post('/{id}/generate-prompt', [RepairSessionController::class, 'generatePrompt']);
+            Route::get('/{id}/prompt-package', [RepairSessionController::class, 'getPromptPackage']);
+            Route::post('/{id}/response', [RepairSessionController::class, 'submitResponse']);
+            Route::post('/{id}/patches/{patchId}/apply', [RepairSessionController::class, 'applyPatch']);
+            Route::post('/{id}/complete', [RepairSessionController::class, 'complete']);
+            Route::post('/{id}/fail', [RepairSessionController::class, 'fail']);
+            Route::post('/{id}/cancel', [RepairSessionController::class, 'cancel']);
+            Route::post('/{id}/retry', [RepairSessionController::class, 'retry']);
+            Route::get('/{id}/history', [RepairSessionController::class, 'history']);
+            Route::get('/{id}/prompts', [RepairPromptController::class, 'forSession']);
+            Route::get('/{id}/prompts/active', [RepairPromptController::class, 'active']);
+            Route::post('/{id}/prompts/{promptId}/mark-sent', [RepairPromptController::class, 'markSent']);
+            Route::get('/{id}/responses', [RepairResponseController::class, 'forSession']);
+            Route::post('/{id}/responses/{responseId}/review', [RepairResponseController::class, 'review']);
+            Route::get('/{id}/patches', [RepairPatchController::class, 'forSession']);
+        });
+
+        // Self-Healing Pipeline (ENG-V2-002)
+        Route::prefix('patches')->group(function () {
+            Route::post('/{patchId}/validate', [PatchValidationController::class, 'validatePatch']);
+            Route::post('/{patchId}/revalidate', [PatchValidationController::class, 'revalidate']);
+            Route::get('/{patchId}/validations', [PatchValidationController::class, 'forPatch']);
+            Route::get('/{patchId}/validations/latest', [PatchValidationController::class, 'latest']);
+            Route::get('/{patchId}/reports', [ValidationReportController::class, 'forPatch']);
+            Route::get('/{patchId}/snapshots', [PatchRollbackController::class, 'snapshots']);
+            Route::post('/{patchId}/rollback', [PatchRollbackController::class, 'rollback']);
+        });
+        Route::prefix('validations')->group(function () {
+            Route::get('/{id}', [PatchValidationController::class, 'show']);
+            Route::get('/{id}/steps', [PatchValidationController::class, 'steps']);
+            Route::post('/{id}/cancel', [PatchValidationController::class, 'cancel']);
+            Route::get('/{id}/report', [ValidationReportController::class, 'forValidation']);
+        });
+    });
+
+    // Autonomous Engineering Guardian (ENG-V2-003)
+    Route::prefix('guardian')->group(function () {
+        Route::get('/dashboard', [GuardianDashboardController::class, 'index']);
+        Route::prefix('runs')->group(function () {
+            Route::get('/', [GuardianRunController::class, 'index']);
+            Route::post('/', [GuardianRunController::class, 'evaluate']);
+            Route::get('/{id}', [GuardianRunController::class, 'show']);
+            Route::get('/{id}/checks', [GuardianRunController::class, 'checks']);
+            Route::get('/{id}/decision', [GuardianRunController::class, 'decision']);
+            Route::get('/{id}/report', [GuardianRunController::class, 'report']);
+            Route::post('/{id}/revalidate', [GuardianRunController::class, 'revalidate']);
+            Route::post('/{id}/cancel', [GuardianRunController::class, 'cancel']);
+        });
+        Route::prefix('policies')->group(function () {
+            Route::get('/', [GuardianPolicyController::class, 'index']);
+            Route::get('/active', [GuardianPolicyController::class, 'active']);
+            Route::post('/', [GuardianPolicyController::class, 'store']);
+            Route::patch('/{id}', [GuardianPolicyController::class, 'update']);
+            Route::post('/{id}/activate', [GuardianPolicyController::class, 'activate']);
+            Route::post('/{id}/deactivate', [GuardianPolicyController::class, 'deactivate']);
+            Route::delete('/{id}', [GuardianPolicyController::class, 'destroy']);
+        });
+    });
+
+    // Engineering Intelligence Platform (ENG-V2-004) — read-only analytics
+    Route::prefix('intelligence')->group(function () {
+        Route::get('/analytics/overview', [IntelAnalyticsController::class, 'overview']);
+        Route::get('/analytics/validators', [IntelAnalyticsController::class, 'validators']);
+        Route::get('/analytics/trends', [IntelAnalyticsController::class, 'trends']);
+        Route::get('/analytics/debt', [IntelAnalyticsController::class, 'debt']);
+        Route::get('/analytics/compare-periods', [IntelAnalyticsController::class, 'comparePeriods']);
+        Route::post('/analytics/compare-releases', [IntelAnalyticsController::class, 'compareReleases']);
+        Route::post('/analytics/snapshots', [IntelAnalyticsController::class, 'snapshot']);
+        Route::get('/analytics/snapshots', [IntelAnalyticsController::class, 'snapshots']);
+        Route::get('/knowledge', [IntelKnowledgeController::class, 'index']);
+        Route::post('/knowledge/learn', [IntelKnowledgeController::class, 'learn']);
+        Route::get('/knowledge/patterns', [IntelKnowledgeController::class, 'patterns']);
+        Route::get('/knowledge/recommendations', [IntelKnowledgeController::class, 'recommendations']);
+        Route::get('/knowledge/confidence', [IntelKnowledgeController::class, 'confidence']);
+        Route::get('/insights', [IntelInsightsController::class, 'index']);
+        Route::post('/insights/generate', [IntelInsightsController::class, 'generate']);
+        Route::post('/insights/{id}/acknowledge', [IntelInsightsController::class, 'acknowledge']);
+        Route::get('/predictions', [IntelInsightsController::class, 'predictions']);
+    });
+
+    // Enterprise Engineering Workspace (ENG-V2-005) — visualization only
+    Route::prefix('workspace')->group(function () {
+        Route::get('/executive', [WorkspaceController::class, 'executive']);
+        Route::get('/live', [WorkspaceController::class, 'live']);
+        Route::get('/timeline', [WorkspaceController::class, 'timeline']);
+        Route::get('/search', [WorkspaceController::class, 'search']);
+        Route::get('/release-readiness', [WorkspaceController::class, 'releaseReadiness']);
+        Route::get('/export', [WorkspaceController::class, 'export']);
+        Route::prefix('views')->group(function () {
+            Route::get('/', [WorkspaceViewController::class, 'index']);
+            Route::post('/', [WorkspaceViewController::class, 'store']);
+            Route::patch('/{id}', [WorkspaceViewController::class, 'update']);
+            Route::delete('/{id}', [WorkspaceViewController::class, 'destroy']);
+        });
+    });
 });

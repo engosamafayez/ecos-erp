@@ -29,9 +29,9 @@ return new class extends Migration
         if (! $hasFk) {
             Schema::table('orders', function (Blueprint $table): void {
                 $table->foreign('logistics_city_id')
-                      ->references('id')
-                      ->on('logistics_cities')
-                      ->nullOnDelete();
+                    ->references('id')
+                    ->on('logistics_cities')
+                    ->nullOnDelete();
             });
         }
 

@@ -26,7 +26,7 @@ class DistributionZonePlan extends Model
     {
         return [
             'planning_date' => 'date',
-            'planned_at'    => 'datetime',
+            'planned_at' => 'datetime',
         ];
     }
 

@@ -18,15 +18,15 @@ class DistributionZoneController extends Controller
 {
     public function stats(): JsonResponse
     {
-        $totalZones    = DistributionZone::count();
-        $activeZones   = DistributionZone::where('is_active', true)->count();
+        $totalZones = DistributionZone::count();
+        $activeZones = DistributionZone::where('is_active', true)->count();
         $assignedAreas = City::whereNotNull('distribution_zone_id')->count();
-        $totalAreas    = City::count();
+        $totalAreas = City::count();
 
         return response()->json([
-            'total_zones'      => $totalZones,
-            'active_zones'     => $activeZones,
-            'assigned_areas'   => $assignedAreas,
+            'total_zones' => $totalZones,
+            'active_zones' => $activeZones,
+            'assigned_areas' => $assignedAreas,
             'unassigned_areas' => max(0, $totalAreas - $assignedAreas),
         ]);
     }
@@ -38,8 +38,8 @@ class DistributionZoneController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('code', 'like', "%{$search}%")
-                  ->orWhere('name_ar', 'like', "%{$search}%")
-                  ->orWhere('name_en', 'like', "%{$search}%");
+                    ->orWhere('name_ar', 'like', "%{$search}%")
+                    ->orWhere('name_en', 'like', "%{$search}%");
             });
         }
 
@@ -63,18 +63,18 @@ class DistributionZoneController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $actor      = Auth::user()?->name ?? 'System';
+        $actor = Auth::user()?->name ?? 'System';
         $forcedMove = $request->boolean('force_move', false);
 
         $validated = $request->validate([
-            'name_ar'     => 'required|string|max:100|unique:distribution_zones,name_ar',
-            'name_en'     => 'nullable|string|max:100',
+            'name_ar' => 'required|string|max:100|unique:distribution_zones,name_ar',
+            'name_en' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:1000',
-            'color'       => 'nullable|string|max:20',
-            'is_active'   => 'sometimes|boolean',
-            'area_ids'    => 'required|array|min:1',
-            'area_ids.*'  => 'required|integer|exists:logistics_cities,id',
-            'force_move'  => 'sometimes|boolean',
+            'color' => 'nullable|string|max:20',
+            'is_active' => 'sometimes|boolean',
+            'area_ids' => 'required|array|min:1',
+            'area_ids.*' => 'required|integer|exists:logistics_cities,id',
+            'force_move' => 'sometimes|boolean',
         ]);
 
         $areaIds = $validated['area_ids'];
@@ -86,7 +86,7 @@ class DistributionZoneController extends Controller
         if ($conflicts->isNotEmpty() && ! $forcedMove) {
             return response()->json([
                 'message' => 'Some areas are already assigned to another distribution zone.',
-                'errors'  => ['area_ids' => ['Areas already assigned: ' . $conflicts->values()->implode(', ')]],
+                'errors' => ['area_ids' => ['Areas already assigned: '.$conflicts->values()->implode(', ')]],
             ], 422);
         }
 
@@ -98,14 +98,14 @@ class DistributionZoneController extends Controller
             }
 
             $zone = DistributionZone::create([
-                'code'        => $this->generateNextCode(),
-                'name_ar'     => $validated['name_ar'],
-                'name_en'     => $validated['name_en'] ?? null,
+                'code' => $this->generateNextCode(),
+                'name_ar' => $validated['name_ar'],
+                'name_en' => $validated['name_en'] ?? null,
                 'description' => $validated['description'] ?? null,
-                'color'       => $validated['color'] ?? null,
-                'is_active'   => $validated['is_active'] ?? true,
-                'created_by'  => $actor,
-                'updated_by'  => $actor,
+                'color' => $validated['color'] ?? null,
+                'is_active' => $validated['is_active'] ?? true,
+                'created_by' => $actor,
+                'updated_by' => $actor,
             ]);
 
             City::whereIn('id', $areaIds)->update(['distribution_zone_id' => $zone->id]);
@@ -120,20 +120,20 @@ class DistributionZoneController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $zone       = DistributionZone::findOrFail($id);
-        $actor      = Auth::user()?->name ?? 'System';
+        $zone = DistributionZone::findOrFail($id);
+        $actor = Auth::user()?->name ?? 'System';
         $forcedMove = $request->boolean('force_move', false);
 
         $validated = $request->validate([
-            'code'        => "sometimes|string|max:50|unique:distribution_zones,code,{$id}",
-            'name_ar'     => "sometimes|string|max:100|unique:distribution_zones,name_ar,{$id}",
-            'name_en'     => 'nullable|string|max:100',
+            'code' => "sometimes|string|max:50|unique:distribution_zones,code,{$id}",
+            'name_ar' => "sometimes|string|max:100|unique:distribution_zones,name_ar,{$id}",
+            'name_en' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:1000',
-            'color'       => 'nullable|string|max:20',
-            'is_active'   => 'sometimes|boolean',
-            'area_ids'    => 'required|array|min:1',
-            'area_ids.*'  => 'required|integer|exists:logistics_cities,id',
-            'force_move'  => 'sometimes|boolean',
+            'color' => 'nullable|string|max:20',
+            'is_active' => 'sometimes|boolean',
+            'area_ids' => 'required|array|min:1',
+            'area_ids.*' => 'required|integer|exists:logistics_cities,id',
+            'force_move' => 'sometimes|boolean',
         ]);
 
         $areaIds = $validated['area_ids'];
@@ -146,7 +146,7 @@ class DistributionZoneController extends Controller
         if ($conflicts->isNotEmpty() && ! $forcedMove) {
             return response()->json([
                 'message' => 'Some areas are already assigned to another distribution zone.',
-                'errors'  => ['area_ids' => ['Areas already assigned: ' . $conflicts->values()->implode(', ')]],
+                'errors' => ['area_ids' => ['Areas already assigned: '.$conflicts->values()->implode(', ')]],
             ], 422);
         }
 
@@ -192,11 +192,11 @@ class DistributionZoneController extends Controller
 
     public function toggleStatus(int $id): JsonResponse
     {
-        $zone  = DistributionZone::findOrFail($id);
+        $zone = DistributionZone::findOrFail($id);
         $actor = Auth::user()?->name ?? 'System';
 
         $zone->update([
-            'is_active'  => ! $zone->is_active,
+            'is_active' => ! $zone->is_active,
             'updated_by' => $actor,
         ]);
 
@@ -212,6 +212,7 @@ class DistributionZoneController extends Controller
     public function nextCode(): JsonResponse
     {
         $next = $this->generateNextCode();
+
         return response()->json(['code' => $next]);
     }
 
@@ -229,7 +230,7 @@ class DistributionZoneController extends Controller
      */
     public function areas(Request $request): JsonResponse
     {
-        $zoneId     = $request->input('zone_id') ? (int) $request->input('zone_id') : null;
+        $zoneId = $request->input('zone_id') ? (int) $request->input('zone_id') : null;
         $includeAll = $request->boolean('include_all', false);
 
         // logistics_cities has no soft deletes — do NOT add whereNull('c.deleted_at')
@@ -237,7 +238,7 @@ class DistributionZoneController extends Controller
             ->leftJoin('logistics_governorates as g', 'g.id', '=', 'c.governorate_id')
             ->leftJoin('distribution_zones as dz', function ($join) {
                 $join->on('dz.id', '=', 'c.distribution_zone_id')
-                     ->whereNull('dz.deleted_at');
+                    ->whereNull('dz.deleted_at');
             })
             ->select([
                 'c.id',
@@ -269,27 +270,27 @@ class DistributionZoneController extends Controller
             $govId = $city->governorate_id;
             if (! isset($grouped[$govId])) {
                 $grouped[$govId] = [
-                    'governorate_id'      => $govId,
+                    'governorate_id' => $govId,
                     'governorate_name_ar' => $city->governorate_name_ar,
                     'governorate_name_en' => $city->governorate_name_en,
-                    'cities'              => [],
+                    'cities' => [],
                 ];
             }
             $grouped[$govId]['cities'][] = [
-                'id'                     => $city->id,
-                'name_ar'                => $city->name_ar,
-                'name_en'                => $city->name_en,
-                'governorate_id'         => $city->governorate_id,
-                'governorate_name_ar'    => $city->governorate_name_ar,
-                'governorate_name_en'    => $city->governorate_name_en,
-                'is_active'              => (bool) $city->is_active,
-                'distribution_zone_id'   => $city->distribution_zone_id ? (int) $city->distribution_zone_id : null,
+                'id' => $city->id,
+                'name_ar' => $city->name_ar,
+                'name_en' => $city->name_en,
+                'governorate_id' => $city->governorate_id,
+                'governorate_name_ar' => $city->governorate_name_ar,
+                'governorate_name_en' => $city->governorate_name_en,
+                'is_active' => (bool) $city->is_active,
+                'distribution_zone_id' => $city->distribution_zone_id ? (int) $city->distribution_zone_id : null,
                 'distribution_zone_name' => $city->distribution_zone_name,
             ];
         }
 
         return response()->json([
-            'data'  => array_values($grouped),
+            'data' => array_values($grouped),
             'total' => $cities->count(),
         ]);
     }
@@ -298,10 +299,10 @@ class DistributionZoneController extends Controller
     private function generateNextCode(): string
     {
         $max = DistributionZone::withTrashed()->max('id') ?? 0;
-        $n   = $max + 1;
+        $n = $max + 1;
 
         do {
-            $code = 'DZ-' . str_pad((string) $n, 4, '0', STR_PAD_LEFT);
+            $code = 'DZ-'.str_pad((string) $n, 4, '0', STR_PAD_LEFT);
             $n++;
         } while (DistributionZone::withTrashed()->where('code', $code)->exists());
 

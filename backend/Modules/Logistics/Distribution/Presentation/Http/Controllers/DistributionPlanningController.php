@@ -34,9 +34,9 @@ class DistributionPlanningController extends Controller
 
         [$zoneMap, $nameMap] = $this->buildCityZoneMaps();
 
-        $assigned   = 0;
+        $assigned = 0;
         $unassigned = 0;
-        $zoneIds    = [];
+        $zoneIds = [];
         $totalValue = 0.0;
 
         foreach ($orders as $order) {
@@ -63,11 +63,11 @@ class DistributionPlanningController extends Controller
         $distinctProducts = $productQuery->distinct()->count('ol.product_id');
 
         return response()->json([
-            'ready_orders'       => $orders->count(),
-            'active_zones'       => count($zoneIds),
-            'unassigned_orders'  => $unassigned,
-            'total_collection'   => round($totalValue, 2),
-            'distinct_products'  => $distinctProducts,
+            'ready_orders' => $orders->count(),
+            'active_zones' => count($zoneIds),
+            'unassigned_orders' => $unassigned,
+            'total_collection' => round($totalValue, 2),
+            'distinct_products' => $distinctProducts,
         ]);
     }
 
@@ -75,10 +75,10 @@ class DistributionPlanningController extends Controller
 
     public function zones(Request $request): JsonResponse
     {
-        $date         = $request->input('date');
+        $date = $request->input('date');
         $statusFilter = $request->input('status');
-        $search       = $request->input('search');
-        $showEmpty    = filter_var($request->input('show_empty', false), FILTER_VALIDATE_BOOLEAN);
+        $search = $request->input('search');
+        $showEmpty = filter_var($request->input('show_empty', false), FILTER_VALIDATE_BOOLEAN);
 
         $ordersQuery = DB::table('orders')
             ->whereIn('status', self::READY_STATUSES)
@@ -101,14 +101,14 @@ class DistributionPlanningController extends Controller
             }
             if (! isset($zoneAggregates[$zoneId])) {
                 $zoneAggregates[$zoneId] = [
-                    'order_ids'    => [],
+                    'order_ids' => [],
                     'customer_ids' => [],
-                    'total'        => 0.0,
+                    'total' => 0.0,
                 ];
             }
-            $zoneAggregates[$zoneId]['order_ids'][]                       = $order->id;
+            $zoneAggregates[$zoneId]['order_ids'][] = $order->id;
             $zoneAggregates[$zoneId]['customer_ids'][$order->customer_id] = true;
-            $zoneAggregates[$zoneId]['total']                            += (float) $order->total;
+            $zoneAggregates[$zoneId]['total'] += (float) $order->total;
         }
 
         // Product / qty counts
@@ -139,9 +139,9 @@ class DistributionPlanningController extends Controller
         $zonesQuery = DistributionZone::where('is_active', true)->orderBy('code');
         if ($search) {
             $zonesQuery->where(function ($q) use ($search): void {
-                $q->where('name_ar', 'like', '%' . $search . '%')
-                  ->orWhere('name_en', 'like', '%' . $search . '%')
-                  ->orWhere('code', 'like', '%' . $search . '%');
+                $q->where('name_ar', 'like', '%'.$search.'%')
+                    ->orWhere('name_en', 'like', '%'.$search.'%')
+                    ->orWhere('code', 'like', '%'.$search.'%');
             });
         }
         $allZones = $zonesQuery->get()->keyBy('id');
@@ -162,7 +162,7 @@ class DistributionPlanningController extends Controller
                 foreach ($agg['order_ids'] as $orderId) {
                     foreach ($productsByOrder->get($orderId, collect()) as $line) {
                         $productSet[$line->product_id] = true;
-                        $totalItems                   += (float) $line->qty;
+                        $totalItems += (float) $line->qty;
                     }
                 }
             }
@@ -174,24 +174,29 @@ class DistributionPlanningController extends Controller
             }
 
             $result[] = [
-                'zone_id'           => $zoneId,
-                'code'              => $zone->code,
-                'name_ar'           => $zone->name_ar,
-                'name_en'           => $zone->name_en,
-                'color'             => $zone->color,
-                'orders_count'      => $agg ? count($agg['order_ids']) : 0,
-                'customers_count'   => $agg ? count($agg['customer_ids']) : 0,
-                'estimated_stops'   => $agg ? count($agg['customer_ids']) : 0,
+                'zone_id' => $zoneId,
+                'code' => $zone->code,
+                'name_ar' => $zone->name_ar,
+                'name_en' => $zone->name_en,
+                'color' => $zone->color,
+                'orders_count' => $agg ? count($agg['order_ids']) : 0,
+                'customers_count' => $agg ? count($agg['customer_ids']) : 0,
+                'estimated_stops' => $agg ? count($agg['customer_ids']) : 0,
                 'distinct_products' => count($productSet),
-                'total_qty'         => round($totalItems, 2),
-                'total_collection'  => round($agg['total'] ?? 0.0, 2),
-                'planning_status'   => $planningStatus,
+                'total_qty' => round($totalItems, 2),
+                'total_collection' => round($agg['total'] ?? 0.0, 2),
+                'planning_status' => $planningStatus,
             ];
         }
 
         usort($result, function ($a, $b): int {
-            if ($a['orders_count'] === 0 && $b['orders_count'] > 0) return 1;
-            if ($b['orders_count'] === 0 && $a['orders_count'] > 0) return -1;
+            if ($a['orders_count'] === 0 && $b['orders_count'] > 0) {
+                return 1;
+            }
+            if ($b['orders_count'] === 0 && $a['orders_count'] > 0) {
+                return -1;
+            }
+
             return $b['orders_count'] <=> $a['orders_count'];
         });
 
@@ -202,7 +207,7 @@ class DistributionPlanningController extends Controller
 
     public function unassigned(Request $request): JsonResponse
     {
-        $date   = $request->input('date');
+        $date = $request->input('date');
         $search = $request->input('search');
 
         $ordersQuery = DB::table('orders as o')
@@ -215,9 +220,9 @@ class DistributionPlanningController extends Controller
 
         if ($search) {
             $ordersQuery->where(function ($q) use ($search): void {
-                $q->where('o.order_number', 'like', '%' . $search . '%')
-                  ->orWhere('o.customer_name', 'like', '%' . $search . '%')
-                  ->orWhere('o.city', 'like', '%' . $search . '%');
+                $q->where('o.order_number', 'like', '%'.$search.'%')
+                    ->orWhere('o.customer_name', 'like', '%'.$search.'%')
+                    ->orWhere('o.city', 'like', '%'.$search.'%');
             });
         }
 
@@ -236,12 +241,13 @@ class DistributionPlanningController extends Controller
             ->filter(fn ($o) => $this->resolveZone($o, $zoneMap, $nameMap) === null)
             ->map(function ($o) use ($zoneMap, $nameMap, $cityHasZone) {
                 $reason = $this->resolveMissingReason($o, $zoneMap, $nameMap, $cityHasZone);
+
                 return array_merge((array) $o, ['missing_reason' => $reason]);
             })
             ->values();
 
         return response()->json([
-            'data'  => $unassigned,
+            'data' => $unassigned,
             'total' => $unassigned->count(),
         ]);
     }
@@ -252,21 +258,21 @@ class DistributionPlanningController extends Controller
     {
         DistributionZone::where('is_active', true)->findOrFail($zoneId);
 
-        $date  = $request->input('date', today()->toDateString());
+        $date = $request->input('date', today()->toDateString());
         $actor = Auth::user()?->name ?? 'System';
 
         $plan = DistributionZonePlan::updateOrCreate(
             ['zone_id' => $zoneId, 'planning_date' => $date],
             [
-                'status'     => 'in_planning',
+                'status' => 'in_planning',
                 'planned_by' => $actor,
                 'updated_by' => $actor,
-            ]
+            ],
         );
 
         return response()->json([
-            'zone_id'         => $zoneId,
-            'planning_date'   => $date,
+            'zone_id' => $zoneId,
+            'planning_date' => $date,
             'planning_status' => $plan->status,
         ]);
     }
@@ -277,22 +283,22 @@ class DistributionPlanningController extends Controller
     {
         DistributionZone::where('is_active', true)->findOrFail($zoneId);
 
-        $date  = $request->input('date', today()->toDateString());
+        $date = $request->input('date', today()->toDateString());
         $actor = Auth::user()?->name ?? 'System';
 
         $plan = DistributionZonePlan::updateOrCreate(
             ['zone_id' => $zoneId, 'planning_date' => $date],
             [
-                'status'     => 'planned',
+                'status' => 'planned',
                 'planned_by' => $actor,
                 'planned_at' => now(),
                 'updated_by' => $actor,
-            ]
+            ],
         );
 
         return response()->json([
-            'zone_id'         => $zoneId,
-            'planning_date'   => $date,
+            'zone_id' => $zoneId,
+            'planning_date' => $date,
             'planning_status' => $plan->status,
         ]);
     }
@@ -303,8 +309,8 @@ class DistributionPlanningController extends Controller
     {
         DistributionZone::where('is_active', true)->findOrFail($zoneId);
 
-        $date   = $request->input('date');
-        $tab    = $request->input('tab', 'orders');
+        $date = $request->input('date');
+        $tab = $request->input('tab', 'orders');
         $search = $request->input('search');
 
         $orderIds = $this->getOrderIdsForZone($zoneId, $date);
@@ -328,7 +334,7 @@ class DistributionPlanningController extends Controller
                     ->groupBy(['p.id', 'p.name']);
 
                 if ($search) {
-                    $query->where('p.name', 'like', '%' . $search . '%');
+                    $query->where('p.name', 'like', '%'.$search.'%');
                 }
 
                 $data = $query->orderByDesc(DB::raw('SUM(ol.quantity)'))->get();
@@ -349,8 +355,8 @@ class DistributionPlanningController extends Controller
 
                 if ($search) {
                     $query->where(function ($q) use ($search): void {
-                        $q->where('customer_name', 'like', '%' . $search . '%')
-                          ->orWhere('billing_phone', 'like', '%' . $search . '%');
+                        $q->where('customer_name', 'like', '%'.$search.'%')
+                            ->orWhere('billing_phone', 'like', '%'.$search.'%');
                     });
                 }
 
@@ -368,9 +374,9 @@ class DistributionPlanningController extends Controller
 
                 if ($search) {
                     $query->where(function ($q) use ($search): void {
-                        $q->where('order_number', 'like', '%' . $search . '%')
-                          ->orWhere('customer_name', 'like', '%' . $search . '%')
-                          ->orWhere('billing_phone', 'like', '%' . $search . '%');
+                        $q->where('order_number', 'like', '%'.$search.'%')
+                            ->orWhere('customer_name', 'like', '%'.$search.'%')
+                            ->orWhere('billing_phone', 'like', '%'.$search.'%');
                     });
                 }
 
@@ -379,8 +385,8 @@ class DistributionPlanningController extends Controller
         }
 
         return response()->json([
-            'data'  => $data,
-            'tab'   => $tab,
+            'data' => $data,
+            'tab' => $tab,
             'total' => $data->count(),
         ]);
     }
@@ -400,17 +406,17 @@ class DistributionPlanningController extends Controller
             ->select(['id', 'name_en', 'distribution_zone_id'])
             ->get();
 
-        $zoneMap     = [];
-        $nameMap     = [];
+        $zoneMap = [];
+        $nameMap = [];
         $cityHasZone = [];
 
         foreach ($cities as $city) {
-            $zoneId                   = $city->distribution_zone_id ? (int) $city->distribution_zone_id : null;
+            $zoneId = $city->distribution_zone_id ? (int) $city->distribution_zone_id : null;
             $zoneMap[(int) $city->id] = $zoneId;
 
             if ($city->name_en) {
-                $key               = strtolower($city->name_en);
-                $nameMap[$key]     = $zoneId;
+                $key = strtolower($city->name_en);
+                $nameMap[$key] = $zoneId;
                 $cityHasZone[$key] = $zoneId !== null;
             }
         }
@@ -437,7 +443,7 @@ class DistributionPlanningController extends Controller
         object $order,
         array $zoneMap,
         array $nameMap,
-        array $cityHasZone
+        array $cityHasZone,
     ): string {
         // FK path — city exists but has no zone
         if ($order->logistics_city_id) {
