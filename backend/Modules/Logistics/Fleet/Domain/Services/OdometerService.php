@@ -88,14 +88,21 @@ class OdometerService
     }
 
     /**
-     * The last accepted reading strictly before a moment — the baseline for
+     * The last accepted reading at or before a moment — the baseline for
      * fuel-efficiency computation.
+     *
+     * `<=` rather than `<` because timestamps have one-second resolution and a
+     * fuel stop routinely lands in the same second as the reading that precedes
+     * it (an API flow, or a bulk card import). A strict comparison silently
+     * returned no baseline in that case, which made efficiency null for the
+     * first fill on every fast-entry path. Callers evaluate this BEFORE writing
+     * their own reading, so `<=` cannot match the reading being created.
      */
     public function readingBefore(FleetUnit $unit, Carbon $before): ?float
     {
         $reading = $unit->odometerReadings()
             ->where('is_accepted', true)
-            ->where('recorded_at', '<', $before)
+            ->where('recorded_at', '<=', $before)
             ->reorder('recorded_at', 'desc')
             ->first();
 

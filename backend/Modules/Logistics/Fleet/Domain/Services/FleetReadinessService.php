@@ -273,13 +273,17 @@ class FleetReadinessService implements FleetReadinessQueryInterface
                 ->first();
 
             if ($latest === null || $latest->submitted_at === null) {
-                // Pre-trip checks are a daily operational routine; a unit that
-                // has never had one is a setup gap, not a road-safety blocker.
-                if ($kind === InspectionKind::PreTrip) {
-                    $warnings[] = 'No pre-trip inspection has been recorded.';
-                } else {
-                    $blockers[] = "No {$kind->label()} inspection on record.";
-                }
+                // The ABSENCE of a record is not evidence of a lapse. ECOS cannot
+                // know whether a statutory or periodic inspection happened before
+                // the vehicle was onboarded, so a missing record is a setup gap —
+                // a warning — never a blocker. Only an inspection we HAVE on
+                // record and that has since expired makes a vehicle unfit.
+                //
+                // This mirrors the document rule below: an expired document
+                // blocks, a missing one does not. Blocking on absence would make
+                // every vehicle unfit on go-live and train operators to reach for
+                // fleet.health.override, which destroys the blocker's value.
+                $warnings[] = "No {$kind->label()} inspection on record.";
 
                 continue;
             }

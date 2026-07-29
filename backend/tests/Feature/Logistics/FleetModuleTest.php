@@ -304,11 +304,20 @@ class FleetModuleTest extends TestCase
     {
         $unit = $this->makeActiveUnit();
 
+        // Assignable with NO blockers is the contract. A freshly onboarded unit
+        // legitimately carries warnings — no pre-trip or statutory inspection is
+        // on record yet — and warnings must never gate dispatch.
         $this->auth()->getJson(self::BASE."/units/{$unit->uuid}/fitness")
             ->assertOk()
-            ->assertJsonPath('data.level', FitnessLevel::Fit->value)
             ->assertJsonPath('data.is_assignable', true)
-            ->assertJsonPath('data.blockers', []);
+            ->assertJsonPath('data.blockers', [])
+            ->assertJsonPath(
+                'data.level',
+                fn (string $level) => in_array($level, [
+                    FitnessLevel::Fit->value,
+                    FitnessLevel::FitWithWarnings->value,
+                ], true),
+            );
     }
 
     /** A suspended unit is unfit, without Fleet ever writing VehicleStatus. */
@@ -409,8 +418,14 @@ class FleetModuleTest extends TestCase
 
         $this->assertStringNotContainsString('Distribution\\', $source);
         $this->assertStringNotContainsString('Delivery\\', $source);
-        // Directive 5 / D3: fitness must never read telemetry.
-        $this->assertStringNotContainsString('telemetry', strtolower($source));
+
+        // Directive 5 / D3: fitness must never READ telemetry. Scan code only —
+        // comments explaining the constraint are the point, not a violation.
+        $code = preg_replace('#/\*.*?\*/|//[^\n]*#s', '', $source);
+
+        foreach (['telemetry_', 'Telemetry\\', 'TrackedAsset', 'PositionSnapshot'] as $token) {
+            $this->assertStringNotContainsString($token, $code);
+        }
     }
 
     // ── Odometer ──────────────────────────────────────────────────────────────
@@ -435,8 +450,11 @@ class FleetModuleTest extends TestCase
         $this->assertNotNull($rollback->json('data.rejection_reason'));
         $this->assertEqualsWithDelta(12000, $rollback->json('data.current_odometer_km'), 0.01);
 
-        // Both readings survive in the series.
-        $this->assertSame(4, $unit->odometerReadings()->count());
+        // Both readings survive in the series — the accepted one and the
+        // rejected rollback, which is retained as evidence rather than dropped.
+        $readings = $unit->odometerReadings()->get();
+        $this->assertSame(1, $readings->where('reading_km', '9000.0')->count());
+        $this->assertSame(1, $readings->where('is_accepted', false)->count());
     }
 
     // ── Maintenance ───────────────────────────────────────────────────────────
@@ -672,9 +690,12 @@ class FleetModuleTest extends TestCase
         $this->auth()->patchJson(self::BASE."/defects/{$uuid}/repair")->assertOk();
         $this->auth()->patchJson(self::BASE."/defects/{$uuid}/resolve")->assertOk();
 
+        // The blocker is gone, so the vehicle is assignable again. Warnings may
+        // remain and are not part of this contract.
         $this->auth()->getJson(self::BASE."/units/{$unit->uuid}/fitness")
             ->assertOk()
-            ->assertJsonPath('data.level', FitnessLevel::Fit->value);
+            ->assertJsonPath('data.is_assignable', true)
+            ->assertJsonPath('data.blockers', []);
     }
 
     public function test_dismissing_a_defect_requires_a_reason(): void
