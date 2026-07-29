@@ -95,7 +95,11 @@ use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryController 
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryPodController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryReturnController as DeliveryOsReturnController;
 use Modules\Logistics\Drivers\Presentation\Http\Controllers\DriverController;
+use Modules\Logistics\Carriers\Presentation\Http\Controllers\CarrierController;
+use Modules\Logistics\Dispatch\Presentation\Http\Controllers\DispatchController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FleetUnitController;
+use Modules\Logistics\Network\Presentation\Http\Controllers\NetworkController;
+use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FuelController as FleetFuelController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\InspectionController as FleetInspectionController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\MaintenanceController as FleetMaintenanceController;
@@ -1609,6 +1613,120 @@ Route::middleware('auth:sanctum')->prefix('logistics/fleet')->group(function ():
 
     Route::get('/units/{id}/costs', [FleetUnitController::class, 'costs'])
         ->middleware('permission:fleet.cost.view');
+});
+
+// ── Logistics V2 — Network (EPIC-LOG-V2-001, Phase 2) ─────────────────────────
+// A service area COMPOSES existing geography — distribution_zones and
+// logistics_cities — and stores no place of its own (Directive 8).
+// Capacity endpoints are ADVISORY: Network answers, Orders decides.
+Route::middleware('auth:sanctum')->prefix('logistics/network')->group(function (): void {
+    Route::get('/options', [NetworkController::class, 'options'])
+        ->middleware('permission:network.view');
+
+    Route::middleware('permission:network.view')->group(function (): void {
+        Route::get('/service-areas', [NetworkController::class, 'index']);
+        Route::get('/service-areas/{id}', [NetworkController::class, 'show']);
+        Route::get('/service-areas/{areaId}/capacity-plans', [NetworkController::class, 'capacityPlans']);
+        Route::get('/dispatch-regions', [NetworkController::class, 'regions']);
+        Route::get('/service-levels', [NetworkController::class, 'serviceLevels']);
+        Route::post('/coverage/resolve', [NetworkController::class, 'resolveCoverage']);
+        // Advisory — never rejects. This is the Orders integration point.
+        Route::post('/capacity/availability', [NetworkController::class, 'availability']);
+    });
+
+    Route::middleware('permission:network.manage')->group(function (): void {
+        Route::post('/service-areas', [NetworkController::class, 'store']);
+        Route::patch('/service-areas/{id}/status', [NetworkController::class, 'setStatus']);
+        Route::post('/service-areas/{id}/members', [NetworkController::class, 'attachMember']);
+        Route::delete('/service-areas/{id}/members/{memberId}', [NetworkController::class, 'detachMember']);
+        Route::post('/dispatch-regions', [NetworkController::class, 'storeRegion']);
+        Route::post('/service-levels', [NetworkController::class, 'storeServiceLevel']);
+    });
+
+    // Reserving capacity is a separate permission from planning it, so sales
+    // cannot raise the ceiling to fit their own order.
+    Route::middleware('permission:network.capacity.commit')->group(function (): void {
+        Route::post('/capacity/reserve', [NetworkController::class, 'reserve']);
+        Route::patch('/capacity/{id}/commit', [NetworkController::class, 'commitReservation']);
+        Route::patch('/capacity/{id}/release', [NetworkController::class, 'releaseReservation']);
+    });
+
+    Route::post('/capacity/sweep-expired', [NetworkController::class, 'sweepExpired'])
+        ->middleware('permission:network.capacity.manage');
+});
+
+// ── Logistics V2 — Dispatch (Phase 2) ─────────────────────────────────────────
+// Dispatch PROPOSES; V1 COMMITS. Release calls Drivers' assignment service and
+// Distribution's TripService, and echoes the ids they return (Directives 5, 6).
+Route::middleware('auth:sanctum')->prefix('logistics/dispatch')->group(function (): void {
+    Route::get('/options', [DispatchController::class, 'options'])
+        ->middleware('permission:dispatch.view');
+
+    Route::middleware('permission:dispatch.view')->group(function (): void {
+        Route::get('/boards', [DispatchController::class, 'index']);
+        Route::get('/boards/{id}', [DispatchController::class, 'show']);
+        // Fit vehicles × available drivers, each with the verdict that decided it.
+        Route::get('/resource-pool', [DispatchController::class, 'resourcePool']);
+    });
+
+    Route::middleware('permission:dispatch.manage')->group(function (): void {
+        Route::post('/boards', [DispatchController::class, 'store']);
+        Route::patch('/boards/{id}/status', [DispatchController::class, 'setStatus']);
+    });
+
+    // Propose and release are separate so an automated proposal cannot commit
+    // itself to V1.
+    Route::middleware('permission:dispatch.propose')->group(function (): void {
+        Route::post('/boards/{id}/propose', [DispatchController::class, 'propose']);
+        Route::patch('/proposals/{id}/reject', [DispatchController::class, 'rejectProposal']);
+        Route::patch('/assignments/{id}/override', [DispatchController::class, 'overrideAssignment']);
+    });
+
+    Route::middleware('permission:dispatch.release')->group(function (): void {
+        Route::patch('/proposals/{id}/accept', [DispatchController::class, 'acceptProposal']);
+        // Partial success is a normal 200 — see DispatchBoardStatus.
+        Route::post('/proposals/{id}/release', [DispatchController::class, 'release']);
+    });
+});
+
+// ── Logistics V2 — Routing (Phase 2) ──────────────────────────────────────────
+// Deterministic strategies only; no optimisation AI. Every run stores its input
+// snapshot, which is the replay harness and the future AI corpus (Directive 10).
+Route::middleware('auth:sanctum')->prefix('logistics/routing')->group(function (): void {
+    Route::middleware('permission:routing.view')->group(function (): void {
+        Route::get('/options', [RoutingController::class, 'options']);
+        Route::get('/strategies', [RoutingController::class, 'strategies']);
+        Route::get('/trips/{tripId}/plan', [RoutingController::class, 'currentPlan']);
+        Route::get('/trips/{tripId}/plans', [RoutingController::class, 'planHistory']);
+        Route::get('/runs/{id}', [RoutingController::class, 'run']);
+    });
+
+    Route::middleware('permission:routing.optimize')->group(function (): void {
+        Route::post('/trips/{tripId}/plan', [RoutingController::class, 'plan']);
+        Route::patch('/trips/{tripId}/plans/{planId}/activate', [RoutingController::class, 'activate']);
+        Route::patch('/trips/{tripId}/plans/{planId}/complete', [RoutingController::class, 'complete']);
+        Route::post('/trips/{tripId}/plans/{planId}/eta', [RoutingController::class, 'projectEta']);
+    });
+});
+
+// ── Logistics V2 — Carrier foundation (Phase 2) ───────────────────────────────
+// Adapter registry, internal fleet adapter and account configuration only.
+// No provider-specific integration yet (D4/D7). Credentials live in the
+// Provider Platform and are never serialised here.
+Route::middleware('auth:sanctum')->prefix('logistics/carriers')->group(function (): void {
+    Route::middleware('permission:carrier.view')->group(function (): void {
+        Route::get('/options', [CarrierController::class, 'options']);
+        Route::get('/accounts', [CarrierController::class, 'index']);
+        Route::get('/accounts/{id}', [CarrierController::class, 'show']);
+        Route::get('/accounts/{id}/capabilities', [CarrierController::class, 'capabilities']);
+        Route::get('/accounts/{id}/status-mappings', [CarrierController::class, 'statusMappings']);
+    });
+
+    Route::middleware('permission:carrier.manage')->group(function (): void {
+        Route::post('/accounts', [CarrierController::class, 'store']);
+        Route::post('/accounts/{id}/test-connection', [CarrierController::class, 'testConnection']);
+        Route::put('/accounts/{id}/status-mappings', [CarrierController::class, 'upsertStatusMapping']);
+    });
 });
 
 // ── Distribution OS — Planning ────────────────────────────────────────────────
