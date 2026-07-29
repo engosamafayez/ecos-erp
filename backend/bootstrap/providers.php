@@ -92,6 +92,8 @@ return [
     Modules\Logistics\Dispatch\Infrastructure\Providers\LogisticsDispatchServiceProvider::class,
     Modules\Logistics\Routing\Infrastructure\Providers\LogisticsRoutingServiceProvider::class,
     Modules\Logistics\Carriers\Infrastructure\Providers\LogisticsCarriersServiceProvider::class,
+    // Phase 4 — Operations reads Dispatch, Fleet and Network, so it registers last.
+    Modules\Logistics\Operations\Infrastructure\Providers\LogisticsOperationsServiceProvider::class,
     // Marketing OS — connector order matters: Registry must boot before MetaConnector registers into it
     // ProviderPlatform must register before ProviderConfig so ProviderEventPublisher is available.
     // ProviderConfig must register before MetaConnector so credentials are resolvable at boot.

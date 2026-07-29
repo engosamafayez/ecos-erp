@@ -184,6 +184,8 @@ export const APP_MODULES: AppModule[] = [
       { key: 'logistics-network',            label: 'Service Areas',         path: ROUTES.logisticsNetwork,              icon: Network      },
       { key: 'dispatch-section',             label: 'Dispatch',              isSection: true },
       { key: 'logistics-dispatch',           label: 'Command Center',        path: ROUTES.logisticsDispatch,             icon: Radio        },
+      { key: 'operations-section',           label: 'Operations',            isSection: true },
+      { key: 'logistics-operations',         label: 'Operations Center',     path: ROUTES.logisticsOperations,           icon: Activity     },
       { key: 'geo-section',                  label: 'Geography',             isSection: true },
       { key: 'egypt-geography',              label: 'Egypt Geography',       path: ROUTES.logisticsGeography,            icon: Map          },
       { key: 'dist-section',                 label: 'Distribution',          isSection: true },

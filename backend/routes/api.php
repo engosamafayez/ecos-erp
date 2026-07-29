@@ -100,6 +100,10 @@ use Modules\Logistics\Dispatch\Presentation\Http\Controllers\DispatchController;
 use Modules\Logistics\Dispatch\Presentation\Http\Controllers\DispatchOperationsController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FleetUnitController;
 use Modules\Logistics\Network\Presentation\Http\Controllers\NetworkController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\CapacityOperationsController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\ExceptionController as OperationsExceptionController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\OperationalHealthController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\ResourcePoolController;
 use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FuelController as FleetFuelController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\InspectionController as FleetInspectionController;
@@ -1808,6 +1812,108 @@ Route::middleware('auth:sanctum')->prefix('logistics/carriers')->group(function 
         Route::post('/accounts', [CarrierController::class, 'store']);
         Route::post('/accounts/{id}/test-connection', [CarrierController::class, 'testConnection']);
         Route::put('/accounts/{id}/status-mappings', [CarrierController::class, 'upsertStatusMapping']);
+    });
+});
+
+// ── Logistics V2 — Operations (Phase 4) ───────────────────────────────────────
+// ADDITIVE: every Phase 0–3 route above is untouched.
+//
+// This context owns no business state beyond pool membership, its own
+// reservation envelopes and the exception registry. Every readiness verdict
+// comes from Fleet, every capacity decision from Network's ledger, and every
+// dispatch figure from Phase 3 — reported here, never recomputed.
+Route::middleware('auth:sanctum')->prefix('logistics/operations')->group(function (): void {
+
+    // ── A. Resource pools ────────────────────────────────────────────────────
+    Route::prefix('pools')->group(function (): void {
+        Route::middleware('permission:operations.view')->group(function (): void {
+            Route::get('/options', [ResourcePoolController::class, 'options']);
+            Route::get('/', [ResourcePoolController::class, 'index']);
+            Route::get('/health', [ResourcePoolController::class, 'healthOverview']);
+            // Assignable resources in no pool — capacity nobody is planning with.
+            Route::get('/unassigned', [ResourcePoolController::class, 'unassigned']);
+            Route::get('/availability-matrix', [ResourcePoolController::class, 'availabilityMatrix']);
+            Route::get('/{id}', [ResourcePoolController::class, 'show']);
+            // Membership joined to Fleet's and Drivers' current verdicts.
+            Route::get('/{id}/unified', [ResourcePoolController::class, 'unifiedView']);
+            Route::get('/{id}/health', [ResourcePoolController::class, 'poolHealth']);
+        });
+
+        Route::middleware('permission:operations.pool.manage')->group(function (): void {
+            Route::post('/', [ResourcePoolController::class, 'store']);
+            Route::patch('/{id}/status', [ResourcePoolController::class, 'setStatus']);
+            Route::post('/{id}/members', [ResourcePoolController::class, 'addMember']);
+            Route::patch('/members/{memberId}/status', [ResourcePoolController::class, 'setMemberStatus']);
+        });
+    });
+
+    // ── B. Capacity operations ───────────────────────────────────────────────
+    Route::prefix('capacity')->group(function (): void {
+        Route::middleware('permission:operations.view')->group(function (): void {
+            Route::get('/options', [CapacityOperationsController::class, 'options']);
+            Route::get('/reservations', [CapacityOperationsController::class, 'index']);
+            Route::get('/reservations/{id}', [CapacityOperationsController::class, 'show']);
+            Route::get('/monitoring', [CapacityOperationsController::class, 'monitoring']);
+            Route::get('/reservations/{id}/rebalance-candidates', [CapacityOperationsController::class, 'rebalanceCandidates']);
+        });
+
+        // Reserving and confirming both consume capacity, so they share the
+        // reserve permission.
+        Route::middleware('permission:operations.capacity.reserve')->group(function (): void {
+            Route::post('/reservations', [CapacityOperationsController::class, 'reserve']);
+            Route::patch('/reservations/{id}/confirm', [CapacityOperationsController::class, 'confirm']);
+        });
+
+        // Giving capacity back is a separate decision someone must own.
+        Route::middleware('permission:operations.capacity.release')->group(function (): void {
+            Route::patch('/reservations/{id}/release', [CapacityOperationsController::class, 'release']);
+            Route::patch('/reservations/{id}/rebalance', [CapacityOperationsController::class, 'rebalance']);
+            Route::post('/maintenance/reconcile', [CapacityOperationsController::class, 'reconcile']);
+        });
+
+        Route::get('/reservations/{id}/audit', [CapacityOperationsController::class, 'auditTrail'])
+            ->middleware('permission:operations.audit.view');
+    });
+
+    // ── C. Operational health — read-only dashboards ─────────────────────────
+    Route::prefix('health')->middleware('permission:operations.view')->group(function (): void {
+        Route::get('/overview', [OperationalHealthController::class, 'overview']);
+        Route::get('/resources', [OperationalHealthController::class, 'resources']);
+        Route::get('/capacity', [OperationalHealthController::class, 'capacity']);
+        Route::get('/dispatch', [OperationalHealthController::class, 'dispatch']);
+        Route::get('/utilisation', [OperationalHealthController::class, 'utilisation']);
+    });
+
+    // ── D. Exception management ──────────────────────────────────────────────
+    Route::prefix('exceptions')->group(function (): void {
+        Route::middleware('permission:operations.view')->group(function (): void {
+            Route::get('/options', [OperationsExceptionController::class, 'options']);
+            Route::get('/', [OperationsExceptionController::class, 'index']);
+            Route::get('/summary', [OperationsExceptionController::class, 'summary']);
+            Route::get('/alerts', [OperationsExceptionController::class, 'alerts']);
+            Route::get('/alerts/summary', [OperationsExceptionController::class, 'alertSummary']);
+            Route::get('/alerts/rules', [OperationsExceptionController::class, 'alertRules']);
+            Route::get('/{id}', [OperationsExceptionController::class, 'show']);
+            Route::get('/{id}/notes', [OperationsExceptionController::class, 'notes']);
+            Route::get('/{id}/escalations', [OperationsExceptionController::class, 'escalationHistory']);
+        });
+
+        Route::middleware('permission:operations.exception.manage')->group(function (): void {
+            Route::patch('/{id}/acknowledge', [OperationsExceptionController::class, 'acknowledge']);
+            Route::patch('/{id}/resolve', [OperationsExceptionController::class, 'resolve']);
+            Route::patch('/{id}/suppress', [OperationsExceptionController::class, 'suppress']);
+            Route::post('/{id}/notes', [OperationsExceptionController::class, 'addNote']);
+            Route::post('/maintenance/reconcile', [OperationsExceptionController::class, 'reconcile']);
+        });
+
+        // Escalating is its own permission: it commits somebody else's time.
+        Route::middleware('permission:operations.exception.escalate')->group(function (): void {
+            Route::post('/{id}/escalate', [OperationsExceptionController::class, 'escalate']);
+            Route::post('/maintenance/escalate-overdue', [OperationsExceptionController::class, 'escalateOverdue']);
+        });
+
+        Route::post('/alerts/rules', [OperationsExceptionController::class, 'storeAlertRule'])
+            ->middleware('permission:operations.alert.manage');
     });
 });
 
