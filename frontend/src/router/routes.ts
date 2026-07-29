@@ -115,6 +115,7 @@ export const ROUTES = {
   logisticsDelivery:             '/logistics/delivery',
   logisticsFleet:                '/logistics/fleet',
   logisticsNetwork:              '/logistics/network',
+  logisticsDispatch:             '/logistics/dispatch',
   // Marketing OS
   marketing:              '/marketing',
   marketingAssets:        '/marketing/assets',

@@ -97,6 +97,7 @@ use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryReturnContr
 use Modules\Logistics\Drivers\Presentation\Http\Controllers\DriverController;
 use Modules\Logistics\Carriers\Presentation\Http\Controllers\CarrierController;
 use Modules\Logistics\Dispatch\Presentation\Http\Controllers\DispatchController;
+use Modules\Logistics\Dispatch\Presentation\Http\Controllers\DispatchOperationsController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FleetUnitController;
 use Modules\Logistics\Network\Presentation\Http\Controllers\NetworkController;
 use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
@@ -1687,6 +1688,87 @@ Route::middleware('auth:sanctum')->prefix('logistics/dispatch')->group(function 
         // Partial success is a normal 200 — see DispatchBoardStatus.
         Route::post('/proposals/{id}/release', [DispatchController::class, 'release']);
     });
+});
+
+// ── Logistics V2 — Dispatch Operations (Phase 3) ──────────────────────────────
+// ADDITIVE: the Phase 2 /logistics/dispatch routes above are untouched.
+// Sessions, queue, locks, allocation, conflicts, review and monitoring.
+//
+// Allocation ORCHESTRATES existing authorities — Fleet readiness, Network
+// capacity, LOG-002 driver fitness — and re-implements none of them.
+Route::middleware('auth:sanctum')->prefix('logistics/dispatch/ops')->group(function (): void {
+    Route::get('/options', [DispatchOperationsController::class, 'options'])
+        ->middleware('permission:dispatch.view');
+
+    // Read surface
+    Route::middleware('permission:dispatch.view')->group(function (): void {
+        Route::get('/sessions', [DispatchOperationsController::class, 'sessions']);
+        Route::get('/boards/{boardId}/queue', [DispatchOperationsController::class, 'queue']);
+        Route::get('/boards/{boardId}/timeline', [DispatchOperationsController::class, 'boardTimeline']);
+        Route::get('/conflicts', [DispatchOperationsController::class, 'conflicts']);
+        Route::get('/reviews/pending', [DispatchOperationsController::class, 'pendingReviews']);
+        Route::get('/locks', [DispatchOperationsController::class, 'locks']);
+    });
+
+    // Sessions
+    Route::middleware('permission:dispatch.session.manage')->group(function (): void {
+        Route::post('/boards/{boardId}/sessions', [DispatchOperationsController::class, 'openSession']);
+        Route::patch('/sessions/{id}/status', [DispatchOperationsController::class, 'setSessionStatus']);
+        Route::patch('/sessions/{id}/close', [DispatchOperationsController::class, 'closeSession']);
+        Route::post('/maintenance/sweep', [DispatchOperationsController::class, 'sweepLocks']);
+    });
+
+    // Queue
+    Route::middleware('permission:dispatch.queue.manage')->group(function (): void {
+        Route::post('/boards/{boardId}/queue/build', [DispatchOperationsController::class, 'buildQueue']);
+        Route::patch('/queue/{itemId}/priority', [DispatchOperationsController::class, 'prioritiseItem']);
+        Route::patch('/queue/{itemId}/defer', [DispatchOperationsController::class, 'deferItem']);
+    });
+
+    // Claiming and allocating is the propose-side permission from Phase 2 —
+    // reused rather than duplicated.
+    Route::middleware('permission:dispatch.propose')->group(function (): void {
+        Route::post('/sessions/{sessionId}/queue/claim-next', [DispatchOperationsController::class, 'claimNext']);
+        Route::post('/sessions/{sessionId}/queue/{itemId}/claim', [DispatchOperationsController::class, 'claimItem']);
+        Route::post('/sessions/{sessionId}/allocate', [DispatchOperationsController::class, 'allocate']);
+        Route::patch('/allocations/{id}/release', [DispatchOperationsController::class, 'releaseAllocation']);
+    });
+
+    // Confirming an allocation commits resources, so it takes the release
+    // permission — the same separation Phase 2 established.
+    Route::patch('/allocations/{id}/confirm', [DispatchOperationsController::class, 'confirmAllocation'])
+        ->middleware('permission:dispatch.release');
+
+    // Conflicts
+    Route::middleware('permission:dispatch.conflict.resolve')->group(function (): void {
+        Route::patch('/conflicts/{id}/resolve', [DispatchOperationsController::class, 'resolveConflict']);
+        Route::patch('/conflicts/{id}/override', [DispatchOperationsController::class, 'overrideConflict']);
+    });
+
+    // Review — requesting and deciding are separate so a risk decision is not
+    // self-certified.
+    Route::post('/assignments/{assignmentId}/review', [DispatchOperationsController::class, 'requestReview'])
+        ->middleware('permission:dispatch.assignment.review');
+    Route::middleware('permission:dispatch.assignment.approve')->group(function (): void {
+        Route::patch('/reviews/{id}/approve', [DispatchOperationsController::class, 'approveReview']);
+        Route::patch('/reviews/{id}/reject', [DispatchOperationsController::class, 'rejectReview']);
+    });
+
+    // Taking a resource from a colleague mid-decision. Always audited.
+    Route::patch('/locks/{id}/break', [DispatchOperationsController::class, 'breakLock'])
+        ->middleware('permission:dispatch.assignment.override');
+
+    // Monitoring — operational metrics only, no prediction.
+    Route::middleware('permission:dispatch.monitoring.view')->group(function (): void {
+        Route::get('/monitoring/kpis', [DispatchOperationsController::class, 'kpis']);
+        Route::get('/monitoring/queue', [DispatchOperationsController::class, 'queueStatistics']);
+        Route::get('/monitoring/health', [DispatchOperationsController::class, 'assignmentHealth']);
+        Route::get('/monitoring/capacity', [DispatchOperationsController::class, 'capacityUtilisation']);
+        Route::get('/monitoring/exceptions', [DispatchOperationsController::class, 'exceptions']);
+    });
+
+    Route::get('/audit', [DispatchOperationsController::class, 'auditTrail'])
+        ->middleware('permission:dispatch.audit.view');
 });
 
 // ── Logistics V2 — Routing (Phase 2) ──────────────────────────────────────────
