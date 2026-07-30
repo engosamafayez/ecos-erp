@@ -6,6 +6,7 @@ namespace Modules\Logistics\Operations\Domain\Services;
 
 use Illuminate\Support\Carbon;
 use Modules\Logistics\Dispatch\Domain\Services\DispatchMonitoringService;
+use Modules\Logistics\Operations\Domain\Events\ReadinessValidated;
 
 /**
  * Cross-module validation — is each authority in a state the operation can run
@@ -59,7 +60,7 @@ class CrossModuleValidationService
             $this->validateOperations($companyId),
         ];
 
-        return [
+        $report = [
             'generated_at' => Carbon::now()->toIso8601String(),
             'overall_status' => $this->rollUp(array_column($modules, 'status')),
             'modules' => $modules,
@@ -67,6 +68,20 @@ class CrossModuleValidationService
             'degraded_count' => count(array_filter($modules, static fn ($m) => $m['status'] === self::DEGRADED)),
             'not_ready_count' => count(array_filter($modules, static fn ($m) => $m['status'] === self::NOT_READY)),
         ];
+
+        // Notification only — the validation already ran; this announces its
+        // verdict for Observability / AI / Automation. Carries scalars, so a
+        // consumer reacts without this class touching the database.
+        ReadinessValidated::dispatch(
+            $report['overall_status'],
+            $report['ready_count'],
+            $report['degraded_count'],
+            $report['not_ready_count'],
+            $companyId,
+            $report['generated_at'],
+        );
+
+        return $report;
     }
 
     /** One module by key, or null if the key is unknown. */

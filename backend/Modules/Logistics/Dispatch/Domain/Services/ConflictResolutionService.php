@@ -7,6 +7,7 @@ namespace Modules\Logistics\Dispatch\Domain\Services;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Logistics\Dispatch\Domain\Enums\ConflictStatus;
+use Modules\Logistics\Dispatch\Domain\Events\DispatchConflictResolved;
 use Modules\Logistics\Dispatch\Domain\Exceptions\DispatchOperationsException;
 use Modules\Logistics\Dispatch\Domain\Models\DispatchAuditEntry;
 use Modules\Logistics\Dispatch\Domain\Models\DispatchConflict;
@@ -88,6 +89,17 @@ class ConflictResolutionService
             actorName: $actorName,
         );
 
+        // Notification only — fired after the state change is committed and
+        // recorded, so no listener can affect the outcome (ADR-011).
+        DispatchConflictResolved::dispatch(
+            $resolved->uuid,
+            $resolved->conflict_type->value,
+            $resolved->authority(),
+            $resolution,
+            $resolved->company_id,
+            ($resolved->resolved_at ?? Carbon::now())->toIso8601String(),
+        );
+
         return $resolved;
     }
 
@@ -158,6 +170,15 @@ class ConflictResolutionService
             assignmentId: $overridden->assignment_id,
             actorId: $actorId,
             actorName: $actorName,
+        );
+
+        DispatchConflictResolved::dispatch(
+            $overridden->uuid,
+            $overridden->conflict_type->value,
+            $overridden->authority(),
+            DispatchConflict::RESOLUTION_OVERRIDDEN,
+            $overridden->company_id,
+            ($overridden->resolved_at ?? Carbon::now())->toIso8601String(),
         );
 
         return $overridden;

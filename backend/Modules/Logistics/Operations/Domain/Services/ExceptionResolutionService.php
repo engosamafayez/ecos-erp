@@ -6,6 +6,7 @@ namespace Modules\Logistics\Operations\Domain\Services;
 
 use Illuminate\Support\Carbon;
 use Modules\Logistics\Operations\Domain\Enums\ExceptionStatus;
+use Modules\Logistics\Operations\Domain\Events\OperationalExceptionResolved;
 use Modules\Logistics\Operations\Domain\Exceptions\OperationsException;
 use Modules\Logistics\Operations\Domain\Models\ExceptionNote;
 use Modules\Logistics\Operations\Domain\Models\OperationalException;
@@ -80,7 +81,20 @@ class ExceptionResolutionService
             'active_flag' => null,
         ]);
 
-        return $exception->refresh();
+        $resolved = $exception->refresh();
+
+        // Notification only — fired after the close is committed. The Resolved
+        // status marks a human resolution, distinct from an auto-resolution.
+        OperationalExceptionResolved::dispatch(
+            $resolved->uuid,
+            $resolved->source->value,
+            $resolved->status->value,
+            $resolved->resolution,
+            $resolved->company_id,
+            ($resolved->resolved_at ?? Carbon::now())->toIso8601String(),
+        );
+
+        return $resolved;
     }
 
     /**

@@ -7,6 +7,8 @@ namespace Modules\Logistics\Operations\Domain\Services;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Logistics\Dispatch\Domain\Models\DispatchConflict;
+use Modules\Logistics\Operations\Domain\Events\OperationalExceptionRaised;
+use Modules\Logistics\Operations\Domain\Events\OperationalExceptionResolved;
 use Modules\Logistics\Operations\Domain\Enums\ExceptionCategory;
 use Modules\Logistics\Operations\Domain\Enums\ExceptionSeverity;
 use Modules\Logistics\Operations\Domain\Enums\ExceptionSource;
@@ -56,7 +58,7 @@ class ExceptionRegistryService
     ): OperationalException {
         $now = Carbon::now();
 
-        return DB::transaction(function () use (
+        $exception = DB::transaction(function () use (
             $source, $category, $exceptionType, $severity, $title, $dedupKey,
             $description, $companyId, $subjectType, $subjectId, $sourceConflictId, $context, $now
         ) {
@@ -110,6 +112,23 @@ class ExceptionRegistryService
                 'occurrence_count' => 1,
             ])->refresh();
         });
+
+        // Notification only, and only for a GENUINELY NEW exception — a
+        // deduplicated recurrence bumps a counter and raises nothing, so a
+        // consumer counting raises counts distinct problems, not occurrences.
+        if ($exception->wasRecentlyCreated) {
+            OperationalExceptionRaised::dispatch(
+                $exception->uuid,
+                $exception->source->value,
+                $exception->category->value,
+                $exception->severity->value,
+                $exception->exception_type,
+                $exception->company_id,
+                ($exception->first_seen_at ?? $now)->toIso8601String(),
+            );
+        }
+
+        return $exception;
     }
 
     /**
@@ -163,7 +182,20 @@ class ExceptionRegistryService
             'active_flag' => null,
         ]);
 
-        return $exception->refresh();
+        $resolved = $exception->refresh();
+
+        // Notification only. The AutoResolved status tells a consumer the
+        // condition cleared on its own — nobody did the work.
+        OperationalExceptionResolved::dispatch(
+            $resolved->uuid,
+            $resolved->source->value,
+            $resolved->status->value,
+            $resolved->resolution,
+            $resolved->company_id,
+            ($resolved->resolved_at ?? Carbon::now())->toIso8601String(),
+        );
+
+        return $resolved;
     }
 
     /**

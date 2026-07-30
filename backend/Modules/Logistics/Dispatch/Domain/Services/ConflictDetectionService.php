@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Modules\Logistics\Dispatch\Domain\Enums\AllocationStatus;
 use Modules\Logistics\Dispatch\Domain\Enums\ConflictStatus;
 use Modules\Logistics\Dispatch\Domain\Enums\ConflictType;
+use Modules\Logistics\Dispatch\Domain\Events\DispatchConflictDetected;
 use Modules\Logistics\Dispatch\Domain\Models\AssignmentLock;
 use Modules\Logistics\Dispatch\Domain\Models\DispatchConflict;
 use Modules\Logistics\Dispatch\Domain\Models\DispatchSession;
@@ -277,7 +278,7 @@ class ConflictDetectionService
         /** @var ConflictType $type */
         $type = $spec['type'];
 
-        return DispatchConflict::create([
+        $conflict = DispatchConflict::create([
             'company_id' => $allocation->company_id,
             'dispatch_session_id' => $session?->id,
             'assignment_id' => $allocation->assignment_id,
@@ -292,5 +293,18 @@ class ConflictDetectionService
             'context' => $spec['context'] ?? null,
             'detected_at' => Carbon::now(),
         ]);
+
+        // Notification only — one dispatch per persisted conflict, carrying the
+        // owning authority so a consumer can route it without re-judging.
+        DispatchConflictDetected::dispatch(
+            $conflict->uuid,
+            $type->value,
+            $type->severity(),
+            $conflict->authority(),
+            $conflict->company_id,
+            ($conflict->detected_at ?? Carbon::now())->toIso8601String(),
+        );
+
+        return $conflict;
     }
 }

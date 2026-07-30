@@ -6,6 +6,7 @@ namespace Modules\Logistics\Operations\Domain\Services;
 
 use Illuminate\Support\Carbon;
 use Modules\Logistics\Dispatch\Domain\Services\DispatchMonitoringService;
+use Modules\Logistics\Operations\Domain\Events\DiagnosticsGenerated;
 
 /**
  * The Diagnostics Center — a system-health view assembled entirely from
@@ -36,15 +37,51 @@ class DiagnosticsService
      */
     public function center(?string $companyId = null): array
     {
-        return [
+        // Compute the validation report ONCE. It is the source for both the
+        // system and dependency sections, and it now emits a ReadinessValidated
+        // event — calling it twice (as the standalone system/dependency methods
+        // each do) would fire that event twice for a single diagnostics run.
+        $report = $this->validation->report($companyId);
+        $overview = $this->health->overview($companyId);
+
+        $system = [
+            'status' => $report['overall_status'],
+            'is_quiet' => $overview['is_quiet'],
+            'headline' => $overview['headline'],
+            'modules_ready' => $report['ready_count'],
+            'modules_degraded' => $report['degraded_count'],
+            'modules_not_ready' => $report['not_ready_count'],
+        ];
+
+        $dependencies = [
+            'status' => $report['overall_status'],
+            'dependencies' => array_map(static fn (array $m) => [
+                'name' => $m['module'],
+                'label' => $m['label'],
+                'status' => $m['status'],
+                'reason' => $m['reasons'][0] ?? null,
+            ], $report['modules']),
+        ];
+
+        $center = [
             'generated_at' => Carbon::now()->toIso8601String(),
-            'system' => $this->systemHealth($companyId),
-            'dependencies' => $this->dependencyHealth($companyId),
+            'system' => $system,
+            'dependencies' => $dependencies,
             'queue' => $this->queueHealth($companyId),
             'capacity' => $this->capacityHealth($companyId),
             'dispatch' => $this->dispatchHealth($companyId),
             'exceptions' => $this->exceptionHealth($companyId),
         ];
+
+        // Notification only.
+        DiagnosticsGenerated::dispatch(
+            $system['status'],
+            $system['is_quiet'],
+            $companyId,
+            $center['generated_at'],
+        );
+
+        return $center;
     }
 
     /**

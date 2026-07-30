@@ -6,6 +6,7 @@ namespace Modules\Logistics\Operations\Domain\Services;
 
 use Illuminate\Support\Carbon;
 use Modules\Logistics\Dispatch\Domain\Services\DispatchMonitoringService;
+use Modules\Logistics\Operations\Domain\Events\ExecutiveSummaryGenerated;
 
 /**
  * The enterprise summaries — the plain-language digest a manager reads first.
@@ -39,7 +40,7 @@ class EnterpriseSummaryService
         $overview = $this->health->overview($companyId);
         $score = $this->readiness->healthScore($companyId);
 
-        return [
+        $summary = [
             'generated_at' => Carbon::now()->toIso8601String(),
             'health_score' => $score['score'],
             'grade' => $score['grade'],
@@ -47,6 +48,17 @@ class EnterpriseSummaryService
             'is_quiet' => $overview['is_quiet'],
             'headline' => $overview['headline'],
         ];
+
+        // Notification only.
+        ExecutiveSummaryGenerated::dispatch(
+            $summary['health_score'],
+            $summary['grade'],
+            $summary['overall_status'],
+            $companyId,
+            $summary['generated_at'],
+        );
+
+        return $summary;
     }
 
     /**

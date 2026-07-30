@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Operations\Domain\Services;
 
-use Illuminate\Support\Carbon;
+use Modules\Logistics\Operations\Domain\Events\LogisticsHealthCalculated;
 
 /**
  * Enterprise readiness — the health score, the module summary and the checklist,
@@ -117,11 +117,22 @@ class ReadinessValidationService
     public function healthScore(?string $companyId = null): array
     {
         $report = $this->validation->report($companyId);
+        $score = $this->scoreFrom($report);
+        $grade = $this->grade($score);
+
+        // Notification only — the score was computed above; this announces it.
+        LogisticsHealthCalculated::dispatch(
+            $score,
+            $grade,
+            $report['overall_status'],
+            $companyId,
+            $report['generated_at'],
+        );
 
         return [
             'generated_at' => $report['generated_at'],
-            'score' => $this->scoreFrom($report),
-            'grade' => $this->grade($this->scoreFrom($report)),
+            'score' => $score,
+            'grade' => $grade,
             'overall_status' => $report['overall_status'],
             'weights' => self::WEIGHTS,
         ];
