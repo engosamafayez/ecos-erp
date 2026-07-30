@@ -24,19 +24,63 @@ use Illuminate\Support\Carbon;
  */
 class ReadinessValidationService
 {
+    /*
+     * ── Health-score weights ──────────────────────────────────────────────────
+     *
+     * Each authority contributes a fixed share of the 100-point score. These are
+     * the ONE business judgement this phase adds, so they are named constants
+     * with their rationale stated here rather than magic numbers inline. They
+     * sum to 100 by design; changing one is a deliberate re-weighting of what
+     * the operation is judged to depend on.
+     */
+
     /**
-     * What the operation leans on, in order. Fleet and drivers are the hard
-     * floor — without a vehicle and a driver nothing moves at all — so they
-     * carry the most weight.
+     * Fleet — 25. A hard floor: without a roadworthy vehicle nothing moves at
+     * all, so an unavailable fleet is one of the two heaviest drags on the score.
+     */
+    public const FLEET_WEIGHT = 25;
+
+    /**
+     * Drivers — 25. The other hard floor, weighted equal to Fleet: a vehicle
+     * with no driver fields nothing, so crewing and vehicles fail the operation
+     * symmetrically.
+     */
+    public const DRIVER_WEIGHT = 25;
+
+    /**
+     * Capacity — 20. Network gates how much can be committed, so it matters
+     * heavily — but a shortfall usually degrades rather than halts (orders wait
+     * for the next window), which is why it sits below the Fleet/Driver floor.
+     */
+    public const CAPACITY_WEIGHT = 20;
+
+    /**
+     * Dispatch — 20. Orchestration readiness: blocking conflicts stop releases,
+     * but the underlying resources still exist and the block is resolvable, so
+     * it carries the same weight as Capacity rather than the hard-floor weight.
+     */
+    public const DISPATCH_WEIGHT = 20;
+
+    /**
+     * Operations — 10. The exception backlog is a health signal, but an open
+     * exception rarely halts execution on its own, so it carries the lightest
+     * weight — enough to move the score, not enough to dominate it.
+     */
+    public const OPERATIONS_WEIGHT = 10;
+
+    /**
+     * The weights keyed by module, composed from the named constants above.
+     * This is the lookup used by the score calculation and returned verbatim in
+     * the health-score response — the single source of truth for both.
      *
      * @var array<string, int>
      */
     private const WEIGHTS = [
-        'fleet' => 25,
-        'drivers' => 25,
-        'capacity' => 20,
-        'dispatch' => 20,
-        'operations' => 10,
+        'fleet' => self::FLEET_WEIGHT,
+        'drivers' => self::DRIVER_WEIGHT,
+        'capacity' => self::CAPACITY_WEIGHT,
+        'dispatch' => self::DISPATCH_WEIGHT,
+        'operations' => self::OPERATIONS_WEIGHT,
     ];
 
     public function __construct(
