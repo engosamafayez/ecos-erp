@@ -94,6 +94,8 @@ return [
     Modules\Logistics\Carriers\Infrastructure\Providers\LogisticsCarriersServiceProvider::class,
     // Phase 4 — Operations reads Dispatch, Fleet and Network, so it registers last.
     Modules\Logistics\Operations\Infrastructure\Providers\LogisticsOperationsServiceProvider::class,
+    // EPIC-LOG-V2-002 — Intelligence reads Operations + Dispatch, so it registers after them.
+    Modules\Logistics\Intelligence\Infrastructure\Providers\LogisticsIntelligenceServiceProvider::class,
     // Marketing OS — connector order matters: Registry must boot before MetaConnector registers into it
     // ProviderPlatform must register before ProviderConfig so ProviderEventPublisher is available.
     // ProviderConfig must register before MetaConnector so credentials are resolvable at boot.

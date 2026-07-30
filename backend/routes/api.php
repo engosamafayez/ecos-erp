@@ -109,6 +109,10 @@ use Modules\Logistics\Operations\Presentation\Http\Controllers\OperationalHealth
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ReadinessController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ResourcePoolController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\SummaryController;
+use Modules\Logistics\Intelligence\Presentation\Http\Controllers\DecisionController;
+use Modules\Logistics\Intelligence\Presentation\Http\Controllers\ForecastController;
+use Modules\Logistics\Intelligence\Presentation\Http\Controllers\InsightController;
+use Modules\Logistics\Intelligence\Presentation\Http\Controllers\OptimizationController;
 use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FuelController as FleetFuelController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\InspectionController as FleetInspectionController;
@@ -284,6 +288,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::apiResource('products', ProductController::class);
     Route::patch('products/{product}', [ProductController::class, 'patch']);
     Route::get('products/{product}/cost-history', [InventoryLayerController::class, 'costHistory']);
+    Route::get('products/{product}/warehouse-distribution', [InventoryLayerController::class, 'warehouseDistribution']);
     Route::get('stock-movements', [StockMovementController::class, 'index']);
     Route::post('stock-movements', [StockMovementController::class, 'store']);
     Route::get('stock-movements/{stockMovement}', [StockMovementController::class, 'show']);
@@ -1993,6 +1998,48 @@ Route::middleware('auth:sanctum')->prefix('logistics/operations')
             Route::get('/dispatch', [SummaryController::class, 'dispatch']);
             Route::get('/fleet', [SummaryController::class, 'fleet']);
             Route::get('/exceptions', [SummaryController::class, 'exceptions']);
+        });
+    });
+
+// ── Logistics V2 — Enterprise Intelligence (EPIC-LOG-V2-002) ──────────────────
+// ADDITIVE and READ-ONLY. No table, no writer, no migration, no new permission,
+// no change to any existing API. Every endpoint reads figures the operational
+// modules already produce and returns decision support — recommendations,
+// deterministic optimisations and deterministic forecasts. It reuses the
+// existing operations.view permission.
+Route::middleware('auth:sanctum')->prefix('logistics/intelligence')
+    ->middleware('permission:operations.view')
+    ->group(function (): void {
+
+        // Decision Engine.
+        Route::prefix('decisions')->group(function (): void {
+            Route::get('/', [DecisionController::class, 'decide']);
+            Route::get('/recommendations', [DecisionController::class, 'recommendations']);
+            Route::get('/priorities', [DecisionController::class, 'priorities']);
+            Route::get('/conflicts', [DecisionController::class, 'conflicts']);
+        });
+
+        // Optimisation Engine.
+        Route::prefix('optimization')->group(function (): void {
+            Route::get('/vehicle', [OptimizationController::class, 'vehicle']);
+            Route::get('/capacity', [OptimizationController::class, 'capacity']);
+            Route::get('/route', [OptimizationController::class, 'route']);
+            Route::get('/assignment', [OptimizationController::class, 'assignment']);
+        });
+
+        // Forecasting — deterministic projections.
+        Route::prefix('forecast')->group(function (): void {
+            Route::get('/capacity', [ForecastController::class, 'capacity']);
+            Route::get('/dispatch', [ForecastController::class, 'dispatch']);
+            Route::get('/workload', [ForecastController::class, 'workload']);
+        });
+
+        // AI Recommendation Layer.
+        Route::prefix('insights')->group(function (): void {
+            Route::get('/suggestions', [InsightController::class, 'suggestions']);
+            Route::get('/bottlenecks', [InsightController::class, 'bottlenecks']);
+            Route::get('/warnings', [InsightController::class, 'warnings']);
+            Route::get('/', [InsightController::class, 'insights']);
         });
     });
 
