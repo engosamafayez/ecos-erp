@@ -96,6 +96,8 @@ return [
     Modules\Logistics\Operations\Infrastructure\Providers\LogisticsOperationsServiceProvider::class,
     // EPIC-LOG-V2-002 — Intelligence reads Operations + Dispatch, so it registers after them.
     Modules\Logistics\Intelligence\Infrastructure\Providers\LogisticsIntelligenceServiceProvider::class,
+    // EPIC-LOG-V2-002 — Automation consumes the domain events, so it registers after every producer.
+    Modules\Logistics\Automation\Infrastructure\Providers\LogisticsAutomationServiceProvider::class,
     // Marketing OS — connector order matters: Registry must boot before MetaConnector registers into it
     // ProviderPlatform must register before ProviderConfig so ProviderEventPublisher is available.
     // ProviderConfig must register before MetaConnector so credentials are resolvable at boot.

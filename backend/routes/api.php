@@ -113,6 +113,7 @@ use Modules\Logistics\Intelligence\Presentation\Http\Controllers\DecisionControl
 use Modules\Logistics\Intelligence\Presentation\Http\Controllers\ForecastController;
 use Modules\Logistics\Intelligence\Presentation\Http\Controllers\InsightController;
 use Modules\Logistics\Intelligence\Presentation\Http\Controllers\OptimizationController;
+use Modules\Logistics\Automation\Presentation\Http\Controllers\AutomationController;
 use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FuelController as FleetFuelController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\InspectionController as FleetInspectionController;
@@ -2041,6 +2042,18 @@ Route::middleware('auth:sanctum')->prefix('logistics/intelligence')
             Route::get('/warnings', [InsightController::class, 'warnings']);
             Route::get('/', [InsightController::class, 'insights']);
         });
+    });
+
+// ── Logistics V2 — Automation observability (EPIC-LOG-V2-002) ──────────────────
+// ADDITIVE and READ-ONLY. The automation consumers run off event dispatch; these
+// endpoints only expose what is wired up — policies, metrics and monitoring.
+// No table, no writer, no new permission; reuses operations.view.
+Route::middleware('auth:sanctum')->prefix('logistics/automation')
+    ->middleware('permission:operations.view')
+    ->group(function (): void {
+        Route::get('/policies', [AutomationController::class, 'policies']);
+        Route::get('/monitoring', [AutomationController::class, 'monitoring']);
+        Route::get('/metrics', [AutomationController::class, 'metrics']);
     });
 
 // ── Distribution OS — Planning ────────────────────────────────────────────────
