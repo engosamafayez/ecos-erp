@@ -98,6 +98,8 @@ return [
     Modules\Logistics\Intelligence\Infrastructure\Providers\LogisticsIntelligenceServiceProvider::class,
     // EPIC-LOG-V2-002 — Automation consumes the domain events, so it registers after every producer.
     Modules\Logistics\Automation\Infrastructure\Providers\LogisticsAutomationServiceProvider::class,
+    // Finance OS — EPIC F1. The financial system of record. Foundation module; integrates with no operational module (F3).
+    Modules\Finance\Infrastructure\Providers\FinanceServiceProvider::class,
     // Marketing OS — connector order matters: Registry must boot before MetaConnector registers into it
     // ProviderPlatform must register before ProviderConfig so ProviderEventPublisher is available.
     // ProviderConfig must register before MetaConnector so credentials are resolvable at boot.

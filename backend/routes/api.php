@@ -115,6 +115,12 @@ use Modules\Logistics\Intelligence\Presentation\Http\Controllers\InsightControll
 use Modules\Logistics\Intelligence\Presentation\Http\Controllers\OptimizationController;
 use Modules\Logistics\Intelligence\Presentation\Http\Controllers\EnterpriseDashboardController;
 use Modules\Logistics\Automation\Presentation\Http\Controllers\AutomationController;
+use Modules\Finance\Presentation\Http\Controllers\AccountController as FinanceAccountController;
+use Modules\Finance\Presentation\Http\Controllers\CostCenterController as FinanceCostCenterController;
+use Modules\Finance\Presentation\Http\Controllers\FiscalController as FinanceFiscalController;
+use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
+use Modules\Finance\Presentation\Http\Controllers\TaxController as FinanceTaxController;
+use Modules\Finance\Presentation\Http\Controllers\TrialBalanceController as FinanceTrialBalanceController;
 use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FuelController as FleetFuelController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\InspectionController as FleetInspectionController;
@@ -2062,6 +2068,80 @@ Route::middleware('auth:sanctum')->prefix('logistics/automation')
         Route::get('/monitoring', [AutomationController::class, 'monitoring']);
         Route::get('/metrics', [AutomationController::class, 'metrics']);
     });
+
+// ── Finance OS — EPIC F1 · Ledger Core & Fiscal Foundation ────────────────────
+// The financial system of record. All read/write is company-scoped from the
+// authenticated user. Manual journals are under strict segregation of duties:
+// create (maker), post (checker/poster) and reverse are DISTINCT permissions.
+Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
+
+    // Chart of Accounts.
+    Route::prefix('accounts')->group(function (): void {
+        Route::middleware('permission:finance.gl.view')->group(function (): void {
+            Route::get('/options', [FinanceAccountController::class, 'options']);
+            Route::get('/', [FinanceAccountController::class, 'index']);
+            Route::get('/{uuid}', [FinanceAccountController::class, 'show']);
+        });
+        Route::middleware('permission:finance.coa.manage')->group(function (): void {
+            Route::post('/', [FinanceAccountController::class, 'store']);
+            Route::patch('/{uuid}/active', [FinanceAccountController::class, 'setActive']);
+        });
+    });
+
+    // Financial dimensions — cost centers.
+    Route::prefix('cost-centers')->group(function (): void {
+        Route::get('/', [FinanceCostCenterController::class, 'index'])->middleware('permission:finance.gl.view');
+        Route::post('/', [FinanceCostCenterController::class, 'store'])->middleware('permission:finance.dimension.manage');
+    });
+
+    // Fiscal calendar.
+    Route::prefix('fiscal')->group(function (): void {
+        Route::middleware('permission:finance.gl.view')->group(function (): void {
+            Route::get('/options', [FinanceFiscalController::class, 'options']);
+            Route::get('/years', [FinanceFiscalController::class, 'index']);
+        });
+        Route::middleware('permission:finance.period.manage')->group(function (): void {
+            Route::post('/years', [FinanceFiscalController::class, 'createYear']);
+            Route::patch('/periods/{uuid}/open', [FinanceFiscalController::class, 'openPeriod']);
+            Route::patch('/periods/{uuid}/close', [FinanceFiscalController::class, 'closePeriod']);
+            Route::patch('/periods/{uuid}/lock', [FinanceFiscalController::class, 'lockPeriod']);
+        });
+    });
+
+    // Manual journals — SEGREGATION OF DUTIES.
+    Route::prefix('journals')->group(function (): void {
+        Route::middleware('permission:finance.gl.view')->group(function (): void {
+            Route::get('/', [FinanceJournalController::class, 'index']);
+            Route::get('/{uuid}', [FinanceJournalController::class, 'show']);
+        });
+        // Maker creates the draft.
+        Route::middleware('permission:finance.journal.create')->group(function (): void {
+            Route::post('/', [FinanceJournalController::class, 'store']);
+            Route::delete('/{uuid}', [FinanceJournalController::class, 'discard']);
+        });
+        // A DIFFERENT person (checker/poster) approves and posts.
+        Route::patch('/{uuid}/approve', [FinanceJournalController::class, 'approve'])
+            ->middleware('permission:finance.journal.post');
+        Route::post('/{uuid}/reverse', [FinanceJournalController::class, 'reverse'])
+            ->middleware('permission:finance.journal.reverse');
+    });
+
+    // Tax core.
+    Route::prefix('tax')->group(function (): void {
+        Route::middleware('permission:finance.gl.view')->group(function (): void {
+            Route::get('/categories', [FinanceTaxController::class, 'categories']);
+            Route::get('/codes', [FinanceTaxController::class, 'codes']);
+        });
+        Route::middleware('permission:finance.tax.manage')->group(function (): void {
+            Route::post('/categories', [FinanceTaxController::class, 'storeCategory']);
+            Route::post('/codes', [FinanceTaxController::class, 'storeCode']);
+        });
+    });
+
+    // Trial Balance — read model.
+    Route::get('/trial-balance', [FinanceTrialBalanceController::class, 'show'])
+        ->middleware('permission:finance.trialbalance.view');
+});
 
 // ── Distribution OS — Planning ────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->prefix('logistics/distribution/planning')->group(function (): void {
