@@ -62,6 +62,11 @@ class FinanceException extends RuntimeException
         return new self("Account {$ref} does not exist.");
     }
 
+    public static function controlAccountManual(string $code): self
+    {
+        return new self("Account {$code} is a control account and cannot be posted to manually; it is moved only by its subledger.");
+    }
+
     // ── Immutability ─────────────────────────────────────────────────────────────
 
     public static function journalImmutable(): self

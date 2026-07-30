@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Finance\Fiscal\Domain\Models\FiscalPeriod;
 use Modules\Finance\Ledger\Domain\Enums\JournalStatus;
+use Modules\Finance\Ledger\Domain\Enums\JournalType;
 use Modules\Finance\Ledger\Domain\Exceptions\FinanceException;
 use Modules\Finance\Ledger\Domain\Models\Account;
 use Modules\Finance\Ledger\Domain\Models\JournalEntry;
@@ -48,6 +49,7 @@ class JournalEngine
                 'reference' => $request->reference,
                 'description' => $request->description,
                 'source' => $request->source,
+                'journal_type' => $request->journalType,
                 'source_module' => $request->sourceModule,
                 'source_event_id' => $request->sourceEventId,
                 'status' => JournalStatus::Posted->value,
@@ -82,6 +84,7 @@ class JournalEngine
                 'reference' => $request->reference,
                 'description' => $request->description,
                 'source' => 'manual',
+                'journal_type' => JournalType::Manual->value,
                 'status' => JournalStatus::Draft->value,
                 'created_by' => $makerId,
             ]);
@@ -155,6 +158,7 @@ class JournalEngine
                 'reference' => $entry->reference,
                 'description' => 'Reversal of '.$entry->uuid,
                 'source' => 'manual',
+                'journal_type' => JournalType::Reversal->value,
                 'status' => JournalStatus::Posted->value,
                 'reverses_journal_id' => $entry->id,
                 'reversal_reason' => $reason,
@@ -264,6 +268,11 @@ class JournalEngine
             }
             if (! $account->is_active) {
                 throw FinanceException::accountInactive($account->code);
+            }
+            // A control account is the GL side of a subledger and is moved ONLY
+            // by that subledger's postings (F3) — never by a manual journal.
+            if ($request->isManual() && $account->is_control) {
+                throw FinanceException::controlAccountManual($account->code);
             }
         }
     }

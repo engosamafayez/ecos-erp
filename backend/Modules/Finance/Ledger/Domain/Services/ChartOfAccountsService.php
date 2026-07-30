@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Finance\Ledger\Domain\Services;
 
+use Modules\Finance\Ledger\Domain\Enums\AccountCategory;
 use Modules\Finance\Ledger\Domain\Enums\AccountType;
+use Modules\Finance\Ledger\Domain\Exceptions\FinanceException;
 use Modules\Finance\Ledger\Domain\Models\Account;
 
 /**
@@ -22,6 +24,20 @@ class ChartOfAccountsService
         $account->account_type = $attributes['account_type'] instanceof AccountType
             ? $attributes['account_type']
             : AccountType::from((string) $attributes['account_type']);
+
+        // A category must belong to the account's type — it refines the type,
+        // it never contradicts it.
+        if (! empty($attributes['account_category'])) {
+            $category = $attributes['account_category'] instanceof AccountCategory
+                ? $attributes['account_category']
+                : AccountCategory::from((string) $attributes['account_category']);
+
+            if ($category->type() !== $account->account_type) {
+                throw new FinanceException(
+                    "Category {$category->label()} belongs to {$category->type()->label()}, not {$account->account_type->label()}."
+                );
+            }
+        }
         // A rollup (parent) account is never postable.
         if (! empty($attributes['is_control'])) {
             $account->is_postable = $attributes['is_postable'] ?? true;

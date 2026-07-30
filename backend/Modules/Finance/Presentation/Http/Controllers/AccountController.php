@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Validation\Rule;
+use Modules\Finance\Ledger\Domain\Enums\AccountCategory;
 use Modules\Finance\Ledger\Domain\Enums\AccountType;
 use Modules\Finance\Ledger\Domain\Models\Account;
 use Modules\Finance\Ledger\Domain\Services\ChartOfAccountsService;
@@ -18,7 +19,10 @@ class AccountController extends Controller
 
     public function options(): JsonResponse
     {
-        return response()->json(['account_types' => AccountType::options()]);
+        return response()->json([
+            'account_types' => AccountType::options(),
+            'account_categories' => AccountCategory::options(),
+        ]);
     }
 
     public function index(Request $request): JsonResponse
@@ -41,6 +45,7 @@ class AccountController extends Controller
             'name' => ['required', 'string', 'max:200'],
             'name_ar' => ['nullable', 'string', 'max:200'],
             'account_type' => ['required', Rule::in(AccountType::values())],
+            'account_category' => ['nullable', Rule::in(AccountCategory::values())],
             'parent_id' => ['nullable', 'integer', 'exists:finance_accounts,id'],
             'is_postable' => ['nullable', 'boolean'],
             'is_control' => ['nullable', 'boolean'],
@@ -86,6 +91,7 @@ class AccountController extends Controller
             'name' => $a->name,
             'name_ar' => $a->name_ar,
             'account_type' => $a->account_type->value,
+            'account_category' => $a->account_category?->value,
             'normal_balance' => $a->normal_balance->value,
             'statement' => $a->account_type->statement(),
             'is_postable' => $a->is_postable,

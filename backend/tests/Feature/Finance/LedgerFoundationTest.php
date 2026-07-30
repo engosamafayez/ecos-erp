@@ -174,6 +174,62 @@ class LedgerFoundationTest extends TestCase
         $this->assertSame(NormalBalance::Credit, $this->account(AccountType::Equity)->normal_balance);
     }
 
+    public function test_a_control_account_cannot_be_posted_manually(): void
+    {
+        // A control account is postable (a subledger posts to it in F3) but is
+        // barred from MANUAL journals.
+        $control = app(ChartOfAccountsService::class)->create([
+            'company_id' => (string) $this->company->id,
+            'code' => 'AR-'.$this->suffix(),
+            'name' => 'Accounts Receivable',
+            'account_type' => AccountType::Asset,
+            'is_control' => true,
+            'control_subledger' => 'ar',
+        ]);
+        $revenue = $this->account(AccountType::Revenue);
+        $company = (string) $this->company->id;
+
+        $request = new PostingRequest(
+            companyId: $company,
+            entryDate: Carbon::today(),
+            lines: [
+                PostingLine::debit((int) $control->id, 100, $company),
+                PostingLine::credit((int) $revenue->id, 100, $company),
+            ],
+            source: 'manual',
+        );
+
+        $this->expectException(FinanceException::class);
+        $this->expectExceptionMessage('control account and cannot be posted to manually');
+        app(JournalEngine::class)->post($request);
+    }
+
+    public function test_an_account_category_must_match_its_type(): void
+    {
+        $this->expectException(FinanceException::class);
+        $this->expectExceptionMessage('belongs to');
+        app(ChartOfAccountsService::class)->create([
+            'company_id' => (string) $this->company->id,
+            'code' => 'X-'.$this->suffix(),
+            'name' => 'Bad',
+            'account_type' => AccountType::Asset,
+            'account_category' => \Modules\Finance\Ledger\Domain\Enums\AccountCategory::OperatingExpense, // wrong type
+        ]);
+    }
+
+    public function test_a_manual_journal_is_typed_manual_and_a_reversal_is_typed_reversal(): void
+    {
+        $entry = app(JournalEngine::class)->submitDraft(
+            $this->balanced($this->account(AccountType::Asset), $this->account(AccountType::Revenue)),
+            makerId: 3,
+        );
+        $this->assertSame(\Modules\Finance\Ledger\Domain\Enums\JournalType::Manual, $entry->journal_type);
+
+        $posted = app(JournalEngine::class)->approveAndPost($entry, checkerId: 4);
+        $reversal = app(JournalEngine::class)->reverse($posted, 'fix');
+        $this->assertSame(\Modules\Finance\Ledger\Domain\Enums\JournalType::Reversal, $reversal->journal_type);
+    }
+
     // ═══ IMMUTABILITY ════════════════════════════════════════════════════════
 
     public function test_a_posted_line_cannot_be_updated(): void

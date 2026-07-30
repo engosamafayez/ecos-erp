@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Modules\Finance\Ledger\Domain\Enums\AccountCategory;
 use Modules\Finance\Ledger\Domain\Enums\AccountType;
 use Modules\Finance\Ledger\Domain\Enums\NormalBalance;
 
@@ -32,7 +33,7 @@ class Account extends Model
 
     protected $fillable = [
         'uuid', 'company_id', 'code', 'name', 'name_ar',
-        'account_type', 'normal_balance', 'parent_id',
+        'account_type', 'account_category', 'normal_balance', 'parent_id',
         'is_postable', 'is_control', 'control_subledger',
         'currency', 'is_active', 'created_by',
     ];
@@ -41,6 +42,7 @@ class Account extends Model
     {
         return [
             'account_type' => AccountType::class,
+            'account_category' => AccountCategory::class,
             'normal_balance' => NormalBalance::class,
             'is_postable' => 'boolean',
             'is_control' => 'boolean',

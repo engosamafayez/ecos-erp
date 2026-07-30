@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Modules\Finance\Fiscal\Domain\Models\FiscalPeriod;
 use Modules\Finance\Ledger\Domain\Enums\JournalStatus;
+use Modules\Finance\Ledger\Domain\Enums\JournalType;
 
 /**
  * A journal entry — the header of one balanced financial fact.
@@ -36,11 +37,12 @@ class JournalEntry extends Model
     protected $attributes = [
         'status' => JournalStatus::Draft->value,
         'source' => 'manual',
+        'journal_type' => JournalType::General->value,
     ];
 
     protected $fillable = [
         'uuid', 'company_id', 'fiscal_period_id', 'entry_date',
-        'reference', 'description', 'source', 'source_module', 'source_event_id',
+        'reference', 'description', 'source', 'journal_type', 'source_module', 'source_event_id',
         'status', 'reverses_journal_id', 'reversed_by_journal_id', 'reversal_reason',
         'created_by', 'approved_by', 'posted_at', 'posted_by',
     ];
@@ -49,6 +51,7 @@ class JournalEntry extends Model
     {
         return [
             'status' => JournalStatus::class,
+            'journal_type' => JournalType::class,
             'entry_date' => 'date',
             'posted_at' => 'datetime',
         ];

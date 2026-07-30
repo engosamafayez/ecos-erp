@@ -28,7 +28,13 @@ final class PostingRequest
         public readonly string $source = 'manual',
         public readonly ?string $sourceModule = null,
         public readonly ?string $sourceEventId = null,
+        public readonly string $journalType = 'general',
     ) {}
+
+    public function isManual(): bool
+    {
+        return $this->source === 'manual';
+    }
 
     public function totalDebit(): float
     {
