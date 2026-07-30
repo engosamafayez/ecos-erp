@@ -6,6 +6,18 @@ namespace Modules\Finance\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Finance\Allocation\Domain\Services\AllocationEngine;
+use Modules\Finance\Analytics\Domain\Services\FinancialDashboardService;
+use Modules\Finance\Analytics\Domain\Services\FinancialMetricsService;
+use Modules\Finance\Intelligence\Domain\Services\CashFlowIntelligenceService;
+use Modules\Finance\Intelligence\Domain\Services\CostIntelligenceService;
+use Modules\Finance\Intelligence\Domain\Services\ForecastService;
+use Modules\Finance\Intelligence\Domain\Services\ProfitabilityService;
+use Modules\Finance\Intelligence\Domain\Services\ScenarioEngine;
+use Modules\Finance\Intelligence\Domain\Services\TrendAnalysisService;
+use Modules\Finance\Intelligence\Domain\Services\VarianceAnalysisService;
+use Modules\Finance\Reporting\Domain\Services\ExecutiveReportingService;
+use Modules\Finance\Workspace\Domain\Services\CfoWorkspaceService;
+use Modules\Finance\Workspace\Domain\Services\ExecutiveWorkspaceService;
 use Modules\Finance\Budget\Domain\Services\BudgetControlEngine;
 use Modules\Finance\Budget\Domain\Services\BudgetService;
 use Modules\Finance\Closing\Domain\Services\ClosingService;
@@ -130,6 +142,22 @@ final class FinanceServiceProvider extends ServiceProvider
         $this->app->singleton(VatService::class);
         $this->app->singleton(FinancialValidationEngine::class);
         $this->app->singleton(ControlExceptionService::class);
+
+        // ── EPIC F5 · Financial Intelligence & Executive Workspace ──────────────
+        // Entirely read-driven. Every figure derives from the metrics kernel; no
+        // service here writes the ledger or any financial transaction.
+        $this->app->singleton(FinancialMetricsService::class);
+        $this->app->singleton(FinancialDashboardService::class);
+        $this->app->singleton(TrendAnalysisService::class);
+        $this->app->singleton(ForecastService::class);
+        $this->app->singleton(ProfitabilityService::class);
+        $this->app->singleton(CostIntelligenceService::class);
+        $this->app->singleton(CashFlowIntelligenceService::class);
+        $this->app->singleton(ScenarioEngine::class);
+        $this->app->singleton(VarianceAnalysisService::class);
+        $this->app->singleton(ExecutiveWorkspaceService::class);
+        $this->app->singleton(CfoWorkspaceService::class);
+        $this->app->singleton(ExecutiveReportingService::class);
     }
 
     public function boot(): void

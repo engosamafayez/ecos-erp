@@ -36,6 +36,22 @@ trait ResolvesFinanceContext
             ->id;
     }
 
+    /**
+     * Resolve a reporting window from the request, defaulting to the trailing 12
+     * months ending today. Returns [from, to] as Carbon.
+     *
+     * @return array{0: \Illuminate\Support\Carbon, 1: \Illuminate\Support\Carbon}
+     */
+    protected function financeWindow(Request $request): array
+    {
+        $to = $request->filled('to') ? \Illuminate\Support\Carbon::parse($request->string('to')) : \Illuminate\Support\Carbon::today();
+        $from = $request->filled('from')
+            ? \Illuminate\Support\Carbon::parse($request->string('from'))
+            : $to->copy()->subMonths(11)->startOfMonth();
+
+        return [$from, $to];
+    }
+
     /** Map the API line shape (account_id = uuid) to the service line shape. */
     protected function resolveLineAccounts(Request $request, array $lines, string $accountKey): array
     {

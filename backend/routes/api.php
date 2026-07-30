@@ -135,6 +135,15 @@ use Modules\Finance\Presentation\Http\Controllers\FinancialControlsController as
 use Modules\Finance\Presentation\Http\Controllers\PeriodClosingController as FinancePeriodClosingController;
 use Modules\Finance\Presentation\Http\Controllers\VatController as FinanceVatController;
 use Modules\Finance\Presentation\Http\Controllers\YearEndController as FinanceYearEndController;
+use Modules\Finance\Presentation\Http\Controllers\CashFlowController as FinanceCashFlowController;
+use Modules\Finance\Presentation\Http\Controllers\CfoWorkspaceController as FinanceCfoWorkspaceController;
+use Modules\Finance\Presentation\Http\Controllers\CostIntelligenceController as FinanceCostIntelligenceController;
+use Modules\Finance\Presentation\Http\Controllers\ExecutiveReportingController as FinanceExecutiveReportingController;
+use Modules\Finance\Presentation\Http\Controllers\ExecutiveWorkspaceController as FinanceExecutiveWorkspaceController;
+use Modules\Finance\Presentation\Http\Controllers\FinancialAnalyticsController as FinanceFinancialAnalyticsController;
+use Modules\Finance\Presentation\Http\Controllers\FinancialIntelligenceController as FinanceFinancialIntelligenceController;
+use Modules\Finance\Presentation\Http\Controllers\ProfitabilityController as FinanceProfitabilityController;
+use Modules\Finance\Presentation\Http\Controllers\ScenarioController as FinanceScenarioController;
 use Modules\Finance\Presentation\Http\Controllers\FiscalController as FinanceFiscalController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
@@ -2419,6 +2428,75 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
             Route::patch('/exceptions/{uuid}/acknowledge', [FinanceFinancialControlsController::class, 'acknowledge']);
             Route::patch('/exceptions/{uuid}/resolve', [FinanceFinancialControlsController::class, 'resolve']);
         });
+    });
+});
+
+// ── Finance OS — EPIC F5 · Financial Intelligence & Executive Workspace ───────
+// The executive intelligence platform. ENTIRELY READ-ONLY: every figure derives
+// from existing Finance data (F1-F4). No journal creation, no posting, no ledger
+// or budget update. Every route is a view authority; scenario analysis simulates
+// in memory and writes nothing.
+Route::middleware('auth:sanctum')->prefix('finance/intelligence')->group(function (): void {
+
+    // Executive & CFO workspaces.
+    Route::get('/executive-workspace', [FinanceExecutiveWorkspaceController::class, 'overview'])
+        ->middleware('permission:finance.executive.workspace.view');
+    Route::get('/cfo-workspace', [FinanceCfoWorkspaceController::class, 'overview'])
+        ->middleware('permission:finance.cfo.workspace.view');
+
+    // Financial intelligence (trends, forecasts, variance, risk).
+    Route::middleware('permission:finance.analytics.view')->group(function (): void {
+        Route::get('/trends', [FinanceFinancialIntelligenceController::class, 'trends']);
+        Route::get('/forecasts', [FinanceFinancialIntelligenceController::class, 'forecasts']);
+        Route::get('/risk', [FinanceFinancialIntelligenceController::class, 'risk']);
+        Route::get('/variance/{budgetUuid}', [FinanceFinancialIntelligenceController::class, 'variance']);
+
+        // Profitability.
+        Route::prefix('profitability')->group(function (): void {
+            Route::get('/company', [FinanceProfitabilityController::class, 'company']);
+            Route::get('/branch', [FinanceProfitabilityController::class, 'branch']);
+            Route::get('/cost-center', [FinanceProfitabilityController::class, 'costCenter']);
+            Route::get('/project', [FinanceProfitabilityController::class, 'project']);
+            Route::get('/customer', [FinanceProfitabilityController::class, 'customer']);
+            Route::get('/product', [FinanceProfitabilityController::class, 'product']);
+            Route::get('/channel', [FinanceProfitabilityController::class, 'channel']);
+        });
+
+        // Cost intelligence.
+        Route::prefix('cost')->group(function (): void {
+            Route::get('/breakdown', [FinanceCostIntelligenceController::class, 'breakdown']);
+            Route::get('/operational', [FinanceCostIntelligenceController::class, 'operational']);
+            Route::get('/trend', [FinanceCostIntelligenceController::class, 'trend']);
+        });
+
+        // Cash-flow intelligence.
+        Route::prefix('cash-flow')->group(function (): void {
+            Route::get('/current', [FinanceCashFlowController::class, 'current']);
+            Route::get('/forecast', [FinanceCashFlowController::class, 'forecast']);
+        });
+
+        // Analytics dashboards.
+        Route::prefix('dashboards')->group(function (): void {
+            Route::get('/revenue', [FinanceFinancialAnalyticsController::class, 'revenue']);
+            Route::get('/expense', [FinanceFinancialAnalyticsController::class, 'expense']);
+            Route::get('/margin', [FinanceFinancialAnalyticsController::class, 'margin']);
+            Route::get('/profit', [FinanceFinancialAnalyticsController::class, 'profit']);
+            Route::get('/budget', [FinanceFinancialAnalyticsController::class, 'budget']);
+            Route::get('/vat', [FinanceFinancialAnalyticsController::class, 'vat']);
+            Route::get('/executive-kpi', [FinanceFinancialAnalyticsController::class, 'executiveKpis']);
+        });
+    });
+
+    // Scenario analysis (read-only simulation).
+    Route::post('/scenario', [FinanceScenarioController::class, 'simulate'])
+        ->middleware('permission:finance.scenario.view');
+
+    // Executive reporting.
+    Route::prefix('reports')->middleware('permission:finance.reports.view')->group(function (): void {
+        Route::post('/generate', [FinanceExecutiveReportingController::class, 'generate']);
+        Route::post('/snapshot', [FinanceExecutiveReportingController::class, 'snapshot']);
+        Route::get('/snapshots', [FinanceExecutiveReportingController::class, 'index']);
+        Route::get('/snapshots/{uuid}', [FinanceExecutiveReportingController::class, 'show']);
     });
 });
 
