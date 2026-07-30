@@ -127,6 +127,14 @@ use Modules\Finance\Presentation\Http\Controllers\AccountRoleController as Finan
 use Modules\Finance\Presentation\Http\Controllers\PostingDeadLetterController as FinancePostingDeadLetterController;
 use Modules\Finance\Presentation\Http\Controllers\PostingIntegrationController as FinancePostingIntegrationController;
 use Modules\Finance\Presentation\Http\Controllers\PostingRuleController as FinancePostingRuleController;
+use Modules\Finance\Presentation\Http\Controllers\BudgetController as FinanceBudgetController;
+use Modules\Finance\Presentation\Http\Controllers\BudgetControlController as FinanceBudgetControlController;
+use Modules\Finance\Presentation\Http\Controllers\ClosingController as FinanceClosingController;
+use Modules\Finance\Presentation\Http\Controllers\ClosingWorkspaceController as FinanceClosingWorkspaceController;
+use Modules\Finance\Presentation\Http\Controllers\FinancialControlsController as FinanceFinancialControlsController;
+use Modules\Finance\Presentation\Http\Controllers\PeriodClosingController as FinancePeriodClosingController;
+use Modules\Finance\Presentation\Http\Controllers\VatController as FinanceVatController;
+use Modules\Finance\Presentation\Http\Controllers\YearEndController as FinanceYearEndController;
 use Modules\Finance\Presentation\Http\Controllers\FiscalController as FinanceFiscalController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
@@ -2324,6 +2332,93 @@ Route::middleware('auth:sanctum')->prefix('finance/integration')->group(function
         Route::get('/', [FinancePostingDeadLetterController::class, 'index']);
         Route::post('/{uuid}/retry', [FinancePostingDeadLetterController::class, 'retry']);
         Route::patch('/{uuid}/discard', [FinancePostingDeadLetterController::class, 'discard']);
+    });
+});
+
+// ── Finance OS — EPIC F4 · Financial Control, Closing & Budget ─────────────────
+// Enterprise financial governance layered on the ledger, never modifying it.
+// Closing orchestrates the F1 period lifecycle; budgets are read-only against
+// Finance; controls report only; VAT and year-end post exclusively through the
+// Posting Engine. Maker/checker is enforced on closing, year-end and budgets.
+Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
+
+    // Period management — soft/hard close and authorized reopen.
+    Route::prefix('periods')->group(function (): void {
+        Route::post('/{uuid}/soft-close', [FinancePeriodClosingController::class, 'softClose'])->middleware('permission:finance.period.close');
+        Route::post('/{uuid}/hard-close', [FinancePeriodClosingController::class, 'hardClose'])->middleware('permission:finance.period.close');
+        Route::post('/{uuid}/reopen', [FinancePeriodClosingController::class, 'reopen'])->middleware('permission:finance.period.reopen');
+        Route::get('/{uuid}/closure-history', [FinancePeriodClosingController::class, 'history'])->middleware('permission:finance.period.close');
+    });
+
+    // Closing runs — validate before close (maker/checker).
+    Route::prefix('closing/runs')->group(function (): void {
+        Route::post('/period/{periodUuid}', [FinanceClosingController::class, 'start'])->middleware('permission:finance.closing.manage');
+        Route::post('/{uuid}/validate', [FinanceClosingController::class, 'validateRun'])->middleware('permission:finance.closing.manage');
+        Route::get('/{uuid}', [FinanceClosingController::class, 'show'])->middleware('permission:finance.closing.manage');
+        Route::post('/{uuid}/close', [FinanceClosingController::class, 'close'])->middleware('permission:finance.closing.approve');
+    });
+
+    // Closing workspace dashboard.
+    Route::get('/closing/workspace/period/{uuid}', [FinanceClosingWorkspaceController::class, 'period'])
+        ->middleware('permission:finance.closing.workspace.view');
+
+    // Year-end closing (maker/checker).
+    Route::prefix('year-end')->group(function (): void {
+        Route::get('/{yearUuid}', [FinanceYearEndController::class, 'show'])->middleware('permission:finance.yearend.manage');
+        Route::post('/{yearUuid}/close', [FinanceYearEndController::class, 'close'])->middleware('permission:finance.yearend.manage');
+        Route::post('/{uuid}/finalize', [FinanceYearEndController::class, 'finalize'])->middleware('permission:finance.yearend.finalize');
+    });
+
+    // Budgets.
+    Route::prefix('budgets')->group(function (): void {
+        Route::middleware('permission:finance.budget.view')->group(function (): void {
+            Route::get('/', [FinanceBudgetController::class, 'index']);
+            Route::get('/{uuid}/vs-actual', [FinanceBudgetController::class, 'vsActual']);
+            Route::get('/{uuid}/alerts', [FinanceBudgetController::class, 'alerts']);
+        });
+        Route::middleware('permission:finance.budget.manage')->group(function (): void {
+            Route::post('/', [FinanceBudgetController::class, 'store']);
+            Route::post('/{uuid}/lines', [FinanceBudgetController::class, 'addLine']);
+            Route::post('/{uuid}/versions', [FinanceBudgetController::class, 'newVersion']);
+        });
+        Route::post('/{uuid}/approve', [FinanceBudgetController::class, 'approve'])->middleware('permission:finance.budget.approve');
+    });
+
+    // Budget control — availability, blocking, commitments, rules.
+    Route::prefix('budget-control')->group(function (): void {
+        Route::get('/availability', [FinanceBudgetControlController::class, 'availability'])->middleware('permission:finance.budget.view');
+        Route::post('/evaluate', [FinanceBudgetControlController::class, 'evaluate'])->middleware('permission:finance.budget.view');
+        Route::middleware('permission:finance.budget.control')->group(function (): void {
+            Route::post('/commitments', [FinanceBudgetControlController::class, 'commit']);
+            Route::patch('/commitments/{uuid}/release', [FinanceBudgetControlController::class, 'release']);
+            Route::post('/rules', [FinanceBudgetControlController::class, 'storeRule']);
+        });
+    });
+
+    // VAT operations.
+    Route::prefix('vat')->group(function (): void {
+        Route::middleware('permission:finance.vat.view')->group(function (): void {
+            Route::get('/periods', [FinanceVatController::class, 'index']);
+            Route::get('/periods/{uuid}/report', [FinanceVatController::class, 'report']);
+        });
+        Route::middleware('permission:finance.vat.manage')->group(function (): void {
+            Route::post('/periods', [FinanceVatController::class, 'store']);
+            Route::post('/periods/{uuid}/return', [FinanceVatController::class, 'generateReturn']);
+            Route::post('/periods/{uuid}/settle', [FinanceVatController::class, 'settle']);
+        });
+    });
+
+    // Financial controls (report-only) + exception register.
+    Route::prefix('controls')->group(function (): void {
+        Route::middleware('permission:finance.controls.view')->group(function (): void {
+            Route::post('/run', [FinanceFinancialControlsController::class, 'run']);
+            Route::get('/dashboard', [FinanceFinancialControlsController::class, 'dashboard']);
+            Route::get('/exceptions', [FinanceFinancialControlsController::class, 'index']);
+        });
+        Route::middleware('permission:finance.controls.resolve')->group(function (): void {
+            Route::patch('/exceptions/{uuid}/acknowledge', [FinanceFinancialControlsController::class, 'acknowledge']);
+            Route::patch('/exceptions/{uuid}/resolve', [FinanceFinancialControlsController::class, 'resolve']);
+        });
     });
 });
 

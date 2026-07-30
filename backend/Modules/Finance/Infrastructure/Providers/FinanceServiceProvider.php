@@ -6,6 +6,15 @@ namespace Modules\Finance\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Finance\Allocation\Domain\Services\AllocationEngine;
+use Modules\Finance\Budget\Domain\Services\BudgetControlEngine;
+use Modules\Finance\Budget\Domain\Services\BudgetService;
+use Modules\Finance\Closing\Domain\Services\ClosingService;
+use Modules\Finance\Closing\Domain\Services\ClosingWorkspaceService;
+use Modules\Finance\Closing\Domain\Services\CloseReadinessScorer;
+use Modules\Finance\Closing\Domain\Services\PeriodClosingService;
+use Modules\Finance\Closing\Domain\Services\YearEndClosingService;
+use Modules\Finance\Controls\Domain\Services\ControlExceptionService;
+use Modules\Finance\Controls\Domain\Services\FinancialValidationEngine;
 use Modules\Finance\Integration\Application\Bridge\EventPostingCatalog;
 use Modules\Finance\Integration\Application\Bridge\EventPostingSubscriber;
 use Modules\Finance\Integration\Application\Services\FinancialIntegrationService;
@@ -30,6 +39,7 @@ use Modules\Finance\Payables\Domain\Services\SupplierLedgerService;
 use Modules\Finance\Posting\Domain\Services\PostingCoordinator;
 use Modules\Finance\Posting\Domain\Services\PostingValidator;
 use Modules\Finance\Posting\Domain\Strategies\DirectPostingStrategy;
+use Modules\Finance\Vat\Domain\Services\VatService;
 use Modules\Finance\Receivables\Domain\Services\AccountsReceivableService;
 use Modules\Finance\Receivables\Domain\Services\ArAgingService;
 use Modules\Finance\Receivables\Domain\Services\CustomerLedgerService;
@@ -105,6 +115,21 @@ final class FinanceServiceProvider extends ServiceProvider
         $this->app->singleton(EventPostingCatalog::class);
         $this->app->singleton(EventPostingSubscriber::class);
         $this->app->singleton(FinancialIntegrationService::class);
+
+        // ── EPIC F4 · Financial Control, Closing & Budget ───────────────────────
+        // Governance over the ledger, never a change to it. Closing orchestrates
+        // F1 transitions; budgets are read-only against Finance; controls report
+        // only; VAT and year-end post exclusively through the Posting Engine.
+        $this->app->singleton(PeriodClosingService::class);
+        $this->app->singleton(CloseReadinessScorer::class);
+        $this->app->singleton(ClosingService::class);
+        $this->app->singleton(ClosingWorkspaceService::class);
+        $this->app->singleton(YearEndClosingService::class);
+        $this->app->singleton(BudgetService::class);
+        $this->app->singleton(BudgetControlEngine::class);
+        $this->app->singleton(VatService::class);
+        $this->app->singleton(FinancialValidationEngine::class);
+        $this->app->singleton(ControlExceptionService::class);
     }
 
     public function boot(): void

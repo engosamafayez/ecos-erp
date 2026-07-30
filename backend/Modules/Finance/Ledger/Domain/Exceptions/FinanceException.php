@@ -235,4 +235,56 @@ class FinanceException extends RuntimeException
     {
         return new self("Posting rule '{$ruleCode}' has no legs; it cannot shape a journal.");
     }
+
+    // ── Financial control, closing & budget — EPIC F4 ───────────────────────────
+
+    public static function hardCloseRequiresSoftClose(string $period): self
+    {
+        return new self("Period {$period} must be soft-closed before it can be hard-closed (locked).");
+    }
+
+    public static function periodAlreadyClosed(string $period): self
+    {
+        return new self("Period {$period} is already closed.");
+    }
+
+    public static function reopenNotAllowed(string $period): self
+    {
+        return new self("Period {$period} cannot be reopened — a hard-closed (locked) period is permanent.");
+    }
+
+    public static function closingBlocked(string $scope, int $failing): self
+    {
+        return new self("The {$scope} cannot be closed: {$failing} blocking check(s) have not passed. Resolve them and re-validate.");
+    }
+
+    public static function yearEndFinalized(): self
+    {
+        return new self('This year-end closing is finalized and immutable. It cannot be re-run or reversed.');
+    }
+
+    public static function nextYearMissing(): self
+    {
+        return new self('Opening balances cannot be generated: the next fiscal year does not exist. Create it before closing the year.');
+    }
+
+    public static function retainedEarningsRequired(): self
+    {
+        return new self('A retained-earnings account must be provided to close the year.');
+    }
+
+    public static function budgetNotEditable(): self
+    {
+        return new self('An approved budget is frozen. Create a new version to make changes.');
+    }
+
+    public static function budgetAlreadyApproved(string $name): self
+    {
+        return new self("Budget {$name} is already approved.");
+    }
+
+    public static function vatPeriodSettled(string $period): self
+    {
+        return new self("VAT period {$period} is already settled.");
+    }
 }
