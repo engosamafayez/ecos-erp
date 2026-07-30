@@ -218,4 +218,21 @@ class FinanceException extends RuntimeException
     {
         return new self('That statement line is already matched.');
     }
+
+    // ── Financial integration (posting engine) — EPIC F3 ────────────────────────
+
+    public static function accountRoleNotMapped(string $role, string $companyId): self
+    {
+        return new self("Posting role '{$role}' is not mapped to an account for this company. Map it in the account-role configuration before this event can post.");
+    }
+
+    public static function noPostingRule(string $eventCode): self
+    {
+        return new self("No active posting rule maps the business event '{$eventCode}'.");
+    }
+
+    public static function postingRuleHasNoLegs(string $ruleCode): self
+    {
+        return new self("Posting rule '{$ruleCode}' has no legs; it cannot shape a journal.");
+    }
 }

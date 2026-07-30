@@ -6,6 +6,17 @@ namespace Modules\Finance\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Finance\Allocation\Domain\Services\AllocationEngine;
+use Modules\Finance\Integration\Application\Bridge\EventPostingCatalog;
+use Modules\Finance\Integration\Application\Bridge\EventPostingSubscriber;
+use Modules\Finance\Integration\Application\Services\FinancialIntegrationService;
+use Modules\Finance\Integration\Domain\Services\AccountRoleResolver;
+use Modules\Finance\Integration\Domain\Services\DeadLetterService;
+use Modules\Finance\Integration\Domain\Services\FinancialEventProcessor;
+use Modules\Finance\Integration\Domain\Services\PostingAuditRecorder;
+use Modules\Finance\Integration\Domain\Services\PostingRuleRegistry;
+use Modules\Finance\Integration\Domain\Services\PostingRuleResolver;
+use Modules\Finance\Integration\Domain\Services\PostingTraceService;
+use Modules\Finance\Integration\Domain\Services\RulePostingStrategy;
 use Modules\Finance\Banking\Domain\Services\BankingService;
 use Modules\Finance\Banking\Domain\Services\BankReconciliationService;
 use Modules\Finance\Cash\Domain\Services\CashService;
@@ -79,10 +90,54 @@ final class FinanceServiceProvider extends ServiceProvider
         $this->app->singleton(CashService::class);
         $this->app->singleton(BankingService::class);
         $this->app->singleton(BankReconciliationService::class);
+
+        // ── EPIC F3 · Financial Integration ─────────────────────────────────────
+        // The rule-driven, event-sourced posting pipeline. It requests journals
+        // through the Posting Engine only — never the ledger.
+        $this->app->singleton(AccountRoleResolver::class);
+        $this->app->singleton(PostingRuleRegistry::class);
+        $this->app->singleton(PostingRuleResolver::class);
+        $this->app->singleton(RulePostingStrategy::class);
+        $this->app->singleton(PostingAuditRecorder::class);
+        $this->app->singleton(DeadLetterService::class);
+        $this->app->singleton(FinancialEventProcessor::class);
+        $this->app->singleton(PostingTraceService::class);
+        $this->app->singleton(EventPostingCatalog::class);
+        $this->app->singleton(EventPostingSubscriber::class);
+        $this->app->singleton(FinancialIntegrationService::class);
     }
 
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+
+        $this->registerIntegrationSubscribers();
+    }
+
+    /**
+     * Wire the operational event bridge onto the enterprise event bus — OFF by
+     * default so existing environments see zero behaviour change. Enabling it is
+     * a deliberate per-environment decision, made once account roles are mapped;
+     * the bus dispatches subscribers as isolated jobs, so a posting failure can
+     * never roll back an operational transaction.
+     */
+    private function registerIntegrationSubscribers(): void
+    {
+        if (! (bool) config('finance.integration.auto_subscribe', false)) {
+            return;
+        }
+
+        $busClass = \Modules\Platform\EventPlatform\Application\Services\EnterpriseEventBus::class;
+        if (! class_exists($busClass) || ! $this->app->bound($busClass)) {
+            return;
+        }
+
+        /** @var \Modules\Platform\EventPlatform\Application\Services\EnterpriseEventBus $bus */
+        $bus = $this->app->make($busClass);
+        $catalog = $this->app->make(EventPostingCatalog::class);
+
+        foreach ($catalog->knownEventNames() as $eventName) {
+            $bus->subscribe($eventName, EventPostingSubscriber::class, priority: 200, queue: 'finance-posting');
+        }
     }
 }

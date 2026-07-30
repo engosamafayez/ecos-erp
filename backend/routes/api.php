@@ -123,6 +123,10 @@ use Modules\Finance\Presentation\Http\Controllers\CostCenterController as Financ
 use Modules\Finance\Presentation\Http\Controllers\CustomerInvoiceController as FinanceCustomerInvoiceController;
 use Modules\Finance\Presentation\Http\Controllers\CustomerLedgerController as FinanceCustomerLedgerController;
 use Modules\Finance\Presentation\Http\Controllers\CustomerReceiptController as FinanceCustomerReceiptController;
+use Modules\Finance\Presentation\Http\Controllers\AccountRoleController as FinanceAccountRoleController;
+use Modules\Finance\Presentation\Http\Controllers\PostingDeadLetterController as FinancePostingDeadLetterController;
+use Modules\Finance\Presentation\Http\Controllers\PostingIntegrationController as FinancePostingIntegrationController;
+use Modules\Finance\Presentation\Http\Controllers\PostingRuleController as FinancePostingRuleController;
 use Modules\Finance\Presentation\Http\Controllers\FiscalController as FinanceFiscalController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
@@ -2278,6 +2282,48 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
             Route::get('/reconciliations/{reconUuid}/outstanding', [FinanceBankController::class, 'outstanding']);
             Route::patch('/reconciliations/{reconUuid}/complete', [FinanceBankController::class, 'complete']);
         });
+    });
+});
+
+// ── Finance OS — EPIC F3 · Enterprise Financial Integration ───────────────────
+// The rule-driven posting pipeline that connects operations to the ledger. Every
+// posting is business event → posting rule → journal → ledger, exactly once. No
+// operational module writes the GL; no account is hardcoded (roles map to a
+// company's accounts). This surface configures rules and role mappings, previews
+// postings, reads the audit/trace, and administers the dead-letter queue.
+Route::middleware('auth:sanctum')->prefix('finance/integration')->group(function (): void {
+
+    // Posting rules — configuration.
+    Route::prefix('rules')->middleware('permission:finance.posting.rule.manage')->group(function (): void {
+        Route::get('/', [FinancePostingRuleController::class, 'index']);
+        Route::get('/{uuid}', [FinancePostingRuleController::class, 'show']);
+        Route::post('/', [FinancePostingRuleController::class, 'store']);
+        Route::patch('/{uuid}/active', [FinancePostingRuleController::class, 'setActive']);
+    });
+
+    // Account-role mapping — the no-hardcoding bridge.
+    Route::prefix('account-roles')->middleware('permission:finance.integration.map')->group(function (): void {
+        Route::get('/', [FinanceAccountRoleController::class, 'index']);
+        Route::post('/', [FinanceAccountRoleController::class, 'store']);
+        Route::delete('/{role}', [FinanceAccountRoleController::class, 'destroy']);
+    });
+
+    // Posting preview — dry-run the journal for an event.
+    Route::post('/preview', [FinancePostingIntegrationController::class, 'preview'])
+        ->middleware('permission:finance.posting.preview');
+
+    // Audit & traceability.
+    Route::middleware('permission:finance.posting.audit.view')->group(function (): void {
+        Route::get('/audit', [FinancePostingIntegrationController::class, 'audit']);
+        Route::get('/trace/entity', [FinancePostingIntegrationController::class, 'traceEntity']);
+        Route::get('/trace/journal/{journalUuid}', [FinancePostingIntegrationController::class, 'traceJournal']);
+    });
+
+    // Dead-letter queue — inspect and replay failed postings.
+    Route::prefix('dead-letters')->middleware('permission:finance.posting.deadletter.manage')->group(function (): void {
+        Route::get('/', [FinancePostingDeadLetterController::class, 'index']);
+        Route::post('/{uuid}/retry', [FinancePostingDeadLetterController::class, 'retry']);
+        Route::patch('/{uuid}/discard', [FinancePostingDeadLetterController::class, 'discard']);
     });
 });
 
