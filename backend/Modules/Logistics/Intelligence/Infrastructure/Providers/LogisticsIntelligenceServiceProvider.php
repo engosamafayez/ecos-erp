@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Logistics\Intelligence\Domain\Services\ConflictRecommendationEngine;
 use Modules\Logistics\Intelligence\Domain\Services\DecisionEngine;
 use Modules\Logistics\Intelligence\Domain\Services\DecisionPriorityEngine;
+use Modules\Logistics\Intelligence\Domain\Services\EnterpriseDashboardService;
 use Modules\Logistics\Intelligence\Domain\Services\ForecastService;
 use Modules\Logistics\Intelligence\Domain\Services\InsightService;
 use Modules\Logistics\Intelligence\Domain\Services\OptimizationService;
@@ -37,5 +38,8 @@ final class LogisticsIntelligenceServiceProvider extends ServiceProvider
         $this->app->singleton(OptimizationService::class);
         $this->app->singleton(ForecastService::class);
         $this->app->singleton(InsightService::class);
+
+        // Completion — the aggregated Enterprise Workspace dashboards.
+        $this->app->singleton(EnterpriseDashboardService::class);
     }
 }

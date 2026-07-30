@@ -113,6 +113,7 @@ use Modules\Logistics\Intelligence\Presentation\Http\Controllers\DecisionControl
 use Modules\Logistics\Intelligence\Presentation\Http\Controllers\ForecastController;
 use Modules\Logistics\Intelligence\Presentation\Http\Controllers\InsightController;
 use Modules\Logistics\Intelligence\Presentation\Http\Controllers\OptimizationController;
+use Modules\Logistics\Intelligence\Presentation\Http\Controllers\EnterpriseDashboardController;
 use Modules\Logistics\Automation\Presentation\Http\Controllers\AutomationController;
 use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FuelController as FleetFuelController;
@@ -2041,6 +2042,12 @@ Route::middleware('auth:sanctum')->prefix('logistics/intelligence')
             Route::get('/bottlenecks', [InsightController::class, 'bottlenecks']);
             Route::get('/warnings', [InsightController::class, 'warnings']);
             Route::get('/', [InsightController::class, 'insights']);
+        });
+
+        // Enterprise Workspace — aggregated dashboards (one read each).
+        Route::prefix('dashboard')->group(function (): void {
+            Route::get('/executive', [EnterpriseDashboardController::class, 'executive']);
+            Route::get('/operations', [EnterpriseDashboardController::class, 'operations']);
         });
     });
 

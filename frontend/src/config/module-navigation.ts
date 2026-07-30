@@ -48,13 +48,10 @@ import {
   SearchCheck,
   GitBranch,
   Wifi,
-  Zap,
   ShieldCheck,
   ListChecks,
   BarChart2,
-  Bell,
   Bot,
-  History,
   Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -194,6 +191,7 @@ export const APP_MODULES: AppModule[] = [
       { key: 'logistics-ops-alerts',         label: 'Alert Center',          path: ROUTES.logisticsOpsAlerts,            icon: Bell         },
       { key: 'logistics-ops-activity',       label: 'Activity & Audit',      path: ROUTES.logisticsOpsActivity,          icon: History      },
       { key: 'logistics-ops-readiness',      label: 'Enterprise Readiness',  path: ROUTES.logisticsOpsReadiness,         icon: ShieldCheck  },
+      { key: 'logistics-enterprise',         label: 'Enterprise Workspace',  path: ROUTES.logisticsEnterprise,           icon: LayoutDashboard },
       { key: 'geo-section',                  label: 'Geography',             isSection: true },
       { key: 'egypt-geography',              label: 'Egypt Geography',       path: ROUTES.logisticsGeography,            icon: Map          },
       { key: 'dist-section',                 label: 'Distribution',          isSection: true },
