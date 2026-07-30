@@ -103,9 +103,12 @@ use Modules\Logistics\Network\Presentation\Http\Controllers\NetworkController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ActivityController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\CapacityOperationsController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\DashboardController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\DiagnosticsController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ExceptionController as OperationsExceptionController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\OperationalHealthController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\ReadinessController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ResourcePoolController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\SummaryController;
 use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FuelController as FleetFuelController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\InspectionController as FleetInspectionController;
@@ -1952,6 +1955,46 @@ Route::middleware('auth:sanctum')->prefix('logistics/operations')->group(functio
             ->middleware('permission:operations.audit.view');
     });
 });
+
+// ── Logistics V2 — Enterprise readiness & completion (Phase 6) ────────────────
+// ADDITIVE and READ-ONLY. No table, no writer, no permission, no migration:
+// every endpoint interprets or digests projections Phases 1-5 already own.
+// Readiness never calculates Fleet readiness or Network capacity itself.
+Route::middleware('auth:sanctum')->prefix('logistics/operations')
+    ->middleware('permission:operations.view')
+    ->group(function (): void {
+
+        // A + B. Operational readiness and cross-module validation.
+        Route::prefix('readiness')->group(function (): void {
+            Route::get('/', [ReadinessController::class, 'dashboard']);
+            Route::get('/health-score', [ReadinessController::class, 'healthScore']);
+            Route::get('/modules', [ReadinessController::class, 'modules']);
+            Route::get('/checklist', [ReadinessController::class, 'checklist']);
+            Route::get('/validate', [ReadinessController::class, 'validateAll']);
+            Route::get('/validate/{module}', [ReadinessController::class, 'validateModule']);
+        });
+
+        // C. Operational diagnostics — projections only.
+        Route::prefix('diagnostics')->group(function (): void {
+            Route::get('/', [DiagnosticsController::class, 'center']);
+            Route::get('/system', [DiagnosticsController::class, 'system']);
+            Route::get('/dependencies', [DiagnosticsController::class, 'dependencies']);
+            Route::get('/queue', [DiagnosticsController::class, 'queue']);
+            Route::get('/capacity', [DiagnosticsController::class, 'capacity']);
+            Route::get('/dispatch', [DiagnosticsController::class, 'dispatch']);
+            Route::get('/exceptions', [DiagnosticsController::class, 'exceptions']);
+        });
+
+        // D. Enterprise summaries — digests over existing monitoring.
+        Route::prefix('summary')->group(function (): void {
+            Route::get('/executive', [SummaryController::class, 'executive']);
+            Route::get('/today', [SummaryController::class, 'today']);
+            Route::get('/capacity', [SummaryController::class, 'capacity']);
+            Route::get('/dispatch', [SummaryController::class, 'dispatch']);
+            Route::get('/fleet', [SummaryController::class, 'fleet']);
+            Route::get('/exceptions', [SummaryController::class, 'exceptions']);
+        });
+    });
 
 // ── Distribution OS — Planning ────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->prefix('logistics/distribution/planning')->group(function (): void {

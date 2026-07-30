@@ -83,6 +83,7 @@ import { DispatchExecutionPage } from '@/features/logistics/dispatch/pages/dispa
 import { OperationalDashboardsPage } from '@/features/logistics/operations/pages/operational-dashboards-page';
 import { AlertCenterPage } from '@/features/logistics/operations/pages/alert-center-page';
 import { ActivityCenterPage } from '@/features/logistics/operations/pages/activity-center-page';
+import { EnterpriseReadinessPage } from '@/features/logistics/operations/pages/enterprise-readiness-page';
 import { DistributionBoardPage } from '@/features/operations/distribution-board/pages/distribution-board-page';
 import { LoadingDashboardPage } from '@/features/operations/distribution-board/pages/loading-dashboard-page';
 import { LoadingWorkspacePage } from '@/features/operations/distribution-board/pages/loading-workspace-page';
@@ -278,6 +279,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.logisticsOpsDashboards,        Component: OperationalDashboardsPage },
             { path: ROUTES.logisticsOpsAlerts,            Component: AlertCenterPage },
             { path: ROUTES.logisticsOpsActivity,          Component: ActivityCenterPage },
+            { path: ROUTES.logisticsOpsReadiness,         Component: EnterpriseReadinessPage },
             // Marketing OS
             { path: ROUTES.marketing,               Component: MarketingDashboardPage },
             { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },

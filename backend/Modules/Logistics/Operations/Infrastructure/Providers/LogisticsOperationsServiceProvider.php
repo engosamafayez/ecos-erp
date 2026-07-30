@@ -14,11 +14,15 @@ use Modules\Logistics\Operations\Domain\Services\ExceptionQueryService;
 use Modules\Logistics\Operations\Domain\Services\ExceptionRegistryService;
 use Modules\Logistics\Operations\Domain\Services\ExceptionResolutionService;
 use Modules\Logistics\Operations\Domain\Services\ActivityTimelineService;
+use Modules\Logistics\Operations\Domain\Services\CrossModuleValidationService;
+use Modules\Logistics\Operations\Domain\Services\DiagnosticsService;
+use Modules\Logistics\Operations\Domain\Services\EnterpriseSummaryService;
 use Modules\Logistics\Operations\Domain\Services\OperationalAlertService;
 use Modules\Logistics\Operations\Domain\Services\OperationalDashboardService;
 use Modules\Logistics\Operations\Domain\Services\OperationalHealthService;
 use Modules\Logistics\Operations\Domain\Services\OperationalHistoryService;
 use Modules\Logistics\Operations\Domain\Services\PoolHealthService;
+use Modules\Logistics\Operations\Domain\Services\ReadinessValidationService;
 use Modules\Logistics\Operations\Domain\Services\ReservationAuditService;
 use Modules\Logistics\Operations\Domain\Services\ResourcePoolManagementService;
 use Modules\Logistics\Operations\Domain\Services\UnifiedResourcePoolService;
@@ -68,6 +72,14 @@ final class LogisticsOperationsServiceProvider extends ServiceProvider
         $this->app->singleton(OperationalDashboardService::class);
         $this->app->singleton(ActivityTimelineService::class);
         $this->app->singleton(OperationalHistoryService::class);
+
+        // Phase 6 — enterprise readiness, validation, diagnostics and summaries.
+        // Pure read-model: each interprets or digests the services above and
+        // computes no readiness or capacity of its own.
+        $this->app->singleton(CrossModuleValidationService::class);
+        $this->app->singleton(ReadinessValidationService::class);
+        $this->app->singleton(DiagnosticsService::class);
+        $this->app->singleton(EnterpriseSummaryService::class);
     }
 
     public function boot(): void
