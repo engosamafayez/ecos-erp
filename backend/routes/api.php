@@ -100,7 +100,9 @@ use Modules\Logistics\Dispatch\Presentation\Http\Controllers\DispatchController;
 use Modules\Logistics\Dispatch\Presentation\Http\Controllers\DispatchOperationsController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FleetUnitController;
 use Modules\Logistics\Network\Presentation\Http\Controllers\NetworkController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\ActivityController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\CapacityOperationsController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\DashboardController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ExceptionController as OperationsExceptionController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\OperationalHealthController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ResourcePoolController;
@@ -1914,6 +1916,40 @@ Route::middleware('auth:sanctum')->prefix('logistics/operations')->group(functio
 
         Route::post('/alerts/rules', [OperationsExceptionController::class, 'storeAlertRule'])
             ->middleware('permission:operations.alert.manage');
+    });
+});
+
+// ── Logistics V2 — Operational surfaces (Phase 5) ─────────────────────────────
+// ADDITIVE and READ-ONLY. No table, no writer, no permission is created here:
+// every endpoint aggregates or unions state Phases 1-4 already own.
+//
+// Dashboards assemble Fleet/Drivers (via Dispatch's ResourcePool), Network's
+// ledger and Phase 3's monitoring. Activity unions the append-only tables those
+// modules keep. Nothing is recomputed; nothing is stored.
+Route::middleware('auth:sanctum')->prefix('logistics/operations')->group(function (): void {
+
+    // ── B. Operational dashboards ────────────────────────────────────────────
+    Route::prefix('dashboards')->middleware('permission:operations.view')->group(function (): void {
+        Route::get('/fleet', [DashboardController::class, 'fleet']);
+        Route::get('/drivers', [DashboardController::class, 'drivers']);
+        Route::get('/capacity', [DashboardController::class, 'capacity']);
+        Route::get('/dispatch', [DashboardController::class, 'dispatch']);
+        Route::get('/kpi', [DashboardController::class, 'kpi']);
+    });
+
+    // ── D. Activity, audit and the history views ─────────────────────────────
+    Route::prefix('activity')->group(function (): void {
+        Route::middleware('permission:operations.view')->group(function (): void {
+            Route::get('/options', [ActivityController::class, 'options']);
+            Route::get('/timeline', [ActivityController::class, 'timeline']);
+            Route::get('/history/assignments', [ActivityController::class, 'assignments']);
+            Route::get('/history/sessions', [ActivityController::class, 'sessions']);
+            Route::get('/history/capacity', [ActivityController::class, 'capacity']);
+        });
+
+        // The audit explorer is who-did-what-and-why; it takes the audit view.
+        Route::get('/audit', [ActivityController::class, 'audit'])
+            ->middleware('permission:operations.audit.view');
     });
 });
 

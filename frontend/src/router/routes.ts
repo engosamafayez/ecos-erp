@@ -117,6 +117,10 @@ export const ROUTES = {
   logisticsNetwork:              '/logistics/network',
   logisticsDispatch:             '/logistics/dispatch',
   logisticsOperations:           '/logistics/operations',
+  logisticsDispatchExecution:    '/logistics/dispatch/execution',
+  logisticsOpsDashboards:        '/logistics/operations/dashboards',
+  logisticsOpsAlerts:            '/logistics/operations/alerts',
+  logisticsOpsActivity:          '/logistics/operations/activity',
   // Marketing OS
   marketing:              '/marketing',
   marketingAssets:        '/marketing/assets',

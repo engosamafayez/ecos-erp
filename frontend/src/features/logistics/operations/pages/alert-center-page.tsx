@@ -1,0 +1,266 @@
+import { useMemo, useState } from 'react';
+import { BellRing, Check, Repeat2 } from 'lucide-react';
+
+import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
+import { WorkspacePage } from '@/components/page/layout/workspace-page';
+import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
+import { useToast } from '@/components/ds/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+import {
+  useAcknowledgeException,
+  useAlerts,
+  useAlertSummary,
+  useExceptions,
+} from '../hooks/use-operations';
+import type { ExceptionSeverity, ExceptionStatus, OperationalAlert } from '../types/operations';
+import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from '../components/operations-badges';
+import { ExceptionDrawer } from '../components/exception-drawer';
+
+const SEVERITY_FILTERS: Array<{ key: ExceptionSeverity | 'all'; label: string }> = [
+  { key: 'all', label: 'All' },
+  { key: 'critical', label: 'Critical' },
+  { key: 'warning', label: 'Warning' },
+  { key: 'info', label: 'Info' },
+];
+
+/**
+ * Live alerts, prioritised loudest-first by the server.
+ *
+ * An alert IS an exception a Phase 4 rule matched — there is no second engine
+ * and no second table here. Acknowledging routes straight to the Phase 4
+ * exception, and resolving it makes the alert disappear on its own.
+ */
+function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
+  const { toast } = useToast();
+  const [severity, setSeverity] = useState<ExceptionSeverity | 'all'>('all');
+  const { data: alerts, isLoading } = useAlerts();
+  const acknowledge = useAcknowledgeException();
+
+  const rows = useMemo(() => {
+    const all = alerts ?? [];
+    return severity === 'all' ? all : all.filter((a) => a.severity === severity);
+  }, [alerts, severity]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {SEVERITY_FILTERS.map((f) => (
+          <Button
+            key={f.key}
+            size="sm"
+            variant={severity === f.key ? 'secondary' : 'ghost'}
+            className="h-8 text-xs"
+            onClick={() => setSeverity(f.key)}
+          >
+            {f.label}
+          </Button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <Skeleton className="h-64 w-full" />
+      ) : rows.length === 0 ? (
+        <div className="rounded-lg border bg-card py-16 text-center">
+          <BellRing className="mx-auto mb-3 size-10 text-muted-foreground/20" />
+          <p className="text-sm font-medium">No live alerts</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Quiet is what a healthy operation looks like.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-lg border bg-card">
+          <ul className="divide-y">
+            {rows.map((alert: OperationalAlert) => (
+              <li key={alert.exception_id} className="flex items-start gap-2 p-3">
+                <SeverityIcon severity={alert.severity} />
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 text-left"
+                  onClick={() => onOpen(alert.exception_id)}
+                >
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-sm font-medium">{alert.title}</span>
+                    <SourceBadge source={alert.source} label={alert.source} />
+                    {alert.rule && (
+                      <Badge variant="outline" className="text-[10px]">
+                        {alert.rule}
+                      </Badge>
+                    )}
+                    {alert.occurrence_count > 1 && (
+                      <Badge variant="outline" className="gap-1 text-[10px]">
+                        <Repeat2 className="size-2.5" />
+                        {alert.occurrence_count}×
+                      </Badge>
+                    )}
+                    {alert.is_overdue && (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Overdue
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    open {alert.age_minutes} min
+                    {alert.unacknowledged_minutes !== null
+                      ? ` · unlooked-at ${alert.unacknowledged_minutes} min`
+                      : ' · acknowledged'}
+                    {alert.escalation_level > 0 ? ` · level ${alert.escalation_level}` : ''}
+                  </p>
+                </button>
+                {alert.unacknowledged_minutes !== null && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 shrink-0 text-xs"
+                    disabled={acknowledge.isPending}
+                    onClick={() =>
+                      acknowledge.mutate(alert.exception_id, {
+                        onSuccess: () => toast({ title: 'Acknowledged.' }),
+                        onError: () =>
+                          toast({ title: 'That could not be acknowledged.', variant: 'destructive' }),
+                      })
+                    }
+                  >
+                    <Check className="mr-1 size-3.5" />
+                    Ack
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const HISTORY_STATUSES: Array<{ key: ExceptionStatus; label: string }> = [
+  { key: 'resolved', label: 'Resolved' },
+  { key: 'auto_resolved', label: 'Cleared on its own' },
+  { key: 'suppressed', label: 'Suppressed' },
+];
+
+function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {
+  const [status, setStatus] = useState<ExceptionStatus>('resolved');
+  const { data, isLoading } = useExceptions({ status });
+
+  const rows = data?.data ?? [];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {HISTORY_STATUSES.map((s) => (
+          <Button
+            key={s.key}
+            size="sm"
+            variant={status === s.key ? 'secondary' : 'ghost'}
+            className="h-8 text-xs"
+            onClick={() => setStatus(s.key)}
+          >
+            {s.label}
+          </Button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <Skeleton className="h-64 w-full" />
+      ) : rows.length === 0 ? (
+        <p className="py-12 text-center text-sm text-muted-foreground">Nothing in this state.</p>
+      ) : (
+        <div className="overflow-hidden rounded-lg border bg-card">
+          <ul className="divide-y">
+            {rows.map((exception) => (
+              <li key={exception.id}>
+                <button
+                  type="button"
+                  className="flex w-full items-start gap-2 p-3 text-left hover:bg-muted/40"
+                  onClick={() => onOpen(exception.id)}
+                >
+                  <SeverityIcon severity={exception.severity} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-sm font-medium">{exception.title}</span>
+                      <SourceBadge source={exception.source} label={exception.source_label} />
+                      <ExceptionStatusBadge status={exception.status} />
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {exception.resolution_reason ?? exception.resolution ?? '—'}
+                      {exception.resolved_by_name ? ` · ${exception.resolved_by_name}` : ''}
+                    </p>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Live Alert Center.
+ *
+ * Reuses the Phase 4 Exception Registry end to end — live alerts, ack, filter,
+ * prioritisation and history are all views over ops_exceptions. No second alert
+ * engine exists.
+ */
+export function AlertCenterPage() {
+  const { data: summary, refetch, isFetching } = useAlertSummary();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const open = (id: string) => {
+    setSelectedId(id);
+    setDrawerOpen(true);
+  };
+
+  const metrics = [
+    { id: 'total', icon: BellRing, label: 'Live Alerts', value: summary?.total ?? 0, isLoading: !summary },
+    { id: 'critical', icon: BellRing, label: 'Critical', value: summary?.critical ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
+    { id: 'unack', icon: BellRing, label: 'Unacknowledged', value: summary?.unacknowledged ?? 0, isLoading: !summary, colorClass: 'text-amber-600' },
+    { id: 'overdue', icon: BellRing, label: 'Overdue', value: summary?.overdue ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
+  ];
+
+  return (
+    <>
+      <WorkspaceHeader
+        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Operations' }]}
+        title="Alert Center"
+        description="Live operational alerts — the Phase 4 exception registry, prioritised"
+        metrics={metrics}
+      />
+
+      <WorkspacePage
+        toolbar={
+          <div className="px-4 sm:px-6">
+            <SmartToolbar onRefresh={() => refetch()} isFetching={isFetching} />
+          </div>
+        }
+      >
+        <div className="px-4 pb-6 sm:px-6">
+          <Tabs defaultValue="live" className="w-full">
+            <TabsList>
+              <TabsTrigger value="live">
+                Live{summary && summary.total > 0 ? ` (${summary.total})` : ''}
+              </TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="live" className="pt-4">
+              <LiveTab onOpen={open} />
+            </TabsContent>
+            <TabsContent value="history" className="pt-4">
+              <HistoryTab onOpen={open} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </WorkspacePage>
+
+      <ExceptionDrawer exceptionId={selectedId} open={drawerOpen} onOpenChange={setDrawerOpen} />
+    </>
+  );
+}

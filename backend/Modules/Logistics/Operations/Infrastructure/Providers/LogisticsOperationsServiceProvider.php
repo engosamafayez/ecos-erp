@@ -13,8 +13,11 @@ use Modules\Logistics\Operations\Domain\Services\ExceptionEscalationService;
 use Modules\Logistics\Operations\Domain\Services\ExceptionQueryService;
 use Modules\Logistics\Operations\Domain\Services\ExceptionRegistryService;
 use Modules\Logistics\Operations\Domain\Services\ExceptionResolutionService;
+use Modules\Logistics\Operations\Domain\Services\ActivityTimelineService;
 use Modules\Logistics\Operations\Domain\Services\OperationalAlertService;
+use Modules\Logistics\Operations\Domain\Services\OperationalDashboardService;
 use Modules\Logistics\Operations\Domain\Services\OperationalHealthService;
+use Modules\Logistics\Operations\Domain\Services\OperationalHistoryService;
 use Modules\Logistics\Operations\Domain\Services\PoolHealthService;
 use Modules\Logistics\Operations\Domain\Services\ReservationAuditService;
 use Modules\Logistics\Operations\Domain\Services\ResourcePoolManagementService;
@@ -59,6 +62,12 @@ final class LogisticsOperationsServiceProvider extends ServiceProvider
 
         // C — Health. Pure roll-up over the four above plus Dispatch.
         $this->app->singleton(OperationalHealthService::class);
+
+        // Phase 5 — read-only surfaces. No new tables, no new writers: every
+        // one of these aggregates or unions state the modules above already own.
+        $this->app->singleton(OperationalDashboardService::class);
+        $this->app->singleton(ActivityTimelineService::class);
+        $this->app->singleton(OperationalHistoryService::class);
     }
 
     public function boot(): void

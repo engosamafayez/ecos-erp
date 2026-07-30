@@ -79,6 +79,10 @@ import { FleetDashboardPage } from '@/features/logistics/fleet/pages/fleet-dashb
 import { ServiceAreasPage } from '@/features/logistics/network/pages/service-areas-page';
 import { DispatchCommandCenterPage } from '@/features/logistics/dispatch/pages/dispatch-command-center-page';
 import { OperationsCenterPage } from '@/features/logistics/operations/pages/operations-center-page';
+import { DispatchExecutionPage } from '@/features/logistics/dispatch/pages/dispatch-execution-page';
+import { OperationalDashboardsPage } from '@/features/logistics/operations/pages/operational-dashboards-page';
+import { AlertCenterPage } from '@/features/logistics/operations/pages/alert-center-page';
+import { ActivityCenterPage } from '@/features/logistics/operations/pages/activity-center-page';
 import { DistributionBoardPage } from '@/features/operations/distribution-board/pages/distribution-board-page';
 import { LoadingDashboardPage } from '@/features/operations/distribution-board/pages/loading-dashboard-page';
 import { LoadingWorkspacePage } from '@/features/operations/distribution-board/pages/loading-workspace-page';
@@ -270,6 +274,10 @@ export const router = createBrowserRouter(
             { path: ROUTES.logisticsNetwork,              Component: ServiceAreasPage },
             { path: ROUTES.logisticsDispatch,             Component: DispatchCommandCenterPage },
             { path: ROUTES.logisticsOperations,           Component: OperationsCenterPage },
+            { path: ROUTES.logisticsDispatchExecution,    Component: DispatchExecutionPage },
+            { path: ROUTES.logisticsOpsDashboards,        Component: OperationalDashboardsPage },
+            { path: ROUTES.logisticsOpsAlerts,            Component: AlertCenterPage },
+            { path: ROUTES.logisticsOpsActivity,          Component: ActivityCenterPage },
             // Marketing OS
             { path: ROUTES.marketing,               Component: MarketingDashboardPage },
             { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },
