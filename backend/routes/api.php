@@ -116,9 +116,18 @@ use Modules\Logistics\Intelligence\Presentation\Http\Controllers\OptimizationCon
 use Modules\Logistics\Intelligence\Presentation\Http\Controllers\EnterpriseDashboardController;
 use Modules\Logistics\Automation\Presentation\Http\Controllers\AutomationController;
 use Modules\Finance\Presentation\Http\Controllers\AccountController as FinanceAccountController;
+use Modules\Finance\Presentation\Http\Controllers\BankController as FinanceBankController;
+use Modules\Finance\Presentation\Http\Controllers\CashController as FinanceCashController;
+use Modules\Finance\Presentation\Http\Controllers\ControlReconciliationController as FinanceControlReconciliationController;
 use Modules\Finance\Presentation\Http\Controllers\CostCenterController as FinanceCostCenterController;
+use Modules\Finance\Presentation\Http\Controllers\CustomerInvoiceController as FinanceCustomerInvoiceController;
+use Modules\Finance\Presentation\Http\Controllers\CustomerLedgerController as FinanceCustomerLedgerController;
+use Modules\Finance\Presentation\Http\Controllers\CustomerReceiptController as FinanceCustomerReceiptController;
 use Modules\Finance\Presentation\Http\Controllers\FiscalController as FinanceFiscalController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
+use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
+use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
+use Modules\Finance\Presentation\Http\Controllers\SupplierPaymentController as FinanceSupplierPaymentController;
 use Modules\Finance\Presentation\Http\Controllers\TaxController as FinanceTaxController;
 use Modules\Finance\Presentation\Http\Controllers\TrialBalanceController as FinanceTrialBalanceController;
 use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
@@ -2141,6 +2150,135 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
     // Trial Balance — read model.
     Route::get('/trial-balance', [FinanceTrialBalanceController::class, 'show'])
         ->middleware('permission:finance.trialbalance.view');
+});
+
+// ── Finance OS — EPIC F2 · Subledgers (AR / AP / Cash / Banking) ──────────────
+// Operational subledgers that feed and reconcile with the GL. They NEVER write
+// the ledger: every posting passes through the Posting Engine. Permissions are
+// segregated per subledger; money-out (supplier payments) carries an approval
+// authority distinct from create.
+Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
+
+    // ── Accounts Receivable ────────────────────────────────────────────────────
+    Route::prefix('ar')->group(function (): void {
+        // Customer documents.
+        Route::prefix('invoices')->group(function (): void {
+            Route::middleware('permission:finance.ar.view')->group(function (): void {
+                Route::get('/', [FinanceCustomerInvoiceController::class, 'index']);
+                Route::get('/{uuid}', [FinanceCustomerInvoiceController::class, 'show']);
+            });
+            Route::post('/', [FinanceCustomerInvoiceController::class, 'store'])
+                ->middleware('permission:finance.ar.invoice.create');
+            Route::patch('/{uuid}/post', [FinanceCustomerInvoiceController::class, 'post'])
+                ->middleware('permission:finance.ar.invoice.post');
+        });
+
+        // Customer receipts, allocation and write-off.
+        Route::prefix('receipts')->group(function (): void {
+            Route::get('/', [FinanceCustomerReceiptController::class, 'index'])
+                ->middleware('permission:finance.ar.view');
+            Route::post('/', [FinanceCustomerReceiptController::class, 'store'])
+                ->middleware('permission:finance.ar.receipt.create');
+            Route::patch('/{uuid}/post', [FinanceCustomerReceiptController::class, 'post'])
+                ->middleware('permission:finance.ar.receipt.create');
+            Route::post('/{uuid}/allocate', [FinanceCustomerReceiptController::class, 'allocate'])
+                ->middleware('permission:finance.allocation.manage');
+            Route::post('/{uuid}/auto-allocate', [FinanceCustomerReceiptController::class, 'autoAllocate'])
+                ->middleware('permission:finance.allocation.manage');
+        });
+        Route::post('/write-off', [FinanceCustomerReceiptController::class, 'writeOff'])
+            ->middleware('permission:finance.ar.writeoff');
+
+        // Customer ledger read models.
+        Route::middleware('permission:finance.ar.view')->group(function (): void {
+            Route::get('/aging', [FinanceCustomerLedgerController::class, 'aging']);
+            Route::get('/customers/{customerId}/ledger', [FinanceCustomerLedgerController::class, 'history']);
+            Route::get('/customers/{customerId}/statement', [FinanceCustomerLedgerController::class, 'statement']);
+            Route::get('/customers/{customerId}/balance', [FinanceCustomerLedgerController::class, 'balance']);
+        });
+    });
+
+    // ── Accounts Payable ───────────────────────────────────────────────────────
+    Route::prefix('ap')->group(function (): void {
+        Route::prefix('bills')->group(function (): void {
+            Route::middleware('permission:finance.ap.view')->group(function (): void {
+                Route::get('/', [FinanceSupplierBillController::class, 'index']);
+                Route::get('/{uuid}', [FinanceSupplierBillController::class, 'show']);
+            });
+            Route::post('/', [FinanceSupplierBillController::class, 'store'])
+                ->middleware('permission:finance.ap.bill.create');
+            Route::patch('/{uuid}/post', [FinanceSupplierBillController::class, 'post'])
+                ->middleware('permission:finance.ap.bill.post');
+        });
+
+        Route::prefix('payments')->group(function (): void {
+            Route::get('/', [FinanceSupplierPaymentController::class, 'index'])
+                ->middleware('permission:finance.ap.view');
+            Route::post('/', [FinanceSupplierPaymentController::class, 'store'])
+                ->middleware('permission:finance.ap.payment.create');
+            // SEGREGATION OF DUTIES: approve is a DISTINCT authority from create.
+            Route::patch('/{uuid}/approve', [FinanceSupplierPaymentController::class, 'approve'])
+                ->middleware('permission:finance.ap.payment.approve');
+            Route::patch('/{uuid}/post', [FinanceSupplierPaymentController::class, 'post'])
+                ->middleware('permission:finance.ap.payment.approve');
+            Route::post('/{uuid}/allocate', [FinanceSupplierPaymentController::class, 'allocate'])
+                ->middleware('permission:finance.allocation.manage');
+            Route::post('/{uuid}/auto-allocate', [FinanceSupplierPaymentController::class, 'autoAllocate'])
+                ->middleware('permission:finance.allocation.manage');
+        });
+
+        Route::middleware('permission:finance.ap.view')->group(function (): void {
+            Route::get('/aging', [FinanceSupplierLedgerController::class, 'aging']);
+            Route::get('/suppliers/{supplierId}/ledger', [FinanceSupplierLedgerController::class, 'history']);
+            Route::get('/suppliers/{supplierId}/statement', [FinanceSupplierLedgerController::class, 'statement']);
+            Route::get('/suppliers/{supplierId}/balance', [FinanceSupplierLedgerController::class, 'balance']);
+        });
+    });
+
+    // ── Control-account reconciliation (subledger ↔ GL integrity proof) ─────────
+    Route::prefix('control-reconciliation')->group(function (): void {
+        Route::get('/receivable', [FinanceControlReconciliationController::class, 'receivable'])
+            ->middleware('permission:finance.ar.view');
+        Route::get('/payable', [FinanceControlReconciliationController::class, 'payable'])
+            ->middleware('permission:finance.ap.view');
+    });
+
+    // ── Cash Management ────────────────────────────────────────────────────────
+    Route::prefix('cash')->group(function (): void {
+        Route::get('/accounts', [FinanceCashController::class, 'accounts'])
+            ->middleware('permission:finance.cash.view');
+        Route::post('/accounts', [FinanceCashController::class, 'storeAccount'])
+            ->middleware('permission:finance.cash.manage');
+        Route::post('/accounts/{accountUuid}/sessions/open', [FinanceCashController::class, 'openSession'])
+            ->middleware('permission:finance.cash.session.manage');
+        Route::patch('/sessions/{sessionUuid}/close', [FinanceCashController::class, 'closeSession'])
+            ->middleware('permission:finance.cash.session.manage');
+        Route::post('/accounts/{accountUuid}/transactions', [FinanceCashController::class, 'transaction'])
+            ->middleware('permission:finance.cash.manage');
+        Route::post('/transfers', [FinanceCashController::class, 'transfer'])
+            ->middleware('permission:finance.cash.manage');
+    });
+
+    // ── Banking ────────────────────────────────────────────────────────────────
+    Route::prefix('bank')->group(function (): void {
+        Route::get('/accounts', [FinanceBankController::class, 'accounts'])
+            ->middleware('permission:finance.bank.view');
+        Route::post('/accounts', [FinanceBankController::class, 'storeAccount'])
+            ->middleware('permission:finance.bank.manage');
+        Route::post('/accounts/{accountUuid}/statements', [FinanceBankController::class, 'importStatement'])
+            ->middleware('permission:finance.bank.manage');
+        Route::post('/rules', [FinanceBankController::class, 'createRule'])
+            ->middleware('permission:finance.bank.rule.manage');
+
+        // Reconciliation workflow.
+        Route::middleware('permission:finance.bank.reconcile')->group(function (): void {
+            Route::post('/statements/{statementUuid}/reconcile', [FinanceBankController::class, 'startReconciliation']);
+            Route::post('/reconciliations/{reconUuid}/auto-match', [FinanceBankController::class, 'autoMatch']);
+            Route::post('/reconciliations/{reconUuid}/match', [FinanceBankController::class, 'manualMatch']);
+            Route::get('/reconciliations/{reconUuid}/outstanding', [FinanceBankController::class, 'outstanding']);
+            Route::patch('/reconciliations/{reconUuid}/complete', [FinanceBankController::class, 'complete']);
+        });
+    });
 });
 
 // ── Distribution OS — Planning ────────────────────────────────────────────────

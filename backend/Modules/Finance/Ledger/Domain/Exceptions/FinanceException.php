@@ -124,4 +124,98 @@ class FinanceException extends RuntimeException
     {
         return new self("No active posting rule maps the event '{$event}'.");
     }
+
+    // ── Subledgers (AR / AP / Cash / Banking) — EPIC F2 ─────────────────────────
+
+    public static function controlAccountNotConfigured(string $subledger): self
+    {
+        return new self(
+            "No {$subledger} control account is configured. Mark a chart-of-accounts node as the {$subledger} control before posting subledger documents."
+        );
+    }
+
+    public static function documentAlreadyPosted(string $kind, string $number): self
+    {
+        return new self("{$kind} {$number} is already posted. A posted document is immutable; correct it with a credit/debit note or a reversal.");
+    }
+
+    public static function documentVoided(string $kind, string $number): self
+    {
+        return new self("{$kind} {$number} is voided and cannot be posted, allocated, or amended.");
+    }
+
+    public static function documentNotPosted(string $kind, string $number): self
+    {
+        return new self("{$kind} {$number} must be posted before it can be allocated or settled.");
+    }
+
+    public static function documentHasNoLines(string $kind): self
+    {
+        return new self("A {$kind} must have at least one line before it can be posted.");
+    }
+
+    public static function documentUnbalancedTotal(string $kind): self
+    {
+        return new self("The {$kind} total does not equal the sum of its lines plus tax. Recompute before posting.");
+    }
+
+    public static function allocationExceedsSource(string $source, string $available): self
+    {
+        return new self("This allocation exceeds the unallocated balance of the {$source} ({$available} remaining).");
+    }
+
+    public static function allocationExceedsDocument(string $kind, string $outstanding): self
+    {
+        return new self("This allocation exceeds the outstanding balance of {$kind} ({$outstanding} remaining).");
+    }
+
+    public static function allocationPartyMismatch(): self
+    {
+        return new self('A receipt or payment can only be allocated to documents of the same party.');
+    }
+
+    public static function allocationMustBePositive(): self
+    {
+        return new self('An allocation amount must be greater than zero.');
+    }
+
+    public static function paymentNotApproved(string $number): self
+    {
+        return new self("Payment {$number} must be approved before it can be posted. Money leaving the business needs a second person.");
+    }
+
+    public static function paymentAlreadyApproved(string $number): self
+    {
+        return new self("Payment {$number} is already approved.");
+    }
+
+    public static function approverCannotBeMaker(): self
+    {
+        return new self('The person who created a payment may not approve it. Segregation of duties requires a second person.');
+    }
+
+    public static function cashSessionAlreadyOpen(string $account): self
+    {
+        return new self("Cash account {$account} already has an open session. Close it before opening another.");
+    }
+
+    public static function cashSessionNotOpen(): self
+    {
+        return new self('That cash session is not open.');
+    }
+
+    public static function reconciliationAlreadyCompleted(): self
+    {
+        return new self('That bank reconciliation is already completed and is immutable.');
+    }
+
+    public static function reconciliationNotBalanced(string $difference): self
+    {
+        return new self("The reconciliation cannot be completed: an unexplained difference of {$difference} remains. Match or explain every item first.");
+    }
+
+    public static function statementLineAlreadyMatched(): self
+    {
+        return new self('That statement line is already matched.');
+    }
 }
