@@ -157,6 +157,14 @@ use Modules\Crm\Service\Presentation\Http\Controllers\ResolutionLibraryControlle
 use Modules\Crm\Service\Presentation\Http\Controllers\ServiceAdminController as CrmServiceAdminController;
 use Modules\Crm\Service\Presentation\Http\Controllers\TicketController as CrmTicketController;
 use Modules\Crm\Service\Presentation\Http\Controllers\TicketNoteController as CrmTicketNoteController;
+use Modules\Crm\Sales\Presentation\Http\Controllers\LeadController as CrmLeadController;
+use Modules\Crm\Sales\Presentation\Http\Controllers\OpportunityController as CrmOpportunityController;
+use Modules\Crm\Sales\Presentation\Http\Controllers\PipelineController as CrmPipelineController;
+use Modules\Crm\Sales\Presentation\Http\Controllers\QuoteController as CrmQuoteController;
+use Modules\Crm\Sales\Presentation\Http\Controllers\SalesActivityController as CrmSalesActivityController;
+use Modules\Crm\Loyalty\Presentation\Http\Controllers\LoyaltyController as CrmLoyaltyController;
+use Modules\Crm\Loyalty\Presentation\Http\Controllers\PointsController as CrmPointsController;
+use Modules\Crm\Loyalty\Presentation\Http\Controllers\RewardController as CrmRewardController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
@@ -3129,5 +3137,86 @@ Route::middleware('auth:sanctum')->prefix('crm/knowledge-base')->group(function 
         Route::post('/', [CrmKnowledgeBaseController::class, 'store']);
         Route::patch('/{id}/publish', [CrmKnowledgeBaseController::class, 'publish']);
         Route::patch('/{id}/archive', [CrmKnowledgeBaseController::class, 'archive']);
+    });
+});
+
+// ── CRM & Customer Service OS — EPIC C4 · Sales & Loyalty ──────────────────────
+// The CRM owns the sales relationship (leads, opportunities, pipeline, quotes)
+// and the loyalty program (points, tiers, rewards, wallet). Commerce owns Orders
+// and Finance owns Payments — both referenced by opaque id only.
+Route::middleware('auth:sanctum')->prefix('crm/sales')->group(function (): void {
+
+    // Leads.
+    Route::prefix('leads')->group(function (): void {
+        Route::middleware('permission:crm.sales.view')->group(function (): void {
+            Route::get('/', [CrmLeadController::class, 'index']);
+            Route::get('/{id}', [CrmLeadController::class, 'show']);
+        });
+        Route::post('/', [CrmLeadController::class, 'store'])->middleware('permission:crm.sales.manage');
+        Route::patch('/{id}/status', [CrmLeadController::class, 'setStatus'])->middleware('permission:crm.sales.manage');
+        Route::post('/{id}/convert', [CrmLeadController::class, 'convert'])->middleware('permission:crm.sales.convert');
+    });
+
+    // Opportunities & pipeline.
+    Route::prefix('opportunities')->group(function (): void {
+        Route::middleware('permission:crm.sales.view')->group(function (): void {
+            Route::get('/', [CrmOpportunityController::class, 'index']);
+            Route::get('/forecast', [CrmOpportunityController::class, 'forecast']);
+        });
+        Route::post('/', [CrmOpportunityController::class, 'store'])->middleware('permission:crm.sales.manage');
+        Route::patch('/{id}/stage', [CrmOpportunityController::class, 'moveStage'])->middleware('permission:crm.sales.manage');
+        Route::patch('/{id}/win', [CrmOpportunityController::class, 'win'])->middleware('permission:crm.sales.convert');
+        Route::patch('/{id}/lose', [CrmOpportunityController::class, 'lose'])->middleware('permission:crm.sales.convert');
+        Route::patch('/{id}/reopen', [CrmOpportunityController::class, 'reopen'])->middleware('permission:crm.sales.convert');
+    });
+    Route::get('/pipelines', [CrmPipelineController::class, 'index'])->middleware('permission:crm.sales.view');
+    Route::post('/pipelines', [CrmPipelineController::class, 'store'])->middleware('permission:crm.sales.manage');
+
+    // Quotes.
+    Route::prefix('quotes')->group(function (): void {
+        Route::middleware('permission:crm.sales.view')->group(function (): void {
+            Route::get('/', [CrmQuoteController::class, 'index']);
+            Route::get('/{id}', [CrmQuoteController::class, 'show']);
+        });
+        Route::middleware('permission:crm.sales.manage')->group(function (): void {
+            Route::post('/', [CrmQuoteController::class, 'store']);
+            Route::patch('/{id}/send', [CrmQuoteController::class, 'send']);
+            Route::patch('/{id}/accept', [CrmQuoteController::class, 'accept']);
+            Route::patch('/{id}/reject', [CrmQuoteController::class, 'reject']);
+        });
+    });
+
+    // Sales activities, reminders & follow-ups.
+    Route::prefix('activities')->group(function (): void {
+        Route::middleware('permission:crm.sales.view')->group(function (): void {
+            Route::get('/', [CrmSalesActivityController::class, 'index']);
+            Route::get('/due', [CrmSalesActivityController::class, 'due']);
+        });
+        Route::middleware('permission:crm.sales.manage')->group(function (): void {
+            Route::post('/', [CrmSalesActivityController::class, 'store']);
+            Route::patch('/{id}/complete', [CrmSalesActivityController::class, 'complete']);
+            Route::patch('/{id}/cancel', [CrmSalesActivityController::class, 'cancel']);
+        });
+    });
+});
+
+// Loyalty.
+Route::middleware('auth:sanctum')->prefix('crm/loyalty')->group(function (): void {
+    Route::middleware('permission:crm.loyalty.view')->group(function (): void {
+        Route::get('/programs', [CrmLoyaltyController::class, 'programs']);
+        Route::get('/rewards', [CrmRewardController::class, 'index']);
+        Route::get('/accounts/{accountId}/wallet', [CrmLoyaltyController::class, 'wallet']);
+        Route::get('/accounts/{accountId}/history', [CrmLoyaltyController::class, 'history']);
+    });
+    Route::middleware('permission:crm.loyalty.manage')->group(function (): void {
+        Route::post('/programs', [CrmLoyaltyController::class, 'storeProgram']);
+        Route::post('/enroll', [CrmLoyaltyController::class, 'enroll']);
+        Route::post('/rewards', [CrmRewardController::class, 'store']);
+    });
+    Route::middleware('permission:crm.loyalty.transact')->group(function (): void {
+        Route::post('/accounts/{accountId}/earn', [CrmPointsController::class, 'earn']);
+        Route::post('/accounts/{accountId}/redeem', [CrmPointsController::class, 'redeem']);
+        Route::post('/accounts/{accountId}/adjust', [CrmPointsController::class, 'adjust']);
+        Route::post('/rewards/redeem', [CrmRewardController::class, 'redeem']);
     });
 });

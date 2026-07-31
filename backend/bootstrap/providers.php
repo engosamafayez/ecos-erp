@@ -126,6 +126,10 @@ return [
     // CRM & Customer Service OS — EPIC C3. Customer Service: tickets, SLA,
     // assignment, escalation, resolution workflow, KB (references only).
     Modules\Crm\Service\Infrastructure\Providers\ServicePlatformServiceProvider::class,
+    // CRM & Customer Service OS — EPIC C4. Sales CRM + Loyalty (orders/payments
+    // owned by Commerce/Finance, referenced only).
+    Modules\Crm\Sales\Infrastructure\Providers\SalesCrmServiceProvider::class,
+    Modules\Crm\Loyalty\Infrastructure\Providers\LoyaltyServiceProvider::class,
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
     Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
 ];
