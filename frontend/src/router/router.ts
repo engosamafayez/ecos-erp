@@ -153,6 +153,13 @@ import { MacrosPage } from '@/features/conversational-commerce/pages/macros-page
 import { RoutingRulesPage } from '@/features/conversational-commerce/pages/routing-rules-page';
 import { ChannelProvidersPage } from '@/features/conversational-commerce/pages/channel-providers-page';
 import { ConversationsDashboardPage } from '@/features/conversational-commerce/pages/conversations-dashboard-page';
+import { WorkforceDashboardPage } from '@/features/hr/pages/workforce-dashboard-page';
+import { EmployeesPage } from '@/features/hr/pages/employees-page';
+import { Employee360Page } from '@/features/hr/pages/employee-360-page';
+import { OrganizationChartPage } from '@/features/hr/pages/organization-chart-page';
+import { WorkforceStructurePage } from '@/features/hr/pages/workforce-structure-page';
+import { AttendanceWorkspacePage } from '@/features/hr/pages/attendance-workspace-page';
+import { LeaveRequestsPage } from '@/features/hr/pages/leave-requests-page';
 import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
@@ -161,7 +168,6 @@ const moduleRoutes = [
   ROUTES.sales,
   ROUTES.accounting,
   ROUTES.crm,
-  ROUTES.hr,
   ROUTES.reports,
   ROUTES.settings,
   ROUTES.users,
@@ -194,6 +200,14 @@ export const router = createBrowserRouter(
             { path: ROUTES.teams, Component: TeamsPage },
             { path: ROUTES.branches, Component: BranchesPage },
             { path: ROUTES.branchCoverage, Component: BranchCoveragePage },
+            // HR & Workforce OS — EPIC H1 + H2
+            { path: ROUTES.hr, Component: WorkforceDashboardPage },
+            { path: ROUTES.hrEmployees, Component: EmployeesPage },
+            { path: ROUTES.hrEmployee360, Component: Employee360Page },
+            { path: ROUTES.hrOrganizationChart, Component: OrganizationChartPage },
+            { path: ROUTES.hrStructure, Component: WorkforceStructurePage },
+            { path: ROUTES.hrAttendance, Component: AttendanceWorkspacePage },
+            { path: ROUTES.hrLeave, Component: LeaveRequestsPage },
             { path: ROUTES.warehouses, Component: WarehousesPage },
             { path: ROUTES.channels, Component: ChannelsPage },
             // Inventory workspace + sub-pages

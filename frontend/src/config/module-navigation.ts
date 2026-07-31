@@ -6,6 +6,7 @@ import {
   BookOpen,
   Briefcase,
   Building2,
+  CalendarDays,
   ClipboardList,
   Cpu,
   DollarSign,
@@ -74,6 +75,7 @@ export type ModuleId =
   | 'marketing'
   | 'core'
   | 'logistics'
+  | 'hr'
   | 'reports'
   | 'administration'
   | 'engineering';
@@ -313,6 +315,24 @@ export const APP_MODULES: AppModule[] = [
     icon: Truck,
     defaultPath: ROUTES.logisticsGeography,
     items: [],
+  },
+  {
+    // HR & Workforce OS — EPIC H1 + H2
+    id: 'hr',
+    label: 'HR & Workforce',
+    railLabel: 'HR',
+    icon: UsersIcon,
+    defaultPath: ROUTES.hr,
+    items: [
+      { key: 'hr-workforce',  label: 'Workforce',      path: ROUTES.hr,                   icon: Gauge         },
+      { key: 'hr-people',     label: 'People',         isSection: true                                        },
+      { key: 'hr-employees',  label: 'Employees',      path: ROUTES.hrEmployees,          icon: UsersIcon     },
+      { key: 'hr-org-chart',  label: 'Org Chart',      path: ROUTES.hrOrganizationChart,  icon: Network       },
+      { key: 'hr-structure',  label: 'Structure',      path: ROUTES.hrStructure,          icon: ListTree      },
+      { key: 'hr-time',       label: 'Time',           isSection: true                                        },
+      { key: 'hr-attendance', label: 'Attendance',     path: ROUTES.hrAttendance,         icon: ClipboardList },
+      { key: 'hr-leave',      label: 'Leave Requests', path: ROUTES.hrLeave,              icon: CalendarDays  },
+    ],
   },
   {
     id: 'reports',

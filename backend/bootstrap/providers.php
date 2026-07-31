@@ -136,6 +136,9 @@ return [
     // CRM & Customer Service OS — EPIC C6. Executive workspace (read-only,
     // derived only; owns no tables and writes nothing).
     Modules\Crm\Executive\Infrastructure\Providers\ExecutiveWorkspaceServiceProvider::class,
+    // HR & Workforce OS — EPIC H1 + H2. Employee is the workforce single source
+    // of truth; Attendance owns attendance events. Referenced, never duplicated.
+    Modules\Hr\Infrastructure\Providers\HrServiceProvider::class,
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
     Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
 ];

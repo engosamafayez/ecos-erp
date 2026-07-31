@@ -173,6 +173,15 @@ use Modules\Crm\Intelligence\Presentation\Http\Controllers\RecommendationControl
 use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutiveDashboardController as CrmExecutiveDashboardController;
 use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutivePerformanceController as CrmExecutivePerformanceController;
 use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutiveReportController as CrmExecutiveReportController;
+use Modules\Hr\Workforce\Presentation\Http\Controllers\EmployeeController as HrEmployeeController;
+use Modules\Hr\Workforce\Presentation\Http\Controllers\WorkforceStructureController as HrStructureController;
+use Modules\Hr\Workforce\Presentation\Http\Controllers\EmploymentContractController as HrContractController;
+use Modules\Hr\Workforce\Presentation\Http\Controllers\OrganizationChartController as HrOrgChartController;
+use Modules\Hr\Workforce\Presentation\Http\Controllers\EmployeeDocumentController as HrDocumentController;
+use Modules\Hr\Attendance\Presentation\Http\Controllers\AttendanceController as HrAttendanceController;
+use Modules\Hr\Attendance\Presentation\Http\Controllers\LeaveRequestController as HrLeaveController;
+use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkScheduleController as HrScheduleController;
+use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkforceAvailabilityController as HrAvailabilityController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
@@ -3285,5 +3294,120 @@ Route::middleware('auth:sanctum')->prefix('crm/executive')->group(function (): v
     });
     Route::middleware('permission:crm.executive.export')->group(function (): void {
         Route::get('/reports/export', [CrmExecutiveReportController::class, 'export']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR & Workforce OS — EPIC H1. Organization & Workforce Foundation.
+|--------------------------------------------------------------------------
+| The employee master, the structure around it, contracts and reporting lines.
+| Companies and branches are owned by the Organization module and referenced here.
+*/
+Route::middleware('auth:sanctum')->prefix('hr')->group(function (): void {
+    // Structure — departments, positions, job grades, employment types.
+    Route::middleware('permission:hr.workforce.view')->group(function (): void {
+        Route::get('/departments', [HrStructureController::class, 'departments']);
+        Route::get('/departments/tree', [HrStructureController::class, 'departmentTree']);
+        Route::get('/positions', [HrStructureController::class, 'positions']);
+        Route::get('/job-grades', [HrStructureController::class, 'jobGrades']);
+        Route::get('/employment-types', [HrStructureController::class, 'employmentTypes']);
+    });
+    Route::middleware('permission:hr.workforce.manage')->group(function (): void {
+        Route::post('/departments', [HrStructureController::class, 'storeDepartment']);
+        Route::put('/departments/{id}', [HrStructureController::class, 'updateDepartment']);
+        Route::post('/positions', [HrStructureController::class, 'storePosition']);
+        Route::put('/positions/{id}', [HrStructureController::class, 'updatePosition']);
+        Route::post('/job-grades', [HrStructureController::class, 'storeJobGrade']);
+        Route::put('/job-grades/{id}', [HrStructureController::class, 'updateJobGrade']);
+        Route::post('/employment-types', [HrStructureController::class, 'storeEmploymentType']);
+    });
+
+    // Employees — the workforce single source of truth.
+    Route::middleware('permission:hr.employees.view')->group(function (): void {
+        Route::get('/employees', [HrEmployeeController::class, 'index']);
+        Route::get('/employees/next-number', [HrEmployeeController::class, 'nextNumber']);
+        Route::get('/employees/{id}', [HrEmployeeController::class, 'show']);
+        Route::get('/employees/{id}/overview', [HrEmployeeController::class, 'overview']);
+        Route::get('/employees/{employeeId}/documents', [HrDocumentController::class, 'index']);
+        Route::get('/documents/expiring', [HrDocumentController::class, 'expiring']);
+    });
+    Route::middleware('permission:hr.employees.manage')->group(function (): void {
+        Route::post('/employees', [HrEmployeeController::class, 'store']);
+        Route::put('/employees/{id}', [HrEmployeeController::class, 'update']);
+        Route::patch('/employees/{id}/transfer', [HrEmployeeController::class, 'transfer']);
+        Route::patch('/employees/{id}/status', [HrEmployeeController::class, 'changeStatus']);
+        Route::patch('/employees/{id}/terminate', [HrEmployeeController::class, 'terminate']);
+        Route::post('/employees/{employeeId}/documents', [HrDocumentController::class, 'store']);
+        Route::delete('/employees/{employeeId}/documents/{id}', [HrDocumentController::class, 'destroy']);
+    });
+
+    // Employment contracts.
+    Route::middleware('permission:hr.contracts.view')->group(function (): void {
+        Route::get('/contracts', [HrContractController::class, 'index']);
+        Route::get('/contracts/expiring', [HrContractController::class, 'expiring']);
+    });
+    Route::middleware('permission:hr.contracts.manage')->group(function (): void {
+        Route::post('/contracts', [HrContractController::class, 'store']);
+        Route::patch('/contracts/{id}/activate', [HrContractController::class, 'activate']);
+        Route::patch('/contracts/{id}/terminate', [HrContractController::class, 'terminate']);
+        Route::patch('/contracts/{id}/expire', [HrContractController::class, 'expire']);
+    });
+
+    // Organisation chart and reporting lines.
+    Route::middleware('permission:hr.org.view')->group(function (): void {
+        Route::get('/organization-chart', [HrOrgChartController::class, 'chart']);
+        Route::get('/employees/{employeeId}/reporting-lines', [HrOrgChartController::class, 'linesFor']);
+    });
+    Route::middleware('permission:hr.org.manage')->group(function (): void {
+        Route::post('/employees/{employeeId}/reporting-lines', [HrOrgChartController::class, 'assignManager']);
+        Route::patch('/reporting-lines/{id}/end', [HrOrgChartController::class, 'endLine']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR & Workforce OS — EPIC H2. Attendance & Workforce Availability.
+|--------------------------------------------------------------------------
+| Manual registration only — no device capture of any kind. No overtime, no
+| compensatory time, no leave balances: attendance stays simple and operational.
+*/
+Route::middleware('auth:sanctum')->prefix('hr/attendance')->group(function (): void {
+    Route::middleware('permission:hr.attendance.view')->group(function (): void {
+        Route::get('/sheet', [HrAttendanceController::class, 'sheet']);
+        Route::get('/days', [HrAttendanceController::class, 'index']);
+        Route::get('/availability', [HrAvailabilityController::class, 'today']);
+        Route::get('/availability/departments', [HrAvailabilityController::class, 'byDepartment']);
+        Route::get('/availability/departments/{departmentId}/trend', [HrAvailabilityController::class, 'departmentTrend']);
+        Route::get('/calendars', [HrScheduleController::class, 'calendars']);
+        Route::get('/shifts', [HrScheduleController::class, 'shifts']);
+        Route::get('/holidays', [HrScheduleController::class, 'holidays']);
+    });
+    Route::middleware('permission:hr.attendance.register')->group(function (): void {
+        Route::post('/register', [HrAttendanceController::class, 'register']);
+        Route::post('/register-many', [HrAttendanceController::class, 'registerMany']);
+        Route::post('/calendars', [HrScheduleController::class, 'storeCalendar']);
+        Route::put('/calendars/{id}', [HrScheduleController::class, 'updateCalendar']);
+        Route::post('/shifts', [HrScheduleController::class, 'storeShift']);
+        Route::put('/shifts/{id}', [HrScheduleController::class, 'updateShift']);
+        Route::post('/employees/{employeeId}/shift', [HrScheduleController::class, 'assignShift']);
+        Route::post('/holidays', [HrScheduleController::class, 'storeHoliday']);
+        Route::put('/holidays/{id}', [HrScheduleController::class, 'updateHoliday']);
+        Route::delete('/holidays/{id}', [HrScheduleController::class, 'destroyHoliday']);
+    });
+});
+
+Route::middleware('auth:sanctum')->prefix('hr/leave')->group(function (): void {
+    Route::middleware('permission:hr.leave.view')->group(function (): void {
+        Route::get('/requests', [HrLeaveController::class, 'index']);
+        Route::get('/requests/pending', [HrLeaveController::class, 'pending']);
+    });
+    Route::middleware('permission:hr.leave.request')->group(function (): void {
+        Route::post('/requests', [HrLeaveController::class, 'store']);
+        Route::patch('/requests/{id}/cancel', [HrLeaveController::class, 'cancel']);
+    });
+    Route::middleware('permission:hr.leave.approve')->group(function (): void {
+        Route::patch('/requests/{id}/approve', [HrLeaveController::class, 'approve']);
+        Route::patch('/requests/{id}/reject', [HrLeaveController::class, 'reject']);
     });
 });

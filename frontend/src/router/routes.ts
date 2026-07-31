@@ -59,7 +59,14 @@ export const ROUTES = {
   sales: '/sales',
   accounting: '/accounting',
   crm: '/crm',
+  // HR & Workforce OS — EPIC H1 + H2
   hr: '/hr',
+  hrEmployees: '/hr/employees',
+  hrEmployee360: '/hr/employees/:employeeId',
+  hrOrganizationChart: '/hr/organization-chart',
+  hrStructure: '/hr/structure',
+  hrAttendance: '/hr/attendance',
+  hrLeave: '/hr/leave',
   reports: '/reports',
   settings: '/settings',
   // Claude Bridge
