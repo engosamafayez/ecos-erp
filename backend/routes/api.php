@@ -149,6 +149,9 @@ use Modules\Crm\Customers\Presentation\Http\Controllers\CustomerController as Cr
 use Modules\Crm\Customers\Presentation\Http\Controllers\CustomerContactController as CrmCustomerContactController;
 use Modules\Crm\Customers\Presentation\Http\Controllers\CustomerGroupController as CrmCustomerGroupController;
 use Modules\Crm\Customers\Presentation\Http\Controllers\CustomerMergeController as CrmCustomerMergeController;
+use Modules\Crm\Engagement\Presentation\Http\Controllers\ActivityController as CrmActivityController;
+use Modules\Crm\Engagement\Presentation\Http\Controllers\TaskController as CrmTaskController;
+use Modules\Crm\Engagement\Presentation\Http\Controllers\TimelineController as CrmTimelineController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
@@ -3039,5 +3042,33 @@ Route::middleware('auth:sanctum')->prefix('crm/customers')->group(function (): v
         Route::post('/{id}/notes', [CrmCustomerContactController::class, 'addNote']);
         Route::post('/{id}/documents', [CrmCustomerContactController::class, 'addDocument']);
         Route::put('/{id}/preferences', [CrmCustomerContactController::class, 'setPreference']);
+    });
+});
+
+// ── CRM & Customer Service OS — EPIC C2 · Customer Engagement ──────────────────
+// The append-only customer timeline. The CRM owns its activities & tasks and
+// READS every other interaction (conversations, orders, notes) live from the
+// existing systems — no duplicated business data. All view endpoints use
+// crm.engagement.view; logging and task management have their own authorities.
+Route::middleware('auth:sanctum')->prefix('crm/customers/{id}')->group(function (): void {
+
+    // Timeline, interaction history, omnichannel feed, journey (read-only).
+    Route::middleware('permission:crm.engagement.view')->group(function (): void {
+        Route::get('/timeline', [CrmTimelineController::class, 'timeline']);
+        Route::get('/interactions', [CrmTimelineController::class, 'interactions']);
+        Route::get('/feed', [CrmTimelineController::class, 'feed']);
+        Route::get('/journey', [CrmTimelineController::class, 'journey']);
+        Route::get('/activities', [CrmActivityController::class, 'index']);
+        Route::get('/tasks', [CrmTaskController::class, 'index']);
+    });
+
+    // Log activities (append-only).
+    Route::post('/activities', [CrmActivityController::class, 'log'])->middleware('permission:crm.engagement.log');
+
+    // Tasks / follow-ups / appointments / meetings.
+    Route::middleware('permission:crm.engagement.task.manage')->group(function (): void {
+        Route::post('/tasks', [CrmTaskController::class, 'store']);
+        Route::patch('/tasks/{taskId}/complete', [CrmTaskController::class, 'complete']);
+        Route::patch('/tasks/{taskId}/cancel', [CrmTaskController::class, 'cancel']);
     });
 });
