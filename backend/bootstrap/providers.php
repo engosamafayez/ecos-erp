@@ -133,6 +133,9 @@ return [
     // CRM & Customer Service OS — EPIC C5. Customer Intelligence (deterministic,
     // explainable; purchase facts fed by reference from Commerce/Finance).
     Modules\Crm\Intelligence\Infrastructure\Providers\CustomerIntelligenceServiceProvider::class,
+    // CRM & Customer Service OS — EPIC C6. Executive workspace (read-only,
+    // derived only; owns no tables and writes nothing).
+    Modules\Crm\Executive\Infrastructure\Providers\ExecutiveWorkspaceServiceProvider::class,
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
     Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
 ];

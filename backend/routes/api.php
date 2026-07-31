@@ -170,6 +170,9 @@ use Modules\Crm\Intelligence\Presentation\Http\Controllers\CustomerIntelligenceC
 use Modules\Crm\Intelligence\Presentation\Http\Controllers\SegmentationController as CrmSegmentationController;
 use Modules\Crm\Intelligence\Presentation\Http\Controllers\CustomerAnalyticsController as CrmAnalyticsController;
 use Modules\Crm\Intelligence\Presentation\Http\Controllers\RecommendationController as CrmRecommendationController;
+use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutiveDashboardController as CrmExecutiveDashboardController;
+use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutivePerformanceController as CrmExecutivePerformanceController;
+use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutiveReportController as CrmExecutiveReportController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
@@ -3252,5 +3255,35 @@ Route::middleware('auth:sanctum')->prefix('crm/intelligence')->group(function ()
     Route::middleware('permission:crm.intelligence.recompute')->group(function (): void {
         Route::post('/customers/{customerId}/recompute', [CrmIntelligenceController::class, 'recompute']);
         Route::post('/recompute', [CrmIntelligenceController::class, 'recomputeAll']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| CRM & Customer Service OS — EPIC C6. Executive Workspace.
+|--------------------------------------------------------------------------
+| Read-only and derived only — every route here is a GET. The workspace owns no
+| tables and performs no operational, Finance or Commerce writes.
+*/
+Route::middleware('auth:sanctum')->prefix('crm/executive')->group(function (): void {
+    Route::middleware('permission:crm.executive.view')->group(function (): void {
+        Route::get('/dashboard', [CrmExecutiveDashboardController::class, 'overview']);
+        Route::get('/kpis', [CrmExecutiveDashboardController::class, 'kpis']);
+        Route::get('/growth', [CrmExecutiveDashboardController::class, 'growth']);
+        Route::get('/retention', [CrmExecutiveDashboardController::class, 'retention']);
+        Route::get('/lifetime-value', [CrmExecutiveDashboardController::class, 'lifetimeValue']);
+        Route::get('/satisfaction', [CrmExecutiveDashboardController::class, 'satisfaction']);
+        Route::get('/performance/service', [CrmExecutivePerformanceController::class, 'service']);
+        Route::get('/performance/sales', [CrmExecutivePerformanceController::class, 'sales']);
+        Route::get('/performance/loyalty', [CrmExecutivePerformanceController::class, 'loyalty']);
+    });
+    Route::middleware('permission:crm.executive.report')->group(function (): void {
+        Route::get('/reports/monthly', [CrmExecutiveReportController::class, 'monthly']);
+        Route::get('/reports/quarterly', [CrmExecutiveReportController::class, 'quarterly']);
+        Route::get('/reports/annual', [CrmExecutiveReportController::class, 'annual']);
+        Route::get('/reports/generate', [CrmExecutiveReportController::class, 'generate']);
+    });
+    Route::middleware('permission:crm.executive.export')->group(function (): void {
+        Route::get('/reports/export', [CrmExecutiveReportController::class, 'export']);
     });
 });
