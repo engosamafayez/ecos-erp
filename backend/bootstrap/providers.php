@@ -117,6 +117,9 @@ return [
     Modules\Marketing\Intelligence\Infrastructure\Providers\MarketingIntelligenceServiceProvider::class,
     Modules\Marketing\Automation\Infrastructure\Providers\AutomationServiceProvider::class,
     Modules\CustomerEngagement\Infrastructure\Providers\CustomerEngagementServiceProvider::class,
+    // CRM & Customer Service OS — EPIC C1. Customer Foundation: the single source
+    // of truth for customer identity (enriches the existing customers master).
+    Modules\Crm\Customers\Infrastructure\Providers\CustomerFoundationServiceProvider::class,
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
     Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
 ];

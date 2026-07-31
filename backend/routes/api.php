@@ -145,6 +145,10 @@ use Modules\Finance\Presentation\Http\Controllers\FinancialIntelligenceControlle
 use Modules\Finance\Presentation\Http\Controllers\ProfitabilityController as FinanceProfitabilityController;
 use Modules\Finance\Presentation\Http\Controllers\ScenarioController as FinanceScenarioController;
 use Modules\Finance\Presentation\Http\Controllers\FiscalController as FinanceFiscalController;
+use Modules\Crm\Customers\Presentation\Http\Controllers\CustomerController as CrmCustomerController;
+use Modules\Crm\Customers\Presentation\Http\Controllers\CustomerContactController as CrmCustomerContactController;
+use Modules\Crm\Customers\Presentation\Http\Controllers\CustomerGroupController as CrmCustomerGroupController;
+use Modules\Crm\Customers\Presentation\Http\Controllers\CustomerMergeController as CrmCustomerMergeController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
@@ -2993,5 +2997,47 @@ Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'
             Route::patch('/{id}', [WorkspaceViewController::class, 'update']);
             Route::delete('/{id}', [WorkspaceViewController::class, 'destroy']);
         });
+    });
+});
+
+// ── CRM & Customer Service OS — EPIC C1 · Customer Foundation ──────────────────
+// The single source of truth for customer identity. Commerce, Finance, Logistics
+// and Marketing REFERENCE the customer; they never duplicate it. Permissions use
+// the existing crm.customers.* namespace; merge and archive are their own gates.
+Route::middleware('auth:sanctum')->prefix('crm/customers')->group(function (): void {
+
+    // Groups.
+    Route::prefix('groups')->group(function (): void {
+        Route::get('/', [CrmCustomerGroupController::class, 'index'])->middleware('permission:crm.customers.view');
+        Route::post('/', [CrmCustomerGroupController::class, 'store'])->middleware('permission:crm.customers.update');
+    });
+
+    // Duplicate detection & merge.
+    Route::post('/detect-duplicates', [CrmCustomerMergeController::class, 'detect'])->middleware('permission:crm.customers.view');
+    Route::post('/merge', [CrmCustomerMergeController::class, 'merge'])->middleware('permission:crm.customers.merge');
+
+    // Master.
+    Route::middleware('permission:crm.customers.view')->group(function (): void {
+        Route::get('/', [CrmCustomerController::class, 'index']);
+        Route::get('/{id}', [CrmCustomerController::class, 'show']);
+        Route::get('/{id}/profile', [CrmCustomerController::class, 'profile']);
+        Route::get('/{id}/duplicates', [CrmCustomerMergeController::class, 'duplicates']);
+    });
+    Route::post('/', [CrmCustomerController::class, 'store'])->middleware('permission:crm.customers.create');
+    Route::patch('/{id}', [CrmCustomerController::class, 'update'])->middleware('permission:crm.customers.update');
+    Route::patch('/{id}/status', [CrmCustomerController::class, 'setStatus'])->middleware('permission:crm.customers.update');
+    Route::patch('/{id}/archive', [CrmCustomerController::class, 'archive'])->middleware('permission:crm.customers.archive');
+
+    // Sub-resources (edit authority).
+    Route::middleware('permission:crm.customers.update')->group(function (): void {
+        Route::post('/{id}/phones', [CrmCustomerContactController::class, 'addPhone']);
+        Route::post('/{id}/emails', [CrmCustomerContactController::class, 'addEmail']);
+        Route::post('/{id}/addresses', [CrmCustomerContactController::class, 'addAddress']);
+        Route::patch('/{id}/addresses/{addressId}/default', [CrmCustomerContactController::class, 'setDefaultAddress']);
+        Route::post('/{id}/tags', [CrmCustomerContactController::class, 'assignTag']);
+        Route::delete('/{id}/tags/{tagId}', [CrmCustomerContactController::class, 'removeTag']);
+        Route::post('/{id}/notes', [CrmCustomerContactController::class, 'addNote']);
+        Route::post('/{id}/documents', [CrmCustomerContactController::class, 'addDocument']);
+        Route::put('/{id}/preferences', [CrmCustomerContactController::class, 'setPreference']);
     });
 });
