@@ -123,6 +123,9 @@ return [
     // CRM & Customer Service OS — EPIC C2. Customer Engagement: the append-only
     // timeline, activities and tasks (reads interactions from existing systems).
     Modules\Crm\Engagement\Infrastructure\Providers\EngagementServiceProvider::class,
+    // CRM & Customer Service OS — EPIC C3. Customer Service: tickets, SLA,
+    // assignment, escalation, resolution workflow, KB (references only).
+    Modules\Crm\Service\Infrastructure\Providers\ServicePlatformServiceProvider::class,
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
     Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
 ];

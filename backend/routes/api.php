@@ -152,6 +152,11 @@ use Modules\Crm\Customers\Presentation\Http\Controllers\CustomerMergeController 
 use Modules\Crm\Engagement\Presentation\Http\Controllers\ActivityController as CrmActivityController;
 use Modules\Crm\Engagement\Presentation\Http\Controllers\TaskController as CrmTaskController;
 use Modules\Crm\Engagement\Presentation\Http\Controllers\TimelineController as CrmTimelineController;
+use Modules\Crm\Service\Presentation\Http\Controllers\KnowledgeBaseController as CrmKnowledgeBaseController;
+use Modules\Crm\Service\Presentation\Http\Controllers\ResolutionLibraryController as CrmResolutionLibraryController;
+use Modules\Crm\Service\Presentation\Http\Controllers\ServiceAdminController as CrmServiceAdminController;
+use Modules\Crm\Service\Presentation\Http\Controllers\TicketController as CrmTicketController;
+use Modules\Crm\Service\Presentation\Http\Controllers\TicketNoteController as CrmTicketNoteController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
@@ -3070,5 +3075,59 @@ Route::middleware('auth:sanctum')->prefix('crm/customers/{id}')->group(function 
         Route::post('/tasks', [CrmTaskController::class, 'store']);
         Route::patch('/tasks/{taskId}/complete', [CrmTaskController::class, 'complete']);
         Route::patch('/tasks/{taskId}/cancel', [CrmTaskController::class, 'cancel']);
+    });
+});
+
+// ── CRM & Customer Service OS — EPIC C3 · Customer Service ─────────────────────
+// The CRM owns service cases (tickets, complaints, service requests, RMA
+// returns, warranty). It references Finance/Inventory/Shipping BY REFERENCE ONLY
+// (opaque ids in source_reference) — it owns none of their data.
+Route::middleware('auth:sanctum')->prefix('crm/service')->group(function (): void {
+
+    // Tickets.
+    Route::prefix('tickets')->group(function (): void {
+        Route::middleware('permission:crm.service.view')->group(function (): void {
+            Route::get('/', [CrmTicketController::class, 'index']);
+            Route::get('/{id}', [CrmTicketController::class, 'show']);
+        });
+        Route::post('/', [CrmTicketController::class, 'store'])->middleware('permission:crm.service.manage');
+        Route::middleware('permission:crm.service.manage')->group(function (): void {
+            Route::post('/{id}/notes', [CrmTicketNoteController::class, 'addNote']);
+            Route::post('/{id}/attachments', [CrmTicketNoteController::class, 'addAttachment']);
+            Route::post('/{id}/resolution', [CrmResolutionLibraryController::class, 'apply']);
+        });
+        Route::patch('/{id}/transition', [CrmTicketController::class, 'transition'])->middleware('permission:crm.service.resolve');
+        Route::patch('/{id}/assign', [CrmTicketController::class, 'assign'])->middleware('permission:crm.service.assign');
+        Route::patch('/{id}/escalate', [CrmTicketController::class, 'escalate'])->middleware('permission:crm.service.assign');
+    });
+
+    // SLA / assignment / escalation administration + the escalation sweep.
+    Route::middleware('permission:crm.service.admin')->group(function (): void {
+        Route::get('/sla-policies', [CrmServiceAdminController::class, 'slaPolicies']);
+        Route::post('/sla-policies', [CrmServiceAdminController::class, 'storeSlaPolicy']);
+        Route::get('/assignment-rules', [CrmServiceAdminController::class, 'assignmentRules']);
+        Route::post('/assignment-rules', [CrmServiceAdminController::class, 'storeAssignmentRule']);
+        Route::get('/escalation-rules', [CrmServiceAdminController::class, 'escalationRules']);
+        Route::post('/escalation-rules', [CrmServiceAdminController::class, 'storeEscalationRule']);
+        Route::post('/escalations/run', [CrmServiceAdminController::class, 'runEscalation']);
+    });
+
+    // Resolution library.
+    Route::prefix('resolutions')->group(function (): void {
+        Route::get('/', [CrmResolutionLibraryController::class, 'index'])->middleware('permission:crm.kb.view');
+        Route::post('/', [CrmResolutionLibraryController::class, 'store'])->middleware('permission:crm.kb.manage');
+    });
+});
+
+// Knowledge base.
+Route::middleware('auth:sanctum')->prefix('crm/knowledge-base')->group(function (): void {
+    Route::middleware('permission:crm.kb.view')->group(function (): void {
+        Route::get('/', [CrmKnowledgeBaseController::class, 'index']);
+        Route::get('/{id}', [CrmKnowledgeBaseController::class, 'show']);
+    });
+    Route::middleware('permission:crm.kb.manage')->group(function (): void {
+        Route::post('/', [CrmKnowledgeBaseController::class, 'store']);
+        Route::patch('/{id}/publish', [CrmKnowledgeBaseController::class, 'publish']);
+        Route::patch('/{id}/archive', [CrmKnowledgeBaseController::class, 'archive']);
     });
 });
