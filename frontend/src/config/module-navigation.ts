@@ -332,6 +332,10 @@ export const APP_MODULES: AppModule[] = [
       { key: 'hr-time',       label: 'Time',           isSection: true                                        },
       { key: 'hr-attendance', label: 'Attendance',     path: ROUTES.hrAttendance,         icon: ClipboardList },
       { key: 'hr-leave',      label: 'Leave Requests', path: ROUTES.hrLeave,              icon: CalendarDays  },
+      { key: 'hr-pay',        label: 'Pay & Performance', isSection: true                                     },
+      { key: 'hr-comp',       label: 'Compensation',   path: ROUTES.hrCompensation,       icon: DollarSign    },
+      { key: 'hr-commission', label: 'Commission Rules', path: ROUTES.hrCommissionRules,  icon: Zap           },
+      { key: 'hr-perf',       label: 'Performance',    path: ROUTES.hrPerformance,        icon: TrendingUp    },
     ],
   },
   {

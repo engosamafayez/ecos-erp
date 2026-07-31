@@ -27,7 +27,7 @@ final class HolidayService
             $end = $start->copy();
         }
 
-        $type = $data['type'] instanceof HolidayType
+        $type = ($data['type'] ?? null) instanceof HolidayType
             ? $data['type']
             : (HolidayType::tryFrom((string) ($data['type'] ?? '')) ?? HolidayType::Public);
 

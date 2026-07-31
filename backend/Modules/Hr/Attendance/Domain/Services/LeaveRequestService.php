@@ -43,7 +43,7 @@ final class LeaveRequestService
 
         $this->assertNoOverlap($employee, $start, $end);
 
-        $flag = $data['payroll_flag'] instanceof LeavePayrollFlag
+        $flag = ($data['payroll_flag'] ?? null) instanceof LeavePayrollFlag
             ? $data['payroll_flag']
             : (LeavePayrollFlag::tryFrom((string) ($data['payroll_flag'] ?? '')) ?? LeavePayrollFlag::DeductSalary);
 

@@ -56,6 +56,7 @@ class HrArchitectureGuardTest extends TestCase
             // Sub-tables that hang off the master are fine; a second master is not.
             ->reject(fn (string $t) => in_array($t, [
                 'hr_employees', 'hr_employee_documents', 'hr_employee_shift_assignments',
+                'hr_employee_incidents',
             ], true));
 
         $this->assertEmpty(
@@ -109,15 +110,41 @@ class HrArchitectureGuardTest extends TestCase
         );
     }
 
-    // ═══ PAYROLL DOES NOT LIVE HERE ══════════════════════════════════════════════
+    // ═══ COMPENSATION LIVES IN ONE PLACE ═════════════════════════════════════════
 
-    public function test_no_hr_table_carries_compensation(): void
+    /**
+     * The workforce and attendance tables carry no pay.
+     *
+     * H1 originally asserted this of the whole HR module, because Payroll did not
+     * exist yet. H3 introduced it, so the invariant sharpens rather than
+     * disappears: compensation lives in the Compensation context and NOWHERE else
+     * in HR. The employee record and the employment contract still carry no
+     * salary, which was the point all along — a second copy would be a second
+     * source of truth.
+     */
+    public function test_the_workforce_and_attendance_tables_carry_no_compensation(): void
     {
-        $money = ['salary', 'wage', 'pay_rate', 'basic_pay', 'gross_pay', 'net_pay', 'allowance', 'deduction', 'bonus'];
+        $money = ['salary', 'wage', 'pay_rate', 'basic_pay', 'gross_pay', 'net_pay', 'allowance', 'bonus'];
+
+        // Every HR table that is NOT part of the Compensation context.
+        $compensationTables = [
+            'hr_payroll_periods', 'hr_salary_structures', 'hr_commission_rules', 'hr_commission_rule_tiers',
+            'hr_bonuses', 'hr_deductions', 'hr_advances', 'hr_advance_installments',
+            'hr_payroll_runs', 'hr_payslips', 'hr_payslip_lines', 'hr_kpi_facts',
+            'hr_bonus_recommendations',
+        ];
+
         $offenders = [];
 
-        foreach ($this->hrTables() as $table) {
+        foreach (array_diff($this->hrTables(), $compensationTables) as $table) {
             foreach (Schema::getColumnListing($table) as $column) {
+                // An `_id` is a link to a compensation record, not a copy of the
+                // amount on it — that traceability is deliberate and is not a
+                // second source of truth.
+                if (str_ends_with($column, '_id')) {
+                    continue;
+                }
+
                 foreach ($money as $needle) {
                     if (str_contains($column, $needle)) {
                         $offenders[] = "{$table}.{$column}";
@@ -128,8 +155,28 @@ class HrArchitectureGuardTest extends TestCase
 
         $this->assertEmpty(
             $offenders,
-            'Compensation belongs to Payroll, not HR — a copy here would be a second source of truth: '.implode(', ', $offenders)
+            'Only the Compensation context may carry pay: '.implode(', ', $offenders)
         );
+    }
+
+    /** The employee record and the employment contract specifically stay pay-free. */
+    public function test_the_employee_and_contract_still_carry_no_pay(): void
+    {
+        foreach (['hr_employees', 'hr_employment_contracts'] as $table) {
+            foreach (Schema::getColumnListing($table) as $column) {
+                foreach (['salary', 'wage', 'pay_rate', 'allowance', 'bonus'] as $needle) {
+                    $this->assertStringNotContainsString(
+                        $needle,
+                        $column,
+                        "{$table}.{$column} — pay belongs to the salary structure, not the employee or the contract."
+                    );
+                }
+            }
+        }
+
+        // And the structure that does carry it is the one Payroll owns.
+        $this->assertTrue(Schema::hasTable('hr_salary_structures'));
+        $this->assertContains('basic_salary', Schema::getColumnListing('hr_salary_structures'));
     }
 
     public function test_the_only_payroll_concern_hr_owns_is_the_leave_flag(): void

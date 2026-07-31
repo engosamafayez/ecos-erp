@@ -14,7 +14,7 @@ final class EmployeeDocumentService
 {
     public function attach(Employee $employee, array $data, ?int $actorId = null): EmployeeDocument
     {
-        $type = $data['type'] instanceof EmployeeDocumentType
+        $type = ($data['type'] ?? null) instanceof EmployeeDocumentType
             ? $data['type']
             : (EmployeeDocumentType::tryFrom((string) ($data['type'] ?? '')) ?? EmployeeDocumentType::Other);
 

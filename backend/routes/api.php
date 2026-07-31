@@ -182,6 +182,12 @@ use Modules\Hr\Attendance\Presentation\Http\Controllers\AttendanceController as 
 use Modules\Hr\Attendance\Presentation\Http\Controllers\LeaveRequestController as HrLeaveController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkScheduleController as HrScheduleController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkforceAvailabilityController as HrAvailabilityController;
+use Modules\Hr\Compensation\Presentation\Http\Controllers\PayrollController as HrPayrollController;
+use Modules\Hr\Compensation\Presentation\Http\Controllers\CompensationController as HrCompensationController;
+use Modules\Hr\Compensation\Presentation\Http\Controllers\CommissionRuleController as HrCommissionController;
+use Modules\Hr\Compensation\Presentation\Http\Controllers\KpiFactController as HrKpiFactController;
+use Modules\Hr\Performance\Presentation\Http\Controllers\PerformanceController as HrPerformanceController;
+use Modules\Hr\Performance\Presentation\Http\Controllers\PerformanceReviewController as HrReviewController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
@@ -3409,5 +3415,104 @@ Route::middleware('auth:sanctum')->prefix('hr/leave')->group(function (): void {
     Route::middleware('permission:hr.leave.approve')->group(function (): void {
         Route::patch('/requests/{id}/approve', [HrLeaveController::class, 'approve']);
         Route::patch('/requests/{id}/reject', [HrLeaveController::class, 'reject']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR & Workforce OS — EPIC H3. Compensation Engine.
+|--------------------------------------------------------------------------
+| Payroll calculates compensation. Finance owns the journal entries and the
+| salary payment; approving a run announces the totals and stops there.
+| Entering, approving and running payroll are separate permissions on purpose.
+*/
+Route::middleware('auth:sanctum')->prefix('hr/compensation')->group(function (): void {
+    Route::middleware('permission:hr.compensation.view')->group(function (): void {
+        Route::get('/periods', [HrPayrollController::class, 'periods']);
+        Route::get('/runs', [HrPayrollController::class, 'runs']);
+        Route::get('/payslips', [HrPayrollController::class, 'payslips']);
+        Route::get('/payslips/{id}', [HrPayrollController::class, 'payslip']);
+        Route::get('/employees/{employeeId}/overview', [HrCompensationController::class, 'overview']);
+        Route::get('/bonuses', [HrCompensationController::class, 'bonuses']);
+        Route::get('/deductions', [HrCompensationController::class, 'deductions']);
+        Route::get('/advances', [HrCompensationController::class, 'advances']);
+        Route::get('/periods/{id}/employees/{employeeId}/attendance-suggestions', [HrPayrollController::class, 'attendanceSuggestions']);
+    });
+    Route::middleware('permission:hr.compensation.manage')->group(function (): void {
+        Route::post('/periods', [HrPayrollController::class, 'storePeriod']);
+        Route::patch('/periods/{id}/open', [HrPayrollController::class, 'openPeriod']);
+        Route::post('/employees/{employeeId}/salary', [HrCompensationController::class, 'assignSalary']);
+        Route::post('/bonuses', [HrCompensationController::class, 'storeBonus']);
+        Route::post('/deductions', [HrCompensationController::class, 'storeDeduction']);
+        Route::post('/advances', [HrCompensationController::class, 'storeAdvance']);
+    });
+    Route::middleware('permission:hr.compensation.calculate')->group(function (): void {
+        Route::post('/periods/{id}/calculate', [HrPayrollController::class, 'calculate']);
+    });
+    Route::middleware('permission:hr.compensation.approve')->group(function (): void {
+        Route::patch('/runs/{runId}/approve', [HrPayrollController::class, 'approveRun']);
+        Route::patch('/periods/{id}/close', [HrPayrollController::class, 'closePeriod']);
+        Route::patch('/bonuses/{id}/decide', [HrCompensationController::class, 'decideBonus']);
+        Route::patch('/deductions/{id}/decide', [HrCompensationController::class, 'decideDeduction']);
+        Route::patch('/advances/{id}/decide', [HrCompensationController::class, 'decideAdvance']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR & Workforce OS — EPIC H3. Commission rules engine.
+|--------------------------------------------------------------------------
+| Rules are configuration: which metric, which method, what rate, for whom.
+*/
+Route::middleware('auth:sanctum')->prefix('hr/commission')->group(function (): void {
+    Route::middleware('permission:hr.commission.view')->group(function (): void {
+        Route::get('/rules', [HrCommissionController::class, 'index']);
+        Route::get('/metrics', [HrCommissionController::class, 'metrics']);
+        Route::get('/employees/{employeeId}/preview', [HrCommissionController::class, 'preview']);
+    });
+    Route::middleware('permission:hr.commission.manage')->group(function (): void {
+        Route::post('/rules', [HrCommissionController::class, 'store']);
+        Route::put('/rules/{id}', [HrCommissionController::class, 'update']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR & Workforce OS — EPIC H4. KPI facts, goals, dashboards and reviews.
+|--------------------------------------------------------------------------
+| KPIs are collected from the operational modules by reference; nobody types in
+| their own score. HR imports no operational class to do it.
+*/
+Route::middleware('auth:sanctum')->prefix('hr/kpi')->group(function (): void {
+    Route::middleware('permission:hr.performance.view')->group(function (): void {
+        Route::get('/facts', [HrKpiFactController::class, 'index']);
+    });
+    Route::middleware('permission:hr.kpi.ingest')->group(function (): void {
+        Route::post('/facts', [HrKpiFactController::class, 'store']);
+        Route::post('/facts/batch', [HrKpiFactController::class, 'storeMany']);
+    });
+});
+
+Route::middleware('auth:sanctum')->prefix('hr/performance')->group(function (): void {
+    Route::middleware('permission:hr.performance.view')->group(function (): void {
+        Route::get('/goals', [HrPerformanceController::class, 'goals']);
+        Route::get('/metrics', [HrPerformanceController::class, 'metrics']);
+        Route::get('/employees/{employeeId}/dashboard', [HrPerformanceController::class, 'employeeDashboard']);
+        Route::get('/employees/{employeeId}/history', [HrPerformanceController::class, 'history']);
+        Route::get('/departments/{departmentId}/dashboard', [HrPerformanceController::class, 'departmentDashboard']);
+        Route::get('/reviews', [HrReviewController::class, 'reviews']);
+        Route::get('/recommendations', [HrReviewController::class, 'recommendations']);
+        Route::get('/incidents', [HrReviewController::class, 'incidents']);
+    });
+    Route::middleware('permission:hr.performance.manage')->group(function (): void {
+        Route::post('/goals', [HrPerformanceController::class, 'storeGoal']);
+        Route::post('/evaluate', [HrPerformanceController::class, 'evaluate']);
+        Route::post('/incidents', [HrReviewController::class, 'storeIncident']);
+        Route::post('/incidents/{id}/deduction', [HrReviewController::class, 'raiseDeduction']);
+    });
+    Route::middleware('permission:hr.performance.review')->group(function (): void {
+        Route::post('/employees/{employeeId}/review', [HrReviewController::class, 'saveReview']);
+        Route::post('/recommendations/generate', [HrReviewController::class, 'generateRecommendations']);
+        Route::patch('/recommendations/{id}/decide', [HrReviewController::class, 'decideRecommendation']);
     });
 });

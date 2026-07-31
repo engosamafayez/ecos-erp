@@ -21,7 +21,7 @@ final class EmploymentContractService
 {
     public function issue(string $companyId, Employee $employee, array $data, ?int $actorId = null): EmploymentContract
     {
-        $type = $data['type'] instanceof ContractType
+        $type = ($data['type'] ?? null) instanceof ContractType
             ? $data['type']
             : (ContractType::tryFrom((string) ($data['type'] ?? '')) ?? ContractType::Permanent);
 

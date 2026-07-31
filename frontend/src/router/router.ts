@@ -160,6 +160,12 @@ import { OrganizationChartPage } from '@/features/hr/pages/organization-chart-pa
 import { WorkforceStructurePage } from '@/features/hr/pages/workforce-structure-page';
 import { AttendanceWorkspacePage } from '@/features/hr/pages/attendance-workspace-page';
 import { LeaveRequestsPage } from '@/features/hr/pages/leave-requests-page';
+import { CompensationWorkspacePage } from '@/features/hr/pages/compensation-workspace-page';
+import { Compensation360Page } from '@/features/hr/pages/compensation-360-page';
+import { CommissionRulesPage } from '@/features/hr/pages/commission-rules-page';
+import { PerformanceWorkspacePage } from '@/features/hr/pages/performance-workspace-page';
+import { EmployeePerformancePage } from '@/features/hr/pages/employee-performance-page';
+import { DepartmentPerformancePage } from '@/features/hr/pages/department-performance-page';
 import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
@@ -208,6 +214,13 @@ export const router = createBrowserRouter(
             { path: ROUTES.hrStructure, Component: WorkforceStructurePage },
             { path: ROUTES.hrAttendance, Component: AttendanceWorkspacePage },
             { path: ROUTES.hrLeave, Component: LeaveRequestsPage },
+            // HR & Workforce OS — EPIC H3 + H4
+            { path: ROUTES.hrCompensation, Component: CompensationWorkspacePage },
+            { path: ROUTES.hrCommissionRules, Component: CommissionRulesPage },
+            { path: ROUTES.hrCompensation360, Component: Compensation360Page },
+            { path: ROUTES.hrPerformance, Component: PerformanceWorkspacePage },
+            { path: ROUTES.hrEmployeePerformance, Component: EmployeePerformancePage },
+            { path: ROUTES.hrDepartmentPerformance, Component: DepartmentPerformancePage },
             { path: ROUTES.warehouses, Component: WarehousesPage },
             { path: ROUTES.channels, Component: ChannelsPage },
             // Inventory workspace + sub-pages

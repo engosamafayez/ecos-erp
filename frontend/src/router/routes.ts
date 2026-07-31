@@ -67,6 +67,13 @@ export const ROUTES = {
   hrStructure: '/hr/structure',
   hrAttendance: '/hr/attendance',
   hrLeave: '/hr/leave',
+  // HR & Workforce OS — EPIC H3 + H4
+  hrCompensation: '/hr/compensation',
+  hrCompensation360: '/hr/compensation/employees/:employeeId',
+  hrCommissionRules: '/hr/compensation/commission-rules',
+  hrPerformance: '/hr/performance',
+  hrEmployeePerformance: '/hr/performance/employees/:employeeId',
+  hrDepartmentPerformance: '/hr/performance/departments/:departmentId',
   reports: '/reports',
   settings: '/settings',
   // Claude Bridge
