@@ -165,6 +165,11 @@ use Modules\Crm\Sales\Presentation\Http\Controllers\SalesActivityController as C
 use Modules\Crm\Loyalty\Presentation\Http\Controllers\LoyaltyController as CrmLoyaltyController;
 use Modules\Crm\Loyalty\Presentation\Http\Controllers\PointsController as CrmPointsController;
 use Modules\Crm\Loyalty\Presentation\Http\Controllers\RewardController as CrmRewardController;
+use Modules\Crm\Intelligence\Presentation\Http\Controllers\PurchaseFactController as CrmPurchaseFactController;
+use Modules\Crm\Intelligence\Presentation\Http\Controllers\CustomerIntelligenceController as CrmIntelligenceController;
+use Modules\Crm\Intelligence\Presentation\Http\Controllers\SegmentationController as CrmSegmentationController;
+use Modules\Crm\Intelligence\Presentation\Http\Controllers\CustomerAnalyticsController as CrmAnalyticsController;
+use Modules\Crm\Intelligence\Presentation\Http\Controllers\RecommendationController as CrmRecommendationController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
@@ -3218,5 +3223,34 @@ Route::middleware('auth:sanctum')->prefix('crm/loyalty')->group(function (): voi
         Route::post('/accounts/{accountId}/redeem', [CrmPointsController::class, 'redeem']);
         Route::post('/accounts/{accountId}/adjust', [CrmPointsController::class, 'adjust']);
         Route::post('/rewards/redeem', [CrmRewardController::class, 'redeem']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| CRM & Customer Service OS — EPIC C5. Customer Intelligence.
+|--------------------------------------------------------------------------
+| Deterministic, explainable analytics over purchase facts fed by opaque
+| reference. Commerce owns Orders and Finance owns Payments — referenced only.
+*/
+Route::middleware('auth:sanctum')->prefix('crm/intelligence')->group(function (): void {
+    Route::middleware('permission:crm.intelligence.view')->group(function (): void {
+        Route::get('/profiles', [CrmIntelligenceController::class, 'index']);
+        Route::get('/customers/{customerId}', [CrmIntelligenceController::class, 'show']);
+        Route::get('/customers/{customerId}/facts', [CrmPurchaseFactController::class, 'index']);
+        Route::get('/customers/{customerId}/recommendations', [CrmRecommendationController::class, 'forCustomer']);
+        Route::get('/segments', [CrmSegmentationController::class, 'index']);
+        Route::get('/segments/distribution', [CrmSegmentationController::class, 'distribution']);
+        Route::get('/analytics', [CrmAnalyticsController::class, 'overview']);
+        Route::get('/retention', [CrmAnalyticsController::class, 'retention']);
+        Route::get('/recommendations', [CrmRecommendationController::class, 'index']);
+    });
+    Route::middleware('permission:crm.intelligence.ingest')->group(function (): void {
+        Route::post('/facts', [CrmPurchaseFactController::class, 'store']);
+        Route::patch('/recommendations/{id}/status', [CrmRecommendationController::class, 'updateStatus']);
+    });
+    Route::middleware('permission:crm.intelligence.recompute')->group(function (): void {
+        Route::post('/customers/{customerId}/recompute', [CrmIntelligenceController::class, 'recompute']);
+        Route::post('/recompute', [CrmIntelligenceController::class, 'recomputeAll']);
     });
 });

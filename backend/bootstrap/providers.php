@@ -130,6 +130,9 @@ return [
     // owned by Commerce/Finance, referenced only).
     Modules\Crm\Sales\Infrastructure\Providers\SalesCrmServiceProvider::class,
     Modules\Crm\Loyalty\Infrastructure\Providers\LoyaltyServiceProvider::class,
+    // CRM & Customer Service OS — EPIC C5. Customer Intelligence (deterministic,
+    // explainable; purchase facts fed by reference from Commerce/Finance).
+    Modules\Crm\Intelligence\Infrastructure\Providers\CustomerIntelligenceServiceProvider::class,
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
     Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
 ];
