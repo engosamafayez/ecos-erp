@@ -191,6 +191,10 @@ use Modules\Hr\Performance\Presentation\Http\Controllers\PerformanceReviewContro
 use Modules\Hr\Recruitment\Presentation\Http\Controllers\PublicCareersController as HrPublicCareersController;
 use Modules\Hr\Recruitment\Presentation\Http\Controllers\RecruitmentController as HrRecruitmentController;
 use Modules\Hr\Recruitment\Presentation\Http\Controllers\HiringController as HrHiringController;
+use Modules\Hr\Recruitment\Presentation\Http\Controllers\RecruitmentEnhancementController as HrRecruitmentEnhancementController;
+use Modules\Hr\Recruitment\Presentation\Http\Controllers\OfferController as HrOfferController;
+use Modules\Hr\Recruitment\Presentation\Http\Controllers\ExitController as HrExitController;
+use Modules\Hr\Compensation\Presentation\Http\Controllers\CompensationExplainabilityController as HrCompensationExplainabilityController;
 use Modules\Hr\Executive\Presentation\Http\Controllers\HrExecutiveController as HrExecutiveController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
@@ -3588,6 +3592,124 @@ Route::middleware('auth:sanctum')->prefix('hr/recruitment')->group(function (): 
     Route::middleware('permission:hr.hiring.execute')->group(function (): void {
         Route::get('/applications/{applicationId}/hire-prefill', [HrHiringController::class, 'prefill']);
         Route::post('/applications/{applicationId}/hire', [HrHiringController::class, 'hire']);
+    });
+
+    /*
+    | HR V1 enhancements — tags, timeline, bulk actions, analytics.
+    |
+    | Tagging is its own permission, and bulk work is its own again: one click
+    | that moves eighty candidacies is not the same authority as moving one.
+    */
+    Route::middleware('permission:hr.recruitment.view')->group(function (): void {
+        Route::get('/tags', [HrRecruitmentEnhancementController::class, 'tagCatalogue']);
+        Route::get('/tags/search', [HrRecruitmentEnhancementController::class, 'searchByTag']);
+        Route::get('/applicants/{applicantId}/tags', [HrRecruitmentEnhancementController::class, 'applicantTags']);
+        Route::get('/applicants/{applicantId}/timeline', [HrRecruitmentEnhancementController::class, 'applicantTimeline']);
+        Route::get('/applications/{applicationId}/timeline', [HrRecruitmentEnhancementController::class, 'applicationTimeline']);
+        Route::get('/bulk/actions', [HrRecruitmentEnhancementController::class, 'bulkActions']);
+    });
+    Route::middleware('permission:hr.recruitment.tag')->group(function (): void {
+        Route::post('/applicants/{applicantId}/tags', [HrRecruitmentEnhancementController::class, 'assignTag']);
+        Route::put('/applicants/{applicantId}/tags', [HrRecruitmentEnhancementController::class, 'syncTags']);
+        Route::delete('/applicants/{applicantId}/tags/{tagId}', [HrRecruitmentEnhancementController::class, 'removeTag']);
+    });
+    Route::middleware('permission:hr.recruitment.tags.manage')->group(function (): void {
+        Route::post('/tags', [HrRecruitmentEnhancementController::class, 'storeTag']);
+        Route::put('/tags/{id}', [HrRecruitmentEnhancementController::class, 'updateTag']);
+        Route::delete('/tags/{id}', [HrRecruitmentEnhancementController::class, 'destroyTag']);
+    });
+    Route::middleware('permission:hr.recruitment.bulk')->group(function (): void {
+        Route::post('/bulk/preview', [HrRecruitmentEnhancementController::class, 'bulkPreview']);
+        Route::post('/bulk/execute', [HrRecruitmentEnhancementController::class, 'bulkExecute']);
+    });
+    Route::middleware('permission:hr.recruitment.analytics.view')->group(function (): void {
+        Route::get('/analytics', [HrRecruitmentEnhancementController::class, 'analytics']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR V1 enhancements — offer letters.
+|--------------------------------------------------------------------------
+| Offers commit the company to a salary, so drafting and sending one is its
+| own permission rather than part of "manage recruitment".
+*/
+Route::middleware('auth:sanctum')->prefix('hr/offers')->group(function (): void {
+    Route::middleware('permission:hr.offers.view')->group(function (): void {
+        Route::get('/', [HrOfferController::class, 'index']);
+        Route::get('/{id}', [HrOfferController::class, 'show']);
+        Route::get('/{id}/document', [HrOfferController::class, 'document']);
+    });
+    Route::middleware('permission:hr.offers.manage')->group(function (): void {
+        Route::post('/applications/{applicationId}', [HrOfferController::class, 'store']);
+        Route::post('/{id}/revise', [HrOfferController::class, 'revise']);
+        Route::patch('/{id}/send', [HrOfferController::class, 'send']);
+        Route::patch('/{id}/accept', [HrOfferController::class, 'accept']);
+        Route::patch('/{id}/decline', [HrOfferController::class, 'decline']);
+        Route::patch('/{id}/withdraw', [HrOfferController::class, 'withdraw']);
+        Route::post('/expire-lapsed', [HrOfferController::class, 'expireLapsed']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR V1 enhancements — employee exit.
+|--------------------------------------------------------------------------
+| Completing an exit changes the employee record and writes the separation
+| into their history, so it sits behind its own grant.
+*/
+Route::middleware('auth:sanctum')->prefix('hr/exits')->group(function (): void {
+    Route::middleware('permission:hr.exit.view')->group(function (): void {
+        Route::get('/', [HrExitController::class, 'index']);
+        Route::get('/types', [HrExitController::class, 'types']);
+        Route::get('/checklist-template', [HrExitController::class, 'checklistTemplate']);
+        Route::get('/assigned/{employeeId}', [HrExitController::class, 'myItems']);
+        Route::get('/{id}', [HrExitController::class, 'show']);
+    });
+    Route::middleware('permission:hr.exit.manage')->group(function (): void {
+        Route::post('/employees/{employeeId}', [HrExitController::class, 'store']);
+        Route::patch('/{id}/complete', [HrExitController::class, 'complete']);
+        Route::patch('/{id}/cancel', [HrExitController::class, 'cancel']);
+        Route::post('/{id}/items', [HrExitController::class, 'addItem']);
+        Route::patch('/items/{itemId}/complete', [HrExitController::class, 'completeItem']);
+        Route::patch('/items/{itemId}/waive', [HrExitController::class, 'waiveItem']);
+        Route::patch('/items/{itemId}/not-applicable', [HrExitController::class, 'notApplicableItem']);
+        Route::patch('/items/{itemId}/reopen', [HrExitController::class, 'reopenItem']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR V1 enhancements — compensation explainability, protection, versioning.
+|--------------------------------------------------------------------------
+| Every read here shows the working behind a number. The only writes are
+| adjustments and new rule versions — the two things that exist BECAUSE
+| approved pay and historical rules can no longer be edited.
+*/
+Route::middleware('auth:sanctum')->prefix('hr/compensation')->group(function (): void {
+    Route::middleware('permission:hr.compensation.view')->group(function (): void {
+        Route::get('/periods/{periodId}/commission-preview', [HrCompensationExplainabilityController::class, 'commissionPreview']);
+        Route::get('/employees/{employeeId}/commission/{ruleId}/drill-down', [HrCompensationExplainabilityController::class, 'commissionDrillDown']);
+        Route::get('/payslips/{payslipId}/explain', [HrCompensationExplainabilityController::class, 'explainPayslip']);
+        Route::get('/employees/{employeeId}/kpi-traceability', [HrCompensationExplainabilityController::class, 'kpiTraceability']);
+        Route::get('/bonuses/{bonusId}/decision-audit', [HrCompensationExplainabilityController::class, 'bonusDecisionAudit']);
+        Route::get('/lock-status', [HrCompensationExplainabilityController::class, 'lockStatus']);
+        Route::get('/adjustments/pending', [HrCompensationExplainabilityController::class, 'pendingAdjustments']);
+        Route::get('/employees/{employeeId}/adjustments', [HrCompensationExplainabilityController::class, 'employeeAdjustments']);
+        Route::get('/commission-rules/{ruleId}/versions', [HrCompensationExplainabilityController::class, 'ruleVersions']);
+        Route::get('/commission-rules/{ruleId}/version-on', [HrCompensationExplainabilityController::class, 'ruleVersionOn']);
+    });
+    Route::middleware('permission:hr.compensation.adjust')->group(function (): void {
+        Route::post('/employees/{employeeId}/adjustments', [HrCompensationExplainabilityController::class, 'raiseAdjustment']);
+    });
+    // Raising and approving are deliberately different grants: the whole point of
+    // an adjustment is that changing approved pay is not one person's decision.
+    Route::middleware('permission:hr.compensation.adjust.approve')->group(function (): void {
+        Route::patch('/adjustments/{id}/approve', [HrCompensationExplainabilityController::class, 'approveAdjustment']);
+        Route::patch('/adjustments/{id}/reject', [HrCompensationExplainabilityController::class, 'rejectAdjustment']);
+    });
+    Route::middleware('permission:hr.commission.manage')->group(function (): void {
+        Route::post('/commission-rules/{ruleId}/versions', [HrCompensationExplainabilityController::class, 'newRuleVersion']);
     });
 });
 

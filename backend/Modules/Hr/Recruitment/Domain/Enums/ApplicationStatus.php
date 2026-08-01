@@ -42,12 +42,15 @@ enum ApplicationStatus: string
     /**
      * Whether an employee may be created from here.
      *
-     * Accepting is a decision; an accepted offer is a commitment. Both qualify,
-     * but nothing earlier does.
+     * Accepting is the company's decision; an accepted OFFER is the agreement
+     * between two parties, and only the second one names a salary and a start
+     * date that both sides have seen. Hiring from a bare "accepted" is how a
+     * start date gets promised twice and a salary gets agreed in a corridor, so
+     * this narrowed to the offer once offers existed (Part 3).
      */
     public function canBeHired(): bool
     {
-        return in_array($this, [self::Accepted, self::OfferAccepted], true);
+        return $this === self::OfferAccepted;
     }
 
     /** @return array<int, self> */

@@ -19,11 +19,27 @@ class CommissionRule extends Model
 
     protected $table = 'hr_commission_rules';
 
+    /**
+     * The fields that decide what a rule PAYS.
+     *
+     * Changing any of them changes what historical payroll would recalculate to,
+     * so they are versioned rather than edited (Part 8). Everything outside this
+     * list — the name, the description, the priority — is presentation or
+     * ordering, and can be corrected in place without moving a single figure.
+     */
+    public const ECONOMIC_FIELDS = [
+        'metric_key', 'method', 'rate', 'applies_to', 'target_id',
+        'dimension_key', 'dimension_value',
+        'min_amount', 'max_amount', 'threshold_value', 'tiers',
+    ];
+
     protected $fillable = [
         'company_id', 'code', 'name', 'description', 'metric_key', 'method', 'rate',
         'applies_to', 'target_id', 'dimension_key', 'dimension_value',
         'min_amount', 'max_amount', 'threshold_value',
         'effective_from', 'effective_to', 'priority', 'is_active',
+        // Part 8 — the lineage.
+        'version', 'version_group', 'supersedes_rule_id', 'superseded_at',
     ];
 
     protected function casts(): array
@@ -39,7 +55,40 @@ class CommissionRule extends Model
             'effective_to' => 'date',
             'priority' => 'integer',
             'is_active' => 'boolean',
+            'version' => 'integer',
+            'superseded_at' => 'datetime',
         ];
+    }
+
+    /** Every version of this rule, oldest first. */
+    public function lineage(): HasMany
+    {
+        return $this->hasMany(self::class, 'version_group', 'version_group')->orderBy('version');
+    }
+
+    /** The version this one replaced. */
+    public function predecessor(): ?self
+    {
+        return $this->supersedes_rule_id === null
+            ? null
+            : self::query()->find($this->supersedes_rule_id);
+    }
+
+    /** Has a later version taken over? */
+    public function isSuperseded(): bool
+    {
+        return $this->superseded_at !== null;
+    }
+
+    /**
+     * The current version of a lineage — the one a new change would build on.
+     *
+     * Highest version rather than "not superseded", so it stays right even if a
+     * lineage is ever left without a closing timestamp.
+     */
+    public function scopeLatestOfLineage(Builder $query, string $versionGroup): Builder
+    {
+        return $query->where('version_group', $versionGroup)->orderByDesc('version')->limit(1);
     }
 
     public function tiers(): HasMany

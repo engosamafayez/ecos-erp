@@ -116,6 +116,29 @@ class RecruitmentPlatformTest extends TestCase
         ], $data));
     }
 
+    /**
+     * Take a candidacy all the way to an accepted offer.
+     *
+     * Since Part 3, hiring requires one — a status alone no longer opens the door,
+     * because only the offer records what salary and start date both sides saw.
+     */
+    private function acceptOffer(JobApplication $application, array $terms = []): \Modules\Hr\Recruitment\Domain\Models\Offer
+    {
+        if ($application->status !== ApplicationStatus::Accepted) {
+            app(JobApplicationService::class)->decide($application, ApplicationStatus::Accepted);
+        }
+
+        $offers = app(\Modules\Hr\Recruitment\Domain\Services\OfferService::class);
+
+        $offer = $offers->draft($application->refresh(), array_merge([
+            'basic_salary' => 9000, 'start_date' => '2026-07-01',
+        ], $terms));
+
+        $offers->send($offer);
+
+        return $offers->accept($offer->refresh());
+    }
+
     // ═══ PUBLIC CAREERS PORTAL ═══════════════════════════════════════════════════
 
     public function test_the_public_jobs_board_shows_only_published_openings(): void
@@ -494,6 +517,7 @@ class RecruitmentPlatformTest extends TestCase
         $application = $this->apply($job, $applicant);
 
         app(JobApplicationService::class)->decide($application, ApplicationStatus::Accepted, 'Strong candidate');
+        $this->acceptOffer($application->refresh(), ['basic_salary' => 10000, 'start_date' => '2026-07-01']);
 
         $employee = app(HiringService::class)->hire($application->refresh(), [
             'hire_date' => '2026-07-01',
@@ -550,11 +574,11 @@ class RecruitmentPlatformTest extends TestCase
         $job = $this->job();
         $applicant = $this->applicant();
         $application = $this->apply($job, $applicant);
-        app(JobApplicationService::class)->decide($application, ApplicationStatus::Accepted);
+        $this->acceptOffer($application);
         app(HiringService::class)->hire($application->refresh(), ['basic_salary' => 9000]);
 
         $second = $this->apply($this->job(['title' => 'Other Role']), $applicant->fresh());
-        app(JobApplicationService::class)->decide($second, ApplicationStatus::Accepted);
+        $this->acceptOffer($second);
 
         $this->expectException(RecruitmentException::class);
         app(HiringService::class)->hire($second->refresh(), ['basic_salary' => 9000]);
@@ -565,7 +589,7 @@ class RecruitmentPlatformTest extends TestCase
         $department = Department::create(['company_id' => $this->companyId, 'code' => 'OPS', 'name' => 'Ops']);
         $job = $this->job(['department_id' => $department->id]);
         $application = $this->apply($job, $this->applicant(), ['expected_salary' => 11000]);
-        app(JobApplicationService::class)->decide($application, ApplicationStatus::Accepted);
+        $this->acceptOffer($application, ['basic_salary' => 10500]);
 
         $prefill = app(HiringService::class)->prefillFor($application->refresh());
 
@@ -573,13 +597,33 @@ class RecruitmentPlatformTest extends TestCase
         $this->assertSame(11000.0, $prefill['expected_salary']);
         $this->assertSame(8000.0, $prefill['salary_range']['min']);
         $this->assertTrue($prefill['can_hire']);
+
+        // The agreed figure outranks both the advertised band and the candidate's
+        // original ask, so nobody retypes what was already signed off.
+        $this->assertSame(10500.0, $prefill['basic_salary']);
+        $this->assertNotNull($prefill['offer']);
+        $this->assertNull($prefill['blocked_by']);
+    }
+
+    public function test_an_accepted_candidacy_without_an_offer_cannot_be_hired(): void
+    {
+        $application = $this->apply($this->job(), $this->applicant());
+        app(JobApplicationService::class)->decide($application, ApplicationStatus::Accepted);
+
+        // The status says the company decided; no offer says nothing was agreed.
+        $prefill = app(HiringService::class)->prefillFor($application->refresh());
+        $this->assertFalse($prefill['can_hire']);
+        $this->assertNotNull($prefill['blocked_by']);
+
+        $this->expectException(RecruitmentException::class);
+        app(HiringService::class)->hire($application->refresh(), ['basic_salary' => 9000]);
     }
 
     public function test_filling_every_position_closes_the_opening(): void
     {
         $job = $this->job(['openings_count' => 1]);
         $application = $this->apply($job, $this->applicant());
-        app(JobApplicationService::class)->decide($application, ApplicationStatus::Accepted);
+        $this->acceptOffer($application);
 
         app(HiringService::class)->hire($application->refresh(), ['basic_salary' => 9000]);
 

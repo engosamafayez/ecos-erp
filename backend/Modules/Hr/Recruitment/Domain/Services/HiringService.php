@@ -51,10 +51,19 @@ final class HiringService
         private readonly EmployeeDocumentService $documents,
         private readonly JobOpeningService $openings,
         private readonly EmployeeLifecycleService $lifecycle,
+        private readonly OfferService $offers,
+        private readonly ApplicantTimelineService $timeline,
     ) {}
 
     /**
-     * Hire an accepted applicant.
+     * Hire an applicant whose offer has been accepted.
+     *
+     * ┌─ THE OFFER IS THE GATE ─────────────────────────────────────────────┐
+     * │ Two checks, not one, and they answer different questions. The status   │
+     * │ says the candidacy reached agreement; the offer record says what was    │
+     * │ actually agreed — which salary, from which date, in which version. A    │
+     * │ status can be set by hand, so hiring insists on the document too.       │
+     * └──────────────────────────────────────────────────────────────────────┘
      *
      * @param  array<string, mixed>  $terms  hire date, salary, contract type, manager
      */
@@ -62,6 +71,10 @@ final class HiringService
     {
         if (! $application->canBeHired()) {
             throw RecruitmentException::notReadyToHire($application->status->value);
+        }
+
+        if ($this->offers->acceptedOfferFor($application) === null) {
+            throw RecruitmentException::offerRequiredBeforeHiring();
         }
 
         $applicant = $application->applicant;
@@ -173,6 +186,21 @@ final class HiringService
                 $this->openings->recordHire($opening);
             }
 
+            // The last line of the candidate's story, and the first of the
+            // employee's — the two records meet here and nowhere else.
+            $this->timeline->recordForApplication($application, \Modules\Hr\Recruitment\Domain\Enums\TimelineEventType::Hired, [
+                'title' => 'Hired as '.$employee->employee_number,
+                'summary' => 'Starting '.$hireDate,
+                'subject_type' => 'employee',
+                'subject_id' => (string) $employee->id,
+                'context' => [
+                    'employee_number' => (string) $employee->employee_number,
+                    'hire_date' => $hireDate,
+                    'department_id' => $employee->department_id,
+                    'position_id' => $employee->position_id,
+                ],
+            ], $actorId);
+
             return $employee->refresh();
         });
 
@@ -203,6 +231,11 @@ final class HiringService
         $applicant = $application->applicant;
         $opening = $application->jobOpening;
 
+        // If an offer was accepted, IT is what both sides agreed — it outranks the
+        // advertised band and the candidate's original ask for every field it names.
+        $offer = $this->offers->acceptedOfferFor($application);
+        $agreed = $offer?->currentTerms();
+
         return [
             'applicant' => [
                 'full_name' => $applicant->full_name ?? null,
@@ -210,12 +243,23 @@ final class HiringService
                 'email' => $applicant->email ?? null,
                 'birth_date' => $applicant?->birth_date?->toDateString(),
             ],
-            'department_id' => $opening?->department_id,
-            'position_id' => $opening?->position_id,
+            'department_id' => $agreed?->department_id ?? $opening?->department_id,
+            'position_id' => $agreed?->position_id ?? $opening?->position_id,
             'job_grade_id' => $opening?->job_grade_id,
-            'employment_type_id' => $opening?->employment_type_id,
-            'branch_id' => $opening?->branch_id,
+            'employment_type_id' => $agreed?->employment_type_id ?? $opening?->employment_type_id,
+            'branch_id' => $agreed?->branch_id ?? $opening?->branch_id,
             'reporting_manager_employee_id' => $opening?->hiring_manager_employee_id,
+            // The agreed figures, so nobody retypes what was already signed off.
+            'basic_salary' => $agreed === null ? null : (float) $agreed->basic_salary,
+            'currency' => $agreed?->currency,
+            'hire_date' => $agreed?->start_date?->toDateString(),
+            'offer' => $offer === null ? null : [
+                'id' => (string) $offer->id,
+                'offer_number' => $offer->offer_number,
+                'version' => (int) $offer->current_version,
+                'accepted_at' => $offer->responded_at?->toDateTimeString(),
+                'terms' => $agreed?->terms(),
+            ],
             // The salary they asked for, and the band it was advertised in.
             'expected_salary' => $application->expected_salary === null ? null : (float) $application->expected_salary,
             'salary_range' => [
@@ -223,7 +267,14 @@ final class HiringService
                 'max' => $opening?->salary_max === null ? null : (float) $opening->salary_max,
             ],
             'available_from' => $application->available_from?->toDateString(),
-            'can_hire' => $application->canBeHired(),
+            // Both conditions, reported separately, so the UI can say WHICH one is
+            // missing rather than greying a button out with no explanation.
+            'can_hire' => $application->canBeHired() && $offer !== null,
+            'blocked_by' => match (true) {
+                ! $application->canBeHired() => 'The candidacy is '.$application->status->label().'; an accepted offer is required.',
+                $offer === null => 'No accepted offer exists for this application.',
+                default => null,
+            },
         ];
     }
 

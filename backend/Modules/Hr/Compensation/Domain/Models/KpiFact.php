@@ -27,6 +27,8 @@ class KpiFact extends Model
         'company_id', 'employee_id', 'department_id', 'source_module', 'metric_key',
         'value', 'quantity', 'dimension_key', 'dimension_value',
         'occurred_at', 'source_reference', 'idempotency_key', 'metadata',
+        // Part 6 — traceability: what kind of document, and when HR received it.
+        'source_document_type', 'source_document_number', 'imported_at',
     ];
 
     protected function casts(): array
@@ -35,6 +37,7 @@ class KpiFact extends Model
             'value' => 'decimal:4',
             'quantity' => 'decimal:4',
             'occurred_at' => 'datetime',
+            'imported_at' => 'datetime',
             'metadata' => 'array',
         ];
     }

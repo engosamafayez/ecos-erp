@@ -77,6 +77,12 @@ export const ROUTES = {
   careersJob: '/careers/:slug',
   hrRecruitment: '/hr/recruitment',
   hrApplication: '/hr/recruitment/applications/:applicationId',
+  // HR V1 enhancements (TASK-HR-V1-ENHANCEMENTS-001)
+  hrRecruitmentAnalytics: '/hr/recruitment/analytics',
+  hrApplicantTags: '/hr/recruitment/tags',
+  hrOffers: '/hr/offers',
+  hrExits: '/hr/exits',
+  hrCompensationExplainability: '/hr/compensation/explainability',
   hrExecutive: '/hr/executive',
   hrAnalytics: '/hr/analytics',
   hrPerformance: '/hr/performance',

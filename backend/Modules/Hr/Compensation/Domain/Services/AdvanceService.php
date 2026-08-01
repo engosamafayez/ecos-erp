@@ -29,6 +29,8 @@ use Modules\Hr\Workforce\Domain\Models\Employee;
  */
 final class AdvanceService
 {
+    public function __construct(private readonly CompensationLockService $lock) {}
+
     public function request(Employee $employee, array $data, ?int $actorId = null): Advance
     {
         $amount = round((float) ($data['amount'] ?? 0), 2);
@@ -36,6 +38,12 @@ final class AdvanceService
         if ($amount <= 0) {
             throw CompensationException::amountMustBePositive();
         }
+
+        // Part 7 — an advance cannot be requested against a period already paid.
+        $this->lock->assertEditable(
+            (string) $employee->company_id,
+            (string) ($data['requested_on'] ?? Carbon::now()->toDateString()),
+        );
 
         $type = ($data['type'] ?? null) instanceof AdvanceType
             ? $data['type']
@@ -72,6 +80,10 @@ final class AdvanceService
     public function approve(Advance $advance, ?int $approverId = null): Advance
     {
         $this->assertTransition($advance, AdvanceStatus::Approved);
+        $this->lock->assertEditable(
+            (string) $advance->company_id,
+            $advance->requested_on?->toDateString(),
+        );
 
         return DB::transaction(function () use ($advance, $approverId): Advance {
             $advance->update([

@@ -139,6 +139,20 @@ class HrArchitectureGuardTest extends TestCase
             // salary an employee is actually paid is still written only once, by
             // Payroll, when a hire is executed.
             'hr_job_openings', 'hr_job_applications',
+
+            // An OFFERED salary is a proposal to someone who is not yet employed,
+            // and the version rows exist precisely so a superseded proposal is not
+            // overwritten. Nothing in Payroll reads this table; the figure becomes
+            // compensation only when hiring hands it to SalaryStructureService.
+            // The distinction the guard actually protects — one writer for what
+            // people are PAID — is untouched, and the two tests below still prove
+            // the employee record and the employment contract carry no salary.
+            'hr_offer_versions',
+
+            // Adjustments correct pay that Payroll already approved. They are
+            // Compensation's own table, listed here only because they postdate the
+            // original list.
+            'hr_compensation_adjustments',
         ];
 
         $offenders = [];

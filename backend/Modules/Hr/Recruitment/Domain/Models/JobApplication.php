@@ -22,6 +22,9 @@ class JobApplication extends Model
         'years_experience', 'current_employer', 'previous_employer', 'expected_salary', 'currency',
         'available_from', 'additional_notes', 'status', 'source', 'applied_at',
         'decided_at', 'decided_by', 'decision_reason', 'match_score', 'match_explanation',
+        // HR V1 enhancements — the recruiter who owns this candidacy, and parking
+        // it without judging it. Archiving is not rejecting.
+        'recruiter_employee_id', 'archived_at',
     ];
 
     protected function casts(): array
@@ -33,6 +36,7 @@ class JobApplication extends Model
             'available_from' => 'date',
             'applied_at' => 'datetime',
             'decided_at' => 'datetime',
+            'archived_at' => 'datetime',
             'match_score' => 'integer',
             'match_explanation' => 'array',
         ];

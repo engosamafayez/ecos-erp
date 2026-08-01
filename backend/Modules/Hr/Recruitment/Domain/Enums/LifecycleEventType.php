@@ -18,12 +18,15 @@ enum LifecycleEventType: string
     case Reinstated = 'reinstated';
     case Resigned = 'resigned';
     case Terminated = 'terminated';
+    // Retiring is not being dismissed. Folding it into Terminated would put a
+    // forty-year career and a disciplinary exit under the same word.
+    case Retired = 'retired';
     case Rehired = 'rehired';
 
     /** Events that end the employment relationship. */
     public function isSeparation(): bool
     {
-        return in_array($this, [self::Resigned, self::Terminated], true);
+        return in_array($this, [self::Resigned, self::Terminated, self::Retired], true);
     }
 
     /** Events that start it. */
@@ -52,6 +55,7 @@ enum LifecycleEventType: string
             self::Reinstated => 'Reinstated',
             self::Resigned => 'Resigned',
             self::Terminated => 'Terminated',
+            self::Retired => 'Retired',
             self::Rehired => 'Rehired',
         };
     }

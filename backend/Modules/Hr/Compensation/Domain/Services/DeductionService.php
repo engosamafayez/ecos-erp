@@ -24,6 +24,8 @@ use Modules\Hr\Workforce\Domain\Models\Employee;
  */
 final class DeductionService
 {
+    public function __construct(private readonly CompensationLockService $lock) {}
+
     public function raise(Employee $employee, array $data, ?int $actorId = null): Deduction
     {
         $amount = round((float) ($data['amount'] ?? 0), 2);
@@ -35,6 +37,13 @@ final class DeductionService
         $type = ($data['type'] ?? null) instanceof DeductionType
             ? $data['type']
             : (DeductionType::tryFrom((string) ($data['type'] ?? '')) ?? DeductionType::Manual);
+
+        // Part 7 — nothing is raised against pay that has already been approved.
+        $this->lock->assertEditable(
+            (string) $employee->company_id,
+            (string) ($data['deduction_date'] ?? Carbon::now()->toDateString()),
+            $data['payroll_period_id'] ?? null,
+        );
 
         return Deduction::create([
             'company_id' => $employee->company_id,
@@ -58,6 +67,7 @@ final class DeductionService
     public function approve(Deduction $deduction, ?int $approverId = null, ?string $decision = null): Deduction
     {
         $this->assertTransition($deduction, ApprovalStatus::Approved);
+        $this->assertEditable($deduction);
 
         $deduction->update([
             'status' => ApprovalStatus::Approved->value,
@@ -72,6 +82,7 @@ final class DeductionService
     public function reject(Deduction $deduction, ?int $approverId = null, ?string $decision = null): Deduction
     {
         $this->assertTransition($deduction, ApprovalStatus::Rejected);
+        $this->assertEditable($deduction);
 
         $deduction->update([
             'status' => ApprovalStatus::Rejected->value,
@@ -86,9 +97,20 @@ final class DeductionService
     public function cancel(Deduction $deduction): Deduction
     {
         $this->assertTransition($deduction, ApprovalStatus::Cancelled);
+        $this->assertEditable($deduction);
         $deduction->update(['status' => ApprovalStatus::Cancelled->value]);
 
         return $deduction->refresh();
+    }
+
+    /** Part 7 — refuse the change if the pay behind it has been approved. */
+    private function assertEditable(Deduction $deduction): void
+    {
+        $this->lock->assertEditable(
+            (string) $deduction->company_id,
+            $deduction->deduction_date?->toDateString(),
+            $deduction->payroll_period_id === null ? null : (string) $deduction->payroll_period_id,
+        );
     }
 
     /**

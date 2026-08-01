@@ -23,6 +23,8 @@ class Bonus extends Model
         'company_id', 'employee_id', 'payroll_period_id', 'type', 'amount', 'currency',
         'reason', 'awarded_on', 'status', 'source', 'recommendation_id',
         'approved_by', 'approved_at', 'notes', 'created_by',
+        // Part 6 — the decision audit: what was proposed, and why it was granted.
+        'recommended_amount', 'approval_reason',
     ];
 
     protected function casts(): array
@@ -31,6 +33,7 @@ class Bonus extends Model
             'type' => BonusType::class,
             'status' => ApprovalStatus::class,
             'amount' => 'decimal:2',
+            'recommended_amount' => 'decimal:2',
             'awarded_on' => 'date',
             'approved_at' => 'datetime',
         ];

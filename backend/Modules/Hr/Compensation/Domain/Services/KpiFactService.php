@@ -19,7 +19,14 @@ use Modules\Hr\Compensation\Domain\ValueObjects\WorkforceKpiEvent;
  */
 final class KpiFactService
 {
-    /** Record a fact. Returns the existing row when the event has already landed. */
+    /**
+     * Record a fact. Returns the existing row when the event has already landed.
+     *
+     * Two timestamps are kept, and they are not the same question. `occurred_at`
+     * is when the thing happened in the operational module; `imported_at` is when
+     * HR heard about it. "The order was on the 30th, we received it on the 3rd"
+     * is exactly what a commission dispute turns on, and one column cannot say it.
+     */
     public function record(WorkforceKpiEvent $event): KpiFact
     {
         $existing = KpiFact::query()->where('idempotency_key', $event->idempotencyKey)->first();
@@ -28,7 +35,87 @@ final class KpiFactService
             return $existing;
         }
 
-        return KpiFact::create($event->toFact());
+        $metadata = $event->metadata;
+
+        return KpiFact::create($event->toFact() + [
+            // The KIND of document behind the reference. Naming a document type is
+            // not importing the module — the reference itself stays opaque, and HR
+            // still cannot resolve it into an order.
+            'source_document_type' => isset($metadata['document_type'])
+                ? (string) $metadata['document_type'] : null,
+            'source_document_number' => isset($metadata['document_number'])
+                ? (string) $metadata['document_number'] : null,
+            'imported_at' => Carbon::now(),
+        ]);
+    }
+
+    /**
+     * Where a number came from — the provenance of every fact behind a metric in a
+     * window.
+     *
+     * This is what turns "your commission is 250" into something a person can
+     * check: which module said so, against which document, on what date, and when
+     * HR received it.
+     *
+     * @return array<string, mixed>
+     */
+    public function traceability(
+        string $companyId,
+        string $employeeId,
+        string $metricKey,
+        string $from,
+        string $to,
+        int $limit = 200,
+    ): array {
+        $facts = KpiFact::query()
+            ->where('company_id', $companyId)
+            ->where('employee_id', $employeeId)
+            ->where('metric_key', $metricKey)
+            ->whereBetween('occurred_at', [
+                Carbon::parse($from)->startOfDay(),
+                Carbon::parse($to)->endOfDay(),
+            ])
+            ->orderBy('occurred_at')
+            ->limit($limit)
+            ->get();
+
+        $total = KpiFact::query()
+            ->where('company_id', $companyId)
+            ->where('employee_id', $employeeId)
+            ->where('metric_key', $metricKey)
+            ->whereBetween('occurred_at', [
+                Carbon::parse($from)->startOfDay(),
+                Carbon::parse($to)->endOfDay(),
+            ])
+            ->count();
+
+        return [
+            'metric_key' => $metricKey,
+            'metric_label' => KpiMetric::tryFrom($metricKey)?->label() ?? $metricKey,
+            'source_module' => KpiMetric::tryFrom($metricKey)?->sourceModule(),
+            'from' => $from,
+            'to' => $to,
+            'facts_total' => $total,
+            'facts_shown' => $facts->count(),
+            // Stated rather than implied: a truncated list that looks complete is
+            // worse than one that says it isn't.
+            'is_truncated' => $total > $facts->count(),
+            'facts' => $facts->map(fn (KpiFact $fact) => [
+                'id' => (string) $fact->id,
+                'source_module' => $fact->source_module,
+                'source_document_type' => $fact->source_document_type,
+                'source_document_number' => $fact->source_document_number,
+                'source_reference' => $fact->source_reference,
+                'value' => (float) $fact->value,
+                'quantity' => (float) $fact->quantity,
+                'dimension_key' => $fact->dimension_key,
+                'dimension_value' => $fact->dimension_value,
+                'event_date' => $fact->occurred_at?->toDateTimeString(),
+                'imported_date' => $fact->imported_at?->toDateTimeString()
+                    ?? $fact->created_at?->toDateTimeString(),
+                'idempotency_key' => $fact->idempotency_key,
+            ])->all(),
+        ];
     }
 
     /**

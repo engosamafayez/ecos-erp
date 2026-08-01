@@ -172,6 +172,12 @@ import { RecruitmentWorkspacePage } from '@/features/hr/pages/recruitment-worksp
 import { ApplicationDetailPage } from '@/features/hr/pages/application-detail-page';
 import { HrExecutivePage } from '@/features/hr/pages/hr-executive-page';
 import { HrAnalyticsPage } from '@/features/hr/pages/hr-analytics-page';
+// HR V1 enhancements (TASK-HR-V1-ENHANCEMENTS-001)
+import { RecruitmentAnalyticsPage } from '@/features/hr/pages/recruitment-analytics-page';
+import { ApplicantTagsPage } from '@/features/hr/pages/applicant-tags-page';
+import { OffersWorkspacePage } from '@/features/hr/pages/offers-workspace-page';
+import { ExitManagementPage } from '@/features/hr/pages/exit-management-page';
+import { CompensationExplainabilityPage } from '@/features/hr/pages/compensation-explainability-page';
 import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
@@ -232,6 +238,13 @@ export const router = createBrowserRouter(
             { path: ROUTES.hrEmployeePerformance, Component: EmployeePerformancePage },
             { path: ROUTES.hrDepartmentPerformance, Component: DepartmentPerformancePage },
             // HR & Workforce OS — EPIC H5 + H6
+            // Static segments before the :applicationId pattern, or /analytics
+            // and /tags would be matched as application ids.
+            { path: ROUTES.hrRecruitmentAnalytics, Component: RecruitmentAnalyticsPage },
+            { path: ROUTES.hrApplicantTags, Component: ApplicantTagsPage },
+            { path: ROUTES.hrOffers, Component: OffersWorkspacePage },
+            { path: ROUTES.hrExits, Component: ExitManagementPage },
+            { path: ROUTES.hrCompensationExplainability, Component: CompensationExplainabilityPage },
             { path: ROUTES.hrRecruitment, Component: RecruitmentWorkspacePage },
             { path: ROUTES.hrApplication, Component: ApplicationDetailPage },
             { path: ROUTES.hrExecutive, Component: HrExecutivePage },
