@@ -188,6 +188,10 @@ use Modules\Hr\Compensation\Presentation\Http\Controllers\CommissionRuleControll
 use Modules\Hr\Compensation\Presentation\Http\Controllers\KpiFactController as HrKpiFactController;
 use Modules\Hr\Performance\Presentation\Http\Controllers\PerformanceController as HrPerformanceController;
 use Modules\Hr\Performance\Presentation\Http\Controllers\PerformanceReviewController as HrReviewController;
+use Modules\Hr\Recruitment\Presentation\Http\Controllers\PublicCareersController as HrPublicCareersController;
+use Modules\Hr\Recruitment\Presentation\Http\Controllers\RecruitmentController as HrRecruitmentController;
+use Modules\Hr\Recruitment\Presentation\Http\Controllers\HiringController as HrHiringController;
+use Modules\Hr\Executive\Presentation\Http\Controllers\HrExecutiveController as HrExecutiveController;
 use Modules\Finance\Presentation\Http\Controllers\JournalController as FinanceJournalController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
@@ -3514,5 +3518,113 @@ Route::middleware('auth:sanctum')->prefix('hr/performance')->group(function (): 
         Route::post('/employees/{employeeId}/review', [HrReviewController::class, 'saveReview']);
         Route::post('/recommendations/generate', [HrReviewController::class, 'generateRecommendations']);
         Route::patch('/recommendations/{id}/decide', [HrReviewController::class, 'decideRecommendation']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR & Workforce OS — EPIC H5. THE PUBLIC CAREERS PORTAL.
+|--------------------------------------------------------------------------
+| ⚠ THE ONLY UNAUTHENTICATED ROUTES IN THE APPLICATION.
+|
+| Anyone on the internet can reach these three endpoints, so they are throttled
+| at the route — reads generously, the write tightly, because submitting an
+| application is what costs storage and creates records. Everything they return
+| is whitelisted field by field in the controller, and the write path can create
+| an applicant and an application and nothing else.
+|
+| Adding a route to this group puts it on the public internet. Do not.
+*/
+Route::prefix('careers')->group(function (): void {
+    Route::middleware('throttle:60,1')->group(function (): void {
+        Route::get('/jobs', [HrPublicCareersController::class, 'jobs']);
+        Route::get('/jobs/{slug}', [HrPublicCareersController::class, 'job']);
+    });
+
+    // Five submissions a minute from one address is generous for a human and
+    // useless for a script.
+    Route::middleware('throttle:5,1')->group(function (): void {
+        Route::post('/jobs/{slug}/apply', [HrPublicCareersController::class, 'apply']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR & Workforce OS — EPIC H5. Recruitment (ATS), hiring and lifecycle.
+|--------------------------------------------------------------------------
+| Recruiters run the pipeline; HR executes the hire and owns the lifecycle;
+| managers interview and decide. Three separate permissions, on purpose.
+*/
+Route::middleware('auth:sanctum')->prefix('hr/recruitment')->group(function (): void {
+    Route::middleware('permission:hr.recruitment.view')->group(function (): void {
+        Route::get('/jobs', [HrRecruitmentController::class, 'jobs']);
+        Route::get('/stages', [HrRecruitmentController::class, 'stages']);
+        Route::get('/board', [HrRecruitmentController::class, 'board']);
+        Route::get('/applications', [HrRecruitmentController::class, 'applications']);
+        Route::get('/applications/{id}', [HrRecruitmentController::class, 'application']);
+        Route::get('/applicants', [HrRecruitmentController::class, 'applicants']);
+        Route::get('/applicants/duplicates', [HrRecruitmentController::class, 'duplicates']);
+        Route::get('/interviews/upcoming', [HrHiringController::class, 'upcomingInterviews']);
+    });
+    Route::middleware('permission:hr.recruitment.manage')->group(function (): void {
+        Route::post('/jobs', [HrRecruitmentController::class, 'storeJob']);
+        Route::put('/jobs/{id}', [HrRecruitmentController::class, 'updateJob']);
+        Route::patch('/jobs/{id}/transition', [HrRecruitmentController::class, 'transitionJob']);
+        Route::post('/stages', [HrRecruitmentController::class, 'storeStage']);
+        Route::put('/stages/{id}', [HrRecruitmentController::class, 'updateStage']);
+        Route::post('/applicants/merge', [HrRecruitmentController::class, 'merge']);
+        Route::patch('/applicants/{id}/talent-pool', [HrRecruitmentController::class, 'talentPool']);
+    });
+    Route::middleware('permission:hr.recruitment.decide')->group(function (): void {
+        Route::patch('/applications/{id}/stage', [HrRecruitmentController::class, 'moveStage']);
+        Route::patch('/applications/{id}/decide', [HrRecruitmentController::class, 'decide']);
+        Route::post('/applications/{applicationId}/evaluations', [HrHiringController::class, 'evaluate']);
+    });
+    Route::middleware('permission:hr.interviews.manage')->group(function (): void {
+        Route::post('/applications/{applicationId}/interviews', [HrHiringController::class, 'scheduleInterview']);
+        Route::patch('/interviews/{id}/complete', [HrHiringController::class, 'completeInterview']);
+        Route::patch('/interviews/{id}/cancel', [HrHiringController::class, 'cancelInterview']);
+    });
+    Route::middleware('permission:hr.hiring.execute')->group(function (): void {
+        Route::get('/applications/{applicationId}/hire-prefill', [HrHiringController::class, 'prefill']);
+        Route::post('/applications/{applicationId}/hire', [HrHiringController::class, 'hire']);
+    });
+});
+
+Route::middleware('auth:sanctum')->prefix('hr/lifecycle')->group(function (): void {
+    Route::middleware('permission:hr.employees.view')->group(function (): void {
+        Route::get('/types', [HrHiringController::class, 'lifecycleTypes']);
+        Route::get('/movements', [HrHiringController::class, 'movements']);
+        Route::get('/employees/{employeeId}/history', [HrHiringController::class, 'history']);
+    });
+    Route::middleware('permission:hr.lifecycle.manage')->group(function (): void {
+        Route::post('/employees/{employeeId}/move', [HrHiringController::class, 'move']);
+        Route::post('/employees/{employeeId}/probation-passed', [HrHiringController::class, 'passProbation']);
+        Route::post('/employees/{employeeId}/separate', [HrHiringController::class, 'separate']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| HR & Workforce OS — EPIC H6. Executive workspace and analytics.
+|--------------------------------------------------------------------------
+| Visualization only — every route is a GET and the services own no data.
+*/
+Route::middleware('auth:sanctum')->prefix('hr/executive')->group(function (): void {
+    Route::middleware('permission:hr.executive.view')->group(function (): void {
+        Route::get('/dashboard', [HrExecutiveController::class, 'dashboard']);
+        Route::get('/workforce', [HrExecutiveController::class, 'workforce']);
+        Route::get('/attendance', [HrExecutiveController::class, 'attendance']);
+        Route::get('/compensation', [HrExecutiveController::class, 'compensation']);
+        Route::get('/performance', [HrExecutiveController::class, 'performanceSummary']);
+        Route::get('/recruitment', [HrExecutiveController::class, 'recruitment']);
+        Route::get('/operations', [HrExecutiveController::class, 'operations']);
+        Route::get('/departments/{departmentId}', [HrExecutiveController::class, 'department']);
+        Route::get('/branches/{branchId}', [HrExecutiveController::class, 'branch']);
+        Route::get('/employees/{employeeId}', [HrExecutiveController::class, 'employee']);
+    });
+    Route::middleware('permission:hr.analytics.view')->group(function (): void {
+        Route::get('/analytics/trends', [HrExecutiveController::class, 'trends']);
+        Route::get('/analytics/trends/{series}', [HrExecutiveController::class, 'trend']);
     });
 });

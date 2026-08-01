@@ -336,6 +336,10 @@ export const APP_MODULES: AppModule[] = [
       { key: 'hr-comp',       label: 'Compensation',   path: ROUTES.hrCompensation,       icon: DollarSign    },
       { key: 'hr-commission', label: 'Commission Rules', path: ROUTES.hrCommissionRules,  icon: Zap           },
       { key: 'hr-perf',       label: 'Performance',    path: ROUTES.hrPerformance,        icon: TrendingUp    },
+      { key: 'hr-talent',     label: 'Talent',         isSection: true                                        },
+      { key: 'hr-recruit',    label: 'Recruitment',    path: ROUTES.hrRecruitment,        icon: UserPlus      },
+      { key: 'hr-exec',       label: 'HR Executive',   path: ROUTES.hrExecutive,          icon: BarChart3     },
+      { key: 'hr-analytics',  label: 'Analytics',      path: ROUTES.hrAnalytics,          icon: BarChart2     },
     ],
   },
   {

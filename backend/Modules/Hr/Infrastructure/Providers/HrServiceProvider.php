@@ -33,6 +33,16 @@ use Modules\Hr\Attendance\Domain\Services\LeaveRequestService;
 use Modules\Hr\Attendance\Domain\Services\WorkforceAvailabilityService;
 use Modules\Hr\Attendance\Domain\Services\WorkScheduleService;
 use Modules\Hr\Workforce\Domain\Contracts\ProvidesAttendanceSummary;
+use Modules\Hr\Executive\Domain\Services\HrAnalyticsService;
+use Modules\Hr\Executive\Domain\Services\HrExecutiveDashboardService;
+use Modules\Hr\Recruitment\Domain\Services\ApplicantScoringService;
+use Modules\Hr\Recruitment\Domain\Services\ApplicantService;
+use Modules\Hr\Recruitment\Domain\Services\EmployeeLifecycleService;
+use Modules\Hr\Recruitment\Domain\Services\HiringService;
+use Modules\Hr\Recruitment\Domain\Services\InterviewService;
+use Modules\Hr\Recruitment\Domain\Services\JobApplicationService;
+use Modules\Hr\Recruitment\Domain\Services\JobOpeningService;
+use Modules\Hr\Recruitment\Domain\Services\RecruitmentPipelineService;
 use Modules\Hr\Workforce\Domain\Policies\EmployeePolicy;
 use Modules\Hr\Workforce\Domain\Services\DepartmentService;
 use Modules\Hr\Workforce\Domain\Services\Employee360Service;
@@ -107,6 +117,20 @@ final class HrServiceProvider extends ServiceProvider
         $this->app->singleton(ManagerReviewService::class);
         $this->app->singleton(BonusRecommendationService::class);
         $this->app->singleton(IncidentService::class);
+
+        // H5 — Recruitment, hiring and employee lifecycle.
+        $this->app->singleton(RecruitmentPipelineService::class);
+        $this->app->singleton(JobOpeningService::class);
+        $this->app->singleton(ApplicantService::class);
+        $this->app->singleton(ApplicantScoringService::class);
+        $this->app->singleton(JobApplicationService::class);
+        $this->app->singleton(InterviewService::class);
+        $this->app->singleton(EmployeeLifecycleService::class);
+        $this->app->singleton(HiringService::class);
+
+        // H6 — Executive intelligence. Read-only: these own no data.
+        $this->app->singleton(HrExecutiveDashboardService::class);
+        $this->app->singleton(HrAnalyticsService::class);
     }
 
     public function boot(): void
@@ -115,6 +139,7 @@ final class HrServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../../Attendance/Infrastructure/Database/Migrations');
         $this->loadMigrationsFrom(__DIR__.'/../../Compensation/Infrastructure/Database/Migrations');
         $this->loadMigrationsFrom(__DIR__.'/../../Performance/Infrastructure/Database/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../Recruitment/Infrastructure/Database/Migrations');
 
         $this->registerKpiSubscribers();
     }

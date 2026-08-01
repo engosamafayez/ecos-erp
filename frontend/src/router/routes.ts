@@ -71,6 +71,14 @@ export const ROUTES = {
   hrCompensation: '/hr/compensation',
   hrCompensation360: '/hr/compensation/employees/:employeeId',
   hrCommissionRules: '/hr/compensation/commission-rules',
+  // HR & Workforce OS — EPIC H5 + H6
+  // PUBLIC — no session required. Rendered outside the application shell.
+  careers: '/careers',
+  careersJob: '/careers/:slug',
+  hrRecruitment: '/hr/recruitment',
+  hrApplication: '/hr/recruitment/applications/:applicationId',
+  hrExecutive: '/hr/executive',
+  hrAnalytics: '/hr/analytics',
   hrPerformance: '/hr/performance',
   hrEmployeePerformance: '/hr/performance/employees/:employeeId',
   hrDepartmentPerformance: '/hr/performance/departments/:departmentId',

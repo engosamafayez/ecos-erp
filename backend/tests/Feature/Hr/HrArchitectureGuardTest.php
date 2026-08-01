@@ -56,7 +56,7 @@ class HrArchitectureGuardTest extends TestCase
             // Sub-tables that hang off the master are fine; a second master is not.
             ->reject(fn (string $t) => in_array($t, [
                 'hr_employees', 'hr_employee_documents', 'hr_employee_shift_assignments',
-                'hr_employee_incidents',
+                'hr_employee_incidents', 'hr_employee_lifecycle_events',
             ], true));
 
         $this->assertEmpty(
@@ -132,6 +132,13 @@ class HrArchitectureGuardTest extends TestCase
             'hr_bonuses', 'hr_deductions', 'hr_advances', 'hr_advance_installments',
             'hr_payroll_runs', 'hr_payslips', 'hr_payslip_lines', 'hr_kpi_facts',
             'hr_bonus_recommendations',
+
+            // Recruitment carries an ADVERTISED band and a candidate's EXPECTATION.
+            // Neither is anybody's pay: the first is a range on a job posting, the
+            // second is what someone asked for before being offered anything. The
+            // salary an employee is actually paid is still written only once, by
+            // Payroll, when a hire is executed.
+            'hr_job_openings', 'hr_job_applications',
         ];
 
         $offenders = [];

@@ -166,6 +166,12 @@ import { CommissionRulesPage } from '@/features/hr/pages/commission-rules-page';
 import { PerformanceWorkspacePage } from '@/features/hr/pages/performance-workspace-page';
 import { EmployeePerformancePage } from '@/features/hr/pages/employee-performance-page';
 import { DepartmentPerformancePage } from '@/features/hr/pages/department-performance-page';
+import { CareersPortalPage } from '@/features/hr/pages/careers-portal-page';
+import { CareersApplyPage } from '@/features/hr/pages/careers-apply-page';
+import { RecruitmentWorkspacePage } from '@/features/hr/pages/recruitment-workspace-page';
+import { ApplicationDetailPage } from '@/features/hr/pages/application-detail-page';
+import { HrExecutivePage } from '@/features/hr/pages/hr-executive-page';
+import { HrAnalyticsPage } from '@/features/hr/pages/hr-analytics-page';
 import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
@@ -183,6 +189,10 @@ const moduleRoutes = [
 export const router = createBrowserRouter(
   [
     { path: ROUTES.home, Component: HomePage },
+    // PUBLIC careers portal — deliberately outside ProtectedRoute and AppShell.
+    // A visitor has no session, no company context and no navigation rail.
+    { path: ROUTES.careers, Component: CareersPortalPage },
+    { path: ROUTES.careersJob, Component: CareersApplyPage },
     {
       path: ROUTES.login,
       Component: GuestRoute,
@@ -221,6 +231,11 @@ export const router = createBrowserRouter(
             { path: ROUTES.hrPerformance, Component: PerformanceWorkspacePage },
             { path: ROUTES.hrEmployeePerformance, Component: EmployeePerformancePage },
             { path: ROUTES.hrDepartmentPerformance, Component: DepartmentPerformancePage },
+            // HR & Workforce OS — EPIC H5 + H6
+            { path: ROUTES.hrRecruitment, Component: RecruitmentWorkspacePage },
+            { path: ROUTES.hrApplication, Component: ApplicationDetailPage },
+            { path: ROUTES.hrExecutive, Component: HrExecutivePage },
+            { path: ROUTES.hrAnalytics, Component: HrAnalyticsPage },
             { path: ROUTES.warehouses, Component: WarehousesPage },
             { path: ROUTES.channels, Component: ChannelsPage },
             // Inventory workspace + sub-pages
