@@ -6,13 +6,13 @@ namespace Modules\Marketing\Automation\Domain\Enums;
 
 enum WorkflowNodeType: string
 {
-    case TRIGGER   = 'trigger';
+    case TRIGGER = 'trigger';
     case CONDITION = 'condition';
-    case ACTION    = 'action';
-    case WAIT      = 'wait';
-    case DELAY     = 'delay';
-    case BRANCH    = 'branch';
-    case LOOP      = 'loop';
+    case ACTION = 'action';
+    case WAIT = 'wait';
+    case DELAY = 'delay';
+    case BRANCH = 'branch';
+    case LOOP = 'loop';
 
     public function isControlFlow(): bool
     {

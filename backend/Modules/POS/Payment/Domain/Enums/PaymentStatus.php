@@ -6,7 +6,7 @@ namespace Modules\POS\Payment\Domain\Enums;
 
 enum PaymentStatus: string
 {
-    case Pending  = 'pending';
+    case Pending = 'pending';
     case Captured = 'captured';
 
     public function isTerminal(): bool

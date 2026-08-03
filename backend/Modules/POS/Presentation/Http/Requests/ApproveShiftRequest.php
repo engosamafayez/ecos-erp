@@ -17,8 +17,8 @@ final class ApproveShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'expected_closing'          => ['required', 'array'],
-            'expected_closing.amount'   => ['required', 'numeric', 'min:0'],
+            'expected_closing' => ['required', 'array'],
+            'expected_closing.amount' => ['required', 'numeric', 'min:0'],
             'expected_closing.currency' => ['required', 'string', 'size:3'],
         ];
     }

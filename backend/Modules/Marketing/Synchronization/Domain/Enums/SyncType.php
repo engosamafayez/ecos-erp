@@ -6,8 +6,8 @@ namespace Modules\Marketing\Synchronization\Domain\Enums;
 
 enum SyncType: string
 {
-    case Manual      = 'manual';
-    case Scheduled   = 'scheduled';
+    case Manual = 'manual';
+    case Scheduled = 'scheduled';
     case Incremental = 'incremental';
-    case Full        = 'full';
+    case Full = 'full';
 }

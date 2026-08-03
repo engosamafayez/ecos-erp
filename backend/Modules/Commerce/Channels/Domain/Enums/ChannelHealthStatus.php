@@ -8,5 +8,5 @@ enum ChannelHealthStatus: string
 {
     case Healthy = 'healthy';
     case Warning = 'warning';
-    case Error   = 'error';
+    case Error = 'error';
 }

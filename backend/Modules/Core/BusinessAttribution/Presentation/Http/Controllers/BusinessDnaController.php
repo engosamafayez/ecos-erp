@@ -42,6 +42,7 @@ class BusinessDnaController extends Controller
         }
 
         $perPage = min((int) $request->query('per_page', 25), 100);
+
         return BusinessDnaResource::collection($query->orderByDesc('created_at')->paginate($perPage));
     }
 
@@ -50,7 +51,7 @@ class BusinessDnaController extends Controller
     {
         $request->validate([
             'entity_type' => ['required', 'string'],
-            'entity_id'   => ['required', 'uuid'],
+            'entity_id' => ['required', 'uuid'],
         ]);
 
         $dna = $this->dnaService->getForEntity(
@@ -69,6 +70,7 @@ class BusinessDnaController extends Controller
     public function show(BusinessDna $businessDna): BusinessDnaResource
     {
         $businessDna->load(['journeySteps', 'metrics']);
+
         return new BusinessDnaResource($businessDna);
     }
 
@@ -79,27 +81,27 @@ class BusinessDnaController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'entity_type'         => ['required', 'string'],
-            'entity_id'           => ['required', 'uuid'],
-            'origin_provider'     => ['nullable', 'string', 'max:50'],
-            'origin_platform'     => ['nullable', 'string', 'max:100'],
-            'initiative_id'       => ['nullable', 'uuid'],
-            'campaign_id'         => ['nullable', 'uuid'],
-            'ad_set_id'           => ['nullable', 'uuid'],
-            'ad_id'               => ['nullable', 'uuid'],
-            'creative_id'         => ['nullable', 'uuid'],
-            'landing_page'        => ['nullable', 'string', 'max:500'],
+            'entity_type' => ['required', 'string'],
+            'entity_id' => ['required', 'uuid'],
+            'origin_provider' => ['nullable', 'string', 'max:50'],
+            'origin_platform' => ['nullable', 'string', 'max:100'],
+            'initiative_id' => ['nullable', 'uuid'],
+            'campaign_id' => ['nullable', 'uuid'],
+            'ad_set_id' => ['nullable', 'uuid'],
+            'ad_id' => ['nullable', 'uuid'],
+            'creative_id' => ['nullable', 'uuid'],
+            'landing_page' => ['nullable', 'string', 'max:500'],
             'conversation_source' => ['nullable', 'string', 'max:100'],
-            'lead_source'         => ['nullable', 'string', 'max:100'],
-            'sales_rep_id'        => ['nullable', 'uuid'],
-            'company_id'          => ['nullable', 'uuid'],
-            'brand_id'            => ['nullable', 'uuid'],
-            'channel_id'          => ['nullable', 'uuid'],
-            'cost_center'         => ['nullable', 'string', 'max:100'],
-            'business_unit'       => ['nullable', 'string', 'max:100'],
-            'attribution_model'   => ['nullable', 'string'],
-            'provider_metadata'   => ['nullable', 'array'],
-            'erp_metadata'        => ['nullable', 'array'],
+            'lead_source' => ['nullable', 'string', 'max:100'],
+            'sales_rep_id' => ['nullable', 'uuid'],
+            'company_id' => ['nullable', 'uuid'],
+            'brand_id' => ['nullable', 'uuid'],
+            'channel_id' => ['nullable', 'uuid'],
+            'cost_center' => ['nullable', 'string', 'max:100'],
+            'business_unit' => ['nullable', 'string', 'max:100'],
+            'attribution_model' => ['nullable', 'string'],
+            'provider_metadata' => ['nullable', 'array'],
+            'erp_metadata' => ['nullable', 'array'],
         ]);
 
         $dna = $this->attachAction->execute(
@@ -115,15 +117,15 @@ class BusinessDnaController extends Controller
     public function update(Request $request, BusinessDna $businessDna): BusinessDnaResource
     {
         $data = $request->validate([
-            'initiative_id'           => ['nullable', 'uuid'],
-            'campaign_id'             => ['nullable', 'uuid'],
-            'lead_source'             => ['nullable', 'string', 'max:100'],
-            'sales_rep_id'            => ['nullable', 'uuid'],
+            'initiative_id' => ['nullable', 'uuid'],
+            'campaign_id' => ['nullable', 'uuid'],
+            'lead_source' => ['nullable', 'string', 'max:100'],
+            'sales_rep_id' => ['nullable', 'uuid'],
             'customer_lifetime_stage' => ['nullable', 'string', 'max:50'],
-            'attribution_model'       => ['nullable', 'string'],
-            'erp_metadata'            => ['nullable', 'array'],
-            'first_touch'             => ['nullable', 'array'],
-            'last_touch'              => ['nullable', 'array'],
+            'attribution_model' => ['nullable', 'string'],
+            'erp_metadata' => ['nullable', 'array'],
+            'first_touch' => ['nullable', 'array'],
+            'last_touch' => ['nullable', 'array'],
         ]);
 
         $this->dnaService->update($businessDna->id, $data);

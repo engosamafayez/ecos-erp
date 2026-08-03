@@ -47,11 +47,12 @@ final class CustomerSyncJob implements ShouldQueue
 
         if ($credential === null) {
             $logService->markFailed($log, 'No credentials configured for this channel.');
+
             return;
         }
 
         $payload = $this->buildPayload();
-        $baseUrl = rtrim($this->channel->store_url, '/') . '/wp-json/wc/v3/customers';
+        $baseUrl = rtrim($this->channel->store_url, '/').'/wp-json/wc/v3/customers';
 
         try {
             $wcCustomerId = $this->resolveWooCommerceCustomerId($baseUrl, $credential->consumer_key, $credential->consumer_secret);
@@ -69,7 +70,7 @@ final class CustomerSyncJob implements ShouldQueue
             if ($response->successful()) {
                 $logService->markSuccess($log, ['wc_customer_id' => $response->json('id')], $this->channel);
             } else {
-                $logService->markFailed($log, "HTTP {$response->status()}: " . substr($response->body(), 0, 500), null, $this->channel);
+                $logService->markFailed($log, "HTTP {$response->status()}: ".substr($response->body(), 0, 500), null, $this->channel);
             }
         } catch (Throwable $e) {
             $logService->markFailed($log, $e->getMessage(), null, $this->channel);

@@ -67,26 +67,26 @@ final class CustomerEventsTest extends TestCase
         $event = CustomerIdentified::now('cust-1', 'C001', 'Jane', true, false, CustomerLookupType::ByPhone);
         $array = $event->toArray();
 
-        $this->assertArrayHasKey('event_id',       $array);
-        $this->assertArrayHasKey('event_name',     $array);
-        $this->assertArrayHasKey('occurred_at',    $array);
-        $this->assertArrayHasKey('event_version',  $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('event_name', $array);
+        $this->assertArrayHasKey('occurred_at', $array);
+        $this->assertArrayHasKey('event_version', $array);
         $this->assertArrayHasKey('correlation_id', $array);
-        $this->assertArrayHasKey('customer_id',    $array);
-        $this->assertArrayHasKey('customer_code',  $array);
-        $this->assertArrayHasKey('name',           $array);
-        $this->assertArrayHasKey('has_email',      $array);
-        $this->assertArrayHasKey('has_phone',      $array);
-        $this->assertArrayHasKey('lookup_type',    $array);
+        $this->assertArrayHasKey('customer_id', $array);
+        $this->assertArrayHasKey('customer_code', $array);
+        $this->assertArrayHasKey('name', $array);
+        $this->assertArrayHasKey('has_email', $array);
+        $this->assertArrayHasKey('has_phone', $array);
+        $this->assertArrayHasKey('lookup_type', $array);
     }
 
     public function test_customer_identified_carries_correct_payload(): void
     {
         $event = CustomerIdentified::now('cust-1', 'C001', 'Jane Doe', true, false, CustomerLookupType::ByEmail);
 
-        $this->assertSame('cust-1',                    $event->customerId);
-        $this->assertSame('C001',                      $event->customerCode);
-        $this->assertSame('Jane Doe',                  $event->name);
+        $this->assertSame('cust-1', $event->customerId);
+        $this->assertSame('C001', $event->customerCode);
+        $this->assertSame('Jane Doe', $event->name);
         $this->assertTrue($event->hasEmail);
         $this->assertFalse($event->hasPhone);
         $this->assertSame(CustomerLookupType::ByEmail, $event->lookupType);
@@ -126,8 +126,8 @@ final class CustomerEventsTest extends TestCase
     public function test_loyalty_points_earned_unique_ids(): void
     {
         $saleTotal = Money::of('100.00', 'EGP');
-        $e1        = LoyaltyPointsEarned::now('c1', 100, $saleTotal, 'TXN-1');
-        $e2        = LoyaltyPointsEarned::now('c1', 100, $saleTotal, 'TXN-2');
+        $e1 = LoyaltyPointsEarned::now('c1', 100, $saleTotal, 'TXN-1');
+        $e2 = LoyaltyPointsEarned::now('c1', 100, $saleTotal, 'TXN-2');
 
         $this->assertNotSame($e1->eventId(), $e2->eventId());
     }
@@ -137,16 +137,16 @@ final class CustomerEventsTest extends TestCase
         $event = LoyaltyPointsEarned::now('c1', 100, Money::of('100.00', 'EGP'), 'TXN-001');
         $array = $event->toArray();
 
-        $this->assertArrayHasKey('event_id',            $array);
-        $this->assertArrayHasKey('event_name',          $array);
-        $this->assertArrayHasKey('occurred_at',         $array);
-        $this->assertArrayHasKey('event_version',       $array);
-        $this->assertArrayHasKey('correlation_id',      $array);
-        $this->assertArrayHasKey('customer_id',         $array);
-        $this->assertArrayHasKey('points_earned',       $array);
-        $this->assertArrayHasKey('sale_total_amount',   $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('event_name', $array);
+        $this->assertArrayHasKey('occurred_at', $array);
+        $this->assertArrayHasKey('event_version', $array);
+        $this->assertArrayHasKey('correlation_id', $array);
+        $this->assertArrayHasKey('customer_id', $array);
+        $this->assertArrayHasKey('points_earned', $array);
+        $this->assertArrayHasKey('sale_total_amount', $array);
         $this->assertArrayHasKey('sale_total_currency', $array);
-        $this->assertArrayHasKey('transaction_ref',     $array);
+        $this->assertArrayHasKey('transaction_ref', $array);
     }
 
     // ── LoyaltyPointsRedeemed ─────────────────────────────────────────────────
@@ -185,12 +185,12 @@ final class CustomerEventsTest extends TestCase
         $event = LoyaltyPointsRedeemed::now('c1', 100, Money::of('1.00', 'EGP'), 'TXN-001');
         $array = $event->toArray();
 
-        $this->assertArrayHasKey('event_id',                  $array);
-        $this->assertArrayHasKey('correlation_id',            $array);
-        $this->assertArrayHasKey('points_redeemed',           $array);
-        $this->assertArrayHasKey('monetary_value_amount',     $array);
-        $this->assertArrayHasKey('monetary_value_currency',   $array);
-        $this->assertArrayHasKey('transaction_ref',           $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('correlation_id', $array);
+        $this->assertArrayHasKey('points_redeemed', $array);
+        $this->assertArrayHasKey('monetary_value_amount', $array);
+        $this->assertArrayHasKey('monetary_value_currency', $array);
+        $this->assertArrayHasKey('transaction_ref', $array);
     }
 
     // ── StoreCreditApplied ────────────────────────────────────────────────────
@@ -227,8 +227,8 @@ final class CustomerEventsTest extends TestCase
     public function test_store_credit_applied_unique_ids(): void
     {
         $amount = Money::of('25.00', 'EGP');
-        $e1     = StoreCreditApplied::now('c1', $amount, 'TXN-1');
-        $e2     = StoreCreditApplied::now('c1', $amount, 'TXN-2');
+        $e1 = StoreCreditApplied::now('c1', $amount, 'TXN-1');
+        $e2 = StoreCreditApplied::now('c1', $amount, 'TXN-2');
 
         $this->assertNotSame($e1->eventId(), $e2->eventId());
     }
@@ -245,14 +245,14 @@ final class CustomerEventsTest extends TestCase
         $event = StoreCreditApplied::now('c1', Money::of('30.00', 'EGP'), 'TXN-001');
         $array = $event->toArray();
 
-        $this->assertArrayHasKey('event_id',                 $array);
-        $this->assertArrayHasKey('event_name',               $array);
-        $this->assertArrayHasKey('occurred_at',              $array);
-        $this->assertArrayHasKey('event_version',            $array);
-        $this->assertArrayHasKey('correlation_id',           $array);
-        $this->assertArrayHasKey('customer_id',              $array);
-        $this->assertArrayHasKey('amount_applied_amount',    $array);
-        $this->assertArrayHasKey('amount_applied_currency',  $array);
-        $this->assertArrayHasKey('transaction_ref',          $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('event_name', $array);
+        $this->assertArrayHasKey('occurred_at', $array);
+        $this->assertArrayHasKey('event_version', $array);
+        $this->assertArrayHasKey('correlation_id', $array);
+        $this->assertArrayHasKey('customer_id', $array);
+        $this->assertArrayHasKey('amount_applied_amount', $array);
+        $this->assertArrayHasKey('amount_applied_currency', $array);
+        $this->assertArrayHasKey('transaction_ref', $array);
     }
 }

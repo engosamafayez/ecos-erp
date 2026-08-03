@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Operations\DemandAnalysis\Application\Listeners;
 
 use Illuminate\Support\Facades\DB;
-use Modules\Operations\DemandAnalysis\Application\Services\DemandCalculationService;
 use Modules\Operations\DemandAnalysis\Application\Services\DemandProjectionBuilder;
 use Modules\Operations\Preparation\Application\Events\Inbound\ManufacturingJobCompletedEvent;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;

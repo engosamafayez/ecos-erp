@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Discount;
 
+use InvalidArgumentException;
 use Modules\POS\Discount\Domain\ValueObjects\DiscountValue;
 use Modules\POS\Shared\Domain\Enums\DiscountType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -53,13 +54,13 @@ final class DiscountValueTest extends TestCase
 
     public function test_fixed_factory_throws_on_zero_amount(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         DiscountValue::fixed(Money::zero('EGP'));
     }
 
     public function test_fixed_factory_throws_on_negative_amount(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         DiscountValue::fixed(Money::of('-10.00', 'EGP'));
     }
 
@@ -67,9 +68,9 @@ final class DiscountValueTest extends TestCase
 
     public function test_apply_percentage_computes_bcmath_result(): void
     {
-        $value    = DiscountValue::percentage(Percentage::of('10'));
-        $base     = Money::of('200.00', 'EGP');
-        $result   = $value->apply($base);
+        $value = DiscountValue::percentage(Percentage::of('10'));
+        $base = Money::of('200.00', 'EGP');
+        $result = $value->apply($base);
 
         $this->assertSame('20.00', $result->amount);
         $this->assertSame('EGP', $result->currency);
@@ -77,8 +78,8 @@ final class DiscountValueTest extends TestCase
 
     public function test_apply_fixed_returns_fixed_amount(): void
     {
-        $value  = DiscountValue::fixed(Money::of('30.00', 'EGP'));
-        $base   = Money::of('200.00', 'EGP');
+        $value = DiscountValue::fixed(Money::of('30.00', 'EGP'));
+        $base = Money::of('200.00', 'EGP');
         $result = $value->apply($base);
 
         $this->assertSame('30.00', $result->amount);
@@ -88,8 +89,8 @@ final class DiscountValueTest extends TestCase
     public function test_apply_percentage_uses_bcmath_not_float(): void
     {
         // 15% of 133.33 = 19.9995 → truncated to 19.99 at scale=2 (BCMath, not float approximation)
-        $value  = DiscountValue::percentage(Percentage::of('15'));
-        $base   = Money::of('133.33', 'EGP');
+        $value = DiscountValue::percentage(Percentage::of('15'));
+        $base = Money::of('133.33', 'EGP');
         $result = $value->apply($base);
 
         $this->assertSame('19.99', $result->amount);
@@ -99,7 +100,7 @@ final class DiscountValueTest extends TestCase
 
     public function test_as_percentage_returns_percentage_for_percentage_type(): void
     {
-        $pct   = Percentage::of('20');
+        $pct = Percentage::of('20');
         $value = DiscountValue::percentage($pct);
         $this->assertTrue($pct->equals($value->asPercentage()));
     }
@@ -113,7 +114,7 @@ final class DiscountValueTest extends TestCase
     public function test_as_fixed_amount_returns_money_for_fixed_type(): void
     {
         $amount = Money::of('40.00', 'EGP');
-        $value  = DiscountValue::fixed($amount);
+        $value = DiscountValue::fixed($amount);
         $this->assertTrue($amount->equals($value->asFixedAmount()));
     }
 

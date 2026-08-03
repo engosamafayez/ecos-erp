@@ -13,32 +13,34 @@ namespace Modules\Purchasing\PurchaseMaterials\Domain\Services;
  */
 final class PurchaseMaterialRuleEngine
 {
-    public const SEVERITY_INFO    = 'info';
+    public const SEVERITY_INFO = 'info';
+
     public const SEVERITY_WARNING = 'warning';
-    public const SEVERITY_ERROR   = 'error';
+
+    public const SEVERITY_ERROR = 'error';
 
     /**
-     * @param  array  $panel         Output of GetProductProcurementPanelAction::execute()
+     * @param  array  $panel  Output of GetProductProcurementPanelAction::execute()
      * @param  float  $requestedQty  Quantity being requested
-     * @param  string|null $requiredDate  ISO date string or null
+     * @param  string|null  $requiredDate  ISO date string or null
      * @return list<array{type: string, severity: string, message: string, recommended_qty: float|null}>
      */
     public function evaluate(array $panel, float $requestedQty, ?string $requiredDate = null): array
     {
         $recommendations = [];
 
-        $daily    = (float) ($panel['consumption']['daily_avg'] ?? 0);
-        $monthly  = (float) ($panel['consumption']['monthly_avg'] ?? 0);
+        $daily = (float) ($panel['consumption']['daily_avg'] ?? 0);
+        $monthly = (float) ($panel['consumption']['monthly_avg'] ?? 0);
         $available = (float) ($panel['inventory']['available_qty'] ?? 0);
-        $days     = $panel['coverage']['days_remaining'] ?? null;
+        $days = $panel['coverage']['days_remaining'] ?? null;
         $lastPrice = $panel['last_purchase']['last_price'] ?? null;
 
         // Rule 1: Coverage is sufficient
         if ($days !== null && $days > 30 && $daily > 0) {
             $recommendations[] = [
-                'type'            => 'coverage_sufficient',
-                'severity'        => self::SEVERITY_INFO,
-                'message'         => sprintf(
+                'type' => 'coverage_sufficient',
+                'severity' => self::SEVERITY_INFO,
+                'message' => sprintf(
                     'Current stock covers approximately %.0f days. Consider whether this request is needed now.',
                     $days,
                 ),
@@ -49,9 +51,9 @@ final class PurchaseMaterialRuleEngine
         // Rule 2: Quantity above 60-day demand
         if ($daily > 0 && $requestedQty > $daily * 60) {
             $recommendations[] = [
-                'type'            => 'quantity_above_demand',
-                'severity'        => self::SEVERITY_WARNING,
-                'message'         => sprintf(
+                'type' => 'quantity_above_demand',
+                'severity' => self::SEVERITY_WARNING,
+                'message' => sprintf(
                     'Requested quantity (%.2f) exceeds 60 days of average demand (%.2f). Consider reducing.',
                     $requestedQty,
                     $daily * 60,
@@ -63,9 +65,9 @@ final class PurchaseMaterialRuleEngine
         // Rule 3: Overstock risk — after receiving, stock covers more than 90 days
         if ($daily > 0 && ($available + $requestedQty) > ($daily * 90)) {
             $recommendations[] = [
-                'type'            => 'overstock_risk',
-                'severity'        => self::SEVERITY_WARNING,
-                'message'         => sprintf(
+                'type' => 'overstock_risk',
+                'severity' => self::SEVERITY_WARNING,
+                'message' => sprintf(
                     'After receiving, total stock would cover approximately %.0f days. Overstock risk.',
                     ($available + $requestedQty) / $daily,
                 ),
@@ -78,9 +80,9 @@ final class PurchaseMaterialRuleEngine
             $recommended = round($monthly * 1.2, 2); // 20% safety buffer
             if (abs($requestedQty - $recommended) / max($recommended, 1) > 0.2) {
                 $recommendations[] = [
-                    'type'            => 'recommended_quantity',
-                    'severity'        => self::SEVERITY_INFO,
-                    'message'         => sprintf(
+                    'type' => 'recommended_quantity',
+                    'severity' => self::SEVERITY_INFO,
+                    'message' => sprintf(
                         'Recommended quantity based on 30-day average + 20%% safety buffer: %.2f.',
                         $recommended,
                     ),
@@ -101,13 +103,13 @@ final class PurchaseMaterialRuleEngine
             }
             if ($minLeadTime !== null) {
                 $daysUntilRequired = (int) ceil(
-                    (strtotime($requiredDate) - time()) / 86400
+                    (strtotime($requiredDate) - time()) / 86400,
                 );
                 if ($daysUntilRequired < $minLeadTime) {
                     $recommendations[] = [
-                        'type'            => 'lead_time_risk',
-                        'severity'        => self::SEVERITY_ERROR,
-                        'message'         => sprintf(
+                        'type' => 'lead_time_risk',
+                        'severity' => self::SEVERITY_ERROR,
+                        'message' => sprintf(
                             'Required date is in %d day(s), but shortest supplier lead time is %d day(s). Expedited order may be needed.',
                             $daysUntilRequired,
                             $minLeadTime,
@@ -125,9 +127,9 @@ final class PurchaseMaterialRuleEngine
                 $altPrice = $s['last_price'] ?? null;
                 if ($altPrice !== null && $altPrice < $lastPrice * 0.95) {
                     $recommendations[] = [
-                        'type'            => 'better_supplier',
-                        'severity'        => self::SEVERITY_INFO,
-                        'message'         => sprintf(
+                        'type' => 'better_supplier',
+                        'severity' => self::SEVERITY_INFO,
+                        'message' => sprintf(
                             '%s offers a lower price (%.2f vs %.2f last paid) — a saving of ~%.1f%%.',
                             $s['supplier_name'],
                             $altPrice,
@@ -144,9 +146,9 @@ final class PurchaseMaterialRuleEngine
         // Rule 7: Critical stock — coverage below 3 days
         if ($days !== null && $days <= 3 && $daily > 0) {
             $recommendations[] = [
-                'type'            => 'critical_stock',
-                'severity'        => self::SEVERITY_ERROR,
-                'message'         => sprintf(
+                'type' => 'critical_stock',
+                'severity' => self::SEVERITY_ERROR,
+                'message' => sprintf(
                     'Critical: only %.1f day(s) of stock remaining. Mark as Urgent.',
                     $days,
                 ),

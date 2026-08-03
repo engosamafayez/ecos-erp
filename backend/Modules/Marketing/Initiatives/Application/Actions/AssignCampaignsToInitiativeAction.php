@@ -18,22 +18,23 @@ use Modules\Marketing\Initiatives\Domain\Models\MarketingInitiative;
 final class AssignCampaignsToInitiativeAction
 {
     /**
-     * @param  list<string> $campaignIds
+     * @param  list<string>  $campaignIds
      * @return array{assigned: int, already_assigned: int}
      */
     public function execute(
         MarketingInitiative $initiative,
-        array               $campaignIds,
-        ?string             $actorId = null,
+        array $campaignIds,
+        ?string $actorId = null,
     ): array {
         $campaigns = Campaign::whereIn('id', $campaignIds)->get();
 
-        $assigned        = 0;
+        $assigned = 0;
         $alreadyAssigned = 0;
 
         foreach ($campaigns as $campaign) {
             if ((string) $campaign->marketing_initiative_id === (string) $initiative->id) {
                 $alreadyAssigned++;
+
                 continue;
             }
 
@@ -41,17 +42,17 @@ final class AssignCampaignsToInitiativeAction
 
             MarketingAuditLog::record(
                 entityType: 'campaign',
-                entityId:   $campaign->id,
-                action:     'assigned_to_initiative',
-                actorId:    $actorId,
-                after:      ['initiative_id' => $initiative->id, 'initiative_name' => $initiative->name],
+                entityId: $campaign->id,
+                action: 'assigned_to_initiative',
+                actorId: $actorId,
+                after: ['initiative_id' => $initiative->id, 'initiative_name' => $initiative->name],
             );
 
             $assigned++;
         }
 
         return [
-            'assigned'        => $assigned,
+            'assigned' => $assigned,
             'already_assigned' => $alreadyAssigned,
         ];
     }

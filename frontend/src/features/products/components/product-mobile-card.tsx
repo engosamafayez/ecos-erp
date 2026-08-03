@@ -1,4 +1,5 @@
 import { Eye, Package, Pencil } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { getMediaUrl } from '@/lib/media';
@@ -40,6 +41,8 @@ export function ProductMobileCard({
   onEdit,
   onSelect,
 }: ProductMobileCardProps) {
+  const { t } = useTranslation('products');
+
   return (
     <div
       role="listitem"
@@ -114,7 +117,7 @@ export function ProductMobileCard({
           size="icon"
           className="size-7"
           onClick={(e) => { e.stopPropagation(); onView(product); }}
-          aria-label="View product"
+          aria-label={t($ => $.mobileCard.viewProduct)}
         >
           <Eye className="size-3.5" />
         </Button>
@@ -124,7 +127,7 @@ export function ProductMobileCard({
             size="icon"
             className="size-7"
             onClick={(e) => { e.stopPropagation(); onEdit(product); }}
-            aria-label="Edit product"
+            aria-label={t($ => $.mobileCard.editProduct)}
           >
             <Pencil className="size-3.5" />
           </Button>

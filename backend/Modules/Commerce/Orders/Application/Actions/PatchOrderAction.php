@@ -6,6 +6,7 @@ namespace Modules\Commerce\Orders\Application\Actions;
 
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
+use BackedEnum;
 use GuzzleHttp\TransferStats;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -17,18 +18,16 @@ use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\CancelOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\CompleteDeliveryWorkflow;
-use Modules\Operations\Fulfillment\Application\Workflows\CompleteOrderWorkflow;
-use Modules\Operations\Fulfillment\Application\Workflows\ConfirmOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\DispatchOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\MarkAwaitingStockWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\MoveToPreparationWorkflow;
+use Modules\Operations\Fulfillment\Application\Workflows\MoveToReviewWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ReturnOrderWorkflow;
-use Modules\Operations\Fulfillment\Application\Workflows\ReturnToConfirmedWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ReturnToPendingWorkflow;
-use Modules\Operations\Fulfillment\Application\Workflows\ResumeToConfirmedWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\SetEarlyStatusWorkflow;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
+use Throwable;
 
 /**
  * Applies a partial field update to an order.
@@ -45,32 +44,29 @@ final class PatchOrderAction extends BaseAction
 {
     private const ALLOWED = ['status', 'area', 'city', 'governorate', 'google_maps_lat', 'google_maps_lng', 'google_maps_url', 'delivery_zone_id', 'delivery_zone'];
 
-    /** Only confirmed triggers the snapshot — the one moment of financial commitment. */
-    private const SNAPSHOT_TRIGGER_STATUSES = ['confirmed'];
+    /** InProgress is the first committed state — trigger snapshot on entry. */
+    private const SNAPSHOT_TRIGGER_STATUSES = ['in_progress'];
 
     public function __construct(
         private readonly CreateOrderSnapshotService $snapshotService,
-        private readonly FulfillmentEngine          $fulfillmentEngine,
+        private readonly FulfillmentEngine $fulfillmentEngine,
         // Workflow pool — resolved via Laravel container for each status target.
-        private readonly ProcessOrderWorkflow       $processWorkflow,
-        private readonly ConfirmOrderWorkflow       $confirmWorkflow,
-        private readonly MoveToPreparationWorkflow  $prepareWorkflow,
-        private readonly DispatchOrderWorkflow      $dispatchWorkflow,
-        private readonly CompleteDeliveryWorkflow   $deliverWorkflow,
-        private readonly CompleteOrderWorkflow      $completeWorkflow,
-        private readonly CancelOrderWorkflow        $cancelWorkflow,
-        private readonly MarkAwaitingStockWorkflow  $awaitingStockWorkflow,
-        private readonly ReturnToPendingWorkflow    $pendingWorkflow,
-        private readonly ReturnToConfirmedWorkflow  $returnToConfirmedWorkflow,
-        private readonly ResumeToConfirmedWorkflow  $resumeToConfirmedWorkflow,
-        private readonly ReturnOrderWorkflow        $returnOrderWorkflow,
-        private readonly SetEarlyStatusWorkflow     $earlyStatusWorkflow,
+        private readonly ProcessOrderWorkflow $processWorkflow,
+        private readonly MoveToPreparationWorkflow $prepareWorkflow,
+        private readonly DispatchOrderWorkflow $dispatchWorkflow,
+        private readonly CompleteDeliveryWorkflow $deliverWorkflow,
+        private readonly CancelOrderWorkflow $cancelWorkflow,
+        private readonly MarkAwaitingStockWorkflow $awaitingStockWorkflow,
+        private readonly ReturnToPendingWorkflow $pendingWorkflow,
+        private readonly ReturnOrderWorkflow $returnOrderWorkflow,
+        private readonly MoveToReviewWorkflow $reviewWorkflow,
+        private readonly SetEarlyStatusWorkflow $earlyStatusWorkflow,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
     {
-        $id   = (string) $arguments[0];
-        $data = (array)  $arguments[1];
+        $id = (string) $arguments[0];
+        $data = (array) $arguments[1];
 
         /** @var Order $order */
         $order = Order::where('id', $id)
@@ -79,7 +75,7 @@ final class PatchOrderAction extends BaseAction
         $update = array_intersect_key($data, array_flip(self::ALLOWED));
 
         // Auto-resolve short Google Maps URLs and extract coordinates server-side.
-        if (!empty($update['google_maps_url']) && !isset($update['google_maps_lat'])) {
+        if (! empty($update['google_maps_url']) && ! isset($update['google_maps_lat'])) {
             $urlHost = strtolower((string) parse_url($update['google_maps_url'], PHP_URL_HOST));
             if (str_contains($urlHost, 'maps.app.goo.gl')) {
                 [$resolvedUrl, $lat, $lng] = $this->resolveShortMapsUrl($update['google_maps_url']);
@@ -91,16 +87,16 @@ final class PatchOrderAction extends BaseAction
             }
         }
 
-        $actorId    = Auth::id() !== null ? (string) Auth::id() : null;
-        $actorName  = Auth::user()?->name ?? null;
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
+        $actorName = Auth::user()?->name ?? null;
         $actorEmail = Auth::user()?->email ?? null;
-        $actorRole  = Auth::user()?->roles()->value('name');
-        $reason     = $data['reason'] ?? null;
+        $actorRole = Auth::user()?->roles()->value('name');
+        $reason = $data['reason'] ?? null;
 
         // ── Status transition (routes through FulfillmentEngine) ──────────────────
 
         if (isset($update['status'])) {
-            $newStatusValue = $update['status'] instanceof \BackedEnum
+            $newStatusValue = $update['status'] instanceof BackedEnum
                 ? $update['status']->value
                 : (string) $update['status'];
 
@@ -114,10 +110,10 @@ final class PatchOrderAction extends BaseAction
             $nonStatusUpdate = array_filter(
                 $update,
                 static fn ($key) => $key !== 'status',
-                ARRAY_FILTER_USE_KEY
+                ARRAY_FILTER_USE_KEY,
             );
 
-            if (!empty($nonStatusUpdate)) {
+            if (! empty($nonStatusUpdate)) {
                 $oldValues = [];
                 foreach (array_keys($nonStatusUpdate) as $field) {
                     $oldValues[$field] = $order->getAttribute($field);
@@ -127,16 +123,16 @@ final class PatchOrderAction extends BaseAction
 
                 foreach ($nonStatusUpdate as $field => $newValue) {
                     $oldValue = $oldValues[$field] ?? null;
-                    $oldStr   = $oldValue instanceof \BackedEnum ? $oldValue->value : $oldValue;
-                    $newStr   = $newValue instanceof \BackedEnum ? $newValue->value : $newValue;
+                    $oldStr = $oldValue instanceof BackedEnum ? $oldValue->value : $oldValue;
+                    $newStr = $newValue instanceof BackedEnum ? $newValue->value : $newValue;
                     if ((string) $oldStr !== (string) ($newStr ?? '')) {
                         OrderEvent::log(
-                            orderId:    $order->id,
-                            type:       'field_updated',
-                            description:"Field '{$field}' updated.",
-                            payload:    ['field' => $field, 'old_value' => $oldStr, 'new_value' => $newStr],
-                            actorId:    $actorId,
-                            actorName:  $actorName,
+                            orderId: $order->id,
+                            type: 'field_updated',
+                            description: "Field '{$field}' updated.",
+                            payload: ['field' => $field, 'old_value' => $oldStr, 'new_value' => $newStr],
+                            actorId: $actorId,
+                            actorName: $actorName,
                         );
                     }
                 }
@@ -152,11 +148,11 @@ final class PatchOrderAction extends BaseAction
                     $actorId,
                 );
                 $order = $result->order;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::channel('daily')->warning('[PatchOrder] Workflow failed', [
                     'order_id' => $order->id,
-                    'to'       => $newStatusValue,
-                    'error'    => $e->getMessage(),
+                    'to' => $newStatusValue,
+                    'error' => $e->getMessage(),
                 ]);
                 abort(422, $e->getMessage());
             }
@@ -177,28 +173,28 @@ final class PatchOrderAction extends BaseAction
             $oldValues[$field] = $order->getAttribute($field);
         }
 
-        if (!empty($update)) {
+        if (! empty($update)) {
             $order->update($update);
         }
 
         foreach ($update as $field => $newValue) {
             $oldValue = $oldValues[$field] ?? null;
-            $oldStr   = $oldValue instanceof \BackedEnum ? $oldValue->value : $oldValue;
-            $newStr   = $newValue instanceof \BackedEnum ? $newValue->value : $newValue;
+            $oldStr = $oldValue instanceof BackedEnum ? $oldValue->value : $oldValue;
+            $newStr = $newValue instanceof BackedEnum ? $newValue->value : $newValue;
 
             if ((string) $oldStr !== (string) ($newStr ?? '')) {
                 OrderEvent::log(
-                    orderId:       $order->id,
-                    type:          'field_updated',
-                    description:   "Field '{$field}' updated.",
-                    payload:       ['field' => $field, 'old_value' => $oldStr, 'new_value' => $newStr],
-                    actorId:       $actorId,
-                    actorName:     $actorName,
+                    orderId: $order->id,
+                    type: 'field_updated',
+                    description: "Field '{$field}' updated.",
+                    payload: ['field' => $field, 'old_value' => $oldStr, 'new_value' => $newStr],
+                    actorId: $actorId,
+                    actorName: $actorName,
                     previousValue: [$field => $oldStr],
-                    newValue:      [$field => $newStr],
-                    actionType:    'updated',
-                    actorRole:     $actorRole,
-                    actorEmail:    $actorEmail,
+                    newValue: [$field => $newStr],
+                    actionType: 'updated',
+                    actorRole: $actorRole,
+                    actorEmail: $actorEmail,
                 );
             }
         }
@@ -216,27 +212,20 @@ final class PatchOrderAction extends BaseAction
     private function resolveWorkflow(OrderStatus $from, string $to, array $data): ?FulfillmentWorkflowInterface
     {
         return match (true) {
-            // Inventory-impacting transitions require specific workflows
-            $to === OrderStatus::Processing->value  => $this->processWorkflow,
-            $to === OrderStatus::Preparing->value   => $this->prepareWorkflow,
-            $to === OrderStatus::OutForDelivery->value => $this->dispatchWorkflow,
-            $to === OrderStatus::Delivered->value   => $this->deliverWorkflow,
-            $to === OrderStatus::Completed->value   => $this->completeWorkflow,
-            $to === OrderStatus::Cancelled->value   => $this->cancelWorkflow,
-            $to === OrderStatus::AwaitingStock->value => $this->awaitingStockWorkflow,
-            $to === OrderStatus::Pending->value     => $this->pendingWorkflow,
-            $to === OrderStatus::Returned->value    => $this->returnOrderWorkflow,
+            // Inventory-impacting transitions
+            $to === OrderStatus::InProgress->value       => $this->processWorkflow,
+            $to === OrderStatus::ReadyForDispatch->value => $this->prepareWorkflow,
+            $to === OrderStatus::OutForDelivery->value   => $this->dispatchWorkflow,
+            $to === OrderStatus::Delivered->value        => $this->deliverWorkflow,
+            $to === OrderStatus::Cancelled->value        => $this->cancelWorkflow,
+            $to === OrderStatus::AwaitingStock->value    => $this->awaitingStockWorkflow,
+            $to === OrderStatus::NewOrder->value         => $this->pendingWorkflow,
+            $to === OrderStatus::Returned->value         => $this->returnOrderWorkflow,
+            $to === OrderStatus::OnHold->value           => $this->reviewWorkflow,
 
-            // Confirmed is context-dependent on source status
-            $to === OrderStatus::Confirmed->value && $from === OrderStatus::Returned  => $this->returnToConfirmedWorkflow,
-            $to === OrderStatus::Confirmed->value && $from === OrderStatus::Delivered => $this->resumeToConfirmedWorkflow,
-            $to === OrderStatus::Confirmed->value   => $this->confirmWorkflow,
-
-            // Simple label changes with no inventory impact
+            // Simple label-only transitions (no inventory impact)
             $to === OrderStatus::AwaitingPayment->value,
-            $to === OrderStatus::Review->value,
-            $to === OrderStatus::Rescheduled->value,
-            $to === OrderStatus::Scheduled->value   => $this->earlyStatusWorkflow,
+            $to === OrderStatus::Scheduled->value        => $this->earlyStatusWorkflow,
 
             default => null,
         };
@@ -249,13 +238,13 @@ final class PatchOrderAction extends BaseAction
         try {
             Http::withOptions([
                 'allow_redirects' => ['max' => 10],
-                'on_stats'        => function (TransferStats $stats) use (&$finalUrl): void {
+                'on_stats' => function (TransferStats $stats) use (&$finalUrl): void {
                     $finalUrl = (string) $stats->getEffectiveUri();
                 },
             ])->withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; ECOS/1.0)'])
-              ->timeout(8)
-              ->head($url);
-        } catch (\Throwable) {
+                ->timeout(8)
+                ->head($url);
+        } catch (Throwable) {
             // Network or resolution failure — return the original URL unchanged.
         }
 

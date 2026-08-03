@@ -27,20 +27,20 @@ final class CancelLoadingSessionAction
 
         return DB::transaction(function () use ($session, $actorId, $reason): LoadingSession {
             $session->update([
-                'status'              => LoadingSessionStatus::Cancelled->value,
-                'cancelled_at'        => now(),
-                'cancelled_by'        => $actorId,
+                'status' => LoadingSessionStatus::Cancelled->value,
+                'cancelled_at' => now(),
+                'cancelled_by' => $actorId,
                 'cancellation_reason' => $reason,
-                'updated_by'          => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             event(new LoadingSessionCancelled(
-                companyId:     $session->company_id,
-                sessionId:     $session->id,
+                companyId: $session->company_id,
+                sessionId: $session->id,
                 sessionNumber: $session->session_number,
-                reason:        $reason,
-                actorId:       $actorId,
-                occurredAt:    now()->toIso8601String(),
+                reason: $reason,
+                actorId: $actorId,
+                occurredAt: now()->toIso8601String(),
             ));
 
             return $session->fresh() ?? $session;

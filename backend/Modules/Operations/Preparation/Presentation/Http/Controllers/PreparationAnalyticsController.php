@@ -18,14 +18,14 @@ final class PreparationAnalyticsController extends Controller
     public function index(Request $request): JsonResponse
     {
         $request->validate([
-            'from_date'    => ['required', 'date_format:Y-m-d'],
-            'to_date'      => ['required', 'date_format:Y-m-d', 'after_or_equal:from_date'],
+            'from_date' => ['required', 'date_format:Y-m-d'],
+            'to_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:from_date'],
             'warehouse_id' => ['nullable', 'uuid'],
         ]);
 
-        $fromDate    = $request->query('from_date');
-        $toDate      = $request->query('to_date');
-        $companyId   = $request->user()->company_id;
+        $fromDate = $request->query('from_date');
+        $toDate = $request->query('to_date');
+        $companyId = $request->user()->company_id;
         $warehouseId = $request->query('warehouse_id');
 
         $daysDiff = (int) \Carbon\Carbon::parse($fromDate)->diffInDays(\Carbon\Carbon::parse($toDate));
@@ -100,27 +100,27 @@ final class PreparationAnalyticsController extends Controller
             ->get();
 
         return [
-            'period'  => ['from' => $fromDate, 'to' => $toDate],
+            'period' => ['from' => $fromDate, 'to' => $toDate],
             'summary' => [
-                'waves_created'              => $wavesCreated,
-                'waves_completed'            => (int) ($summary->waves_completed ?? 0),
-                'waves_cancelled'            => (int) ($summary->waves_cancelled ?? 0),
-                'avg_completion_time_minutes'=> round((float) ($summary->avg_completion_time_minutes ?? 0), 0),
-                'avg_completion_pct'         => round((float) ($summary->avg_completion_pct ?? 0), 1),
-                'shortage_rate_pct'          => $shortageRate,
-                'total_units_prepared'       => (float) ($summary->total_units_prepared ?? 0),
+                'waves_created' => $wavesCreated,
+                'waves_completed' => (int) ($summary->waves_completed ?? 0),
+                'waves_cancelled' => (int) ($summary->waves_cancelled ?? 0),
+                'avg_completion_time_minutes' => round((float) ($summary->avg_completion_time_minutes ?? 0), 0),
+                'avg_completion_pct' => round((float) ($summary->avg_completion_pct ?? 0), 1),
+                'shortage_rate_pct' => $shortageRate,
+                'total_units_prepared' => (float) ($summary->total_units_prepared ?? 0),
             ],
             'daily' => $daily->map(fn ($d) => [
-                'date'          => $d->date,
-                'waves'         => (int) $d->waves,
-                'units_prepared'=> (float) ($d->units_prepared ?? 0),
-                'avg_minutes'   => round((float) ($d->avg_minutes ?? 0), 0),
+                'date' => $d->date,
+                'waves' => (int) $d->waves,
+                'units_prepared' => (float) ($d->units_prepared ?? 0),
+                'avg_minutes' => round((float) ($d->avg_minutes ?? 0), 0),
             ])->values()->all(),
             'top_shorted_products' => $topShorted->map(fn ($p) => [
-                'product_id'          => $p->product_id,
-                'sku'                 => $p->sku,
-                'shortage_occurrences'=> (int) $p->shortage_occurrences,
-                'avg_shortage_pct'    => round((float) $p->avg_shortage_pct, 1),
+                'product_id' => $p->product_id,
+                'sku' => $p->sku,
+                'shortage_occurrences' => (int) $p->shortage_occurrences,
+                'avg_shortage_pct' => round((float) $p->avg_shortage_pct, 1),
             ])->values()->all(),
         ];
     }

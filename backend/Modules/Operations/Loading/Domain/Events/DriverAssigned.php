@@ -7,7 +7,8 @@ namespace Modules\Operations\Loading\Domain\Events;
 final class DriverAssigned
 {
     public string $eventType = 'loading.driver.assigned';
-    public string $version   = '1.0';
+
+    public string $version = '1.0';
 
     public function __construct(
         public readonly string $companyId,

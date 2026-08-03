@@ -18,7 +18,7 @@ final class ProductObserver
     public function updated(Product $product): void
     {
         $productFieldChanged = $product->wasChanged(self::PRODUCT_SYNC_FIELDS);
-        $priceFieldChanged   = $product->wasChanged(self::PRICE_SYNC_FIELDS);
+        $priceFieldChanged = $product->wasChanged(self::PRICE_SYNC_FIELDS);
 
         // Skip sync entirely when no sync-relevant field changed (e.g. stock_status update).
         if (! $productFieldChanged && ! $priceFieldChanged) {

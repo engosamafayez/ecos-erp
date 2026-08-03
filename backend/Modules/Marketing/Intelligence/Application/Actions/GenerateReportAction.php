@@ -8,8 +8,8 @@ use Illuminate\Http\Response;
 use Modules\Marketing\Connections\Domain\Models\MarketingAuditLog;
 use Modules\Marketing\Intelligence\Application\Dto\IntelligenceFilterDto;
 use Modules\Marketing\Intelligence\Application\Services\MarketingKpiEngine;
-use Modules\Marketing\Intelligence\Domain\Models\MarketingReport;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 /**
  * Generates marketing intelligence reports in CSV, Excel (UTF-8 BOM CSV), or HTML format.
@@ -35,9 +35,9 @@ final class GenerateReportAction
      */
     public function campaignReport(
         IntelligenceFilterDto $filter,
-        string                $format = 'csv',
-        string                $sortBy = 'total_spend',
-        ?string               $actorId = null,
+        string $format = 'csv',
+        string $sortBy = 'total_spend',
+        ?string $actorId = null,
     ): StreamedResponse|Response {
         $breakdown = $this->engine->campaignBreakdown($filter, $sortBy, 'desc', null, 1000, 1);
         $rows = $breakdown['data'];
@@ -46,7 +46,7 @@ final class GenerateReportAction
 
         return match ($format) {
             'excel' => $this->streamCsv($rows, $this->campaignHeaders(), 'campaign_analytics', excelMode: true),
-            'html'  => $this->htmlResponse($rows, $this->campaignHeaders(), 'Campaign Analytics Report', $filter),
+            'html' => $this->htmlResponse($rows, $this->campaignHeaders(), 'Campaign Analytics Report', $filter),
             default => $this->streamCsv($rows, $this->campaignHeaders(), 'campaign_analytics'),
         };
     }
@@ -56,8 +56,8 @@ final class GenerateReportAction
      */
     public function adReport(
         IntelligenceFilterDto $filter,
-        string                $format  = 'csv',
-        ?string               $actorId = null,
+        string $format = 'csv',
+        ?string $actorId = null,
     ): StreamedResponse|Response {
         $breakdown = $this->engine->adBreakdown($filter, 'total_spend', 'desc', 1000, 1);
         $rows = $breakdown['data'];
@@ -66,7 +66,7 @@ final class GenerateReportAction
 
         return match ($format) {
             'excel' => $this->streamCsv($rows, $this->adHeaders(), 'ad_analytics', excelMode: true),
-            'html'  => $this->htmlResponse($rows, $this->adHeaders(), 'Ad Analytics Report', $filter),
+            'html' => $this->htmlResponse($rows, $this->adHeaders(), 'Ad Analytics Report', $filter),
             default => $this->streamCsv($rows, $this->adHeaders(), 'ad_analytics'),
         };
     }
@@ -76,8 +76,8 @@ final class GenerateReportAction
      */
     public function creativeReport(
         IntelligenceFilterDto $filter,
-        string                $format  = 'csv',
-        ?string               $actorId = null,
+        string $format = 'csv',
+        ?string $actorId = null,
     ): StreamedResponse|Response {
         $breakdown = $this->engine->creativeBreakdown($filter, 'total_revenue', 'desc', 1000, 1);
         $rows = $breakdown['data'];
@@ -86,7 +86,7 @@ final class GenerateReportAction
 
         return match ($format) {
             'excel' => $this->streamCsv($rows, $this->creativeHeaders(), 'creative_analytics', excelMode: true),
-            'html'  => $this->htmlResponse($rows, $this->creativeHeaders(), 'Creative Analytics Report', $filter),
+            'html' => $this->htmlResponse($rows, $this->creativeHeaders(), 'Creative Analytics Report', $filter),
             default => $this->streamCsv($rows, $this->creativeHeaders(), 'creative_analytics'),
         };
     }
@@ -94,18 +94,18 @@ final class GenerateReportAction
     // ── CSV / Excel streaming ─────────────────────────────────────────────────
 
     /**
-     * @param list<array<string, mixed>> $rows
-     * @param array<string, string>      $headers  [column_key => Column Label]
+     * @param  list<array<string, mixed>>  $rows
+     * @param  array<string, string>  $headers  [column_key => Column Label]
      */
     private function streamCsv(
-        array  $rows,
-        array  $headers,
+        array $rows,
+        array $headers,
         string $filename,
-        bool   $excelMode = false,
+        bool $excelMode = false,
     ): StreamedResponse {
-        $ext      = $excelMode ? 'xlsx' : 'csv';
-        $mime     = $excelMode ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv';
-        $date     = now()->format('Y-m-d');
+        $ext = $excelMode ? 'xlsx' : 'csv';
+        $mime = $excelMode ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv';
+        $date = now()->format('Y-m-d');
         $fullName = "{$filename}_{$date}.{$ext}";
 
         return response()->stream(function () use ($rows, $headers, $excelMode): void {
@@ -113,7 +113,7 @@ final class GenerateReportAction
 
             // Excel needs UTF-8 BOM to open CSV files correctly on Windows
             if ($excelMode) {
-                fputs($out, "\xEF\xBB\xBF");
+                fwrite($out, "\xEF\xBB\xBF");
             }
 
             fputcsv($out, array_values($headers));
@@ -128,54 +128,54 @@ final class GenerateReportAction
 
             fclose($out);
         }, 200, [
-            'Content-Type'        => $mime,
+            'Content-Type' => $mime,
             'Content-Disposition' => "attachment; filename=\"{$fullName}\"",
-            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
-            'Pragma'              => 'no-cache',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
         ]);
     }
 
     // ── HTML report ───────────────────────────────────────────────────────────
 
     /**
-     * @param list<array<string, mixed>> $rows
-     * @param array<string, string>      $headers
+     * @param  list<array<string, mixed>>  $rows
+     * @param  array<string, string>  $headers
      */
     private function htmlResponse(
-        array                 $rows,
-        array                 $headers,
-        string                $title,
+        array $rows,
+        array $headers,
+        string $title,
         IntelligenceFilterDto $filter,
     ): Response {
         [$start, $end] = $filter->resolvedDates();
 
-        $html  = $this->htmlHead($title);
+        $html = $this->htmlHead($title);
         $html .= "<h1>{$title}</h1>";
-        $html .= "<p class='meta'>Period: {$start} → {$end} | Generated: " . now()->format('Y-m-d H:i') . " UTC</p>";
-        $html .= "<table><thead><tr>";
+        $html .= "<p class='meta'>Period: {$start} → {$end} | Generated: ".now()->format('Y-m-d H:i').' UTC</p>';
+        $html .= '<table><thead><tr>';
 
         foreach ($headers as $label) {
             $html .= "<th>{$label}</th>";
         }
 
-        $html .= "</tr></thead><tbody>";
+        $html .= '</tr></thead><tbody>';
 
         foreach ($rows as $row) {
-            $html .= "<tr>";
+            $html .= '<tr>';
             foreach (array_keys($headers) as $key) {
-                $val   = $row[$key] ?? '—';
-                $html .= "<td>" . htmlspecialchars((string) $val, ENT_QUOTES, 'UTF-8') . "</td>";
+                $val = $row[$key] ?? '—';
+                $html .= '<td>'.htmlspecialchars((string) $val, ENT_QUOTES, 'UTF-8').'</td>';
             }
-            $html .= "</tr>";
+            $html .= '</tr>';
         }
 
-        $html .= "</tbody></table></body></html>";
+        $html .= '</tbody></table></body></html>';
 
-        $date     = now()->format('Y-m-d');
-        $filename = strtolower(str_replace(' ', '_', $title)) . "_{$date}.html";
+        $date = now()->format('Y-m-d');
+        $filename = strtolower(str_replace(' ', '_', $title))."_{$date}.html";
 
         return response($html, 200, [
-            'Content-Type'        => 'text/html; charset=UTF-8',
+            'Content-Type' => 'text/html; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
@@ -212,23 +212,23 @@ final class GenerateReportAction
     private function campaignHeaders(): array
     {
         return [
-            'rank'        => 'Rank',
-            'name'        => 'Campaign',
-            'status'      => 'Status',
-            'objective'   => 'Objective',
-            'spend'       => 'Spend',
-            'revenue'     => 'Revenue',
-            'roas'        => 'ROAS',
-            'roi'         => 'ROI %',
-            'purchases'   => 'Purchases',
-            'leads'       => 'Leads',
-            'ctr'         => 'CTR',
-            'cpa'         => 'CPA',
-            'cpc'         => 'CPC',
-            'cpm'         => 'CPM',
+            'rank' => 'Rank',
+            'name' => 'Campaign',
+            'status' => 'Status',
+            'objective' => 'Objective',
+            'spend' => 'Spend',
+            'revenue' => 'Revenue',
+            'roas' => 'ROAS',
+            'roi' => 'ROI %',
+            'purchases' => 'Purchases',
+            'leads' => 'Leads',
+            'ctr' => 'CTR',
+            'cpa' => 'CPA',
+            'cpc' => 'CPC',
+            'cpm' => 'CPM',
             'impressions' => 'Impressions',
-            'clicks'      => 'Clicks',
-            'reach'       => 'Reach',
+            'clicks' => 'Clicks',
+            'reach' => 'Reach',
         ];
     }
 
@@ -236,22 +236,22 @@ final class GenerateReportAction
     private function adHeaders(): array
     {
         return [
-            'rank'          => 'Rank',
-            'name'          => 'Ad',
-            'status'        => 'Status',
+            'rank' => 'Rank',
+            'name' => 'Ad',
+            'status' => 'Status',
             'campaign_name' => 'Campaign',
-            'spend'         => 'Spend',
-            'revenue'       => 'Revenue',
-            'roas'          => 'ROAS',
-            'roi'           => 'ROI %',
-            'purchases'     => 'Purchases',
-            'leads'         => 'Leads',
-            'ctr'           => 'CTR',
-            'cpa'           => 'CPA',
-            'cpc'           => 'CPC',
-            'cpm'           => 'CPM',
-            'impressions'   => 'Impressions',
-            'clicks'        => 'Clicks',
+            'spend' => 'Spend',
+            'revenue' => 'Revenue',
+            'roas' => 'ROAS',
+            'roi' => 'ROI %',
+            'purchases' => 'Purchases',
+            'leads' => 'Leads',
+            'ctr' => 'CTR',
+            'cpa' => 'CPA',
+            'cpc' => 'CPC',
+            'cpm' => 'CPM',
+            'impressions' => 'Impressions',
+            'clicks' => 'Clicks',
         ];
     }
 
@@ -259,48 +259,48 @@ final class GenerateReportAction
     private function creativeHeaders(): array
     {
         return [
-            'rank'          => 'Rank',
-            'headline'      => 'Headline',
+            'rank' => 'Rank',
+            'headline' => 'Headline',
             'creative_type' => 'Type',
             'campaign_name' => 'Campaign',
-            'spend'         => 'Spend',
-            'revenue'       => 'Revenue',
-            'roas'          => 'ROAS',
-            'cpa'           => 'CPA',
-            'ctr'           => 'CTR',
-            'purchases'     => 'Purchases',
-            'impressions'   => 'Impressions',
-            'clicks'        => 'Clicks',
+            'spend' => 'Spend',
+            'revenue' => 'Revenue',
+            'roas' => 'ROAS',
+            'cpa' => 'CPA',
+            'ctr' => 'CTR',
+            'purchases' => 'Purchases',
+            'impressions' => 'Impressions',
+            'clicks' => 'Clicks',
         ];
     }
 
     // ── Audit ─────────────────────────────────────────────────────────────────
 
     private function logReportGeneration(
-        string                $reportType,
-        string                $format,
+        string $reportType,
+        string $format,
         IntelligenceFilterDto $filter,
-        int                   $rowCount,
-        ?string               $actorId,
+        int $rowCount,
+        ?string $actorId,
     ): void {
         try {
             MarketingAuditLog::record(
-                entityType:    'marketing_report',
-                entityId:      uniqid('report_', true),
-                action:        'report_generated',
-                actorId:       $actorId,
-                after:         [
+                entityType: 'marketing_report',
+                entityId: uniqid('report_', true),
+                action: 'report_generated',
+                actorId: $actorId,
+                after: [
                     'report_type' => $reportType,
-                    'format'      => $format,
-                    'row_count'   => $rowCount,
+                    'format' => $format,
+                    'row_count' => $rowCount,
                     'date_preset' => $filter->datePreset,
-                    'date_start'  => $filter->dateStart,
-                    'date_stop'   => $filter->dateStop,
-                    'company_id'  => $filter->companyId,
+                    'date_start' => $filter->dateStart,
+                    'date_stop' => $filter->dateStop,
+                    'company_id' => $filter->companyId,
                 ],
-                connectionId:  $filter->connectionId,
+                connectionId: $filter->connectionId,
             );
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Audit failures never block report delivery
         }
     }

@@ -41,6 +41,7 @@ final class EloquentWorkerRepository implements WorkerRepositoryInterface
     public function update(Worker $worker, array $attributes): Worker
     {
         $worker->update($attributes);
+
         return $worker->fresh();
     }
 

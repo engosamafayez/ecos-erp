@@ -24,7 +24,7 @@ final readonly class ValidationFailure
     public function toArray(): array
     {
         return [
-            'code'    => $this->code->value,
+            'code' => $this->code->value,
             'message' => $this->message,
             'context' => $this->context,
         ];

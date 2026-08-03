@@ -29,7 +29,7 @@ return new class extends Migration
     public function up(): void
     {
         // Step 1: re-run channel-mapping backfill (safe no-op for already-assigned rows).
-        DB::statement("
+        DB::statement('
             UPDATE products p
             SET company_id = (
                 SELECT ch.company_id
@@ -43,12 +43,12 @@ return new class extends Migration
             )
             WHERE p.deleted_at IS NULL
               AND p.company_id IS NULL
-        ");
+        ');
 
         // Step 2: assign remaining nulls to the primary company
         // (the company that owns the greatest number of active channels).
         // If no companies exist the subquery returns NULL and no rows are touched.
-        DB::statement("
+        DB::statement('
             UPDATE products p
             SET company_id = (
                 SELECT ch.company_id
@@ -61,7 +61,7 @@ return new class extends Migration
             )
             WHERE p.deleted_at IS NULL
               AND p.company_id IS NULL
-        ");
+        ');
 
         // Report any products that could not be resolved (no companies in system).
         $unresolved = DB::table('products')
@@ -71,8 +71,8 @@ return new class extends Migration
 
         if ($unresolved > 0) {
             // Non-fatal: log a clear warning so operators know manual action is needed.
-            \Illuminate\Support\Facades\Log::warning(
-                "ADR-013 backfill: {$unresolved} product(s) still have company_id = NULL. " .
+            Illuminate\Support\Facades\Log::warning(
+                "ADR-013 backfill: {$unresolved} product(s) still have company_id = NULL. ".
                 'Assign them via the Product form before running migration 000003.',
             );
         }

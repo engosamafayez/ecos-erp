@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,7 +28,8 @@ import { cn } from '@/lib/utils';
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
-const STEP_LABELS = ['Warehouse', 'Quantity', 'Cost & Notes', 'Confirm'] as const;
+// Step keys — translated inside the component body
+const STEP_COUNT = 4;
 type Step = 0 | 1 | 2 | 3;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -42,12 +44,21 @@ type Props = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Props) {
+  const { t } = useTranslation('raw-materials');
   const { currency } = useCompany();
   const [step,        setStep]        = useState<Step>(0);
   const [warehouseId, setWarehouseId] = useState('');
   const [quantity,    setQuantity]    = useState('');
   const [unitCost,    setUnitCost]    = useState('');
   const [notes,       setNotes]       = useState('');
+
+  // Step labels — must be inside the component body (they use t())
+  const stepLabels = [
+    t($ => $.addStock.steps.warehouse),
+    t($ => $.addStock.steps.quantity),
+    t($ => $.addStock.steps.costAndNotes),
+    t($ => $.addStock.steps.confirm),
+  ] as const;
 
   const addStock = useAddStock();
   const { data: warehousesData } = useWarehousesQuery({ per_page: 200, status: 'active' });
@@ -87,19 +98,19 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
     return true;
   })();
 
-  const unitName = material.unit?.name ?? 'units';
+  const unitName    = material.unit?.name ?? 'units';
   const currentCost = material.manual_cost;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
-          <DialogTitle>Add Stock — {material.name}</DialogTitle>
+          <DialogTitle>{t($ => $.addStock.title, { name: material.name })}</DialogTitle>
         </DialogHeader>
 
         {/* ── Step indicator ── */}
         <div className="flex items-center">
-          {STEP_LABELS.map((label, i) => (
+          {stepLabels.map((label, i) => (
             <div key={label} className="flex items-center flex-1 min-w-0">
               <div
                 className={cn(
@@ -113,7 +124,7 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
               >
                 {i < step ? <Check className="size-3.5" /> : i + 1}
               </div>
-              {i < STEP_LABELS.length - 1 && (
+              {i < STEP_COUNT - 1 && (
                 <div
                   className={cn(
                     'flex-1 h-px mx-1.5 transition-colors',
@@ -125,7 +136,8 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
           ))}
         </div>
         <p className="text-xs text-muted-foreground -mt-1">
-          Step {step + 1} of {STEP_LABELS.length} — <span className="font-medium text-foreground">{STEP_LABELS[step]}</span>
+          {t($ => $.addStock.stepLabel, { current: step + 1, total: STEP_COUNT })}
+          <span className="font-medium text-foreground">{stepLabels[step]}</span>
         </p>
 
         {/* ── Step content ── */}
@@ -134,14 +146,14 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
           {/* Step 0: Warehouse */}
           {step === 0 && (
             <div className="space-y-2">
-              <Label>Destination Warehouse</Label>
+              <Label>{t($ => $.addStock.warehouse.label)}</Label>
               <Select value={warehouseId} onValueChange={setWarehouseId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a warehouse…" />
+                  <SelectValue placeholder={t($ => $.addStock.warehouse.placeholder)} />
                 </SelectTrigger>
                 <SelectContent>
                   {warehouses.length === 0 && (
-                    <SelectItem value="_none" disabled>No active warehouses</SelectItem>
+                    <SelectItem value="_none" disabled>{t($ => $.addStock.warehouse.noWarehouses)}</SelectItem>
                   )}
                   {warehouses.map((w) => (
                     <SelectItem key={w.id} value={w.id}>
@@ -158,7 +170,7 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
           {step === 1 && (
             <div className="space-y-2">
               <Label>
-                Quantity to Add
+                {t($ => $.addStock.quantity.label)}
                 <span className="ml-1 text-muted-foreground font-normal">({unitName})</span>
               </Label>
               <Input
@@ -171,7 +183,8 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                Warehouse: <span className="font-medium text-foreground">{selectedWarehouse?.name}</span>
+                {t($ => $.addStock.quantity.warehouseNote)}
+                <span className="font-medium text-foreground">{selectedWarehouse?.name}</span>
               </p>
             </div>
           )}
@@ -181,8 +194,8 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>
-                  Unit Cost ({currency})
-                  <span className="ml-1 text-muted-foreground font-normal">— optional</span>
+                  {t($ => $.addStock.costNotes.costLabel, { currency })}
+                  <span className="ml-1 text-muted-foreground font-normal">{t($ => $.addStock.costNotes.costOptional)}</span>
                 </Label>
                 <Input
                   type="number"
@@ -190,29 +203,31 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
                   step="0.01"
                   value={unitCost}
                   onChange={(e) => setUnitCost(e.target.value)}
-                  placeholder="0.00"
+                  placeholder={t($ => $.addStock.costNotes.costPlaceholder)}
                   autoFocus
                 />
                 <p className="text-xs text-muted-foreground">
                   {currentCost != null ? (
-                    <>Current cost: <span className="font-medium">{currentCost.toFixed(2)} {currency}</span></>
+                    <>
+                      {t($ => $.addStock.costNotes.currentCost, { cost: currentCost.toFixed(2), currency })}
+                    </>
                   ) : (
-                    'No cost recorded yet'
+                    t($ => $.addStock.costNotes.noCost)
                   )}
                   {unitCost && parseFloat(unitCost) > 0 && (
-                    <> → will update to <span className="font-medium text-foreground">{parseFloat(unitCost).toFixed(2)} {currency}</span></>
+                    <> {t($ => $.addStock.costNotes.willUpdate, { cost: parseFloat(unitCost).toFixed(2), currency })}</>
                   )}
                 </p>
               </div>
               <div className="space-y-2">
                 <Label>
-                  Notes
-                  <span className="ml-1 text-muted-foreground font-normal">— optional</span>
+                  {t($ => $.addStock.costNotes.notesLabel)}
+                  <span className="ml-1 text-muted-foreground font-normal">{t($ => $.addStock.costNotes.notesOptional)}</span>
                 </Label>
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. Opening balance, manual adjustment…"
+                  placeholder={t($ => $.addStock.costNotes.notesPlaceholder)}
                   rows={2}
                 />
               </div>
@@ -222,21 +237,24 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
           {/* Step 3: Review */}
           {step === 3 && (
             <div className="rounded-lg border bg-muted/30 p-4 space-y-2.5 text-sm">
-              <ReviewRow label="Material"   value={material.name} />
-              <ReviewRow label="Warehouse"  value={selectedWarehouse?.name ?? '—'} />
+              <ReviewRow label={t($ => $.addStock.review.material)}  value={material.name} />
+              <ReviewRow label={t($ => $.addStock.review.warehouse)} value={selectedWarehouse?.name ?? '—'} />
               <ReviewRow
-                label="Quantity"
+                label={t($ => $.addStock.review.quantity)}
                 value={`${parseFloat(quantity || '0').toFixed(3)} ${unitName}`}
               />
               {unitCost && parseFloat(unitCost) > 0 && (
-                <ReviewRow label="Unit Cost" value={`${parseFloat(unitCost).toFixed(2)} ${currency}`} />
+                <ReviewRow
+                  label={t($ => $.addStock.review.unitCost)}
+                  value={`${parseFloat(unitCost).toFixed(2)} ${currency}`}
+                />
               )}
               {notes.trim() && (
-                <ReviewRow label="Notes" value={notes.trim()} />
+                <ReviewRow label={t($ => $.addStock.review.notes)} value={notes.trim()} />
               )}
               {addStock.isError && (
                 <p className="text-xs text-destructive pt-1">
-                  Failed to add stock. Please try again.
+                  {t($ => $.addStock.review.errorFailed)}
                 </p>
               )}
             </div>
@@ -251,19 +269,19 @@ export function AddStockWizard({ material, open, onOpenChange, onSuccess }: Prop
               onClick={() => setStep((s) => (s - 1) as Step)}
               disabled={addStock.isPending}
             >
-              Back
+              {t($ => $.addStock.back)}
             </Button>
           )}
           <Button variant="outline" onClick={handleClose} disabled={addStock.isPending}>
-            Cancel
+            {t($ => $.addStock.cancel)}
           </Button>
-          {step < STEP_LABELS.length - 1 ? (
+          {step < STEP_COUNT - 1 ? (
             <Button onClick={() => setStep((s) => (s + 1) as Step)} disabled={!canNext}>
-              Next
+              {t($ => $.addStock.next)}
             </Button>
           ) : (
             <Button onClick={handleConfirm} disabled={addStock.isPending}>
-              {addStock.isPending ? 'Adding…' : 'Confirm & Add Stock'}
+              {addStock.isPending ? t($ => $.addStock.adding) : t($ => $.addStock.confirm)}
             </Button>
           )}
         </DialogFooter>

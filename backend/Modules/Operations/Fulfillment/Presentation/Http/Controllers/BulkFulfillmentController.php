@@ -23,6 +23,7 @@ use Modules\Operations\Fulfillment\Application\Workflows\ResumeOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ResumeToConfirmedWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ReturnOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ReturnToConfirmedWorkflow;
+use Throwable;
 
 /**
  * Bulk fulfillment endpoints — run a workflow across multiple orders in one request.
@@ -33,27 +34,27 @@ use Modules\Operations\Fulfillment\Application\Workflows\ReturnToConfirmedWorkfl
 final class BulkFulfillmentController extends Controller
 {
     public function __construct(
-        private readonly BulkWorkflowEngine          $bulk,
-        private readonly ConfirmOrderWorkflow         $confirmWorkflow,
-        private readonly CancelOrderWorkflow          $cancelWorkflow,
-        private readonly MoveToPreparationWorkflow    $prepWorkflow,
-        private readonly CompleteDeliveryWorkflow     $deliveryWorkflow,
-        private readonly CompleteOrderWorkflow        $completeWorkflow,
-        private readonly DispatchOrderWorkflow        $dispatchWorkflow,
-        private readonly MarkAwaitingStockWorkflow    $awaitingStockWorkflow,
-        private readonly ResumeOrderWorkflow          $resumeWorkflow,
-        private readonly MoveToReviewWorkflow         $reviewWorkflow,
-        private readonly RescheduleOrderWorkflow      $rescheduleWorkflow,
-        private readonly ReturnOrderWorkflow          $returnWorkflow,
-        private readonly ReturnToConfirmedWorkflow    $returnToConfirmedWorkflow,
-        private readonly ResumeToConfirmedWorkflow    $resumeToConfirmedWorkflow,
+        private readonly BulkWorkflowEngine $bulk,
+        private readonly ConfirmOrderWorkflow $confirmWorkflow,
+        private readonly CancelOrderWorkflow $cancelWorkflow,
+        private readonly MoveToPreparationWorkflow $prepWorkflow,
+        private readonly CompleteDeliveryWorkflow $deliveryWorkflow,
+        private readonly CompleteOrderWorkflow $completeWorkflow,
+        private readonly DispatchOrderWorkflow $dispatchWorkflow,
+        private readonly MarkAwaitingStockWorkflow $awaitingStockWorkflow,
+        private readonly ResumeOrderWorkflow $resumeWorkflow,
+        private readonly MoveToReviewWorkflow $reviewWorkflow,
+        private readonly RescheduleOrderWorkflow $rescheduleWorkflow,
+        private readonly ReturnOrderWorkflow $returnWorkflow,
+        private readonly ReturnToConfirmedWorkflow $returnToConfirmedWorkflow,
+        private readonly ResumeToConfirmedWorkflow $resumeToConfirmedWorkflow,
     ) {}
 
     /** POST /api/fulfillment/bulk/confirm */
     public function confirmBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
         ]);
 
@@ -67,9 +68,9 @@ final class BulkFulfillmentController extends Controller
     public function cancelBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
-            'reason'      => ['nullable', 'string', 'max:500'],
+            'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
         $actorId = Auth::id() !== null ? (string) Auth::id() : null;
@@ -87,7 +88,7 @@ final class BulkFulfillmentController extends Controller
     public function moveToPreparationBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
         ]);
 
@@ -101,7 +102,7 @@ final class BulkFulfillmentController extends Controller
     public function completeDeliveryBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
         ]);
 
@@ -115,7 +116,7 @@ final class BulkFulfillmentController extends Controller
     public function completeBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
         ]);
 
@@ -129,7 +130,7 @@ final class BulkFulfillmentController extends Controller
     public function dispatchBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
         ]);
 
@@ -143,9 +144,9 @@ final class BulkFulfillmentController extends Controller
     public function markAwaitingStockBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
-            'reason'      => ['nullable', 'string', 'max:500'],
+            'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
         $actorId = Auth::id() !== null ? (string) Auth::id() : null;
@@ -163,7 +164,7 @@ final class BulkFulfillmentController extends Controller
     public function resumeBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
         ]);
 
@@ -177,9 +178,9 @@ final class BulkFulfillmentController extends Controller
     public function moveToReviewBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
-            'reason'      => ['nullable', 'string', 'max:500'],
+            'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
         $actorId = Auth::id() !== null ? (string) Auth::id() : null;
@@ -197,10 +198,10 @@ final class BulkFulfillmentController extends Controller
     public function rescheduleBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'          => ['required', 'array', 'min:1', 'max:200'],
-            'order_ids.*'        => ['required', 'string'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids.*' => ['required', 'string'],
             'next_delivery_date' => ['required', 'date', 'after:today'],
-            'reschedule_reason'  => ['nullable', 'string', 'max:500'],
+            'reschedule_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
         $actorId = Auth::id() !== null ? (string) Auth::id() : null;
@@ -209,7 +210,7 @@ final class BulkFulfillmentController extends Controller
             $data['order_ids'],
             [
                 'next_delivery_date' => $data['next_delivery_date'],
-                'reschedule_reason'  => $data['reschedule_reason'] ?? null,
+                'reschedule_reason' => $data['reschedule_reason'] ?? null,
             ],
             $actorId,
         );
@@ -221,34 +222,36 @@ final class BulkFulfillmentController extends Controller
     public function returnBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'     => ['required', 'array', 'min:1', 'max:200'],
-            'order_ids.*'   => ['required', 'string'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids.*' => ['required', 'string'],
             'return_reason' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $actorId      = Auth::id() !== null ? (string) Auth::id() : null;
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $returnReason = $data['return_reason'] ?? 'Bulk return';
-        $succeeded    = [];
-        $failed       = [];
+        $succeeded = [];
+        $failed = [];
 
         foreach ($data['order_ids'] as $orderId) {
             $order = Order::with('lines.product')->find($orderId);
 
             if ($order === null) {
-                $failed[$orderId] = "Order not found.";
+                $failed[$orderId] = 'Order not found.';
+
                 continue;
             }
 
             // Auto-generate lines from order line items
             $lines = $order->lines->map(static fn ($line) => [
-                'order_line_id'      => $line->id,
-                'product_id'         => $line->product_id,
-                'quantity_returned'  => (float) $line->quantity,
-                'condition'          => 'sellable',
+                'order_line_id' => $line->id,
+                'product_id' => $line->product_id,
+                'quantity_returned' => (float) $line->quantity,
+                'condition' => 'sellable',
             ])->all();
 
             if (empty($lines)) {
-                $failed[$orderId] = "Order has no line items.";
+                $failed[$orderId] = 'Order has no line items.';
+
                 continue;
             }
 
@@ -263,15 +266,15 @@ final class BulkFulfillmentController extends Controller
                 $succeeded[$orderId] = $result;
             } catch (\Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException $e) {
                 $failed[$orderId] = $e->getMessage();
-            } catch (\Throwable $e) {
-                $failed[$orderId] = "Execution error: " . $e->getMessage();
+            } catch (Throwable $e) {
+                $failed[$orderId] = 'Execution error: '.$e->getMessage();
             }
         }
 
         return response()->json([
             'succeeded' => count($succeeded),
-            'failed'    => count($failed),
-            'errors'    => $failed,
+            'failed' => count($failed),
+            'errors' => $failed,
         ]);
     }
 
@@ -279,12 +282,12 @@ final class BulkFulfillmentController extends Controller
     public function returnToConfirmedBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
         ]);
 
         $actorId = Auth::id() !== null ? (string) Auth::id() : null;
-        $result  = $this->bulk->run($this->returnToConfirmedWorkflow, $data['order_ids'], [], $actorId);
+        $result = $this->bulk->run($this->returnToConfirmedWorkflow, $data['order_ids'], [], $actorId);
 
         return response()->json($result->toArray());
     }
@@ -293,12 +296,12 @@ final class BulkFulfillmentController extends Controller
     public function resumeToConfirmedBulk(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'order_ids'   => ['required', 'array', 'min:1', 'max:200'],
+            'order_ids' => ['required', 'array', 'min:1', 'max:200'],
             'order_ids.*' => ['required', 'string'],
         ]);
 
         $actorId = Auth::id() !== null ? (string) Auth::id() : null;
-        $result  = $this->bulk->run($this->resumeToConfirmedWorkflow, $data['order_ids'], [], $actorId);
+        $result = $this->bulk->run($this->resumeToConfirmedWorkflow, $data['order_ids'], [], $actorId);
 
         return response()->json($result->toArray());
     }

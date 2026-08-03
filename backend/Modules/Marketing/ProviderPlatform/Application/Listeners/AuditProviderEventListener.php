@@ -20,9 +20,11 @@ final class AuditProviderEventListener implements ShouldQueue
 {
     use InteractsWithQueue;
 
-    public string $queue  = 'audit';
-    public int    $tries  = 3;
-    public int    $timeout = 15;
+    public string $queue = 'audit';
+
+    public int $tries = 3;
+
+    public int $timeout = 15;
 
     public function __construct(
         private readonly ConfigAuditService $audit,
@@ -32,18 +34,18 @@ final class AuditProviderEventListener implements ShouldQueue
     {
         $this->audit->record(
             companyId: $event->companyId,
-            module:    'marketing',
-            category:  'provider_lifecycle',
-            action:    $event->eventName(),
-            oldValue:  $event->previousStatus ? ['status' => $event->previousStatus] : null,
-            newValue:  [
-                'provider'        => $event->provider,
-                'provider_type'   => $event->providerType,
-                'current_status'  => $event->currentStatus,
-                'metadata'        => $event->metadata,
+            module: 'marketing',
+            category: 'provider_lifecycle',
+            action: $event->eventName(),
+            oldValue: $event->previousStatus ? ['status' => $event->previousStatus] : null,
+            newValue: [
+                'provider' => $event->provider,
+                'provider_type' => $event->providerType,
+                'current_status' => $event->currentStatus,
+                'metadata' => $event->metadata,
             ],
             configKey: "provider.{$event->provider}.lifecycle",
-            reason:    "Domain event: {$event->eventName()} [{$event->eventId}]",
+            reason: "Domain event: {$event->eventName()} [{$event->eventId}]",
         );
     }
 }

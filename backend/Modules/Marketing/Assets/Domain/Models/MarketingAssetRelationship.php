@@ -17,18 +17,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Supports both manual mapping (mapped_by) and auto-suggested mapping
  * (is_auto_suggested = true, confidence = 0-100) awaiting user acceptance.
  *
- * @property string               $id
- * @property string               $marketing_asset_id
- * @property string               $related_type
- * @property string               $related_id
- * @property string|null          $mapped_by
- * @property \Carbon\Carbon|null  $mapped_at
- * @property int|null             $confidence
- * @property bool                 $is_auto_suggested
- * @property \Carbon\Carbon|null  $accepted_at
- * @property string|null          $accepted_by
- * @property \Carbon\Carbon|null  $rejected_at
- * @property string|null          $rejected_by
+ * @property string $id
+ * @property string $marketing_asset_id
+ * @property string $related_type
+ * @property string $related_id
+ * @property string|null $mapped_by
+ * @property \Carbon\Carbon|null $mapped_at
+ * @property int|null $confidence
+ * @property bool $is_auto_suggested
+ * @property \Carbon\Carbon|null $accepted_at
+ * @property string|null $accepted_by
+ * @property \Carbon\Carbon|null $rejected_at
+ * @property string|null $rejected_by
  */
 class MarketingAssetRelationship extends Model
 {
@@ -59,11 +59,11 @@ class MarketingAssetRelationship extends Model
     protected function casts(): array
     {
         return [
-            'mapped_at'         => 'datetime',
-            'accepted_at'       => 'datetime',
-            'rejected_at'       => 'datetime',
+            'mapped_at' => 'datetime',
+            'accepted_at' => 'datetime',
+            'rejected_at' => 'datetime',
             'is_auto_suggested' => 'boolean',
-            'confidence'        => 'integer',
+            'confidence' => 'integer',
         ];
     }
 

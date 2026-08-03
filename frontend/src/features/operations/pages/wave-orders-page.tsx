@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Loader2, ShoppingCart, Waves } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -12,103 +13,25 @@ import { useWaveOrders, useWaveKpis } from '../hooks/use-preparation';
 import { useSelectedWaveId } from '../components/wave-picker';
 import type { WaveOrderEntry } from '../types/preparation';
 
-function buildColumns(): DataGridColumnDef<WaveOrderEntry>[] {
-  return [
-    {
-      key: 'order_number',
-      label: 'Order #',
-      alwaysVisible: true,
-      cell: (o) => (
-        <span className="font-mono text-sm font-medium">{o.order_number}</span>
-      ),
-    },
-    {
-      key: 'customer',
-      label: 'Customer',
-      defaultVisible: true,
-      cell: (o) => (
-        <span className="text-sm">
-          {o.customer_name_snapshot ?? <span className="text-muted-foreground">—</span>}
-        </span>
-      ),
-    },
-    {
-      key: 'delivery_zone',
-      label: 'Delivery Zone',
-      defaultVisible: true,
-      cell: (o) => (
-        <span className="text-sm text-muted-foreground">{o.delivery_zone_snapshot ?? '—'}</span>
-      ),
-    },
-    {
-      key: 'governorate',
-      label: 'Governorate',
-      defaultVisible: true,
-      cell: (o) => (
-        <span className="text-sm text-muted-foreground">{o.governorate_snapshot ?? '—'}</span>
-      ),
-    },
-    {
-      key: 'is_paid',
-      label: 'Payment',
-      defaultVisible: true,
-      cell: (o) => (
-        o.is_paid
-          ? <Badge className="text-xs bg-emerald-100 text-emerald-700">Paid</Badge>
-          : <Badge className="text-xs bg-gray-100 text-gray-600">Unpaid</Badge>
-      ),
-    },
-    {
-      key: 'priority',
-      label: 'Priority',
-      defaultVisible: false,
-      align: 'end',
-      cell: (o) => (
-        <span className="text-xs tabular-nums text-muted-foreground">{o.preparation_priority}</span>
-      ),
-    },
-    {
-      key: 'added_at',
-      label: 'Added At',
-      defaultVisible: true,
-      cell: (o) => (
-        <span className="text-xs text-muted-foreground">
-          {new Date(o.added_at).toLocaleString(undefined, {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </span>
-      ),
-    },
-  ];
-}
-
-const COL_METAS = buildColumns().map((c) => ({
-  key: c.key,
-  label: c.label,
-  alwaysVisible: c.alwaysVisible,
-  defaultVisible: c.defaultVisible,
-}));
-
-const COLUMNS = buildColumns();
-
 // ── Zone filter tabs ───────────────────────────────────────────────────────────
 
 function ZoneTabs({
   orders,
   zone,
   onZone,
+  allZonesLabel,
+  unzonedLabel,
 }: {
   orders: WaveOrderEntry[];
   zone: string | null;
   onZone: (z: string | null) => void;
+  allZonesLabel: string;
+  unzonedLabel: string;
 }) {
   const counts: Record<string, number> = {};
   let total = 0;
   for (const o of orders) {
-    const z = o.delivery_zone_snapshot ?? 'Unzoned';
+    const z = o.delivery_zone_snapshot ?? unzonedLabel;
     counts[z] = (counts[z] ?? 0) + 1;
     total += 1;
   }
@@ -124,7 +47,7 @@ function ZoneTabs({
             : 'text-muted-foreground hover:text-foreground hover:bg-background/60'
         }`}
       >
-        All Zones
+        {allZonesLabel}
         <span className={`inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] tabular-nums ${
           zone === null ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
         }`}>
@@ -156,20 +79,104 @@ function ZoneTabs({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function WaveOrdersPage() {
+  const { t } = useTranslation('operations');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   const waveId = useSelectedWaveId();
   const { data: orders, isLoading, isFetching, refetch } = useWaveOrders(waveId);
   const { data: kpis } = useWaveKpis(waveId);
 
-  const [search, setSearch]       = useState('');
+  const [search, setSearch]         = useState('');
   const [zoneFilter, setZoneFilter] = useState<string | null>(null);
 
-  const colVis = useColumnVisibility('wave-orders-cols', COL_METAS);
+  const columns: DataGridColumnDef<WaveOrderEntry>[] = useMemo(() => [
+    {
+      key: 'order_number',
+      label: t($ => $.wave.orders.columns.orderNo),
+      alwaysVisible: true,
+      cell: (o) => (
+        <span className="font-mono text-sm font-medium">{o.order_number}</span>
+      ),
+    },
+    {
+      key: 'customer',
+      label: t($ => $.wave.orders.columns.customer),
+      defaultVisible: true,
+      cell: (o) => (
+        <span className="text-sm">
+          {o.customer_name_snapshot ?? <span className="text-muted-foreground">—</span>}
+        </span>
+      ),
+    },
+    {
+      key: 'delivery_zone',
+      label: t($ => $.wave.orders.columns.deliveryZone),
+      defaultVisible: true,
+      cell: (o) => (
+        <span className="text-sm text-muted-foreground">{o.delivery_zone_snapshot ?? '—'}</span>
+      ),
+    },
+    {
+      key: 'governorate',
+      label: t($ => $.wave.orders.columns.governorate),
+      defaultVisible: true,
+      cell: (o) => (
+        <span className="text-sm text-muted-foreground">{o.governorate_snapshot ?? '—'}</span>
+      ),
+    },
+    {
+      key: 'is_paid',
+      label: t($ => $.wave.orders.columns.payment),
+      defaultVisible: true,
+      cell: (o) => (
+        o.is_paid
+          ? <Badge className="text-xs bg-emerald-100 text-emerald-700">{t($ => $.wave.orders.payment.paid)}</Badge>
+          : <Badge className="text-xs bg-gray-100 text-gray-600">{t($ => $.wave.orders.payment.unpaid)}</Badge>
+      ),
+    },
+    {
+      key: 'priority',
+      label: t($ => $.wave.orders.columns.priority),
+      defaultVisible: false,
+      align: 'end',
+      cell: (o) => (
+        <span className="text-xs tabular-nums text-muted-foreground">{o.preparation_priority}</span>
+      ),
+    },
+    {
+      key: 'added_at',
+      label: t($ => $.wave.orders.columns.addedAt),
+      defaultVisible: true,
+      cell: (o) => (
+        <span className="text-xs text-muted-foreground">
+          {new Date(o.added_at).toLocaleString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </span>
+      ),
+    },
+   
+  ], [t]);
+
+  const colMetas = useMemo(() => columns.map((c) => ({
+    key: c.key,
+    label: c.label,
+    alwaysVisible: c.alwaysVisible,
+    defaultVisible: c.defaultVisible,
+  })), [columns]);
+
+  const colVis = useColumnVisibility('wave-orders-cols', colMetas);
 
   const allOrders = orders ?? [];
 
+  const unzonedLabel = t($ => $.wave.unzoned);
+
   const filtered = allOrders.filter((o) => {
     if (zoneFilter !== null) {
-      const oZone = o.delivery_zone_snapshot ?? 'Unzoned';
+      const oZone = o.delivery_zone_snapshot ?? unzonedLabel;
       if (oZone !== zoneFilter) return false;
     }
     if (search) {
@@ -187,7 +194,7 @@ export function WaveOrdersPage() {
   const ordersCount  = kpis?.orders_count ?? allOrders.length;
   const preparedPct  = kpis?.completion_pct ?? 0;
   const missingCount = kpis?.missing_materials_count ?? 0;
-  const uniqueZones  = new Set(allOrders.map((o) => o.delivery_zone_snapshot ?? 'Unzoned')).size;
+  const uniqueZones  = new Set(allOrders.map((o) => o.delivery_zone_snapshot ?? unzonedLabel)).size;
   const paidCount    = allOrders.filter((o) => o.is_paid).length;
 
   return (
@@ -197,7 +204,7 @@ export function WaveOrdersPage() {
         isFetching={isFetching}
         viewControls={
           <ColumnVisibilityMenu
-            columns={COL_METAS}
+            columns={colMetas}
             visibility={colVis.visibility}
             onToggle={colVis.toggle}
             onReset={colVis.reset}
@@ -209,11 +216,11 @@ export function WaveOrdersPage() {
       {allOrders.length > 0 && (
         <div className="flex items-center gap-2 px-4 py-2 border-b bg-background overflow-x-auto shrink-0">
           {[
-            { label: 'Total Orders',    value: ordersCount,           cls: '' },
-            { label: 'Delivery Zones',  value: uniqueZones,           cls: '' },
-            { label: 'Paid',            value: paidCount,             cls: paidCount > 0 ? 'text-emerald-700' : '' },
-            { label: 'Completion',      value: `${preparedPct.toFixed(1)}%`, cls: preparedPct >= 100 ? 'text-emerald-700' : '' },
-            { label: 'Missing Matls',   value: missingCount,          cls: missingCount > 0 ? 'text-red-700' : '' },
+            { label: t($ => $.wave.orders.kpis.totalOrders),      value: ordersCount,                  cls: '' },
+            { label: t($ => $.wave.orders.kpis.deliveryZones),    value: uniqueZones,                  cls: '' },
+            { label: t($ => $.wave.orders.kpis.paid),             value: paidCount,                    cls: paidCount > 0 ? 'text-emerald-700' : '' },
+            { label: t($ => $.wave.orders.kpis.completion),       value: `${preparedPct.toFixed(1)}%`, cls: preparedPct >= 100 ? 'text-emerald-700' : '' },
+            { label: t($ => $.wave.orders.kpis.missingMaterials), value: missingCount,                 cls: missingCount > 0 ? 'text-red-700' : '' },
           ].map((kpi) => (
             <div
               key={kpi.label}
@@ -227,12 +234,18 @@ export function WaveOrdersPage() {
       )}
 
       <div className="flex items-center justify-between gap-3 px-4 py-2 border-b bg-muted/30 flex-wrap">
-        <ZoneTabs orders={allOrders} zone={zoneFilter} onZone={setZoneFilter} />
+        <ZoneTabs
+          orders={allOrders}
+          zone={zoneFilter}
+          onZone={setZoneFilter}
+          allZonesLabel={t($ => $.wave.orders.allZones)}
+          unzonedLabel={unzonedLabel}
+        />
         <div className="flex items-center gap-2 shrink-0">
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search order / customer…"
+            placeholder={tAny('wave.orders.searchPlaceholder')}
             className="h-7 text-xs w-48"
           />
         </div>
@@ -242,16 +255,16 @@ export function WaveOrdersPage() {
         {!waveId ? (
           <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
             <Waves className="h-8 w-8 opacity-30" />
-            <p className="text-sm">Select a wave to view its orders.</p>
+            <p className="text-sm">{t($ => $.wave.orders.noWave)}</p>
           </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Loading…</span>
+            <span className="text-sm">{t($ => $.wave.loading)}</span>
           </div>
         ) : (
           <UniversalDataGrid<WaveOrderEntry>
-            columns={COLUMNS}
+            columns={columns}
             data={filtered}
             rowId={(o) => o.id}
             loading={false}
@@ -261,8 +274,8 @@ export function WaveOrdersPage() {
                 <ShoppingCart className="w-8 h-8" />
                 <p className="text-sm">
                   {allOrders.length === 0
-                    ? 'No orders attached to this wave yet.'
-                    : 'No orders match the current filter.'}
+                    ? t($ => $.wave.orders.emptyNoOrders)
+                    : t($ => $.wave.orders.emptyNoMatch)}
                 </p>
               </div>
             }

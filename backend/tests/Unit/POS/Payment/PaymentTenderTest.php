@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Payment;
 
+use InvalidArgumentException;
 use Modules\POS\Payment\Domain\ValueObjects\PaymentTender;
 use Modules\POS\Shared\Domain\Enums\PaymentMethodType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -70,19 +71,19 @@ final class PaymentTenderTest extends TestCase
     public function test_create_stores_metadata_when_provided(): void
     {
         $metadata = ['last4' => '1234', 'card_brand' => 'Visa'];
-        $tender   = PaymentTender::create(PaymentMethodType::Card, $this->makeAmount(), null, $metadata);
+        $tender = PaymentTender::create(PaymentMethodType::Card, $this->makeAmount(), null, $metadata);
         $this->assertSame($metadata, $tender->metadata);
     }
 
     public function test_create_throws_for_zero_amount(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PaymentTender::create(PaymentMethodType::Cash, Money::zero('EGP'));
     }
 
     public function test_create_throws_for_negative_amount(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PaymentTender::create(PaymentMethodType::Cash, Money::of('-50.00', 'EGP'));
     }
 
@@ -118,11 +119,11 @@ final class PaymentTenderTest extends TestCase
     public function test_from_array_handles_null_reference(): void
     {
         $tender = PaymentTender::fromArray([
-            'id'        => 'uuid-x',
-            'type'      => 'cash',
-            'amount'    => ['amount' => '50.00', 'currency' => 'EGP'],
+            'id' => 'uuid-x',
+            'type' => 'cash',
+            'amount' => ['amount' => '50.00', 'currency' => 'EGP'],
             'reference' => null,
-            'metadata'  => [],
+            'metadata' => [],
         ]);
         $this->assertNull($tender->reference);
     }

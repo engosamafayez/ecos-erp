@@ -58,27 +58,27 @@ final class ReceiveStockAction extends BaseAction
                 throw new InvalidInventoryMovementException('InventoryItem disappeared during transaction');
             }
 
-            $onHandBefore  = (float) $locked->on_hand_qty;
+            $onHandBefore = (float) $locked->on_hand_qty;
             $reservedBefore = (float) $locked->reserved_qty;
-            $onHandAfter   = $onHandBefore + $dto->quantity;
+            $onHandAfter = $onHandBefore + $dto->quantity;
 
             $locked->on_hand_qty = $onHandAfter;
             $this->inventory->save($locked);
 
             $this->inventory->recordEntry([
                 'inventory_item_id' => $locked->id,
-                'warehouse_id'      => $dto->warehouse_id,
-                'product_id'        => $dto->product_id,
-                'company_id'        => $dto->company_id,
-                'movement_type'     => LedgerMovementType::PurchaseReceipt->value,
-                'quantity'          => $dto->quantity,
-                'on_hand_before'    => $onHandBefore,
-                'on_hand_after'     => $onHandAfter,
-                'reserved_before'   => $reservedBefore,
-                'reserved_after'    => $reservedBefore,
-                'reference_type'    => $dto->reference_type,
-                'reference_id'      => $dto->reference_id,
-                'notes'             => $dto->notes,
+                'warehouse_id' => $dto->warehouse_id,
+                'product_id' => $dto->product_id,
+                'company_id' => $dto->company_id,
+                'movement_type' => LedgerMovementType::PurchaseReceipt->value,
+                'quantity' => $dto->quantity,
+                'on_hand_before' => $onHandBefore,
+                'on_hand_after' => $onHandAfter,
+                'reserved_before' => $reservedBefore,
+                'reserved_after' => $reservedBefore,
+                'reference_type' => $dto->reference_type,
+                'reference_id' => $dto->reference_id,
+                'notes' => $dto->notes,
             ]);
 
             $locked->refresh();
@@ -96,15 +96,15 @@ final class ReceiveStockAction extends BaseAction
         // commits — rollback of the outer transaction silently discards the callback,
         // guaranteeing zero events on rollback and exactly one event on success.
         $event = new InventoryStockReceived(
-            inventoryItemId:  $result->id,
-            warehouseId:      $dto->warehouse_id,
-            productId:        $dto->product_id,
-            companyId:        $dto->company_id,
+            inventoryItemId: $result->id,
+            warehouseId: $dto->warehouse_id,
+            productId: $dto->product_id,
+            companyId: $dto->company_id,
             quantityReceived: $dto->quantity,
-            onHandBefore:     $onHandBefore ?? 0.0,
-            onHandAfter:      (float) $result->on_hand_qty,
-            referenceType:    $dto->reference_type,
-            referenceId:      $dto->reference_id,
+            onHandBefore: $onHandBefore ?? 0.0,
+            onHandAfter: (float) $result->on_hand_qty,
+            referenceType: $dto->reference_type,
+            referenceId: $dto->reference_id,
         );
 
         DB::connection()->afterCommit(function () use ($event): void {

@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         if (Schema::hasColumn('bae_business_events', 'schema_version')) {
@@ -25,8 +28,8 @@ return new class extends Migration {
             // The specific event (by UUID) that caused this event — enables cause→effect traversal
             $table->uuid('causation_id')->nullable()->after('correlation_id');
 
-            $table->index('causation_id',                          'bae_be_causation_idx');
-            $table->index(['replay_compatible', 'occurred_at'],    'bae_be_replay_idx');
+            $table->index('causation_id', 'bae_be_causation_idx');
+            $table->index(['replay_compatible', 'occurred_at'], 'bae_be_replay_idx');
         });
     }
 

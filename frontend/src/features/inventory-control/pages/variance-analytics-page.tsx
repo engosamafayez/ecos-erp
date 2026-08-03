@@ -32,10 +32,10 @@ function FrequentTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-xs">
-              <th className="px-4 py-2 text-start font-medium">{t('variance.table.product')}</th>
-              <th className="px-4 py-2 text-center font-medium">{t('variance.table.count')}</th>
-              <th className="px-4 py-2 text-end font-medium">{t('variance.table.totalQty')}</th>
-              <th className="px-4 py-2 text-end font-medium">{t('variance.table.totalValue')}</th>
+              <th className="px-4 py-2 text-start font-medium">{t($ => $.variance.table.product)}</th>
+              <th className="px-4 py-2 text-center font-medium">{t($ => $.variance.table.count)}</th>
+              <th className="px-4 py-2 text-end font-medium">{t($ => $.variance.table.totalQty)}</th>
+              <th className="px-4 py-2 text-end font-medium">{t($ => $.variance.table.totalValue)}</th>
             </tr>
           </thead>
           <tbody>
@@ -66,16 +66,16 @@ function WarehouseTable({ rows }: { rows: WarehouseVariance[] }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{t('variance.byWarehouse')}</CardTitle>
+        <CardTitle className="text-sm font-medium">{t($ => $.variance.byWarehouse)}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-xs">
-              <th className="px-4 py-2 text-start font-medium">{t('variance.table.warehouse')}</th>
-              <th className="px-4 py-2 text-end font-medium">{t('variance.table.adjIn')}</th>
-              <th className="px-4 py-2 text-end font-medium">{t('variance.table.adjOut')}</th>
-              <th className="px-4 py-2 text-end font-medium">{t('variance.table.netVariance')}</th>
+              <th className="px-4 py-2 text-start font-medium">{t($ => $.variance.table.warehouse)}</th>
+              <th className="px-4 py-2 text-end font-medium">{t($ => $.variance.table.adjIn)}</th>
+              <th className="px-4 py-2 text-end font-medium">{t($ => $.variance.table.adjOut)}</th>
+              <th className="px-4 py-2 text-end font-medium">{t($ => $.variance.table.netVariance)}</th>
             </tr>
           </thead>
           <tbody>
@@ -103,16 +103,16 @@ function CategoryTable({ rows }: { rows: CategoryVariance[] }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{t('variance.byCategory')}</CardTitle>
+        <CardTitle className="text-sm font-medium">{t($ => $.variance.byCategory)}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-xs">
-              <th className="px-4 py-2 text-start font-medium">{t('variance.table.category')}</th>
-              <th className="px-4 py-2 text-end font-medium">{t('variance.table.adjIn')}</th>
-              <th className="px-4 py-2 text-end font-medium">{t('variance.table.adjOut')}</th>
-              <th className="px-4 py-2 text-end font-medium">{t('variance.table.netVariance')}</th>
+              <th className="px-4 py-2 text-start font-medium">{t($ => $.variance.table.category)}</th>
+              <th className="px-4 py-2 text-end font-medium">{t($ => $.variance.table.adjIn)}</th>
+              <th className="px-4 py-2 text-end font-medium">{t($ => $.variance.table.adjOut)}</th>
+              <th className="px-4 py-2 text-end font-medium">{t($ => $.variance.table.netVariance)}</th>
             </tr>
           </thead>
           <tbody>
@@ -141,16 +141,16 @@ function TrendTable({ rows }: { rows: MonthlyTrend[] }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{t('variance.monthlyTrend')}</CardTitle>
+        <CardTitle className="text-sm font-medium">{t($ => $.variance.monthlyTrend)}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-xs">
-              <th className="px-4 py-2 text-start font-medium">{t('variance.table.month')}</th>
-              <th className="w-32 px-4 py-2 text-start font-medium">{t('variance.table.adjIn')}</th>
-              <th className="w-32 px-4 py-2 text-start font-medium">{t('variance.table.adjOut')}</th>
-              <th className="px-4 py-2 text-end font-medium">{t('variance.table.netVariance')}</th>
+              <th className="px-4 py-2 text-start font-medium">{t($ => $.variance.table.month)}</th>
+              <th className="w-32 px-4 py-2 text-start font-medium">{t($ => $.variance.table.adjIn)}</th>
+              <th className="w-32 px-4 py-2 text-start font-medium">{t($ => $.variance.table.adjOut)}</th>
+              <th className="px-4 py-2 text-end font-medium">{t($ => $.variance.table.netVariance)}</th>
             </tr>
           </thead>
           <tbody>
@@ -192,16 +192,16 @@ export function VarianceAnalyticsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('variance.title')}
+        title={t($ => $.variance.title)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('variance.title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.variance.title) },
         ]}
       />
 
       <div className="flex flex-col gap-4 md:flex-row">
-        <FrequentTable rows={data.frequently_missing} title={t('variance.frequentlyMissing')} />
-        <FrequentTable rows={data.frequently_overcounted} title={t('variance.frequentlyOvercounted')} />
+        <FrequentTable rows={data.frequently_missing} title={t($ => $.variance.frequentlyMissing)} />
+        <FrequentTable rows={data.frequently_overcounted} title={t($ => $.variance.frequentlyOvercounted)} />
       </div>
 
       <WarehouseTable rows={data.by_warehouse} />

@@ -33,32 +33,32 @@ final class CompleteLoadingAction
 
             if ($pendingTasks > 0) {
                 throw new RuntimeException(
-                    "Cannot complete loading: {$pendingTasks} task(s) are still pending or in progress."
+                    "Cannot complete loading: {$pendingTasks} task(s) are still pending or in progress.",
                 );
             }
 
             $session->update([
-                'status'               => LoadingSessionStatus::LoadingComplete->value,
+                'status' => LoadingSessionStatus::LoadingComplete->value,
                 'loading_completed_at' => now(),
                 'loading_completed_by' => $actorId,
-                'updated_by'           => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             $session->load('vehicleAssignments.vehicleInventoryItems');
 
             foreach ($session->vehicleAssignments as $assignment) {
-                $totalUnitsLoaded    = (float) $assignment->vehicleInventoryItems->sum('quantity_loaded');
+                $totalUnitsLoaded = (float) $assignment->vehicleInventoryItems->sum('quantity_loaded');
                 $loadedProductsCount = $assignment->vehicleInventoryItems->count();
 
                 event(new VehicleLoaded(
-                    companyId:           $session->company_id,
-                    assignmentId:        $assignment->id,
-                    sessionId:           $session->id,
-                    vehicleId:           $assignment->vehicle_id,
-                    totalUnitsLoaded:    $totalUnitsLoaded,
+                    companyId: $session->company_id,
+                    assignmentId: $assignment->id,
+                    sessionId: $session->id,
+                    vehicleId: $assignment->vehicle_id,
+                    totalUnitsLoaded: $totalUnitsLoaded,
                     loadedProductsCount: $loadedProductsCount,
-                    actorId:             $actorId,
-                    occurredAt:          now()->toIso8601String(),
+                    actorId: $actorId,
+                    occurredAt: now()->toIso8601String(),
                 ));
             }
 

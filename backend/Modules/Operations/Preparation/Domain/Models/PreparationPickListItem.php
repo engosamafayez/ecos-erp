@@ -10,23 +10,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Operations\Preparation\Domain\Enums\PickListItemStatus;
 
 /**
- * @property string              $id
- * @property string              $company_id
- * @property string              $pick_list_id
- * @property string              $product_id
- * @property string              $sku_snapshot
- * @property string              $name_snapshot
- * @property string|null         $warehouse_zone
- * @property string|null         $shelf_location
- * @property float               $quantity_to_pick
- * @property float               $quantity_picked
- * @property PickListItemStatus  $status
- * @property string|null         $picked_by
+ * @property string $id
+ * @property string $company_id
+ * @property string $pick_list_id
+ * @property string $product_id
+ * @property string $sku_snapshot
+ * @property string $name_snapshot
+ * @property string|null $warehouse_zone
+ * @property string|null $shelf_location
+ * @property float $quantity_to_pick
+ * @property float $quantity_picked
+ * @property PickListItemStatus $status
+ * @property string|null $picked_by
  * @property \Carbon\Carbon|null $picked_at
- * @property string              $created_by
- * @property string              $updated_by
- * @property \Carbon\Carbon      $created_at
- * @property \Carbon\Carbon      $updated_at
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class PreparationPickListItem extends Model
 {
@@ -60,10 +60,10 @@ class PreparationPickListItem extends Model
     protected function casts(): array
     {
         return [
-            'status'           => PickListItemStatus::class,
+            'status' => PickListItemStatus::class,
             'quantity_to_pick' => 'float',
-            'quantity_picked'  => 'float',
-            'picked_at'        => 'datetime',
+            'quantity_picked' => 'float',
+            'picked_at' => 'datetime',
         ];
     }
 

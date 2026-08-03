@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\ValueObjects;
 
+use InvalidArgumentException;
 use Modules\POS\Shared\Domain\ValueObjects\Quantity;
 use PHPUnit\Framework\TestCase;
 
@@ -36,7 +37,7 @@ final class QuantityTest extends TestCase
 
     public function test_constructor_rejects_non_numeric(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         Quantity::of('invalid');
     }
@@ -78,7 +79,7 @@ final class QuantityTest extends TestCase
 
     public function test_divide_by_zero_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         Quantity::of('5.0')->divide(0);
     }
@@ -99,7 +100,7 @@ final class QuantityTest extends TestCase
 
     public function test_greater_than_and_less_than(): void
     {
-        $big   = Quantity::of('10.0');
+        $big = Quantity::of('10.0');
         $small = Quantity::of('5.0');
 
         $this->assertTrue($big->isGreaterThan($small));

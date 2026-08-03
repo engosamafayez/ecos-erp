@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronRight, Layers, MapPin, Network as NetworkIcon, PauseCircle } from 'lucide-react';
 
 import { Pagination } from '@/components/crud';
@@ -42,27 +43,27 @@ function TableSkeleton() {
 }
 
 function EmptyAreas({ hasFilter }: { hasFilter: boolean }) {
+  const { t } = useTranslation('logistics');
+
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <NetworkIcon className="mb-3 size-12 text-muted-foreground/20" />
       <p className="text-sm font-medium">
-        {hasFilter ? 'No service areas match your filters' : 'No service areas yet'}
+        {hasFilter ? t($ => $.network.empty.filteredTitle) : t($ => $.network.empty.title)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {hasFilter
-          ? 'Try a different status.'
-          : 'A service area composes zones and cities that already exist — it never creates geography.'}
+        {hasFilter ? t($ => $.network.empty.filteredHint) : t($ => $.network.empty.hint)}
       </p>
     </div>
   );
 }
 
 const STATUS_FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'active', label: 'Active' },
-  { key: 'draft', label: 'Draft' },
-  { key: 'paused', label: 'Paused' },
-  { key: 'closed', label: 'Closed' },
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'active', labelKey: 'common.active' },
+  { key: 'draft', labelKey: 'network.areaStatus.draft' },
+  { key: 'paused', labelKey: 'network.areaStatus.paused' },
+  { key: 'closed', labelKey: 'network.areaStatus.closed' },
 ] as const;
 
 type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];
@@ -75,6 +76,7 @@ type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];
  * surfacing rather than discovering at dispatch time.
  */
 export function ServiceAreasPage() {
+  const { t } = useTranslation('logistics');
   const [statusFilter, setStatusFilter] = useState<StatusFilterKey>('all');
   const [page, setPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -97,19 +99,19 @@ export function ServiceAreasPage() {
   const uncovered = areas.filter((a) => a.member_count === 0).length;
 
   const metrics = [
-    { id: 'areas', icon: NetworkIcon, label: 'Service Areas', value: meta?.total ?? 0, isLoading: !data },
-    { id: 'active', icon: MapPin, label: 'Active', value: activeCount, isLoading: !data, colorClass: 'text-emerald-600' },
-    { id: 'regions', icon: Layers, label: 'Dispatch Regions', value: regions?.length ?? 0, isLoading: !regions },
+    { id: 'areas', icon: NetworkIcon, label: t($ => $.network.metrics.serviceAreas), value: meta?.total ?? 0, isLoading: !data },
+    { id: 'active', icon: MapPin, label: t($ => $.common.active), value: activeCount, isLoading: !data, colorClass: 'text-emerald-600' },
+    { id: 'regions', icon: Layers, label: t($ => $.network.metrics.dispatchRegions), value: regions?.length ?? 0, isLoading: !regions },
     // An area with no members never matches an address — worth surfacing.
-    { id: 'uncovered', icon: PauseCircle, label: 'Without Coverage', value: uncovered, isLoading: !data, colorClass: 'text-amber-600' },
+    { id: 'uncovered', icon: PauseCircle, label: t($ => $.network.metrics.withoutCoverage), value: uncovered, isLoading: !data, colorClass: 'text-amber-600' },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Network' }]}
-        title="Service Areas"
-        description="Coverage, service levels and capacity — composed from existing zones and cities"
+        breadcrumbs={[{ label: t($ => $.network.breadcrumbRoot) }, { label: t($ => $.network.breadcrumbNetwork) }]}
+        title={t($ => $.network.title)}
+        description={t($ => $.network.description)}
         metrics={metrics}
       />
 
@@ -132,7 +134,7 @@ export function ServiceAreasPage() {
                   setPage(1);
                 }}
               >
-                {s.label}
+                {t(s.labelKey)}
               </Button>
             ))}
           </div>
@@ -147,12 +149,12 @@ export function ServiceAreasPage() {
             <div className="overflow-x-auto rounded-lg border bg-card">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="h-10 px-3 font-medium">Area</th>
-                    <th className="h-10 px-3 font-medium">Status</th>
-                    <th className="h-10 px-3 text-center font-medium">Members</th>
-                    <th className="h-10 px-3 font-medium">Dispatch Region</th>
-                    <th className="h-10 px-3 text-right font-medium">Lead time</th>
+                  <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="h-10 px-3 font-medium">{t($ => $.network.table.area)}</th>
+                    <th className="h-10 px-3 font-medium">{t($ => $.common.status)}</th>
+                    <th className="h-10 px-3 text-center font-medium">{t($ => $.network.table.members)}</th>
+                    <th className="h-10 px-3 font-medium">{t($ => $.network.area.dispatchRegion)}</th>
+                    <th className="h-10 px-3 text-end font-medium">{t($ => $.network.area.leadTime)}</th>
                     <th className="h-10 w-10 px-3" />
                   </tr>
                 </thead>
@@ -175,7 +177,7 @@ export function ServiceAreasPage() {
                       </td>
                       <td className="px-3 py-2.5 text-center tabular-nums">
                         {area.member_count === 0 ? (
-                          <span className="text-amber-600" title="This area covers nothing">
+                          <span className="text-amber-600" title={t($ => $.network.table.noCoverageTooltip)}>
                             0
                           </span>
                         ) : (
@@ -185,10 +187,10 @@ export function ServiceAreasPage() {
                       <td className="px-3 py-2.5 text-xs text-muted-foreground">
                         {area.dispatch_region?.name ?? '—'}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums">
-                        {area.default_lead_time_hours}h
+                      <td className="px-3 py-2.5 text-end tabular-nums">
+                        {t($ => $.network.hoursShort, { hours: area.default_lead_time_hours })}
                       </td>
-                      <td className="px-3 py-2.5 text-right">
+                      <td className="px-3 py-2.5 text-end">
                         <ChevronRight className="size-4 text-muted-foreground" />
                       </td>
                     </tr>

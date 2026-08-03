@@ -46,9 +46,9 @@ final readonly class OrchestratorResult
     public function toArray(): array
     {
         return [
-            'decision'        => $this->decision->toArray(),
+            'decision' => $this->decision->toArray(),
             'recipe_snapshot' => $this->recipe_snapshot?->toArray(),
-            'metadata'        => $this->metadata,
+            'metadata' => $this->metadata,
         ];
     }
 }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\Terminal;
 
+use DateTimeImmutable;
+use DateTimeZone;
+use InvalidArgumentException;
 use Modules\POS\Terminal\Domain\Enums\TerminalStatus;
 use Modules\POS\Terminal\Domain\Exceptions\InvalidTerminalStatusTransitionException;
 use Modules\POS\Terminal\Domain\Models\Terminal;
@@ -31,16 +34,17 @@ final class TerminalAggregateTest extends TestCase
 {
     // No RefreshDatabase — all tests are purely in-memory.
 
-    private string $branchId    = 'branch-uuid-1';
+    private string $branchId = 'branch-uuid-1';
+
     private string $warehouseId = 'warehouse-uuid-1';
 
     private function makeTerminal(string $code = 'POS-01'): Terminal
     {
         return Terminal::register(
-            terminalCode:   $code,
-            name:           'Test Terminal',
-            branchId:       $this->branchId,
-            warehouseId:    $this->warehouseId,
+            terminalCode: $code,
+            name: 'Test Terminal',
+            branchId: $this->branchId,
+            warehouseId: $this->warehouseId,
             hardwareConfig: HardwareConfig::default(),
         );
     }
@@ -60,10 +64,10 @@ final class TerminalAggregateTest extends TestCase
     public function test_register_uppercases_terminal_code(): void
     {
         $terminal = Terminal::register(
-            terminalCode:   'pos-02',
-            name:           'Lower-case Test',
-            branchId:       $this->branchId,
-            warehouseId:    $this->warehouseId,
+            terminalCode: 'pos-02',
+            name: 'Lower-case Test',
+            branchId: $this->branchId,
+            warehouseId: $this->warehouseId,
             hardwareConfig: HardwareConfig::default(),
         );
 
@@ -73,10 +77,10 @@ final class TerminalAggregateTest extends TestCase
     public function test_register_trims_name(): void
     {
         $terminal = Terminal::register(
-            terminalCode:   'POS-03',
-            name:           '  Checkout  ',
-            branchId:       $this->branchId,
-            warehouseId:    $this->warehouseId,
+            terminalCode: 'POS-03',
+            name: '  Checkout  ',
+            branchId: $this->branchId,
+            warehouseId: $this->warehouseId,
             hardwareConfig: HardwareConfig::default(),
         );
 
@@ -85,7 +89,7 @@ final class TerminalAggregateTest extends TestCase
 
     public function test_register_stores_hardware_config_as_array(): void
     {
-        $config   = new HardwareConfig('thermal_58mm', true, false, true, 'ws://agent:9000');
+        $config = new HardwareConfig('thermal_58mm', true, false, true, 'ws://agent:9000');
         $terminal = Terminal::register('POS-04', 'T4', $this->branchId, $this->warehouseId, $config);
 
         $this->assertTrue($config->equals($terminal->getHardwareConfig()));
@@ -93,7 +97,7 @@ final class TerminalAggregateTest extends TestCase
 
     public function test_register_rejects_empty_code(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Terminal code cannot be empty');
 
         Terminal::register('', 'Name', $this->branchId, $this->warehouseId, HardwareConfig::default());
@@ -101,14 +105,14 @@ final class TerminalAggregateTest extends TestCase
 
     public function test_register_rejects_whitespace_only_code(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         Terminal::register('   ', 'Name', $this->branchId, $this->warehouseId, HardwareConfig::default());
     }
 
     public function test_register_rejects_empty_name(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Terminal name cannot be empty');
 
         Terminal::register('POS-05', '', $this->branchId, $this->warehouseId, HardwareConfig::default());
@@ -227,7 +231,7 @@ final class TerminalAggregateTest extends TestCase
 
     public function test_update_hardware_config_replaces_existing(): void
     {
-        $terminal  = $this->makeTerminal();
+        $terminal = $this->makeTerminal();
         $newConfig = HardwareConfig::minimal();
 
         $terminal->updateHardwareConfig($newConfig);
@@ -237,7 +241,7 @@ final class TerminalAggregateTest extends TestCase
 
     public function test_get_hardware_config_returns_vo(): void
     {
-        $config   = HardwareConfig::default();
+        $config = HardwareConfig::default();
         $terminal = Terminal::register('POS-06', 'T6', $this->branchId, $this->warehouseId, $config);
 
         $retrieved = $terminal->getHardwareConfig();
@@ -251,7 +255,7 @@ final class TerminalAggregateTest extends TestCase
     public function test_record_heartbeat_sets_ip_and_timestamp(): void
     {
         $terminal = $this->makeTerminal();
-        $at       = new \DateTimeImmutable('2026-07-01 10:00:00', new \DateTimeZone('UTC'));
+        $at = new DateTimeImmutable('2026-07-01 10:00:00', new DateTimeZone('UTC'));
 
         $terminal->recordHeartbeat($at, '10.0.0.5');
 

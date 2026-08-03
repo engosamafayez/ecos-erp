@@ -17,9 +17,9 @@ final class ReprintReceiptRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cashier_id'   => ['required', 'string', 'uuid'],
-            'terminal_id'  => ['required', 'string', 'uuid'],
-            'reason'       => ['required', 'string', 'max:500'],
+            'cashier_id' => ['required', 'string', 'uuid'],
+            'terminal_id' => ['required', 'string', 'uuid'],
+            'reason' => ['required', 'string', 'max:500'],
         ];
     }
 }

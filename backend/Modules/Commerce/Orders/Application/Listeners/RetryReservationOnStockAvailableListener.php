@@ -11,6 +11,7 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
+use Throwable;
 
 /**
  * TASK-INV-RESERVATION-LIFECYCLE-001 — Part 4
@@ -26,7 +27,7 @@ use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
 final class RetryReservationOnStockAvailableListener
 {
     public function __construct(
-        private readonly FulfillmentEngine    $fulfillmentEngine,
+        private readonly FulfillmentEngine $fulfillmentEngine,
         private readonly ProcessOrderWorkflow $processWorkflow,
     ) {}
 
@@ -56,16 +57,16 @@ final class RetryReservationOnStockAvailableListener
                 );
 
                 Log::info("[RetryReservation] Order #{$order->order_number} processed after stock receipt.", [
-                    'order_id'     => $order->id,
-                    'new_status'   => $result->order->status->value,
-                    'product_id'   => $event->productId,
+                    'order_id' => $order->id,
+                    'new_status' => $result->order->status->value,
+                    'product_id' => $event->productId,
                     'warehouse_id' => $event->warehouseId,
                 ]);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Never let a single order failure halt the retry loop.
                 Log::error("[RetryReservation] Failed to process order #{$order->order_number} after stock receipt.", [
                     'order_id' => $order->id,
-                    'error'    => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

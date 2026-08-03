@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   Ban,
@@ -14,76 +15,86 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { DeliveryStatus } from '../types/delivery';
 
-const CONFIG: Record<DeliveryStatus, { label: string; className: string; Icon: typeof CheckCircle }> = {
+/**
+ * `labelKey` is a `logistics` namespace key — resolved at render, never stored translated.
+ *
+ * Module-private: nothing outside this file reads it, and exporting a constant
+ * beside a component is what stops Fast Refresh from hot-reloading the module.
+ */
+const DELIVERY_STATUS_CONFIG: Record<
+  DeliveryStatus,
+  { labelKey: string; className: string; Icon: typeof CheckCircle }
+> = {
   pending: {
-    label: 'Pending',
+    labelKey: 'common.pending',
     className: 'bg-muted text-muted-foreground hover:bg-muted',
     Icon: Clock,
   },
   scheduled: {
-    label: 'Scheduled',
+    labelKey: 'common.scheduled',
     className: 'bg-sky-600 hover:bg-sky-600 text-white',
     Icon: Clock,
   },
   in_transit: {
-    label: 'In Transit',
+    labelKey: 'delivery.status.inTransit',
     className: 'bg-blue-600 hover:bg-blue-600 text-white',
     Icon: Truck,
   },
   out_for_delivery: {
-    label: 'Out for Delivery',
+    labelKey: 'delivery.status.outForDelivery',
     className: 'bg-indigo-600 hover:bg-indigo-600 text-white',
     Icon: MapPin,
   },
   attempted: {
-    label: 'Attempted',
+    labelKey: 'delivery.status.attempted',
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
     Icon: AlertTriangle,
   },
   delivered: {
-    label: 'Delivered',
+    labelKey: 'delivery.status.delivered',
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
     Icon: CheckCircle,
   },
   partially_delivered: {
-    label: 'Partially Delivered',
+    labelKey: 'delivery.status.partiallyDelivered',
     className: 'bg-amber-600 hover:bg-amber-600 text-white',
     Icon: PackageCheck,
   },
   failed: {
-    label: 'Failed',
+    labelKey: 'common.failed',
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
     Icon: XCircle,
   },
   awaiting_retry: {
-    label: 'Awaiting Retry',
+    labelKey: 'delivery.status.awaitingRetry',
     className: 'bg-orange-500 hover:bg-orange-500 text-white',
     Icon: RotateCcw,
   },
   returning: {
-    label: 'Returning',
+    labelKey: 'delivery.status.returning',
     className: 'bg-purple-600 hover:bg-purple-600 text-white',
     Icon: Undo2,
   },
   returned: {
-    label: 'Returned',
+    labelKey: 'delivery.status.returned',
     className: 'bg-slate-600 hover:bg-slate-600 text-white',
     Icon: Undo2,
   },
   cancelled: {
-    label: 'Cancelled',
+    labelKey: 'common.cancelled',
     className: 'bg-muted text-muted-foreground hover:bg-muted',
     Icon: Ban,
   },
 };
 
 export function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
-  const { label, className, Icon } = CONFIG[status];
+  const { t } = useTranslation('logistics');
+  const { labelKey, className, Icon } = DELIVERY_STATUS_CONFIG[status];
 
   return (
     <Badge className={`gap-1 text-xs ${className}`}>
       <Icon className="size-3" />
-      {label}
+      {t(labelKey)}
     </Badge>
   );
 }

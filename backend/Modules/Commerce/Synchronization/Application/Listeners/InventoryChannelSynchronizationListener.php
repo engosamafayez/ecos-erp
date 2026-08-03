@@ -64,8 +64,8 @@ final class InventoryChannelSynchronizationListener
             // Session events may be missing product-scoped fields — that is expected.
             // Only warn (and return early) when truly required base fields are absent.
             Log::channel('daily')->warning('[DomainEvent][PhaseB] Inventory event received with missing required fields', [
-                'event_id'       => $event->eventId(),
-                'event_name'     => $event->eventName(),
+                'event_id' => $event->eventId(),
+                'event_name' => $event->eventName(),
                 'correlation_id' => $event->correlationId(),
                 'missing_fields' => $missing,
             ]);
@@ -84,8 +84,8 @@ final class InventoryChannelSynchronizationListener
     /**
      * Validate that required base fields are present and non-empty.
      *
-     * @param  array<string, mixed> $payload
-     * @return list<string>          missing field names
+     * @param  array<string, mixed>  $payload
+     * @return list<string> missing field names
      */
     private function validatePayload(array $payload): array
     {

@@ -37,18 +37,18 @@ final class CompanyContextController extends Controller
 
         return response()->json([
             'data' => [
-                'id'                 => $company->id,
-                'name'               => $company->name,
-                'currency'           => $currency,
-                'currency_symbol'    => $currencySymbols[$currency] ?? $currency,
-                'timezone'           => $company->timezone ?? 'UTC',
-                'language'           => $company->language ?? 'en',
-                'locale'             => $company->locale ?? 'en-US',
-                'date_format'        => $company->date_format ?? 'YYYY-MM-DD',
-                'number_format'      => $company->number_format ?? '1,234.56',
-                'week_start'         => $company->week_start ?? 'Monday',
-                'fiscal_year_start'  => $company->fiscal_year_start?->toDateString(),
-                'fiscal_year_end'    => $company->fiscal_year_end?->toDateString(),
+                'id' => $company->id,
+                'name' => $company->name,
+                'currency' => $currency,
+                'currency_symbol' => $currencySymbols[$currency] ?? $currency,
+                'timezone' => $company->timezone ?? 'UTC',
+                'language' => $company->language ?? 'en',
+                'locale' => $company->locale ?? 'en-US',
+                'date_format' => $company->date_format ?? 'YYYY-MM-DD',
+                'number_format' => $company->number_format ?? '1,234.56',
+                'week_start' => $company->week_start ?? 'Monday',
+                'fiscal_year_start' => $company->fiscal_year_start?->toDateString(),
+                'fiscal_year_end' => $company->fiscal_year_end?->toDateString(),
             ],
         ]);
     }

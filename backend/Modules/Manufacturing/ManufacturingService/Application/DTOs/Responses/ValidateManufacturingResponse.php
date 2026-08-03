@@ -44,14 +44,14 @@ final readonly class ValidateManufacturingResponse
     public static function blocked(ManufacturingWorkflowResult $result): self
     {
         return new self(
-            workflow_id:                 $result->workflow_id,
-            is_workflow_valid:           false,
-            blocking_reason:             $result->blocking_reason?->value,
+            workflow_id: $result->workflow_id,
+            is_workflow_valid: false,
+            blocking_reason: $result->blocking_reason?->value,
             is_plan_valid_for_execution: false,
-            pipeline_failures:           [],
-            plan_id:                     null,
-            decision_key:                null,
-            metadata:                    $result->metadata,
+            pipeline_failures: [],
+            plan_id: null,
+            decision_key: null,
+            metadata: $result->metadata,
         );
     }
 
@@ -60,17 +60,17 @@ final readonly class ValidateManufacturingResponse
         ManufacturingExecutionContext $context,
     ): self {
         return new self(
-            workflow_id:                 $workflowResult->workflow_id,
-            is_workflow_valid:           true,
-            blocking_reason:             $workflowResult->blocking_reason?->value,
+            workflow_id: $workflowResult->workflow_id,
+            is_workflow_valid: true,
+            blocking_reason: $workflowResult->blocking_reason?->value,
             is_plan_valid_for_execution: $context->isValid(),
-            pipeline_failures:           array_map(
+            pipeline_failures: array_map(
                 fn (ValidationFailure $f): array => $f->toArray(),
                 $context->validation_result->failures,
             ),
-            plan_id:                     $context->plan->plan_id,
-            decision_key:                $context->decision_key,
-            metadata:                    $workflowResult->metadata,
+            plan_id: $context->plan->plan_id,
+            decision_key: $context->decision_key,
+            metadata: $workflowResult->metadata,
         );
     }
 
@@ -78,14 +78,14 @@ final readonly class ValidateManufacturingResponse
     public function toArray(): array
     {
         return [
-            'workflow_id'                 => $this->workflow_id,
-            'is_workflow_valid'           => $this->is_workflow_valid,
-            'blocking_reason'             => $this->blocking_reason,
+            'workflow_id' => $this->workflow_id,
+            'is_workflow_valid' => $this->is_workflow_valid,
+            'blocking_reason' => $this->blocking_reason,
             'is_plan_valid_for_execution' => $this->is_plan_valid_for_execution,
-            'pipeline_failures'           => $this->pipeline_failures,
-            'plan_id'                     => $this->plan_id,
-            'decision_key'                => $this->decision_key,
-            'metadata'                    => $this->metadata,
+            'pipeline_failures' => $this->pipeline_failures,
+            'plan_id' => $this->plan_id,
+            'decision_key' => $this->decision_key,
+            'metadata' => $this->metadata,
         ];
     }
 }

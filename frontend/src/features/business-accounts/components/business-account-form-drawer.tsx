@@ -58,17 +58,23 @@ export function BusinessAccountFormDrawer({ open, onOpenChange, account }: Busin
 
   const isPending = createAccount.isPending || updateAccount.isPending;
 
+  // `reset` is a stable reference in react-hook-form, so the effect depends on
+  // the two reset functions rather than on the whole form objects — whose
+  // identity changes each render and would re-reset the form continuously.
+  const { reset: resetCreate } = createForm;
+  const { reset: resetUpdate } = updateForm;
+
   useEffect(() => {
     if (open) {
       setImageFile(null);
       setServerError(null);
       if (isEdit && account) {
-        updateForm.reset(toUpdateFormValues(account));
+        resetUpdate(toUpdateFormValues(account));
       } else {
-        createForm.reset(toCreateFormValues());
+        resetCreate(toCreateFormValues());
       }
     }
-  }, [open, account, isEdit]);
+  }, [open, account, isEdit, resetCreate, resetUpdate]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) setServerError(null);

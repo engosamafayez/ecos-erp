@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowDown,
   ArrowRight,
@@ -78,11 +79,11 @@ const PER_PAGE = 20;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmtCost(n: number, currency = 'EGP', locale = 'en-EG'): string {
+function fmtCost(n: number, currency: string, locale = 'en-EG'): string {
   return formatMoney(n, currency, locale);
 }
 
-function fmtAbbrev(n: number, currency = 'EGP', locale = 'en-EG'): string {
+function fmtAbbrev(n: number, currency: string, locale = 'en-EG'): string {
   return formatMoneyCompact(n, currency, locale);
 }
 
@@ -94,53 +95,20 @@ function computeRecipeCost(recipe: Recipe): number {
 
 // Waste badge thresholds (PKG-RECIPE-006 PART 4)
 function WasteBadge({ pct }: { pct: number }) {
+  const { t } = useTranslation('recipes');
   if (pct <= 0) return <span className="text-xs text-muted-foreground">—</span>;
   let cls: string;
-  let label: string;
-  if (pct <= 2)       { cls = 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'; label = 'Excellent'; }
-  else if (pct <= 5)  { cls = 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800'; label = 'Normal'; }
-  else if (pct <= 10) { cls = 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800'; label = 'High'; }
-  else                { cls = 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'; label = 'Critical'; }
+  let labelKey: string;
+  if (pct <= 2)       { cls = 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'; labelKey = 'waste.excellent'; }
+  else if (pct <= 5)  { cls = 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800'; labelKey = 'waste.normal'; }
+  else if (pct <= 10) { cls = 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800'; labelKey = 'waste.high'; }
+  else                { cls = 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'; labelKey = 'waste.critical'; }
   return (
     <div className="flex items-center gap-1.5">
-      <Badge variant="outline" className={`text-xs ${cls}`}>{label}</Badge>
+      <Badge variant="outline" className={`text-xs ${cls}`}>{(t as unknown as (k: string) => string)(labelKey)}</Badge>
       <span className="text-xs tabular-nums text-muted-foreground">{pct.toFixed(2)} %</span>
     </div>
   );
-}
-
-// ─── CSV export ───────────────────────────────────────────────────────────────
-
-type CsvCol = { key: RecipeColumnKey; header: string; value: (r: Recipe) => string };
-
-const CSV_COLUMNS: CsvCol[] = [
-  { key: 'image',           header: 'Product Image',   value: (r) => r.product?.image_url ?? '' },
-  { key: 'product',         header: 'Product',         value: (r) => `${r.product?.name ?? ''} (${r.product?.sku ?? ''})` },
-  { key: 'category',        header: 'Category',        value: (r) => r.product?.category?.name ?? '' },
-  { key: 'recipe_cost',     header: 'Recipe Cost',     value: (r) => computeRecipeCost(r).toFixed(2) },
-  { key: 'waste_pct',       header: 'Waste %',         value: (r) => `${(r.total_waste_pct ?? 0).toFixed(2)}%` },
-  { key: 'total_materials', header: 'Total Materials', value: (r) => String(r.lines_count ?? r.lines?.length ?? 0) },
-  { key: 'channel',         header: 'Channel',         value: (r) => r.product?.channels?.map((c) => c.name).join(', ') ?? '' },
-  { key: 'company',         header: 'Company',         value: (r) => r.product?.channels?.[0]?.company_name ?? '' },
-  { key: 'updated',         header: 'Updated',         value: (r) => (r.updated_at ?? r.created_at ?? '').slice(0, 10) },
-  { key: 'status',          header: 'Status',          value: (r) => (r.is_active ? 'Active' : 'Draft') },
-];
-
-function triggerCsvDownload(items: Recipe[], visibleColumns: Set<RecipeColumnKey>) {
-  const cols   = CSV_COLUMNS.filter((c) => visibleColumns.has(c.key));
-  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-  const header = cols.map((c) => escape(c.header)).join(',');
-  const rows   = items.map((r) => cols.map((c) => escape(c.value(r))).join(','));
-  const csv    = [header, ...rows].join('\n');
-  const blob   = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url    = URL.createObjectURL(blob);
-  const a      = document.createElement('a');
-  a.href     = url;
-  a.download = `recipes-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
@@ -148,6 +116,7 @@ function triggerCsvDownload(items: Recipe[], visibleColumns: Set<RecipeColumnKey
 type SharedFilter = Pick<RecipesQuery, 'search' | 'status' | 'company_id' | 'channel_id' | 'has_manufacturing_cost' | 'has_packaging_materials' | 'updated_from' | 'updated_to'>;
 
 function RecipeStats({ query }: { query: SharedFilter }) {
+  const { t } = useTranslation('recipes');
   const { currency, locale } = useCompany();
   const { data, isLoading } = useRecipesQuery({ ...query, per_page: 999 });
   const recipes   = data?.items ?? [];
@@ -167,10 +136,10 @@ function RecipeStats({ query }: { query: SharedFilter }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <QuickStatCard icon={BookOpen}   title="Total Recipes"    value={total}             colorClassName="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" />
-      <QuickStatCard icon={BookMarked} title="Active Recipes"   value={active}            colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30" />
-      <QuickStatCard icon={FileText}   title="Draft Recipes"    value={draft}             colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30" />
-      <QuickStatCard icon={DollarSign} title="Avg Recipe Cost"  value={fmtAbbrev(avgCost, currency, locale)} colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30" />
+      <QuickStatCard icon={BookOpen}   title={t($ => $.page.stats.total)}   value={total}                                      colorClassName="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" />
+      <QuickStatCard icon={BookMarked} title={t($ => $.page.stats.active)}  value={active}                                     colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30" />
+      <QuickStatCard icon={FileText}   title={t($ => $.page.stats.draft)}   value={draft}                                      colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30" />
+      <QuickStatCard icon={DollarSign} title={t($ => $.page.stats.avgCost)} value={fmtAbbrev(avgCost, currency, locale)}       colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30" />
     </div>
   );
 }
@@ -185,17 +154,18 @@ type ColumnManagerProps = {
 };
 
 function ColumnManagerPanel({ visibleColumns, onToggle, onRestoreDefaults, onShowAll }: ColumnManagerProps) {
+  const { t } = useTranslation('recipes');
   return (
     <PopoverContent align="end" className="w-56 p-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium">Columns</p>
+        <p className="text-sm font-medium">{t($ => $.columnManager.title)}</p>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onShowAll}>
-            Show All
+            {t($ => $.columnManager.showAll)}
           </Button>
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onRestoreDefaults}>
             <RotateCcw className="size-3 mr-1" />
-            Reset
+            {t($ => $.columnManager.reset)}
           </Button>
         </div>
       </div>
@@ -213,7 +183,7 @@ function ColumnManagerPanel({ visibleColumns, onToggle, onRestoreDefaults, onSho
               aria-label={col.label}
             />
             <span>{col.label}</span>
-            {col.locked && <span className="ms-auto text-[10px] text-muted-foreground">Locked</span>}
+            {col.locked && <span className="ms-auto text-[10px] text-muted-foreground">{t($ => $.columnManager.locked)}</span>}
           </label>
         ))}
       </div>
@@ -236,44 +206,45 @@ type FiltersPanelProps = FiltersState & {
 };
 
 function FiltersPanel({ hasMfgCost, hasPkgMaterials, updatedFrom, updatedTo, onChange, onClear }: FiltersPanelProps) {
+  const { t } = useTranslation('recipes');
   const hasAny = hasMfgCost || hasPkgMaterials || !!updatedFrom || !!updatedTo;
   return (
     <PopoverContent align="end" className="w-72 p-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-medium">Filters</p>
+        <p className="text-sm font-medium">{t($ => $.filtersPanel.title)}</p>
         {hasAny && (
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-muted-foreground" onClick={onClear}>
-            <X className="size-3 mr-1" />Clear All
+            <X className="size-3 mr-1" />{t($ => $.filtersPanel.clearAll)}
           </Button>
         )}
       </div>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm">Has manufacturing cost</label>
+          <label className="text-sm">{t($ => $.filtersPanel.hasMfgCost)}</label>
           <Switch checked={hasMfgCost} onCheckedChange={(v) => onChange({ hasMfgCost: v })} />
         </div>
         <div className="flex items-center justify-between">
-          <label className="text-sm">Has packaging materials</label>
+          <label className="text-sm">{t($ => $.filtersPanel.hasPkgMaterials)}</label>
           <Switch checked={hasPkgMaterials} onCheckedChange={(v) => onChange({ hasPkgMaterials: v })} />
         </div>
         <Separator />
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Updated Date</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t($ => $.filtersPanel.updatedDate)}</p>
           <div className="flex items-center gap-2">
             <Input
               type="date"
               value={updatedFrom}
               onChange={(e) => onChange({ updatedFrom: e.target.value })}
               className="h-8 text-sm"
-              placeholder="From"
+              placeholder={t($ => $.filtersPanel.from)}
             />
-            <span className="text-muted-foreground text-xs shrink-0">to</span>
+            <span className="text-muted-foreground text-xs shrink-0">{t($ => $.filtersPanel.toConnector)}</span>
             <Input
               type="date"
               value={updatedTo}
               onChange={(e) => onChange({ updatedTo: e.target.value })}
               className="h-8 text-sm"
-              placeholder="To"
+              placeholder={t($ => $.filtersPanel.to)}
             />
           </div>
         </div>
@@ -311,6 +282,7 @@ function RecipeToolbar({
   onSearch, onStatus, onCompany, onChannel, onFilters, onClearFilters,
   onNew, onToggleColumn, onRestoreDefaults, onShowAll, onRefresh, onExport,
 }: ToolbarProps) {
+  const { t } = useTranslation('recipes');
   const activeFilterCount = [
     filters.hasMfgCost,
     filters.hasPkgMaterials,
@@ -323,7 +295,7 @@ function RecipeToolbar({
       {/* Search */}
       <div className="relative flex-1 min-w-52 max-w-80">
         <Input
-          placeholder="Search by name or SKU…"
+          placeholder={t($ => $.toolbar.searchPlaceholder)}
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           className="h-9"
@@ -333,37 +305,37 @@ function RecipeToolbar({
       {/* Status */}
       <Select value={status} onValueChange={onStatus}>
         <SelectTrigger className="h-9 w-36">
-          <SelectValue placeholder="All Statuses" />
+          <SelectValue placeholder={t($ => $.toolbar.allStatuses)} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Statuses</SelectItem>
-          <SelectItem value="active">Active</SelectItem>
-          <SelectItem value="draft">Draft</SelectItem>
+          <SelectItem value="all">{t($ => $.toolbar.allStatuses)}</SelectItem>
+          <SelectItem value="active">{t($ => $.status.active)}</SelectItem>
+          <SelectItem value="draft">{t($ => $.status.draft)}</SelectItem>
         </SelectContent>
       </Select>
 
       {/* Company */}
       <div className="w-44">
-        <CompanySelect value={companyId} onChange={onCompany} placeholder="All Companies" />
+        <CompanySelect value={companyId} onChange={onCompany} placeholder={t($ => $.toolbar.allCompanies)} />
       </div>
 
       {/* Channel */}
       <div className="w-44">
-        <ChannelSelect value={channelId} onChange={onChannel} placeholder="All Channels" />
+        <ChannelSelect value={channelId} onChange={onChannel} placeholder={t($ => $.toolbar.allChannels)} />
       </div>
 
       {/* Action buttons */}
       <div className="ms-auto flex items-center gap-2">
         <Button size="sm" onClick={onNew} className="gap-1.5">
           <Plus className="size-4" />
-          New Recipe
+          {t($ => $.toolbar.newRecipe)}
         </Button>
 
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
               <Columns3 className="size-4" />
-              Columns
+              {t($ => $.toolbar.columns)}
             </Button>
           </PopoverTrigger>
           <ColumnManagerPanel
@@ -378,7 +350,7 @@ function RecipeToolbar({
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5 relative">
               <Filter className="size-4" />
-              Filters
+              {t($ => $.toolbar.filters)}
               {activeFilterCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                   {activeFilterCount}
@@ -401,12 +373,12 @@ function RecipeToolbar({
           className="gap-1.5"
         >
           <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
+          {t($ => $.toolbar.refresh)}
         </Button>
 
         <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5">
           <Download className="size-4" />
-          Export
+          {t($ => $.toolbar.export)}
         </Button>
       </div>
     </div>
@@ -418,17 +390,18 @@ function RecipeToolbar({
 function BulkActionBar({
   count, onExport, onClear,
 }: { count: number; onExport: () => void; onClear: () => void }) {
+  const { t } = useTranslation('recipes');
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-2.5 shadow-sm">
-      <span className="text-sm font-medium shrink-0">{count} selected</span>
+      <span className="text-sm font-medium shrink-0">{t($ => $.bulk.selected, { count })}</span>
       <div className="w-px h-5 bg-border mx-1" />
       <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5 h-8">
         <Download className="size-3.5" />
-        Export Selected
+        {t($ => $.bulk.exportSelected)}
       </Button>
       <Button variant="ghost" size="sm" onClick={onClear} className="ms-auto h-8 gap-1.5 text-muted-foreground">
         <X className="size-3.5" />
-        Clear Selection
+        {t($ => $.bulk.clearSelection)}
       </Button>
     </div>
   );
@@ -482,6 +455,7 @@ function RecipeTable({
   selectedIds, onSelectionChange, onRowClick, onEdit, onCreateFrom, onToggle, onDelete,
   onViewMaterials,
 }: RecipeTableProps) {
+  const { t } = useTranslation('recipes');
   const { currency, locale } = useCompany();
   const vis = (key: RecipeColumnKey) => visibleColumns.has(key);
 
@@ -518,20 +492,20 @@ function RecipeTable({
               <Checkbox
                 checked={someSelected ? 'indeterminate' : allSelected}
                 onCheckedChange={toggleAll}
-                aria-label="Select all"
+                aria-label={t($ => $.table.selectAll)}
               />
             </TableHead>
-            {vis('image')           && <TableHead className="w-14">Image</TableHead>}
-            {vis('product')         && <SortableHead field="product_name"    label="Product"         sort={sort} onSort={onSortChange} />}
-            {vis('category')        && <SortableHead field="category"        label="Category"        sort={sort} onSort={onSortChange} />}
-            {vis('recipe_cost')     && <SortableHead field="recipe_cost"     label="Recipe Cost"     sort={sort} onSort={onSortChange} align="right" />}
-            {vis('waste_pct')       && <SortableHead field="total_waste_pct" label="Waste %"         sort={sort} onSort={onSortChange} />}
-            {vis('total_materials') && <SortableHead field="lines_count"     label="Total Materials" sort={sort} onSort={onSortChange} align="right" />}
-            {vis('channel')         && <TableHead>Channel</TableHead>}
-            {vis('company')         && <TableHead>Company</TableHead>}
-            {vis('updated')         && <SortableHead field="updated_at"      label="Updated At"      sort={sort} onSort={onSortChange} />}
-            {vis('status')          && <TableHead>Status</TableHead>}
-            {vis('actions')         && <TableHead className="w-12 text-end">Actions</TableHead>}
+            {vis('image')           && <TableHead className="w-14">{t($ => $.table.headers.image)}</TableHead>}
+            {vis('product')         && <SortableHead field="product_name"    label={t($ => $.table.headers.product)}        sort={sort} onSort={onSortChange} />}
+            {vis('category')        && <SortableHead field="category"        label={t($ => $.table.headers.category)}       sort={sort} onSort={onSortChange} />}
+            {vis('recipe_cost')     && <SortableHead field="recipe_cost"     label={t($ => $.table.headers.recipeCost)}     sort={sort} onSort={onSortChange} align="right" />}
+            {vis('waste_pct')       && <SortableHead field="total_waste_pct" label={t($ => $.table.headers.wastePct)}       sort={sort} onSort={onSortChange} />}
+            {vis('total_materials') && <SortableHead field="lines_count"     label={t($ => $.table.headers.totalMaterials)} sort={sort} onSort={onSortChange} align="right" />}
+            {vis('channel')         && <TableHead>{t($ => $.table.headers.channel)}</TableHead>}
+            {vis('company')         && <TableHead>{t($ => $.table.headers.company)}</TableHead>}
+            {vis('updated')         && <SortableHead field="updated_at"      label={t($ => $.table.headers.updatedAt)}      sort={sort} onSort={onSortChange} />}
+            {vis('status')          && <TableHead>{t($ => $.table.headers.status)}</TableHead>}
+            {vis('actions')         && <TableHead className="w-12 text-end">{t($ => $.table.headers.actions)}</TableHead>}
           </TableRow>
         </TableHeader>
 
@@ -547,7 +521,7 @@ function RecipeTable({
           ) : isError ? (
             <TableRow>
               <TableCell colSpan={colSpan} className="py-12 text-center text-muted-foreground">
-                Failed to load recipes. Try refreshing.
+                {t($ => $.table.error)}
               </TableCell>
             </TableRow>
           ) : data.length === 0 ? (
@@ -555,8 +529,8 @@ function RecipeTable({
               <TableCell colSpan={colSpan}>
                 <EmptyState
                   icon={BookOpen}
-                  title="No Recipes"
-                  description="Try adjusting the filters or create a new recipe."
+                  title={t($ => $.table.empty.title)}
+                  description={t($ => $.table.empty.description)}
                 />
               </TableCell>
             </TableRow>
@@ -579,7 +553,7 @@ function RecipeTable({
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => toggleRow(r.id)}
-                      aria-label={`Select ${r.product?.name ?? r.bom_number}`}
+                      aria-label={t($ => $.table.selectRow, { name: r.product?.name ?? r.bom_number })}
                     />
                   </TableCell>
 
@@ -670,10 +644,10 @@ function RecipeTable({
                     <TableCell>
                       {r.is_active ? (
                         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 text-xs">
-                          Active
+                          {t($ => $.status.active)}
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-muted-foreground text-xs">Draft</Badge>
+                        <Badge variant="outline" className="text-muted-foreground text-xs">{t($ => $.status.draft)}</Badge>
                       )}
                     </TableCell>
                   )}
@@ -682,18 +656,18 @@ function RecipeTable({
                   {vis('actions') && (
                     <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu
-                        label={`Actions for ${r.product?.name ?? r.bom_number}`}
+                        label={t($ => $.table.actionsFor, { name: r.product?.name ?? r.bom_number })}
                         items={[
-                          { key: 'view',        label: 'View',                      icon: Eye,    onSelect: () => onRowClick(r) },
-                          { key: 'edit',        label: 'Edit',                      icon: Pencil, onSelect: () => onEdit(r) },
-                          { key: 'create-from', label: 'Create From This Recipe',   icon: Copy,   onSelect: () => onCreateFrom(r) },
+                          { key: 'view',        label: t($ => $.actions.view),       icon: Eye,    onSelect: () => onRowClick(r) },
+                          { key: 'edit',        label: t($ => $.actions.edit),       icon: Pencil, onSelect: () => onEdit(r) },
+                          { key: 'create-from', label: t($ => $.actions.createFrom), icon: Copy,   onSelect: () => onCreateFrom(r) },
                           {
                             key: 'toggle',
-                            label: r.is_active ? 'Set as Draft' : 'Set as Active',
+                            label: r.is_active ? t($ => $.actions.setDraft) : t($ => $.actions.setActive),
                             icon: Power,
                             onSelect: () => onToggle(r),
                           },
-                          { key: 'delete', label: 'Delete', icon: Trash2, onSelect: () => onDelete(r), variant: 'destructive' },
+                          { key: 'delete', label: t($ => $.actions.delete), icon: Trash2, onSelect: () => onDelete(r), variant: 'destructive' },
                         ]}
                       />
                     </TableCell>
@@ -735,6 +709,7 @@ type PreviewLine = {
 };
 
 function MaterialPreviewRow({ line }: { line: PreviewLine }) {
+  const { t } = useTranslation('recipes');
   const isPkg   = line.raw_material?.product_type === 'packaging_material';
   const hasCost = (line.raw_material?.material_cost ?? 0) > 0;
 
@@ -765,11 +740,11 @@ function MaterialPreviewRow({ line }: { line: PreviewLine }) {
                 : 'border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400'
             }`}
           >
-            {isPkg ? 'Packaging' : 'Raw'}
+            {isPkg ? t($ => $.materialTypes.packaging) : t($ => $.materialTypes.raw)}
           </Badge>
           {line.waste_percentage > 0 && (
             <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium">
-              +{line.waste_percentage.toFixed(0)}% waste
+              {t($ => $.waste.wasteSuffix, { pct: line.waste_percentage.toFixed(0) })}
             </span>
           )}
         </div>
@@ -780,7 +755,7 @@ function MaterialPreviewRow({ line }: { line: PreviewLine }) {
         <span className="text-xs tabular-nums font-medium">{line.quantity}</span>
         {!hasCost && (
           <span className="text-[9px] text-amber-500 flex items-center gap-0.5">
-            <TriangleAlert className="size-2.5" />No cost
+            <TriangleAlert className="size-2.5" />{t($ => $.noCost)}
           </span>
         )}
       </div>
@@ -795,6 +770,7 @@ function MaterialsPreviewPopover({
   recipe: Recipe;
   onViewMaterials: (recipe: Recipe) => void;
 }) {
+  const { t } = useTranslation('recipes');
   const [open, setOpen]       = useState(false);
   const closeTimer             = useRef<ReturnType<typeof setTimeout> | null>(null);
   const materialsCount         = recipe.lines_count ?? recipe.lines?.length ?? 0;
@@ -835,9 +811,9 @@ function MaterialsPreviewPopover({
           onMouseEnter={handleMouseEnterTrigger}
           onMouseLeave={handleMouseLeaveTrigger}
           onClick={() => setOpen((v) => !v)}
-          aria-label={`Preview ${materialsCount} materials for ${recipe.product?.name ?? recipe.bom_number}`}
+          aria-label={t($ => $.preview.ariaLabel, { count: materialsCount, name: recipe.product?.name ?? recipe.bom_number })}
         >
-          {materialsCount} {materialsCount === 1 ? 'material' : 'materials'}
+          {t($ => $.preview.materialsCount, { count: materialsCount })}
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -852,9 +828,9 @@ function MaterialsPreviewPopover({
         <div className="px-3 py-2 border-b">
           <p className="text-xs font-semibold truncate">{recipe.product?.name ?? recipe.bom_number}</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            {rawCount > 0 && `${rawCount} raw`}
+            {rawCount > 0 && t($ => $.preview.rawCount, { count: rawCount })}
             {rawCount > 0 && pkgCount > 0 && ' · '}
-            {pkgCount > 0 && `${pkgCount} packaging`}
+            {pkgCount > 0 && t($ => $.preview.pkgCount, { count: pkgCount })}
           </p>
         </div>
 
@@ -863,7 +839,7 @@ function MaterialsPreviewPopover({
           {isFetching && lines.length === 0 ? (
             <SkeletonMaterialList />
           ) : lines.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-6">No materials.</p>
+            <p className="text-xs text-muted-foreground text-center py-6">{t($ => $.preview.noMaterials)}</p>
           ) : (
             lines.map((line) => <MaterialPreviewRow key={line.id} line={line} />)
           )}
@@ -872,14 +848,14 @@ function MaterialsPreviewPopover({
         {/* Footer */}
         <div className="border-t px-3 py-2 flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground tabular-nums">
-            {materialsCount} total
+            {t($ => $.preview.total, { count: materialsCount })}
           </span>
           <button
             type="button"
             className="text-[10px] text-primary font-medium flex items-center gap-1 hover:underline"
             onClick={() => { setOpen(false); onViewMaterials(recipe); }}
           >
-            View Full Recipe
+            {t($ => $.actions.viewFullRecipe)}
             <ArrowRight className="size-3" />
           </button>
         </div>
@@ -892,6 +868,7 @@ function MaterialsPreviewPopover({
 
 export function RecipesPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation('recipes');
 
   // ── Column preferences ────────────────────────────────────────────────────
   const { visibleColumns, toggleColumn, restoreDefaults, showAll } = useRecipeColumnPreferences();
@@ -928,6 +905,21 @@ export function RecipesPage() {
   // ── Mutations ─────────────────────────────────────────────────────────────
   const deleteRecipe = useDeleteRecipe();
   const toggleStatus = useToggleRecipeStatus();
+
+  // ── CSV columns — depends on t(), must be inside component body ───────────
+  type CsvCol = { key: RecipeColumnKey; header: string; value: (r: Recipe) => string };
+  const csvColumns = useMemo<CsvCol[]>(() => [
+    { key: 'image',           header: t($ => $.csv.headers.image),          value: (r) => r.product?.image_url ?? '' },
+    { key: 'product',         header: t($ => $.csv.headers.product),        value: (r) => `${r.product?.name ?? ''} (${r.product?.sku ?? ''})` },
+    { key: 'category',        header: t($ => $.csv.headers.category),       value: (r) => r.product?.category?.name ?? '' },
+    { key: 'recipe_cost',     header: t($ => $.csv.headers.recipeCost),     value: (r) => computeRecipeCost(r).toFixed(2) },
+    { key: 'waste_pct',       header: t($ => $.csv.headers.wastePct),       value: (r) => `${(r.total_waste_pct ?? 0).toFixed(2)}%` },
+    { key: 'total_materials', header: t($ => $.csv.headers.totalMaterials), value: (r) => String(r.lines_count ?? r.lines?.length ?? 0) },
+    { key: 'channel',         header: t($ => $.csv.headers.channel),        value: (r) => r.product?.channels?.map((c) => c.name).join(', ') ?? '' },
+    { key: 'company',         header: t($ => $.csv.headers.company),        value: (r) => r.product?.channels?.[0]?.company_name ?? '' },
+    { key: 'updated',         header: t($ => $.csv.headers.updated),        value: (r) => (r.updated_at ?? r.created_at ?? '').slice(0, 10) },
+    { key: 'status',          header: t($ => $.csv.headers.status),         value: (r) => (r.is_active ? t($ => $.status.active) : t($ => $.status.draft)) },
+  ], [t]);
 
   // ── Shared filter (one source of truth for stats + table + export) ────────
   const sharedFilter: SharedFilter = {
@@ -996,24 +988,41 @@ export function RecipesPage() {
   function handleCreateFrom(r: Recipe) { navigate(ROUTES.recipesNew, { state: { sourceRecipeId: r.id } }); }
 
   // ── Export ────────────────────────────────────────────────────────────────
+  function triggerCsvDownload(csvItems: Recipe[], cols: CsvCol[]) {
+    const visibleCols = cols.filter((c) => visibleColumns.has(c.key));
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const header = visibleCols.map((c) => escape(c.header)).join(',');
+    const rows   = csvItems.map((r) => visibleCols.map((c) => escape(c.value(r))).join(','));
+    const csv    = [header, ...rows].join('\n');
+    const blob   = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url    = URL.createObjectURL(blob);
+    const a      = document.createElement('a');
+    a.href     = url;
+    a.download = `recipes-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   async function handleExport() {
     if (selectedIds.size > 0) {
-      triggerCsvDownload(items.filter((r) => selectedIds.has(r.id)), visibleColumns);
+      triggerCsvDownload(items.filter((r) => selectedIds.has(r.id)), csvColumns);
       return;
     }
     const result = await recipesService.list({ ...sharedFilter, per_page: 10_000 });
-    triggerCsvDownload(result.items, visibleColumns);
+    triggerCsvDownload(result.items, csvColumns);
   }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Recipes"
-        subtitle="Manage production recipes and their material components."
+        title={t($ => $.page.title)}
+        subtitle={t($ => $.page.subtitle)}
         breadcrumbs={[
-          { label: 'Home',      to: ROUTES.dashboard },
-          { label: 'Inventory', to: ROUTES.inventoryProducts },
-          { label: 'Recipes' },
+          { label: t($ => $.page.breadcrumbs.home),      to: ROUTES.dashboard },
+          { label: t($ => $.page.breadcrumbs.inventory), to: ROUTES.inventoryProducts },
+          { label: t($ => $.page.breadcrumbs.recipes) },
         ]}
       />
 
@@ -1095,9 +1104,9 @@ export function RecipesPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete Recipe"
-        description={`Are you sure you want to delete the recipe for "${deleting?.product?.name ?? deleting?.bom_number}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title={t($ => $.delete.title)}
+        description={t($ => $.delete.description, { name: deleting?.product?.name ?? deleting?.bom_number ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteRecipe.isPending}
         onConfirm={() => {

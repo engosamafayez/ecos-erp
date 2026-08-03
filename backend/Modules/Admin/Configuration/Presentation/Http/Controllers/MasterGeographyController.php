@@ -33,17 +33,17 @@ class MasterGeographyController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'    => 'required|string|max:100|unique:master_governorates,name',
+            'name' => 'required|string|max:100|unique:master_governorates,name',
             'name_ar' => 'nullable|string|max:100',
-            'code'    => 'required|string|max:10|unique:master_governorates,code',
+            'code' => 'required|string|max:10|unique:master_governorates,code',
         ]);
 
         $gov = MasterGovernorate::create([
-            'name'        => $validated['name'],
-            'name_ar'     => $validated['name_ar'] ?? null,
-            'code'        => strtoupper($validated['code']),
-            'sort_order'  => (int) MasterGovernorate::max('sort_order') + 1,
-            'is_active'   => true,
+            'name' => $validated['name'],
+            'name_ar' => $validated['name_ar'] ?? null,
+            'code' => strtoupper($validated['code']),
+            'sort_order' => (int) MasterGovernorate::max('sort_order') + 1,
+            'is_active' => true,
             'is_archived' => false,
         ]);
 
@@ -55,10 +55,10 @@ class MasterGeographyController extends Controller
         $gov = MasterGovernorate::findOrFail($id);
 
         $validated = $request->validate([
-            'name'        => ['sometimes', 'string', 'max:100', Rule::unique('master_governorates', 'name')->ignore($id)],
-            'name_ar'     => 'nullable|string|max:100',
-            'sort_order'  => 'sometimes|integer|min:0',
-            'is_active'   => 'sometimes|boolean',
+            'name' => ['sometimes', 'string', 'max:100', Rule::unique('master_governorates', 'name')->ignore($id)],
+            'name_ar' => 'nullable|string|max:100',
+            'sort_order' => 'sometimes|integer|min:0',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $gov->update($validated);
@@ -81,7 +81,7 @@ class MasterGeographyController extends Controller
         $deps = DeliveryGeography::where('master_governorate_id', $id)->count();
         if ($deps > 0) {
             return response()->json([
-                'message'          => "Cannot delete: $deps brand geography record(s) reference this governorate.",
+                'message' => "Cannot delete: $deps brand geography record(s) reference this governorate.",
                 'dependency_count' => $deps,
             ], 422);
         }

@@ -31,12 +31,12 @@ final class CreateTeamAction extends BaseAction
             $code = $dto->code ?? $this->codeGenerator->next($dto->company_id);
 
             return $this->teams->create([
-                'company_id'  => $dto->company_id,
-                'code'        => $code,
-                'name'        => $dto->name,
+                'company_id' => $dto->company_id,
+                'code' => $code,
+                'name' => $dto->name,
                 'leader_name' => $dto->leader_name,
                 'description' => $dto->description,
-                'is_active'   => $dto->is_active,
+                'is_active' => $dto->is_active,
             ]);
         });
 

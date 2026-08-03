@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Organization\Brands\Domain\Models\BrandShippingSettings;
 use Modules\Organization\Brands\Infrastructure\Database\Factories\BrandFactory;
 use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
 use Modules\Organization\Companies\Domain\Models\Company;
@@ -57,10 +56,10 @@ class Brand extends Model
     protected function casts(): array
     {
         return [
-            'is_active'             => 'boolean',
+            'is_active' => 'boolean',
             'default_target_margin' => 'float',
-            'default_markup'        => 'float',
-            'default_discount_pct'  => 'float',
+            'default_markup' => 'float',
+            'default_discount_pct' => 'float',
         ];
     }
 

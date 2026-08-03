@@ -16,17 +16,19 @@ class WaveManagerTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company   $company;
+    private Company $company;
+
     private Warehouse $warehouse;
+
     private WaveManager $manager;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->manager   = new WaveManager();
+        $this->manager = new WaveManager;
     }
 
     public function test_returns_null_when_no_active_wave_exists(): void
@@ -92,7 +94,7 @@ class WaveManagerTest extends TestCase
 
     public function test_get_active_wave_for_date_matches_planning_date(): void
     {
-        $today    = today()->toDateString();
+        $today = today()->toDateString();
         $tomorrow = today()->addDay()->toDateString();
 
         $todayWave = $this->makeWave(WaveStatus::Collecting, $today);
@@ -110,20 +112,20 @@ class WaveManagerTest extends TestCase
     private function makeWave(WaveStatus $status, ?string $date = null): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $this->warehouse->id,
-            'wave_number'          => 'PREP-' . now()->format('Ym') . '-' . str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
-            'planning_date'        => $date ?? today()->toDateString(),
-            'status'               => $status->value,
-            'orders_count'         => 0,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'wave_number' => 'PREP-'.now()->format('Ym').'-'.str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
+            'planning_date' => $date ?? today()->toDateString(),
+            'status' => $status->value,
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'wave_type'            => 'engine',
-            'created_by'           => 'system',
-            'updated_by'           => 'system',
+            'shortage_detected' => false,
+            'wave_type' => 'engine',
+            'created_by' => 'system',
+            'updated_by' => 'system',
         ]);
     }
 }

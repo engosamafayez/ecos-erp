@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\DecisionKernel\Domain\ValueObjects;
 
+use Closure;
 use Modules\Manufacturing\DecisionKernel\Domain\Contracts\DecisionRuleInterface;
 use Modules\Manufacturing\DecisionKernel\Domain\Enums\DecisionType;
 
@@ -19,8 +20,8 @@ use Modules\Manufacturing\DecisionKernel\Domain\Enums\DecisionType;
 final readonly class DecisionRule implements DecisionRuleInterface
 {
     /**
-     * @param  \Closure(DecisionContext): bool  $condition  Pure predicate.
-     * @param  array<string, mixed>             $metadata
+     * @param  Closure(DecisionContext): bool  $condition  Pure predicate.
+     * @param  array<string, mixed>  $metadata
      */
     public function __construct(
         private string $rule_id,
@@ -28,22 +29,40 @@ final readonly class DecisionRule implements DecisionRuleInterface
         private int $priority,
         private DecisionType $decision_type,
         private DecisionReason $reason,
-        private \Closure $condition,
+        private Closure $condition,
         private array $metadata = [],
     ) {}
 
-    public function ruleId(): string { return $this->rule_id; }
+    public function ruleId(): string
+    {
+        return $this->rule_id;
+    }
 
-    public function name(): string { return $this->name; }
+    public function name(): string
+    {
+        return $this->name;
+    }
 
-    public function priority(): int { return $this->priority; }
+    public function priority(): int
+    {
+        return $this->priority;
+    }
 
-    public function decisionType(): DecisionType { return $this->decision_type; }
+    public function decisionType(): DecisionType
+    {
+        return $this->decision_type;
+    }
 
-    public function reason(): DecisionReason { return $this->reason; }
+    public function reason(): DecisionReason
+    {
+        return $this->reason;
+    }
 
     /** @return array<string, mixed> */
-    public function metadata(): array { return $this->metadata; }
+    public function metadata(): array
+    {
+        return $this->metadata;
+    }
 
     public function matches(DecisionContext $context): bool
     {

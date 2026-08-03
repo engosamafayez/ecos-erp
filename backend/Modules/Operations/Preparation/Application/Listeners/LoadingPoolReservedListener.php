@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Operations\Preparation\Application\Events\Inbound\LoadingPoolReservedEvent;
 use Modules\Operations\Preparation\Domain\Enums\PoolMovementType;
+use Throwable;
 
 /**
  * When Loading OS reserves units from the Prepared Products Pool,
@@ -50,29 +51,29 @@ final class LoadingPoolReservedListener
                     ->where('id', $event->poolEntryId)
                     ->update([
                         'quantity_reserved' => $pool->quantity_reserved + $event->quantityReserved,
-                        'quantity_available'=> max(0, $pool->quantity_available - $event->quantityReserved),
-                        'updated_at'        => now(),
+                        'quantity_available' => max(0, $pool->quantity_available - $event->quantityReserved),
+                        'updated_at' => now(),
                     ]);
 
                 DB::table('prepared_pool_movements')->insert([
-                    'id'                   => Str::ulid()->toString(),
-                    'prepared_pool_id'     => $event->poolEntryId,
-                    'movement_type'        => PoolMovementType::Reserved->value,
-                    'quantity'             => $event->quantityReserved,
-                    'reference_type'       => 'loading_wave',
-                    'reference_id'         => $event->loadingWaveId,
-                    'performed_by_type'    => 'system',
-                    'performed_by_id'      => null,
-                    'notes'                => "Reserved by Loading Wave",
-                    'recorded_at'          => now(),
+                    'id' => Str::ulid()->toString(),
+                    'prepared_pool_id' => $event->poolEntryId,
+                    'movement_type' => PoolMovementType::Reserved->value,
+                    'quantity' => $event->quantityReserved,
+                    'reference_type' => 'loading_wave',
+                    'reference_id' => $event->loadingWaveId,
+                    'performed_by_type' => 'system',
+                    'performed_by_id' => null,
+                    'notes' => 'Reserved by Loading Wave',
+                    'recorded_at' => now(),
                 ]);
             });
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[Preparation] LoadingPoolReservedListener failed', [
-                'pool_entry_id'    => $event->poolEntryId,
-                'product_id'       => $event->productId,
-                'qty_reserved'     => $event->quantityReserved,
-                'error'            => $e->getMessage(),
+                'pool_entry_id' => $event->poolEntryId,
+                'product_id' => $event->productId,
+                'qty_reserved' => $event->quantityReserved,
+                'error' => $e->getMessage(),
             ]);
         }
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Application\Services;
 
 use Illuminate\Support\Facades\DB;
@@ -16,15 +18,15 @@ class DashboardService
     public function getKpis(?string $companyId = null): array
     {
         $inboxStats = $this->inboxService->getStats($companyId);
-        $slaStats   = $this->slaService->getComplianceStats($companyId);
-        $leads      = Lead::when($companyId, fn ($q) => $q->where('company_id', $companyId));
+        $slaStats = $this->slaService->getComplianceStats($companyId);
+        $leads = Lead::when($companyId, fn ($q) => $q->where('company_id', $companyId));
 
         return [
             'conversations' => $inboxStats,
-            'sla'           => $slaStats,
-            'leads'         => [
-                'total'     => (clone $leads)->count(),
-                'new'       => (clone $leads)->where('status', 'new')->count(),
+            'sla' => $slaStats,
+            'leads' => [
+                'total' => (clone $leads)->count(),
+                'new' => (clone $leads)->where('status', 'new')->count(),
                 'qualified' => (clone $leads)->where('status', 'qualified')->count(),
                 'converted' => (clone $leads)->where('status', 'converted')->count(),
             ],

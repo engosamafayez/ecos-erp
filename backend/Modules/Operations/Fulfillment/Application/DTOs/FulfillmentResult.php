@@ -10,10 +10,10 @@ final class FulfillmentResult
 {
     /** @param array<string, mixed> $meta */
     private function __construct(
-        public readonly bool   $success,
-        public readonly Order  $order,
+        public readonly bool $success,
+        public readonly Order $order,
         public readonly string $message,
-        public readonly array  $meta = [],
+        public readonly array $meta = [],
     ) {}
 
     /** @param array<string, mixed> $meta */

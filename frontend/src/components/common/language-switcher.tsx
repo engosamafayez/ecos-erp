@@ -23,7 +23,7 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" aria-label={t('language.switcher')}>
+        <Button variant="outline" size="icon" aria-label={t($ => $.language.switcher)}>
           <Languages className="size-[1.2rem]" />
         </Button>
       </DropdownMenuTrigger>

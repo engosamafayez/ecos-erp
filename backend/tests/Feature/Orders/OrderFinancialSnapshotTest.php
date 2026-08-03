@@ -15,6 +15,7 @@ use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Sales\Customers\Domain\Models\Customer;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -37,18 +38,21 @@ class OrderFinancialSnapshotTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Brand $brand;
+
     private Customer $customer;
+
     private CreateOrderSnapshotService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company  = Company::factory()->create();
-        $this->brand    = Brand::factory()->create(['company_id' => $this->company->id]);
+        $this->company = Company::factory()->create();
+        $this->brand = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->customer = Customer::factory()->create();
-        $this->service  = app(CreateOrderSnapshotService::class);
+        $this->service = app(CreateOrderSnapshotService::class);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -56,26 +60,26 @@ class OrderFinancialSnapshotTest extends TestCase
     private function makeProduct(array $overrides = []): Product
     {
         return Product::factory()->finishedGood()->create(array_merge([
-            'brand_id'      => $this->brand->id,
+            'brand_id' => $this->brand->id,
             'regular_price' => 100.0,
-            'sale_price'    => null,
+            'sale_price' => null,
         ], $overrides));
     }
 
     private function makeOrder(array $overrides = []): Order
     {
         return Order::create(array_merge([
-            'customer_id'       => $this->customer->id,
-            'order_number'      => 'ORD-' . uniqid(),
-            'order_date'        => now()->toDateString(),
-            'status'            => 'confirmed',
-            'subtotal'          => 200.0,
-            'total'             => 200.0,
-            'shipping_total'    => 0,
-            'discount_total'    => 0,
-            'tax_total'         => 0,
-            'discount_amount'   => 0.0,
-            'deposit_amount'    => 0.0,
+            'customer_id' => $this->customer->id,
+            'order_number' => 'ORD-'.uniqid(),
+            'order_date' => now()->toDateString(),
+            'status' => 'confirmed',
+            'subtotal' => 200.0,
+            'total' => 200.0,
+            'shipping_total' => 0,
+            'discount_total' => 0,
+            'tax_total' => 0,
+            'discount_amount' => 0.0,
+            'deposit_amount' => 0.0,
             'remaining_balance' => 200.0,
         ], $overrides));
     }
@@ -83,9 +87,9 @@ class OrderFinancialSnapshotTest extends TestCase
     private function addLine(Order $order, Product $product, float $qty = 2.0, float $unitPrice = 100.0): OrderLine
     {
         return OrderLine::create([
-            'order_id'   => $order->id,
+            'order_id' => $order->id,
             'product_id' => $product->id,
-            'quantity'   => $qty,
+            'quantity' => $qty,
             'unit_price' => $unitPrice,
             'line_total' => round($qty * $unitPrice, 4),
         ]);
@@ -99,7 +103,7 @@ class OrderFinancialSnapshotTest extends TestCase
     public function test_confirm_order_creates_snapshot(): void
     {
         $product = $this->makeProduct();
-        $order   = $this->makeOrder(['subtotal' => 200.0, 'total' => 200.0]);
+        $order = $this->makeOrder(['subtotal' => 200.0, 'total' => 200.0]);
         $this->addLine($order, $product, 2.0, 100.0);
 
         $snapshot = $this->service->createIfAbsent($order);
@@ -107,7 +111,7 @@ class OrderFinancialSnapshotTest extends TestCase
         $this->assertNotNull($snapshot);
         $this->assertInstanceOf(OrderFinancialSnapshot::class, $snapshot);
         $this->assertDatabaseHas('order_financial_snapshots', [
-            'order_id'    => $order->id,
+            'order_id' => $order->id,
             'grand_total' => 200.0,
         ]);
     }
@@ -118,7 +122,7 @@ class OrderFinancialSnapshotTest extends TestCase
     public function test_snapshot_is_locked_on_creation(): void
     {
         $product = $this->makeProduct();
-        $order   = $this->makeOrder(['subtotal' => 100.0, 'total' => 100.0]);
+        $order = $this->makeOrder(['subtotal' => 100.0, 'total' => 100.0]);
         $this->addLine($order, $product, 1.0, 100.0);
 
         $snapshot = $this->service->createIfAbsent($order);
@@ -136,10 +140,10 @@ class OrderFinancialSnapshotTest extends TestCase
     public function test_create_if_absent_is_idempotent(): void
     {
         $product = $this->makeProduct();
-        $order   = $this->makeOrder(['subtotal' => 100.0, 'total' => 100.0]);
+        $order = $this->makeOrder(['subtotal' => 100.0, 'total' => 100.0]);
         $this->addLine($order, $product, 1.0, 100.0);
 
-        $first  = $this->service->createIfAbsent($order);
+        $first = $this->service->createIfAbsent($order);
         $second = $this->service->createIfAbsent($order);
 
         $this->assertNotNull($first);
@@ -155,7 +159,7 @@ class OrderFinancialSnapshotTest extends TestCase
     public function test_integrity_hash_verifies_against_stored_data(): void
     {
         $product = $this->makeProduct();
-        $order   = $this->makeOrder(['subtotal' => 300.0, 'total' => 300.0]);
+        $order = $this->makeOrder(['subtotal' => 300.0, 'total' => 300.0]);
         $this->addLine($order, $product, 3.0, 100.0);
 
         $snapshot = $this->service->createIfAbsent($order);
@@ -163,7 +167,7 @@ class OrderFinancialSnapshotTest extends TestCase
 
         $this->assertTrue(
             $this->service->verifyIntegrityHash($snapshot),
-            'Hash recomputed from stored snapshot data must match stored integrity_hash'
+            'Hash recomputed from stored snapshot data must match stored integrity_hash',
         );
     }
 
@@ -173,7 +177,7 @@ class OrderFinancialSnapshotTest extends TestCase
     public function test_snapshot_preserves_historical_unit_price(): void
     {
         $product = $this->makeProduct(['regular_price' => 100.0]);
-        $order   = $this->makeOrder(['subtotal' => 100.0, 'total' => 100.0]);
+        $order = $this->makeOrder(['subtotal' => 100.0, 'total' => 100.0]);
         $this->addLine($order, $product, 1.0, 100.0);
 
         $snapshot = $this->service->createIfAbsent($order);
@@ -197,14 +201,14 @@ class OrderFinancialSnapshotTest extends TestCase
 
         // BOM with known manufacturing cost (no ingredient lines needed here)
         $bom = BillOfMaterial::create([
-            'bom_number'         => 'BOM-SNAP-TEST-001',
-            'product_id'         => $product->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-SNAP-TEST-001',
+            'product_id' => $product->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => true,
+            'is_active' => true,
             'manufacturing_cost' => 30.0,
-            'other_costs'        => 0.0,
-            'recipe_cost'        => 30.0,
+            'other_costs' => 0.0,
+            'recipe_cost' => 30.0,
         ]);
 
         $order = $this->makeOrder(['subtotal' => 100.0, 'total' => 100.0]);
@@ -246,11 +250,11 @@ class OrderFinancialSnapshotTest extends TestCase
         $product = $this->makeProduct();
         // subtotal=200, discount=10, shipping=20 → total=210
         $order = $this->makeOrder([
-            'subtotal'          => 200.0,
-            'total'             => 210.0,
-            'shipping_cost'     => 20.0,
-            'discount_amount'   => 10.0,
-            'deposit_amount'    => 50.0,
+            'subtotal' => 200.0,
+            'total' => 210.0,
+            'shipping_cost' => 20.0,
+            'discount_amount' => 10.0,
+            'deposit_amount' => 50.0,
             'remaining_balance' => 160.0,
         ]);
         $this->addLine($order, $product, 2.0, 100.0);
@@ -259,11 +263,11 @@ class OrderFinancialSnapshotTest extends TestCase
 
         $this->assertEquals(200.0, $snapshot->subtotal);
         $this->assertEquals(210.0, $snapshot->grand_total);
-        $this->assertEquals(20.0,  $snapshot->shipping_cost);
-        $this->assertEquals(10.0,  $snapshot->discount_amount);
-        $this->assertEquals(50.0,  $snapshot->deposit_amount);
+        $this->assertEquals(20.0, $snapshot->shipping_cost);
+        $this->assertEquals(10.0, $snapshot->discount_amount);
+        $this->assertEquals(50.0, $snapshot->deposit_amount);
         $this->assertEquals(160.0, $snapshot->remaining_balance);
-        $this->assertEquals(1,     $snapshot->snapshot_version);
+        $this->assertEquals(1, $snapshot->snapshot_version);
         $this->assertNotNull($snapshot->snapshot_uuid);
     }
 
@@ -273,7 +277,7 @@ class OrderFinancialSnapshotTest extends TestCase
     public function test_snapshot_model_is_immutable(): void
     {
         $product = $this->makeProduct();
-        $order   = $this->makeOrder(['subtotal' => 100.0, 'total' => 100.0]);
+        $order = $this->makeOrder(['subtotal' => 100.0, 'total' => 100.0]);
         $this->addLine($order, $product, 1.0, 100.0);
 
         $snapshot = $this->service->createIfAbsent($order);
@@ -285,11 +289,11 @@ class OrderFinancialSnapshotTest extends TestCase
         $this->assertEquals(
             $originalTotal,
             $snapshot->grand_total,
-            'Update must be silently rejected by the immutable model'
+            'Update must be silently rejected by the immutable model',
         );
 
         // Delete throws RuntimeException
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessageMatches('/immutable/i');
         $snapshot->delete();
     }
@@ -300,7 +304,7 @@ class OrderFinancialSnapshotTest extends TestCase
     public function test_snapshot_line_captures_correct_product_details(): void
     {
         $product = $this->makeProduct(['regular_price' => 150.0]);
-        $order   = $this->makeOrder(['subtotal' => 300.0, 'total' => 300.0]);
+        $order = $this->makeOrder(['subtotal' => 300.0, 'total' => 300.0]);
         $this->addLine($order, $product, 2.0, 150.0);
 
         $snapshot = $this->service->createIfAbsent($order);
@@ -309,11 +313,11 @@ class OrderFinancialSnapshotTest extends TestCase
         $this->assertCount(1, $snapshot->lines, 'Snapshot must have exactly one line');
 
         $line = $snapshot->lines->first();
-        $this->assertEquals($product->id,   $line->product_id);
-        $this->assertEquals($product->sku,  $line->product_sku);
+        $this->assertEquals($product->id, $line->product_id);
+        $this->assertEquals($product->sku, $line->product_sku);
         $this->assertEquals($product->name, $line->product_name);
-        $this->assertEquals(2.0,            $line->quantity);
-        $this->assertEquals(150.0,          $line->unit_price_at_sale);
-        $this->assertEquals(300.0,          $line->line_total);
+        $this->assertEquals(2.0, $line->quantity);
+        $this->assertEquals(150.0, $line->unit_price_at_sale);
+        $this->assertEquals(300.0, $line->line_total);
     }
 }

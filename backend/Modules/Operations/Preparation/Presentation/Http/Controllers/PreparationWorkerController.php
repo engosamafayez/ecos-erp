@@ -17,12 +17,12 @@ final class PreparationWorkerController extends Controller
     public function index(Request $request): JsonResponse
     {
         $request->validate([
-            'warehouse_id'  => ['required', 'uuid'],
+            'warehouse_id' => ['required', 'uuid'],
             'planning_date' => ['nullable', 'date_format:Y-m-d'],
         ]);
 
-        $companyId    = $request->user()->company_id;
-        $warehouseId  = $request->query('warehouse_id');
+        $companyId = $request->user()->company_id;
+        $warehouseId = $request->query('warehouse_id');
         $planningDate = $request->query('planning_date', now()->toDateString());
 
         $rows = DB::table('preparation_wave_workers as pww')
@@ -39,19 +39,19 @@ final class PreparationWorkerController extends Controller
                 'pw.id as wave_id',
                 'pw.wave_number',
                 'pw.status as wave_status',
-                'pww.assigned_at'
+                'pww.assigned_at',
             )
             ->get();
 
         return $this->success($rows->map(fn ($r) => [
-            'user_id'     => $r->user_id,
-            'name'        => $r->user_name,
-            'role'        => $r->role,
-            'wave_id'     => $r->wave_id,
+            'user_id' => $r->user_id,
+            'name' => $r->user_name,
+            'role' => $r->role,
+            'wave_id' => $r->wave_id,
             'wave_number' => $r->wave_number,
             'wave_status' => $r->wave_status,
             'assigned_at' => $r->assigned_at,
-            'status'      => 'active',
+            'status' => 'active',
         ])->values()->all());
     }
 }

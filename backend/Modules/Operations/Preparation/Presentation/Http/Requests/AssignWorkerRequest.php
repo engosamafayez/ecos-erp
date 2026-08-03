@@ -18,7 +18,7 @@ final class AssignWorkerRequest extends FormRequest
     {
         return [
             'user_id' => ['required', 'integer', 'exists:users,id'],
-            'role'    => ['required', 'string', 'in:operator,supervisor,quality_inspector'],
+            'role' => ['required', 'string', 'in:operator,supervisor,quality_inspector'],
         ];
     }
 }

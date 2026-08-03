@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Domain\Contracts;
 
 /**
@@ -21,7 +23,7 @@ interface DigitalTwinProviderInterface
     /**
      * Synchronize the twin's internal state with the current real entity state.
      *
-     * @param array $realState  Result of EntityStateResolver::resolve()
+     * @param  array  $realState  Result of EntityStateResolver::resolve()
      */
     public function synchronize(array $realState): void;
 

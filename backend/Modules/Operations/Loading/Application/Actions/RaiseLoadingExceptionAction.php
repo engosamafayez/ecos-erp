@@ -20,17 +20,17 @@ final class RaiseLoadingExceptionAction
         ?string $entityId = null,
     ): LoadingException {
         return LoadingException::create([
-            'company_id'            => $session->company_id,
-            'loading_session_id'    => $session->id,
+            'company_id' => $session->company_id,
+            'loading_session_id' => $session->id,
             'vehicle_assignment_id' => $vehicleAssignmentId,
-            'exception_type'        => $exceptionType,
-            'severity'              => $severity,
-            'description'           => $description,
-            'status'                => 'open',
-            'entity_type'           => $entityType,
-            'entity_id'             => $entityId,
-            'created_by'            => $actorId,
-            'updated_by'            => $actorId,
+            'exception_type' => $exceptionType,
+            'severity' => $severity,
+            'description' => $description,
+            'status' => 'open',
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'created_by' => $actorId,
+            'updated_by' => $actorId,
         ]);
     }
 }

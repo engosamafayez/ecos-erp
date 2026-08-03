@@ -12,7 +12,7 @@ final class POSServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(
             base_path('config/pos.php'),
-            'pos'
+            'pos',
         );
     }
 

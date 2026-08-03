@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
@@ -20,18 +21,25 @@ import type { ChecklistItem, ModuleStatus } from '../types/readiness';
 
 // ── Status vocabulary ────────────────────────────────────────────────────────
 
-const STATUS: Record<ModuleStatus, { label: string; className: string }> = {
-  ready: { label: 'Ready', className: 'bg-emerald-600 hover:bg-emerald-600 text-white' },
-  degraded: { label: 'Degraded', className: 'bg-amber-500 hover:bg-amber-500 text-white' },
+const STATUS: Record<ModuleStatus, { labelKey: string; className: string }> = {
+  ready: {
+    labelKey: 'operations.readiness.status.ready',
+    className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
+  },
+  degraded: {
+    labelKey: 'operations.readiness.status.degraded',
+    className: 'bg-amber-500 hover:bg-amber-500 text-white',
+  },
   not_ready: {
-    label: 'Not ready',
+    labelKey: 'operations.readiness.status.notReady',
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
   },
 };
 
 function StatusBadge({ status }: { status: ModuleStatus }) {
-  const { label, className } = STATUS[status];
-  return <Badge className={`text-xs ${className}`}>{label}</Badge>;
+  const { t } = useTranslation('logistics');
+  const { labelKey, className } = STATUS[status];
+  return <Badge className={`text-xs ${className}`}>{t(labelKey)}</Badge>;
 }
 
 function scoreTone(score: number): string {
@@ -51,6 +59,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 
 /** A ring showing the health score — the single number a manager wants. */
 function HealthRing({ score, grade }: { score: number; grade: string }) {
+  const { t } = useTranslation('logistics');
   const circumference = 2 * Math.PI * 42;
   const offset = circumference * (1 - Math.min(100, Math.max(0, score)) / 100);
   const stroke =
@@ -73,7 +82,9 @@ function HealthRing({ score, grade }: { score: number; grade: string }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={`text-3xl font-semibold tabular-nums ${scoreTone(score)}`}>{score}</span>
-        <span className="text-xs text-muted-foreground">Grade {grade}</span>
+        <span className="text-xs text-muted-foreground">
+          {t($ => $.operations.readiness.gradeValue, { grade })}
+        </span>
       </div>
     </div>
   );
@@ -88,6 +99,7 @@ function CheckIcon({ item }: { item: ChecklistItem }) {
 // ── Readiness tab ────────────────────────────────────────────────────────────
 
 function ReadinessTab() {
+  const { t } = useTranslation('logistics');
   const { data, isLoading } = useReadinessDashboard();
   const { data: checklist } = useReadinessChecklist();
 
@@ -95,25 +107,30 @@ function ReadinessTab() {
 
   return (
     <div className="space-y-4">
-      <Panel title="Logistics health score">
+      <Panel title={t($ => $.operations.readiness.panel.healthScore)}>
         <div className="flex flex-wrap items-center gap-6">
           <HealthRing score={data.health_score} grade={gradeFor(data.health_score)} />
           <div className="space-y-2">
             <StatusBadge status={data.overall_status} />
             <div className="flex gap-4 text-xs text-muted-foreground">
-              <span className="text-emerald-600">{data.ready_count} ready</span>
-              <span className="text-amber-600">{data.degraded_count} degraded</span>
-              <span className="text-destructive">{data.not_ready_count} not ready</span>
+              <span className="text-emerald-600">
+                {t($ => $.operations.readiness.countReady, { count: data.ready_count })}
+              </span>
+              <span className="text-amber-600">
+                {t($ => $.operations.readiness.countDegraded, { count: data.degraded_count })}
+              </span>
+              <span className="text-destructive">
+                {t($ => $.operations.readiness.countNotReady, { count: data.not_ready_count })}
+              </span>
             </div>
             <p className="max-w-md text-xs text-muted-foreground">
-              A weighted roll-up of the five authorities&apos; own signals. Ready scores full,
-              degraded half, not-ready zero — this layer computes no readiness itself.
+              {t($ => $.operations.readiness.weightingNote)}
             </p>
           </div>
         </div>
       </Panel>
 
-      <Panel title="Module readiness">
+      <Panel title={t($ => $.operations.readiness.panel.moduleReadiness)}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data.modules.map((module) => (
             <div key={module.module} className="rounded-md border p-3">
@@ -122,7 +139,11 @@ function ReadinessTab() {
                 <StatusBadge status={module.status} />
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {module.passed_checks}/{module.total_checks} checks · weight {module.weight}
+                {t($ => $.operations.readiness.checksWeight, {
+                  passed: module.passed_checks,
+                  total: module.total_checks,
+                  weight: module.weight,
+                })}
               </p>
               {module.headline && (
                 <p className="mt-1 text-xs text-amber-600">{module.headline}</p>
@@ -132,11 +153,12 @@ function ReadinessTab() {
         </div>
       </Panel>
 
-      <Panel title="Operational readiness checklist">
+      <Panel title={t($ => $.operations.readiness.panel.checklist)}>
         {checklist && checklist.blocking_failures.length > 0 && (
           <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-xs text-destructive">
-            {checklist.blocking_failures.length} blocking check
-            {checklist.blocking_failures.length === 1 ? '' : 's'} must clear before go-live.
+            {t($ => $.operations.readiness.blockingChecks, {
+              count: checklist.blocking_failures.length,
+            })}
           </div>
         )}
         <ul className="space-y-1.5">
@@ -147,7 +169,7 @@ function ReadinessTab() {
                 <span className={item.passed ? '' : 'font-medium'}>
                   {item.module_label}: {item.label}
                 </span>
-                <span className="ml-1.5 text-xs text-muted-foreground">{item.detail}</span>
+                <span className="ms-1.5 text-xs text-muted-foreground">{item.detail}</span>
               </div>
             </li>
           ))}
@@ -168,41 +190,46 @@ function gradeFor(score: number): string {
 // ── Diagnostics tab ──────────────────────────────────────────────────────────
 
 function DiagnosticsTab() {
+  const { t } = useTranslation('logistics');
   const { data, isLoading } = useDiagnostics();
 
   if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
 
   const projections: Array<{ key: string; label: string; status: ModuleStatus }> = [
-    { key: 'queue', label: 'Queue', status: data.queue.status },
-    { key: 'capacity', label: 'Capacity', status: data.capacity.status },
-    { key: 'dispatch', label: 'Dispatch', status: data.dispatch.status },
-    { key: 'exceptions', label: 'Exceptions', status: data.exceptions.status },
+    { key: 'queue', label: t($ => $.operations.readiness.projection.queue), status: data.queue.status },
+    { key: 'capacity', label: t($ => $.common.capacity), status: data.capacity.status },
+    { key: 'dispatch', label: t($ => $.operations.readiness.projection.dispatch), status: data.dispatch.status },
+    { key: 'exceptions', label: t($ => $.operations.readiness.projection.exceptions), status: data.exceptions.status },
   ];
 
   return (
     <div className="space-y-4">
-      <Panel title="System health">
+      <Panel title={t($ => $.operations.readiness.panel.systemHealth)}>
         <div className="flex flex-wrap items-center gap-4">
           <StatusBadge status={data.system.status} />
           {data.system.is_quiet && (
-            <span className="text-sm text-emerald-600">Quiet — nothing needs a person.</span>
+            <span className="text-sm text-emerald-600">{t($ => $.operations.readiness.quiet)}</span>
           )}
           <div className="flex gap-4 text-xs text-muted-foreground">
-            <span>{data.system.modules_ready} ready</span>
-            <span>{data.system.modules_degraded} degraded</span>
-            <span>{data.system.modules_not_ready} not ready</span>
+            <span>{t($ => $.operations.readiness.countReady, { count: data.system.modules_ready })}</span>
+            <span>
+              {t($ => $.operations.readiness.countDegraded, { count: data.system.modules_degraded })}
+            </span>
+            <span>
+              {t($ => $.operations.readiness.countNotReady, { count: data.system.modules_not_ready })}
+            </span>
           </div>
         </div>
       </Panel>
 
-      <Panel title="Dependency health">
+      <Panel title={t($ => $.operations.readiness.panel.dependencyHealth)}>
         <div className="space-y-1.5">
           {data.dependencies.dependencies.map((dep) => (
             <div key={dep.name} className="flex items-start justify-between gap-3 text-sm">
               <div className="min-w-0">
                 <span className="font-medium">{dep.label}</span>
                 {dep.reason && (
-                  <span className="ml-2 text-xs text-muted-foreground">{dep.reason}</span>
+                  <span className="ms-2 text-xs text-muted-foreground">{dep.reason}</span>
                 )}
               </div>
               <StatusBadge status={dep.status} />
@@ -211,7 +238,7 @@ function DiagnosticsTab() {
         </div>
       </Panel>
 
-      <Panel title="Projections">
+      <Panel title={t($ => $.operations.readiness.panel.projections)}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {projections.map((p) => (
             <div key={p.key} className="rounded-md border p-3">
@@ -244,6 +271,7 @@ function pct(value: number | null | undefined): string {
 }
 
 function SummaryTab() {
+  const { t } = useTranslation('logistics');
   const { data: exec } = useExecutiveSummary();
   const { data: today } = useTodaySummary();
   const { data: fleet } = useFleetSummary();
@@ -252,29 +280,62 @@ function SummaryTab() {
 
   return (
     <div className="space-y-4">
-      <Panel title="Executive">
+      <Panel title={t($ => $.operations.readiness.panel.executive)}>
         <div className="grid gap-4 md:grid-cols-3">
-          <SummaryStat label="Health score" value={`${exec.health_score} (${exec.grade})`} />
-          <SummaryStat label="Critical alerts" value={exec.headline.critical_alerts} />
-          <SummaryStat label="Can field today" value={exec.headline.fieldable_units} />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.healthScore)}
+            value={`${exec.health_score} (${exec.grade})`}
+          />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.criticalAlerts)}
+            value={exec.headline.critical_alerts}
+          />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.canFieldToday)}
+            value={exec.headline.fieldable_units}
+          />
         </div>
       </Panel>
 
-      <Panel title="Today's operations">
+      <Panel title={t($ => $.operations.readiness.panel.todaysOperations)}>
         <div className="grid gap-4 md:grid-cols-4">
-          <SummaryStat label="Active sessions" value={today.sessions_active} />
-          <SummaryStat label="Confirmed" value={today.allocations_confirmed} />
-          <SummaryStat label="Confirmation rate" value={pct(today.confirmation_rate)} />
-          <SummaryStat label="Queue depth" value={today.queue_depth} />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.activeSessions)}
+            value={today.sessions_active}
+          />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.confirmed)}
+            value={today.allocations_confirmed}
+          />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.confirmationRate)}
+            value={pct(today.confirmation_rate)}
+          />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.queueDepth)}
+            value={today.queue_depth}
+          />
         </div>
       </Panel>
 
-      <Panel title="Fleet">
+      <Panel title={t($ => $.operations.readiness.panel.fleet)}>
         <div className="grid gap-4 md:grid-cols-4">
-          <SummaryStat label="Assignable vehicles" value={fleet.vehicles.assignable} />
-          <SummaryStat label="Available drivers" value={fleet.drivers.available} />
-          <SummaryStat label="Fieldable units" value={fleet.fieldable_units} />
-          <SummaryStat label="Vehicle use now" value={pct(fleet.vehicles.utilisation_now)} />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.assignableVehicles)}
+            value={fleet.vehicles.assignable}
+          />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.availableDrivers)}
+            value={fleet.drivers.available}
+          />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.fieldableUnits)}
+            value={fleet.fieldable_units}
+          />
+          <SummaryStat
+            label={t($ => $.operations.readiness.stat.vehicleUseNow)}
+            value={pct(fleet.vehicles.utilisation_now)}
+          />
         </div>
       </Panel>
     </div>
@@ -291,13 +352,14 @@ function SummaryTab() {
  * Operations — reported and interpreted here, never recomputed.
  */
 export function EnterpriseReadinessPage() {
+  const { t } = useTranslation('logistics');
   const { data: score, refetch, isFetching } = useHealthScore();
 
   const metrics = [
     {
       id: 'score',
       icon: CheckCircle2,
-      label: 'Health Score',
+      label: t($ => $.operations.readiness.metrics.healthScore),
       value: score?.score ?? 0,
       isLoading: !score,
       colorClass: score ? scoreTone(score.score) : undefined,
@@ -305,14 +367,14 @@ export function EnterpriseReadinessPage() {
     {
       id: 'status',
       icon: score?.overall_status === 'ready' ? CheckCircle2 : AlertTriangle,
-      label: 'Overall',
-      value: score ? STATUS[score.overall_status].label : '—',
+      label: t($ => $.operations.readiness.metrics.overall),
+      value: score ? t(STATUS[score.overall_status].labelKey) : '—',
       isLoading: !score,
     },
     {
       id: 'grade',
       icon: CheckCircle2,
-      label: 'Grade',
+      label: t($ => $.operations.readiness.metrics.grade),
       value: score?.grade ?? '—',
       isLoading: !score,
     },
@@ -321,9 +383,12 @@ export function EnterpriseReadinessPage() {
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Operations' }]}
-        title="Enterprise Readiness"
-        description="Readiness score, cross-module validation, diagnostics and the executive summary"
+        breadcrumbs={[
+          { label: t($ => $.operations.readiness.breadcrumbRoot) },
+          { label: t($ => $.operations.readiness.breadcrumbSection) },
+        ]}
+        title={t($ => $.operations.readiness.title)}
+        description={t($ => $.operations.readiness.description)}
         metrics={metrics}
       />
 

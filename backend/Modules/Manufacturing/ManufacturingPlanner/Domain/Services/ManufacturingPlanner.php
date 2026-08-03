@@ -46,50 +46,50 @@ final class ManufacturingPlanner
     ): ManufacturingPlan {
         $this->assertInvariant($availability);
 
-        $plannedAt = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-        $snapshot  = $availability->recipe_snapshot;
+        $plannedAt = (new DateTimeImmutable)->format(DateTimeInterface::ATOM);
+        $snapshot = $availability->recipe_snapshot;
 
         // Build per-component plans from the availability analysis
-        $components             = $this->buildComponents($availability);
+        $components = $this->buildComponents($availability);
         $negativeStockDecisions = $this->buildNegativeStockDecisions($components);
 
         // can_proceed: both eligibility and the Decision Kernel must be positive
-        $canProceed       = $availability->eligibility->allowsManufacturing()
+        $canProceed = $availability->eligibility->allowsManufacturing()
             && $decision->decision->isPositive();
         $shouldManufacture = $canProceed && $availability->needs_manufacturing;
 
         // Merge caller metadata with plan-level context
         $fullMetadata = array_merge([
-            'warehouse_id'    => $availability->warehouse_id,
-            'decided_at'      => $decision->decided_at,
-            'trigger_type'    => $decision->trigger->trigger_type,
-            'trigger_id'      => $decision->trigger->trigger_id,
+            'warehouse_id' => $availability->warehouse_id,
+            'decided_at' => $decision->decided_at,
+            'trigger_type' => $decision->trigger->trigger_type,
+            'trigger_id' => $decision->trigger->trigger_id,
             'trigger_version' => $decision->trigger->trigger_version,
-            'actor_id'        => $decision->trigger->actor_id,
+            'actor_id' => $decision->trigger->actor_id,
         ], $metadata);
 
         return new ManufacturingPlan(
-            plan_id:                   $this->generatePlanId(),
-            product_id:                $availability->product_id,
-            warehouse_id:              $availability->warehouse_id,
-            product_sku:               $snapshot?->product_sku,
-            product_name:              $snapshot?->product_name,
-            qty_to_manufacture:        $availability->qty_to_manufacture,
+            plan_id: $this->generatePlanId(),
+            product_id: $availability->product_id,
+            warehouse_id: $availability->warehouse_id,
+            product_sku: $snapshot?->product_sku,
+            product_name: $snapshot?->product_name,
+            qty_to_manufacture: $availability->qty_to_manufacture,
             finished_goods_to_produce: $availability->qty_to_manufacture,
-            available_finished_goods:  $availability->available_finished_goods,
-            recipe_id:                 $snapshot?->recipe_id,
-            bom_version_number:        $snapshot?->bom_version_number,
-            recipe_snapshot:           $snapshot,
-            recipe_snapshot_hash:      $this->hashSnapshot($availability),
-            components:                $components,
-            negative_stock_decisions:  $negativeStockDecisions,
-            eligibility:               $availability->eligibility,
-            can_proceed:               $canProceed,
-            should_manufacture:        $shouldManufacture,
-            decision_type:             $decision->decision,
-            decision_reason:           $decision->reason,
-            planned_at:                $plannedAt,
-            metadata:                  $fullMetadata,
+            available_finished_goods: $availability->available_finished_goods,
+            recipe_id: $snapshot?->recipe_id,
+            bom_version_number: $snapshot?->bom_version_number,
+            recipe_snapshot: $snapshot,
+            recipe_snapshot_hash: $this->hashSnapshot($availability),
+            components: $components,
+            negative_stock_decisions: $negativeStockDecisions,
+            eligibility: $availability->eligibility,
+            can_proceed: $canProceed,
+            should_manufacture: $shouldManufacture,
+            decision_type: $decision->decision,
+            decision_reason: $decision->reason,
+            planned_at: $plannedAt,
+            metadata: $fullMetadata,
         );
     }
 
@@ -117,17 +117,17 @@ final class ManufacturingPlanner
     private function buildComponents(AvailabilityResult $availability): array
     {
         return array_map(
-            fn(RawMaterialAvailability $mat): ComponentConsumptionPlan => new ComponentConsumptionPlan(
-                component_id:         $mat->component_id,
-                sku:                  $mat->sku,
-                name:                 $mat->name,
-                unit_symbol:          $mat->unit_symbol,
-                qty_to_consume:       $mat->required_qty,
-                available_qty:        $mat->available_qty,
-                missing_qty:          $mat->missing_qty,
+            fn (RawMaterialAvailability $mat): ComponentConsumptionPlan => new ComponentConsumptionPlan(
+                component_id: $mat->component_id,
+                sku: $mat->sku,
+                name: $mat->name,
+                unit_symbol: $mat->unit_symbol,
+                qty_to_consume: $mat->required_qty,
+                available_qty: $mat->available_qty,
+                missing_qty: $mat->missing_qty,
                 allow_negative_stock: $mat->allow_negative_stock,
-                will_go_negative:     $mat->missing_qty > 0.0 && $mat->allow_negative_stock,
-                is_blocked:           $mat->missing_qty > 0.0 && !$mat->allow_negative_stock,
+                will_go_negative: $mat->missing_qty > 0.0 && $mat->allow_negative_stock,
+                is_blocked: $mat->missing_qty > 0.0 && ! $mat->allow_negative_stock,
             ),
             $availability->raw_materials,
         );
@@ -144,12 +144,12 @@ final class ManufacturingPlanner
         foreach ($components as $plan) {
             if ($plan->will_go_negative) {
                 $decisions[] = new NegativeStockDecision(
-                    component_id:      $plan->component_id,
-                    sku:               $plan->sku,
-                    name:              $plan->name,
-                    unit_symbol:       $plan->unit_symbol,
-                    available_qty:     $plan->available_qty,
-                    qty_to_consume:    $plan->qty_to_consume,
+                    component_id: $plan->component_id,
+                    sku: $plan->sku,
+                    name: $plan->name,
+                    unit_symbol: $plan->unit_symbol,
+                    available_qty: $plan->available_qty,
+                    qty_to_consume: $plan->qty_to_consume,
                     projected_balance: $plan->available_qty - $plan->qty_to_consume,
                 );
             }
@@ -182,9 +182,9 @@ final class ManufacturingPlanner
     /** Generates a UUID v4 without framework dependencies. */
     private function generatePlanId(): string
     {
-        $data    = random_bytes(16);
-        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
-        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+        $data = random_bytes(16);
+        $data[6] = chr(ord($data[6]) & 0x0F | 0x40);
+        $data[8] = chr(ord($data[8]) & 0x3F | 0x80);
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }

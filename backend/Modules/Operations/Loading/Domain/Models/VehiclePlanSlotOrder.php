@@ -9,21 +9,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property string              $id
- * @property string              $company_id
- * @property string              $vehicle_plan_slot_id
- * @property string              $vehicle_plan_id
- * @property string              $order_id
- * @property string              $order_number_snapshot
- * @property string|null         $order_type_snapshot
- * @property string|null         $channel_id_snapshot
- * @property string|null         $zone_id_snapshot
- * @property float               $estimated_weight_kg
- * @property float               $estimated_volume_m3
- * @property int|null            $stop_sequence
- * @property \Carbon\Carbon      $added_at
- * @property string              $added_by
- * @property string|null         $moved_from_slot_id
+ * @property string $id
+ * @property string $company_id
+ * @property string $vehicle_plan_slot_id
+ * @property string $vehicle_plan_id
+ * @property string $order_id
+ * @property string $order_number_snapshot
+ * @property string|null $order_type_snapshot
+ * @property string|null $channel_id_snapshot
+ * @property string|null $zone_id_snapshot
+ * @property float $estimated_weight_kg
+ * @property float $estimated_volume_m3
+ * @property int|null $stop_sequence
+ * @property \Carbon\Carbon $added_at
+ * @property string $added_by
+ * @property string|null $moved_from_slot_id
  */
 class VehiclePlanSlotOrder extends Model
 {
@@ -61,8 +61,8 @@ class VehiclePlanSlotOrder extends Model
         return [
             'estimated_weight_kg' => 'float',
             'estimated_volume_m3' => 'float',
-            'stop_sequence'       => 'integer',
-            'added_at'            => 'datetime',
+            'stop_sequence' => 'integer',
+            'added_at' => 'datetime',
         ];
     }
 

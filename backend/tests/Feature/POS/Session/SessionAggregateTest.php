@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\Session;
 
+use InvalidArgumentException;
 use Modules\POS\Session\Domain\Enums\DeviceType;
 use Modules\POS\Session\Domain\Exceptions\InvalidSessionTransitionException;
 use Modules\POS\Session\Domain\Models\Session;
@@ -16,24 +17,26 @@ use Tests\TestCase;
  */
 final class SessionAggregateTest extends TestCase
 {
-    private const CASHIER_ID   = 'cashier-uuid-1';
-    private const COMPANY_ID   = 'company-uuid-1';
+    private const CASHIER_ID = 'cashier-uuid-1';
+
+    private const COMPANY_ID = 'company-uuid-1';
+
     private const WAREHOUSE_ID = 'warehouse-uuid-1';
 
     private function makeSession(
-        string     $cashierId   = self::CASHIER_ID,
-        string     $fingerprint = 'device-fp-001',
-        string     $ip          = '10.0.0.1',
-        DeviceType $deviceType  = DeviceType::Browser,
+        string $cashierId = self::CASHIER_ID,
+        string $fingerprint = 'device-fp-001',
+        string $ip = '10.0.0.1',
+        DeviceType $deviceType = DeviceType::Browser,
     ): Session {
         return Session::open(
-            cashierId:   $cashierId,
-            companyId:   self::COMPANY_ID,
-            channelId:   null,
+            cashierId: $cashierId,
+            companyId: self::COMPANY_ID,
+            channelId: null,
             warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of($fingerprint),
-            ipAddress:   $ip,
-            deviceType:  $deviceType,
+            ipAddress: $ip,
+            deviceType: $deviceType,
         );
     }
 
@@ -89,7 +92,7 @@ final class SessionAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_cashier_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Cashier ID cannot be empty');
 
         Session::open('', self::COMPANY_ID, null, self::WAREHOUSE_ID, DeviceFingerprint::of('fp'), '1.2.3.4');
@@ -97,7 +100,7 @@ final class SessionAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_company_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Company ID cannot be empty');
 
         Session::open(self::CASHIER_ID, '', null, self::WAREHOUSE_ID, DeviceFingerprint::of('fp'), '1.2.3.4');
@@ -105,7 +108,7 @@ final class SessionAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_warehouse_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Warehouse ID cannot be empty');
 
         Session::open(self::CASHIER_ID, self::COMPANY_ID, null, '', DeviceFingerprint::of('fp'), '1.2.3.4');
@@ -322,14 +325,14 @@ final class SessionAggregateTest extends TestCase
     public function test_is_same_device_returns_true_for_matching_fingerprint(): void
     {
         $session = $this->makeSession(fingerprint: 'device-fp-aaa');
-        $other   = DeviceFingerprint::of('device-fp-aaa');
+        $other = DeviceFingerprint::of('device-fp-aaa');
 
         $this->assertTrue($session->isSameDevice($other));
     }
 
     public function test_is_same_device_returns_false_for_different_fingerprint(): void
     {
-        $session     = $this->makeSession(fingerprint: 'device-fp-aaa');
+        $session = $this->makeSession(fingerprint: 'device-fp-aaa');
         $otherDevice = DeviceFingerprint::of('device-fp-bbb');
 
         $this->assertFalse($session->isSameDevice($otherDevice));

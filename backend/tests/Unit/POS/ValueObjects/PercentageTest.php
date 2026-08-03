@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\ValueObjects;
 
+use InvalidArgumentException;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Percentage;
 use PHPUnit\Framework\TestCase;
@@ -43,7 +44,7 @@ final class PercentageTest extends TestCase
 
     public function test_rejects_negative_value(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('negative');
 
         Percentage::of('-1');
@@ -51,7 +52,7 @@ final class PercentageTest extends TestCase
 
     public function test_rejects_value_above_one_hundred(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('exceed 100');
 
         Percentage::of('101');
@@ -59,15 +60,15 @@ final class PercentageTest extends TestCase
 
     public function test_rejects_non_numeric(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         Percentage::of('abc');
     }
 
     public function test_apply_to_money(): void
     {
-        $vat    = Percentage::of('14');
-        $base   = Money::of('100.00', 'EGP');
+        $vat = Percentage::of('14');
+        $base = Money::of('100.00', 'EGP');
         $result = $vat->applyTo($base);
 
         $this->assertSame('14.00', $result->amount);
@@ -76,8 +77,8 @@ final class PercentageTest extends TestCase
 
     public function test_apply_to_money_fractional_result(): void
     {
-        $pct    = Percentage::of('10');
-        $base   = Money::of('33.33', 'EGP');
+        $pct = Percentage::of('10');
+        $base = Money::of('33.33', 'EGP');
         $result = $pct->applyTo($base);
 
         // 10% of 33.33 = 3.33 (rounded to 2 dp)

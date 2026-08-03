@@ -7,6 +7,7 @@ namespace Modules\IAM\Infrastructure\Database\Seeders;
 use Illuminate\Database\Seeder;
 use Modules\IAM\Domain\Models\Permission;
 use Modules\IAM\Domain\Models\Role;
+use Throwable;
 
 /**
  * Seeds roles and permissions from config/permissions.php.
@@ -50,9 +51,9 @@ final class RbacSeeder extends Seeder
                     $permission = Permission::firstOrCreate(
                         ['name' => $name],
                         [
-                            'module'      => $domain,
-                            'resource'    => $resource,
-                            'action'      => $action,
+                            'module' => $domain,
+                            'resource' => $resource,
+                            'action' => $action,
                             'description' => ucfirst($action).' '.str_replace('_', ' ', $resource),
                         ],
                     );
@@ -74,7 +75,7 @@ final class RbacSeeder extends Seeder
             $roles[$slug] = Role::firstOrCreate(
                 ['slug' => $slug],
                 [
-                    'name'      => $def['name'],
+                    'name' => $def['name'],
                     'is_system' => $def['is_system'],
                 ],
             );
@@ -98,7 +99,7 @@ final class RbacSeeder extends Seeder
                 continue;
             }
 
-            $role          = $roles[$slug];
+            $role = $roles[$slug];
             $permissionIds = [];
 
             foreach ($domainResourceGrants as $domainResource => $actions) {
@@ -124,7 +125,7 @@ final class RbacSeeder extends Seeder
         // ── 4. Flush RBAC cache after seeding ─────────────────────────────────
         try {
             cache()->flush();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Non-fatal: cache may not be configured during CI.
         }
     }

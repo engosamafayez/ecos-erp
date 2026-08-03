@@ -54,9 +54,10 @@ final class OrderPreparationObserver
             && $order->assigned_warehouse_id !== $session->warehouse_id) {
             $this->manager->detachOrder(
                 sessionOrder: $sessionOrder,
-                reason:       'warehouse_reassigned',
-                detachedBy:   'system',
+                reason: 'warehouse_reassigned',
+                detachedBy: 'system',
             );
+
             return;
         }
 
@@ -72,8 +73,8 @@ final class OrderPreparationObserver
                     ?? 'status_ineligible';
                 $this->manager->detachOrder(
                     sessionOrder: $sessionOrder,
-                    reason:       $reason,
-                    detachedBy:   'system',
+                    reason: $reason,
+                    detachedBy: 'system',
                 );
             }
         }

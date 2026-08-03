@@ -22,23 +22,23 @@ export function useSupplierReturnLabels() {
   const { t } = useTranslation('supplier-returns');
 
   const returnStatusLabel: Record<SupplierReturnStatus, string> = {
-    draft:            t('status.draft'),
-    waiting_approval: t('status.waiting_approval'),
-    approved:         t('status.approved'),
-    sent:             t('status.sent'),
-    credit_pending:   t('status.credit_pending'),
-    completed:        t('status.completed'),
-    cancelled:        t('status.cancelled'),
-    rejected:         t('status.rejected'),
+    draft:            t($ => $.status.draft),
+    waiting_approval: t($ => $.status.waiting_approval),
+    approved:         t($ => $.status.approved),
+    sent:             t($ => $.status.sent),
+    credit_pending:   t($ => $.status.credit_pending),
+    completed:        t($ => $.status.completed),
+    cancelled:        t($ => $.status.cancelled),
+    rejected:         t($ => $.status.rejected),
   };
 
   const returnColumnHeaders = {
-    number:     t('columns.number'),
-    supplier:   t('columns.supplier'),
-    returnDate: t('columns.returnDate'),
-    reason:     t('columns.reason'),
-    amount:     t('columns.amount'),
-    status:     t('columns.status'),
+    number:     t($ => $.columns.number),
+    supplier:   t($ => $.columns.supplier),
+    returnDate: t($ => $.columns.returnDate),
+    reason:     t($ => $.columns.reason),
+    amount:     t($ => $.columns.amount),
+    status:     t($ => $.columns.status),
   };
 
   return { returnStatusLabel, returnColumnHeaders };

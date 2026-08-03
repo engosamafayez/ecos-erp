@@ -15,9 +15,9 @@ use Modules\POS\Shift\Domain\Contracts\ShiftRepositoryInterface;
 final class CloseSessionService
 {
     public function __construct(
-        private readonly SessionRepositoryInterface    $sessionRepo,
+        private readonly SessionRepositoryInterface $sessionRepo,
         private readonly DomainEventPublisherInterface $publisher,
-        private readonly ?ShiftRepositoryInterface     $shiftRepo = null,
+        private readonly ?ShiftRepositoryInterface $shiftRepo = null,
     ) {}
 
     public function execute(CloseSessionCommand $command): CloseSessionResult

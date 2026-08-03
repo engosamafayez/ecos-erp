@@ -26,6 +26,11 @@ final class ChannelFactory extends Factory
     {
         return [
             'brand_id' => Brand::factory(),
+            // Derived from the brand rather than minted separately: a channel and
+            // its brand must belong to the same company, and the column is NOT
+            // NULL. Leaving it unset made every suite touching this factory fail
+            // on insert.
+            'company_id' => fn (array $attributes) => Brand::find($attributes['brand_id'])?->company_id,
             'name' => $this->faker->company().' Store',
             'platform' => $this->faker->randomElement(ChannelPlatform::cases())->value,
             'store_url' => $this->faker->url(),

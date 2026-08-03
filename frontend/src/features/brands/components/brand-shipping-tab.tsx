@@ -1,3 +1,4 @@
+import { useFormatter } from '@/hooks/use-formatter';
 import { useState } from 'react';
 import {
   ChevronDown,
@@ -57,6 +58,7 @@ function ActionBadge({ action }: { action: UnsupportedAreaAction }) {
 
 function GeneralSettings({ brandId }: { brandId: string }) {
   const { toast } = useToast();
+  const { currency } = useFormatter();
   const { data: settings, isLoading } = useBrandShippingSettings(brandId);
   const update = useUpdateBrandShippingSettings(brandId);
 
@@ -149,7 +151,7 @@ function GeneralSettings({ brandId }: { brandId: string }) {
 
       {/* Free Shipping Threshold */}
       <div className="space-y-1.5">
-        <Label className="text-xs font-medium">Free Shipping Threshold (EGP)</Label>
+        <Label className="text-xs font-medium">Free Shipping Threshold ({currency})</Label>
         <Input
           type="number"
           min={0}
@@ -184,6 +186,7 @@ function CitiesPanel({
   onClose: () => void;
 }) {
   const { toast } = useToast();
+  const { money } = useFormatter();
   const govId = gov.governorate_id;
   const { data: cities = [], isLoading } = useBrandShippingCities(brandId, govId);
   const updateCity = useUpdateBrandCitySetting(brandId);
@@ -233,7 +236,7 @@ function CitiesPanel({
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-                    <span className="tabular-nums">{effectivePrice} EGP</span>
+                    <span className="tabular-nums">{money(effectivePrice)}</span>
                     {citySetting.shipping_price !== null && (
                       <span className="text-blue-600">custom</span>
                     )}
@@ -268,6 +271,7 @@ function CitiesPanel({
 
 function GovernoratesGrid({ brandId }: { brandId: string }) {
   const { toast }    = useToast();
+  const { money }    = useFormatter();
   const { data: govSettings = [], isLoading } = useBrandShippingGovernorates(brandId);
   const updateGov    = useUpdateBrandGovernorateSettings(brandId);
   const { data: settings } = useBrandShippingSettings(brandId);
@@ -425,7 +429,7 @@ function GovernoratesGrid({ brandId }: { brandId: string }) {
                     }}
                   >
                     <span className={govSetting.shipping_price !== null ? 'text-blue-600 font-medium' : 'text-muted-foreground'}>
-                      {effectivePrice} EGP
+                      {money(effectivePrice)}
                     </span>
                     {govSetting.shipping_price === null && (
                       <span className="ml-1 text-muted-foreground/60">(default)</span>

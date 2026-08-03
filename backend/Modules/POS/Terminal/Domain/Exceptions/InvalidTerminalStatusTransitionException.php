@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\POS\Terminal\Domain\Exceptions;
 
+use DomainException;
 use Modules\POS\Terminal\Domain\Enums\TerminalStatus;
 
-final class InvalidTerminalStatusTransitionException extends \DomainException
+final class InvalidTerminalStatusTransitionException extends DomainException
 {
     public static function cannotTransition(
         string $terminalId,

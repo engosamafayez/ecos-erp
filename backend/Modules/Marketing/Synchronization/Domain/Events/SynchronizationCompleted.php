@@ -10,9 +10,9 @@ final class SynchronizationCompleted
 {
     public function __construct(
         public readonly MarketingSyncLog $syncLog,
-        public readonly int              $assetsDiscovered,
-        public readonly int              $assetsCreated,
-        public readonly int              $assetsUpdated,
-        public readonly int              $assetsFailed,
+        public readonly int $assetsDiscovered,
+        public readonly int $assetsCreated,
+        public readonly int $assetsUpdated,
+        public readonly int $assetsFailed,
     ) {}
 }

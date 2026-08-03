@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Platform\EventPlatform;
 
+use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseEventStoreInterface;
 use Tests\Platform\EventPlatform\Fixtures\TestOrderCreatedEvent;
@@ -23,7 +24,7 @@ class EnterpriseEventStoreTest extends TestCase
 
     public function test_persist_and_find_by_id(): void
     {
-        $event  = TestOrderCreatedEvent::make(companyId: 'company-1');
+        $event = TestOrderCreatedEvent::make(companyId: 'company-1');
         $stored = $this->store->persist($event);
 
         $found = $this->store->findById($event->eventId());
@@ -68,7 +69,7 @@ class EnterpriseEventStoreTest extends TestCase
 
     public function test_mark_published_updates_status(): void
     {
-        $event  = TestOrderCreatedEvent::make();
+        $event = TestOrderCreatedEvent::make();
         $stored = $this->store->persist($event);
 
         $this->store->markPublished($event->eventId());
@@ -92,8 +93,8 @@ class EnterpriseEventStoreTest extends TestCase
         $event = TestOrderCreatedEvent::make();
         $this->store->persist($event);
 
-        $from    = new \DateTimeImmutable('1 hour ago');
-        $to      = new \DateTimeImmutable('1 hour from now');
+        $from = new DateTimeImmutable('1 hour ago');
+        $to = new DateTimeImmutable('1 hour from now');
         $results = $this->store->queryByTimeRange($from, $to);
 
         $this->assertTrue($results->isNotEmpty());

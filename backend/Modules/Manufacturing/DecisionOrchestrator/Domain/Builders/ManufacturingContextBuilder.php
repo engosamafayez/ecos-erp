@@ -47,10 +47,10 @@ final class ManufacturingContextBuilder implements ContextBuilderInterface
 
         // ── Required fields ───────────────────────────────────────────────────
         $context = $context
-            ->with('product_id',   (string) ($parameters['product_id']  ?? ''))
-            ->with('ordered_qty',  (float)  ($parameters['ordered_qty'] ?? 0.0))
-            ->with('available_qty',(float)  ($parameters['available_qty'] ?? 0.0))
-            ->with('shortage_qty', (float)  ($parameters['shortage_qty'] ?? 0.0));
+            ->with('product_id', (string) ($parameters['product_id'] ?? ''))
+            ->with('ordered_qty', (float) ($parameters['ordered_qty'] ?? 0.0))
+            ->with('available_qty', (float) ($parameters['available_qty'] ?? 0.0))
+            ->with('shortage_qty', (float) ($parameters['shortage_qty'] ?? 0.0));
 
         // ── Optional fields ───────────────────────────────────────────────────
         if (isset($parameters['branch_id'])) {

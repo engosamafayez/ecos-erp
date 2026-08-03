@@ -18,7 +18,7 @@ class EventMonitorCommand extends Command
     public function handle(EnterpriseEventMonitor $monitor): int
     {
         $companyId = $this->option('company-id') ?: null;
-        $watch     = $this->option('watch');
+        $watch = $this->option('watch');
 
         do {
             $stats = $monitor->getSnapshot($companyId);
@@ -36,7 +36,7 @@ class EventMonitorCommand extends Command
     private function displayStats(array $stats): void
     {
         $this->info('=== ECOS Enterprise Event Platform Monitor ===');
-        $this->line('Generated: ' . $stats['generated_at']);
+        $this->line('Generated: '.$stats['generated_at']);
         $this->newLine();
 
         $this->table(
@@ -50,7 +50,7 @@ class EventMonitorCommand extends Command
                 ['Dead Letter Queue', number_format($stats['dead_letter'])],
                 ['Replayed',          number_format($stats['replayed'])],
                 ['Avg Processing',    $stats['avg_processing_ms'] !== null
-                    ? number_format($stats['avg_processing_ms'], 2) . ' ms'
+                    ? number_format($stats['avg_processing_ms'], 2).' ms'
                     : 'N/A'],
                 ['Active Subscribers', number_format($stats['active_subscribers'])],
             ],

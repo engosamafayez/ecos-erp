@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Platform\EventPlatform\Presentation\Console;
 
+use DateTimeImmutable;
 use Illuminate\Console\Command;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventReplayService;
 
@@ -27,6 +28,7 @@ class ReplayEventsCommand extends Command
             $this->info("Replaying event: {$eventId}");
             $replayService->replaySingle($eventId);
             $this->info('Done.');
+
             return 0;
         }
 
@@ -34,6 +36,7 @@ class ReplayEventsCommand extends Command
             $this->info("Replaying DLQ entry: {$dlqEntry}");
             $replayService->replayDlqEntry($dlqEntry);
             $this->info('Done.');
+
             return 0;
         }
 
@@ -42,6 +45,7 @@ class ReplayEventsCommand extends Command
             $this->info("Replaying aggregate {$aggregateType}/{$aggregateId}");
             $count = $replayService->replayByAggregate($aggregateType, $aggregateId);
             $this->info("Replayed {$count} events.");
+
             return 0;
         }
 
@@ -49,26 +53,29 @@ class ReplayEventsCommand extends Command
             $this->info("Replaying module: {$module}");
             $count = $replayService->replayByModule($module, $this->option('company-id'));
             $this->info("Replayed {$count} events.");
+
             return 0;
         }
 
         if ($from = $this->option('from')) {
-            $to      = $this->option('to') ?? now()->toIso8601String();
+            $to = $this->option('to') ?? now()->toIso8601String();
             $filters = [];
             if ($companyId = $this->option('company-id')) {
                 $filters['company_id'] = $companyId;
             }
             $this->info("Replaying time range: {$from} → {$to}");
             $count = $replayService->replayByTimeRange(
-                new \DateTimeImmutable($from),
-                new \DateTimeImmutable($to),
+                new DateTimeImmutable($from),
+                new DateTimeImmutable($to),
                 $filters,
             );
             $this->info("Replayed {$count} events.");
+
             return 0;
         }
 
         $this->error('No replay target specified. Use --event-id, --aggregate-type, --module, --from, or --dlq-entry.');
+
         return 1;
     }
 }

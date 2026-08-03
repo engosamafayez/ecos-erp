@@ -28,26 +28,26 @@ final class CreateLoadingSessionAction
             $number = $this->numberGen->next($companyId);
 
             $session = LoadingSession::create([
-                'company_id'       => $companyId,
-                'warehouse_id'     => $warehouseId,
-                'session_number'   => $number,
+                'company_id' => $companyId,
+                'warehouse_id' => $warehouseId,
+                'session_number' => $number,
                 'operational_date' => $operationalDate,
-                'status'           => LoadingSessionStatus::Draft->value,
-                'session_type'     => $sessionType,
-                'notes'            => $notes,
-                'created_by'       => $actorId,
-                'updated_by'       => $actorId,
+                'status' => LoadingSessionStatus::Draft->value,
+                'session_type' => $sessionType,
+                'notes' => $notes,
+                'created_by' => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             event(new LoadingSessionCreated(
-                companyId:       $companyId,
-                sessionId:       $session->id,
-                sessionNumber:   $number,
-                warehouseId:     $warehouseId,
+                companyId: $companyId,
+                sessionId: $session->id,
+                sessionNumber: $number,
+                warehouseId: $warehouseId,
                 operationalDate: $operationalDate,
-                sessionType:     $sessionType,
-                actorId:         $actorId,
-                occurredAt:      now()->toIso8601String(),
+                sessionType: $sessionType,
+                actorId: $actorId,
+                occurredAt: now()->toIso8601String(),
             ));
 
             return $session;

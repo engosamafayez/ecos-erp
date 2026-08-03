@@ -10,16 +10,18 @@ use Modules\POS\Application\Exceptions\SessionNotFoundException;
 use Modules\POS\Application\Results\CloseSessionResult;
 use Modules\POS\Application\Services\CloseSessionService;
 use Modules\POS\Session\Domain\Contracts\SessionRepositoryInterface;
+use Modules\POS\Session\Domain\Enums\DeviceType;
 use Modules\POS\Session\Domain\Events\SessionClosed;
 use Modules\POS\Session\Domain\Models\Session;
 use Modules\POS\Session\Domain\ValueObjects\DeviceFingerprint;
-use Modules\POS\Session\Domain\Enums\DeviceType;
 use Tests\TestCase;
 
 final class CloseSessionServiceTest extends TestCase
 {
     private SessionRepositoryInterface $sessionRepo;
+
     private DomainEventPublisherInterface $publisher;
+
     private CloseSessionService $service;
 
     protected function setUp(): void
@@ -27,8 +29,8 @@ final class CloseSessionServiceTest extends TestCase
         parent::setUp();
 
         $this->sessionRepo = $this->createMock(SessionRepositoryInterface::class);
-        $this->publisher   = $this->createMock(DomainEventPublisherInterface::class);
-        $this->service     = new CloseSessionService($this->sessionRepo, $this->publisher);
+        $this->publisher = $this->createMock(DomainEventPublisherInterface::class);
+        $this->service = new CloseSessionService($this->sessionRepo, $this->publisher);
     }
 
     public function test_throws_when_session_not_found(): void

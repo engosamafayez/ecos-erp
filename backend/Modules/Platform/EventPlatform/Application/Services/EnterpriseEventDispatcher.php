@@ -21,7 +21,7 @@ final class EnterpriseEventDispatcher
      */
     public function dispatch(DomainEvent $event, StoredEvent $storedEvent): void
     {
-        $eventName   = $event->eventName();
+        $eventName = $event->eventName();
         $subscribers = $this->registry->getSubscribersFor($eventName);
 
         if (empty($subscribers)) {
@@ -42,13 +42,13 @@ final class EnterpriseEventDispatcher
     /**
      * Chunk-dispatch a large batch of events without overwhelming the queue.
      *
-     * @param DomainEvent[] $events
+     * @param  DomainEvent[]  $events
      */
     public function dispatchBatch(array $events, array $storedEvents): void
     {
         $chunks = array_chunk(
             array_map(null, $events, $storedEvents),
-            50
+            50,
         );
 
         foreach ($chunks as $chunk) {

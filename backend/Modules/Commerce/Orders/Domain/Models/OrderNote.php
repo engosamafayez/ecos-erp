@@ -10,19 +10,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * @property string      $id
- * @property string      $order_id
- * @property string      $type        internal|customer|system
- * @property string      $content
+ * @property string $id
+ * @property string $order_id
+ * @property string $type internal|customer|system
+ * @property string $content
  * @property string|null $user_id
  * @property string|null $user_name
  * @property string|null $user_role
- * @property bool        $is_edited
+ * @property bool $is_edited
  * @property string|null $edited_by_id
  * @property string|null $edited_by_name
  * @property \Illuminate\Support\Carbon|null $edited_at
- * @property \Illuminate\Support\Carbon      $created_at
- * @property \Illuminate\Support\Carbon      $updated_at
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
  */
 final class OrderNote extends Model
 {

@@ -7,11 +7,11 @@ namespace Modules\Marketing\Automation\Domain\Enums;
 enum WorkflowTriggerType: string
 {
     case BUSINESS_EVENT = 'business_event';
-    case SCHEDULE       = 'schedule';
-    case DATE_BASED     = 'date_based';
-    case WEBHOOK        = 'webhook';
-    case API            = 'api';
-    case MANUAL         = 'manual';
+    case SCHEDULE = 'schedule';
+    case DATE_BASED = 'date_based';
+    case WEBHOOK = 'webhook';
+    case API = 'api';
+    case MANUAL = 'manual';
 
     public function requiresEventSubscription(): bool
     {
@@ -27,11 +27,11 @@ enum WorkflowTriggerType: string
     {
         return match ($this) {
             self::BUSINESS_EVENT => 'Business Event',
-            self::SCHEDULE       => 'Schedule (Cron)',
-            self::DATE_BASED     => 'Date / Anniversary',
-            self::WEBHOOK        => 'Webhook',
-            self::API            => 'API Trigger',
-            self::MANUAL         => 'Manual',
+            self::SCHEDULE => 'Schedule (Cron)',
+            self::DATE_BASED => 'Date / Anniversary',
+            self::WEBHOOK => 'Webhook',
+            self::API => 'API Trigger',
+            self::MANUAL => 'Manual',
         };
     }
 }

@@ -83,34 +83,34 @@ export function BranchesPage() {
   };
 
   const columns: ColumnDef<Branch>[] = [
-    { key: 'company', header: t('columns.company'), cell: (b) => b.company?.name ?? '—' },
+    { key: 'company', header: t($ => $.columns.company), cell: (b) => b.company?.name ?? '—' },
     {
       key: 'code',
-      header: t('columns.code'),
+      header: t($ => $.columns.code),
       sortable: true,
       cell: (b) => <span className="font-medium">{b.code}</span>,
     },
-    { key: 'name', header: t('columns.name'), sortable: true, cell: (b) => b.name },
+    { key: 'name', header: t($ => $.columns.name), sortable: true, cell: (b) => b.name },
     {
       key: 'phone',
-      header: t('columns.phone'),
+      header: t($ => $.columns.phone),
       cell: (b) => <span className="text-muted-foreground">{b.phone ?? '—'}</span>,
     },
-    { key: 'city', header: t('columns.city'), sortable: true, cell: (b) => b.city ?? '—' },
+    { key: 'city', header: t($ => $.columns.city), sortable: true, cell: (b) => b.city ?? '—' },
     {
       key: 'is_head_office',
-      header: t('columns.headOffice'),
+      header: t($ => $.columns.headOffice),
       sortable: true,
       cell: (b) =>
         b.is_head_office ? (
-          <Badge>{t('columns.headOffice')}</Badge>
+          <Badge>{t($ => $.columns.headOffice)}</Badge>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
     },
     {
       key: 'is_active',
-      header: t('columns.status'),
+      header: t($ => $.columns.status),
       sortable: true,
       cell: (b) => <StatusBadge status={b.is_active ? 'active' : 'inactive'} />,
     },
@@ -124,17 +124,17 @@ export function BranchesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
           { label: 'Organization', to: ROUTES.organization },
-          { label: t('title') },
+          { label: t($ => $.title) },
         ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -142,7 +142,7 @@ export function BranchesPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={t($ => $.search)}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -155,18 +155,18 @@ export function BranchesPage() {
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{tCommon('filters.company')}</span>
+                  <span className="text-sm font-medium">{tCommon($ => $.filters.company)}</span>
                   <CompanySelect
                     value={companyFilter}
                     onChange={(value) => {
                       setCompanyFilter(value);
                       setPage(1);
                     }}
-                    placeholder={tCommon('filters.allCompanies')}
+                    placeholder={tCommon($ => $.filters.allCompanies)}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{tCommon('filters.status')}</span>
+                  <span className="text-sm font-medium">{tCommon($ => $.filters.status)}</span>
                   <select
                     value={statusFilter}
                     onChange={(event) => {
@@ -175,9 +175,9 @@ export function BranchesPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">{tCommon('status.all')}</option>
-                    <option value="active">{tCommon('status.active')}</option>
-                    <option value="inactive">{tCommon('status.inactive')}</option>
+                    <option value="all">{tCommon($ => $.status.all)}</option>
+                    <option value="active">{tCommon($ => $.status.active)}</option>
+                    <option value="inactive">{tCommon($ => $.status.inactive)}</option>
                   </select>
                 </div>
               </>
@@ -196,11 +196,11 @@ export function BranchesPage() {
               <ActionMenu
                 label={`Actions for ${branch.name}`}
                 items={[
-                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(branch) },
-                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(branch) },
+                  { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => openEdit(branch) },
+                  { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(branch) },
                   {
                     key: 'delete',
-                    label: tCommon('common.delete'),
+                    label: tCommon($ => $.common.delete),
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(branch),
@@ -238,9 +238,9 @@ export function BranchesPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={tCommon($ => $.dialogs.softDeleteMessage, { name: deleting?.name ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteBranch.isPending}
         onConfirm={confirmDelete}

@@ -14,5 +14,5 @@ const STATUS_VARIANTS: Record<PurchaseOrderStatus, 'pending' | 'active' | 'archi
 
 export function PoStatusBadge({ status }: { status: PurchaseOrderStatus }) {
   const { t } = useTranslation('purchase-orders');
-  return <StatusBadge status={STATUS_VARIANTS[status]} label={t(`status.${status}`)} />;
+  return <StatusBadge status={STATUS_VARIANTS[status]} label={t($ => $.status[status])} />;
 }

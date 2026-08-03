@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -11,18 +13,26 @@ class ConversationTask extends Model
     use HasUuids, SoftDeletes;
 
     protected $table = 'cep_conversation_tasks';
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'due_at'       => 'datetime',
+            'due_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
     }
 
-    public function isDone(): bool  { return !is_null($this->completed_at); }
-    public function isOverdue(): bool { return !$this->isDone() && $this->due_at?->isPast(); }
+    public function isDone(): bool
+    {
+        return ! is_null($this->completed_at);
+    }
+
+    public function isOverdue(): bool
+    {
+        return ! $this->isDone() && $this->due_at?->isPast();
+    }
 
     public function complete(int $userId): void
     {

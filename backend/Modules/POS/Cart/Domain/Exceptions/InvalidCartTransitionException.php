@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\POS\Cart\Domain\Exceptions;
 
+use DomainException;
 use Modules\POS\Shared\Domain\Enums\CartStatus;
 
-final class InvalidCartTransitionException extends \DomainException
+final class InvalidCartTransitionException extends DomainException
 {
     public static function cannotTransition(string $cartId, CartStatus $from, CartStatus $to): self
     {
         return new self(
-            "Cart [{$cartId}] cannot transition from \"{$from->value}\" to \"{$to->value}\"."
+            "Cart [{$cartId}] cannot transition from \"{$from->value}\" to \"{$to->value}\".",
         );
     }
 
@@ -33,7 +34,7 @@ final class InvalidCartTransitionException extends \DomainException
     public static function terminalState(string $cartId, CartStatus $state): self
     {
         return new self(
-            "Cart [{$cartId}] is in terminal state \"{$state->value}\" and cannot be modified."
+            "Cart [{$cartId}] is in terminal state \"{$state->value}\" and cannot be modified.",
         );
     }
 }

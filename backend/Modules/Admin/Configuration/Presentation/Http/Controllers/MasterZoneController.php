@@ -36,11 +36,11 @@ class MasterZoneController extends Controller
                 Rule::unique('master_zones')->where('master_governorate_id', $govId),
             ],
             'estimated_delivery_sla_hours' => 'nullable|integer|min:1|max:168',
-            'default_warehouse_id'         => 'nullable|uuid',
-            'default_logistics_hub'        => 'nullable|string|max:100',
-            'delivery_difficulty'          => 'nullable|in:easy,medium,hard',
-            'priority'                     => 'nullable|integer|min:1|max:10',
-            'notes'                        => 'nullable|string|max:500',
+            'default_warehouse_id' => 'nullable|uuid',
+            'default_logistics_hub' => 'nullable|string|max:100',
+            'delivery_difficulty' => 'nullable|in:easy,medium,hard',
+            'priority' => 'nullable|integer|min:1|max:10',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         $code = $this->generateCode($gov->code, $validated['name']);
@@ -48,10 +48,10 @@ class MasterZoneController extends Controller
         $zone = MasterZone::create([
             ...$validated,
             'master_governorate_id' => $govId,
-            'sort_order'            => (int) MasterZone::where('master_governorate_id', $govId)->max('sort_order') + 1,
-            'code'                  => $code,
-            'is_active'             => true,
-            'is_archived'           => false,
+            'sort_order' => (int) MasterZone::where('master_governorate_id', $govId)->max('sort_order') + 1,
+            'code' => $code,
+            'is_active' => true,
+            'is_archived' => false,
         ]);
 
         return response()->json(['data' => $zone], 201);
@@ -66,16 +66,16 @@ class MasterZoneController extends Controller
                 'sometimes', 'string', 'max:100',
                 Rule::unique('master_zones')->where('master_governorate_id', $govId)->ignore($id),
             ],
-            'is_active'                    => 'sometimes|boolean',
+            'is_active' => 'sometimes|boolean',
             'estimated_delivery_sla_hours' => 'nullable|integer|min:1|max:168',
-            'default_warehouse_id'         => 'nullable|uuid',
-            'default_logistics_hub'        => 'nullable|string|max:100',
-            'delivery_difficulty'          => 'nullable|in:easy,medium,hard',
-            'priority'                     => 'nullable|integer|min:1|max:10',
-            'latitude'                     => 'nullable|numeric|between:-90,90',
-            'longitude'                    => 'nullable|numeric|between:-180,180',
-            'polygon_id'                   => 'nullable|string|max:100',
-            'notes'                        => 'nullable|string|max:500',
+            'default_warehouse_id' => 'nullable|uuid',
+            'default_logistics_hub' => 'nullable|string|max:100',
+            'delivery_difficulty' => 'nullable|in:easy,medium,hard',
+            'priority' => 'nullable|integer|min:1|max:10',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'polygon_id' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         // code is immutable — never updated
@@ -99,7 +99,7 @@ class MasterZoneController extends Controller
         $deps = DeliveryZone::where('master_zone_id', $id)->count();
         if ($deps > 0) {
             return response()->json([
-                'message'          => "Cannot delete: $deps brand zone record(s) reference this zone.",
+                'message' => "Cannot delete: $deps brand zone record(s) reference this zone.",
                 'dependency_count' => $deps,
             ], 422);
         }
@@ -113,15 +113,16 @@ class MasterZoneController extends Controller
     private function generateCode(string $govCode, string $zoneName): string
     {
         $compact = preg_replace('/\s+/', '', strtoupper($zoneName)) ?? strtoupper($zoneName);
-        $clean   = preg_replace('/[^A-Z0-9]/', '', $compact) ?? $compact;
-        $abbr    = str_pad(substr($clean, 0, 3), 3, 'X');
+        $clean = preg_replace('/[^A-Z0-9]/', '', $compact) ?? $compact;
+        $abbr = str_pad(substr($clean, 0, 3), 3, 'X');
 
-        $code = $govCode . '-' . $abbr;
-        $n    = 2;
+        $code = $govCode.'-'.$abbr;
+        $n = 2;
         while (MasterZone::where('code', $code)->exists()) {
-            $code = $govCode . '-' . substr($abbr, 0, 2) . $n;
+            $code = $govCode.'-'.substr($abbr, 0, 2).$n;
             $n++;
         }
+
         return $code;
     }
 }

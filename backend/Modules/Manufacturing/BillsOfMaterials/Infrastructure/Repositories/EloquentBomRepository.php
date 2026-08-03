@@ -19,7 +19,7 @@ final class EloquentBomRepository implements BomRepositoryInterface
 
     public function __construct(
         private readonly CostCalculationEngine $costCalculationEngine,
-        private readonly PricingReviewService  $pricingReviewService,
+        private readonly PricingReviewService $pricingReviewService,
     ) {}
 
     /**
@@ -58,8 +58,8 @@ final class EloquentBomRepository implements BomRepositoryInterface
                 'bills_of_materials.*',
                 DB::raw(
                     '(SELECT COALESCE(SUM(l.quantity * l.waste_percentage) / NULLIF(SUM(l.quantity), 0), 0)'
-                    . ' FROM bill_of_material_lines l'
-                    . ' WHERE l.bom_id = bills_of_materials.id) AS total_waste_pct'
+                    .' FROM bill_of_material_lines l'
+                    .' WHERE l.bom_id = bills_of_materials.id) AS total_waste_pct',
                 ),
             ]);
 
@@ -97,40 +97,40 @@ final class EloquentBomRepository implements BomRepositoryInterface
             $query->where('is_active', (bool) $filters['is_active']);
         }
 
-        if (!empty($filters['has_manufacturing_cost'])) {
+        if (! empty($filters['has_manufacturing_cost'])) {
             $query->where('manufacturing_cost', '>', 0);
         }
 
-        if (!empty($filters['has_packaging_materials'])) {
+        if (! empty($filters['has_packaging_materials'])) {
             $query->whereHas('lines.rawMaterial', fn ($q) => $q->where('product_type', 'packaging_material'));
         }
 
-        if (!empty($filters['updated_from'])) {
+        if (! empty($filters['updated_from'])) {
             $query->where('updated_at', '>=', $filters['updated_from']);
         }
 
-        if (!empty($filters['updated_to'])) {
+        if (! empty($filters['updated_to'])) {
             $query->where('updated_at', '<=', $filters['updated_to'].' 23:59:59');
         }
 
         $sortDir = ($filters['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
         match ($filters['sort_by'] ?? '') {
-            'bom_number'      => $query->orderBy('bills_of_materials.bom_number', $sortDir),
-            'version'         => $query->orderBy('bills_of_materials.version', $sortDir),
-            'recipe_cost'     => $query->orderBy('bills_of_materials.recipe_cost', $sortDir),
+            'bom_number' => $query->orderBy('bills_of_materials.bom_number', $sortDir),
+            'version' => $query->orderBy('bills_of_materials.version', $sortDir),
+            'recipe_cost' => $query->orderBy('bills_of_materials.recipe_cost', $sortDir),
             'total_waste_pct' => $query->orderBy('total_waste_pct', $sortDir),
-            'lines_count'     => $query->orderBy('lines_count', $sortDir),
-            'updated_at'      => $query->orderBy('bills_of_materials.updated_at', $sortDir),
-            'product_name'    => $query->orderByRaw(
-                "(SELECT name FROM products WHERE id = bills_of_materials.product_id) {$sortDir}"
+            'lines_count' => $query->orderBy('lines_count', $sortDir),
+            'updated_at' => $query->orderBy('bills_of_materials.updated_at', $sortDir),
+            'product_name' => $query->orderByRaw(
+                "(SELECT name FROM products WHERE id = bills_of_materials.product_id) {$sortDir}",
             ),
-            'category'        => $query->orderByRaw(
-                "(SELECT c.name FROM categories c"
-                . " JOIN products p ON p.category_id = c.id"
-                . " WHERE p.id = bills_of_materials.product_id) {$sortDir}"
+            'category' => $query->orderByRaw(
+                '(SELECT c.name FROM categories c'
+                .' JOIN products p ON p.category_id = c.id'
+                ." WHERE p.id = bills_of_materials.product_id) {$sortDir}",
             ),
-            default           => $query->orderBy('bills_of_materials.created_at', $sortDir),
+            default => $query->orderBy('bills_of_materials.created_at', $sortDir),
         };
 
         return $query->paginate((int) ($filters['per_page'] ?? self::PER_PAGE));
@@ -212,7 +212,7 @@ final class EloquentBomRepository implements BomRepositoryInterface
 
         $summary = $this->costCalculationEngine->calculateAndPersist(
             $bom,
-            triggerType:   'recipe_edit',
+            triggerType: 'recipe_edit',
             triggerSource: $bom->bom_number,
         );
 
@@ -228,12 +228,12 @@ final class EloquentBomRepository implements BomRepositoryInterface
         }
 
         $previousCost = (float) ($product->product_cost ?? 0.0);
-        $newCost      = $summary->finishedProductCost;
-        $yieldQty     = max((float) ($bom->yield_quantity ?? 1.0), 0.0001);
+        $newCost = $summary->finishedProductCost;
+        $yieldQty = max((float) ($bom->yield_quantity ?? 1.0), 0.0001);
 
         $product->update([
             'product_cost' => $newCost,
-            'unit_cost'    => round($newCost / $yieldQty, 4),
+            'unit_cost' => round($newCost / $yieldQty, 4),
         ]);
 
         $companyId = $product->brand?->company_id;
@@ -242,32 +242,32 @@ final class EloquentBomRepository implements BomRepositoryInterface
         }
 
         $difference = round($newCost - $previousCost, 4);
-        $diffPct    = $previousCost > 0
+        $diffPct = $previousCost > 0
             ? round(($difference / $previousCost) * 100, 4)
             : 0.0;
 
         $this->pricingReviewService->upsertForProduct(
-            product:             $product,
-            newProductCost:      $newCost,
+            product: $product,
+            newProductCost: $newCost,
             previousProductCost: $previousCost,
-            companyId:           (string) $companyId,
-            historyId:           null,
-            triggerReason:       PricingTriggerReason::RecipeUpdated->value,
-            triggerSource:       $bom->bom_number,
-            costSnapshot:        $summary->toArray(),
+            companyId: (string) $companyId,
+            historyId: null,
+            triggerReason: PricingTriggerReason::RecipeUpdated->value,
+            triggerSource: $bom->bom_number,
+            costSnapshot: $summary->toArray(),
         );
 
         FinishedProductCostChanged::dispatch(
-            productId:         $product->id,
-            companyId:         (string) $companyId,
-            oldCost:           $previousCost,
-            newCost:           $newCost,
-            difference:        $difference,
+            productId: $product->id,
+            companyId: (string) $companyId,
+            oldCost: $previousCost,
+            newCost: $newCost,
+            difference: $difference,
             differencePercent: $diffPct,
-            triggerReason:     PricingTriggerReason::RecipeUpdated,
-            triggerSource:     $bom->bom_number,
-            occurredAt:        now()->toIso8601String(),
-            costSnapshot:      $summary->toArray(),
+            triggerReason: PricingTriggerReason::RecipeUpdated,
+            triggerSource: $bom->bom_number,
+            occurredAt: now()->toIso8601String(),
+            costSnapshot: $summary->toArray(),
         );
     }
 

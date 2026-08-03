@@ -25,7 +25,7 @@ final class SyncController extends Controller
      */
     public function triggerSync(Request $request, MarketingConnection $connection): JsonResponse
     {
-        $async   = $request->boolean('async', false);
+        $async = $request->boolean('async', false);
         $actorId = (string) (string) $request->user()->id;
 
         if ($async) {
@@ -38,7 +38,7 @@ final class SyncController extends Controller
 
         return response()->json([
             'message' => 'Sync completed.',
-            'data'    => new SyncLogResource($syncLog),
+            'data' => new SyncLogResource($syncLog),
         ]);
     }
 
@@ -54,9 +54,9 @@ final class SyncController extends Controller
         return response()->json([
             'data' => SyncLogResource::collection($logs->items()),
             'meta' => [
-                'page'      => $logs->currentPage(),
-                'per_page'  => $logs->perPage(),
-                'total'     => $logs->total(),
+                'page' => $logs->currentPage(),
+                'per_page' => $logs->perPage(),
+                'total' => $logs->total(),
                 'last_page' => $logs->lastPage(),
             ],
         ]);

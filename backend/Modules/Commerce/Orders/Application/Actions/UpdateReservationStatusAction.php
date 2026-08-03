@@ -40,15 +40,15 @@ final class UpdateReservationStatusAction
 
         if ($toStatus !== null) {
             OrderReservationAudit::record(
-                orderId:     $order->id,
-                fromStatus:  $fromStatus,
-                toStatus:    $toStatus->value,
-                reason:      $reason,
+                orderId: $order->id,
+                fromStatus: $fromStatus,
+                toStatus: $toStatus->value,
+                reason: $reason,
                 warehouseId: $warehouseId,
-                vehicleId:   $vehicleId,
-                meta:        $meta,
-                actorId:     Auth::id(),
-                actorType:   Auth::check() ? 'user' : 'system',
+                vehicleId: $vehicleId,
+                meta: $meta,
+                actorId: Auth::id(),
+                actorType: Auth::check() ? 'user' : 'system',
             );
         }
     }

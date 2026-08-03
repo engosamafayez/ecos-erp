@@ -13,8 +13,9 @@ class CampaignVersion extends Model
 {
     use HasUuids;
 
-    protected $table    = 'marketing_campaign_versions';
-    public    $timestamps = false;
+    protected $table = 'marketing_campaign_versions';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'campaign_draft_id', 'version_number', 'change_type',
@@ -24,11 +25,11 @@ class CampaignVersion extends Model
     ];
 
     protected $casts = [
-        'change_type'        => VersionChangeType::class,
-        'snapshot'           => 'array',
-        'changed_fields'     => 'array',
+        'change_type' => VersionChangeType::class,
+        'snapshot' => 'array',
+        'changed_fields' => 'array',
         'approval_decided_at' => 'datetime',
-        'created_at'         => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     public function draft(): BelongsTo

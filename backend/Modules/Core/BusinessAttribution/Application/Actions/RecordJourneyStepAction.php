@@ -21,8 +21,8 @@ final class RecordJourneyStepAction
     ) {}
 
     /**
-     * @param  array<string, mixed> $stepData  Optional: event_id, actor_id, actor_type, occurred_at, payload
-     * @param  array<string, mixed> $dnaDefaults  Optional defaults when DNA doesn't yet exist
+     * @param  array<string, mixed>  $stepData  Optional: event_id, actor_id, actor_type, occurred_at, payload
+     * @param  array<string, mixed>  $dnaDefaults  Optional defaults when DNA doesn't yet exist
      */
     public function execute(
         string $entityType,

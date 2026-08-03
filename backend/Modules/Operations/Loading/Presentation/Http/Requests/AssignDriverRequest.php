@@ -16,12 +16,12 @@ final class AssignDriverRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'driver_id'              => ['required', 'uuid'],
-            'driver_name'            => ['required', 'string', 'max:255'],
-            'driver_phone'           => ['nullable', 'string', 'max:50'],
-            'assignment_type'        => ['nullable', 'in:primary,substitute'],
+            'driver_id' => ['required', 'uuid'],
+            'driver_name' => ['required', 'string', 'max:255'],
+            'driver_phone' => ['nullable', 'string', 'max:50'],
+            'assignment_type' => ['nullable', 'in:primary,substitute'],
             'departure_time_planned' => ['nullable', 'date'],
-            'notes'                  => ['nullable', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

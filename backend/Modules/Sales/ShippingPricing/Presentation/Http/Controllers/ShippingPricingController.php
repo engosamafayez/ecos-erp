@@ -39,12 +39,12 @@ final class ShippingPricingController extends Controller
         $companyId = Auth::user()?->company_id;
 
         $validated = $request->validate([
-            'governorate'   => 'required|string|max:100',
-            'city'          => 'nullable|string|max:100',
-            'area'          => 'nullable|string|max:100',
+            'governorate' => 'required|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'area' => 'nullable|string|max:100',
             'standard_cost' => 'required|numeric|min:0',
-            'express_cost'  => 'nullable|numeric|min:0',
-            'is_active'     => 'sometimes|boolean',
+            'express_cost' => 'nullable|numeric|min:0',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $this->assertNoDuplicate(
@@ -75,17 +75,17 @@ final class ShippingPricingController extends Controller
         $rule = ShippingPricingRule::findOrFail($id);
 
         $validated = $request->validate([
-            'governorate'   => 'sometimes|required|string|max:100',
-            'city'          => 'nullable|string|max:100',
-            'area'          => 'nullable|string|max:100',
+            'governorate' => 'sometimes|required|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'area' => 'nullable|string|max:100',
             'standard_cost' => 'sometimes|required|numeric|min:0',
-            'express_cost'  => 'nullable|numeric|min:0',
-            'is_active'     => 'sometimes|boolean',
+            'express_cost' => 'nullable|numeric|min:0',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $governorate = $validated['governorate'] ?? $rule->governorate;
-        $city        = array_key_exists('city', $validated) ? $validated['city'] : $rule->city;
-        $area        = array_key_exists('area', $validated) ? $validated['area'] : $rule->area;
+        $city = array_key_exists('city', $validated) ? $validated['city'] : $rule->city;
+        $area = array_key_exists('area', $validated) ? $validated['area'] : $rule->area;
 
         $this->assertNoDuplicate(
             companyId: $rule->company_id,
@@ -111,8 +111,8 @@ final class ShippingPricingController extends Controller
     {
         $validated = $request->validate([
             'governorate' => 'required|string|max:100',
-            'city'        => 'nullable|string|max:100',
-            'area'        => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'area' => 'nullable|string|max:100',
         ]);
 
         // Inject the authenticated company so CalculateShippingCostAction can still

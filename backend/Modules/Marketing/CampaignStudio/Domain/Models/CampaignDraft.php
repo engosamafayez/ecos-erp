@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Marketing\CampaignStudio\Domain\Enums\CampaignInternalStatus;
 use Modules\Marketing\CampaignStudio\Domain\Enums\BudgetType;
+use Modules\Marketing\CampaignStudio\Domain\Enums\CampaignInternalStatus;
 
 class CampaignDraft extends Model
 {
@@ -35,16 +35,16 @@ class CampaignDraft extends Model
     ];
 
     protected $casts = [
-        'tags'                      => 'array',
-        'daily_budget'              => 'decimal:2',
-        'lifetime_budget'           => 'decimal:2',
-        'internal_status'           => CampaignInternalStatus::class,
-        'budget_type'               => BudgetType::class,
-        'start_date'                => 'datetime',
-        'end_date'                  => 'datetime',
-        'published_at'              => 'datetime',
-        'scheduled_publish_at'      => 'datetime',
-        'last_published_at'         => 'datetime',
+        'tags' => 'array',
+        'daily_budget' => 'decimal:2',
+        'lifetime_budget' => 'decimal:2',
+        'internal_status' => CampaignInternalStatus::class,
+        'budget_type' => BudgetType::class,
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+        'published_at' => 'datetime',
+        'scheduled_publish_at' => 'datetime',
+        'last_published_at' => 'datetime',
         'submitted_for_approval_at' => 'datetime',
     ];
 

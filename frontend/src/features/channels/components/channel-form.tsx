@@ -31,7 +31,7 @@ export function ChannelFormFields() {
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <FormField name="company_id" label={t('form.company.label', 'Company (filter brands)')}>
+          <FormField name="company_id" label={t($ => $.form.company.label, 'Company (filter brands)')}>
             <Combobox
               options={companyOptions}
               value={companyId || null}
@@ -39,30 +39,30 @@ export function ChannelFormFields() {
                 setValue('company_id', val, { shouldValidate: false });
                 setValue('brand_id', '', { shouldValidate: false });
               }}
-              placeholder={t('form.company.placeholder', 'All companies')}
+              placeholder={t($ => $.form.company.placeholder, 'All companies')}
               loading={companiesLoading}
             />
           </FormField>
         </div>
 
         <div className="sm:col-span-2">
-          <FormField name="brand_id" label={t('form.brand.label', 'Brand')} required>
+          <FormField name="brand_id" label={t($ => $.form.brand.label, 'Brand')} required>
             <Combobox
               options={brandOptions}
               value={brandId || null}
               onChange={(val) => setValue('brand_id', val, { shouldValidate: true })}
-              placeholder={companyId ? t('form.brand.placeholder', 'Select brand…') : 'Select a company first'}
+              placeholder={companyId ? t($ => $.form.brand.placeholder, 'Select brand…') : 'Select a company first'}
               loading={brandsLoading}
               disabled={!companyId}
             />
           </FormField>
         </div>
 
-        <FormField name="name" label={t('form.name.label')} required>
-          <Input placeholder={t('form.name.placeholder')} {...register('name')} />
+        <FormField name="name" label={t($ => $.form.name.label)} required>
+          <Input placeholder={t($ => $.form.name.placeholder)} {...register('name')} />
         </FormField>
 
-        <FormField name="platform" label={t('form.platform.label')} required>
+        <FormField name="platform" label={t($ => $.form.platform.label)} required>
           <select
             {...register('platform')}
             className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs"
@@ -76,43 +76,43 @@ export function ChannelFormFields() {
         </FormField>
 
         <div className="sm:col-span-2">
-          <FormField name="store_url" label={t('form.storeUrl.label')} required>
-            <Input type="url" placeholder={t('form.storeUrl.placeholder')} {...register('store_url')} />
+          <FormField name="store_url" label={t($ => $.form.storeUrl.label)} required>
+            <Input type="url" placeholder={t($ => $.form.storeUrl.placeholder)} {...register('store_url')} />
           </FormField>
         </div>
 
-        <FormField name="consumer_key" label={t('form.consumerKey.label')}>
-          <Input placeholder={t('form.consumerKey.placeholder')} {...register('consumer_key')} />
+        <FormField name="consumer_key" label={t($ => $.form.consumerKey.label)}>
+          <Input placeholder={t($ => $.form.consumerKey.placeholder)} {...register('consumer_key')} />
         </FormField>
 
-        <FormField name="consumer_secret" label={t('form.consumerSecret.label')}>
-          <Input type="password" placeholder={t('form.consumerSecret.placeholder')} {...register('consumer_secret')} />
+        <FormField name="consumer_secret" label={t($ => $.form.consumerSecret.label)}>
+          <Input type="password" placeholder={t($ => $.form.consumerSecret.placeholder)} {...register('consumer_secret')} />
         </FormField>
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">{t('form.syncSettings')}</span>
+        <span className="text-sm font-medium">{t($ => $.form.syncSettings)}</span>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="border-input size-4 rounded" {...register('sync_products')} />
-          {t('form.syncProducts')}
+          {t($ => $.form.syncProducts)}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="border-input size-4 rounded" {...register('sync_prices')} />
-          {t('form.syncPrices')}
+          {t($ => $.form.syncPrices)}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="border-input size-4 rounded" {...register('sync_stock')} />
-          {t('form.syncStock')}
+          {t($ => $.form.syncStock)}
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="border-input size-4 rounded" {...register('sync_customers')} />
-          {t('form.syncCustomers')}
+          {t($ => $.form.syncCustomers)}
         </label>
       </div>
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" className="border-input size-4 rounded" {...register('is_active')} />
-        {t('form.active')}
+        {t($ => $.form.active)}
       </label>
     </div>
   );

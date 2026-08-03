@@ -11,7 +11,7 @@ final class InsufficientStockException extends RuntimeException
     public function __construct(string $productId, float $available, float $required)
     {
         parent::__construct(
-            "Insufficient stock for product [{$productId}]: available {$available}, required {$required}."
+            "Insufficient stock for product [{$productId}]: available {$available}, required {$required}.",
         );
     }
 }

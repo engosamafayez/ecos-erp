@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderConnected extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.connected'; }
+    public function eventName(): string
+    {
+        return 'provider.connected';
+    }
 }

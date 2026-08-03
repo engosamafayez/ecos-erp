@@ -38,12 +38,12 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
                     ->orWhere('external_order_id', 'like', "%{$search}%")
                     ->orWhereHas('customer', function (Builder $c) use ($search): void {
                         $c->where('name', 'like', "%{$search}%")
-                          ->orWhere('phone', 'like', "%{$search}%")
-                          ->orWhere('code', 'like', "%{$search}%");
+                            ->orWhere('phone', 'like', "%{$search}%")
+                            ->orWhere('code', 'like', "%{$search}%");
                     })
                     ->orWhereHas('lines.product', function (Builder $p) use ($search): void {
                         $p->where('sku', 'like', "%{$search}%")
-                          ->orWhere('name', 'like', "%{$search}%");
+                            ->orWhere('name', 'like', "%{$search}%");
                     });
             });
         }
@@ -87,7 +87,7 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
         if ($paymentMethod !== '') {
             $query->where(function (Builder $b) use ($paymentMethod): void {
                 $b->where('payment_method', $paymentMethod)
-                  ->orWhere('payment_method_manual', $paymentMethod);
+                    ->orWhere('payment_method_manual', $paymentMethod);
             });
         }
 
@@ -132,7 +132,7 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
         if ($phone !== '') {
             $query->where(function (Builder $b) use ($phone): void {
                 $b->where('billing_phone', 'like', "%{$phone}%")
-                  ->orWhere('customer_secondary_phone', 'like', "%{$phone}%");
+                    ->orWhere('customer_secondary_phone', 'like', "%{$phone}%");
             });
         }
 
@@ -165,11 +165,11 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
                 $query->whereColumn('deposit_amount', '>=', 'total');
             } elseif ($paymentStatus === 'partial') {
                 $query->where('deposit_amount', '>', 0)
-                      ->whereColumn('deposit_amount', '<', 'total');
+                    ->whereColumn('deposit_amount', '<', 'total');
             } elseif ($paymentStatus === 'unpaid') {
                 $query->where(function (Builder $b): void {
                     $b->whereNull('deposit_amount')
-                      ->orWhere('deposit_amount', '<=', 0);
+                        ->orWhere('deposit_amount', '<=', 0);
                 });
             }
         }
@@ -180,11 +180,11 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
             $boolProof = filter_var($hasProof, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             if ($boolProof === true) {
                 $query->whereNotNull('payment_proof_path')
-                      ->where('payment_proof_path', '!=', '');
+                    ->where('payment_proof_path', '!=', '');
             } elseif ($boolProof === false) {
                 $query->where(function (Builder $b): void {
                     $b->whereNull('payment_proof_path')
-                      ->orWhere('payment_proof_path', '');
+                        ->orWhere('payment_proof_path', '');
                 });
             }
         }
@@ -204,7 +204,7 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
         if ($zone !== '') {
             $query->where(function (Builder $b) use ($zone): void {
                 $b->where('delivery_zone', 'like', "%{$zone}%")
-                  ->orWhere('delivery_zone_id', $zone);
+                    ->orWhere('delivery_zone_id', $zone);
             });
         }
 
@@ -224,7 +224,7 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
         if ($createdBy !== '') {
             $query->where(function (Builder $b) use ($createdBy): void {
                 $b->where('created_by_id', $createdBy)
-                  ->orWhere('created_by_name', 'like', "%{$createdBy}%");
+                    ->orWhere('created_by_name', 'like', "%{$createdBy}%");
             });
         }
 
@@ -396,7 +396,7 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
         // globally unique across all companies (matching the unique constraint).
         $last = Order::withoutGlobalScopes()
             ->withTrashed()
-            ->orderByRaw("CAST(REPLACE(order_number, 'ORD-', '') AS INTEGER) DESC")
+            ->orderByRaw("CAST(REPLACE(order_number, 'ORD-', '') AS UNSIGNED) DESC")
             ->value('order_number');
 
         if ($last === null) {

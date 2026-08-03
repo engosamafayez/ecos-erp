@@ -31,40 +31,40 @@ export function SyncStockResultDialog({ open, onOpenChange, result, channelName 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('dialog.title')}</DialogTitle>
+          <DialogTitle>{t($ => $.dialog.title)}</DialogTitle>
           <DialogDescription>
-            {channelName ? t('dialog.subtitle', { name: channelName }) : t('dialog.subtitleGeneric')}
+            {channelName ? t($ => $.dialog.subtitle, { name: channelName }) : t($ => $.dialog.subtitleGeneric)}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-2">
-            <Stat label={t('dialog.total')} value={result.total} />
-            <Stat label={t('dialog.synced')} value={result.synced} />
-            <Stat label={t('dialog.errors')} value={result.errors} highlight={hasErrors} />
+            <Stat label={t($ => $.dialog.total)} value={result.total} />
+            <Stat label={t($ => $.dialog.synced)} value={result.synced} />
+            <Stat label={t($ => $.dialog.errors)} value={result.errors} highlight={hasErrors} />
           </div>
 
           {allSucceeded && (
             <div className="flex items-center gap-1.5 text-sm text-emerald-600">
               <CheckCircle2 className="size-4" />
-              {t('dialog.allSuccess')}
+              {t($ => $.dialog.allSuccess)}
             </div>
           )}
 
           {hasErrors && (
             <div className="flex items-center gap-1.5 text-sm text-rose-600">
               <AlertCircle className="size-4" />
-              {t('dialog.someErrors')}
+              {t($ => $.dialog.someErrors)}
             </div>
           )}
 
           {result.total === 0 && (
-            <p className="text-muted-foreground text-sm">{t('dialog.noMappings')}</p>
+            <p className="text-muted-foreground text-sm">{t($ => $.dialog.noMappings)}</p>
           )}
         </div>
 
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>{t('dialog.close')}</Button>
+          <Button onClick={() => onOpenChange(false)}>{t($ => $.dialog.close)}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

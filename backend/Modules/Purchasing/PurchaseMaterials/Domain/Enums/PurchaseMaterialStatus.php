@@ -7,32 +7,32 @@ namespace Modules\Purchasing\PurchaseMaterials\Domain\Enums;
 enum PurchaseMaterialStatus: string
 {
     // ── Workflow states ────────────────────────────────────────────────────
-    case Draft                    = 'draft';
-    case UnderReview              = 'under_review';
+    case Draft = 'draft';
+    case UnderReview = 'under_review';
     case WaitingSupplierSelection = 'waiting_supplier_selection';
-    case Approved                 = 'approved';
-    case Purchasing               = 'purchasing';
-    case Receiving                = 'receiving';
-    case Completed                = 'completed';
+    case Approved = 'approved';
+    case Purchasing = 'purchasing';
+    case Receiving = 'receiving';
+    case Completed = 'completed';
 
     // ── Exception states ───────────────────────────────────────────────────
-    case Rejected                 = 'rejected';
-    case OnHold                   = 'on_hold';
-    case Cancelled                = 'cancelled';
+    case Rejected = 'rejected';
+    case OnHold = 'on_hold';
+    case Cancelled = 'cancelled';
 
     public function label(): string
     {
         return match ($this) {
-            self::Draft                    => 'Draft',
-            self::UnderReview              => 'Under Review',
+            self::Draft => 'Draft',
+            self::UnderReview => 'Under Review',
             self::WaitingSupplierSelection => 'Waiting Supplier Selection',
-            self::Approved                 => 'Approved',
-            self::Purchasing               => 'Purchasing',
-            self::Receiving                => 'Receiving',
-            self::Completed                => 'Completed',
-            self::Rejected                 => 'Rejected',
-            self::OnHold                   => 'On Hold',
-            self::Cancelled                => 'Cancelled',
+            self::Approved => 'Approved',
+            self::Purchasing => 'Purchasing',
+            self::Receiving => 'Receiving',
+            self::Completed => 'Completed',
+            self::Rejected => 'Rejected',
+            self::OnHold => 'On Hold',
+            self::Cancelled => 'Cancelled',
         };
     }
 
@@ -80,13 +80,13 @@ enum PurchaseMaterialStatus: string
     public function nextWorkflowState(): ?self
     {
         return match ($this) {
-            self::Draft                    => self::UnderReview,
-            self::UnderReview              => self::WaitingSupplierSelection,
+            self::Draft => self::UnderReview,
+            self::UnderReview => self::WaitingSupplierSelection,
             self::WaitingSupplierSelection => self::Approved,
-            self::Approved                 => self::Purchasing,
-            self::Purchasing               => self::Receiving,
-            self::Receiving                => self::Completed,
-            default                        => null,
+            self::Approved => self::Purchasing,
+            self::Purchasing => self::Receiving,
+            self::Receiving => self::Completed,
+            default => null,
         };
     }
 }

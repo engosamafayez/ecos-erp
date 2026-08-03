@@ -38,7 +38,7 @@ return new class extends Migration
 
             // Financials (updated by procurement actions)
             $table->decimal('estimated_value', 15, 2)->default(0);
-            $table->decimal('approved_value',  15, 2)->default(0);
+            $table->decimal('approved_value', 15, 2)->default(0);
             $table->decimal('purchased_value', 15, 2)->default(0);
 
             // Audit

@@ -20,13 +20,31 @@ final class EloquentProductRepository implements ProductRepositoryInterface
 
     public function paginate(array $filters): LengthAwarePaginator
     {
+        // Canonical inventory summary flag (EPIC-DATA-CONSOLIDATION-001, Phase B/D).
+        // OFF (default): legacy sum-then-clamp availability + material_cost value —
+        // byte-identical to prior behaviour. ON: canonical clamp-per-warehouse-then-sum
+        // + FIFO value, matching InventorySummaryService / EnterpriseCostEngine.
+        $canonicalSummary = (bool) config('inventory_ledger.canonical_summary');
+
+        $availableExpr = $canonicalSummary
+            ? 'COALESCE(inv_agg.inv_available, 0)'
+            : 'GREATEST(COALESCE(inv_agg.inv_on_hand, 0) - COALESCE(inv_agg.inv_reserved, 0), 0)';
+
+        $valueExpr = $canonicalSummary
+            ? '(SELECT COALESCE(SUM(irl.remaining_qty * irl.landed_unit_cost), 0) FROM inventory_receipt_layers irl WHERE irl.product_id = products.id AND irl.remaining_qty > 0)'
+            : 'COALESCE(inv_agg.inv_on_hand, 0) * COALESCE(products.material_cost, 0)';
+
+        $compAvailExpr = $canonicalSummary
+            ? 'SUM(GREATEST(ii_c.on_hand_qty - ii_c.reserved_qty, 0.0))'
+            : 'GREATEST(SUM(ii_c.on_hand_qty) - SUM(ii_c.reserved_qty), 0.0)';
+
         $query = Product::query()
             ->with(['category', 'unit', 'activeRecipe', 'channelMappings.channel.brand.company', 'brand.company'])
             ->select('products.*')
             ->leftJoinSub(
                 DB::table('inventory_items')
                     ->whereNull('deleted_at')
-                    ->selectRaw('product_id, SUM(on_hand_qty) as inv_on_hand, SUM(reserved_qty) as inv_reserved')
+                    ->selectRaw('product_id, SUM(on_hand_qty) as inv_on_hand, SUM(reserved_qty) as inv_reserved, SUM(GREATEST(on_hand_qty - reserved_qty, 0)) as inv_available')
                     ->groupBy('product_id'),
                 'inv_agg',
                 'products.id',
@@ -36,8 +54,8 @@ final class EloquentProductRepository implements ProductRepositoryInterface
             ->addSelect(
                 DB::raw('COALESCE(inv_agg.inv_on_hand, 0) as on_hand_qty'),
                 DB::raw('COALESCE(inv_agg.inv_reserved, 0) as reserved_qty'),
-                DB::raw('GREATEST(COALESCE(inv_agg.inv_on_hand, 0) - COALESCE(inv_agg.inv_reserved, 0), 0) as agg_available_qty'),
-                DB::raw('COALESCE(inv_agg.inv_on_hand, 0) * COALESCE(products.material_cost, 0) as inventory_value'),
+                DB::raw($availableExpr . ' as agg_available_qty'),
+                DB::raw($valueExpr . ' as inventory_value'),
                 DB::raw("EXISTS(SELECT 1 FROM pricing_reviews WHERE pricing_reviews.product_id = products.id AND pricing_reviews.status = 'pending') as has_pending_review"),
                 DB::raw("(CASE
                     WHEN products.product_type != 'finished_good' THEN NULL
@@ -58,7 +76,7 @@ final class EloquentProductRepository implements ProductRepositoryInterface
                          AND comp_chk.deleted_at IS NULL
                         LEFT JOIN (
                             SELECT ii_c.product_id,
-                                   GREATEST(SUM(ii_c.on_hand_qty) - SUM(ii_c.reserved_qty), 0.0) AS avail
+                                   {$compAvailExpr} AS avail
                             FROM inventory_items ii_c
                             WHERE ii_c.deleted_at IS NULL
                             GROUP BY ii_c.product_id
@@ -127,7 +145,7 @@ final class EloquentProductRepository implements ProductRepositoryInterface
             );
         }
 
-        if (!empty($filters['eligible_for_recipe'])) {
+        if (! empty($filters['eligible_for_recipe'])) {
             $query->whereDoesntHave('recipes', fn ($q) => $q->where('is_active', true));
         }
 
@@ -138,7 +156,7 @@ final class EloquentProductRepository implements ProductRepositoryInterface
             $query->whereDoesntHave('recipes', fn ($q) => $q->where('is_active', true));
         }
 
-        if (!empty($filters['needs_pricing_review'])) {
+        if (! empty($filters['needs_pricing_review'])) {
             $query->whereExists(function ($sub): void {
                 $sub->select(DB::raw(1))
                     ->from('pricing_reviews')
@@ -147,20 +165,20 @@ final class EloquentProductRepository implements ProductRepositoryInterface
             });
         }
 
-        if (!empty($filters['low_margin'])) {
+        if (! empty($filters['low_margin'])) {
             $query->whereNotNull('products.regular_price')
-                  ->where('products.regular_price', '>', 0)
-                  ->whereNotNull('products.product_cost')
-                  ->whereRaw('(products.regular_price - products.product_cost) / products.regular_price < 0.20');
+                ->where('products.regular_price', '>', 0)
+                ->whereNotNull('products.product_cost')
+                ->whereRaw('(products.regular_price - products.product_cost) / products.regular_price < 0.20');
         }
 
-        if (!empty($filters['manufacturing_ready'])) {
+        if (! empty($filters['manufacturing_ready'])) {
             $query->whereHas('recipes', fn ($q) => $q->where('is_active', true))
-                  ->whereNotNull('products.regular_price')
-                  ->where('products.regular_price', '>', 0)
-                  ->whereNotNull('products.image_url')
-                  ->where('products.image_url', '!=', '')
-                  ->whereHas('channelMappings');
+                ->whereNotNull('products.regular_price')
+                ->where('products.regular_price', '>', 0)
+                ->whereNotNull('products.image_url')
+                ->where('products.image_url', '!=', '')
+                ->whereHas('channelMappings');
         }
 
         $mavFilter = trim((string) ($filters['manufacturing_availability'] ?? ''));
@@ -177,12 +195,12 @@ final class EloquentProductRepository implements ProductRepositoryInterface
                     ->from('bill_of_material_lines as boml_f')
                     ->join('bills_of_materials as bom_f', function ($j): void {
                         $j->on('bom_f.id', '=', 'boml_f.bom_id')
-                          ->where('bom_f.is_active', true)
-                          ->whereNull('bom_f.deleted_at');
+                            ->where('bom_f.is_active', true)
+                            ->whereNull('bom_f.deleted_at');
                     })
                     ->join('products as comp_f', function ($j): void {
                         $j->on('comp_f.id', '=', 'boml_f.raw_material_id')
-                          ->whereNull('comp_f.deleted_at');
+                            ->whereNull('comp_f.deleted_at');
                     })
                     ->leftJoinSub(
                         DB::table('inventory_items')
@@ -192,7 +210,7 @@ final class EloquentProductRepository implements ProductRepositoryInterface
                         'inv_f',
                         'inv_f.product_id',
                         '=',
-                        'comp_f.id'
+                        'comp_f.id',
                     )
                     ->whereColumn('bom_f.product_id', 'products.id')
                     ->whereRaw('COALESCE(inv_f.avail, 0) <= 0')

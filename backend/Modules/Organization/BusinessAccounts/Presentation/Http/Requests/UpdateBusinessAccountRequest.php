@@ -20,7 +20,7 @@ final class UpdateBusinessAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'brand_id'    => [
+            'brand_id' => [
                 'nullable',
                 'uuid',
                 'exists:brands,id',
@@ -29,7 +29,7 @@ final class UpdateBusinessAccountRequest extends FormRequest
                         return;
                     }
                     $baId = (string) $this->route('businessAccount');
-                    $ba   = BusinessAccount::find($baId);
+                    $ba = BusinessAccount::find($baId);
                     if ($ba === null) {
                         return;
                     }
@@ -39,11 +39,11 @@ final class UpdateBusinessAccountRequest extends FormRequest
                     }
                 },
             ],
-            'name'        => ['required', 'string', 'max:255'],
-            'provider'    => ['required', 'string', 'in:Meta,WooCommerce,Shopify,Amazon,TikTok,Google,Noon,Snapchat,Custom'],
-            'status'      => ['nullable', 'string', 'in:active,inactive,suspended'],
+            'name' => ['required', 'string', 'max:255'],
+            'provider' => ['required', 'string', 'in:Meta,WooCommerce,Shopify,Amazon,TikTok,Google,Noon,Snapchat,Custom'],
+            'status' => ['nullable', 'string', 'in:active,inactive,suspended'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'logo'        => ['nullable', 'string', 'max:500'],
+            'logo' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

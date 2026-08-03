@@ -45,15 +45,15 @@ final readonly class RawMaterialAvailability
     public function toArray(): array
     {
         return [
-            'component_id'         => $this->component_id,
-            'sku'                  => $this->sku,
-            'name'                 => $this->name,
-            'unit_symbol'          => $this->unit_symbol,
-            'required_qty'         => $this->required_qty,
-            'available_qty'        => $this->available_qty,
-            'missing_qty'          => $this->missing_qty,
+            'component_id' => $this->component_id,
+            'sku' => $this->sku,
+            'name' => $this->name,
+            'unit_symbol' => $this->unit_symbol,
+            'required_qty' => $this->required_qty,
+            'available_qty' => $this->available_qty,
+            'missing_qty' => $this->missing_qty,
             'allow_negative_stock' => $this->allow_negative_stock,
-            'is_satisfied'         => $this->is_satisfied,
+            'is_satisfied' => $this->is_satisfied,
         ];
     }
 }

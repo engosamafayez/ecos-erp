@@ -6,13 +6,13 @@ namespace Modules\Marketing\Automation\Domain\Enums;
 
 enum WorkflowStatus: string
 {
-    case DRAFT            = 'draft';
+    case DRAFT = 'draft';
     case PENDING_APPROVAL = 'pending_approval';
-    case APPROVED         = 'approved';
-    case ACTIVE           = 'active';
-    case PAUSED           = 'paused';
-    case ARCHIVED         = 'archived';
-    case FAILED           = 'failed';
+    case APPROVED = 'approved';
+    case ACTIVE = 'active';
+    case PAUSED = 'paused';
+    case ARCHIVED = 'archived';
+    case FAILED = 'failed';
 
     public function isEditable(): bool
     {

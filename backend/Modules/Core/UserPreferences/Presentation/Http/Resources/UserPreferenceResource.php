@@ -17,8 +17,8 @@ final class UserPreferenceResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'category'   => $this->category,
-            'payload'    => $this->payload,
+            'category' => $this->category,
+            'payload' => $this->payload,
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }

@@ -30,12 +30,12 @@ final class WarehouseController extends Controller
     public function index(Request $request, ListWarehousesAction $action): JsonResponse
     {
         $filters = [
-            'search'     => $request->query('search'),
+            'search' => $request->query('search'),
             'company_id' => (string) (Auth::user()?->company_id ?? ''),
-            'status'     => $request->query('status', 'all'),
-            'sort_by'    => $request->query('sort_by', 'created_at'),
-            'sort_dir'   => $request->query('sort_dir', 'desc'),
-            'per_page'   => $request->query('per_page', 10),
+            'status' => $request->query('status', 'all'),
+            'sort_by' => $request->query('sort_by', 'created_at'),
+            'sort_dir' => $request->query('sort_dir', 'desc'),
+            'per_page' => $request->query('per_page', 10),
         ];
 
         $paginator = $action->execute($filters)->data();

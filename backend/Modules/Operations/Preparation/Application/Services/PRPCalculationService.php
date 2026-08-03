@@ -41,21 +41,21 @@ final class PRPCalculationService
             if ($existing) {
                 $existing->update([
                     'quantity_to_produce' => $quantityToManufacture,
-                    'updated_by'          => $actorId,
+                    'updated_by' => $actorId,
                 ]);
             } else {
                 PreparationProductionRequirement::create([
-                    'id'                  => Str::uuid()->toString(),
-                    'company_id'          => $wave->company_id,
+                    'id' => Str::uuid()->toString(),
+                    'company_id' => $wave->company_id,
                     'preparation_wave_id' => $wave->id,
-                    'product_id'          => $item->product_id,
-                    'sku_snapshot'        => $item->sku_snapshot,
-                    'quantity_required'   => $item->quantity_required,
+                    'product_id' => $item->product_id,
+                    'sku_snapshot' => $item->sku_snapshot,
+                    'quantity_required' => $item->quantity_required,
                     'quantity_to_produce' => $quantityToManufacture,
-                    'quantity_produced'   => 0,
-                    'status'              => $quantityToManufacture > 0 ? 'pending' : 'ready',
-                    'created_by'          => $actorId,
-                    'updated_by'          => $actorId,
+                    'quantity_produced' => 0,
+                    'status' => $quantityToManufacture > 0 ? 'pending' : 'ready',
+                    'created_by' => $actorId,
+                    'updated_by' => $actorId,
                 ]);
             }
 
@@ -63,12 +63,12 @@ final class PRPCalculationService
                 // Publish manufacturing.production_job.requested event for Manufacturing OS to consume.
                 // Manufacturing OS creates a job and links back via manufacturing.production_job.created.
                 event(new \Modules\Operations\Preparation\Domain\Events\ProductionJobRequested(
-                    waveId:               $wave->id,
-                    companyId:            $wave->company_id,
-                    productId:            $item->product_id,
+                    waveId: $wave->id,
+                    companyId: $wave->company_id,
+                    productId: $item->product_id,
                     quantityToManufacture: $quantityToManufacture,
-                    priority:             1,
-                    requiredByDate:       $wave->planning_date->toDateString(),
+                    priority: 1,
+                    requiredByDate: $wave->planning_date->toDateString(),
                 ));
             }
         }

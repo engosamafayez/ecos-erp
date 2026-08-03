@@ -10,7 +10,6 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
-use Modules\Operations\Fulfillment\Application\OrderStatusGuard;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
 
 /**
@@ -30,7 +29,7 @@ final class FulfillmentEngine
     /**
      * Run a workflow against an order.
      *
-     * @param array<string, mixed> $data   Extra context for the workflow.
+     * @param  array<string, mixed>  $data  Extra context for the workflow.
      */
     public function run(
         FulfillmentWorkflowInterface $workflow,
@@ -50,7 +49,7 @@ final class FulfillmentEngine
         // OrderStatusGuard is active for the duration so the Order model's
         // updating hook does not throw UnauthorizedOrderStatusWriteException.
         $previousStatus = $order->status->value;
-        $actorName      = Auth::user()?->name ?? null;
+        $actorName = Auth::user()?->name ?? null;
 
         OrderStatusGuard::activate();
         try {
@@ -59,7 +58,7 @@ final class FulfillmentEngine
 
                 if ($r->order->status->value !== $previousStatus) {
                     $r->order->update([
-                        'previous_status'   => $previousStatus,
+                        'previous_status' => $previousStatus,
                         'status_entered_by' => $actorName,
                         'status_entered_at' => now(),
                     ]);
@@ -78,15 +77,15 @@ final class FulfillmentEngine
 
         // 4. Audit trail — includes actor name and previous/new status values
         OrderEvent::log(
-            orderId:       $result->order->id,
-            type:          $workflow->name(),
-            description:   $result->message,
-            payload:       $result->meta,
-            actorId:       $actorId,
-            actorName:     $actorName,
+            orderId: $result->order->id,
+            type: $workflow->name(),
+            description: $result->message,
+            payload: $result->meta,
+            actorId: $actorId,
+            actorName: $actorName,
             previousValue: $previousStatus !== $result->order->status->value ? ['status' => $previousStatus] : null,
-            newValue:      $previousStatus !== $result->order->status->value ? ['status' => $result->order->status->value] : null,
-            module:        'fulfillment',
+            newValue: $previousStatus !== $result->order->status->value ? ['status' => $result->order->status->value] : null,
+            module: 'fulfillment',
         );
 
         return $result;

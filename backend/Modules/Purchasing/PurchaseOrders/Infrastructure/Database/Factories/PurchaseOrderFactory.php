@@ -22,15 +22,15 @@ final class PurchaseOrderFactory extends Factory
     public function definition(): array
     {
         return [
-            'po_number'   => 'PO-' . str_pad((string) $this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
-            'company_id'  => Company::factory(),
+            'po_number' => 'PO-'.str_pad((string) $this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
+            'company_id' => Company::factory(),
             'supplier_id' => Supplier::factory(),
-            'order_date'  => $this->faker->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
+            'order_date' => $this->faker->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
             'expected_date' => $this->faker->dateTimeBetween('now', '+2 months')->format('Y-m-d'),
-            'status'      => PurchaseOrderStatus::Draft->value,
-            'subtotal'    => 0,
+            'status' => PurchaseOrderStatus::Draft->value,
+            'subtotal' => 0,
             'grand_total' => 0,
-            'total'       => 0,
+            'total' => 0,
         ];
     }
 
@@ -42,7 +42,7 @@ final class PurchaseOrderFactory extends Factory
     public function approved(): self
     {
         return $this->state(fn (): array => [
-            'status'      => PurchaseOrderStatus::Approved->value,
+            'status' => PurchaseOrderStatus::Approved->value,
             'approved_at' => now(),
         ]);
     }

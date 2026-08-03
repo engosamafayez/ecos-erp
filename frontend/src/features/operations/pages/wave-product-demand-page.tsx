@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Factory, Loader2, Package, Waves } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
@@ -14,24 +15,34 @@ import type { WaveProductDemandItem } from '../types/preparation';
 
 type CompletionFilter = 'all' | 'not_started' | 'in_progress' | 'completed';
 
-const COMPLETION_TABS: Array<{ value: CompletionFilter; label: string }> = [
-  { value: 'all',         label: 'All'          },
-  { value: 'not_started', label: 'Not Started'  },
-  { value: 'in_progress', label: 'In Progress'  },
-  { value: 'completed',   label: 'Completed'    },
-];
-
 function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-// ── Columns ────────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 
-function buildColumns(): DataGridColumnDef<WaveProductDemandItem>[] {
-  return [
+export function WaveProductDemandPage() {
+  const { t } = useTranslation('operations');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
+  const waveId = useSelectedWaveId();
+  const { data: items, isLoading, isFetching, refetch } = useWaveProductDemand(waveId);
+  const { data: kpis } = useWaveKpis(waveId);
+
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<CompletionFilter>('all');
+
+  const COMPLETION_TABS: Array<{ value: CompletionFilter; label: string }> = [
+    { value: 'all',         label: t($ => $.wave.productDemand.filters.all) },
+    { value: 'not_started', label: t($ => $.wave.productDemand.filters.notStarted) },
+    { value: 'in_progress', label: t($ => $.wave.productDemand.filters.inProgress) },
+    { value: 'completed',   label: t($ => $.wave.productDemand.filters.completed) },
+  ];
+
+  const columns: DataGridColumnDef<WaveProductDemandItem>[] = useMemo(() => [
     {
       key: 'product',
-      label: 'Product',
+      label: t($ => $.wave.productDemand.columns.product),
       alwaysVisible: true,
       cell: (item) => (
         <div>
@@ -44,14 +55,14 @@ function buildColumns(): DataGridColumnDef<WaveProductDemandItem>[] {
     },
     {
       key: 'required_qty',
-      label: 'Required',
+      label: t($ => $.wave.productDemand.columns.required),
       defaultVisible: true,
       align: 'end',
       cell: (item) => <span className="text-sm tabular-nums">{fmt(item.required_qty)}</span>,
     },
     {
       key: 'prepared_qty',
-      label: 'Prepared',
+      label: t($ => $.wave.productDemand.columns.prepared),
       defaultVisible: true,
       align: 'end',
       cell: (item) => (
@@ -60,7 +71,7 @@ function buildColumns(): DataGridColumnDef<WaveProductDemandItem>[] {
     },
     {
       key: 'remaining_qty',
-      label: 'Remaining',
+      label: t($ => $.wave.productDemand.columns.remaining),
       defaultVisible: true,
       align: 'end',
       cell: (item) => (
@@ -71,7 +82,7 @@ function buildColumns(): DataGridColumnDef<WaveProductDemandItem>[] {
     },
     {
       key: 'orders_count',
-      label: 'Orders',
+      label: t($ => $.wave.productDemand.columns.orders),
       defaultVisible: true,
       align: 'end',
       cell: (item) => (
@@ -80,7 +91,7 @@ function buildColumns(): DataGridColumnDef<WaveProductDemandItem>[] {
     },
     {
       key: 'completion_pct',
-      label: 'Progress',
+      label: t($ => $.wave.productDemand.columns.progress),
       defaultVisible: true,
       width: 140,
       cell: (item) => (
@@ -92,42 +103,30 @@ function buildColumns(): DataGridColumnDef<WaveProductDemandItem>[] {
     },
     {
       key: 'manufacture',
-      label: 'Action',
+      label: t($ => $.wave.productDemand.columns.action),
       alwaysVisible: true,
       align: 'end',
       cell: () => (
         <span
           className="inline-flex items-center gap-1 text-xs text-muted-foreground border rounded px-2 py-1 opacity-50 cursor-not-allowed select-none"
-          title="Manufacture Now — coming soon"
+          title={t($ => $.wave.productDemand.manufactureNow)}
         >
           <Factory className="h-3 w-3" />
-          Manufacture Now
+          {t($ => $.wave.productDemand.manufactureNow)}
         </span>
       ),
     },
-  ];
-}
+   
+  ], [t]);
 
-const COL_METAS = buildColumns().map((c) => ({
-  key: c.key,
-  label: c.label,
-  alwaysVisible: c.alwaysVisible,
-  defaultVisible: c.defaultVisible,
-}));
+  const colMetas = useMemo(() => columns.map((c) => ({
+    key: c.key,
+    label: c.label,
+    alwaysVisible: c.alwaysVisible,
+    defaultVisible: c.defaultVisible,
+  })), [columns]);
 
-const COLUMNS = buildColumns();
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
-export function WaveProductDemandPage() {
-  const waveId = useSelectedWaveId();
-  const { data: items, isLoading, isFetching, refetch } = useWaveProductDemand(waveId);
-  const { data: kpis } = useWaveKpis(waveId);
-
-  const [search, setSearch]             = useState('');
-  const [filter, setFilter]             = useState<CompletionFilter>('all');
-
-  const colVis = useColumnVisibility('wave-product-demand-cols', COL_METAS);
+  const colVis = useColumnVisibility('wave-product-demand-cols', colMetas);
 
   const allItems = items ?? [];
 
@@ -168,7 +167,7 @@ export function WaveProductDemandPage() {
         isFetching={isFetching}
         viewControls={
           <ColumnVisibilityMenu
-            columns={COL_METAS}
+            columns={colMetas}
             visibility={colVis.visibility}
             onToggle={colVis.toggle}
             onReset={colVis.reset}
@@ -180,11 +179,11 @@ export function WaveProductDemandPage() {
       {allItems.length > 0 && (
         <div className="flex items-center gap-2 px-4 py-2 border-b bg-background overflow-x-auto shrink-0">
           {[
-            { label: 'Products',     value: allItems.length,               cls: '' },
-            { label: 'Required',     value: fmt(allItems.reduce((s, i) => s + i.required_qty, 0)),  cls: 'tabular-nums' },
-            { label: 'Prepared',     value: fmt(allItems.reduce((s, i) => s + i.prepared_qty, 0)), cls: 'tabular-nums text-emerald-700' },
-            { label: 'Remaining',    value: fmt(allItems.reduce((s, i) => s + i.remaining_qty, 0)), cls: `tabular-nums ${allItems.some((i) => i.remaining_qty > 0) ? 'text-amber-700' : 'text-muted-foreground'}` },
-            { label: 'Completion',   value: `${completionPct.toFixed(1)}%`,  cls: `tabular-nums ${completionPct >= 100 ? 'text-emerald-700' : ''}` },
+            { label: t($ => $.wave.productDemand.kpis.products),   value: allItems.length,                                                            cls: '' },
+            { label: t($ => $.wave.productDemand.kpis.required),   value: fmt(allItems.reduce((s, i) => s + i.required_qty, 0)),                       cls: 'tabular-nums' },
+            { label: t($ => $.wave.productDemand.kpis.prepared),   value: fmt(allItems.reduce((s, i) => s + i.prepared_qty, 0)),                       cls: 'tabular-nums text-emerald-700' },
+            { label: t($ => $.wave.productDemand.kpis.remaining),  value: fmt(allItems.reduce((s, i) => s + i.remaining_qty, 0)),                      cls: `tabular-nums ${allItems.some((i) => i.remaining_qty > 0) ? 'text-amber-700' : 'text-muted-foreground'}` },
+            { label: t($ => $.wave.productDemand.kpis.completion), value: `${completionPct.toFixed(1)}%`,                                              cls: `tabular-nums ${completionPct >= 100 ? 'text-emerald-700' : ''}` },
           ].map((kpi) => (
             <div
               key={kpi.label}
@@ -228,7 +227,7 @@ export function WaveProductDemandPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search product / SKU…"
+            placeholder={tAny('wave.productDemand.searchPlaceholder')}
             className="h-7 text-xs w-48"
           />
         </div>
@@ -239,16 +238,16 @@ export function WaveProductDemandPage() {
         {!waveId ? (
           <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
             <Waves className="h-8 w-8 opacity-30" />
-            <p className="text-sm">Select a wave to view product demand.</p>
+            <p className="text-sm">{t($ => $.wave.productDemand.noWave)}</p>
           </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Loading…</span>
+            <span className="text-sm">{t($ => $.wave.loading)}</span>
           </div>
         ) : (
           <UniversalDataGrid<WaveProductDemandItem>
-            columns={COLUMNS}
+            columns={columns}
             data={filtered}
             rowId={(item) => item.id}
             loading={false}
@@ -258,8 +257,8 @@ export function WaveProductDemandPage() {
                 <Package className="w-8 h-8" />
                 <p className="text-sm">
                   {allItems.length === 0
-                    ? 'No product demand data yet. Generate demand first.'
-                    : 'No products match the current filter.'}
+                    ? t($ => $.wave.productDemand.emptyNoDemand)
+                    : t($ => $.wave.productDemand.emptyNoMatch)}
                 </p>
               </div>
             }

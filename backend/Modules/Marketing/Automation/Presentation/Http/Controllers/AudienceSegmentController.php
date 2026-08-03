@@ -31,12 +31,12 @@ class AudienceSegmentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'         => 'required|string|max:255',
-            'description'  => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'segment_type' => 'required|string',
-            'rules'        => 'required|array',
-            'entity_type'  => 'nullable|string',
-            'is_dynamic'   => 'boolean',
+            'rules' => 'required|array',
+            'entity_type' => 'nullable|string',
+            'is_dynamic' => 'boolean',
         ]);
 
         $validated['company_id'] = $request->user()?->company_id;
@@ -54,10 +54,10 @@ class AudienceSegmentController extends Controller
     public function update(Request $request, AudienceSegment $segment): JsonResponse
     {
         $validated = $request->validate([
-            'name'        => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'rules'       => 'sometimes|array',
-            'is_dynamic'  => 'boolean',
+            'rules' => 'sometimes|array',
+            'is_dynamic' => 'boolean',
         ]);
 
         $segment = $this->service->update($segment, $validated, (string) $request->user()->id);

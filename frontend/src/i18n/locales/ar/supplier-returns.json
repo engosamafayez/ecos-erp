@@ -24,7 +24,10 @@
     "approved": "معتمد",
     "rejected": "مرفوض",
     "completed": "مكتمل",
-    "cancelled": "ملغى"
+    "cancelled": "ملغى",
+    "waiting_approval": "في انتظار الموافقة",
+    "sent": "تم الإرسال إلى المورد",
+    "credit_pending": "في انتظار الإشعار الدائن"
   },
   "reason": {
     "damaged": "بضائع تالفة",
@@ -35,11 +38,23 @@
     "other": "سبب آخر"
   },
   "form": {
-    "supplier": { "label": "المورد", "placeholder": "اختر مورداً…" },
-    "purchaseOrder": { "label": "أمر الشراء", "placeholder": "اختر أمر شراء…" },
+    "supplier": {
+      "label": "المورد",
+      "placeholder": "اختر مورداً…"
+    },
+    "purchaseOrder": {
+      "label": "أمر الشراء",
+      "placeholder": "اختر أمر شراء…"
+    },
     "returnDate": "تاريخ الإرجاع",
-    "reason": { "label": "سبب الإرجاع", "placeholder": "اختر السبب…" },
-    "notes": { "label": "ملاحظات", "placeholder": "وصف المشكلة…" }
+    "reason": {
+      "label": "سبب الإرجاع",
+      "placeholder": "اختر السبب…"
+    },
+    "notes": {
+      "label": "ملاحظات",
+      "placeholder": "وصف المشكلة…"
+    }
   },
   "lines": {
     "title": "بنود المرتجع",
@@ -72,5 +87,113 @@
     "submitEdit": "حفظ التغييرات",
     "saving": "جارٍ الحفظ…",
     "errorTitle": "تعذر الحفظ"
+  },
+  "page": {
+    "title": "مرتجعات الموردين",
+    "subtitle": "إدارة طلبات الإرجاع إلى الموردين بسبب العيوب أو الكميات الزائدة أو مشاكل الجودة.",
+    "newReturn": "مرتجع جديد",
+    "statusChips": {
+      "all": "الكل",
+      "draft": "مسودة",
+      "waiting": "في الانتظار",
+      "credit_pending": "الدائنية معلقة",
+      "completed": "مكتمل"
+    },
+    "search": "بحث في المرتجعات…",
+    "columns": {
+      "returnNo": "رقم المرتجع",
+      "supplier": "المورد",
+      "warehouse": "المستودع",
+      "returnDate": "تاريخ الإرجاع",
+      "reason": "السبب",
+      "totalValue": "القيمة الإجمالية",
+      "creditMethod": "طريقة الدائنية",
+      "status": "الحالة"
+    },
+    "empty": "لا توجد مرتجعات للموردين.",
+    "actions": {
+      "viewDetails": "عرض التفاصيل",
+      "submit": "إرسال للاعتماد",
+      "approve": "اعتماد",
+      "cancel": "إلغاء",
+      "delete": "حذف"
+    },
+    "confirmCancel": {
+      "title": "إلغاء المرتجع",
+      "description": "هل تريد إلغاء هذا المرتجع؟",
+      "confirm": "إلغاء المرتجع"
+    },
+    "confirmDelete": {
+      "title": "حذف المرتجع",
+      "description": "هل تريد حذف هذا المرتجع؟",
+      "confirm": "حذف"
+    },
+    "toast": {
+      "submitted": "تم إرسال المرتجع للاعتماد.",
+      "submitFailed": "فشل إرسال المرتجع.",
+      "approved": "تم اعتماد المرتجع.",
+      "approveFailed": "فشل اعتماد المرتجع.",
+      "cancelled": "تم إلغاء المرتجع.",
+      "cancelFailed": "فشل إلغاء المرتجع.",
+      "deleted": "تم حذف المرتجع.",
+      "deleteFailed": "فشل حذف المرتجع."
+    },
+    "pagination": {
+      "total": "{{count}} مرتجع",
+      "previous": "السابق",
+      "next": "التالي",
+      "page": "صفحة {{current}} من {{last}}"
+    }
+  },
+  "returnDrawer": {
+    "createTitle": "مرتجع مورد جديد",
+    "createHint": "أنشئ المرتجعات عبر نقطة النهاية POST /supplier-returns.",
+    "reasonLabel": "السبب",
+    "loading": "جارٍ التحميل…",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "items": "الأصناف",
+      "timeline": "الجدول الزمني"
+    },
+    "overview": {
+      "fields": {
+        "supplier": "المورد",
+        "warehouse": "المستودع",
+        "returnDate": "تاريخ الإرجاع",
+        "reason": "السبب",
+        "creditMethod": "طريقة الدائنية",
+        "expectedCredit": "الدائنية المتوقعة"
+      },
+      "totalReturnValue": "إجمالي قيمة المرتجع",
+      "notes": "ملاحظات"
+    },
+    "items": {
+      "empty": "لا أصناف في هذا المرتجع."
+    },
+    "timeline": {
+      "events": {
+        "created": "تم الإنشاء",
+        "submitted": "تم الإرسال",
+        "approved": "معتمد",
+        "completed": "مكتمل"
+      }
+    },
+    "actions": {
+      "submit": "إرسال",
+      "approve": "اعتماد",
+      "cancel": "إلغاء"
+    },
+    "toast": {
+      "submitted": "تم إرسال المرتجع.",
+      "approved": "تم اعتماد المرتجع.",
+      "cancelled": "تم إلغاء المرتجع.",
+      "failed": "فشل الإجراء."
+    }
+  },
+  "statusTab": {
+    "draft": "مسودة",
+    "waiting": "في الانتظار",
+    "credit_pending": "في انتظار الإشعار الدائن",
+    "completed": "مكتمل"
   }
 }

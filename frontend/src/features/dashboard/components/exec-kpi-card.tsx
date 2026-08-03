@@ -1,5 +1,6 @@
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -15,7 +16,7 @@ interface Props {
   icon:        LucideIcon;
   color?:      KpiColor;
   trendPct?:   number | null;   // positive = up, negative = down, null = no data
-  trendLabel?: string;          // e.g. "vs yesterday"
+  trendLabel?: string;          // e.g. "vs yesterday" — falls back to translated string
   loading?:    boolean;
   compact?:    boolean;         // smaller variant for dense rows
   hero?:       boolean;         // larger hero variant for executive section
@@ -86,13 +87,16 @@ export function ExecKpiCard({
   icon: Icon,
   color = 'indigo',
   trendPct,
-  trendLabel = 'vs yesterday',
+  trendLabel,
   loading,
   compact,
   hero,
 }: Props) {
+  const { t } = useTranslation('dashboard');
+
   if (loading) return <Skeleton compact={compact} hero={hero} />;
 
+  const displayTrendLabel = trendLabel ?? t($ => $.execKpi.vsYesterday);
   const c = COLOR[color];
 
   return (
@@ -133,7 +137,7 @@ export function ExecKpiCard({
         {subValue && (
           <span className={cn('text-muted-foreground', hero ? 'text-xs' : 'text-[10px]')}>{subValue}</span>
         )}
-        <TrendBadge pct={trendPct} label={trendLabel} />
+        <TrendBadge pct={trendPct} label={displayTrendLabel} />
       </div>
     </div>
   );

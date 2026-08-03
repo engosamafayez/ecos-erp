@@ -256,6 +256,8 @@ export interface Delivery {
   uuid: string;
   company_id: string | null;
   order_id: string;
+  order_number?: string | null;
+  order_customer_name?: string | null;
   current_stop_id: number | null;
 
   status: DeliveryStatus;

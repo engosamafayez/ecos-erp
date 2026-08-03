@@ -22,12 +22,17 @@ use PHPUnit\Framework\TestCase;
  */
 final class CartDomainEventsTest extends TestCase
 {
-    private const CART_ID     = 'cart-uuid-1';
-    private const SESSION_ID  = 'session-uuid-1';
-    private const SHIFT_ID    = 'shift-uuid-1';
+    private const CART_ID = 'cart-uuid-1';
+
+    private const SESSION_ID = 'session-uuid-1';
+
+    private const SHIFT_ID = 'shift-uuid-1';
+
     private const TERMINAL_ID = 'terminal-uuid-1';
-    private const CASHIER_ID  = 'cashier-uuid-1';
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
+
+    private const CURRENCY = 'EGP';
 
     // ── CartOpened ────────────────────────────────────────────────────────────
 
@@ -52,8 +57,8 @@ final class CartDomainEventsTest extends TestCase
         $array = $this->makeOpened()->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'cart_id', 'session_id', 'shift_id', 'terminal_id', 'cashier_id',
-                  'customer_id', 'currency'] as $key) {
+            'cart_id', 'session_id', 'shift_id', 'terminal_id', 'cashier_id',
+            'customer_id', 'currency'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing: {$key}");
         }
     }
@@ -87,8 +92,8 @@ final class CartDomainEventsTest extends TestCase
         $array = $this->makeLineAdded()->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'cart_id', 'line_id', 'product_id', 'product_name', 'sku',
-                  'quantity', 'unit_price_amount', 'line_total_amount', 'currency'] as $key) {
+            'cart_id', 'line_id', 'product_id', 'product_name', 'sku',
+            'quantity', 'unit_price_amount', 'line_total_amount', 'currency'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing: {$key}");
         }
     }
@@ -114,7 +119,7 @@ final class CartDomainEventsTest extends TestCase
         )->toArray();
 
         foreach (['event_id', 'cart_id', 'line_id', 'product_id', 'old_quantity',
-                  'new_quantity', 'line_total_amount', 'currency'] as $key) {
+            'new_quantity', 'line_total_amount', 'currency'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing: {$key}");
         }
     }
@@ -159,7 +164,7 @@ final class CartDomainEventsTest extends TestCase
         )->toArray();
 
         foreach (['event_id', 'cart_id', 'session_id', 'terminal_id', 'cashier_id',
-                  'line_count', 'total_amount', 'currency'] as $key) {
+            'line_count', 'total_amount', 'currency'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing: {$key}");
         }
     }
@@ -200,7 +205,7 @@ final class CartDomainEventsTest extends TestCase
         $array = $this->makeCompleted()->toArray();
 
         foreach (['event_id', 'cart_id', 'session_id', 'terminal_id', 'cashier_id',
-                  'receipt_number', 'total_amount', 'currency', 'line_count'] as $key) {
+            'receipt_number', 'total_amount', 'currency', 'line_count'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing: {$key}");
         }
     }

@@ -29,7 +29,7 @@ class BusinessMetricsController extends Controller
     public function aggregateAverages(Request $request): JsonResponse
     {
         $companyId = $request->query('company_id');
-        $data      = $this->metricsService->aggregateAverages($companyId);
+        $data = $this->metricsService->aggregateAverages($companyId);
 
         return response()->json(['data' => $data]);
     }

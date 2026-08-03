@@ -26,7 +26,7 @@ return new class extends Migration
         });
 
         // Backfill from purchase_orders → companies
-        DB::statement(<<<SQL
+        DB::statement(<<<'SQL'
             UPDATE goods_receipts gr
             INNER JOIN purchase_orders po ON gr.purchase_order_id = po.id
             SET gr.company_id = po.company_id

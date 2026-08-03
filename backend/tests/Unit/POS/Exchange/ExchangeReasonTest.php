@@ -11,20 +11,20 @@ final class ExchangeReasonTest extends TestCase
 {
     public function test_cases_have_correct_string_values(): void
     {
-        $this->assertSame('defective',           ExchangeReason::Defective->value);
-        $this->assertSame('wrong_item',          ExchangeReason::WrongItem->value);
+        $this->assertSame('defective', ExchangeReason::Defective->value);
+        $this->assertSame('wrong_item', ExchangeReason::WrongItem->value);
         $this->assertSame('customer_preference', ExchangeReason::CustomerPreference->value);
-        $this->assertSame('size_exchange',       ExchangeReason::SizeExchange->value);
-        $this->assertSame('other',               ExchangeReason::Other->value);
+        $this->assertSame('size_exchange', ExchangeReason::SizeExchange->value);
+        $this->assertSame('other', ExchangeReason::Other->value);
     }
 
     public function test_labels_are_human_readable(): void
     {
-        $this->assertSame('Defective Item',        ExchangeReason::Defective->label());
-        $this->assertSame('Wrong Item Received',   ExchangeReason::WrongItem->label());
-        $this->assertSame('Customer Preference',   ExchangeReason::CustomerPreference->label());
-        $this->assertSame('Size Exchange',         ExchangeReason::SizeExchange->label());
-        $this->assertSame('Other',                 ExchangeReason::Other->label());
+        $this->assertSame('Defective Item', ExchangeReason::Defective->label());
+        $this->assertSame('Wrong Item Received', ExchangeReason::WrongItem->label());
+        $this->assertSame('Customer Preference', ExchangeReason::CustomerPreference->label());
+        $this->assertSame('Size Exchange', ExchangeReason::SizeExchange->label());
+        $this->assertSame('Other', ExchangeReason::Other->label());
     }
 
     public function test_only_other_requires_note(): void
@@ -40,7 +40,7 @@ final class ExchangeReasonTest extends TestCase
     {
         $this->assertSame(ExchangeReason::Defective, ExchangeReason::from('defective'));
         $this->assertSame(ExchangeReason::WrongItem, ExchangeReason::from('wrong_item'));
-        $this->assertSame(ExchangeReason::Other,     ExchangeReason::from('other'));
+        $this->assertSame(ExchangeReason::Other, ExchangeReason::from('other'));
     }
 
     public function test_try_from_returns_null_for_unknown_value(): void

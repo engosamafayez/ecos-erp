@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AlertTriangle, ExternalLink, Loader2, PackageX, Waves } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,14 +15,6 @@ import type { WaveMissingMaterialItem } from '../types/preparation';
 
 type PriorityFilter = 'all' | 'critical' | 'high' | 'medium' | 'low';
 
-const PRIORITY_TABS: Array<{ value: PriorityFilter; label: string }> = [
-  { value: 'all',      label: 'All Shortages' },
-  { value: 'critical', label: 'Critical'       },
-  { value: 'high',     label: 'High'           },
-  { value: 'medium',   label: 'Medium'         },
-  { value: 'low',      label: 'Low'            },
-];
-
 const PRIORITY_COLORS: Record<WaveMissingMaterialItem['priority'], string> = {
   critical: 'bg-red-100 text-red-800',
   high:     'bg-amber-100 text-amber-700',
@@ -33,13 +26,30 @@ function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 3 });
 }
 
-// ── Columns ────────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 
-function buildColumns(onProcurement: () => void): DataGridColumnDef<WaveMissingMaterialItem>[] {
-  return [
+export function WaveMissingMaterialsPage() {
+  const { t } = useTranslation('operations');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
+  const waveId   = useSelectedWaveId();
+  const navigate = useNavigate();
+  const { data: missing, isLoading, isFetching, refetch } = useWaveMissingMaterials(waveId);
+
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
+
+  const PRIORITY_TABS: Array<{ value: PriorityFilter; label: string }> = [
+    { value: 'all',      label: t($ => $.wave.missingMaterials.filters.all) },
+    { value: 'critical', label: t($ => $.wave.missingMaterials.filters.critical) },
+    { value: 'high',     label: t($ => $.wave.missingMaterials.filters.high) },
+    { value: 'medium',   label: t($ => $.wave.missingMaterials.filters.medium) },
+    { value: 'low',      label: t($ => $.wave.missingMaterials.filters.low) },
+  ];
+
+  const columns: DataGridColumnDef<WaveMissingMaterialItem>[] = useMemo(() => [
     {
       key: 'material',
-      label: 'Material',
+      label: t($ => $.wave.missingMaterials.columns.material),
       alwaysVisible: true,
       cell: (m) => (
         <div className="text-sm font-medium text-red-900">{m.material_name}</div>
@@ -47,17 +57,17 @@ function buildColumns(onProcurement: () => void): DataGridColumnDef<WaveMissingM
     },
     {
       key: 'priority',
-      label: 'Priority',
+      label: t($ => $.wave.missingMaterials.columns.priority),
       alwaysVisible: true,
       cell: (m) => (
         <Badge className={`text-xs ${PRIORITY_COLORS[m.priority]}`}>
-          {m.priority.charAt(0).toUpperCase() + m.priority.slice(1)}
+          {tAny(`wave.missingMaterials.priority.${m.priority}`)}
         </Badge>
       ),
     },
     {
       key: 'missing_qty',
-      label: 'Missing Qty',
+      label: t($ => $.wave.missingMaterials.columns.missingQty),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -66,7 +76,7 @@ function buildColumns(onProcurement: () => void): DataGridColumnDef<WaveMissingM
     },
     {
       key: 'affected_orders_count',
-      label: 'Affected Orders',
+      label: t($ => $.wave.missingMaterials.columns.affectedOrders),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -75,7 +85,7 @@ function buildColumns(onProcurement: () => void): DataGridColumnDef<WaveMissingM
     },
     {
       key: 'procurement_status',
-      label: 'Procurement',
+      label: t($ => $.wave.missingMaterials.columns.procurement),
       defaultVisible: true,
       cell: (m) => (
         m.procurement_status ? (
@@ -87,7 +97,7 @@ function buildColumns(onProcurement: () => void): DataGridColumnDef<WaveMissingM
     },
     {
       key: 'action',
-      label: 'Action',
+      label: t($ => $.wave.missingMaterials.columns.action),
       alwaysVisible: true,
       align: 'end',
       cell: () => (
@@ -95,24 +105,15 @@ function buildColumns(onProcurement: () => void): DataGridColumnDef<WaveMissingM
           size="sm"
           variant="outline"
           className="h-7 text-xs text-blue-700 border-blue-200 hover:bg-blue-50"
-          onClick={(e) => { e.stopPropagation(); onProcurement(); }}
+          onClick={(e) => { e.stopPropagation(); void navigate(ROUTES.procurementHub); }}
         >
           <ExternalLink className="h-3 w-3 mr-1" />
-          Open Procurement Queue
+          {t($ => $.wave.missingMaterials.openProcurementQueue)}
         </Button>
       ),
     },
-  ];
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
-export function WaveMissingMaterialsPage() {
-  const waveId   = useSelectedWaveId();
-  const navigate = useNavigate();
-  const { data: missing, isLoading, isFetching, refetch } = useWaveMissingMaterials(waveId);
-
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [t, navigate]);
 
   const allMissing = missing ?? [];
 
@@ -127,8 +128,6 @@ export function WaveMissingMaterialsPage() {
   const filtered = priorityFilter === 'all'
     ? allMissing
     : allMissing.filter((m) => m.priority === priorityFilter);
-
-  const columns = buildColumns(() => void navigate(ROUTES.procurementHub));
 
   return (
     <div className="flex flex-col h-full">
@@ -166,12 +165,12 @@ export function WaveMissingMaterialsPage() {
         {!waveId ? (
           <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
             <Waves className="h-8 w-8 opacity-30" />
-            <p className="text-sm">Select a wave to view missing materials.</p>
+            <p className="text-sm">{t($ => $.wave.missingMaterials.noWave)}</p>
           </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Loading…</span>
+            <span className="text-sm">{t($ => $.wave.loading)}</span>
           </div>
         ) : (
           <UniversalDataGrid<WaveMissingMaterialItem>
@@ -184,13 +183,13 @@ export function WaveMissingMaterialsPage() {
                 <PackageX className="w-8 h-8" />
                 <p className="text-sm font-medium">
                   {allMissing.length === 0
-                    ? 'No material shortages — all requirements are met!'
-                    : 'No shortages at this priority level.'}
+                    ? t($ => $.wave.missingMaterials.emptyAllMet)
+                    : t($ => $.wave.missingMaterials.emptyPriorityFilter)}
                 </p>
                 {allMissing.length === 0 && (
                   <p className="text-xs flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3 text-amber-500" />
-                    Shortages appear here once Demand Generation runs.
+                    {t($ => $.wave.missingMaterials.shortagesNote)}
                   </p>
                 )}
               </div>

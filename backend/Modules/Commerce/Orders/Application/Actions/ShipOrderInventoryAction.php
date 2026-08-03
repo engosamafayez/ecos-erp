@@ -27,10 +27,10 @@ final class ShipOrderInventoryAction
     ) {}
 
     /**
-     * @param array<string, float>|null $lineQuantities Map of order_line_id => qty to ship.
-     *                                                   When null, the full reserved_qty per line is used.
-     *                                                   Used for split-shipment (P1-001): each vehicle
-     *                                                   ships only the quantities allocated to it.
+     * @param  array<string, float>|null  $lineQuantities  Map of order_line_id => qty to ship.
+     *                                                     When null, the full reserved_qty per line is used.
+     *                                                     Used for split-shipment (P1-001): each vehicle
+     *                                                     ships only the quantities allocated to it.
      */
     public function execute(Order $order, ?array $lineQuantities = null): void
     {
@@ -46,13 +46,13 @@ final class ShipOrderInventoryAction
 
         if ($order->inventory_reserved_at === null) {
             throw new UnprocessableEntityHttpException(
-                "Order [{$order->id}] cannot be shipped: inventory has not been reserved."
+                "Order [{$order->id}] cannot be shipped: inventory has not been reserved.",
             );
         }
 
         $order->loadMissing('lines', 'assignedWarehouse');
 
-        $companyId   = $order->assignedWarehouse->company_id;
+        $companyId = $order->assignedWarehouse->company_id;
         $warehouseId = $order->assigned_warehouse_id;
 
         DB::transaction(function () use ($order, $companyId, $warehouseId, $lineQuantities, $previousReservationStatus): void {
@@ -74,12 +74,12 @@ final class ShipOrderInventoryAction
                 // 1. Move physical stock
                 $this->shipStock->execute(new StockOperationDTO(
                     warehouse_id: $warehouseId,
-                    product_id:   $line->product_id,
-                    company_id:   $companyId,
-                    quantity:     $qty,
+                    product_id: $line->product_id,
+                    company_id: $companyId,
+                    quantity: $qty,
                     reference_type: 'sales_order',
-                    reference_id:   $order->id,
-                    notes:          "Shipped for order #{$order->order_number}",
+                    reference_id: $order->id,
+                    notes: "Shipped for order #{$order->order_number}",
                 ));
 
                 // 2. FIFO layer consumption (within same transaction).
@@ -90,12 +90,12 @@ final class ShipOrderInventoryAction
                 if ($inventoryItem !== null) {
                     $result = $this->layerConsumption->consume(
                         inventoryItemId: $inventoryItem->id,
-                        productId:       $line->product_id,
-                        warehouseId:     $warehouseId,
-                        companyId:       $companyId,
-                        quantity:        $qty,
-                        orderId:         $order->id,
-                        orderLineId:     $line->id,
+                        productId: $line->product_id,
+                        warehouseId: $warehouseId,
+                        companyId: $companyId,
+                        quantity: $qty,
+                        orderId: $order->id,
+                        orderLineId: $line->id,
                     );
 
                     $totalCogs += $result->totalCost;
@@ -106,29 +106,29 @@ final class ShipOrderInventoryAction
             }
 
             // 3. Stamp COGS and margin on the order
-            $revenue      = (float) $order->total;
-            $margin       = $revenue - $totalCogs;
-            $marginPct    = $revenue > 0 ? round($margin / $revenue * 100, 2) : null;
+            $revenue = (float) $order->total;
+            $margin = $revenue - $totalCogs;
+            $marginPct = $revenue > 0 ? round($margin / $revenue * 100, 2) : null;
 
             $order->update([
-                'inventory_shipped_at'  => now(),
-                'actual_cogs_amount'    => round($totalCogs, 2),
-                'actual_margin_amount'  => round($margin, 2),
+                'inventory_shipped_at' => now(),
+                'actual_cogs_amount' => round($totalCogs, 2),
+                'actual_margin_amount' => round($margin, 2),
                 'actual_margin_percent' => $marginPct,
-                'reservation_status'    => ReservationStatus::Transferred->value,
+                'reservation_status' => ReservationStatus::Transferred->value,
             ]);
 
             // Audit inside the transaction so the record commits or rolls back
             // atomically with the shipment (F-INV-H6 fix).
             OrderReservationAudit::record(
-                orderId:     $order->id,
-                fromStatus:  $previousReservationStatus,
-                toStatus:    ReservationStatus::Transferred->value,
-                reason:      'Inventory transferred to vehicle during loading',
+                orderId: $order->id,
+                fromStatus: $previousReservationStatus,
+                toStatus: ReservationStatus::Transferred->value,
+                reason: 'Inventory transferred to vehicle during loading',
                 warehouseId: $order->assigned_warehouse_id,
-                meta:        ['line_count' => $order->lines->count()],
-                actorId:     Auth::id(),
-                actorType:   Auth::check() ? 'user' : 'system',
+                meta: ['line_count' => $order->lines->count()],
+                actorId: Auth::id(),
+                actorType: Auth::check() ? 'user' : 'system',
             );
         });
     }

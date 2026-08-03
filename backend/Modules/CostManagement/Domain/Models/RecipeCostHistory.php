@@ -39,10 +39,10 @@ class RecipeCostHistory extends Model
     {
         return [
             'previous_materials_cost' => 'float',
-            'new_materials_cost'      => 'float',
-            'difference'              => 'float',
-            'cost_snapshot'           => 'array',
-            'occurred_at'             => 'datetime',
+            'new_materials_cost' => 'float',
+            'difference' => 'float',
+            'cost_snapshot' => 'array',
+            'occurred_at' => 'datetime',
         ];
     }
 

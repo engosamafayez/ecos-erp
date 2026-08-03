@@ -11,7 +11,7 @@ final class ConnectionUpdated
     /** @param array<string, mixed> $changes */
     public function __construct(
         public readonly MarketingConnection $connection,
-        public readonly array               $changes,
-        public readonly string              $actorId,
+        public readonly array $changes,
+        public readonly string $actorId,
     ) {}
 }

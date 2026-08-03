@@ -58,9 +58,9 @@ final class ReserveStockAction extends BaseAction
                 throw new InvalidInventoryMovementException('InventoryItem disappeared during transaction');
             }
 
-            $onHandBefore   = (float) $locked->on_hand_qty;
+            $onHandBefore = (float) $locked->on_hand_qty;
             $reservedBefore = (float) $locked->reserved_qty;
-            $available      = $locked->availableQty();
+            $available = $locked->availableQty();
 
             if ($available < $dto->quantity) {
                 throw new InsufficientStockException(
@@ -78,33 +78,33 @@ final class ReserveStockAction extends BaseAction
 
             $this->inventory->recordEntry([
                 'inventory_item_id' => $locked->id,
-                'warehouse_id'      => $dto->warehouse_id,
-                'product_id'        => $dto->product_id,
-                'company_id'        => $dto->company_id,
-                'movement_type'     => LedgerMovementType::Reservation->value,
-                'quantity'          => $dto->quantity,
-                'on_hand_before'    => $onHandBefore,
-                'on_hand_after'     => $onHandBefore,
-                'reserved_before'   => $reservedBefore,
-                'reserved_after'    => $reservedAfter,
-                'reference_type'    => $dto->reference_type,
-                'reference_id'      => $dto->reference_id,
-                'notes'             => $dto->notes,
+                'warehouse_id' => $dto->warehouse_id,
+                'product_id' => $dto->product_id,
+                'company_id' => $dto->company_id,
+                'movement_type' => LedgerMovementType::Reservation->value,
+                'quantity' => $dto->quantity,
+                'on_hand_before' => $onHandBefore,
+                'on_hand_after' => $onHandBefore,
+                'reserved_before' => $reservedBefore,
+                'reserved_after' => $reservedAfter,
+                'reference_type' => $dto->reference_type,
+                'reference_id' => $dto->reference_id,
+                'notes' => $dto->notes,
             ]);
 
             $locked->refresh();
 
             $event = new InventoryStockReserved(
-                inventoryItemId:  $locked->id,
-                warehouseId:      $dto->warehouse_id,
-                productId:        $dto->product_id,
-                companyId:        $dto->company_id,
+                inventoryItemId: $locked->id,
+                warehouseId: $dto->warehouse_id,
+                productId: $dto->product_id,
+                companyId: $dto->company_id,
                 quantityReserved: $dto->quantity,
-                reservedBefore:   $reservedBefore,
-                reservedAfter:    $reservedAfter,
-                onHandQty:        $onHandBefore,
-                referenceType:    $dto->reference_type,
-                referenceId:      $dto->reference_id,
+                reservedBefore: $reservedBefore,
+                reservedAfter: $reservedAfter,
+                onHandQty: $onHandBefore,
+                referenceType: $dto->reference_type,
+                referenceId: $dto->reference_id,
             );
 
             return $locked;

@@ -21,7 +21,8 @@ final class ResetDevAdminCommand extends Command
 
     protected $description = 'Reset the development administrator password (local/staging only)';
 
-    private const EMAIL    = 'admin@ecos.local';
+    private const EMAIL = 'admin@ecos.local';
+
     private const PASSWORD = 'Admin@123456';
 
     public function handle(): int

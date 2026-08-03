@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Application\Services;
 
+use InvalidArgumentException;
 use Modules\CustomerEngagement\Application\ChannelProviders\InstagramProvider;
 use Modules\CustomerEngagement\Application\ChannelProviders\MessengerProvider;
 use Modules\CustomerEngagement\Application\ChannelProviders\WhatsAppProvider;
@@ -22,11 +25,11 @@ class ChannelProviderService
 
     public function makeProvider(ChannelProvider $config): ChannelProviderContract
     {
-        return match($config->channel) {
-            'whatsapp'         => new WhatsAppProvider($config),
-            'messenger'        => new MessengerProvider($config),
+        return match ($config->channel) {
+            'whatsapp' => new WhatsAppProvider($config),
+            'messenger' => new MessengerProvider($config),
             'instagram_direct' => new InstagramProvider($config),
-            default            => throw new \InvalidArgumentException("Unknown channel: {$config->channel}"),
+            default => throw new InvalidArgumentException("Unknown channel: {$config->channel}"),
         };
     }
 
@@ -40,6 +43,7 @@ class ChannelProviderService
     public function activate(ChannelProvider $provider): ChannelProvider
     {
         $provider->update(['status' => ChannelProviderStatus::ACTIVE->value, 'last_error' => null]);
+
         return $provider->fresh();
     }
 
@@ -51,8 +55,8 @@ class ChannelProviderService
     public function paginate(array $filters, int $perPage = 20): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         return ChannelProvider::query()
-            ->when(!empty($filters['company_id']), fn ($q) => $q->where('company_id', $filters['company_id']))
-            ->when(!empty($filters['channel']),    fn ($q) => $q->where('channel', $filters['channel']))
+            ->when(! empty($filters['company_id']), fn ($q) => $q->where('company_id', $filters['company_id']))
+            ->when(! empty($filters['channel']), fn ($q) => $q->where('channel', $filters['channel']))
             ->latest()
             ->paginate($perPage);
     }

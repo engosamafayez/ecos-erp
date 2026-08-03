@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::table('purchase_material_lines', function (Blueprint $table): void {
             // Supplier selection (set by Procurement team, never by Warehouse)
             $table->uuid('supplier_id')->nullable()->after('notes')
-                  ->constrained('suppliers')->nullOnDelete();
+                ->constrained('suppliers')->nullOnDelete();
             $table->decimal('agreed_price', 15, 4)->nullable()->after('supplier_id');
             $table->decimal('agreed_qty', 15, 4)->nullable()->after('agreed_price');
             $table->unsignedInteger('lead_time_days')->nullable()->after('agreed_qty');

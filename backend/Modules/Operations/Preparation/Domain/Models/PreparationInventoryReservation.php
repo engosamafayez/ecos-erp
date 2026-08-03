@@ -11,24 +11,24 @@ use Modules\Operations\Preparation\Domain\Enums\ReservableType;
 use Modules\Operations\Preparation\Domain\Enums\ReservationStatus;
 
 /**
- * @property string               $id
- * @property string               $company_id
- * @property string               $preparation_wave_id
- * @property ReservableType       $reservable_type
- * @property string               $reservable_id
- * @property string               $reservable_name_snapshot
- * @property float                $quantity_reserved
- * @property ReservationStatus    $status
- * @property \Carbon\Carbon|null  $expires_at
- * @property \Carbon\Carbon|null  $released_at
- * @property string|null          $released_by
- * @property \Carbon\Carbon|null  $consumed_at
- * @property string|null          $consumed_by
- * @property string|null          $notes
- * @property string               $created_by
- * @property string               $updated_by
- * @property \Carbon\Carbon       $created_at
- * @property \Carbon\Carbon       $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $preparation_wave_id
+ * @property ReservableType $reservable_type
+ * @property string $reservable_id
+ * @property string $reservable_name_snapshot
+ * @property float $quantity_reserved
+ * @property ReservationStatus $status
+ * @property \Carbon\Carbon|null $expires_at
+ * @property \Carbon\Carbon|null $released_at
+ * @property string|null $released_by
+ * @property \Carbon\Carbon|null $consumed_at
+ * @property string|null $consumed_by
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class PreparationInventoryReservation extends Model
 {
@@ -63,12 +63,12 @@ class PreparationInventoryReservation extends Model
     protected function casts(): array
     {
         return [
-            'reservable_type'   => ReservableType::class,
-            'status'            => ReservationStatus::class,
+            'reservable_type' => ReservableType::class,
+            'status' => ReservationStatus::class,
             'quantity_reserved' => 'float',
-            'expires_at'        => 'datetime',
-            'released_at'       => 'datetime',
-            'consumed_at'       => 'datetime',
+            'expires_at' => 'datetime',
+            'released_at' => 'datetime',
+            'consumed_at' => 'datetime',
         ];
     }
 

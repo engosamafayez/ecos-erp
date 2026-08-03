@@ -73,7 +73,7 @@ export function LoadingWorkspacePage() {
 
   const [completeOpen, setCompleteOpen] = useState(false);
   const [phase2Tab, setPhase2Tab]       = useState<Phase2Tab>('products');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
 
   // Step 1: resolve manifest ID from trip
   const manifestSummaryQ = useQuery({

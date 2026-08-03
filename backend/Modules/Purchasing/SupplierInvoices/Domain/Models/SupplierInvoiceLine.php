@@ -37,15 +37,15 @@ class SupplierInvoiceLine extends Model
     ];
 
     protected $casts = [
-        'quantity'                  => 'decimal:4',
-        'unit_price'                => 'decimal:4',
-        'tax_rate'                  => 'decimal:4',
-        'tax_amount'                => 'decimal:4',
-        'discount_amount'           => 'decimal:4',
-        'line_total'                => 'decimal:4',
-        'allocated_freight'         => 'decimal:4',
-        'allocated_additional_costs'=> 'decimal:4',
-        'landed_unit_cost'          => 'decimal:4',
+        'quantity' => 'decimal:4',
+        'unit_price' => 'decimal:4',
+        'tax_rate' => 'decimal:4',
+        'tax_amount' => 'decimal:4',
+        'discount_amount' => 'decimal:4',
+        'line_total' => 'decimal:4',
+        'allocated_freight' => 'decimal:4',
+        'allocated_additional_costs' => 'decimal:4',
+        'landed_unit_cost' => 'decimal:4',
     ];
 
     public function supplierInvoice(): BelongsTo

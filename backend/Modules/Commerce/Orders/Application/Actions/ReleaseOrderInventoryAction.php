@@ -34,26 +34,26 @@ final class ReleaseOrderInventoryAction
         // Never reserved (pending/awaiting_stock) → just stamp release, nothing to un-reserve
         if ($order->inventory_reserved_at === null) {
             $order->update([
-                'inventory_released_at'      => now(),
-                'reservation_status'         => ReservationStatus::Released->value,
+                'inventory_released_at' => now(),
+                'reservation_status' => ReservationStatus::Released->value,
                 'reservation_failure_reason' => null,
             ]);
 
             OrderReservationAudit::record(
-                orderId:    $order->id,
+                orderId: $order->id,
                 fromStatus: $previousStatus,
-                toStatus:   ReservationStatus::Released->value,
-                reason:     'Order cancelled before reservation',
-                actorId:    Auth::id(),
-                actorType:  Auth::check() ? 'user' : 'system',
+                toStatus: ReservationStatus::Released->value,
+                reason: 'Order cancelled before reservation',
+                actorId: Auth::id(),
+                actorType: Auth::check() ? 'user' : 'system',
             );
 
             OrderEvent::log(
-                orderId:     $order->id,
-                type:        'reservation_released',
+                orderId: $order->id,
+                type: 'reservation_released',
                 description: "Inventory reservation released for order #{$order->order_number} (was not reserved).",
-                payload:     ['warehouse_id' => $order->assigned_warehouse_id],
-                module:      'orders',
+                payload: ['warehouse_id' => $order->assigned_warehouse_id],
+                module: 'orders',
             );
 
             return;
@@ -91,27 +91,27 @@ final class ReleaseOrderInventoryAction
             }
 
             $order->update([
-                'inventory_released_at'      => now(),
-                'reservation_status'         => ReservationStatus::Released->value,
+                'inventory_released_at' => now(),
+                'reservation_status' => ReservationStatus::Released->value,
                 'reservation_failure_reason' => null,
             ]);
 
             OrderReservationAudit::record(
-                orderId:     $order->id,
-                fromStatus:  $previousStatus,
-                toStatus:    ReservationStatus::Released->value,
+                orderId: $order->id,
+                fromStatus: $previousStatus,
+                toStatus: ReservationStatus::Released->value,
                 warehouseId: $order->assigned_warehouse_id,
-                meta:        ['line_count' => $order->lines->count()],
-                actorId:     Auth::id(),
-                actorType:   Auth::check() ? 'user' : 'system',
+                meta: ['line_count' => $order->lines->count()],
+                actorId: Auth::id(),
+                actorType: Auth::check() ? 'user' : 'system',
             );
 
             OrderEvent::log(
-                orderId:     $order->id,
-                type:        'reservation_released',
+                orderId: $order->id,
+                type: 'reservation_released',
                 description: "Inventory reservation released for order #{$order->order_number}.",
-                payload:     ['warehouse_id' => $order->assigned_warehouse_id, 'line_count' => $order->lines->count()],
-                module:      'orders',
+                payload: ['warehouse_id' => $order->assigned_warehouse_id, 'line_count' => $order->lines->count()],
+                module: 'orders',
             );
         });
     }

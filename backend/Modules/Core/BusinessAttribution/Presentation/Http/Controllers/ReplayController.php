@@ -19,9 +19,9 @@ use Modules\Core\BusinessAttribution\Presentation\Http\Resources\ReplayResultRes
 class ReplayController extends Controller
 {
     public function __construct(
-        private readonly ReplayEventsAction    $replayAction,
+        private readonly ReplayEventsAction $replayAction,
         private readonly EnhancedReplayService $enhancedReplay,
-        private readonly ReplayAuditService    $auditService,
+        private readonly ReplayAuditService $auditService,
     ) {}
 
     // ─── Existing endpoint — backwards-compatible ─────────────────────────────
@@ -30,12 +30,12 @@ class ReplayController extends Controller
     public function replay(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'type'           => ['required', 'in:entity,dna,correlation,campaign'],
-            'entity_type'    => ['required_if:type,entity', 'nullable', 'string'],
-            'entity_id'      => ['required_if:type,entity', 'nullable', 'uuid'],
-            'dna_id'         => ['required_if:type,dna', 'nullable', 'uuid'],
+            'type' => ['required', 'in:entity,dna,correlation,campaign'],
+            'entity_type' => ['required_if:type,entity', 'nullable', 'string'],
+            'entity_id' => ['required_if:type,entity', 'nullable', 'uuid'],
+            'dna_id' => ['required_if:type,dna', 'nullable', 'uuid'],
             'correlation_id' => ['required_if:type,correlation', 'nullable', 'uuid'],
-            'campaign_id'    => ['required_if:type,campaign', 'nullable', 'uuid'],
+            'campaign_id' => ['required_if:type,campaign', 'nullable', 'uuid'],
         ]);
 
         $result = $this->replayAction->execute($data['type'], $data);
@@ -55,7 +55,7 @@ class ReplayController extends Controller
     public function replayEntity(Request $request, string $entityType, string $entityId): JsonResponse
     {
         $from = $request->query('from') ? Carbon::parse((string) $request->query('from')) : null;
-        $to   = $request->query('to')   ? Carbon::parse((string) $request->query('to'))   : null;
+        $to = $request->query('to') ? Carbon::parse((string) $request->query('to')) : null;
 
         $context = ($from && $to)
             ? ReplayContext::timeline($entityType, $entityId, $from, $to)
@@ -73,16 +73,16 @@ class ReplayController extends Controller
     public function batch(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'entities'               => ['required', 'array', 'min:1', 'max:50'],
+            'entities' => ['required', 'array', 'min:1', 'max:50'],
             'entities.*.entity_type' => ['required', 'string'],
-            'entities.*.entity_id'   => ['required', 'string'],
+            'entities.*.entity_id' => ['required', 'string'],
         ]);
 
         $results = $this->enhancedReplay->batchReplay($validated['entities']);
 
         return response()->json([
-            'data'  => array_map(
-                fn($r) => (new ReplayResultResource($r))->toArray(request()),
+            'data' => array_map(
+                fn ($r) => (new ReplayResultResource($r))->toArray(request()),
                 $results,
             ),
             'total' => count($results),
@@ -96,7 +96,7 @@ class ReplayController extends Controller
     {
         $validated = $request->validate([
             'from' => ['required', 'date'],
-            'to'   => ['required', 'date', 'after:from'],
+            'to' => ['required', 'date', 'after:from'],
         ]);
 
         $result = $this->enhancedReplay->replayModule(
@@ -122,9 +122,9 @@ class ReplayController extends Controller
             'data' => ReplayAuditLogResource::collection($logs->items())->resolve(),
             'meta' => [
                 'current_page' => $logs->currentPage(),
-                'last_page'    => $logs->lastPage(),
-                'per_page'     => $logs->perPage(),
-                'total'        => $logs->total(),
+                'last_page' => $logs->lastPage(),
+                'per_page' => $logs->perPage(),
+                'total' => $logs->total(),
             ],
         ]);
     }

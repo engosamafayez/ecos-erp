@@ -22,18 +22,18 @@ final class BomSeeder extends Seeder
         }
 
         $bom = BillOfMaterial::create([
-            'bom_number'         => 'BOM-00001',
-            'product_id'         => $finishedGood->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-00001',
+            'product_id' => $finishedGood->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => true,
-            'notes'              => 'Initial bill of materials — seeded automatically.',
+            'is_active' => true,
+            'notes' => 'Initial bill of materials — seeded automatically.',
         ]);
 
         foreach ($rawMaterials as $index => $material) {
             $bom->lines()->create([
                 'raw_material_id' => $material->id,
-                'quantity'        => round(($index + 1) * 1.5, 4),
+                'quantity' => round(($index + 1) * 1.5, 4),
             ]);
         }
     }

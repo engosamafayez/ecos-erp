@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderCredentialRotated extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.credential_rotated'; }
+    public function eventName(): string
+    {
+        return 'provider.credential_rotated';
+    }
 }

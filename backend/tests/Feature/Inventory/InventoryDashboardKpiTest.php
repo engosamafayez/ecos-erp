@@ -27,12 +27,13 @@ class InventoryDashboardKpiTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
     }
 
@@ -42,7 +43,7 @@ class InventoryDashboardKpiTest extends TestCase
     {
         return Product::factory()->create([
             'regular_price' => 100.0,
-            'average_cost'  => $avgCost,
+            'average_cost' => $avgCost,
         ]);
     }
 
@@ -50,9 +51,9 @@ class InventoryDashboardKpiTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => 0,
         ]);
     }
@@ -64,12 +65,12 @@ class InventoryDashboardKpiTest extends TestCase
     private function addLayer(InventoryItem $item, float $qty, float $cost = 80.0): InventoryReceiptLayer
     {
         return InventoryReceiptLayer::query()->create([
-            'product_id'       => $item->product_id,
-            'warehouse_id'     => $this->warehouse->id,
-            'received_qty'     => $qty,
-            'remaining_qty'    => $qty,
+            'product_id' => $item->product_id,
+            'warehouse_id' => $this->warehouse->id,
+            'received_qty' => $qty,
+            'remaining_qty' => $qty,
             'landed_unit_cost' => $cost,
-            'receipt_date'     => now()->toDateString(),
+            'receipt_date' => now()->toDateString(),
         ]);
     }
 
@@ -80,9 +81,9 @@ class InventoryDashboardKpiTest extends TestCase
     private function createApprovedSession(array $productQuantities = []): InventoryCountSession
     {
         $session = app(CreateCountSessionAction::class)->execute([
-            'company_id'   => $this->company->id,
+            'company_id' => $this->company->id,
             'warehouse_id' => $this->warehouse->id,
-            'notes'        => 'test',
+            'notes' => 'test',
         ]);
 
         app(StartCountSessionAction::class)->execute($session);
@@ -169,16 +170,16 @@ class InventoryDashboardKpiTest extends TestCase
 
         // Draft session
         app(CreateCountSessionAction::class)->execute([
-            'company_id'   => $this->company->id,
+            'company_id' => $this->company->id,
             'warehouse_id' => $this->warehouse->id,
-            'notes'        => 'draft',
+            'notes' => 'draft',
         ]);
 
         // In-progress session
         $inProgress = app(CreateCountSessionAction::class)->execute([
-            'company_id'   => $this->company->id,
+            'company_id' => $this->company->id,
             'warehouse_id' => $this->warehouse->id,
-            'notes'        => 'in-progress',
+            'notes' => 'in-progress',
         ]);
         app(StartCountSessionAction::class)->execute($inProgress);
 
@@ -254,11 +255,11 @@ class InventoryDashboardKpiTest extends TestCase
     {
         // 4 products: 2 exact, 2 short → accuracy = 50% → critical
         $products = [];
-        $items    = [];
+        $items = [];
         for ($i = 0; $i < 4; $i++) {
-            $p           = $this->makeProduct();
-            $items[]     = $this->seedItem($p, 10.0);
-            $products[]  = $p;
+            $p = $this->makeProduct();
+            $items[] = $this->seedItem($p, 10.0);
+            $products[] = $p;
         }
 
         // products[2] and [3] have negative variance (-5) → need layers

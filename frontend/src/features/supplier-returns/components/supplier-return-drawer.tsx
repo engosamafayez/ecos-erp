@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useFormatter } from '@/hooks/use-formatter';
 import {
   CheckCircle2,
   Clock,
@@ -45,6 +47,8 @@ type Props = {
 };
 
 export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: Props) {
+  const { t } = useTranslation('supplier-returns');
+  const fmt = useFormatter();
   const [activeTab, setActiveTab] = useState<'overview' | 'lines' | 'timeline'>('overview');
 
   const { data: returnRecord, isLoading } = useSupplierReturn(id);
@@ -52,15 +56,28 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
   const approveMutation = useApproveSupplierReturn();
   const cancelMutation  = useCancelSupplierReturn();
 
+  const drawerTabs = [
+    { key: 'overview' as const, label: t($ => $.returnDrawer.tabs.overview), icon: FileText },
+    { key: 'lines' as const,    label: t($ => $.returnDrawer.tabs.items),    icon: Package },
+    { key: 'timeline' as const, label: t($ => $.returnDrawer.tabs.timeline), icon: Clock },
+  ];
+
+  const timelineEvents = [
+    { label: t($ => $.returnDrawer.timeline.events.created),   at: returnRecord?.created_at,  color: 'bg-gray-400' },
+    { label: t($ => $.returnDrawer.timeline.events.submitted), at: returnRecord?.submitted_at, color: 'bg-yellow-400' },
+    { label: t($ => $.returnDrawer.timeline.events.approved),  at: returnRecord?.approved_at,  color: 'bg-blue-400' },
+    { label: t($ => $.returnDrawer.timeline.events.completed), at: returnRecord?.completed_at, color: 'bg-green-400' },
+  ];
+
   if (mode === 'create') {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>New Supplier Return</SheetTitle>
+            <SheetTitle>{t($ => $.returnDrawer.createTitle)}</SheetTitle>
           </SheetHeader>
           <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center text-sm text-gray-500">
-            Return creation form — use the backend API POST /supplier-returns
+            {t($ => $.returnDrawer.createHint)}
           </div>
         </SheetContent>
       </Sheet>
@@ -72,7 +89,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         {isLoading || !returnRecord ? (
           <div className="flex items-center justify-center h-48">
-            <p className="text-sm text-gray-400">Loading…</p>
+            <p className="text-sm text-gray-400">{t($ => $.returnDrawer.loading)}</p>
           </div>
         ) : (
           <>
@@ -105,7 +122,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
                     disabled={submitMutation.isPending}
                   >
                     <Send className="w-3.5 h-3.5" />
-                    Submit
+                    {t($ => $.returnDrawer.actions.submit)}
                   </Button>
                 )}
                 {returnRecord.status === 'waiting_approval' && (
@@ -116,7 +133,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
                     disabled={approveMutation.isPending}
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Approve
+                    {t($ => $.returnDrawer.actions.approve)}
                   </Button>
                 )}
                 {['draft', 'waiting_approval'].includes(returnRecord.status) && (
@@ -128,7 +145,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
                     disabled={cancelMutation.isPending}
                   >
                     <XCircle className="w-3.5 h-3.5" />
-                    Cancel
+                    {t($ => $.returnDrawer.actions.cancel)}
                   </Button>
                 )}
               </div>
@@ -136,11 +153,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
 
             {/* Tabs */}
             <div className="flex border-b border-gray-200 mb-4">
-              {([
-                { key: 'overview', label: 'Overview',   icon: FileText },
-                { key: 'lines',    label: 'Items',      icon: Package },
-                { key: 'timeline', label: 'Timeline',   icon: Clock },
-              ] as const).map(({ key, label, icon: Icon }) => (
+              {drawerTabs.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setActiveTab(key)}
@@ -161,31 +174,31 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-xs text-gray-500">Supplier</p>
+                    <p className="text-xs text-gray-500">{t($ => $.returnDrawer.overview.fields.supplier)}</p>
                     <p className="font-medium mt-0.5">{returnRecord.supplier?.name ?? '—'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Warehouse</p>
+                    <p className="text-xs text-gray-500">{t($ => $.returnDrawer.overview.fields.warehouse)}</p>
                     <p className="font-medium mt-0.5">{returnRecord.warehouse?.name ?? '—'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Return Date</p>
+                    <p className="text-xs text-gray-500">{t($ => $.returnDrawer.overview.fields.returnDate)}</p>
                     <p className="font-medium mt-0.5">{returnRecord.return_date}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Reason</p>
+                    <p className="text-xs text-gray-500">{t($ => $.returnDrawer.overview.fields.reason)}</p>
                     <p className="font-medium mt-0.5 capitalize">
                       {returnRecord.reason?.replace(/_/g, ' ') ?? '—'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Credit Method</p>
+                    <p className="text-xs text-gray-500">{t($ => $.returnDrawer.overview.fields.creditMethod)}</p>
                     <p className="font-medium mt-0.5 capitalize">
                       {returnRecord.credit_method?.replace(/_/g, ' ') ?? '—'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Expected Credit</p>
+                    <p className="text-xs text-gray-500">{t($ => $.returnDrawer.overview.fields.expectedCredit)}</p>
                     <p className="font-medium mt-0.5">{returnRecord.expected_credit_date ?? '—'}</p>
                   </div>
                 </div>
@@ -195,10 +208,10 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-700">
                     <DollarSign className="w-4 h-4" />
-                    <span className="text-sm font-medium">Total Return Value</span>
+                    <span className="text-sm font-medium">{t($ => $.returnDrawer.overview.totalReturnValue)}</span>
                   </div>
                   <span className="text-base font-semibold text-gray-900">
-                    SAR {returnRecord.total_return_value.toLocaleString()}
+                    {fmt.money(returnRecord.total_return_value)}
                   </span>
                 </div>
 
@@ -206,7 +219,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
                   <>
                     <Separator />
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">Notes</p>
+                      <p className="text-xs text-gray-500 mb-1">{t($ => $.returnDrawer.overview.notes)}</p>
                       <p className="text-sm text-gray-700">{returnRecord.notes}</p>
                     </div>
                   </>
@@ -218,26 +231,26 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
             {activeTab === 'lines' && (
               <div className="space-y-2">
                 {returnRecord.lines.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-8">No items on this return</p>
+                  <p className="text-sm text-gray-400 text-center py-8">{t($ => $.returnDrawer.items.empty)}</p>
                 ) : (
                   returnRecord.lines.map(line => (
                     <div key={line.id} className="p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="text-sm font-medium">{line.product?.name ?? line.product_id}</p>
+                          <p className="text-sm font-medium">{line.product?.name ?? '—'}</p>
                           <p className="text-xs text-gray-500 mt-0.5">SKU: {line.product?.sku ?? '—'}</p>
                           {line.reason && (
                             <p className="text-xs text-gray-500 mt-0.5 capitalize">
-                              Reason: {line.reason.replace(/_/g, ' ')}
+                              {t($ => $.returnDrawer.reasonLabel)}: {line.reason.replace(/_/g, ' ')}
                             </p>
                           )}
                         </div>
                         <div className="text-end">
                           <p className="text-sm font-semibold">
-                            SAR {line.total_cost.toLocaleString()}
+                            {fmt.money(line.total_cost)}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5">
-                            {line.return_quantity} {line.uom_symbol_snapshot ?? 'units'} × SAR {line.unit_cost}
+                            {line.return_quantity} {line.uom_symbol_snapshot ?? 'units'} × {fmt.money(line.unit_cost)}
                           </p>
                         </div>
                       </div>
@@ -250,12 +263,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
             {/* Timeline Tab */}
             {activeTab === 'timeline' && (
               <div className="space-y-3">
-                {[
-                  { label: 'Created',   at: returnRecord.created_at,  color: 'bg-gray-400' },
-                  { label: 'Submitted', at: returnRecord.submitted_at, color: 'bg-yellow-400' },
-                  { label: 'Approved',  at: returnRecord.approved_at,  color: 'bg-blue-400' },
-                  { label: 'Completed', at: returnRecord.completed_at, color: 'bg-green-400' },
-                ].filter(e => e.at !== null).map(event => (
+                {timelineEvents.filter(e => e.at != null).map(event => (
                   <div key={event.label} className="flex items-center gap-3">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${event.color}`} />
                     <div>

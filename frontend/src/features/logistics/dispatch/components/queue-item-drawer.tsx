@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { PageDrawer } from '@/components/page/drawer/page-drawer';
 import { useToast } from '@/components/ds/use-toast';
@@ -20,6 +21,14 @@ import type { QueueItem, QueuePriority } from '../types/dispatch-ops';
 import { PriorityBadge, QueueStatusBadge } from './dispatch-status-badges';
 
 const PRIORITIES: QueuePriority[] = ['critical', 'high', 'normal', 'low'];
+
+/** `logistics` namespace keys — resolved at render, never stored translated. */
+const PRIORITY_LABEL_KEYS: Record<QueuePriority, string> = {
+  critical: 'common.critical',
+  high: 'common.high',
+  normal: 'dispatch.priority.normal',
+  low: 'common.low',
+};
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -45,6 +54,7 @@ export function QueueItemDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const [priority, setPriority] = useState<QueuePriority>('normal');
   const [reason, setReason] = useState('');
@@ -60,38 +70,42 @@ export function QueueItemDrawer({
     <PageDrawer
       open={open}
       onOpenChange={onOpenChange}
-      title={item.trip_number ?? 'Queue item'}
-      description="Queue position and hold"
+      title={item.trip_number ?? t($ => $.dispatch.queue.itemFallbackTitle)}
+      description={t($ => $.dispatch.queue.drawerDescription)}
       size="lg"
     >
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Status">
+          <Field label={t($ => $.common.status)}>
             <QueueStatusBadge status={item.status} />
           </Field>
-          <Field label="Priority">
+          <Field label={t($ => $.common.priority)}>
             <PriorityBadge priority={item.priority} />
           </Field>
-          <Field label="Rank">{item.rank}</Field>
-          <Field label="Waiting">{item.waiting_minutes} min</Field>
-          <Field label="Attempts">{item.attempt_count}</Field>
-          <Field label="Claimed by">{item.claimed_by ?? '—'}</Field>
-          <Field label="Trip capacity">{item.trip_capacity ?? '—'}</Field>
-          <Field label="Queued at">
+          <Field label={t($ => $.dispatch.queue.rank)}>{item.rank}</Field>
+          <Field label={t($ => $.dispatch.queue.colWaiting)}>
+            {t($ => $.dispatch.units.minutes, { value: item.waiting_minutes })}
+          </Field>
+          <Field label={t($ => $.dispatch.queue.colAttempts)}>{item.attempt_count}</Field>
+          <Field label={t($ => $.dispatch.queue.colClaimedBy)}>{item.claimed_by ?? '—'}</Field>
+          <Field label={t($ => $.dispatch.queue.tripCapacity)}>{item.trip_capacity ?? '—'}</Field>
+          <Field label={t($ => $.dispatch.queue.queuedAt)}>
             {item.queued_at ? new Date(item.queued_at).toLocaleString() : '—'}
           </Field>
         </div>
 
         {item.priority_reason && (
-          <Field label="Why this priority">{item.priority_reason}</Field>
+          <Field label={t($ => $.dispatch.queue.whyPriority)}>{item.priority_reason}</Field>
         )}
 
         {item.is_stuck && (
           <Alert variant="destructive">
             <AlertDescription className="text-xs">
-              This item has failed {item.attempt_count} times.
-              {item.last_failure_reason ? ` Last reason: ${item.last_failure_reason}.` : ''} It
-              needs a decision, not another attempt.
+              {t($ => $.dispatch.queue.stuckFailed, { count: item.attempt_count })}
+              {item.last_failure_reason
+                ? ` ${t($ => $.dispatch.queue.stuckLastReason, { reason: item.last_failure_reason })}`
+                : ''}{' '}
+              {t($ => $.dispatch.queue.stuckAdvice)}
             </AlertDescription>
           </Alert>
         )}
@@ -100,13 +114,13 @@ export function QueueItemDrawer({
 
         {!canReorder ? (
           <p className="text-xs text-muted-foreground">
-            This item is {item.status_label.toLowerCase()} — its position is no longer editable.
+            {t($ => $.dispatch.queue.notEditable, { status: item.status_label.toLowerCase() })}
           </p>
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Priority</Label>
+                <Label className="text-xs">{t($ => $.common.priority)}</Label>
                 <Select
                   value={priority}
                   onValueChange={(v) => setPriority(v as QueuePriority)}
@@ -116,19 +130,19 @@ export function QueueItemDrawer({
                   </SelectTrigger>
                   <SelectContent>
                     {PRIORITIES.map((p) => (
-                      <SelectItem key={p} value={p} className="capitalize">
-                        {p}
+                      <SelectItem key={p} value={p}>
+                        {t(PRIORITY_LABEL_KEYS[p])}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Reason</Label>
+                <Label className="text-xs">{t($ => $.common.reason)}</Label>
                 <Input
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="Why this changes"
+                  placeholder={t($ => $.dispatch.queue.changeReasonPlaceholder)}
                   className="h-9"
                 />
               </div>
@@ -144,20 +158,20 @@ export function QueueItemDrawer({
                     { itemId: item.id, priority, reason: reason.trim() },
                     {
                       onSuccess: () => {
-                        toast({ title: 'Priority updated.' });
+                        toast({ title: t($ => $.dispatch.toast.priorityUpdated) });
                         setReason('');
                         onOpenChange(false);
                       },
                       onError: () =>
                         toast({
-                          title: 'The priority could not be changed.',
+                          title: t($ => $.dispatch.toast.priorityFailed),
                           variant: 'destructive',
                         }),
                     },
                   )
                 }
               >
-                Set priority
+                {t($ => $.dispatch.queue.setPriority)}
               </Button>
 
               <Button
@@ -170,16 +184,16 @@ export function QueueItemDrawer({
                     { itemId: item.id, reason: reason.trim() || undefined },
                     {
                       onSuccess: () => {
-                        toast({ title: 'Item deferred.' });
+                        toast({ title: t($ => $.dispatch.toast.itemDeferred) });
                         onOpenChange(false);
                       },
                       onError: () =>
-                        toast({ title: 'The item could not be deferred.', variant: 'destructive' }),
+                        toast({ title: t($ => $.dispatch.toast.deferFailed), variant: 'destructive' }),
                     },
                   )
                 }
               >
-                Defer
+                {t($ => $.dispatch.queue.defer)}
               </Button>
             </div>
           </div>

@@ -28,13 +28,13 @@ return new class extends Migration
         $conflicts = DB::table('categories as c')
             ->join('products as p1', function ($join): void {
                 $join->on('c.id', '=', 'p1.category_id')
-                     ->where('p1.product_type', '=', 'finished_good')
-                     ->whereNull('p1.deleted_at');
+                    ->where('p1.product_type', '=', 'finished_good')
+                    ->whereNull('p1.deleted_at');
             })
             ->join('products as p2', function ($join): void {
                 $join->on('c.id', '=', 'p2.category_id')
-                     ->whereIn('p2.product_type', ['raw_material', 'packaging_material'])
-                     ->whereNull('p2.deleted_at');
+                    ->whereIn('p2.product_type', ['raw_material', 'packaging_material'])
+                    ->whereNull('p2.deleted_at');
             })
             ->whereNull('c.deleted_at')
             ->select('c.id', 'c.code', 'c.name')
@@ -43,11 +43,11 @@ return new class extends Migration
 
         if ($conflicts->isNotEmpty()) {
             Log::warning('[TASK-CATEGORY-001] Category scope migration: conflicted categories detected.', [
-                'count'      => $conflicts->count(),
+                'count' => $conflicts->count(),
                 'categories' => $conflicts->map(fn ($r) => "{$r->code} — {$r->name}")->all(),
-                'action'     => 'These categories are assigned to both products and materials. '
-                    . 'They have been assigned scope=product (from their existing `type` value). '
-                    . 'Please review and re-assign category_scope manually if needed.',
+                'action' => 'These categories are assigned to both products and materials. '
+                    .'They have been assigned scope=product (from their existing `type` value). '
+                    .'Please review and re-assign category_scope manually if needed.',
             ]);
         }
 

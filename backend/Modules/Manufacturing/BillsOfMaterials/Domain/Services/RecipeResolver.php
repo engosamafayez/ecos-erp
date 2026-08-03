@@ -39,8 +39,8 @@ final class RecipeResolver implements RecipeResolverInterface
     /**
      * Resolve the active Recipe for the given product into an immutable snapshot.
      *
-     * @throws RecipeResolverException  On any invalid state (no recipe, inactive
-     *                                  components, missing units, etc.).
+     * @throws RecipeResolverException On any invalid state (no recipe, inactive
+     *                                 components, missing units, etc.).
      */
     public function resolve(string $productId): RecipeSnapshot
     {
@@ -87,28 +87,28 @@ final class RecipeResolver implements RecipeResolverInterface
             }
 
             $components[] = new RecipeComponent(
-                component_id:         $component->id,
-                sku:                  $component->sku,
-                name:                 $component->name,
-                unit_id:              $component->unit->id,
-                unit_name:            $component->unit->name,
-                unit_symbol:          $component->unit->symbol,
-                quantity:             (float) $line->quantity,
+                component_id: $component->id,
+                sku: $component->sku,
+                name: $component->name,
+                unit_id: $component->unit->id,
+                unit_name: $component->unit->name,
+                unit_symbol: $component->unit->symbol,
+                quantity: (float) $line->quantity,
                 allow_negative_stock: (bool) $component->allow_negative_stock,
             );
         }
 
         // ── Step 5: Return immutable snapshot ─────────────────────────────────
         return new RecipeSnapshot(
-            recipe_id:          $recipe->id,
-            bom_number:         $recipe->bom_number,
-            version:            $recipe->version,
+            recipe_id: $recipe->id,
+            bom_number: $recipe->bom_number,
+            version: $recipe->version,
             bom_version_number: $recipe->bom_version_number,
-            product_id:         $product->id,
-            product_sku:        $product->sku,
-            product_name:       $product->name,
-            components:         $components,
-            resolved_at:        now()->toIso8601String(),
+            product_id: $product->id,
+            product_sku: $product->sku,
+            product_name: $product->name,
+            components: $components,
+            resolved_at: now()->toIso8601String(),
         );
     }
 }

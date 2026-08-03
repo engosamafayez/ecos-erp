@@ -16,6 +16,7 @@ use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoice;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoiceLine;
 use Modules\Purchasing\SupplierInvoices\Presentation\Http\Requests\StoreSupplierInvoiceRequest;
 use Modules\Purchasing\SupplierInvoices\Presentation\Http\Resources\SupplierInvoiceResource;
+use Throwable;
 
 final class SupplierInvoiceController extends Controller
 {
@@ -61,16 +62,16 @@ final class SupplierInvoiceController extends Controller
             $query->whereDate('invoice_date', '<=', $request->query('date_to'));
         }
 
-        $perPage   = (int) $request->query('per_page', 15);
+        $perPage = (int) $request->query('per_page', 15);
         $paginator = $query->paginate($perPage);
 
         return $this->success([
             'items' => SupplierInvoiceResource::collection($paginator->items()),
-            'meta'  => [
+            'meta' => [
                 'current_page' => $paginator->currentPage(),
-                'per_page'     => $paginator->perPage(),
-                'total'        => $paginator->total(),
-                'last_page'    => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
             ],
         ]);
     }
@@ -88,15 +89,15 @@ final class SupplierInvoiceController extends Controller
 
         $invoice = SupplierInvoice::query()->create(
             array_merge($request->safe()->except('lines'), [
-                'invoice_number'   => (new SupplierInvoice())->generateInvoiceNumber(),
-                'status'           => SupplierInvoiceStatus::Draft,
-                'created_by'       => auth()->id(),
-                'currency'         => $currency,
-                'exchange_rate'    => $request->input('exchange_rate', 1),
-                'freight_amount'   => $request->input('freight_amount', 0),
+                'invoice_number' => (new SupplierInvoice)->generateInvoiceNumber(),
+                'status' => SupplierInvoiceStatus::Draft,
+                'created_by' => auth()->id(),
+                'currency' => $currency,
+                'exchange_rate' => $request->input('exchange_rate', 1),
+                'freight_amount' => $request->input('freight_amount', 0),
                 'additional_costs' => $request->input('additional_costs', 0),
-                'discount_amount'  => $request->input('discount_amount', 0),
-            ])
+                'discount_amount' => $request->input('discount_amount', 0),
+            ]),
         );
 
         $this->syncLines($invoice, $request->input('lines'));
@@ -150,13 +151,13 @@ final class SupplierInvoiceController extends Controller
     {
         try {
             $this->postService->execute($supplierInvoice);
-        } catch (\Throwable $e) {
-            return $this->error('Posting failed: ' . $e->getMessage(), 422);
+        } catch (Throwable $e) {
+            return $this->error('Posting failed: '.$e->getMessage(), 422);
         }
 
         return $this->success(
             new SupplierInvoiceResource($supplierInvoice->fresh(['supplier', 'warehouse', 'lines.product'])),
-            'Invoice posted successfully'
+            'Invoice posted successfully',
         );
     }
 
@@ -192,12 +193,12 @@ final class SupplierInvoiceController extends Controller
         };
 
         $stats = [
-            'total'         => SupplierInvoice::query()->tap($scope)->count(),
-            'draft'         => SupplierInvoice::query()->tap($scope)->where('status', 'draft')->count(),
-            'validated'     => SupplierInvoice::query()->tap($scope)->where('status', 'validated')->count(),
-            'posted'        => SupplierInvoice::query()->tap($scope)->where('status', 'posted')->count(),
-            'failed'        => SupplierInvoice::query()->tap($scope)->where('status', 'failed')->count(),
-            'total_value'   => (float) SupplierInvoice::query()->tap($scope)->where('status', 'posted')->sum('grand_total'),
+            'total' => SupplierInvoice::query()->tap($scope)->count(),
+            'draft' => SupplierInvoice::query()->tap($scope)->where('status', 'draft')->count(),
+            'validated' => SupplierInvoice::query()->tap($scope)->where('status', 'validated')->count(),
+            'posted' => SupplierInvoice::query()->tap($scope)->where('status', 'posted')->count(),
+            'failed' => SupplierInvoice::query()->tap($scope)->where('status', 'failed')->count(),
+            'total_value' => (float) SupplierInvoice::query()->tap($scope)->where('status', 'posted')->sum('grand_total'),
             'pending_value' => (float) SupplierInvoice::query()->tap($scope)->whereIn('status', ['draft', 'validated'])->sum('grand_total'),
         ];
 
@@ -210,20 +211,20 @@ final class SupplierInvoiceController extends Controller
         $invoice->lines()->delete();
 
         foreach ($lines as $lineData) {
-            $qty      = (float) $lineData['quantity'];
-            $price    = (float) $lineData['unit_price'];
-            $taxRate  = (float) ($lineData['tax_rate'] ?? 0);
+            $qty = (float) $lineData['quantity'];
+            $price = (float) $lineData['unit_price'];
+            $taxRate = (float) ($lineData['tax_rate'] ?? 0);
             $discount = (float) ($lineData['discount_amount'] ?? 0);
             $subtotal = round($qty * $price, 4);
-            $taxAmt   = round($subtotal * $taxRate / 100, 4);
-            $total    = round($subtotal + $taxAmt - $discount, 4);
+            $taxAmt = round($subtotal * $taxRate / 100, 4);
+            $total = round($subtotal + $taxAmt - $discount, 4);
 
             SupplierInvoiceLine::query()->create(array_merge($lineData, [
                 'supplier_invoice_id' => $invoice->id,
-                'tax_rate'            => $taxRate,
-                'tax_amount'          => $taxAmt,
-                'discount_amount'     => $discount,
-                'line_total'          => $total,
+                'tax_rate' => $taxRate,
+                'tax_amount' => $taxAmt,
+                'discount_amount' => $discount,
+                'line_total' => $total,
             ]));
         }
     }

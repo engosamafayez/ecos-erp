@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Core\BusinessAttribution\Application\Actions;
 
-use Modules\Core\BusinessAttribution\Application\Services\BusinessEventBusService;
 use Modules\Core\BusinessAttribution\Application\Services\BusinessDnaService;
+use Modules\Core\BusinessAttribution\Application\Services\BusinessEventBusService;
 use Modules\Core\BusinessAttribution\Domain\Models\BusinessEvent;
 
 /**
@@ -20,15 +20,15 @@ final class PublishBusinessEventAction
     ) {}
 
     /**
-     * @param  array<string, mixed> $eventData
+     * @param  array<string, mixed>  $eventData
      */
     public function execute(array $eventData): BusinessEvent
     {
         // Auto-resolve DNA if entity reference is provided but no explicit DNA ID
         if (
             empty($eventData['business_dna_id'])
-            && !empty($eventData['entity_type'])
-            && !empty($eventData['entity_id'])
+            && ! empty($eventData['entity_type'])
+            && ! empty($eventData['entity_id'])
         ) {
             $dna = $this->dnaService->getForEntity($eventData['entity_type'], $eventData['entity_id']);
             if ($dna !== null) {

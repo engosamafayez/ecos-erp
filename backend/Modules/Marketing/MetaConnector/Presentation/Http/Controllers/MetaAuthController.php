@@ -15,7 +15,7 @@ use Modules\Marketing\Synchronization\Domain\Enums\SyncType;
 final class MetaAuthController extends Controller
 {
     public function __construct(
-        private readonly MetaOAuthService          $oauthService,
+        private readonly MetaOAuthService $oauthService,
         private readonly ProviderCredentialService $providerConfig,
     ) {}
 
@@ -33,7 +33,7 @@ final class MetaAuthController extends Controller
 
         if (! $this->providerConfig->isConfigured($companyId, 'meta')) {
             return response()->json([
-                'error'   => 'not_configured',
+                'error' => 'not_configured',
                 'message' => 'Meta is not configured yet. Complete the Meta Configuration Wizard before connecting.',
             ], 422);
         }
@@ -54,13 +54,13 @@ final class MetaAuthController extends Controller
     public function callback(Request $request): JsonResponse
     {
         $request->validate([
-            'code'  => ['required', 'string'],
+            'code' => ['required', 'string'],
             'state' => ['required', 'string'],
         ]);
 
         $connection = $this->oauthService->handleCallback(
-            code:    $request->string('code')->toString(),
-            state:   $request->string('state')->toString(),
+            code: $request->string('code')->toString(),
+            state: $request->string('state')->toString(),
             actorId: (string) $request->user()->id,
         );
 
@@ -71,13 +71,13 @@ final class MetaAuthController extends Controller
         MetaIncrementalSyncJob::dispatch($connection->id, (string) $connection->company_id, SyncType::Full);
 
         return response()->json([
-            'message'    => 'Meta connection established. Asset discovery has started in the background.',
+            'message' => 'Meta connection established. Asset discovery has started in the background.',
             'connection' => [
-                'id'             => $connection->id,
-                'label'          => $connection->label,
-                'status'         => $connection->status,
+                'id' => $connection->id,
+                'label' => $connection->label,
+                'status' => $connection->status,
                 'connector_type' => $connection->connector_type,
-                'connected_at'   => $connection->connected_at?->toISOString(),
+                'connected_at' => $connection->connected_at?->toISOString(),
             ],
         ], 201);
     }

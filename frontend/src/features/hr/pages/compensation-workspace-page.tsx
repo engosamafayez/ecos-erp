@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Calculator, Check, Plus, ShieldCheck, X } from 'lucide-react';
 
 import { ConfirmDialog, PageHeader, StatusBadge } from '@/components/crud';
@@ -29,8 +30,6 @@ const STATUS_TONE: Record<ApprovalStatus, StatusVariant> = {
   cancelled: 'archived',
 };
 
-const money = (value: number, currency = 'EGP') =>
-  `${currency} ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 type Tab = 'periods' | 'bonuses' | 'deductions' | 'advances';
 
@@ -41,6 +40,7 @@ type Tab = 'periods' | 'bonuses' | 'deductions' | 'advances';
  * totals for Finance, which posts the entries and pays the salaries.
  */
 export function CompensationWorkspacePage() {
+  const { money } = useFormatter();
   const [tab, setTab] = useState<Tab>('periods');
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
   const [approving, setApproving] = useState<{ id: string; reference: string; net: number } | null>(null);

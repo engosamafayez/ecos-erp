@@ -1,6 +1,7 @@
 import { useFormContext, useWatch, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Lock, Unlock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,8 +33,11 @@ function ReadOnlyField({ label, value, note }: { label: string; value: React.Rea
 }
 
 function PriceHealthBadge({ marginPct }: { marginPct: number | null }) {
+  const { t } = useTranslation('products');
+  const tAny = t as (key: string) => string;
   const health = getPriceHealth(marginPct);
   if (!health) return <span className="text-muted-foreground text-xs">—</span>;
+  const labelKey = `detailDrawer.priceHealth${health.label.charAt(0).toUpperCase()}${health.label.slice(1)}`;
   return (
     <span
       className={cn(
@@ -41,7 +45,7 @@ function PriceHealthBadge({ marginPct }: { marginPct: number | null }) {
         health.cls,
       )}
     >
-      {health.emoji} {health.label}
+      {health.emoji} {tAny(labelKey)}
     </span>
   );
 }
@@ -51,6 +55,7 @@ type Props = {
 };
 
 export function ProductPricingSection({ existingProduct }: Props) {
+  const { t } = useTranslation('products');
   const navigate = useNavigate();
   const { control, setValue } = useFormContext<ProductFormValues>();
 
@@ -90,7 +95,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
     <div className="rounded-lg border bg-muted/30 p-4 flex flex-col gap-4">
       {/* Header with Use Brand Defaults toggle */}
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pricing</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t($ => $.pricingSection.title)}</p>
         <Controller
           control={control}
           name="use_brand_pricing"
@@ -124,7 +129,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
                 />
               </span>
               <span className="text-xs text-muted-foreground">
-                {field.value ? 'Brand Defaults' : 'Custom'}
+                {field.value ? t($ => $.pricingSection.brandDefaults) : t($ => $.pricingSection.custom)}
               </span>
             </label>
           )}
@@ -135,7 +140,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
       {locked && (
         <div className="flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
           <Lock className="size-3" aria-hidden />
-          Pricing fields are controlled by the Brand policy. Uncheck "Brand Defaults" to override.
+          {t($ => $.pricingSection.brandDefaultsLocked)}
         </div>
       )}
 
@@ -143,16 +148,16 @@ export function ProductPricingSection({ existingProduct }: Props) {
       <div className="rounded-lg border bg-primary/5 border-primary/20 p-3">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Current Product Cost
+            {t($ => $.pricingSection.currentProductCost)}
           </p>
           {hasRecipe ? (
             <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 border-emerald-200 bg-emerald-50 text-[10px] font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
               <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
-              🟢 Live from Recipe
+              {t($ => $.pricingSection.liveFromRecipe)}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 border-slate-200 bg-slate-50 text-[10px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/30 dark:text-slate-400">
-              ✏ Manual
+              {t($ => $.pricingSection.manual)}
             </span>
           )}
         </div>
@@ -190,7 +195,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
               className={cn('text-xs', locked ? 'text-muted-foreground/60' : 'text-muted-foreground')}
               htmlFor="form-markup-pct"
             >
-              Markup %
+              {t($ => $.pricingSection.markupPct)}
             </label>
             <Controller
               control={control}
@@ -214,7 +219,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
             />
           </div>
 
-          <ReadOnlyField label="Suggested Regular" value={fmt(suggestedPrice)} />
+          <ReadOnlyField label={t($ => $.pricingSection.suggestedRegular)} value={fmt(suggestedPrice)} />
 
           {suggestedPrice != null && !locked && (
             <Button
@@ -231,7 +236,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
                 }
               }}
             >
-              Apply →
+              {t($ => $.pricingSection.applyBtn)}
             </Button>
           )}
         </div>
@@ -245,7 +250,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
             className={cn('text-xs', locked ? 'text-muted-foreground/60' : 'text-muted-foreground')}
             htmlFor="form-regular-price"
           >
-            Regular Price
+            {t($ => $.pricingSection.regularPrice)}
           </label>
           <Controller
             control={control}
@@ -280,7 +285,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
             className={cn('text-xs', locked ? 'text-muted-foreground/60' : 'text-muted-foreground')}
             htmlFor="form-discount-pct"
           >
-            Discount %
+            {t($ => $.pricingSection.discountPct)}
           </label>
           <Controller
             control={control}
@@ -320,7 +325,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
               className={cn('text-xs', locked ? 'text-muted-foreground/60' : 'text-muted-foreground')}
               htmlFor="form-sale-price"
             >
-              Sale Price
+              {t($ => $.pricingSection.salePrice)}
             </label>
             {suggestedSalePrice != null && !locked && (
               <span className="text-[10px] text-muted-foreground">
@@ -354,7 +359,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
       {/* 4. Gross Profit % + Final Margin % */}
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-md border bg-card p-2.5">
-          <p className="text-[10px] text-muted-foreground mb-0.5">Gross Profit %</p>
+          <p className="text-[10px] text-muted-foreground mb-0.5">{t($ => $.pricingSection.grossProfitPct)}</p>
           <p
             className={cn(
               'text-base font-semibold tabular-nums',
@@ -363,11 +368,11 @@ export function ProductPricingSection({ existingProduct }: Props) {
           >
             {grossProfitPct != null ? `${grossProfitPct.toFixed(1)}%` : '—'}
           </p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">(Regular − Cost) / Regular</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{t($ => $.pricingSection.regularFormula)}</p>
         </div>
 
         <div className="rounded-md border bg-card p-2.5">
-          <p className="text-[10px] text-muted-foreground mb-0.5">Final Margin %</p>
+          <p className="text-[10px] text-muted-foreground mb-0.5">{t($ => $.pricingSection.finalMarginPct)}</p>
           <p
             className={cn(
               'text-base font-semibold tabular-nums',
@@ -377,14 +382,14 @@ export function ProductPricingSection({ existingProduct }: Props) {
             {finalMarginPct != null ? `${finalMarginPct.toFixed(1)}%` : '—'}
           </p>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            {salePrice ? '(Sale − Cost) / Sale' : '(Regular − Cost) / Regular'}
+            {salePrice ? t($ => $.pricingSection.saleFormula) : t($ => $.pricingSection.regularFormula)}
           </p>
         </div>
       </div>
 
       {/* 5. Price Health */}
       <div className="flex items-center justify-between rounded-md border bg-card px-3 py-2">
-        <p className="text-xs text-muted-foreground">Price Health</p>
+        <p className="text-xs text-muted-foreground">{t($ => $.pricingSection.priceHealth)}</p>
         <PriceHealthBadge marginPct={finalMarginPct} />
       </div>
 
@@ -392,7 +397,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
       {existingProduct && (
         <div className="flex items-center justify-between rounded-md border bg-card px-3 py-2">
           <div>
-            <p className="text-[10px] text-muted-foreground">Pricing Source</p>
+            <p className="text-[10px] text-muted-foreground">{t($ => $.pricingSection.pricingSource)}</p>
             <p className="text-xs font-medium mt-0.5">{pricingSource.label}</p>
           </div>
           {pricingSource.date && (
@@ -405,7 +410,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
       {existingProduct?.pending_review ? (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-950/40">
           <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
-            ⚠ Pending Pricing Review
+            {t($ => $.pricingSection.pendingReview)}
           </span>
           <Button
             type="button"
@@ -415,7 +420,7 @@ export function ProductPricingSection({ existingProduct }: Props) {
             onClick={() => navigate(ROUTES.costManagementPriceReview)}
           >
             <ArrowUpRight className="size-3" />
-            Open Price Review
+            {t($ => $.pricingSection.openPriceReview)}
           </Button>
         </div>
       ) : null}

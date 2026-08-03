@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Receipt\Domain\Exceptions;
 
-final class ReprintNotAllowedException extends \RuntimeException
+use RuntimeException;
+
+final class ReprintNotAllowedException extends RuntimeException
 {
     public static function receiptIsVoided(string $receiptNumber): self
     {
@@ -14,7 +16,7 @@ final class ReprintNotAllowedException extends \RuntimeException
     public static function reprintLimitReached(string $receiptNumber, int $limit): self
     {
         return new self(
-            "Receipt {$receiptNumber} has reached the maximum reprint limit of {$limit}."
+            "Receipt {$receiptNumber} has reached the maximum reprint limit of {$limit}.",
         );
     }
 }

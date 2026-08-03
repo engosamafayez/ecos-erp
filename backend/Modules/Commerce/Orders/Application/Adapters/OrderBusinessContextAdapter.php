@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Orders\Application\Adapters;
 
+use DateTimeInterface;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Common\Snapshots\Domain\Contracts\BusinessContextProvider;
 use Modules\CostManagement\Domain\Enums\PricingReviewStatus;
@@ -19,15 +20,20 @@ use Modules\CostManagement\Domain\Models\PricingReview;
 final class OrderBusinessContextAdapter implements BusinessContextProvider
 {
     // Resolved on first access, cached for the lifetime of the adapter
-    private ?string $resolvedPriceSource     = null;
-    private ?string $resolvedPriceReviewId   = null;
-    private ?string $resolvedCostSource      = null;
-    private ?string $resolvedRecipeVersion   = null;
-    private ?float  $resolvedDeliveryRate    = null;
-    private bool    $contextResolved         = false;
+    private ?string $resolvedPriceSource = null;
+
+    private ?string $resolvedPriceReviewId = null;
+
+    private ?string $resolvedCostSource = null;
+
+    private ?string $resolvedRecipeVersion = null;
+
+    private ?float $resolvedDeliveryRate = null;
+
+    private bool $contextResolved = false;
 
     public function __construct(
-        private readonly Order   $order,
+        private readonly Order $order,
         private readonly ?string $actorId,
         private readonly ?string $companyId,
     ) {}
@@ -51,14 +57,45 @@ final class OrderBusinessContextAdapter implements BusinessContextProvider
 
     // ── PART 1: Policy versions ───────────────────────────────────────────────
 
-    public function getPricingPolicyVersion(): ?string       { return '1.0.0'; }
-    public function getShippingPolicyVersion(): ?string      { return '1.0.0'; }
-    public function getBrandPolicyVersion(): ?string         { return null; }
-    public function getDiscountPolicyVersion(): ?string      { return null; }
-    public function getDeliverySlaVersion(): ?string         { return null; }
-    public function getSalesChannelConfigVersion(): ?string  { return null; }
-    public function getLoyaltyPolicyVersion(): ?string       { return null; }
-    public function getPromotionEngineVersion(): ?string     { return null; }
+    public function getPricingPolicyVersion(): ?string
+    {
+        return '1.0.0';
+    }
+
+    public function getShippingPolicyVersion(): ?string
+    {
+        return '1.0.0';
+    }
+
+    public function getBrandPolicyVersion(): ?string
+    {
+        return null;
+    }
+
+    public function getDiscountPolicyVersion(): ?string
+    {
+        return null;
+    }
+
+    public function getDeliverySlaVersion(): ?string
+    {
+        return null;
+    }
+
+    public function getSalesChannelConfigVersion(): ?string
+    {
+        return null;
+    }
+
+    public function getLoyaltyPolicyVersion(): ?string
+    {
+        return null;
+    }
+
+    public function getPromotionEngineVersion(): ?string
+    {
+        return null;
+    }
 
     // ── PART 2: Decision provenance — Price ───────────────────────────────────
 
@@ -69,7 +106,10 @@ final class OrderBusinessContextAdapter implements BusinessContextProvider
         return $this->resolvedPriceSource ?? 'regular_price';
     }
 
-    public function getPricingEngineRule(): ?string { return null; }
+    public function getPricingEngineRule(): ?string
+    {
+        return null;
+    }
 
     public function getPriceReviewId(): ?string
     {
@@ -85,7 +125,10 @@ final class OrderBusinessContextAdapter implements BusinessContextProvider
         return ($this->order->discount_amount ?? 0) > 0 ? 'manual' : null;
     }
 
-    public function getCampaignId(): ?string { return null; }
+    public function getCampaignId(): ?string
+    {
+        return null;
+    }
 
     public function getDiscountManualOverride(): bool
     {
@@ -124,20 +167,49 @@ final class OrderBusinessContextAdapter implements BusinessContextProvider
         return $this->resolvedRecipeVersion;
     }
 
-    public function getCostEngineVersion(): string { return '1.0.0'; }
+    public function getCostEngineVersion(): string
+    {
+        return '1.0.0';
+    }
 
     // ── PART 3: Approval snapshot ─────────────────────────────────────────────
 
-    public function getApprovedBy(): ?string              { return $this->actorId; }
-    public function getConfirmationUser(): ?string        { return $this->actorId; }
-    public function getConfirmationTime(): ?\DateTimeInterface { return now()->toDateTime(); }
-    public function getApprovalWorkflowVersion(): ?string { return '1.0.0'; }
+    public function getApprovedBy(): ?string
+    {
+        return $this->actorId;
+    }
+
+    public function getConfirmationUser(): ?string
+    {
+        return $this->actorId;
+    }
+
+    public function getConfirmationTime(): ?DateTimeInterface
+    {
+        return now()->toDateTime();
+    }
+
+    public function getApprovalWorkflowVersion(): ?string
+    {
+        return '1.0.0';
+    }
 
     // ── PART 4: Customer commercial context ───────────────────────────────────
 
-    public function getCustomerTier(): ?string    { return null; }
-    public function getCustomerSegment(): ?string { return null; }
-    public function getLoyaltyLevel(): ?string    { return null; }
+    public function getCustomerTier(): ?string
+    {
+        return null;
+    }
+
+    public function getCustomerSegment(): ?string
+    {
+        return null;
+    }
+
+    public function getLoyaltyLevel(): ?string
+    {
+        return null;
+    }
 
     public function getDeliverySuccessRate(): ?float
     {
@@ -153,34 +225,93 @@ final class OrderBusinessContextAdapter implements BusinessContextProvider
         return $this->order->channel?->brand?->name;
     }
 
-    public function getBrandVersion(): ?string                    { return '1.0.0'; }
-    public function getBrandCommercialStrategyVersion(): ?string  { return '1.0.0'; }
+    public function getBrandVersion(): ?string
+    {
+        return '1.0.0';
+    }
+
+    public function getBrandCommercialStrategyVersion(): ?string
+    {
+        return '1.0.0';
+    }
 
     // ── PART 6: Channel context ───────────────────────────────────────────────
 
-    public function getChannelName(): ?string { return $this->order->channel?->name; }
-    public function getChannelType(): ?string { return $this->order->channel?->channel_type; }
-    public function getMarketplaceVersion(): ?string { return '1.0.0'; }
+    public function getChannelName(): ?string
+    {
+        return $this->order->channel?->name;
+    }
+
+    public function getChannelType(): ?string
+    {
+        return $this->order->channel?->channel_type;
+    }
+
+    public function getMarketplaceVersion(): ?string
+    {
+        return '1.0.0';
+    }
 
     // ── PART 7: Marketing context ─────────────────────────────────────────────
 
-    public function getMarketingCampaignId(): ?string { return null; }
-    public function getCampaignName(): ?string        { return null; }
-    public function getCampaignVersion(): ?string     { return null; }
-    public function getUtmSource(): ?string           { return null; }
-    public function getUtmMedium(): ?string           { return null; }
-    public function getUtmCampaign(): ?string         { return null; }
+    public function getMarketingCampaignId(): ?string
+    {
+        return null;
+    }
+
+    public function getCampaignName(): ?string
+    {
+        return null;
+    }
+
+    public function getCampaignVersion(): ?string
+    {
+        return null;
+    }
+
+    public function getUtmSource(): ?string
+    {
+        return null;
+    }
+
+    public function getUtmMedium(): ?string
+    {
+        return null;
+    }
+
+    public function getUtmCampaign(): ?string
+    {
+        return null;
+    }
 
     // ── PART 8: Fulfillment context ───────────────────────────────────────────
 
-    public function getPreparationStrategy(): ?string { return null; }
-    public function getAllocationPolicy(): ?string    { return null; }
-    public function getShippingPriority(): ?string   { return null; }
-    public function getSlaPolicyVersion(): ?string   { return '1.0.0'; }
+    public function getPreparationStrategy(): ?string
+    {
+        return null;
+    }
+
+    public function getAllocationPolicy(): ?string
+    {
+        return null;
+    }
+
+    public function getShippingPriority(): ?string
+    {
+        return null;
+    }
+
+    public function getSlaPolicyVersion(): ?string
+    {
+        return '1.0.0';
+    }
 
     // ── Actor ─────────────────────────────────────────────────────────────────
 
-    public function getContextCreatedBy(): ?string { return $this->actorId; }
+    public function getContextCreatedBy(): ?string
+    {
+        return $this->actorId;
+    }
 
     // ── Private resolution helpers ────────────────────────────────────────────
 
@@ -192,11 +323,11 @@ final class OrderBusinessContextAdapter implements BusinessContextProvider
 
         $this->contextResolved = true;
 
-        $this->resolvedPriceSource   = $this->resolvePriceSource();
+        $this->resolvedPriceSource = $this->resolvePriceSource();
         $this->resolvedPriceReviewId = $this->resolveFirstPriceReviewId();
-        $this->resolvedCostSource    = $this->resolveCostSource();
+        $this->resolvedCostSource = $this->resolveCostSource();
         $this->resolvedRecipeVersion = $this->resolveRecipeVersion();
-        $this->resolvedDeliveryRate  = $this->resolveDeliverySuccessRate();
+        $this->resolvedDeliveryRate = $this->resolveDeliverySuccessRate();
     }
 
     private function resolvePriceSource(): string

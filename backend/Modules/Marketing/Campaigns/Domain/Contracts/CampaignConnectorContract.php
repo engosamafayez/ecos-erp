@@ -19,7 +19,7 @@ interface CampaignConnectorContract
     /**
      * Discover all campaigns for a given ad account.
      *
-     * @param  array<string, mixed> $params  Optional filter params (status, date range, etc.)
+     * @param  array<string, mixed>  $params  Optional filter params (status, date range, etc.)
      * @return list<array{
      *   external_campaign_id: string,
      *   external_account_id:  string,
@@ -39,9 +39,9 @@ interface CampaignConnectorContract
      * }>
      */
     public function discoverCampaigns(
-        string             $adAccountId,
+        string $adAccountId,
         MarketingConnection $connection,
-        array              $params = [],
+        array $params = [],
     ): array;
 
     /**
@@ -65,7 +65,7 @@ interface CampaignConnectorContract
      * }>
      */
     public function discoverAdSets(
-        string             $campaignId,
+        string $campaignId,
         MarketingConnection $connection,
     ): array;
 
@@ -84,7 +84,7 @@ interface CampaignConnectorContract
      * }>
      */
     public function discoverAds(
-        string             $adSetId,
+        string $adSetId,
         MarketingConnection $connection,
     ): array;
 
@@ -94,12 +94,12 @@ interface CampaignConnectorContract
      * @return list<array<string, mixed>>
      */
     public function fetchInsights(
-        string             $entityId,
-        string             $level,   // 'campaign' | 'adset' | 'ad'
+        string $entityId,
+        string $level,   // 'campaign' | 'adset' | 'ad'
         MarketingConnection $connection,
-        string             $datePreset = 'last_30d',
-        ?string            $dateStart  = null,
-        ?string            $dateStop   = null,
+        string $datePreset = 'last_30d',
+        ?string $dateStart = null,
+        ?string $dateStop = null,
     ): array;
 
     /**
@@ -108,7 +108,7 @@ interface CampaignConnectorContract
      * @return list<array<string, mixed>>
      */
     public function discoverCreatives(
-        string             $adId,
+        string $adId,
         MarketingConnection $connection,
     ): array;
 }

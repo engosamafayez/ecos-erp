@@ -23,8 +23,8 @@ class BrandShippingSettings extends Model
     protected function casts(): array
     {
         return [
-            'default_cod_enabled'             => 'boolean',
-            'default_free_shipping_threshold'  => 'decimal:2',
+            'default_cod_enabled' => 'boolean',
+            'default_free_shipping_threshold' => 'decimal:2',
         ];
     }
 

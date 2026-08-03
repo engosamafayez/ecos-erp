@@ -62,7 +62,7 @@ final class PrepareOrderManufacturingAction
         $order->loadMissing('lines.product', 'assignedWarehouse');
 
         $warehouseId = (string) $order->assigned_warehouse_id;
-        $companyId   = (string) $order->assignedWarehouse->company_id;
+        $companyId = (string) $order->assignedWarehouse->company_id;
 
         foreach ($order->lines as $line) {
             $this->processLine($line, $order, $warehouseId, $companyId);
@@ -89,19 +89,19 @@ final class PrepareOrderManufacturingAction
         $product = $line->product;
 
         $request = new OrderLifecycleRequest(
-            order_id:                    (string) $order->id,
-            order_line_id:               (string) $line->id,
-            order_status:                $order->status->value,
-            is_order_cancelled:          $order->status === \Modules\Commerce\Orders\Domain\Enums\OrderStatus::Cancelled,
-            product_id:                  (string) $line->product_id,
-            required_qty:                $line->quantity,
-            product_can_manufacture:     (bool) $product->can_manufacture,
-            product_has_active_recipe:   $product->hasRecipe(),
+            order_id: (string) $order->id,
+            order_line_id: (string) $line->id,
+            order_status: $order->status->value,
+            is_order_cancelled: $order->status === \Modules\Commerce\Orders\Domain\Enums\OrderStatus::Cancelled,
+            product_id: (string) $line->product_id,
+            required_qty: $line->quantity,
+            product_can_manufacture: (bool) $product->can_manufacture,
+            product_has_active_recipe: $product->hasRecipe(),
             product_is_inventory_managed: in_array($product->product_type, Product::TYPES, strict: true),
-            warehouse_id:                $warehouseId,
-            company_id:                  $companyId,
-            actor_id:                    'system:order_prepare',
-            already_manufactured:        false, // Executed lines are skipped above; this is always a fresh attempt
+            warehouse_id: $warehouseId,
+            company_id: $companyId,
+            actor_id: 'system:order_prepare',
+            already_manufactured: false, // Executed lines are skipped above; this is always a fresh attempt
         );
 
         $lifecycleResult = $this->coordinator->handle($request);
@@ -115,17 +115,17 @@ final class PrepareOrderManufacturingAction
         // (not_needed vs blocked, AlreadyManufactured vs other rejections), so this
         // mapping is a clean 1:1 switch on LifecycleAction with no sub-inspections.
         $state = match ($result->action) {
-            LifecycleAction::ManufacturingTriggered       => OrderLineManufacturingState::Executed,
+            LifecycleAction::ManufacturingTriggered => OrderLineManufacturingState::Executed,
             LifecycleAction::ManufacturingAlreadyExecuted => OrderLineManufacturingState::Executed,
-            LifecycleAction::ManufacturingBlocked         => OrderLineManufacturingState::Failed,
-            LifecycleAction::ManufacturingNotRequired     => OrderLineManufacturingState::NotRequired,
-            LifecycleAction::PolicyRejected               => OrderLineManufacturingState::Skipped,
-            LifecycleAction::StatusIgnored                => OrderLineManufacturingState::Skipped,
+            LifecycleAction::ManufacturingBlocked => OrderLineManufacturingState::Failed,
+            LifecycleAction::ManufacturingNotRequired => OrderLineManufacturingState::NotRequired,
+            LifecycleAction::PolicyRejected => OrderLineManufacturingState::Skipped,
+            LifecycleAction::StatusIgnored => OrderLineManufacturingState::Skipped,
         };
 
         $line->update([
-            'manufacturing_state'        => $state->value,
-            'manufacturing_result'       => $result->toArray(),
+            'manufacturing_state' => $state->value,
+            'manufacturing_result' => $result->toArray(),
             'manufacturing_completed_at' => now(),
         ]);
     }

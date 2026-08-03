@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\Preparation\Application\Services\DailyPreparationSessionManager;
 use Modules\Organizations\Domain\Models\Company;
+use Throwable;
 
 /**
  * CR-PREP-001 — Create daily preparation sessions for all active warehouses.
@@ -36,7 +37,7 @@ final class CreateDailyPreparationSessionsCommand extends Command
             ? now()->parse($this->option('date'))
             : today();
 
-        $companyFilter   = $this->option('company');
+        $companyFilter = $this->option('company');
         $warehouseFilter = $this->option('warehouse');
 
         $this->info("Creating preparation sessions for {$businessDate->toDateString()}...");
@@ -50,9 +51,9 @@ final class CreateDailyPreparationSessionsCommand extends Command
         }
 
         $warehouses = $warehouseQuery->get();
-        $created    = 0;
-        $existing   = 0;
-        $failed     = 0;
+        $created = 0;
+        $existing = 0;
+        $failed = 0;
 
         foreach ($warehouses as $warehouse) {
             try {
@@ -66,13 +67,13 @@ final class CreateDailyPreparationSessionsCommand extends Command
                     $created++;
                     $this->line("  CREATE {$warehouse->name} — session created");
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $failed++;
                 $this->error("  FAIL  {$warehouse->name} — {$e->getMessage()}");
                 Log::error('CreateDailyPreparationSessions failed', [
                     'warehouse_id' => $warehouse->id,
-                    'error'        => $e->getMessage(),
-                    'trace'        => $e->getTraceAsString(),
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
         }

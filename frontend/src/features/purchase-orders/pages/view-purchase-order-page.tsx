@@ -46,8 +46,8 @@ export function ViewPurchaseOrderPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          title={t('detail.loading')}
-          breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title'), to: ROUTES.purchaseOrders }, { label: '…' }]}
+          title={t($ => $.detail.loading)}
+          breadcrumbs={[{ label: tCommon($ => $.home), to: ROUTES.dashboard }, { label: t($ => $.title), to: ROUTES.purchaseOrders }, { label: '…' }]}
         />
       </div>
     );
@@ -57,10 +57,10 @@ export function ViewPurchaseOrderPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          title={t('detail.notFound')}
-          breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title'), to: ROUTES.purchaseOrders }]}
+          title={t($ => $.detail.notFound)}
+          breadcrumbs={[{ label: tCommon($ => $.home), to: ROUTES.dashboard }, { label: t($ => $.title), to: ROUTES.purchaseOrders }]}
         />
-        <p className="text-muted-foreground text-sm">{t('detail.notFoundMessage')}</p>
+        <p className="text-muted-foreground text-sm">{t($ => $.detail.notFoundMessage)}</p>
       </div>
     );
   }
@@ -75,8 +75,8 @@ export function ViewPurchaseOrderPage() {
         title={order.po_number}
         subtitle={order.supplier?.name ?? ''}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('title'), to: ROUTES.purchaseOrders },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.title), to: ROUTES.purchaseOrders },
           { label: order.po_number },
         ]}
         actions={
@@ -86,24 +86,24 @@ export function ViewPurchaseOrderPage() {
               <>
                 <Button variant="outline" onClick={() => navigate(`${ROUTES.purchaseOrders}/${order.id}/edit`)}>
                   <Pencil className="size-4" />
-                  {tCommon('common.edit')}
+                  {tCommon($ => $.common.edit)}
                 </Button>
                 <Button onClick={() => setSubmitting(true)}>
                   <SendHorizonal className="size-4" />
-                  {t('actions.submit')}
+                  {t($ => $.actions.submit)}
                 </Button>
               </>
             )}
             {isSubmitted && (
               <Button onClick={() => setApproving(true)}>
                 <CheckCircle className="size-4" />
-                {t('actions.approve')}
+                {t($ => $.actions.approve)}
               </Button>
             )}
             {isCancellable && (
               <Button variant="destructive" onClick={() => setCancelling(true)}>
                 <XCircle className="size-4" />
-                {tCommon('common.cancel')}
+                {tCommon($ => $.common.cancel)}
               </Button>
             )}
           </div>
@@ -112,19 +112,19 @@ export function ViewPurchaseOrderPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('detail.orderDetails')}</CardTitle>
+          <CardTitle>{t($ => $.detail.orderDetails)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <LabelValue label={t('detail.supplier')} value={order.supplier?.name ?? '—'} />
-            <LabelValue label={t('detail.warehouse')} value={order.warehouse?.name ?? '—'} />
-            <LabelValue label={t('detail.orderDate')} value={order.order_date} />
-            <LabelValue label={t('detail.expectedDate')} value={order.expected_date ?? '—'} />
-            <LabelValue label={t('detail.status')} value={<PoStatusBadge status={order.status} />} />
+            <LabelValue label={t($ => $.detail.supplier)} value={order.supplier?.name ?? '—'} />
+            <LabelValue label={t($ => $.detail.warehouse)} value={order.warehouse?.name ?? '—'} />
+            <LabelValue label={t($ => $.detail.orderDate)} value={order.order_date} />
+            <LabelValue label={t($ => $.detail.expectedDate)} value={order.expected_date ?? '—'} />
+            <LabelValue label={t($ => $.detail.status)} value={<PoStatusBadge status={order.status} />} />
           </div>
           {order.notes && (
             <div className="mt-4">
-              <span className="text-muted-foreground text-xs">{t('detail.notes')}</span>
+              <span className="text-muted-foreground text-xs">{t($ => $.detail.notes)}</span>
               <p className="mt-0.5 text-sm">{order.notes}</p>
             </div>
           )}
@@ -133,19 +133,19 @@ export function ViewPurchaseOrderPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('detail.lineItems')}</CardTitle>
+          <CardTitle>{t($ => $.detail.lineItems)}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground border-b text-start">
-                  <th className="pb-2 pr-3 font-medium">{t('detail.product')}</th>
-                  <th className="w-24 pb-2 pr-3 font-medium">{t('detail.qty')}</th>
-                  <th className="w-24 pb-2 pr-3 font-medium">{t('detail.receivedQty')}</th>
-                  <th className="w-24 pb-2 pr-3 font-medium">{t('detail.remainingQty')}</th>
-                  <th className="w-32 pb-2 pr-3 font-medium">{t('detail.unitPrice')}</th>
-                  <th className="w-32 pb-2 font-medium text-end">{t('detail.lineTotal')}</th>
+                  <th className="pb-2 pr-3 font-medium">{t($ => $.detail.product)}</th>
+                  <th className="w-24 pb-2 pr-3 font-medium">{t($ => $.detail.qty)}</th>
+                  <th className="w-24 pb-2 pr-3 font-medium">{t($ => $.detail.receivedQty)}</th>
+                  <th className="w-24 pb-2 pr-3 font-medium">{t($ => $.detail.remainingQty)}</th>
+                  <th className="w-32 pb-2 pr-3 font-medium">{t($ => $.detail.unitPrice)}</th>
+                  <th className="w-32 pb-2 font-medium text-end">{t($ => $.detail.lineTotal)}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -186,29 +186,29 @@ export function ViewPurchaseOrderPage() {
           {/* Financial summary */}
           <div className="flex flex-col items-end gap-1 border-t pt-3 text-sm">
             <div className="flex gap-8">
-              <span className="text-muted-foreground">{t('detail.subtotal')}</span>
+              <span className="text-muted-foreground">{t($ => $.detail.subtotal)}</span>
               <span className="w-32 text-end font-medium">{fmt(order.subtotal)}</span>
             </div>
             {order.discount_amount > 0 && (
               <div className="flex gap-8">
-                <span className="text-muted-foreground">{t('detail.discount')}</span>
+                <span className="text-muted-foreground">{t($ => $.detail.discount)}</span>
                 <span className="w-32 text-end font-medium">- {fmt(order.discount_amount)}</span>
               </div>
             )}
             {order.shipping_amount > 0 && (
               <div className="flex gap-8">
-                <span className="text-muted-foreground">{t('detail.shipping')}</span>
+                <span className="text-muted-foreground">{t($ => $.detail.shipping)}</span>
                 <span className="w-32 text-end font-medium">{fmt(order.shipping_amount)}</span>
               </div>
             )}
             {order.additional_costs > 0 && (
               <div className="flex gap-8">
-                <span className="text-muted-foreground">{t('detail.additionalCosts')}</span>
+                <span className="text-muted-foreground">{t($ => $.detail.additionalCosts)}</span>
                 <span className="w-32 text-end font-medium">{fmt(order.additional_costs)}</span>
               </div>
             )}
             <div className="flex gap-8 text-base font-semibold">
-              <span>{t('detail.grandTotal')}</span>
+              <span>{t($ => $.detail.grandTotal)}</span>
               <span className="w-32 text-end">{fmt(order.grand_total)}</span>
             </div>
           </div>
@@ -218,9 +218,9 @@ export function ViewPurchaseOrderPage() {
       <ConfirmDialog
         open={submitting}
         onOpenChange={setSubmitting}
-        title={t('dialogs.submit.title')}
-        description={t('dialogs.submit.description', { number: order.po_number })}
-        confirmLabel={t('dialogs.submit.confirm')}
+        title={t($ => $.dialogs.submit.title)}
+        description={t($ => $.dialogs.submit.description, { number: order.po_number })}
+        confirmLabel={t($ => $.dialogs.submit.confirm)}
         loading={submitPO.isPending}
         onConfirm={() => {
           submitPO.mutate(order.id, { onSuccess: () => setSubmitting(false) });
@@ -230,9 +230,9 @@ export function ViewPurchaseOrderPage() {
       <ConfirmDialog
         open={approving}
         onOpenChange={setApproving}
-        title={t('dialogs.approve.title')}
-        description={t('dialogs.approve.description', { number: order.po_number })}
-        confirmLabel={t('dialogs.approve.confirm')}
+        title={t($ => $.dialogs.approve.title)}
+        description={t($ => $.dialogs.approve.description, { number: order.po_number })}
+        confirmLabel={t($ => $.dialogs.approve.confirm)}
         loading={approvePO.isPending}
         onConfirm={() => {
           approvePO.mutate(order.id, { onSuccess: () => setApproving(false) });
@@ -242,9 +242,9 @@ export function ViewPurchaseOrderPage() {
       <ConfirmDialog
         open={cancelling}
         onOpenChange={setCancelling}
-        title={t('dialogs.cancel.title')}
-        description={t('dialogs.cancel.description', { number: order.po_number })}
-        confirmLabel={t('dialogs.cancel.confirm')}
+        title={t($ => $.dialogs.cancel.title)}
+        description={t($ => $.dialogs.cancel.description, { number: order.po_number })}
+        confirmLabel={t($ => $.dialogs.cancel.confirm)}
         variant="destructive"
         loading={cancelPO.isPending}
         onConfirm={() => {

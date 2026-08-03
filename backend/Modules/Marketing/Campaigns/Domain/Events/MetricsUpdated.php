@@ -11,6 +11,6 @@ final class MetricsUpdated
         public readonly string $level,
         public readonly string $dateStart,
         public readonly string $dateStop,
-        public readonly int    $rowsInserted,
+        public readonly int $rowsInserted,
     ) {}
 }

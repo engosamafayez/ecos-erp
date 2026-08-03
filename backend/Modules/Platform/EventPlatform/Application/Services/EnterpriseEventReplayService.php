@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Platform\EventPlatform\Application\Services;
 
+use DateTimeImmutable;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 use Modules\Platform\EventPlatform\Domain\Abstracts\EnterpriseEvent;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseDeadLetterQueueInterface;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseEventStoreInterface;
 use Modules\Platform\EventPlatform\Domain\Models\StoredEvent;
+use RuntimeException;
+use Throwable;
 
 final class EnterpriseEventReplayService
 {
@@ -24,8 +28,8 @@ final class EnterpriseEventReplayService
     {
         $storedEvent = $this->store->findById($storedEventId);
 
-        if (!$storedEvent) {
-            throw new \InvalidArgumentException("StoredEvent not found: {$storedEventId}");
+        if (! $storedEvent) {
+            throw new InvalidArgumentException("StoredEvent not found: {$storedEventId}");
         }
 
         $this->replayStoredEvent($storedEvent);
@@ -35,16 +39,18 @@ final class EnterpriseEventReplayService
     public function replayByAggregate(string $aggregateType, string $aggregateId): int
     {
         $events = $this->store->queryByAggregate($aggregateType, $aggregateId);
+
         return $this->replayCollection($events);
     }
 
     /** Replay all events within a time window, with optional filters. */
     public function replayByTimeRange(
-        \DateTimeImmutable $from,
-        \DateTimeImmutable $to,
+        DateTimeImmutable $from,
+        DateTimeImmutable $to,
         array $filters = [],
     ): int {
         $events = $this->store->queryByTimeRange($from, $to, $filters);
+
         return $this->replayCollection($events);
     }
 
@@ -52,6 +58,7 @@ final class EnterpriseEventReplayService
     public function replayByModule(string $module, ?string $companyId = null): int
     {
         $events = $this->store->queryByCompany($companyId ?? '', ['module' => $module]);
+
         return $this->replayCollection($events);
     }
 
@@ -60,13 +67,13 @@ final class EnterpriseEventReplayService
     {
         $dlqEntry = $this->dlq->findById($dlqEntryId);
 
-        if (!$dlqEntry) {
-            throw new \InvalidArgumentException("DLQ entry not found: {$dlqEntryId}");
+        if (! $dlqEntry) {
+            throw new InvalidArgumentException("DLQ entry not found: {$dlqEntryId}");
         }
 
         $storedEvent = $this->store->findById($dlqEntry->stored_event_id);
-        if (!$storedEvent) {
-            throw new \InvalidArgumentException("StoredEvent not found for DLQ entry: {$dlqEntryId}");
+        if (! $storedEvent) {
+            throw new InvalidArgumentException("StoredEvent not found for DLQ entry: {$dlqEntryId}");
         }
 
         $this->dlq->markReplaying($dlqEntryId);
@@ -74,7 +81,7 @@ final class EnterpriseEventReplayService
         try {
             $this->replayStoredEvent($storedEvent);
             $this->dlq->markReplayed($dlqEntryId);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             throw $e;
         }
     }
@@ -85,7 +92,7 @@ final class EnterpriseEventReplayService
 
         // Only EnterpriseEvent subclasses support fromArray reconstruction
         if ($eventClass && is_subclass_of($eventClass, EnterpriseEvent::class)) {
-            $raw  = $this->serializer->deserialize($storedEvent->toArray());
+            $raw = $this->serializer->deserialize($storedEvent->toArray());
             $event = $eventClass::fromArray($raw);
             $replayEvent = $event->asReplay();
 
@@ -94,8 +101,8 @@ final class EnterpriseEventReplayService
         } else {
             // Legacy events cannot be fully reconstructed — re-dispatch the stored envelope
             // Implementations may override this hook to handle legacy replay differently.
-            throw new \RuntimeException(
-                "Cannot replay legacy event '{$storedEvent->event_name}': class '{$eventClass}' does not extend EnterpriseEvent."
+            throw new RuntimeException(
+                "Cannot replay legacy event '{$storedEvent->event_name}': class '{$eventClass}' does not extend EnterpriseEvent.",
             );
         }
     }
@@ -107,7 +114,7 @@ final class EnterpriseEventReplayService
             try {
                 $this->replayStoredEvent($storedEvent);
                 $count++;
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Non-fatal — skip unrestorable events, log and continue
                 \Illuminate\Support\Facades\Log::warning(
                     "EnterpriseEventReplayService: skipped event {$storedEvent->event_id}",
@@ -115,6 +122,7 @@ final class EnterpriseEventReplayService
                 );
             }
         }
+
         return $count;
     }
 }

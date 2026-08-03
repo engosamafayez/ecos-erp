@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Payment\Domain\Exceptions;
 
-final class PaymentNotFoundException extends \DomainException
+use DomainException;
+
+final class PaymentNotFoundException extends DomainException
 {
     public static function withId(string $id): self
     {

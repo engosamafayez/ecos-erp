@@ -39,17 +39,17 @@ final class BrandShippingRuleController extends Controller
     public function store(Request $request, string $brandId): JsonResponse
     {
         $validated = $request->validate([
-            'delivery_zone_id'        => 'nullable|uuid|exists:config_delivery_zones,id',
-            'delivery_geography_id'   => 'nullable|uuid|exists:config_delivery_geographies,id',
-            'shipping_cost'           => 'required|numeric|min:0',
-            'is_enabled'              => 'nullable|boolean',
-            'effective_date'          => 'nullable|date',
-            'notes'                   => 'nullable|string|max:500',
-            'delivery_window_id'      => 'nullable|uuid|exists:config_delivery_windows,id',
+            'delivery_zone_id' => 'nullable|uuid|exists:config_delivery_zones,id',
+            'delivery_geography_id' => 'nullable|uuid|exists:config_delivery_geographies,id',
+            'shipping_cost' => 'required|numeric|min:0',
+            'is_enabled' => 'nullable|boolean',
+            'effective_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:500',
+            'delivery_window_id' => 'nullable|uuid|exists:config_delivery_windows,id',
         ]);
 
         $companyId = Auth::user()?->company_id ?? '';
-        $actorId   = Auth::id() ?? '';
+        $actorId = Auth::id() ?? '';
 
         if (isset($validated['delivery_zone_id'])) {
             $exists = BrandShippingRule::where('brand_id', $brandId)
@@ -60,7 +60,7 @@ final class BrandShippingRuleController extends Controller
 
         $rule = BrandShippingRule::create([
             ...$validated,
-            'brand_id'   => $brandId,
+            'brand_id' => $brandId,
             'company_id' => $companyId,
             'created_by' => $actorId,
             'updated_by' => $actorId,
@@ -68,12 +68,12 @@ final class BrandShippingRuleController extends Controller
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'shipping_pricing',
-            category:  'brand_shipping_rule',
-            action:    'create',
-            oldValue:  null,
-            newValue:  $rule->toArray(),
-            brandId:   $brandId,
+            module: 'shipping_pricing',
+            category: 'brand_shipping_rule',
+            action: 'create',
+            oldValue: null,
+            newValue: $rule->toArray(),
+            brandId: $brandId,
         );
 
         return $this->created($rule->load(['zone.geography', 'deliveryWindow']), 'Shipping rule created.');
@@ -84,10 +84,10 @@ final class BrandShippingRuleController extends Controller
         $rule = BrandShippingRule::where('brand_id', $brandId)->findOrFail($id);
 
         $validated = $request->validate([
-            'shipping_cost'      => 'sometimes|required|numeric|min:0',
-            'is_enabled'         => 'nullable|boolean',
-            'effective_date'     => 'nullable|date',
-            'notes'              => 'nullable|string|max:500',
+            'shipping_cost' => 'sometimes|required|numeric|min:0',
+            'is_enabled' => 'nullable|boolean',
+            'effective_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:500',
             'delivery_window_id' => 'nullable|uuid|exists:config_delivery_windows,id',
         ]);
 
@@ -96,12 +96,12 @@ final class BrandShippingRuleController extends Controller
 
         $this->audit->record(
             companyId: Auth::user()?->company_id ?? '',
-            module:    'shipping_pricing',
-            category:  'brand_shipping_rule',
-            action:    'update',
-            oldValue:  $old,
-            newValue:  $rule->fresh()?->toArray() ?? [],
-            brandId:   $brandId,
+            module: 'shipping_pricing',
+            category: 'brand_shipping_rule',
+            action: 'update',
+            oldValue: $old,
+            newValue: $rule->fresh()?->toArray() ?? [],
+            brandId: $brandId,
         );
 
         return $this->updated($rule->load(['zone.geography', 'deliveryWindow']), 'Shipping rule updated.');
@@ -113,12 +113,12 @@ final class BrandShippingRuleController extends Controller
 
         $this->audit->record(
             companyId: Auth::user()?->company_id ?? '',
-            module:    'shipping_pricing',
-            category:  'brand_shipping_rule',
-            action:    'delete',
-            oldValue:  $rule->toArray(),
-            newValue:  null,
-            brandId:   $brandId,
+            module: 'shipping_pricing',
+            category: 'brand_shipping_rule',
+            action: 'delete',
+            oldValue: $rule->toArray(),
+            newValue: null,
+            brandId: $brandId,
         );
 
         $rule->delete();

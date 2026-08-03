@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import {
   CheckCircle,
   Clock,
@@ -8,6 +9,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,18 +37,6 @@ import type {
 const fmt = (n: number | null | undefined, decimals = 2) =>
   n == null ? '—' : n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
-const EVENT_LABELS: Record<string, string> = {
-  created:               'Investigation created',
-  resolved:              'Investigation resolved',
-  attachment_added:      'Attachment added',
-  attachment_removed:    'Attachment removed',
-  notes_edited:          'Notes edited',
-  damage_reason_changed: 'Damage reason updated',
-  outcome_decided:       'Outcome decided',
-  liability_created:     'Warehouse liability created',
-  value_changed:         'Value changed',
-};
-
 const EVENT_COLORS: Record<string, string> = {
   created:          'text-sky-600',
   resolved:         'text-emerald-600',
@@ -64,18 +54,15 @@ function formatBytes(bytes: number | null): string {
 // ─── Summary tab ─────────────────────────────────────────────────────────────
 
 function SummaryTab({ inv }: { inv: WasteInvestigation }) {
-  const outcomeLabels: Record<string, string> = {
-    operational_waste:          'Operational Waste',
-    warehouse_responsibility:   'Warehouse Responsibility',
-    supplier_responsibility:    'Supplier Responsibility',
-    preparation_responsibility: 'Preparation Responsibility',
-  };
+  const { t } = useTranslation('inventory-count');
+  const { currency } = useFormatter();
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
 
   return (
     <div className="space-y-5 py-4">
       {/* Product */}
       <div className="rounded-lg border bg-muted/30 px-4 py-3">
-        <p className="text-xs text-muted-foreground mb-1">Product</p>
+        <p className="text-xs text-muted-foreground mb-1">{t($ => $.waste.detail.summary.product)}</p>
         <p className="font-semibold">{inv.product?.name ?? '—'}</p>
         <p className="text-xs text-muted-foreground">{inv.product?.sku}</p>
       </div>
@@ -83,17 +70,17 @@ function SummaryTab({ inv }: { inv: WasteInvestigation }) {
       {/* Quantities */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-lg border bg-card p-3 text-center">
-          <p className="text-xs text-muted-foreground">Quantity</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.quantity)}</p>
           <p className="text-lg font-semibold mt-0.5 tabular-nums">{fmt(inv.quantity, 2)}</p>
         </div>
         <div className="rounded-lg border bg-card p-3 text-center">
-          <p className="text-xs text-muted-foreground">Unit Cost</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.unitCost)}</p>
           <p className="text-lg font-semibold mt-0.5 tabular-nums">
             {inv.cost_snapshot_unit_cost != null ? fmt(inv.cost_snapshot_unit_cost, 4) : fmt(inv.unit_cost, 4)}
           </p>
         </div>
         <div className="rounded-lg border bg-card p-3 text-center">
-          <p className="text-xs text-muted-foreground">Total Value</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.totalValue)}</p>
           <p className="text-lg font-semibold mt-0.5 tabular-nums">
             {inv.cost_snapshot_total_value != null ? fmt(inv.cost_snapshot_total_value) : fmt(inv.total_cost)}
           </p>
@@ -105,8 +92,11 @@ function SummaryTab({ inv }: { inv: WasteInvestigation }) {
         <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 rounded-md border border-emerald-200 dark:border-emerald-800 px-3 py-2">
           <CheckCircle className="size-3.5 shrink-0" />
           <span>
-            <strong>FIFO Cost Snapshot</strong> at {new Date(inv.cost_snapshot_at).toLocaleString()} ·
-            Method: {inv.cost_method ?? 'FIFO'} · Currency: {inv.currency ?? 'EGP'}
+            {tAny('waste.detail.summary.fifoSnapshotFull', {
+              date: new Date(inv.cost_snapshot_at).toLocaleString(),
+              method: inv.cost_method ?? 'FIFO',
+              currency: inv.currency ?? currency,
+            })}
           </span>
         </div>
       )}
@@ -114,50 +104,52 @@ function SummaryTab({ inv }: { inv: WasteInvestigation }) {
       {/* Details grid */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
         <div>
-          <p className="text-xs text-muted-foreground">Damage Reason</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.damageReason)}</p>
           <p className="mt-0.5 font-medium">{inv.damage_reason ?? '—'}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Warehouse</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.warehouse)}</p>
           <p className="mt-0.5 font-medium">{(inv.warehouse as { name: string } | null)?.name ?? '—'}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Status</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.status)}</p>
           <p className="mt-0.5">
             {inv.status === 'resolved'
-              ? <span className="text-emerald-600 font-medium">Resolved</span>
-              : <span className="text-amber-600 font-medium">Pending</span>}
+              ? <span className="text-emerald-600 font-medium">{t($ => $.waste.detail.summary.statusResolved)}</span>
+              : <span className="text-amber-600 font-medium">{t($ => $.waste.detail.summary.statusPending)}</span>}
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Outcome</p>
-          <p className="mt-0.5 font-medium">{inv.outcome ? outcomeLabels[inv.outcome] ?? inv.outcome : '—'}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.outcome)}</p>
+          <p className="mt-0.5 font-medium">
+            {inv.outcome ? t($ => $.waste.detail.outcomes[inv.outcome!], { defaultValue: inv.outcome }) : '—'}
+          </p>
         </div>
         {inv.resolved_by && (
           <div>
-            <p className="text-xs text-muted-foreground">Resolved By</p>
+            <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.resolvedBy)}</p>
             <p className="mt-0.5 font-medium">{inv.resolved_by}</p>
           </div>
         )}
         {inv.resolved_at && (
           <div>
-            <p className="text-xs text-muted-foreground">Resolution Date</p>
+            <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.resolutionDate)}</p>
             <p className="mt-0.5 font-medium">{new Date(inv.resolved_at).toLocaleDateString()}</p>
           </div>
         )}
         <div>
-          <p className="text-xs text-muted-foreground">Month</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.month)}</p>
           <p className="mt-0.5 font-medium">{inv.month}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Days Open</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.summary.daysOpen)}</p>
           <p className="mt-0.5 font-medium">{inv.days_pending ?? '—'}</p>
         </div>
       </div>
 
       {inv.investigator_notes && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Investigator Notes</p>
+          <p className="text-xs text-muted-foreground mb-1">{t($ => $.waste.detail.summary.investigatorNotes)}</p>
           <p className="text-sm rounded-md border bg-muted/30 px-3 py-2">{inv.investigator_notes}</p>
         </div>
       )}
@@ -165,7 +157,7 @@ function SummaryTab({ inv }: { inv: WasteInvestigation }) {
       {/* Future integration readiness */}
       {inv.metadata && Object.keys(inv.metadata).length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Integration References</p>
+          <p className="text-xs text-muted-foreground mb-1">{t($ => $.waste.detail.summary.integrationRefs)}</p>
           <div className="text-xs font-mono bg-muted/50 rounded px-3 py-2 space-y-0.5">
             {Object.entries(inv.metadata).map(([k, v]) => (
               <div key={k}><span className="text-muted-foreground">{k}:</span> {String(v)}</div>
@@ -180,11 +172,13 @@ function SummaryTab({ inv }: { inv: WasteInvestigation }) {
 // ─── Timeline tab ─────────────────────────────────────────────────────────────
 
 function TimelineTab({ events }: { events: WasteInvestigationEvent[] }) {
+  const { t } = useTranslation('inventory-count');
+
   if (events.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-12 text-center">
         <Clock className="size-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">No events yet</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.waste.detail.timeline.noEvents)}</p>
       </div>
     );
   }
@@ -201,7 +195,7 @@ function TimelineTab({ events }: { events: WasteInvestigationEvent[] }) {
               </span>
               <div className="text-sm">
                 <p className={`font-medium ${color}`}>
-                  {EVENT_LABELS[ev.event_type] ?? ev.event_type}
+                  {t($ => $.waste.detail.timeline.events[ev.event_type], { defaultValue: ev.event_type })}
                 </p>
                 {ev.description && (
                   <p className="text-muted-foreground text-xs mt-0.5">{ev.description}</p>
@@ -230,6 +224,9 @@ function AttachmentsTab({
   attachments: WasteInvestigationAttachment[];
   isResolved: boolean;
 }) {
+  const { t } = useTranslation('inventory-count');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [description, setDescription] = useState('');
@@ -244,9 +241,9 @@ function AttachmentsTab({
     try {
       await uploadMutation.mutateAsync({ file, description: description || undefined });
       setDescription('');
-      toast.success('Attachment uploaded.');
+      toast.success(t($ => $.waste.detail.attachments.toast.uploaded));
     } catch {
-      toast.error('Upload failed.');
+      toast.error(t($ => $.waste.detail.attachments.toast.uploadFailed));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -256,9 +253,9 @@ function AttachmentsTab({
   async function handleDelete(attachmentId: string, fileName: string) {
     try {
       await deleteMutation.mutateAsync(attachmentId);
-      toast.success(`${fileName} removed.`);
+      toast.success(tAny('waste.detail.attachments.toast.removed', { fileName }));
     } catch {
-      toast.error('Delete failed.');
+      toast.error(t($ => $.waste.detail.attachments.toast.removeFailed));
     }
   }
 
@@ -269,7 +266,7 @@ function AttachmentsTab({
         <div className="rounded-lg border border-dashed bg-muted/20 p-4 space-y-2">
           <input
             type="text"
-            placeholder="Description (optional)"
+            placeholder={tAny('waste.detail.attachments.descriptionPlaceholder')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="h-8 w-full rounded border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
@@ -292,9 +289,9 @@ function AttachmentsTab({
               {uploading
                 ? <Loader2 className="size-3.5 animate-spin" />
                 : <Upload className="size-3.5" />}
-              {uploading ? 'Uploading…' : 'Upload File'}
+              {uploading ? t($ => $.waste.detail.attachments.uploading) : t($ => $.waste.detail.attachments.upload)}
             </Button>
-            <p className="text-xs text-muted-foreground">PDF, images, video — up to 20 MB</p>
+            <p className="text-xs text-muted-foreground">{t($ => $.waste.detail.attachments.fileTypes)}</p>
           </div>
         </div>
       )}
@@ -303,7 +300,7 @@ function AttachmentsTab({
       {attachments.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <Paperclip className="size-7 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No attachments</p>
+          <p className="text-sm text-muted-foreground">{t($ => $.waste.detail.attachments.empty)}</p>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -368,6 +365,9 @@ export function WasteInvestigationDetailDrawer({ investigationId, open, onOpenCh
 }
 
 function DrawerContent({ inv }: { inv: WasteInvestigation }) {
+  const { t } = useTranslation('inventory-count');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   const isResolved = inv.status === 'resolved';
   const events = inv.events ?? [];
   const attachments = inv.attachments ?? [];
@@ -384,7 +384,7 @@ function DrawerContent({ inv }: { inv: WasteInvestigation }) {
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <SheetTitle className="text-base font-semibold truncate">
-              {inv.product?.name ?? 'Waste Investigation'}
+              {inv.product?.name ?? t($ => $.waste.detail.header.fallbackTitle)}
             </SheetTitle>
             <SheetDescription className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge
@@ -394,10 +394,10 @@ function DrawerContent({ inv }: { inv: WasteInvestigation }) {
                   : 'text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-xs'
                 }
               >
-                {isResolved ? 'Resolved' : 'Pending'}
+                {isResolved ? t($ => $.waste.detail.header.resolved) : t($ => $.waste.detail.header.pending)}
               </Badge>
               <span className={`text-xs font-medium ${overdueClass}`}>
-                {inv.days_pending != null ? `Open ${inv.days_pending} day(s)` : ''}
+                {inv.days_pending != null ? tAny('waste.detail.header.daysOpen', { days: inv.days_pending }) : ''}
               </span>
             </SheetDescription>
           </div>
@@ -406,9 +406,9 @@ function DrawerContent({ inv }: { inv: WasteInvestigation }) {
 
       <Tabs defaultValue="summary" className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="mx-6 mt-3 mb-0 shrink-0 w-fit">
-          <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="summary">{t($ => $.waste.detail.tabs.summary)}</TabsTrigger>
           <TabsTrigger value="timeline">
-            Timeline
+            {t($ => $.waste.detail.tabs.timeline)}
             {events.length > 0 && (
               <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[10px] font-medium tabular-nums">
                 {events.length}
@@ -416,7 +416,7 @@ function DrawerContent({ inv }: { inv: WasteInvestigation }) {
             )}
           </TabsTrigger>
           <TabsTrigger value="attachments">
-            Attachments
+            {t($ => $.waste.detail.tabs.attachments)}
             {attachments.length > 0 && (
               <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[10px] font-medium tabular-nums">
                 {attachments.length}

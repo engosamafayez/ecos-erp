@@ -27,25 +27,27 @@ class InventoryReservationTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Warehouse $warehouse;
+
     private Product $product;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->product   = Product::factory()->create();
+        $this->product = Product::factory()->create();
     }
 
     private function dto(float $quantity, array $overrides = []): StockOperationDTO
     {
         return StockOperationDTO::fromArray(array_merge([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $this->product->id,
-            'company_id'   => $this->company->id,
-            'quantity'     => $quantity,
+            'product_id' => $this->product->id,
+            'company_id' => $this->company->id,
+            'quantity' => $quantity,
         ], $overrides));
     }
 

@@ -63,7 +63,7 @@ interface InventoryMutationInterface
      *
      * MUST be called inside an existing DB::transaction().
      *
-     * @return string  The StockLedgerEntry UUID created for this production.
+     * @return string The StockLedgerEntry UUID created for this production.
      */
     public function produceFinishedGoods(
         string $productId,

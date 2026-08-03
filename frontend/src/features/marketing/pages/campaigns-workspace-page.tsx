@@ -18,6 +18,7 @@ import {
 } from '../types/campaign';
 import { RefreshCw, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useFormatter } from '@/hooks/use-formatter';
 import { ROUTES } from '@/router/routes';
 
 const STATUS_OPTIONS: Array<{ value: CampaignStatus; label: string }> = [
@@ -37,11 +38,6 @@ const STATUS_COLORS: Record<CampaignStatus, string> = {
   WITH_ISSUES: 'bg-orange-100 text-orange-800',
 };
 
-function fmt(n: number | null | undefined, decimals = 2): string {
-  if (n == null) return '—';
-  return n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-}
-
 function fmtInt(n: number | null | undefined): string {
   if (n == null) return '—';
   return n.toLocaleString();
@@ -54,6 +50,7 @@ function fmtPct(n: number | null | undefined): string {
 
 export function CampaignsWorkspacePage() {
   const navigate = useNavigate();
+  const { money } = useFormatter();
 
   const [search,     setSearch]     = useState('');
   const [status,     setStatus]     = useState('');
@@ -203,7 +200,7 @@ export function CampaignsWorkspacePage() {
                   </td>
                   <td className="px-3 py-2 text-end text-xs">{campaign.budget_display}</td>
                   <td className="px-3 py-2 text-end font-medium">
-                    {campaign.latest_insight ? `$${fmt(campaign.latest_insight.spend)}` : '—'}
+                    {campaign.latest_insight ? money(campaign.latest_insight.spend) : '—'}
                   </td>
                   <td className="px-3 py-2 text-end">
                     {fmtInt(campaign.latest_insight?.impressions)}
@@ -212,7 +209,7 @@ export function CampaignsWorkspacePage() {
                     {fmtPct(campaign.latest_insight?.ctr)}
                   </td>
                   <td className="px-3 py-2 text-end">
-                    {campaign.latest_insight?.cpc != null ? `$${fmt(campaign.latest_insight.cpc)}` : '—'}
+                    {campaign.latest_insight?.cpc != null ? money(campaign.latest_insight.cpc) : '—'}
                   </td>
                   <td className="px-3 py-2 text-end">
                     {fmtInt(campaign.latest_insight?.purchases)}

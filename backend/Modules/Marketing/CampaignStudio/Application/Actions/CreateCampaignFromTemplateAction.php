@@ -13,7 +13,7 @@ use Modules\Marketing\CampaignStudio\Domain\Models\CampaignTemplate;
 class CreateCampaignFromTemplateAction
 {
     public function __construct(
-        private readonly CampaignTemplateService  $templateService,
+        private readonly CampaignTemplateService $templateService,
         private readonly CampaignVersioningService $versioningService,
     ) {}
 
@@ -21,6 +21,7 @@ class CreateCampaignFromTemplateAction
     {
         $draft = $this->templateService->createDraftFromTemplate($template, $overrides, $userId);
         $this->versioningService->snapshot($draft, VersionChangeType::INITIAL, $userId, "Created from template: {$template->name}");
+
         return $draft->fresh(['audience', 'placement']);
     }
 }

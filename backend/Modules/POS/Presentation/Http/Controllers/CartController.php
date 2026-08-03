@@ -24,28 +24,28 @@ final class CartController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private readonly OpenCartService         $openCartService,
-        private readonly FindCartService         $findCartService,
-        private readonly HoldCartService         $holdCartService,
-        private readonly ResumeCartService       $resumeCartService,
-        private readonly CancelCartService       $cancelCartService,
-        private readonly SetCartCustomerService  $setCartCustomerService,
+        private readonly OpenCartService $openCartService,
+        private readonly FindCartService $findCartService,
+        private readonly HoldCartService $holdCartService,
+        private readonly ResumeCartService $resumeCartService,
+        private readonly CancelCartService $cancelCartService,
+        private readonly SetCartCustomerService $setCartCustomerService,
     ) {}
 
     public function store(OpenCartRequest $request): JsonResponse
     {
-        $data    = $request->validated();
+        $data = $request->validated();
         $command = new OpenCartCommand(
-            sessionId:  $data['session_id'],
-            shiftId:    $data['shift_id'],
+            sessionId: $data['session_id'],
+            shiftId: $data['shift_id'],
             terminalId: $data['terminal_id'],
-            cashierId:  $data['cashier_id'],
-            currency:   $data['currency'],
+            cashierId: $data['cashier_id'],
+            currency: $data['currency'],
             customerId: $data['customer_id'] ?? null,
         );
 
         $result = $this->openCartService->execute($command);
-        $cart   = $this->findCartService->execute($result->cartId);
+        $cart = $this->findCartService->execute($result->cartId);
 
         return $this->created(new CartResource($cart), 'Cart opened.');
     }
@@ -73,10 +73,10 @@ final class CartController extends Controller
 
     public function setCustomer(SetCartCustomerRequest $request, string $cart): JsonResponse
     {
-        $data       = $request->validated();
-        $updated    = $this->setCartCustomerService->execute(
+        $data = $request->validated();
+        $updated = $this->setCartCustomerService->execute(
             new SetCartCustomerCommand(
-                cartId:     $cart,
+                cartId: $cart,
                 customerId: $data['customer_id'] ?? null,
             ),
         );

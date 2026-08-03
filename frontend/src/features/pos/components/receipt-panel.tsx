@@ -1,4 +1,5 @@
 import { Plus, Printer, X } from 'lucide-react';
+import { useFormatter } from '@/hooks/use-formatter';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -13,6 +14,7 @@ type ReceiptPanelProps = {
 };
 
 export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProps) {
+  const { money } = useFormatter();
   const { lastReceiptId } = usePosStore();
   const id = receiptId ?? lastReceiptId;
   const { data: receipt, isLoading } = useReceipt(id);
@@ -105,10 +107,10 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
               <div key={i} className="space-y-0.5">
                 <div className="flex justify-between font-medium text-xs">
                   <span className="flex-1 truncate">{item.product_name}</span>
-                  <span className="ml-2 tabular-nums">{item.line_total.amount}</span>
+                  <span className="ml-2 tabular-nums">{money(Number(item.line_total.amount), item.line_total.currency)}</span>
                 </div>
                 <div className="text-[10px] text-muted-foreground">
-                  {item.sku} × {item.quantity} @ {item.unit_price.amount}
+                  {item.sku} × {item.quantity} @ {money(Number(item.unit_price.amount), item.unit_price.currency)}
                 </div>
               </div>
             ))}
@@ -120,23 +122,23 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
           <div className="space-y-0.5 text-xs">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
-              <span className="tabular-nums">{receipt.totals.subtotal.amount}</span>
+              <span className="tabular-nums">{money(Number(receipt.totals.subtotal.amount), receipt.currency)}</span>
             </div>
             {parseFloat(receipt.totals.discount.amount) > 0 && (
               <div className="flex justify-between text-emerald-600">
                 <span>Discount</span>
-                <span className="tabular-nums">-{receipt.totals.discount.amount}</span>
+                <span className="tabular-nums">-{money(Number(receipt.totals.discount.amount), receipt.currency)}</span>
               </div>
             )}
             {parseFloat(receipt.totals.tax.amount) > 0 && (
               <div className="flex justify-between text-muted-foreground">
                 <span>Tax</span>
-                <span className="tabular-nums">{receipt.totals.tax.amount}</span>
+                <span className="tabular-nums">{money(Number(receipt.totals.tax.amount), receipt.currency)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-sm">
               <span>Total</span>
-              <span className="tabular-nums">{receipt.currency} {receipt.totals.total.amount}</span>
+              <span className="tabular-nums">{money(Number(receipt.totals.total.amount), receipt.currency)}</span>
             </div>
           </div>
 
@@ -147,16 +149,16 @@ export function ReceiptPanel({ receiptId, onClose, onNewSale }: ReceiptPanelProp
             {receipt.payments.map((p, i) => (
               <div key={i} className="flex justify-between">
                 <span className="capitalize">{p.method.replace('_', ' ')}</span>
-                <span className="tabular-nums">{p.amount.amount}</span>
+                <span className="tabular-nums">{money(Number(p.amount.amount), p.amount.currency)}</span>
               </div>
             ))}
             <div className="flex justify-between">
               <span>Tendered</span>
-              <span className="tabular-nums">{receipt.totals.tendered.amount}</span>
+              <span className="tabular-nums">{money(Number(receipt.totals.tendered.amount), receipt.currency)}</span>
             </div>
             <div className="flex justify-between font-medium text-foreground">
               <span>Change</span>
-              <span className="tabular-nums">{receipt.totals.change.amount}</span>
+              <span className="tabular-nums">{money(Number(receipt.totals.change.amount), receipt.currency)}</span>
             </div>
           </div>
 

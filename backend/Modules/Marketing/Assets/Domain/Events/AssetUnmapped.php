@@ -7,9 +7,9 @@ namespace Modules\Marketing\Assets\Domain\Events;
 final class AssetUnmapped
 {
     public function __construct(
-        public readonly string  $assetId,
-        public readonly string  $relatedType,
-        public readonly string  $relatedId,
-        public readonly string  $actorId,
+        public readonly string $assetId,
+        public readonly string $relatedType,
+        public readonly string $relatedId,
+        public readonly string $actorId,
     ) {}
 }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Shift\Domain\Exceptions;
 
-final class ShiftNotFoundException extends \DomainException
+use DomainException;
+
+final class ShiftNotFoundException extends DomainException
 {
     public static function withId(string $id): self
     {

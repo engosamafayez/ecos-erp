@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Application\Services;
 
 use Modules\CustomerEngagement\Domain\Models\Conversation;
@@ -16,15 +18,17 @@ class RoutingService
             ->get();
 
         $conversationData = [
-            'channel'   => $conversation->provider,
-            'language'  => $conversation->language,
-            'country'   => $conversation->country,
-            'is_vip'    => $conversation->is_vip ?? false,
+            'channel' => $conversation->provider,
+            'language' => $conversation->language,
+            'country' => $conversation->country,
+            'is_vip' => $conversation->is_vip ?? false,
             'campaign_id' => $conversation->campaign_id,
         ];
 
         foreach ($rules as $rule) {
-            if (!$rule->matches($conversationData)) { continue; }
+            if (! $rule->matches($conversationData)) {
+                continue;
+            }
 
             $update = [];
 
@@ -42,7 +46,7 @@ class RoutingService
                 $update['priority'] = $rule->set_priority;
             }
 
-            if (!empty($update)) {
+            if (! empty($update)) {
                 $conversation->update($update);
             }
             break; // First matching rule wins
@@ -52,18 +56,25 @@ class RoutingService
     public function paginate(array $filters, int $perPage = 20): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         return RoutingRule::query()
-            ->when(!empty($filters['company_id']), fn ($q) => $q->where('company_id', $filters['company_id']))
+            ->when(! empty($filters['company_id']), fn ($q) => $q->where('company_id', $filters['company_id']))
             ->orderBy('priority')
             ->paginate($perPage);
     }
 
-    public function create(array $data): RoutingRule { return RoutingRule::create($data); }
+    public function create(array $data): RoutingRule
+    {
+        return RoutingRule::create($data);
+    }
 
     public function update(RoutingRule $rule, array $data): RoutingRule
     {
         $rule->update($data);
+
         return $rule->fresh();
     }
 
-    public function delete(RoutingRule $rule): void { $rule->delete(); }
+    public function delete(RoutingRule $rule): void
+    {
+        $rule->delete();
+    }
 }

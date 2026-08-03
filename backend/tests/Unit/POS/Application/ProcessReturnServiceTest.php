@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Application;
 
+use Illuminate\Support\Facades\DB;
 use Modules\POS\Application\Commands\ProcessReturnCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
 use Modules\POS\Application\Exceptions\SaleNotFoundException;
@@ -16,7 +17,6 @@ use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
 use Modules\POS\Sale\Domain\Models\Sale;
 use Modules\POS\Sale\Domain\ValueObjects\PaymentSummaryLine;
 use Modules\POS\Sale\Domain\ValueObjects\SaleLine;
-use Illuminate\Support\Facades\DB;
 use Modules\POS\Shared\Domain\Enums\PaymentMethodType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Quantity;
@@ -25,10 +25,15 @@ use Tests\TestCase;
 final class ProcessReturnServiceTest extends TestCase
 {
     private SaleRepositoryInterface $saleRepo;
+
     private SaleReturnRepositoryInterface $returnRepo;
+
     private ReceiptRepositoryInterface $receiptRepo;
+
     private ReceiptNumberingStrategyInterface $numbering;
+
     private DomainEventPublisherInterface $publisher;
+
     private ProcessReturnService $service;
 
     protected function setUp(): void
@@ -36,13 +41,13 @@ final class ProcessReturnServiceTest extends TestCase
         parent::setUp();
 
         DB::shouldReceive('transaction')
-            ->andReturnUsing(fn(callable $cb) => $cb());
+            ->andReturnUsing(fn (callable $cb) => $cb());
 
-        $this->saleRepo   = $this->createMock(SaleRepositoryInterface::class);
+        $this->saleRepo = $this->createMock(SaleRepositoryInterface::class);
         $this->returnRepo = $this->createMock(SaleReturnRepositoryInterface::class);
         $this->receiptRepo = $this->createMock(ReceiptRepositoryInterface::class);
-        $this->numbering  = $this->createMock(ReceiptNumberingStrategyInterface::class);
-        $this->publisher  = $this->createMock(DomainEventPublisherInterface::class);
+        $this->numbering = $this->createMock(ReceiptNumberingStrategyInterface::class);
+        $this->publisher = $this->createMock(DomainEventPublisherInterface::class);
 
         $this->numbering->method('next')->willReturn('RCP-RTN-00001');
 
@@ -69,7 +74,7 @@ final class ProcessReturnServiceTest extends TestCase
         $sale = $this->makeSale('100.00');
         $this->saleRepo->method('findById')->willReturn($sale);
         $this->returnRepo->expects($this->once())->method('save')
-            ->willReturnCallback(fn($r) => $r->id = 'return-uuid');
+            ->willReturnCallback(fn ($r) => $r->id = 'return-uuid');
         $this->saleRepo->expects($this->once())->method('save')->with($sale);
         $this->receiptRepo->expects($this->once())->method('save');
         $this->publisher->method('publishAll');
@@ -81,7 +86,7 @@ final class ProcessReturnServiceTest extends TestCase
     {
         $sale = $this->makeSale('100.00');
         $this->saleRepo->method('findById')->willReturn($sale);
-        $this->returnRepo->method('save')->willReturnCallback(fn($r) => $r->id = 'return-uuid');
+        $this->returnRepo->method('save')->willReturnCallback(fn ($r) => $r->id = 'return-uuid');
         $this->saleRepo->method('save');
         $this->receiptRepo->method('save');
         $this->publisher->method('publishAll');
@@ -95,7 +100,7 @@ final class ProcessReturnServiceTest extends TestCase
     {
         $sale = $this->makeSale('100.00');
         $this->saleRepo->method('findById')->willReturn($sale);
-        $this->returnRepo->method('save')->willReturnCallback(fn($r) => $r->id = 'return-uuid');
+        $this->returnRepo->method('save')->willReturnCallback(fn ($r) => $r->id = 'return-uuid');
         $this->saleRepo->method('save');
         $this->receiptRepo->method('save');
         $this->publisher->method('publishAll');
@@ -126,25 +131,25 @@ final class ProcessReturnServiceTest extends TestCase
     private function makeSale(string $totalAmount): Sale
     {
         $sale = Sale::record(
-            cartId:           'cart-1',
-            paymentId:        'pay-1',
-            sessionId:        'sess-1',
-            shiftId:          'shift-1',
-            terminalId:       'term-1',
-            cashierId:        'cashier-1',
-            customerId:       null,
-            currency:         'EGP',
-            receiptNumber:    'SALE-001',
-            lines:            [
+            cartId: 'cart-1',
+            paymentId: 'pay-1',
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            terminalId: 'term-1',
+            cashierId: 'cashier-1',
+            customerId: null,
+            currency: 'EGP',
+            receiptNumber: 'SALE-001',
+            lines: [
                 new SaleLine('ln-1', 'prod-1', 'Product A', 'SKU-001',
                     Quantity::of('1'), Money::of('100.00', 'EGP'), null, null,
                     Money::of($totalAmount, 'EGP'), 0),
             ],
-            subtotal:         Money::of($totalAmount, 'EGP'),
-            discountTotal:    Money::of('0.00', 'EGP'),
-            total:            Money::of($totalAmount, 'EGP'),
-            amountPaid:       Money::of($totalAmount, 'EGP'),
-            changeGiven:      Money::of('0.00', 'EGP'),
+            subtotal: Money::of($totalAmount, 'EGP'),
+            discountTotal: Money::of('0.00', 'EGP'),
+            total: Money::of($totalAmount, 'EGP'),
+            amountPaid: Money::of($totalAmount, 'EGP'),
+            changeGiven: Money::of('0.00', 'EGP'),
             paymentSummaries: [
                 new PaymentSummaryLine(PaymentMethodType::Cash, Money::of($totalAmount, 'EGP'), null),
             ],
@@ -159,31 +164,31 @@ final class ProcessReturnServiceTest extends TestCase
     private function makeCommand(string $refundAmount = '100.00'): ProcessReturnCommand
     {
         return new ProcessReturnCommand(
-            saleId:                'sale-1',
+            saleId: 'sale-1',
             originalReceiptNumber: 'SALE-001',
-            sessionId:             'sess-1',
-            shiftId:               'shift-1',
-            terminalId:            'term-1',
-            cashierId:             'cashier-1',
-            customerId:            null,
-            currency:              'EGP',
-            returnNumber:          'RTN-001',
-            lines:                 [
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            terminalId: 'term-1',
+            cashierId: 'cashier-1',
+            customerId: null,
+            currency: 'EGP',
+            returnNumber: 'RTN-001',
+            lines: [
                 [
-                    'line_id'       => 'ln-1',
-                    'product_id'    => 'prod-1',
-                    'product_name'  => 'Product A',
-                    'sku'           => 'SKU-001',
-                    'quantity'      => '1',
-                    'unit_price'    => ['amount' => '100.00', 'currency' => 'EGP'],
+                    'line_id' => 'ln-1',
+                    'product_id' => 'prod-1',
+                    'product_name' => 'Product A',
+                    'sku' => 'SKU-001',
+                    'quantity' => '1',
+                    'unit_price' => ['amount' => '100.00', 'currency' => 'EGP'],
                     'refund_amount' => ['amount' => $refundAmount, 'currency' => 'EGP'],
-                    'reason'        => 'customer_preference',
+                    'reason' => 'customer_preference',
                     'should_restock' => true,
-                    'sort_order'    => 0,
+                    'sort_order' => 0,
                 ],
             ],
-            refundTotalAmount:     $refundAmount,
-            refundMethod:          'cash',
+            refundTotalAmount: $refundAmount,
+            refundMethod: 'cash',
         );
     }
 }

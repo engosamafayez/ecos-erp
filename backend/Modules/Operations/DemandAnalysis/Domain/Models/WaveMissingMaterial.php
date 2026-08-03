@@ -14,14 +14,14 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
  * Read model: only materials with shortage > 0.
  * Derived from WaveMaterialDemand after each recalculation.
  *
- * @property string  $id
- * @property string  $company_id
- * @property string  $warehouse_id
- * @property string  $preparation_wave_id
- * @property string  $material_id
- * @property string  $material_name
- * @property float   $missing_qty
- * @property int     $affected_orders_count
+ * @property string $id
+ * @property string $company_id
+ * @property string $warehouse_id
+ * @property string $preparation_wave_id
+ * @property string $material_id
+ * @property string $material_name
+ * @property float $missing_qty
+ * @property int $affected_orders_count
  * @property MaterialPriority $priority
  * @property string|null $procurement_status
  * @property \Carbon\Carbon $last_calculated_at
@@ -47,10 +47,10 @@ final class WaveMissingMaterial extends Model
     ];
 
     protected $casts = [
-        'missing_qty'           => 'float',
+        'missing_qty' => 'float',
         'affected_orders_count' => 'integer',
-        'priority'              => MaterialPriority::class,
-        'last_calculated_at'    => 'datetime',
+        'priority' => MaterialPriority::class,
+        'last_calculated_at' => 'datetime',
     ];
 
     /** @return BelongsTo<PreparationWave, self> */

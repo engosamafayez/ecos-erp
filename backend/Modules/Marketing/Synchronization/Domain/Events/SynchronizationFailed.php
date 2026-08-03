@@ -10,6 +10,6 @@ final class SynchronizationFailed
 {
     public function __construct(
         public readonly MarketingSyncLog $syncLog,
-        public readonly string           $errorMessage,
+        public readonly string $errorMessage,
     ) {}
 }

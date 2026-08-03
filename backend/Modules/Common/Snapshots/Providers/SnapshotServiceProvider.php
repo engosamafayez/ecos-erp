@@ -16,13 +16,13 @@ class SnapshotServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(IntegrityEngine::class, fn () => new IntegrityEngine());
+        $this->app->singleton(IntegrityEngine::class, fn () => new IntegrityEngine);
 
-        $this->app->singleton(SnapshotValidator::class, fn () => new SnapshotValidator());
+        $this->app->singleton(SnapshotValidator::class, fn () => new SnapshotValidator);
 
         $this->app->singleton(
             BusinessContextSnapshotBuilder::class,
-            fn () => new BusinessContextSnapshotBuilder(),
+            fn () => new BusinessContextSnapshotBuilder,
         );
 
         $this->app->singleton(
@@ -34,7 +34,7 @@ class SnapshotServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             SnapshotTimelineBuilder::class,
-            fn () => new SnapshotTimelineBuilder(),
+            fn () => new SnapshotTimelineBuilder,
         );
 
         $this->app->singleton(

@@ -45,22 +45,22 @@ final class GetSupplierInventoryBreakdownQuery
             ->get();
 
         return $rows->map(function (object $row): array {
-            $costValue  = (float) $row->cost_value;
-            $saleValue  = (float) $row->sale_value;
+            $costValue = (float) $row->cost_value;
+            $saleValue = (float) $row->sale_value;
 
             return [
-                'product_id'          => $row->product_id,
-                'product_sku'         => $row->product_sku,
-                'product_name'        => $row->product_name,
-                'average_cost'        => $row->average_cost !== null ? round((float) $row->average_cost, 4) : null,
-                'sale_price'          => $row->sale_price !== null ? round((float) $row->sale_price, 2) : null,
-                'remaining_quantity'  => round((float) $row->remaining_quantity, 4),
-                'cost_value'          => round($costValue, 2),
-                'sale_value'          => round($saleValue, 2),
-                'gross_profit'        => round(max(0.0, $saleValue - $costValue), 2),
+                'product_id' => $row->product_id,
+                'product_sku' => $row->product_sku,
+                'product_name' => $row->product_name,
+                'average_cost' => $row->average_cost !== null ? round((float) $row->average_cost, 4) : null,
+                'sale_price' => $row->sale_price !== null ? round((float) $row->sale_price, 2) : null,
+                'remaining_quantity' => round((float) $row->remaining_quantity, 4),
+                'cost_value' => round($costValue, 2),
+                'sale_value' => round($saleValue, 2),
+                'gross_profit' => round(max(0.0, $saleValue - $costValue), 2),
                 'oldest_receipt_date' => $row->oldest_receipt_date,
                 'latest_receipt_date' => $row->latest_receipt_date,
-                'receipt_count'       => (int) $row->receipt_count,
+                'receipt_count' => (int) $row->receipt_count,
             ];
         });
     }

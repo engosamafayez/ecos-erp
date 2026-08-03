@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\ClaudeBridge\Domain\Contracts;
 
 use Modules\ClaudeBridge\Domain\Models\Task;
-use Modules\ClaudeBridge\Domain\Enums\TaskStatus;
 
 interface TaskRepositoryInterface
 {

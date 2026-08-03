@@ -16,13 +16,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * related_type: 'company' | 'brand' | 'channel' | 'team'
  * related_id: UUID of the related ERP entity
  *
- * @property string  $id
- * @property string  $mapping_profile_id
- * @property string  $match_field
- * @property string  $match_value
- * @property string  $related_type
- * @property string  $related_id
- * @property int     $priority
+ * @property string $id
+ * @property string $mapping_profile_id
+ * @property string $match_field
+ * @property string $match_value
+ * @property string $related_type
+ * @property string $related_id
+ * @property int $priority
  */
 class MappingProfileRule extends Model
 {
@@ -55,20 +55,20 @@ class MappingProfileRule extends Model
     /**
      * Does this rule match a given raw asset descriptor?
      *
-     * @param array{name: string, external_id: string, asset_type: string} $asset
+     * @param  array{name: string, external_id: string, asset_type: string}  $asset
      */
     public function matchesData(array $asset): bool
     {
-        $name       = strtolower((string) ($asset['name'] ?? ''));
+        $name = strtolower((string) ($asset['name'] ?? ''));
         $externalId = (string) ($asset['external_id'] ?? '');
-        $assetType  = (string) ($asset['asset_type'] ?? '');
+        $assetType = (string) ($asset['asset_type'] ?? '');
 
         return match ($this->match_field) {
-            'name'          => $name === strtolower($this->match_value),
+            'name' => $name === strtolower($this->match_value),
             'name_contains' => str_contains($name, strtolower($this->match_value)),
-            'external_id'   => $externalId === $this->match_value,
-            'asset_type'    => $assetType === $this->match_value,
-            default         => false,
+            'external_id' => $externalId === $this->match_value,
+            'asset_type' => $assetType === $this->match_value,
+            default => false,
         };
     }
 

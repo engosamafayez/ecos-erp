@@ -41,14 +41,14 @@ final class DemandAnalysisDTO
     public function toArray(): array
     {
         return [
-            'product_id'               => $this->product_id,
-            'inventory_health'         => $this->inventory_health,
-            'demand_intelligence'      => $this->demand_intelligence,
-            'coverage_intelligence'    => $this->coverage_intelligence,
+            'product_id' => $this->product_id,
+            'inventory_health' => $this->inventory_health,
+            'demand_intelligence' => $this->demand_intelligence,
+            'coverage_intelligence' => $this->coverage_intelligence,
             'procurement_intelligence' => $this->procurement_intelligence,
-            'business_impact'          => $this->business_impact,
-            'recommendations'          => $this->recommendations,
-            'timeline'                 => $this->timeline,
+            'business_impact' => $this->business_impact,
+            'recommendations' => $this->recommendations,
+            'timeline' => $this->timeline,
         ];
     }
 
@@ -57,31 +57,31 @@ final class DemandAnalysisDTO
      */
     public function toProcurementPanel(): array
     {
-        $inv  = $this->inventory_health;
-        $dem  = $this->demand_intelligence;
-        $cov  = $this->coverage_intelligence;
+        $inv = $this->inventory_health;
+        $dem = $this->demand_intelligence;
+        $cov = $this->coverage_intelligence;
         $proc = $this->procurement_intelligence;
 
         return [
-            'product_id'  => $this->product_id,
-            'inventory'   => [
-                'on_hand_qty'   => $inv['on_hand'],
-                'reserved_qty'  => $inv['reserved'],
+            'product_id' => $this->product_id,
+            'inventory' => [
+                'on_hand_qty' => $inv['on_hand'],
+                'reserved_qty' => $inv['reserved'],
                 'available_qty' => $inv['available'],
             ],
             'consumption' => [
-                'daily_avg'   => $dem['daily_avg'],
-                'weekly_avg'  => $dem['weekly_avg'],
+                'daily_avg' => $dem['daily_avg'],
+                'weekly_avg' => $dem['weekly_avg'],
                 'monthly_avg' => $dem['monthly_avg'],
-                'trend'       => $dem['trend'],
+                'trend' => $dem['trend'],
             ],
-            'coverage'    => [
+            'coverage' => [
                 'days_remaining' => $cov['current_coverage_days'],
-                'risk'           => $cov['risk'],
+                'risk' => $cov['risk'],
             ],
-            'last_purchase'          => $proc['last_purchase'],
-            'alternative_suppliers'  => $proc['alternative_suppliers'],
-            'recommendations'        => $this->recommendations,
+            'last_purchase' => $proc['last_purchase'],
+            'alternative_suppliers' => $proc['alternative_suppliers'],
+            'recommendations' => $this->recommendations,
         ];
     }
 }

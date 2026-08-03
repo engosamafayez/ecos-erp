@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Pricing;
 
+use InvalidArgumentException;
 use Modules\POS\Pricing\Domain\Enums\PriceSource;
 use Modules\POS\Pricing\Domain\ValueObjects\PriceSnapshot;
 use Modules\POS\Pricing\Domain\ValueObjects\ResolvedPrice;
@@ -16,7 +17,7 @@ final class PriceSnapshotTest extends TestCase
 
     public function test_capture_creates_with_correct_fields(): void
     {
-        $price    = Money::of('149.99', 'EGP');
+        $price = Money::of('149.99', 'EGP');
         $snapshot = PriceSnapshot::capture('prod-001', 'Widget Pro', $price, PriceSource::SalePrice);
 
         $this->assertSame('prod-001', $snapshot->productId);
@@ -28,19 +29,19 @@ final class PriceSnapshotTest extends TestCase
 
     public function test_capture_throws_on_empty_product_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PriceSnapshot::capture('', 'Widget', Money::of('10.00', 'EGP'), PriceSource::RegularPrice);
     }
 
     public function test_capture_throws_on_empty_product_name(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PriceSnapshot::capture('prod-001', '', Money::of('10.00', 'EGP'), PriceSource::RegularPrice);
     }
 
     public function test_capture_throws_on_whitespace_only_product_name(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PriceSnapshot::capture('prod-001', '   ', Money::of('10.00', 'EGP'), PriceSource::RegularPrice);
     }
 
@@ -72,7 +73,7 @@ final class PriceSnapshotTest extends TestCase
 
     public function test_from_resolved_price_throws_on_empty_product_name(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $resolved = ResolvedPrice::of('prod-1', Money::of('10.00', 'EGP'), PriceSource::SalePrice);
         PriceSnapshot::fromResolvedPrice($resolved, '');
     }
@@ -80,8 +81,8 @@ final class PriceSnapshotTest extends TestCase
     public function test_from_resolved_price_generates_unique_ids(): void
     {
         $resolved = ResolvedPrice::of('prod-1', Money::of('10.00', 'EGP'), PriceSource::RegularPrice);
-        $a        = PriceSnapshot::fromResolvedPrice($resolved, 'Prod');
-        $b        = PriceSnapshot::fromResolvedPrice($resolved, 'Prod');
+        $a = PriceSnapshot::fromResolvedPrice($resolved, 'Prod');
+        $b = PriceSnapshot::fromResolvedPrice($resolved, 'Prod');
         $this->assertNotSame($a->snapshotId, $b->snapshotId);
     }
 
@@ -90,7 +91,7 @@ final class PriceSnapshotTest extends TestCase
     public function test_to_array_contains_required_keys(): void
     {
         $snapshot = PriceSnapshot::capture('prod-1', 'Widget', Money::of('50.00', 'EGP'), PriceSource::RegularPrice);
-        $data     = $snapshot->toArray();
+        $data = $snapshot->toArray();
 
         foreach (['snapshot_id', 'product_id', 'product_name', 'unit_price', 'source', 'captured_at'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");

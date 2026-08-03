@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,6 +35,7 @@ type ExchangePanelProps = {
 };
 
 export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
+  const { money } = useFormatter();
   const { cashierId, cashierName, currency, exchangeSaleId } = usePosStore();
   const [saleSearch, setSaleSearch] = useState(exchangeSaleId ?? '');
   const [activeSaleId, setActiveSaleId] = useState<string | null>(exchangeSaleId ?? null);
@@ -148,7 +150,7 @@ export function ExchangePanel({ onClose, onSuccess }: ExchangePanelProps) {
             <div className="rounded-lg bg-muted p-3 text-xs">
               <div className="flex justify-between font-medium">
                 <span>Receipt #{sale.receipt_number}</span>
-                <span>{currency} {sale.total.amount}</span>
+                <span>{money(Number(sale.total.amount), currency)}</span>
               </div>
             </div>
 

@@ -1,4 +1,5 @@
 import { ShieldAlert } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 
@@ -8,18 +9,15 @@ type PagePermissionStateProps = {
   className?: string;
 };
 
-/**
- * State shown when the current user lacks permission to view page content.
- *
- * Usage:
- *   <PagePermissionState />
- *   <PagePermissionState title="Finance restricted" description="Contact your admin." />
- */
 export function PagePermissionState({
-  title = 'Access denied',
-  description = "You don't have permission to view this page. Contact your administrator to request access.",
+  title,
+  description,
   className,
 }: PagePermissionStateProps) {
+  const { t } = useTranslation('common');
+  const displayTitle = title ?? t($ => $.permission.accessDenied);
+  const displayDescription = description ?? t($ => $.permission.description);
+
   return (
     <div
       className={cn(
@@ -31,8 +29,8 @@ export function PagePermissionState({
         <ShieldAlert className="size-8" aria-hidden />
       </span>
       <div className="space-y-1">
-        <p className="text-base font-semibold">{title}</p>
-        <p className="mx-auto max-w-xs text-sm text-muted-foreground">{description}</p>
+        <p className="text-base font-semibold">{displayTitle}</p>
+        <p className="mx-auto max-w-xs text-sm text-muted-foreground">{displayDescription}</p>
       </div>
     </div>
   );

@@ -15,38 +15,38 @@ final class BusinessAccountResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'         => $this->id,
+            'id' => $this->id,
             'company_id' => $this->company_id,
-            'company'    => $this->whenLoaded('company', fn (): array => [
-                'id'   => $this->company->id,
+            'company' => $this->whenLoaded('company', fn (): array => [
+                'id' => $this->company->id,
                 'code' => $this->company->code,
                 'name' => $this->company->name,
             ]),
-            'brand_id'   => $this->brand_id,
-            'brand'      => $this->whenLoaded('brand', function (): ?array {
+            'brand_id' => $this->brand_id,
+            'brand' => $this->whenLoaded('brand', function (): ?array {
                 if ($this->brand === null) {
                     return null;
                 }
 
                 return [
-                    'id'   => $this->brand->id,
+                    'id' => $this->brand->id,
                     'code' => $this->brand->code,
                     'name' => $this->brand->name,
                 ];
             }),
-            'code'              => $this->code,
-            'name'              => $this->name,
-            'provider'          => $this->provider,
-            'status'            => $this->status,
-            'description'       => $this->description,
-            'logo'              => $this->logo,
-            'oauth_config'      => $this->oauth_config,
-            'api_keys'          => $this->api_keys,
-            'webhook_config'    => $this->webhook_config,
-            'sync_settings'     => $this->sync_settings,
+            'code' => $this->code,
+            'name' => $this->name,
+            'provider' => $this->provider,
+            'status' => $this->status,
+            'description' => $this->description,
+            'logo' => $this->logo,
+            'oauth_config' => $this->oauth_config,
+            'api_keys' => $this->api_keys,
+            'webhook_config' => $this->webhook_config,
+            'sync_settings' => $this->sync_settings,
             'external_metadata' => $this->external_metadata,
-            'created_at'        => $this->created_at?->toIso8601String(),
-            'updated_at'        => $this->updated_at?->toIso8601String(),
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

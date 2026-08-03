@@ -1,28 +1,8 @@
 import { Box, Layers, Package } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import type { ProductType } from '@/features/products/types/product';
-
-const CONFIG: Record<ProductType, { label: string; icon: typeof Package; className: string }> = {
-  finished_good: {
-    label: 'Finished Good',
-    icon: Package,
-    className:
-      'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-400',
-  },
-  raw_material: {
-    label: 'Raw Material',
-    icon: Layers,
-    className:
-      'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-400',
-  },
-  packaging_material: {
-    label: 'Packaging',
-    icon: Box,
-    className:
-      'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-950/50 dark:text-teal-400',
-  },
-};
 
 type ProductTypeBadgeProps = {
   type: ProductType;
@@ -30,6 +10,29 @@ type ProductTypeBadgeProps = {
 };
 
 export function ProductTypeBadge({ type, className }: ProductTypeBadgeProps) {
+  const { t } = useTranslation('products');
+
+  const CONFIG: Record<ProductType, { labelKey: string; icon: typeof Package; className: string }> = {
+    finished_good: {
+      labelKey: 'badges.finishedGood',
+      icon: Package,
+      className:
+        'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-400',
+    },
+    raw_material: {
+      labelKey: 'badges.rawMaterial',
+      icon: Layers,
+      className:
+        'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-400',
+    },
+    packaging_material: {
+      labelKey: 'badges.packaging',
+      icon: Box,
+      className:
+        'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-950/50 dark:text-teal-400',
+    },
+  };
+
   const cfg = CONFIG[type];
   const Icon = cfg.icon;
 
@@ -42,7 +45,7 @@ export function ProductTypeBadge({ type, className }: ProductTypeBadgeProps) {
       )}
     >
       <Icon className="size-3 shrink-0" />
-      {cfg.label}
+      {(t as unknown as (k: string) => string)(cfg.labelKey)}
     </span>
   );
 }

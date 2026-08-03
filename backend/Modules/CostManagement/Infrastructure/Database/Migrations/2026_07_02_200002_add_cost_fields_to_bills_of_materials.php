@@ -23,8 +23,8 @@ return new class extends Migration
         }
 
         Schema::table('bills_of_materials', function (Blueprint $table): void {
-            $table->decimal('yield_quantity',        10, 4)->default(1.0)->after('notes');
-            $table->decimal('recipe_cost',           15, 4)->nullable()->after('yield_quantity');
+            $table->decimal('yield_quantity', 10, 4)->default(1.0)->after('notes');
+            $table->decimal('recipe_cost', 15, 4)->nullable()->after('yield_quantity');
             $table->timestampTz('recipe_cost_updated_at')->nullable()->after('recipe_cost');
         });
     }

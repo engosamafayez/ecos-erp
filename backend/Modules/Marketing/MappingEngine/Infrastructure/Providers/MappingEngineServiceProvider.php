@@ -17,7 +17,7 @@ final class MappingEngineServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(
-            __DIR__ . '/../../Database/Migrations'
+            __DIR__.'/../../Database/Migrations',
         );
     }
 }

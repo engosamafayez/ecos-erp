@@ -8,6 +8,7 @@ use App\Core\FeatureFlags\FeatureFlagService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
+use Throwable;
 
 /**
  * When raw material stock arrives, check if any shortage-blocked waves
@@ -49,20 +50,20 @@ final class StockAddedListener
                         ->update(['resolved' => true, 'updated_at' => now()]);
 
                     Log::channel('daily')->info('[Preparation] Shortage resolved by stock arrival', [
-                        'wave_number'    => $req->wave_number,
-                        'wave_id'        => $req->preparation_wave_id,
-                        'material_id'    => $event->productId,
-                        'stock_arrived'  => $event->quantityReceived,
-                        'stock_on_hand'  => $currentStock,
-                        'qty_required'   => $req->quantity_required,
+                        'wave_number' => $req->wave_number,
+                        'wave_id' => $req->preparation_wave_id,
+                        'material_id' => $event->productId,
+                        'stock_arrived' => $event->quantityReceived,
+                        'stock_on_hand' => $currentStock,
+                        'qty_required' => $req->quantity_required,
                     ]);
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[Preparation] StockAddedListener failed', [
-                'product_id'  => $event->productId,
-                'warehouse_id'=> $event->warehouseId,
-                'error'       => $e->getMessage(),
+                'product_id' => $event->productId,
+                'warehouse_id' => $event->warehouseId,
+                'error' => $e->getMessage(),
             ]);
         }
     }

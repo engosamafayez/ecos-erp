@@ -41,12 +41,12 @@ class AttributionController extends Controller
         $configs = AttributionConfig::where('company_id', $request->query('company_id'))->get();
 
         return \Illuminate\Http\Resources\Json\JsonResource::collection($configs->map(static fn ($c) => [
-            'id'         => $c->id,
+            'id' => $c->id,
             'company_id' => $c->company_id,
-            'model'      => $c->model->value,
+            'model' => $c->model->value,
             'model_label' => $c->model->label(),
             'model_description' => $c->model->description(),
-            'config'     => $c->config,
+            'config' => $c->config,
             'is_default' => $c->is_default,
             'created_at' => $c->created_at?->toIso8601String(),
         ]));
@@ -57,13 +57,13 @@ class AttributionController extends Controller
     {
         $data = $request->validate([
             'company_id' => ['required', 'uuid'],
-            'model'      => ['required', 'string'],
-            'config'     => ['nullable', 'array'],
+            'model' => ['required', 'string'],
+            'config' => ['nullable', 'array'],
             'is_default' => ['boolean'],
         ]);
 
         // If setting as default, clear other defaults for this company
-        if (!empty($data['is_default'])) {
+        if (! empty($data['is_default'])) {
             AttributionConfig::where('company_id', $data['company_id'])
                 ->update(['is_default' => false]);
         }
@@ -74,8 +74,8 @@ class AttributionController extends Controller
         );
 
         return response()->json(['data' => [
-            'id'         => $config->id,
-            'model'      => $config->model->value,
+            'id' => $config->id,
+            'model' => $config->model->value,
             'is_default' => $config->is_default,
         ]], 201);
     }

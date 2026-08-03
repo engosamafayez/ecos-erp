@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import type { ConnectionStatus } from '../types/marketing';
 
@@ -18,29 +19,14 @@ const STATUS_CLASS: Record<ConnectionStatus, string> = {
   error:          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
 
-const STATUS_LABEL: Record<ConnectionStatus, string> = {
-  pending:        'Pending',
-  authenticating: 'Authenticating',
-  connected:      'Connected',
-  validating:     'Validating',
-  synchronizing:  'Syncing',
-  healthy:        'Healthy',
-  warning:        'Warning',
-  degraded:       'Degraded',
-  disconnected:   'Disconnected',
-  archived:       'Archived',
-  // legacy
-  active:         'Active',
-  expired:        'Token Expired',
-  error:          'Error',
-};
-
 interface Props {
   status: ConnectionStatus;
   className?: string;
 }
 
 export function ConnectionStatusBadge({ status, className }: Props) {
+  const { t } = useTranslation('marketing');
+
   return (
     <span
       className={cn(
@@ -49,7 +35,7 @@ export function ConnectionStatusBadge({ status, className }: Props) {
         className,
       )}
     >
-      {STATUS_LABEL[status]}
+      {t($ => $.connections.status[status])}
     </span>
   );
 }

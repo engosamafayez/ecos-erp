@@ -33,6 +33,7 @@ function ChannelMultiSelect({
   value: string[];
   onChange: (ids: string[]) => void;
 }) {
+  const { t } = useTranslation('products');
   const { data: channelsData, isLoading } = useQuery({
     queryKey: ['channels-for-brand', brandId],
     queryFn: () => channelsService.list({ brand_id: brandId, per_page: 100 }),
@@ -53,7 +54,7 @@ function ChannelMultiSelect({
 
   if (!brandId) {
     return (
-      <p className="text-xs text-muted-foreground italic">Select a brand first.</p>
+      <p className="text-xs text-muted-foreground italic">{t($ => $.formSection.selectBrandFirst)}</p>
     );
   }
 
@@ -61,14 +62,14 @@ function ChannelMultiSelect({
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Loader2 className="size-3.5 animate-spin" />
-        Loading channels…
+        {t($ => $.formSection.loadingChannels)}
       </div>
     );
   }
 
   if (channels.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground italic">No channels for this brand.</p>
+      <p className="text-xs text-muted-foreground italic">{t($ => $.formSection.noChannelsForBrand)}</p>
     );
   }
 
@@ -163,7 +164,7 @@ export function ProductFormFields({ isEdit = false, existingProduct = null, onIm
       setValue('channel_ids', [], { shouldValidate: false });
     }
     prevBrandRef.current = brandId;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [brandId, setValue]);
 
   // When brand is selected (or options load) and Use Brand Defaults is ON:
@@ -209,9 +210,9 @@ export function ProductFormFields({ isEdit = false, existingProduct = null, onIm
     <div className="flex flex-col gap-5">
       {/* Section: Assignment */}
       <div className="rounded-lg border bg-muted/30 p-4 flex flex-col gap-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assignment</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t($ => $.formSection.assignment)}</p>
 
-        <FormField name="brand_id" label="Brand" required>
+        <FormField name="brand_id" label={t($ => $.formSection.brand)} required>
           <Controller
             control={control}
             name="brand_id"
@@ -221,7 +222,7 @@ export function ProductFormFields({ isEdit = false, existingProduct = null, onIm
           />
         </FormField>
 
-        <FormField name="channel_ids" label="Channels">
+        <FormField name="channel_ids" label={t($ => $.formSection.channels)}>
           <Controller
             control={control}
             name="channel_ids"
@@ -235,23 +236,23 @@ export function ProductFormFields({ isEdit = false, existingProduct = null, onIm
           />
           {channelIds.length > 0 && (
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {channelIds.length} channel{channelIds.length !== 1 ? 's' : ''} selected
+              {t($ => $.formSection.channelsSelected, { count: channelIds.length })}
             </p>
           )}
         </FormField>
       </div>
 
       {/* Section: Product Image */}
-      <FormField name="image_url" label="Product Image">
+      <FormField name="image_url" label={t($ => $.formSection.productImage)}>
         <ImageUploadField existingUrl={imageUrl ?? null} onChange={handleImageChange} />
       </FormField>
 
       {/* Section: Basic Info */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField name="sku" label={t('form.sku.label')} required>
+        <FormField name="sku" label={t($ => $.form.sku.label)} required>
           <div className="relative">
             <Input
-              placeholder={skuLoading ? 'Generating…' : t('form.sku.placeholder')}
+              placeholder={skuLoading ? t($ => $.formSection.generatingSku) : t($ => $.form.sku.placeholder)}
               {...register('sku')}
               className="pr-8"
             />
@@ -264,7 +265,7 @@ export function ProductFormFields({ isEdit = false, existingProduct = null, onIm
           </div>
         </FormField>
 
-        <FormField name="category_id" label={t('form.category.label')} required>
+        <FormField name="category_id" label={t($ => $.form.category.label)} required>
           <Controller
             control={control}
             name="category_id"
@@ -275,8 +276,8 @@ export function ProductFormFields({ isEdit = false, existingProduct = null, onIm
         </FormField>
 
         <div className="sm:col-span-2">
-          <FormField name="name" label={t('form.name.label')} required>
-            <Input placeholder={t('form.name.placeholder')} {...register('name')} />
+          <FormField name="name" label={t($ => $.form.name.label)} required>
+            <Input placeholder={t($ => $.form.name.placeholder)} {...register('name')} />
           </FormField>
         </div>
       </div>
@@ -284,13 +285,13 @@ export function ProductFormFields({ isEdit = false, existingProduct = null, onIm
       {/* Pricing Engine */}
       <ProductPricingSection existingProduct={existingProduct} />
 
-      <FormField name="description" label={t('form.description.label')}>
-        <Input placeholder={t('form.description.placeholder')} {...register('description')} />
+      <FormField name="description" label={t($ => $.form.description.label)}>
+        <Input placeholder={t($ => $.form.description.placeholder)} {...register('description')} />
       </FormField>
 
-      <FormField name="long_description" label={t('form.longDescription.label')}>
+      <FormField name="long_description" label={t($ => $.form.longDescription.label)}>
         <Textarea
-          placeholder={t('form.longDescription.placeholder')}
+          placeholder={t($ => $.form.longDescription.placeholder)}
           rows={3}
           {...register('long_description')}
         />
@@ -309,7 +310,7 @@ export function ProductFormFields({ isEdit = false, existingProduct = null, onIm
             />
           )}
         />
-        {t('form.active')}
+        {t($ => $.form.active)}
       </label>
     </div>
   );

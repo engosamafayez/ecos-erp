@@ -11,6 +11,7 @@ use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Events\SaleItemPayload;
 use Modules\POS\Application\Events\SalePaymentPayload;
 use Modules\POS\Application\Listeners\PosNotificationListener;
+use stdClass;
 use Tests\TestCase;
 
 /**
@@ -25,7 +26,7 @@ final class PosNotificationListenerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->listener = new PosNotificationListener();
+        $this->listener = new PosNotificationListener;
     }
 
     // ── Large sale alerts ─────────────────────────────────────────────────────
@@ -80,7 +81,7 @@ final class PosNotificationListenerTest extends TestCase
     public function test_logs_error_on_unexpected_exception_and_does_not_rethrow(): void
     {
         // Set threshold to a type that will cause (float) cast to fail
-        Config::set('pos.notifications.large_sale_threshold', new \stdClass());
+        Config::set('pos.notifications.large_sale_threshold', new stdClass);
 
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         // Either logs error (exception path) or survives gracefully
@@ -97,26 +98,26 @@ final class PosNotificationListenerTest extends TestCase
     private function makeEvent(string $grandTotal = '100.00'): SaleFinalized
     {
         return new SaleFinalized(
-            eventId:       'event-uuid-001',
-            occurredAt:    new DateTimeImmutable('now'),
-            saleId:        'sale-uuid-001',
+            eventId: 'event-uuid-001',
+            occurredAt: new DateTimeImmutable('now'),
+            saleId: 'sale-uuid-001',
             receiptNumber: 'RCP-2026-000001',
-            companyId:     'company-uuid-001',
-            channelId:     null,
-            warehouseId:   'warehouse-uuid-001',
-            sessionId:     'session-uuid-001',
-            shiftId:       'shift-uuid-001',
-            terminalId:    'terminal-uuid-001',
-            cashierId:     'cashier-uuid-001',
-            customerId:    'customer-uuid-001',
-            items:         [new SaleItemPayload('l1', 'p1', 'Widget', 'WGT', 1.0, $grandTotal, $grandTotal, 'EGP')],
-            payments:      [new SalePaymentPayload('cash', $grandTotal, 'EGP', null)],
-            subtotal:      $grandTotal,
+            companyId: 'company-uuid-001',
+            channelId: null,
+            warehouseId: 'warehouse-uuid-001',
+            sessionId: 'session-uuid-001',
+            shiftId: 'shift-uuid-001',
+            terminalId: 'terminal-uuid-001',
+            cashierId: 'cashier-uuid-001',
+            customerId: 'customer-uuid-001',
+            items: [new SaleItemPayload('l1', 'p1', 'Widget', 'WGT', 1.0, $grandTotal, $grandTotal, 'EGP')],
+            payments: [new SalePaymentPayload('cash', $grandTotal, 'EGP', null)],
+            subtotal: $grandTotal,
             discountTotal: '0.00',
-            grandTotal:    $grandTotal,
-            amountPaid:    $grandTotal,
-            changeGiven:   '0.00',
-            currency:      'EGP',
+            grandTotal: $grandTotal,
+            amountPaid: $grandTotal,
+            changeGiven: '0.00',
+            currency: 'EGP',
         );
     }
 }

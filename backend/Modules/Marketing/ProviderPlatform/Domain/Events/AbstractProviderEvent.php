@@ -18,35 +18,36 @@ use Illuminate\Support\Str;
 abstract class AbstractProviderEvent
 {
     public readonly string $eventId;
+
     public readonly string $occurredAt;
 
     /**
-     * @param string       $companyId      Company that owns this provider configuration
-     * @param string       $provider       Machine key, e.g. "meta", "google_ads"
-     * @param string       $providerType   Category, e.g. "social_platform", "advertising_platform"
-     * @param string|null  $triggeredBy    Actor user UUID, or null for system-initiated events
-     * @param string       $currentStatus  Status after the event
-     * @param string|null  $previousStatus Status before the event, null for first-time events
-     * @param string|null  $correlationId  Trace correlation ID from the originating request
-     * @param string|null  $requestId      HTTP request ID, null for background events
-     * @param string       $environment    config('app.env') value
-     * @param array        $metadata       Safe, non-secret context (app_id, provider_type, etc.)
-     * @param array|null   $payload        Optional provider-specific extra data — must never contain secrets
+     * @param  string  $companyId  Company that owns this provider configuration
+     * @param  string  $provider  Machine key, e.g. "meta", "google_ads"
+     * @param  string  $providerType  Category, e.g. "social_platform", "advertising_platform"
+     * @param  string|null  $triggeredBy  Actor user UUID, or null for system-initiated events
+     * @param  string  $currentStatus  Status after the event
+     * @param  string|null  $previousStatus  Status before the event, null for first-time events
+     * @param  string|null  $correlationId  Trace correlation ID from the originating request
+     * @param  string|null  $requestId  HTTP request ID, null for background events
+     * @param  string  $environment  config('app.env') value
+     * @param  array  $metadata  Safe, non-secret context (app_id, provider_type, etc.)
+     * @param  array|null  $payload  Optional provider-specific extra data — must never contain secrets
      */
     public function __construct(
-        public readonly string  $companyId,
-        public readonly string  $provider,
-        public readonly string  $providerType,
+        public readonly string $companyId,
+        public readonly string $provider,
+        public readonly string $providerType,
         public readonly ?string $triggeredBy,
-        public readonly string  $currentStatus,
+        public readonly string $currentStatus,
         public readonly ?string $previousStatus,
         public readonly ?string $correlationId,
         public readonly ?string $requestId,
-        public readonly string  $environment,
-        public readonly array   $metadata  = [],
-        public readonly ?array  $payload   = null,
+        public readonly string $environment,
+        public readonly array $metadata = [],
+        public readonly ?array $payload = null,
     ) {
-        $this->eventId    = (string) Str::uuid();
+        $this->eventId = (string) Str::uuid();
         $this->occurredAt = now()->toISOString();
     }
 
@@ -57,20 +58,20 @@ abstract class AbstractProviderEvent
     public function toArray(): array
     {
         return [
-            'event_id'        => $this->eventId,
-            'event_name'      => $this->eventName(),
-            'occurred_at'     => $this->occurredAt,
-            'company_id'      => $this->companyId,
-            'provider'        => $this->provider,
-            'provider_type'   => $this->providerType,
-            'triggered_by'    => $this->triggeredBy,
-            'current_status'  => $this->currentStatus,
+            'event_id' => $this->eventId,
+            'event_name' => $this->eventName(),
+            'occurred_at' => $this->occurredAt,
+            'company_id' => $this->companyId,
+            'provider' => $this->provider,
+            'provider_type' => $this->providerType,
+            'triggered_by' => $this->triggeredBy,
+            'current_status' => $this->currentStatus,
             'previous_status' => $this->previousStatus,
-            'correlation_id'  => $this->correlationId,
-            'request_id'      => $this->requestId,
-            'environment'     => $this->environment,
-            'metadata'        => $this->metadata,
-            'payload'         => $this->payload,
+            'correlation_id' => $this->correlationId,
+            'request_id' => $this->requestId,
+            'environment' => $this->environment,
+            'metadata' => $this->metadata,
+            'payload' => $this->payload,
         ];
     }
 }

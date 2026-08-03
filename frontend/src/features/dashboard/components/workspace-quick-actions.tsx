@@ -7,76 +7,95 @@ import {
   ShoppingCart,
   UserPlus,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 
 // ── Action definitions ─────────────────────────────────────────────────────
 
+type QuickActionTitleKey =
+  | 'quickActionsWidget.createOrder'
+  | 'quickActionsWidget.receiveInventory'
+  | 'quickActionsWidget.launchWave'
+  | 'quickActionsWidget.transferStock'
+  | 'quickActionsWidget.addCustomer'
+  | 'quickActionsWidget.purchaseMaterials';
+
+type QuickActionDescKey =
+  | 'quickActionsWidget.createOrderDesc'
+  | 'quickActionsWidget.receiveInventoryDesc'
+  | 'quickActionsWidget.launchWaveDesc'
+  | 'quickActionsWidget.transferStockDesc'
+  | 'quickActionsWidget.addCustomerDesc'
+  | 'quickActionsWidget.purchaseMaterialsDesc';
+
 interface QuickAction {
-  id:          string;
-  icon:        LucideIcon;
-  title:       string;
-  description: string;
-  to:          string;
-  color:       string;
-  badge?:      string;
+  id:       string;
+  icon:     LucideIcon;
+  titleKey: QuickActionTitleKey;
+  descKey:  QuickActionDescKey;
+  to:       string;
+  color:    string;
+  badge?:   string;
 }
 
 const ACTIONS: QuickAction[] = [
   {
-    id:          'create-order',
-    icon:        ShoppingCart,
-    title:       'Create Order',
-    description: 'Start a new sales order',
-    to:          ROUTES.ordersNew,
-    color:       'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
+    id:       'create-order',
+    icon:     ShoppingCart,
+    titleKey: 'quickActionsWidget.createOrder',
+    descKey:  'quickActionsWidget.createOrderDesc',
+    to:       ROUTES.ordersNew,
+    color:    'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
   },
   {
-    id:          'receive-inventory',
-    icon:        Package,
-    title:       'Receive Inventory',
-    description: 'Record incoming stock',
-    to:          ROUTES.goodsReceiptsNew,
-    color:       'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    id:       'receive-inventory',
+    icon:     Package,
+    titleKey: 'quickActionsWidget.receiveInventory',
+    descKey:  'quickActionsWidget.receiveInventoryDesc',
+    to:       ROUTES.goodsReceiptsNew,
+    color:    'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   },
   {
-    id:          'launch-wave',
-    icon:        Factory,
-    title:       'Launch Wave',
-    description: 'Start a preparation wave',
-    to:          ROUTES.waveWorkspace,
-    color:       'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+    id:       'launch-wave',
+    icon:     Factory,
+    titleKey: 'quickActionsWidget.launchWave',
+    descKey:  'quickActionsWidget.launchWaveDesc',
+    to:       ROUTES.waveWorkspace,
+    color:    'bg-violet-500/10 text-violet-600 dark:text-violet-400',
   },
   {
-    id:          'transfer-stock',
-    icon:        ArrowLeftRight,
-    title:       'Transfer Stock',
-    description: 'Move between warehouses',
-    to:          ROUTES.stockTransfers,
-    color:       'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+    id:       'transfer-stock',
+    icon:     ArrowLeftRight,
+    titleKey: 'quickActionsWidget.transferStock',
+    descKey:  'quickActionsWidget.transferStockDesc',
+    to:       ROUTES.stockTransfers,
+    color:    'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
   },
   {
-    id:          'add-customer',
-    icon:        UserPlus,
-    title:       'Add Customer',
-    description: 'Register new customer',
-    to:          ROUTES.customers,
-    color:       'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    id:       'add-customer',
+    icon:     UserPlus,
+    titleKey: 'quickActionsWidget.addCustomer',
+    descKey:  'quickActionsWidget.addCustomerDesc',
+    to:       ROUTES.customers,
+    color:    'bg-amber-500/10 text-amber-600 dark:text-amber-400',
   },
   {
-    id:          'purchase-materials',
-    icon:        ClipboardList,
-    title:       'Purchase Materials',
-    description: 'Create purchase order',
-    to:          ROUTES.purchaseMaterials,
-    color:       'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+    id:       'purchase-materials',
+    icon:     ClipboardList,
+    titleKey: 'quickActionsWidget.purchaseMaterials',
+    descKey:  'quickActionsWidget.purchaseMaterialsDesc',
+    to:       ROUTES.purchaseMaterials,
+    color:    'bg-orange-500/10 text-orange-600 dark:text-orange-400',
   },
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function WorkspaceQuickActions() {
+  const { t } = useTranslation('dashboard');
+
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
       {ACTIONS.map((action) => (
@@ -96,10 +115,10 @@ export function WorkspaceQuickActions() {
           </div>
           <div>
             <p className="text-sm font-semibold leading-tight">
-              {action.title}
+              {t(action.titleKey)}
             </p>
             <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
-              {action.description}
+              {t(action.descKey)}
             </p>
           </div>
         </Link>

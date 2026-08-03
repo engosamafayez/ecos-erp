@@ -9,8 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 final class FeatureFlag extends Model
 {
     public $incrementing = false;
-    protected $keyType   = 'string';
-    protected $table     = 'feature_flags';
+
+    protected $keyType = 'string';
+
+    protected $table = 'feature_flags';
 
     protected $fillable = [
         'id',
@@ -24,7 +26,7 @@ final class FeatureFlag extends Model
     protected function casts(): array
     {
         return [
-            'enabled'  => 'boolean',
+            'enabled' => 'boolean',
             'metadata' => 'array',
         ];
     }

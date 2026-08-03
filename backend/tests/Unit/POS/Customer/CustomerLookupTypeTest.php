@@ -11,26 +11,26 @@ final class CustomerLookupTypeTest extends TestCase
 {
     public function test_cases_have_correct_values(): void
     {
-        $this->assertSame('id',    CustomerLookupType::ById->value);
+        $this->assertSame('id', CustomerLookupType::ById->value);
         $this->assertSame('phone', CustomerLookupType::ByPhone->value);
         $this->assertSame('email', CustomerLookupType::ByEmail->value);
-        $this->assertSame('code',  CustomerLookupType::ByCode->value);
+        $this->assertSame('code', CustomerLookupType::ByCode->value);
     }
 
     public function test_labels_are_human_readable(): void
     {
-        $this->assertSame('Customer ID',    CustomerLookupType::ById->label());
-        $this->assertSame('Phone Number',   CustomerLookupType::ByPhone->label());
-        $this->assertSame('Email Address',  CustomerLookupType::ByEmail->label());
-        $this->assertSame('Customer Code',  CustomerLookupType::ByCode->label());
+        $this->assertSame('Customer ID', CustomerLookupType::ById->label());
+        $this->assertSame('Phone Number', CustomerLookupType::ByPhone->label());
+        $this->assertSame('Email Address', CustomerLookupType::ByEmail->label());
+        $this->assertSame('Customer Code', CustomerLookupType::ByCode->label());
     }
 
     public function test_can_create_from_value(): void
     {
-        $this->assertSame(CustomerLookupType::ById,    CustomerLookupType::from('id'));
+        $this->assertSame(CustomerLookupType::ById, CustomerLookupType::from('id'));
         $this->assertSame(CustomerLookupType::ByPhone, CustomerLookupType::from('phone'));
         $this->assertSame(CustomerLookupType::ByEmail, CustomerLookupType::from('email'));
-        $this->assertSame(CustomerLookupType::ByCode,  CustomerLookupType::from('code'));
+        $this->assertSame(CustomerLookupType::ByCode, CustomerLookupType::from('code'));
     }
 
     public function test_try_from_returns_null_for_invalid_value(): void

@@ -12,17 +12,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Commerce\Channels\Domain\Models\Channel;
-use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
-use Modules\Commerce\Shipping\Domain\ValueObjects\ShippingValidationResult;
-use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
-use Modules\Commerce\Orders\Application\Actions\ResolveProductPricingAction;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
+use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
+use Modules\Commerce\Shipping\Domain\ValueObjects\ShippingValidationResult;
 use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
-use Modules\Operations\Preparation\Application\Services\WarehouseAssignmentEngine;
+use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
+use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
+use Modules\Operations\Preparation\Application\Services\BranchAssignmentEngine;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Modules\Sales\Customers\Domain\Models\CustomerAddress;
+use Throwable;
+use ValueError;
 
 /**
  * Creates a manual order with optional inline customer creation.
@@ -37,10 +39,12 @@ final class CreateManualOrderAction extends BaseAction
         private readonly OrderRepositoryInterface $orders,
         private readonly ResolveProductPricingAction $pricingAction,
         private readonly PermissionServiceInterface $permissions,
-        private readonly WarehouseAssignmentEngine $warehouseAssignment,
+        private readonly BranchAssignmentEngine $branchAssignment,
         private readonly ConfigurationManager $config,
         private readonly ReserveOrderInventoryAction $reserveInventory,
         private readonly ShippingValidationService $shippingEngine,
+        private readonly FulfillmentEngine $fulfillmentEngine,
+        private readonly ProcessOrderWorkflow $initiateWorkflow,
     ) {}
 
     /**
@@ -52,7 +56,7 @@ final class CreateManualOrderAction extends BaseAction
         $data = $arguments[0];
 
         // Resolve brand and order policy once — reused throughout this action.
-        $brandId     = $this->resolveBrandId($data['channel_id'] ?? null);
+        $brandId = $this->resolveBrandId($data['channel_id'] ?? null);
         $orderPolicy = $brandId !== null ? $this->config->getBrandPolicy($brandId, 'order') : [];
 
         // Enforce pricing constraints and discount limits.
@@ -67,16 +71,16 @@ final class CreateManualOrderAction extends BaseAction
 
         if ($shippingVO->isRejected()) {
             return OperationResult::failure(
-                'Shipping area rejected: ' . $shippingVO->reason .
-                ' The destination is not supported by the brand shipping policy.'
+                'Shipping area rejected: '.$shippingVO->reason.
+                ' The destination is not supported by the brand shipping policy.',
             );
         }
 
-        $customerWasReused  = false;
-        $subtotal           = 0.0;
-        $monetaryDiscount   = 0.0;
-        $grandTotal         = 0.0;
-        $remaining          = 0.0;
+        $customerWasReused = false;
+        $subtotal = 0.0;
+        $monetaryDiscount = 0.0;
+        $grandTotal = 0.0;
+        $remaining = 0.0;
         $order = DB::transaction(function () use ($data, $orderPolicy, $shippingResult, &$customerWasReused, &$subtotal, &$monetaryDiscount, &$grandTotal, &$remaining) {
             [$customerId, $customerWasReused] = $this->resolveCustomer($data, $orderPolicy);
 
@@ -95,77 +99,77 @@ final class CreateManualOrderAction extends BaseAction
                 array_map(
                     static fn (array $l): float => (float) $l['quantity'] * (float) $l['unit_price'],
                     $data['lines'] ?? [],
-                )
+                ),
             );
 
             // discount_amount in the request is the raw input (10 for "10%", or 150 for "EGP 150 fixed").
             // Convert to monetary amount before computing grand_total — same logic as OrderResource.
-            $rawDiscount      = (float) ($data['discount_amount'] ?? 0);
-            $discountType     = (string) ($data['discount_type'] ?? '');
+            $rawDiscount = (float) ($data['discount_amount'] ?? 0);
+            $discountType = (string) ($data['discount_type'] ?? '');
             $monetaryDiscount = $discountType === 'percentage'
                 ? round($subtotal * $rawDiscount / 100, 2)
                 : $rawDiscount;
-            $shippingCost   = (float) ($data['shipping_cost'] ?? 0);
-            $depositAmount  = (float) ($data['deposit_amount'] ?? 0);
-            $grandTotal     = round($subtotal - $monetaryDiscount + $shippingCost, 2);
-            $remaining      = max(0.0, round($grandTotal - $depositAmount, 2));
+            $shippingCost = (float) ($data['shipping_cost'] ?? 0);
+            $depositAmount = (float) ($data['deposit_amount'] ?? 0);
+            $grandTotal = round($subtotal - $monetaryDiscount + $shippingCost, 2);
+            $remaining = max(0.0, round($grandTotal - $depositAmount, 2));
 
             // Always derive company from the authenticated actor — never trust the
             // request body. This closes the cross-tenant order-creation vector.
-            $actorCompanyId  = Auth::user()?->company_id;
+            $actorCompanyId = Auth::user()?->company_id;
 
             $orderAttributes = [
-                'company_id'               => $actorCompanyId,
-                'channel_id'               => $data['channel_id'] ?? null,
-                'customer_id'              => $customerId,
-                'order_number'             => $this->orders->nextOrderNumber(),
-                'order_date'               => $data['order_date'] ?? now()->toDateString(),
-                'status'                   => $shippingResult['status_override'] ?? $this->resolveManualOrderStatus($data, $orderPolicy),
-                'subtotal'                 => $subtotal,
-                'total'                    => $grandTotal,
-                'notes'                    => $data['notes'] ?? null,
-                'requested_delivery_date'  => $data['requested_delivery_date'] ?? null,
-                'preferred_delivery_time'  => $data['preferred_delivery_time'] ?? null,
-                'delivery_window_id'       => $data['delivery_window_id'] ?? null,
-                'delivery_window'          => $data['delivery_window'] ?? null,
-                'delivery_zone_id'         => $data['delivery_zone_id'] ?? null,
-                'delivery_zone'            => $data['delivery_zone'] ?? null,
-                'payment_method_manual'    => $data['payment_method_manual'] ?? null,
-                'payment_proof_path'       => $data['payment_proof_path'] ?? null,
-                'governorate'              => $data['governorate'] ?? null,
-                'city'                     => $data['city'] ?? null,
-                'shipping_address'         => $data['shipping_address'] ?? null,
-                'building'                 => $data['building'] ?? null,
-                'floor'                    => $data['floor'] ?? null,
-                'apartment'                => $data['apartment'] ?? null,
-                'landmark'                 => $data['landmark'] ?? null,
-                'address_notes'            => $data['address_notes'] ?? null,
-                'area'                     => $data['area'] ?? null,
-                'google_maps_lat'          => $data['google_maps_lat'] ?? null,
-                'google_maps_lng'          => $data['google_maps_lng'] ?? null,
-                'google_maps_url'          => $data['google_maps_url'] ?? null,
-                'location_source'          => $data['location_source'] ?? null,
+                'company_id' => $actorCompanyId,
+                'channel_id' => $data['channel_id'] ?? null,
+                'customer_id' => $customerId,
+                'order_number' => $this->orders->nextOrderNumber(),
+                'order_date' => $data['order_date'] ?? now()->toDateString(),
+                'status' => $shippingResult['status_override'] ?? $this->resolveManualOrderStatus($data, $orderPolicy),
+                'subtotal' => $subtotal,
+                'total' => $grandTotal,
+                'notes' => $data['notes'] ?? null,
+                'requested_delivery_date' => $data['requested_delivery_date'] ?? null,
+                'preferred_delivery_time' => $data['preferred_delivery_time'] ?? null,
+                'delivery_window_id' => $data['delivery_window_id'] ?? null,
+                'delivery_window' => $data['delivery_window'] ?? null,
+                'delivery_zone_id' => $data['delivery_zone_id'] ?? null,
+                'delivery_zone' => $data['delivery_zone'] ?? null,
+                'payment_method_manual' => $data['payment_method_manual'] ?? null,
+                'payment_proof_path' => $data['payment_proof_path'] ?? null,
+                'governorate' => $data['governorate'] ?? null,
+                'city' => $data['city'] ?? null,
+                'shipping_address' => $data['shipping_address'] ?? null,
+                'building' => $data['building'] ?? null,
+                'floor' => $data['floor'] ?? null,
+                'apartment' => $data['apartment'] ?? null,
+                'landmark' => $data['landmark'] ?? null,
+                'address_notes' => $data['address_notes'] ?? null,
+                'area' => $data['area'] ?? null,
+                'google_maps_lat' => $data['google_maps_lat'] ?? null,
+                'google_maps_lng' => $data['google_maps_lng'] ?? null,
+                'google_maps_url' => $data['google_maps_url'] ?? null,
+                'location_source' => $data['location_source'] ?? null,
                 // Customer snapshot — historically immutable once written.
                 // Form data takes precedence; customer record provides fallback for
                 // fields not pre-filled when an existing customer is matched by phone.
-                'created_by_id'            => Auth::id() !== null ? (string) Auth::id() : null,
-                'created_by_name'          => Auth::user()?->name ?? null,
-                'status_entered_at'        => now(),
-                'customer_name'            => $data['customer_name'] ?? $customerRecord?->name,
+                'created_by_id' => Auth::id() !== null ? (string) Auth::id() : null,
+                'created_by_name' => Auth::user()?->name ?? null,
+                'status_entered_at' => now(),
+                'customer_name' => $data['customer_name'] ?? $customerRecord?->name,
                 'customer_secondary_phone' => ($data['customer_secondary_phone'] ?? null) ?: $customerRecord?->mobile,
-                'customer_notes'           => ($data['customer_notes'] ?? null) ?: $customerRecord?->notes,
-                'billing_phone'            => $data['customer_phone'] ?? null,
-                'shipping_cost'            => $shippingCost ?: null,
-                'shipping_cost_source'     => $data['shipping_cost_source'] ?? null,
-                'discount_amount'          => $rawDiscount,
-                'discount_type'            => $data['discount_type'] ?? null,
-                'deposit_amount'           => $depositAmount,
-                'remaining_balance'        => $remaining,
+                'customer_notes' => ($data['customer_notes'] ?? null) ?: $customerRecord?->notes,
+                'billing_phone' => $data['customer_phone'] ?? null,
+                'shipping_cost' => $shippingCost ?: null,
+                'shipping_cost_source' => $data['shipping_cost_source'] ?? null,
+                'discount_amount' => $rawDiscount,
+                'discount_type' => $data['discount_type'] ?? null,
+                'deposit_amount' => $depositAmount,
+                'remaining_balance' => $remaining,
             ];
 
             $lines = array_map(static fn (array $l): array => [
                 'product_id' => (string) $l['product_id'],
-                'quantity'   => (float) $l['quantity'],
+                'quantity' => (float) $l['quantity'],
                 'unit_price' => (float) $l['unit_price'],
                 'line_total' => (float) $l['quantity'] * (float) $l['unit_price'],
             ], $data['lines'] ?? []);
@@ -175,22 +179,23 @@ final class CreateManualOrderAction extends BaseAction
 
         $order->load(['customer', 'lines.product.unit', 'fees', 'coupons', 'channel']);
 
-        // CR-PREP-001: Auto-assign warehouse immediately after order creation.
-        $this->warehouseAssignment->assign($order, Auth::user()?->company_id ?? $order->channel?->brand?->company_id);
+        // TASK-BRANCH-ASSIGNMENT-ENGINE-001: Resolve branch → warehouse via coverage rules.
+        $this->branchAssignment->assign($order, Auth::user()?->company_id ?? $order->channel?->brand?->company_id);
 
-        // Auto-reserve inventory if the brand policy enables it, a warehouse is assigned,
-        // and the order is NOT Scheduled (BUG-003: future-dated orders must not lock stock
-        // until they activate on their delivery date).
-        $isScheduled = $order->status === OrderStatus::Scheduled;
-        if (
-            ! $isScheduled
-            && (bool) ($orderPolicy['auto_reserve_inventory'] ?? false)
-            && $order->assigned_warehouse_id !== null
-        ) {
+        // V3 auto-trigger: immediately initiate the FulfillmentEngine for all New orders.
+        // Scheduled orders wait for their delivery date; AwaitingPayment orders wait for payment.
+        // The engine attempts reservation and moves the order to InProgress (or AwaitingStock).
+        if ($order->status === OrderStatus::NewOrder) {
             try {
-                $this->reserveInventory->execute($order->fresh());
-            } catch (\Throwable $e) {
-                Log::channel('daily')->warning('[Order] Auto-reserve inventory failed after creation', [
+                $actorId = Auth::id() !== null ? (string) Auth::id() : null;
+                $this->fulfillmentEngine->run(
+                    $this->initiateWorkflow,
+                    $order->fresh(),
+                    [],
+                    $actorId,
+                );
+            } catch (Throwable $e) {
+                Log::channel('daily')->warning('[Order] Auto-initiate fulfillment failed after creation', [
                     'order_id' => $order->id,
                     'error'    => $e->getMessage(),
                 ]);
@@ -198,10 +203,10 @@ final class CreateManualOrderAction extends BaseAction
         }
 
         $this->logAuditEvents($order->id, $data, $order->status->value, $customerWasReused, $order, [
-            'subtotal'          => $subtotal,
+            'subtotal' => $subtotal,
             'monetary_discount' => $monetaryDiscount,
-            'grand_total'       => $grandTotal,
-            'remaining'         => $remaining,
+            'grand_total' => $grandTotal,
+            'remaining' => $remaining,
         ]);
 
         return OperationResult::success($order, 'Order created successfully.');
@@ -218,12 +223,24 @@ final class CreateManualOrderAction extends BaseAction
     }
 
     /**
-     * Statuses preferred when payment is confirmed — ordered by business priority.
-     * Cash / paid orders skip the pending queue and enter a higher-confidence status
-     * if one is enabled in the brand policy.
-     * Extend this list to change priority rules without touching UI or policy config.
+     * Status migration map for legacy config values (pre-V3).
+     * Brand policy JSON may still reference old status strings — map to current values.
      */
-    private const PAYMENT_CLEAR_STATUS_PREFERENCE = ['processing', 'confirmed', 'preparing'];
+    private const LEGACY_STATUS_MAP = [
+        'pending'    => 'new',
+        'processing' => 'in_progress',
+        'confirmed'  => 'in_progress',
+        'preparing'  => 'in_progress',
+        'review'     => 'on_hold',
+        'rescheduled' => 'on_hold',
+        'completed'  => 'delivered',
+    ];
+
+    /**
+     * Statuses preferred when payment is confirmed — ordered by business priority.
+     * Payment-clear orders prefer In Progress to enter the operational queue directly.
+     */
+    private const PAYMENT_CLEAR_STATUS_PREFERENCE = ['in_progress', 'new'];
 
     /**
      * Determines the entry status for a manually created order.
@@ -239,7 +256,7 @@ final class CreateManualOrderAction extends BaseAction
      */
     private function resolveManualOrderStatus(array $data, array $orderPolicy): string
     {
-        $method          = (string) ($data['payment_method_manual'] ?? '');
+        $method = (string) ($data['payment_method_manual'] ?? '');
         $submittedStatus = (string) ($data['status'] ?? '');
 
         // Proof required but not supplied → AwaitingPayment regardless of selection.
@@ -261,15 +278,19 @@ final class CreateManualOrderAction extends BaseAction
 
         if (is_array($configured)) {
             // Build the set of enabled, valid statuses (preserving config order).
+            // Legacy pre-V3 values (pending, processing, confirmed) are migrated on read.
             $enabled = [];
             foreach ($configured as $status) {
                 try {
-                    $enabled[] = OrderStatus::from((string) $status)->value;
-                } catch (\ValueError) { /* skip invalid */ }
+                    $migrated = self::LEGACY_STATUS_MAP[(string) $status] ?? (string) $status;
+                    $enabled[] = OrderStatus::from($migrated)->value;
+                } catch (ValueError) { /* skip invalid */
+                }
             }
+            $enabled = array_values(array_unique($enabled));
 
             if (empty($enabled)) {
-                return OrderStatus::Pending->value;
+                return OrderStatus::NewOrder->value;
             }
 
             // Honor explicit frontend selection when it is within the allowed set.
@@ -293,11 +314,13 @@ final class CreateManualOrderAction extends BaseAction
         // Single string (legacy) — only one valid status exists.
         if (is_string($configured) && $configured !== '') {
             try {
-                return OrderStatus::from($configured)->value;
-            } catch (\ValueError) { /* fall through */ }
+                $migrated = self::LEGACY_STATUS_MAP[$configured] ?? $configured;
+                return OrderStatus::from($migrated)->value;
+            } catch (ValueError) { /* fall through */
+            }
         }
 
-        return OrderStatus::Pending->value;
+        return OrderStatus::NewOrder->value;
     }
 
     /**
@@ -310,20 +333,21 @@ final class CreateManualOrderAction extends BaseAction
      * blocking the order would be more disruptive than helpful.
      *
      * @param  array<string, mixed>  $data
+     *
      * @throws AuthorizationException
      */
     private function enforceApprovedPricing(array $data): void
     {
-        $user      = Auth::user();
+        $user = Auth::user();
         $companyId = $user?->company_id;
 
         // System roles (super-admin) bypass all permission checks.
         $isSystemUser = $user !== null && $this->permissions->userHasSystemRole($user);
-        $canOverride  = $isSystemUser
+        $canOverride = $isSystemUser
             || ($user !== null && $this->permissions->userHasPermission($user, 'sales.orders.override_price'));
 
         foreach ($data['lines'] ?? [] as $line) {
-            $productId      = (string) ($line['product_id'] ?? '');
+            $productId = (string) ($line['product_id'] ?? '');
             $submittedPrice = (float) ($line['unit_price'] ?? 0);
 
             $pricing = $this->pricingAction->execute($productId, $companyId);
@@ -342,8 +366,8 @@ final class CreateManualOrderAction extends BaseAction
 
             if (! $canOverride) {
                 throw new AuthorizationException(
-                    "Price override is not permitted. Product approved price is {$approvedPrice}. " .
-                    'The `sales.orders.override_price` permission is required to submit a different price.'
+                    "Price override is not permitted. Product approved price is {$approvedPrice}. ".
+                    'The `sales.orders.override_price` permission is required to submit a different price.',
                 );
             }
 
@@ -357,6 +381,7 @@ final class CreateManualOrderAction extends BaseAction
      * to bypass, or system role.
      *
      * @param  array<string, mixed>  $data
+     *
      * @throws AuthorizationException
      */
     private function enforceDiscountPolicy(array $data): void
@@ -376,8 +401,8 @@ final class CreateManualOrderAction extends BaseAction
             return;
         }
 
-        $policy        = $this->config->getBrandPolicy((string) $channel->brand_id, 'pricing');
-        $discountType  = (string) ($policy['discount_type']  ?? 'percentage');
+        $policy = $this->config->getBrandPolicy((string) $channel->brand_id, 'pricing');
+        $discountType = (string) ($policy['discount_type'] ?? 'percentage');
         $discountValue = (float) ($policy['discount_value'] ?? 0);
 
         if ($discountValue <= 0) {
@@ -388,7 +413,7 @@ final class CreateManualOrderAction extends BaseAction
             array_map(
                 static fn (array $l): float => (float) $l['quantity'] * (float) $l['unit_price'],
                 $data['lines'] ?? [],
-            )
+            ),
         );
 
         $maxDiscount = $discountType === 'percentage'
@@ -401,17 +426,17 @@ final class CreateManualOrderAction extends BaseAction
 
         $user = Auth::user();
         $isSystemUser = $user !== null && $this->permissions->userHasSystemRole($user);
-        $canOverride  = $isSystemUser
+        $canOverride = $isSystemUser
             || ($user !== null && $this->permissions->userHasPermission($user, 'sales.orders.override_discount'));
 
         if (! $canOverride) {
             $limit = $discountType === 'percentage'
-                ? "{$discountValue}% of subtotal (max " . number_format($maxDiscount, 2) . ' EGP)'
-                : number_format($discountValue, 2) . ' EGP';
+                ? "{$discountValue}% of subtotal (max ".number_format($maxDiscount, 2).' EGP)'
+                : number_format($discountValue, 2).' EGP';
 
             throw new AuthorizationException(
-                "Discount of {$discountAmount} EGP exceeds the configured limit of {$limit}. " .
-                'The `sales.orders.override_discount` permission is required to proceed.'
+                "Discount of {$discountAmount} EGP exceeds the configured limit of {$limit}. ".
+                'The `sales.orders.override_discount` permission is required to proceed.',
             );
         }
     }
@@ -424,7 +449,7 @@ final class CreateManualOrderAction extends BaseAction
         ?\Modules\Commerce\Orders\Domain\Models\Order $order = null,
         array $financials = [],
     ): void {
-        $actorId   = Auth::id() !== null ? (string) Auth::id() : null;
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $actorName = Auth::user()?->name;
         $actorRole = Auth::user()?->roles()->value('name');
 
@@ -446,9 +471,9 @@ final class CreateManualOrderAction extends BaseAction
             null,
             null,
             [
-                'channel'       => $order?->channel?->name,
+                'channel' => $order?->channel?->name,
                 'customer_name' => $data['customer_name'] ?? null,
-                'order_total'   => $order?->total,
+                'order_total' => $order?->total,
             ],
             $actorRole,
         );
@@ -464,15 +489,15 @@ final class CreateManualOrderAction extends BaseAction
                 OrderEvent::log($orderId, 'customer_reused', 'Existing customer matched by phone.', [
                     'phone' => $data['customer_phone'] ?? null,
                 ], $actorId);
-            } elseif (!empty($data['customer_name'])) {
+            } elseif (! empty($data['customer_name'])) {
                 OrderEvent::log($orderId, 'customer_created', 'New customer created during order.', [
-                    'name'  => $data['customer_name'],
+                    'name' => $data['customer_name'],
                     'phone' => $data['customer_phone'] ?? null,
                 ], $actorId);
             }
         }
 
-        if (!empty($data['discount_amount']) && (float) $data['discount_amount'] > 0) {
+        if (! empty($data['discount_amount']) && (float) $data['discount_amount'] > 0) {
             OrderEvent::log(
                 $orderId,
                 'discount_applied',
@@ -491,20 +516,20 @@ final class CreateManualOrderAction extends BaseAction
                 null,
                 null,
                 [
-                    'amount'           => $data['discount_amount'],
-                    'type'             => $data['discount_type'] ?? 'fixed',
+                    'amount' => $data['discount_amount'],
+                    'type' => $data['discount_type'] ?? 'fixed',
                     'calculated_value' => $financials['monetary_discount'] ?? null,
-                    'subtotal'         => $financials['subtotal'] ?? null,
+                    'subtotal' => $financials['subtotal'] ?? null,
                 ],
                 $actorRole,
                 Auth::user()?->email,
             );
         }
 
-        if (!empty($data['deposit_amount']) && (float) $data['deposit_amount'] > 0) {
-            $depositAmt     = (float) $data['deposit_amount'];
-            $grandTotal     = (float) ($financials['grand_total'] ?? 0);
-            $remaining      = (float) ($financials['remaining'] ?? max(0, $grandTotal - $depositAmt));
+        if (! empty($data['deposit_amount']) && (float) $data['deposit_amount'] > 0) {
+            $depositAmt = (float) $data['deposit_amount'];
+            $grandTotal = (float) ($financials['grand_total'] ?? 0);
+            $remaining = (float) ($financials['remaining'] ?? max(0, $grandTotal - $depositAmt));
 
             OrderEvent::log(
                 $orderId,
@@ -531,9 +556,9 @@ final class CreateManualOrderAction extends BaseAction
             );
         }
 
-        if (!empty($data['payment_proof_path'])) {
+        if (! empty($data['payment_proof_path'])) {
             OrderEvent::log($orderId, 'proof_uploaded', 'Payment proof attached.', [
-                'path'   => $data['payment_proof_path'],
+                'path' => $data['payment_proof_path'],
                 'method' => $data['payment_method_manual'] ?? null,
             ], $actorId);
         }
@@ -544,16 +569,16 @@ final class CreateManualOrderAction extends BaseAction
             ], $actorId);
         }
 
-        if (!empty($data['requested_delivery_date'])) {
+        if (! empty($data['requested_delivery_date'])) {
             OrderEvent::log($orderId, 'delivery_date_set', 'Requested delivery date recorded.', [
                 'date' => $data['requested_delivery_date'],
             ], $actorId);
         }
 
-        if (!empty($data['google_maps_lat']) && !empty($data['google_maps_lng'])) {
+        if (! empty($data['google_maps_lat']) && ! empty($data['google_maps_lng'])) {
             OrderEvent::log($orderId, 'location_set', 'Customer location coordinates recorded.', [
-                'lat'    => $data['google_maps_lat'],
-                'lng'    => $data['google_maps_lng'],
+                'lat' => $data['google_maps_lat'],
+                'lng' => $data['google_maps_lng'],
                 'source' => $data['location_source'] ?? null,
             ], $actorId);
         }
@@ -577,11 +602,11 @@ final class CreateManualOrderAction extends BaseAction
      */
     private function resolveCustomer(array $data, array $orderPolicy = []): array
     {
-        if (!empty($data['customer_id'])) {
+        if (! empty($data['customer_id'])) {
             return [(string) $data['customer_id'], false];
         }
 
-        $phone  = (string) ($data['customer_phone'] ?? '');
+        $phone = (string) ($data['customer_phone'] ?? '');
         $policy = (string) ($orderPolicy['customer_matching_policy'] ?? 'reuse_existing');
 
         // Phone-based matching applies for all policies except always_create_new.
@@ -595,21 +620,21 @@ final class CreateManualOrderAction extends BaseAction
         // Create a new customer record.
         // Use MAX of the numeric suffix to avoid collision when records are inserted out of sequence.
         $maxNum = (int) \DB::table('customers')
-            ->selectRaw("COALESCE(MAX(CAST(SPLIT_PART(code, '-', 2) AS INTEGER)), 0) as n")
+            ->selectRaw("COALESCE(MAX(CAST(SUBSTRING_INDEX(code, '-', -1) AS UNSIGNED)), 0) as n")
             ->value('n');
-        $code = 'CUS-' . str_pad((string) ($maxNum + 1), 5, '0', STR_PAD_LEFT);
+        $code = 'CUS-'.str_pad((string) ($maxNum + 1), 5, '0', STR_PAD_LEFT);
 
         $customer = Customer::create([
-            'code'        => $code,
-            'name'        => (string) $data['customer_name'],
-            'phone'       => $data['customer_phone'] ?? null,
-            'mobile'      => $data['customer_secondary_phone'] ?? null,
-            'city'        => $data['city'] ?? null,
+            'code' => $code,
+            'name' => (string) $data['customer_name'],
+            'phone' => $data['customer_phone'] ?? null,
+            'mobile' => $data['customer_secondary_phone'] ?? null,
+            'city' => $data['city'] ?? null,
             'governorate' => $data['governorate'] ?? null,
-            'area'        => $data['area'] ?? null,
-            'address'     => $data['shipping_address'] ?? null,
-            'notes'       => $data['customer_notes'] ?? null,
-            'is_active'   => true,
+            'area' => $data['area'] ?? null,
+            'address' => $data['shipping_address'] ?? null,
+            'notes' => $data['customer_notes'] ?? null,
+            'is_active' => true,
         ]);
 
         // CustomerAddress is created by syncCustomerDefaultAddress after resolveCustomer returns.
@@ -629,22 +654,22 @@ final class CreateManualOrderAction extends BaseAction
     private function syncCustomerDefaultAddress(string $customerId, array $data): void
     {
         $governorate = $data['governorate'] ?? null;
-        $city        = $data['city']        ?? null;
+        $city = $data['city'] ?? null;
 
         if ($governorate === null && $city === null) {
             return;
         }
 
         $fields = [
-            'governorate'     => $governorate,
-            'city'            => $city,
-            'area'            => $data['area']            ?? null,
-            'address_line'    => $data['shipping_address'] ?? null,
-            'building'        => $data['building']        ?? null,
-            'floor'           => $data['floor']           ?? null,
-            'apartment'       => $data['apartment']       ?? null,
-            'landmark'        => $data['landmark']        ?? null,
-            'address_notes'   => $data['address_notes']   ?? null,
+            'governorate' => $governorate,
+            'city' => $city,
+            'area' => $data['area'] ?? null,
+            'address_line' => $data['shipping_address'] ?? null,
+            'building' => $data['building'] ?? null,
+            'floor' => $data['floor'] ?? null,
+            'apartment' => $data['apartment'] ?? null,
+            'landmark' => $data['landmark'] ?? null,
+            'address_notes' => $data['address_notes'] ?? null,
             'google_maps_lat' => $data['google_maps_lat'] ?? null,
             'google_maps_lng' => $data['google_maps_lng'] ?? null,
             'google_maps_url' => $data['google_maps_url'] ?? null,
@@ -667,8 +692,8 @@ final class CreateManualOrderAction extends BaseAction
         } else {
             CustomerAddress::create(array_merge($updates, [
                 'customer_id' => $customerId,
-                'label'       => 'Default',
-                'is_default'  => true,
+                'label' => 'Default',
+                'is_default' => true,
             ]));
         }
 
@@ -691,24 +716,24 @@ final class CreateManualOrderAction extends BaseAction
     private function validateAndResolveShipping(array $data, ?string $brandId): array
     {
         $governorateId = isset($data['governorate_id']) ? (int) $data['governorate_id'] : null;
-        $cityId        = isset($data['city_id'])        ? (int) $data['city_id']        : null;
-        $isDelivery    = $governorateId !== null;
+        $cityId = isset($data['city_id']) ? (int) $data['city_id'] : null;
+        $isDelivery = $governorateId !== null;
 
         if ($brandId === null || ! $isDelivery) {
             return ['result' => ShippingValidationResult::walkIn()];
         }
 
         $result = $this->shippingEngine->evaluate(
-            brandId:         $brandId,
-            governorateId:   $governorateId,
-            cityId:          $cityId,
+            brandId: $brandId,
+            governorateId: $governorateId,
+            cityId: $cityId,
             isDeliveryOrder: true,
         );
 
         $override = ['result' => $result];
 
         if ($result->requiresReview()) {
-            $override['status_override'] = OrderStatus::Review->value;
+            $override['status_override'] = OrderStatus::OnHold->value;
         }
 
         return $override;

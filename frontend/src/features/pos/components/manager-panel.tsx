@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Settings, LogOut, RotateCcw, Clock, DollarSign } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { useSession, useShift } from '@/features/pos/hooks/use-pos-queries';
 import { usePosStore } from '@/features/pos/store/pos-store';
 
 export function ManagerPanel() {
+  const { money } = useFormatter();
   const { sessionId, shiftId } = usePosStore();
   const [sessionDialogMode, setSessionDialogMode] = useState<'open' | 'close' | null>(null);
   const [shiftDialogMode, setShiftDialogMode] = useState<'open' | 'close' | 'approve' | null>(null);
@@ -92,12 +94,12 @@ export function ManagerPanel() {
               <div className="rounded bg-muted p-2 text-xs space-y-0.5">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Opening Cash</span>
-                  <span className="tabular-nums">{shift.opening_cash.amount}</span>
+                  <span className="tabular-nums">{money(Number(shift.opening_cash.amount), shift.opening_cash.currency)}</span>
                 </div>
                 {shift.closing_count && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Closing Count</span>
-                    <span className="tabular-nums">{shift.closing_count.amount}</span>
+                    <span className="tabular-nums">{money(Number(shift.closing_count.amount), shift.closing_count.currency)}</span>
                   </div>
                 )}
               </div>

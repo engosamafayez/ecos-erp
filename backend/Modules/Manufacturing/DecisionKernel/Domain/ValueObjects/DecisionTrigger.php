@@ -56,12 +56,12 @@ final readonly class DecisionTrigger
         array $metadata = [],
     ): self {
         return new self(
-            trigger_type:  $type,
-            trigger_id:    $id,
+            trigger_type: $type,
+            trigger_id: $id,
             trigger_version: $version,
-            triggered_at:  (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-            actor_id:      $actor,
-            metadata:      $metadata,
+            triggered_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
+            actor_id: $actor,
+            metadata: $metadata,
         );
     }
 
@@ -69,12 +69,12 @@ final readonly class DecisionTrigger
     public function toArray(): array
     {
         return [
-            'trigger_type'    => $this->trigger_type,
-            'trigger_id'      => $this->trigger_id,
+            'trigger_type' => $this->trigger_type,
+            'trigger_id' => $this->trigger_id,
             'trigger_version' => $this->trigger_version,
-            'triggered_at'    => $this->triggered_at,
-            'actor_id'        => $this->actor_id,
-            'metadata'        => $this->metadata,
+            'triggered_at' => $this->triggered_at,
+            'actor_id' => $this->actor_id,
+            'metadata' => $this->metadata,
         ];
     }
 }

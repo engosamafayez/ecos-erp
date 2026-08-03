@@ -6,6 +6,7 @@ namespace Modules\POS\CashDrawer\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use Modules\POS\CashDrawer\Domain\Events\CashInRecorded;
 use Modules\POS\CashDrawer\Domain\Events\CashOutRecorded;
 use Modules\POS\CashDrawer\Domain\Events\ClosingCountRecorded;
@@ -21,11 +22,12 @@ final class CashDrawer extends Model
 {
     use HasUuids;
 
-    protected $table  = 'pos_cash_drawers';
+    protected $table = 'pos_cash_drawers';
+
     protected $guarded = [];
 
     protected $casts = [
-        'movements'     => 'array',
+        'movements' => 'array',
         'opening_float' => 'array',
         'closing_count' => 'array',
     ];
@@ -38,47 +40,47 @@ final class CashDrawer extends Model
         string $shiftId,
         string $cashierId,
         string $currency,
-        Money  $openingFloat,
+        Money $openingFloat,
     ): self {
         if (trim($terminalId) === '') {
-            throw new \InvalidArgumentException('Terminal ID cannot be empty.');
+            throw new InvalidArgumentException('Terminal ID cannot be empty.');
         }
         if (trim($sessionId) === '') {
-            throw new \InvalidArgumentException('Session ID cannot be empty.');
+            throw new InvalidArgumentException('Session ID cannot be empty.');
         }
         if (trim($shiftId) === '') {
-            throw new \InvalidArgumentException('Shift ID cannot be empty.');
+            throw new InvalidArgumentException('Shift ID cannot be empty.');
         }
         if (trim($cashierId) === '') {
-            throw new \InvalidArgumentException('Cashier ID cannot be empty.');
+            throw new InvalidArgumentException('Cashier ID cannot be empty.');
         }
         if (trim($currency) === '') {
-            throw new \InvalidArgumentException('Currency cannot be empty.');
+            throw new InvalidArgumentException('Currency cannot be empty.');
         }
         if ($openingFloat->isNegative()) {
-            throw new \InvalidArgumentException('Opening float cannot be negative.');
+            throw new InvalidArgumentException('Opening float cannot be negative.');
         }
 
-        $drawer = new self();
-        $drawer->terminal_id   = $terminalId;
-        $drawer->session_id    = $sessionId;
-        $drawer->shift_id      = $shiftId;
-        $drawer->cashier_id    = $cashierId;
-        $drawer->currency      = $currency;
-        $drawer->status        = CashDrawerStatus::Open->value;
+        $drawer = new self;
+        $drawer->terminal_id = $terminalId;
+        $drawer->session_id = $sessionId;
+        $drawer->shift_id = $shiftId;
+        $drawer->cashier_id = $cashierId;
+        $drawer->currency = $currency;
+        $drawer->status = CashDrawerStatus::Open->value;
         $drawer->opening_float = $openingFloat->toArray();
-        $drawer->movements     = [];
+        $drawer->movements = [];
         $drawer->closing_count = null;
-        $drawer->opened_at     = now();
-        $drawer->closed_at     = null;
+        $drawer->opened_at = now();
+        $drawer->closed_at = null;
 
         $drawer->dispatchDomainEvent(DrawerOpened::now(
-            drawerId:     $drawer->id ?? '',
-            terminalId:   $terminalId,
-            sessionId:    $sessionId,
-            shiftId:      $shiftId,
-            cashierId:    $cashierId,
-            currency:     $currency,
+            drawerId: $drawer->id ?? '',
+            terminalId: $terminalId,
+            sessionId: $sessionId,
+            shiftId: $shiftId,
+            cashierId: $cashierId,
+            currency: $currency,
             openingFloat: $openingFloat->amount,
         ));
 
@@ -92,18 +94,18 @@ final class CashDrawer extends Model
         $this->guardOpen();
         $this->guardSameCurrency($amount);
 
-        $movement  = CashMovement::record(TransactionType::CashIn, $amount, $note);
+        $movement = CashMovement::record(TransactionType::CashIn, $amount, $note);
         $movements = $this->movements ?? [];
         $movements[] = $movement->toArray();
         $this->movements = $movements;
 
         $this->dispatchDomainEvent(CashInRecorded::now(
-            drawerId:   (string) $this->id,
+            drawerId: (string) $this->id,
             movementId: $movement->id,
-            shiftId:    (string) $this->shift_id,
-            amount:     $amount->amount,
-            currency:   $amount->currency,
-            note:       $note,
+            shiftId: (string) $this->shift_id,
+            amount: $amount->amount,
+            currency: $amount->currency,
+            note: $note,
         ));
 
         return $movement->id;
@@ -114,18 +116,18 @@ final class CashDrawer extends Model
         $this->guardOpen();
         $this->guardSameCurrency($amount);
 
-        $movement  = CashMovement::record(TransactionType::CashOut, $amount, $note);
+        $movement = CashMovement::record(TransactionType::CashOut, $amount, $note);
         $movements = $this->movements ?? [];
         $movements[] = $movement->toArray();
         $this->movements = $movements;
 
         $this->dispatchDomainEvent(CashOutRecorded::now(
-            drawerId:   (string) $this->id,
+            drawerId: (string) $this->id,
             movementId: $movement->id,
-            shiftId:    (string) $this->shift_id,
-            amount:     $amount->amount,
-            currency:   $amount->currency,
-            note:       $note,
+            shiftId: (string) $this->shift_id,
+            amount: $amount->amount,
+            currency: $amount->currency,
+            note: $note,
         ));
 
         return $movement->id;
@@ -137,7 +139,7 @@ final class CashDrawer extends Model
         $this->guardSameCurrency($actualCount);
 
         if ($actualCount->isNegative()) {
-            throw new \InvalidArgumentException('Closing count cannot be negative.');
+            throw new InvalidArgumentException('Closing count cannot be negative.');
         }
 
         if ($this->closing_count !== null) {
@@ -147,10 +149,10 @@ final class CashDrawer extends Model
         $this->closing_count = $actualCount->toArray();
 
         $this->dispatchDomainEvent(ClosingCountRecorded::now(
-            drawerId:    (string) $this->id,
-            shiftId:     (string) $this->shift_id,
+            drawerId: (string) $this->id,
+            shiftId: (string) $this->shift_id,
             actualCount: $actualCount->amount,
-            currency:    $actualCount->currency,
+            currency: $actualCount->currency,
         ));
     }
 
@@ -163,21 +165,21 @@ final class CashDrawer extends Model
         }
 
         $expected = $this->getExpectedBalance();
-        $closing  = $this->getClosingCount();
+        $closing = $this->getClosingCount();
         $variance = $this->getVariance();
 
-        $this->status    = CashDrawerStatus::Closed->value;
+        $this->status = CashDrawerStatus::Closed->value;
         $this->closed_at = now();
 
         $this->dispatchDomainEvent(DrawerClosed::now(
-            drawerId:        (string) $this->id,
-            shiftId:         (string) $this->shift_id,
-            terminalId:      (string) $this->terminal_id,
-            openingFloat:    $this->getOpeningFloat()->amount,
+            drawerId: (string) $this->id,
+            shiftId: (string) $this->shift_id,
+            terminalId: (string) $this->terminal_id,
+            openingFloat: $this->getOpeningFloat()->amount,
             expectedBalance: $expected->amount,
-            closingCount:    $closing->amount,
-            variance:        $variance->amount,
-            currency:        $this->currency,
+            closingCount: $closing->amount,
+            variance: $variance->amount,
+            currency: $this->currency,
         ));
     }
 
@@ -193,6 +195,7 @@ final class CashDrawer extends Model
         if ($this->closing_count === null) {
             return Money::zero($this->currency);
         }
+
         return Money::fromArray($this->closing_count);
     }
 
@@ -217,6 +220,7 @@ final class CashDrawer extends Model
         if ($this->closing_count === null) {
             return Money::zero($this->currency);
         }
+
         return $this->getClosingCount()->subtract($this->getExpectedBalance());
     }
 
@@ -238,8 +242,8 @@ final class CashDrawer extends Model
     public function getMovements(): array
     {
         return array_map(
-            fn(array $data) => CashMovement::fromArray($data),
-            $this->movements ?? []
+            fn (array $data) => CashMovement::fromArray($data),
+            $this->movements ?? [],
         );
     }
 
@@ -253,14 +257,21 @@ final class CashDrawer extends Model
         return CashDrawerStatus::from($this->status);
     }
 
-    public function isOpen(): bool   { return $this->getStatus() === CashDrawerStatus::Open; }
-    public function isClosed(): bool { return $this->getStatus() === CashDrawerStatus::Closed; }
+    public function isOpen(): bool
+    {
+        return $this->getStatus() === CashDrawerStatus::Open;
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->getStatus() === CashDrawerStatus::Closed;
+    }
 
     // ── Guards ────────────────────────────────────────────────────────────────
 
     private function guardOpen(): void
     {
-        if (!$this->isOpen()) {
+        if (! $this->isOpen()) {
             throw InvalidDrawerOperationException::drawerAlreadyClosed((string) $this->id);
         }
     }
@@ -268,8 +279,8 @@ final class CashDrawer extends Model
     private function guardSameCurrency(Money $money): void
     {
         if ($money->currency !== $this->currency) {
-            throw new \InvalidArgumentException(
-                "Currency mismatch: drawer is {$this->currency}, got {$money->currency}."
+            throw new InvalidArgumentException(
+                "Currency mismatch: drawer is {$this->currency}, got {$money->currency}.",
             );
         }
     }
@@ -286,8 +297,9 @@ final class CashDrawer extends Model
 
     public function pullDomainEvents(): array
     {
-        $events             = $this->domainEvents;
+        $events = $this->domainEvents;
         $this->domainEvents = [];
+
         return $events;
     }
 }

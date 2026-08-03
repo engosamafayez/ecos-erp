@@ -6,8 +6,8 @@ namespace Modules\Operations\Preparation\Domain\Enums;
 
 enum ExceptionStatus: string
 {
-    case Open      = 'open';
-    case Resolved  = 'resolved';
+    case Open = 'open';
+    case Resolved = 'resolved';
     case Escalated = 'escalated';
-    case Closed    = 'closed';
+    case Closed = 'closed';
 }

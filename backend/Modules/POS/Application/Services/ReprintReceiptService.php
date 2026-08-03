@@ -14,8 +14,8 @@ use Modules\POS\Receipt\Domain\Policies\ReprintPolicy;
 final class ReprintReceiptService
 {
     public function __construct(
-        private readonly ReceiptRepositoryInterface    $receiptRepo,
-        private readonly ReprintPolicy                 $reprintPolicy,
+        private readonly ReceiptRepositoryInterface $receiptRepo,
+        private readonly ReprintPolicy $reprintPolicy,
         private readonly DomainEventPublisherInterface $publisher,
     ) {}
 
@@ -26,9 +26,9 @@ final class ReprintReceiptService
         $maxReprints = $this->reprintPolicy->maxReprints();
 
         $receipt->reprint(
-            cashierId:   $command->cashierId,
-            terminalId:  $command->terminalId,
-            reason:      ReprintReason::tryFrom($command->reason) ?? ReprintReason::Other,
+            cashierId: $command->cashierId,
+            terminalId: $command->terminalId,
+            reason: ReprintReason::tryFrom($command->reason) ?? ReprintReason::Other,
             maxReprints: $maxReprints,
         );
 
@@ -37,7 +37,7 @@ final class ReprintReceiptService
         $this->publisher->publishAll($receipt->pullDomainEvents());
 
         return new ReprintReceiptResult(
-            receiptId:    (string) $receipt->id,
+            receiptId: (string) $receipt->id,
             receiptNumber: $receipt->receipt_number,
             reprintCount: $receipt->reprint_count,
         );

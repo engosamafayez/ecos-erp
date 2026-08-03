@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useFormatter } from '@/hooks/use-formatter';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -30,6 +31,7 @@ function StatCard({ label, value, color }: { label: string; value: number; color
 }
 
 function GateTripCard({ trip }: { trip: DispatchGateTripCard }) {
+  const { money } = useFormatter();
   const navigate = useNavigate();
 
   const statusColor = TRIP_STATUS_COLORS[trip.status as TripStatus] ?? 'bg-muted text-muted-foreground';
@@ -100,7 +102,7 @@ function GateTripCard({ trip }: { trip: DispatchGateTripCard }) {
           </div>
           <div className="text-center">
             <div className="text-sm font-bold tabular-nums">
-              EGP {trip.collection_amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              {money(trip.collection_amount)}
             </div>
             <div className="text-xs text-muted-foreground">Collection</div>
           </div>

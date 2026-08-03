@@ -55,13 +55,14 @@ final class BusinessAttributionServiceProvider extends ServiceProvider
 
         // EntityStateResolver: register all built-in state appliers
         $this->app->singleton(EntityStateResolver::class, function (): EntityStateResolver {
-            $resolver = new EntityStateResolver();
-            $resolver->register(new CustomerStateApplier());
-            $resolver->register(new OrderStateApplier());
-            $resolver->register(new LeadStateApplier());
-            $resolver->register(new ConversationStateApplier());
-            $resolver->register(new CampaignStateApplier());
-            $resolver->register(new ShipmentStateApplier());
+            $resolver = new EntityStateResolver;
+            $resolver->register(new CustomerStateApplier);
+            $resolver->register(new OrderStateApplier);
+            $resolver->register(new LeadStateApplier);
+            $resolver->register(new ConversationStateApplier);
+            $resolver->register(new CampaignStateApplier);
+            $resolver->register(new ShipmentStateApplier);
+
             return $resolver;
         });
 
@@ -89,6 +90,6 @@ final class BusinessAttributionServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
     }
 }

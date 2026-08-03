@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\CashDrawer;
 
+use InvalidArgumentException;
 use Modules\POS\CashDrawer\Domain\ValueObjects\CashMovement;
 use Modules\POS\Shared\Domain\Enums\TransactionType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -15,7 +16,7 @@ final class CashMovementTest extends TestCase
 
     public function test_record_creates_cash_in_movement(): void
     {
-        $amount   = Money::of('50.00', 'EGP');
+        $amount = Money::of('50.00', 'EGP');
         $movement = CashMovement::record(TransactionType::CashIn, $amount, 'Cash deposit');
 
         $this->assertSame(TransactionType::CashIn, $movement->type);
@@ -25,7 +26,7 @@ final class CashMovementTest extends TestCase
 
     public function test_record_creates_cash_out_movement(): void
     {
-        $amount   = Money::of('20.00', 'EGP');
+        $amount = Money::of('20.00', 'EGP');
         $movement = CashMovement::record(TransactionType::CashOut, $amount);
 
         $this->assertSame(TransactionType::CashOut, $movement->type);
@@ -60,13 +61,13 @@ final class CashMovementTest extends TestCase
 
     public function test_record_throws_on_zero_amount(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         CashMovement::record(TransactionType::CashIn, Money::zero('EGP'));
     }
 
     public function test_record_throws_on_negative_amount(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         CashMovement::record(TransactionType::CashOut, Money::of('-5.00', 'EGP'));
     }
 
@@ -75,7 +76,7 @@ final class CashMovementTest extends TestCase
     public function test_to_array_contains_required_keys(): void
     {
         $movement = CashMovement::record(TransactionType::CashIn, Money::of('30.00', 'EGP'), 'note');
-        $data     = $movement->toArray();
+        $data = $movement->toArray();
 
         $this->assertArrayHasKey('id', $data);
         $this->assertArrayHasKey('type', $data);
@@ -87,7 +88,7 @@ final class CashMovementTest extends TestCase
     public function test_to_array_serializes_type_as_string(): void
     {
         $movement = CashMovement::record(TransactionType::CashIn, Money::of('30.00', 'EGP'));
-        $data     = $movement->toArray();
+        $data = $movement->toArray();
 
         $this->assertSame('cash_in', $data['type']);
     }
@@ -95,7 +96,7 @@ final class CashMovementTest extends TestCase
     public function test_to_array_serializes_amount_as_nested_array(): void
     {
         $movement = CashMovement::record(TransactionType::CashOut, Money::of('15.50', 'EGP'));
-        $data     = $movement->toArray();
+        $data = $movement->toArray();
 
         $this->assertArrayHasKey('amount', $data['amount']);
         $this->assertArrayHasKey('currency', $data['amount']);

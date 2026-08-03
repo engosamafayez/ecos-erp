@@ -40,10 +40,10 @@ final class DeliveryZoneController extends Controller
     public function store(Request $request, string $brandId, string $geoId): JsonResponse
     {
         $validated = $request->validate([
-            'name'       => 'required|string|max:150',
-            'name_ar'    => 'nullable|string|max:150',
+            'name' => 'required|string|max:150',
+            'name_ar' => 'nullable|string|max:150',
             'sort_order' => 'nullable|integer|min:0',
-            'is_active'  => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         $actorId = Auth::id() ?? '';
@@ -51,19 +51,19 @@ final class DeliveryZoneController extends Controller
         $zone = DeliveryZone::create([
             ...$validated,
             'delivery_geography_id' => $geoId,
-            'brand_id'              => $brandId,
-            'created_by'            => $actorId,
-            'updated_by'            => $actorId,
+            'brand_id' => $brandId,
+            'created_by' => $actorId,
+            'updated_by' => $actorId,
         ]);
 
         $this->audit->record(
             companyId: Auth::user()?->company_id ?? '',
-            module:    'delivery_geography',
-            category:  'zone',
-            action:    'create',
-            oldValue:  null,
-            newValue:  $zone->toArray(),
-            brandId:   $brandId,
+            module: 'delivery_geography',
+            category: 'zone',
+            action: 'create',
+            oldValue: null,
+            newValue: $zone->toArray(),
+            brandId: $brandId,
         );
 
         return $this->created($zone->load('shippingRule'), 'Zone created.');
@@ -76,10 +76,10 @@ final class DeliveryZoneController extends Controller
             ->findOrFail($id);
 
         $validated = $request->validate([
-            'name'                 => 'sometimes|required|string|max:150',
-            'name_ar'              => 'nullable|string|max:150',
-            'sort_order'           => 'nullable|integer|min:0',
-            'is_active'            => 'nullable|boolean',
+            'name' => 'sometimes|required|string|max:150',
+            'name_ar' => 'nullable|string|max:150',
+            'sort_order' => 'nullable|integer|min:0',
+            'is_active' => 'nullable|boolean',
             'custom_shipping_cost' => 'nullable|numeric|min:0',
         ]);
 
@@ -88,12 +88,12 @@ final class DeliveryZoneController extends Controller
 
         $this->audit->record(
             companyId: Auth::user()?->company_id ?? '',
-            module:    'delivery_geography',
-            category:  'zone',
-            action:    'update',
-            oldValue:  $old,
-            newValue:  $zone->fresh()?->toArray() ?? [],
-            brandId:   $brandId,
+            module: 'delivery_geography',
+            category: 'zone',
+            action: 'update',
+            oldValue: $old,
+            newValue: $zone->fresh()?->toArray() ?? [],
+            brandId: $brandId,
         );
 
         return $this->updated($zone->load('shippingRule'), 'Zone updated.');
@@ -107,12 +107,12 @@ final class DeliveryZoneController extends Controller
 
         $this->audit->record(
             companyId: Auth::user()?->company_id ?? '',
-            module:    'delivery_geography',
-            category:  'zone',
-            action:    'delete',
-            oldValue:  $zone->toArray(),
-            newValue:  null,
-            brandId:   $brandId,
+            module: 'delivery_geography',
+            category: 'zone',
+            action: 'delete',
+            oldValue: $zone->toArray(),
+            newValue: null,
+            brandId: $brandId,
         );
 
         $zone->delete();

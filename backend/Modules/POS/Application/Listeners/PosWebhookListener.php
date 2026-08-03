@@ -7,6 +7,7 @@ namespace Modules\POS\Application\Listeners;
 use Illuminate\Support\Facades\Log;
 use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Jobs\DispatchWebhookJob;
+use Throwable;
 
 /**
  * Subscriber 8 — Integration / Webhook
@@ -52,26 +53,27 @@ final class PosWebhookListener
         $payload = $event->toArray();
 
         foreach ($endpoints as $url) {
-            if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            if (! filter_var($url, FILTER_VALIDATE_URL)) {
                 Log::channel('daily')->warning('[POS][Webhook] Invalid endpoint URL skipped', [
-                    'url'     => $url,
+                    'url' => $url,
                     'sale_id' => $event->saleId,
                 ]);
+
                 continue;
             }
 
             try {
                 DispatchWebhookJob::dispatch(
-                    endpointUrl:     $url,
-                    eventName:       $event->eventName(),
-                    idempotencyKey:  $event->eventId(),
-                    payload:         $payload,
+                    endpointUrl: $url,
+                    eventName: $event->eventName(),
+                    idempotencyKey: $event->eventId(),
+                    payload: $payload,
                 );
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::channel('daily')->error('[POS][Webhook] Failed to dispatch webhook job', [
-                    'url'     => $url,
+                    'url' => $url,
                     'sale_id' => $event->saleId,
-                    'error'   => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

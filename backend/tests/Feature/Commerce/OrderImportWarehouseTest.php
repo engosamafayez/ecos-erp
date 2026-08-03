@@ -19,17 +19,20 @@ class OrderImportWarehouseTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Brand $brand;
+
     private Warehouse $warehouse;
+
     private Channel $channel;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->company   = Company::factory()->create();
-        $this->brand     = Brand::factory()->create(['company_id' => $this->company->id]);
+        $this->company = Company::factory()->create();
+        $this->brand = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->channel   = Channel::factory()->create([
+        $this->channel = Channel::factory()->create([
             'brand_id' => $this->brand->id,
         ]);
     }
@@ -37,48 +40,48 @@ class OrderImportWarehouseTest extends TestCase
     private function makeWooOrder(string $sku, int $wooId = 1001): array
     {
         return [
-            'id'             => $wooId,
-            'number'         => (string) $wooId,
-            'status'         => 'processing',
-            'date_created'   => '2026-06-25T10:00:00',
-            'customer_note'  => '',
-            'total'          => '100.00',
+            'id' => $wooId,
+            'number' => (string) $wooId,
+            'status' => 'processing',
+            'date_created' => '2026-06-25T10:00:00',
+            'customer_note' => '',
+            'total' => '100.00',
             'shipping_total' => '0',
             'discount_total' => '0',
-            'total_tax'      => '0',
-            'billing'  => [
+            'total_tax' => '0',
+            'billing' => [
                 'first_name' => 'Ahmed',
-                'last_name'  => 'Ali',
-                'email'      => 'ahmed@example.com',
-                'phone'      => '01012345678',
-                'country'    => 'EG',
-                'city'       => 'Cairo',
-                'address_1'  => '1 Tahrir Square',
-                'company'    => '',
-                'state'      => '',
-                'address_2'  => '',
-                'postcode'   => '',
+                'last_name' => 'Ali',
+                'email' => 'ahmed@example.com',
+                'phone' => '01012345678',
+                'country' => 'EG',
+                'city' => 'Cairo',
+                'address_1' => '1 Tahrir Square',
+                'company' => '',
+                'state' => '',
+                'address_2' => '',
+                'postcode' => '',
             ],
             'shipping' => [],
             'shipping_lines' => [],
-            'payment_method'       => 'bacs',
+            'payment_method' => 'bacs',
             'payment_method_title' => 'Direct bank transfer',
-            'transaction_id'       => '',
-            'date_paid'            => '',
+            'transaction_id' => '',
+            'date_paid' => '',
             'line_items' => [
                 [
                     'product_id' => 99,
-                    'sku'        => $sku,
-                    'name'       => 'Test Product',
-                    'quantity'   => 2,
-                    'price'      => '50.00',
-                    'subtotal'   => '100.00',
-                    'total'      => '100.00',
+                    'sku' => $sku,
+                    'name' => 'Test Product',
+                    'quantity' => 2,
+                    'price' => '50.00',
+                    'subtotal' => '100.00',
+                    'total' => '100.00',
                 ],
             ],
-            'fee_lines'    => [],
+            'fee_lines' => [],
             'coupon_lines' => [],
-            'tax_lines'    => [],
+            'tax_lines' => [],
         ];
     }
 
@@ -137,10 +140,10 @@ class OrderImportWarehouseTest extends TestCase
 
         $this->actingAs($user)
             ->postJson('/api/channels', [
-                'name'       => 'Test Channel',
-                'platform'   => 'woocommerce',
-                'store_url'  => 'https://example.com',
-                'is_active'  => true,
+                'name' => 'Test Channel',
+                'platform' => 'woocommerce',
+                'store_url' => 'https://example.com',
+                'is_active' => true,
                 // Missing brand_id — must fail validation
             ])
             ->assertUnprocessable()

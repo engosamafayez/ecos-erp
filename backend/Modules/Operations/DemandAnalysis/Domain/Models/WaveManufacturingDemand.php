@@ -13,17 +13,17 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
  * Read model: manufacturing demand per finished product per wave.
  * Tracks how much needs to be made vs. what is planned/in-progress/done.
  *
- * @property string  $id
- * @property string  $company_id
- * @property string  $warehouse_id
- * @property string  $preparation_wave_id
- * @property string  $product_id
- * @property string  $product_name
- * @property float   $required_qty
- * @property float   $planned_qty
- * @property float   $manufacturing_qty
- * @property float   $completed_qty
- * @property float   $remaining_qty
+ * @property string $id
+ * @property string $company_id
+ * @property string $warehouse_id
+ * @property string $preparation_wave_id
+ * @property string $product_id
+ * @property string $product_name
+ * @property float $required_qty
+ * @property float $planned_qty
+ * @property float $manufacturing_qty
+ * @property float $completed_qty
+ * @property float $remaining_qty
  * @property \Carbon\Carbon $last_calculated_at
  */
 final class WaveManufacturingDemand extends Model
@@ -48,11 +48,11 @@ final class WaveManufacturingDemand extends Model
     ];
 
     protected $casts = [
-        'required_qty'      => 'float',
-        'planned_qty'       => 'float',
+        'required_qty' => 'float',
+        'planned_qty' => 'float',
         'manufacturing_qty' => 'float',
-        'completed_qty'     => 'float',
-        'remaining_qty'     => 'float',
+        'completed_qty' => 'float',
+        'remaining_qty' => 'float',
         'last_calculated_at' => 'datetime',
     ];
 

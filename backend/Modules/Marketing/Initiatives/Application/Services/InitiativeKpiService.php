@@ -24,9 +24,9 @@ final class InitiativeKpiService
      */
     public function forInitiative(
         MarketingInitiative $initiative,
-        string              $datePreset = 'last_30d',
+        string $datePreset = 'last_30d',
     ): array {
-        $dateRange   = $this->dateRangeFromPreset($datePreset);
+        $dateRange = $this->dateRangeFromPreset($datePreset);
         $campaignIds = Campaign::where('marketing_initiative_id', $initiative->id)->pluck('id');
 
         if ($campaignIds->isEmpty()) {
@@ -38,7 +38,7 @@ final class InitiativeKpiService
             ->whereIn('marketing_campaign_id', $campaignIds)
             ->where('level', 'campaign')
             ->whereBetween('date_start', [$dateRange['start'], $dateRange['end']])
-            ->selectRaw("
+            ->selectRaw('
                 SUM(spend)       as total_spend,
                 SUM(reach)       as total_reach,
                 SUM(impressions) as total_impressions,
@@ -49,7 +49,7 @@ final class InitiativeKpiService
                 SUM(leads)       as total_leads,
                 SUM(messages)    as total_messages,
                 SUM(clicks)      as total_clicks
-            ")
+            ')
             ->first();
 
         // Campaign status breakdown
@@ -58,7 +58,7 @@ final class InitiativeKpiService
             ->groupBy('status')
             ->pluck('count', 'status');
 
-        $totalCampaigns  = $campaignIds->count();
+        $totalCampaigns = $campaignIds->count();
         $activeCampaigns = (int) ($statusBreakdown['ACTIVE'] ?? 0);
         $pausedCampaigns = (int) ($statusBreakdown['PAUSED'] ?? 0);
 
@@ -67,45 +67,45 @@ final class InitiativeKpiService
             : null;
 
         return [
-            'campaign_count'   => $totalCampaigns,
+            'campaign_count' => $totalCampaigns,
             'active_campaigns' => $activeCampaigns,
             'paused_campaigns' => $pausedCampaigns,
             'status_breakdown' => $statusBreakdown,
 
             // Spend & Budget
-            'budget'              => $initiative->budget,
-            'total_spend'         => $agg?->total_spend,
-            'budget_utilization'  => $budgetUtilization,
+            'budget' => $initiative->budget,
+            'total_spend' => $agg?->total_spend,
+            'budget_utilization' => $budgetUtilization,
 
             // Delivery
-            'total_reach'        => $agg?->total_reach,
-            'total_impressions'  => $agg?->total_impressions,
-            'total_clicks'       => $agg?->total_clicks,
+            'total_reach' => $agg?->total_reach,
+            'total_impressions' => $agg?->total_impressions,
+            'total_clicks' => $agg?->total_clicks,
 
             // Efficiency
-            'avg_ctr'  => $agg?->avg_ctr,
-            'avg_cpc'  => $agg?->avg_cpc,
-            'avg_cpm'  => $agg?->avg_cpm,
+            'avg_ctr' => $agg?->avg_ctr,
+            'avg_cpc' => $agg?->avg_cpc,
+            'avg_cpm' => $agg?->avg_cpm,
 
             // Conversions
             'total_purchases' => $agg?->total_purchases,
-            'total_leads'     => $agg?->total_leads,
-            'total_messages'  => $agg?->total_messages,
+            'total_leads' => $agg?->total_leads,
+            'total_messages' => $agg?->total_messages,
 
             // Placeholders — Marketing Finance module (future)
             'estimated_revenue' => null,
-            'estimated_profit'  => null,
-            'roas'              => null,
+            'estimated_profit' => null,
+            'roas' => null,
 
             // Timeline
-            'days_remaining'   => $initiative->daysRemaining(),
+            'days_remaining' => $initiative->daysRemaining(),
             'progress_percent' => $initiative->progressPercent(),
 
             // Period
             'period' => [
-                'preset'     => $datePreset,
-                'date_from'  => $dateRange['start'],
-                'date_to'    => $dateRange['end'],
+                'preset' => $datePreset,
+                'date_from' => $dateRange['start'],
+                'date_to' => $dateRange['end'],
             ],
         ];
     }
@@ -122,7 +122,7 @@ final class InitiativeKpiService
         $initiativeQuery = MarketingInitiative::query()
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId));
 
-        $totalInitiatives  = (clone $initiativeQuery)->count();
+        $totalInitiatives = (clone $initiativeQuery)->count();
         $activeInitiatives = (clone $initiativeQuery)->where('status', 'active')->count();
 
         $campaignIds = Campaign::whereHas('initiative', function ($q) use ($companyId) {
@@ -137,14 +137,14 @@ final class InitiativeKpiService
             ->first();
 
         return [
-            'total_initiatives'  => $totalInitiatives,
+            'total_initiatives' => $totalInitiatives,
             'active_initiatives' => $activeInitiatives,
-            'total_spend'        => $agg?->total_spend,
-            'total_reach'        => $agg?->total_reach,
-            'total_impressions'  => $agg?->total_impressions,
-            'avg_ctr'            => $agg?->avg_ctr,
-            'total_purchases'    => $agg?->total_purchases,
-            'total_leads'        => $agg?->total_leads,
+            'total_spend' => $agg?->total_spend,
+            'total_reach' => $agg?->total_reach,
+            'total_impressions' => $agg?->total_impressions,
+            'avg_ctr' => $agg?->avg_ctr,
+            'total_purchases' => $agg?->total_purchases,
+            'total_leads' => $agg?->total_leads,
         ];
     }
 
@@ -152,28 +152,28 @@ final class InitiativeKpiService
     private function emptyKpis(MarketingInitiative $initiative): array
     {
         return [
-            'campaign_count'   => 0,
+            'campaign_count' => 0,
             'active_campaigns' => 0,
             'paused_campaigns' => 0,
             'status_breakdown' => [],
-            'budget'           => $initiative->budget,
-            'total_spend'      => null,
+            'budget' => $initiative->budget,
+            'total_spend' => null,
             'budget_utilization' => null,
-            'total_reach'      => null,
+            'total_reach' => null,
             'total_impressions' => null,
-            'total_clicks'     => null,
-            'avg_ctr'          => null,
-            'avg_cpc'          => null,
-            'avg_cpm'          => null,
-            'total_purchases'  => null,
-            'total_leads'      => null,
-            'total_messages'   => null,
+            'total_clicks' => null,
+            'avg_ctr' => null,
+            'avg_cpc' => null,
+            'avg_cpm' => null,
+            'total_purchases' => null,
+            'total_leads' => null,
+            'total_messages' => null,
             'estimated_revenue' => null,
-            'estimated_profit'  => null,
-            'roas'              => null,
-            'days_remaining'   => $initiative->daysRemaining(),
+            'estimated_profit' => null,
+            'roas' => null,
+            'days_remaining' => $initiative->daysRemaining(),
             'progress_percent' => $initiative->progressPercent(),
-            'period'           => ['preset' => 'last_30d'],
+            'period' => ['preset' => 'last_30d'],
         ];
     }
 
@@ -181,11 +181,11 @@ final class InitiativeKpiService
     private function dateRangeFromPreset(string $preset): array
     {
         return match ($preset) {
-            'last_7d'    => ['start' => now()->subDays(7)->toDateString(),   'end' => now()->toDateString()],
-            'last_90d'   => ['start' => now()->subDays(90)->toDateString(),  'end' => now()->toDateString()],
-            'last_180d'  => ['start' => now()->subDays(180)->toDateString(), 'end' => now()->toDateString()],
+            'last_7d' => ['start' => now()->subDays(7)->toDateString(),   'end' => now()->toDateString()],
+            'last_90d' => ['start' => now()->subDays(90)->toDateString(),  'end' => now()->toDateString()],
+            'last_180d' => ['start' => now()->subDays(180)->toDateString(), 'end' => now()->toDateString()],
             'this_month' => ['start' => now()->startOfMonth()->toDateString(), 'end' => now()->toDateString()],
-            default      => ['start' => now()->subDays(30)->toDateString(),  'end' => now()->toDateString()],
+            default => ['start' => now()->subDays(30)->toDateString(),  'end' => now()->toDateString()],
         };
     }
 }

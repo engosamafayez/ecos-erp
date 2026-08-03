@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Common\Snapshots\Domain\DTOs;
 
+use DateTimeInterface;
+
 /**
  * Assembled business context data ready for persistence.
  * Produced by BusinessContextSnapshotBuilder from a BusinessContextProvider.
@@ -11,8 +13,8 @@ namespace Modules\Common\Snapshots\Domain\DTOs;
 final readonly class BusinessContextDTO
 {
     public function __construct(
-        public string  $aggregateId,
-        public string  $aggregateType,
+        public string $aggregateId,
+        public string $aggregateType,
 
         // PART 1: Policy versions
         public ?string $brandPolicyVersion,
@@ -25,35 +27,35 @@ final readonly class BusinessContextDTO
         public ?string $promotionEngineVersion,
 
         // PART 2: Decision provenance — Price
-        public string  $priceSource,
+        public string $priceSource,
         public ?string $pricingEngineRule,
         public ?string $priceReviewId,
 
         // PART 2: Decision provenance — Discount
         public ?string $discountSource,
         public ?string $campaignId,
-        public bool    $discountManualOverride,
+        public bool $discountManualOverride,
 
         // PART 2: Decision provenance — Shipping
         public ?string $shippingRuleId,
         public ?string $shippingZone,
 
         // PART 2: Decision provenance — Cost
-        public string  $costSource,
+        public string $costSource,
         public ?string $recipeVersion,
-        public string  $costEngineVersion,
+        public string $costEngineVersion,
 
         // PART 3: Approval snapshot
-        public ?string             $approvedBy,
-        public ?string             $confirmationUser,
-        public ?\DateTimeInterface $confirmationTime,
-        public ?string             $approvalWorkflowVersion,
+        public ?string $approvedBy,
+        public ?string $confirmationUser,
+        public ?DateTimeInterface $confirmationTime,
+        public ?string $approvalWorkflowVersion,
 
         // PART 4: Customer commercial context
         public ?string $customerTier,
         public ?string $customerSegment,
         public ?string $loyaltyLevel,
-        public ?float  $deliverySuccessRate,
+        public ?float $deliverySuccessRate,
 
         // PART 5: Brand context
         public ?string $brandName,

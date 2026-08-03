@@ -14,18 +14,18 @@ use Modules\POS\Sale\Domain\ValueObjects\PaymentSummaryLine;
 final readonly class SalePaymentPayload
 {
     public function __construct(
-        public string  $method,
-        public string  $amount,
-        public string  $currency,
+        public string $method,
+        public string $amount,
+        public string $currency,
         public ?string $reference,
     ) {}
 
     public static function fromPaymentSummaryLine(PaymentSummaryLine $line): self
     {
         return new self(
-            method:    $line->type->value,
-            amount:    $line->amount->amount,
-            currency:  $line->amount->currency,
+            method: $line->type->value,
+            amount: $line->amount->amount,
+            currency: $line->amount->currency,
             reference: $line->reference,
         );
     }
@@ -34,9 +34,9 @@ final readonly class SalePaymentPayload
     public function toArray(): array
     {
         return [
-            'method'    => $this->method,
-            'amount'    => $this->amount,
-            'currency'  => $this->currency,
+            'method' => $this->method,
+            'amount' => $this->amount,
+            'currency' => $this->currency,
             'reference' => $this->reference,
         ];
     }

@@ -42,7 +42,7 @@ return new class extends Migration
             $table->unique(['company_id', 'warehouse_id'], 'uq_wave_engine_config_company_warehouse');
         });
 
-        DB::statement("ALTER TABLE wave_engine_configurations ADD CONSTRAINT chk_wave_engine_config_times CHECK (preparation_start_time > collection_start_time AND wave_end_time > preparation_start_time)");
+        DB::statement('ALTER TABLE wave_engine_configurations ADD CONSTRAINT chk_wave_engine_config_times CHECK (preparation_start_time > collection_start_time AND wave_end_time > preparation_start_time)');
     }
 
     public function down(): void

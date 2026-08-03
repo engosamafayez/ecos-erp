@@ -20,46 +20,40 @@ export type ReservationStatus =
   | 'failed';
 
 // ── Status ────────────────────────────────────────────────────────────────────
-// V2 lifecycle (TASK-ORDER-WORKFLOW-V2-001).
-// Cancelled is no longer terminal — orders may be reopened.
-// Completed is the only true terminal state (financial closure).
+// V3 lifecycle (TASK-ORDERS-LIFECYCLE-ARCH-002).
+// Primary flow: new → in_progress → ready_for_dispatch → out_for_delivery → delivered
+// Terminal: delivered, cancelled, returned
 export type OrderStatus =
-  | 'scheduled'
-  | 'pending'
-  | 'awaiting_payment'   // V2 label: "Payment"
-  | 'processing'
-  | 'confirmed'
-  | 'preparing'
+  | 'new'
+  | 'in_progress'
+  | 'ready_for_dispatch'
   | 'out_for_delivery'
   | 'delivered'
-  | 'returned'
+  | 'awaiting_payment'
   | 'awaiting_stock'
-  | 'rescheduled'
-  | 'review'
+  | 'scheduled'
+  | 'on_hold'
   | 'cancelled'
-  | 'completed';
+  | 'returned';
 
 /**
- * Official V2 status display order — applies everywhere in the UI:
+ * Official V3 status display order — applies everywhere in the UI:
  * filters, selector, dashboard, analytics, timeline, toolbar, badges, exports.
  * Do NOT reorder.
  */
 export const STATUS_TAB_ORDER: Array<OrderStatus | 'all'> = [
   'all',
+  'new',
   'scheduled',
-  'pending',
   'awaiting_payment',
-  'processing',
-  'confirmed',
-  'preparing',
+  'in_progress',
+  'awaiting_stock',
+  'ready_for_dispatch',
   'out_for_delivery',
   'delivered',
   'returned',
-  'awaiting_stock',
-  'rescheduled',
-  'review',
+  'on_hold',
   'cancelled',
-  'completed',
 ];
 
 // ── Bulk action keys ─────────────────────────────────────────────────────────

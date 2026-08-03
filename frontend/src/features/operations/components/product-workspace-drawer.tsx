@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   X,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,16 +34,10 @@ type Props = {
   onClose: () => void;
 };
 
-const ISSUE_LABELS: Record<PreparationIssueType, string> = {
-  missing_material:  'Missing Material',
-  damaged_material:  'Damaged Material',
-  quality_issue:     'Quality Issue',
-  recipe_mismatch:   'Recipe Mismatch',
-  negative_stock:    'Negative Stock',
-  manual_adjustment: 'Manual Adjustment',
-};
-
 export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
+  const { t } = useTranslation('operations');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   const toast = useToastStore((s) => s.toast);
   const [activeTab, setActiveTab] = useState('overview');
   const [qtyPrepared, setQtyPrepared] = useState('');
@@ -53,39 +48,48 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
   const completeItem = useCompleteItem();
   const reportIssue  = useReportIssue();
 
+  const ISSUE_TYPES: PreparationIssueType[] = [
+    'missing_material',
+    'damaged_material',
+    'quality_issue',
+    'recipe_mismatch',
+    'negative_stock',
+    'manual_adjustment',
+  ];
+
   function handleCompleteItem() {
     if (!itemId || !qtyPrepared) return;
     const qty = parseFloat(qtyPrepared);
     if (isNaN(qty) || qty < 0) {
-      toast({ title: 'Invalid quantity', variant: 'destructive' });
+      toast({ title: t($ => $.wave.drawer.toast.invalidQty), variant: 'destructive' });
       return;
     }
     completeItem.mutate(
       { waveId, itemId, payload: { quantity_prepared: qty } },
       {
         onSuccess: () => {
-          toast({ title: 'Item marked prepared' });
+          toast({ title: t($ => $.wave.drawer.toast.itemPrepared) });
           setQtyPrepared('');
         },
-        onError: () => toast({ title: 'Error', description: 'Failed to update item.', variant: 'destructive' }),
+        onError: () => toast({ title: t($ => $.wave.drawer.toast.error), description: t($ => $.wave.drawer.toast.failedUpdate), variant: 'destructive' }),
       },
     );
   }
 
   function handleReportIssue() {
     if (!itemId || !issueType || issueDesc.length < 10) {
-      toast({ title: 'Fill in issue type and description (min 10 chars)', variant: 'destructive' });
+      toast({ title: t($ => $.wave.drawer.toast.fillIssue), variant: 'destructive' });
       return;
     }
     reportIssue.mutate(
       { waveId, payload: { issue_type: issueType as PreparationIssueType, description: issueDesc, entity_type: 'product', entity_id: workspace?.item?.product_id } },
       {
         onSuccess: () => {
-          toast({ title: 'Issue reported' });
+          toast({ title: t($ => $.wave.drawer.toast.issueReported) });
           setIssueType('');
           setIssueDesc('');
         },
-        onError: () => toast({ title: 'Error', description: 'Failed to report issue.', variant: 'destructive' }),
+        onError: () => toast({ title: t($ => $.wave.drawer.toast.error), description: t($ => $.wave.drawer.toast.failedReport), variant: 'destructive' }),
       },
     );
   }
@@ -113,7 +117,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
               )}
               <div>
                 <SheetTitle className="text-base leading-tight">
-                  {item?.name_snapshot ?? 'Loading…'}
+                  {item?.name_snapshot ?? t($ => $.wave.drawer.loading)}
                 </SheetTitle>
                 <p className="text-xs text-muted-foreground font-mono mt-0.5">{item?.sku}</p>
               </div>
@@ -131,8 +135,8 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                 {item.quantity_prepared}/{item.quantity_required} {product?.unit_symbol}
               </span>
               <Badge className={
-                item.status === 'prepared' ? 'bg-green-100 text-green-700' :
-                item.status === 'short'    ? 'bg-amber-100 text-amber-700' :
+                item.status === 'prepared'    ? 'bg-green-100 text-green-700' :
+                item.status === 'short'       ? 'bg-amber-100 text-amber-700' :
                 item.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
                 'bg-gray-100 text-gray-600'
               }>
@@ -151,24 +155,24 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
         {!isLoading && workspace && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
             <TabsList className="mx-6 mt-3 grid grid-cols-4 shrink-0">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="overview">{t($ => $.wave.drawer.tabs.overview)}</TabsTrigger>
               <TabsTrigger value="recipe">
-                Recipe
+                {t($ => $.wave.drawer.tabs.recipe)}
                 {recipe ? ` (${recipe.material_lines.length})` : ''}
               </TabsTrigger>
-              <TabsTrigger value="orders">Orders ({workspace.orders.length})</TabsTrigger>
-              <TabsTrigger value="issues">Issues</TabsTrigger>
+              <TabsTrigger value="orders">{t($ => $.wave.drawer.tabs.orders)} ({workspace.orders.length})</TabsTrigger>
+              <TabsTrigger value="issues">{t($ => $.wave.drawer.tabs.issues)}</TabsTrigger>
             </TabsList>
 
             {/* Overview tab — complete item */}
             <TabsContent value="overview" className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded border p-3">
-                  <p className="text-xs text-muted-foreground">Required</p>
+                  <p className="text-xs text-muted-foreground">{t($ => $.wave.drawer.overview.required)}</p>
                   <p className="text-lg font-semibold">{item?.quantity_required} <span className="text-xs font-normal text-muted-foreground">{product?.unit_symbol}</span></p>
                 </div>
                 <div className="rounded border p-3">
-                  <p className="text-xs text-muted-foreground">Prepared</p>
+                  <p className="text-xs text-muted-foreground">{t($ => $.wave.drawer.overview.prepared)}</p>
                   <p className="text-lg font-semibold">{item?.quantity_prepared} <span className="text-xs font-normal text-muted-foreground">{product?.unit_symbol}</span></p>
                 </div>
               </div>
@@ -176,18 +180,18 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
               {(item?.quantity_short ?? 0) > 0 && (
                 <div className="flex items-center gap-2 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
-                  <span>{item?.quantity_short} {product?.unit_symbol} short</span>
+                  <span>{item?.quantity_short} {product?.unit_symbol} {t($ => $.wave.drawer.overview.short)}</span>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label>Mark Prepared Quantity</Label>
+                <Label>{t($ => $.wave.drawer.overview.markPreparedQty)}</Label>
                 <div className="flex gap-2">
                   <Input
                     type="number"
                     min="0"
                     step="0.001"
-                    placeholder={`Max ${item?.quantity_required}…`}
+                    placeholder={tAny('wave.drawer.overview.maxPlaceholder', { max: item?.quantity_required })}
                     value={qtyPrepared}
                     onChange={(e) => setQtyPrepared(e.target.value)}
                     className="flex-1"
@@ -197,7 +201,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                     disabled={!qtyPrepared || completeItem.isPending}
                   >
                     {completeItem.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    <span className="ml-1.5">Mark</span>
+                    <span className="ml-1.5">{t($ => $.wave.drawer.overview.markButton)}</span>
                   </Button>
                 </div>
               </div>
@@ -205,14 +209,14 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
               {/* Materials summary */}
               {workspace.materials.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Materials</h4>
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{t($ => $.wave.drawer.overview.materialsHeader)}</h4>
                   <div className="divide-y rounded border text-sm">
                     {workspace.materials.map((m: (typeof workspace.materials)[0]) => (
                       <div key={m.id} className="flex items-center justify-between px-3 py-2">
                         <span className="text-xs font-mono text-muted-foreground">{m.raw_material_id.slice(0, 8)}…</span>
                         <div className="flex items-center gap-2">
                           {m.shortage_flag && (
-                            <Badge className="bg-red-100 text-red-700 text-[10px]">Short {m.shortage_qty}</Badge>
+                            <Badge className="bg-red-100 text-red-700 text-[10px]">{t($ => $.wave.drawer.overview.shortBadge)} {m.shortage_qty}</Badge>
                           )}
                           <span className="text-xs">{m.quantity_on_hand} / {m.quantity_needed}</span>
                         </div>
@@ -228,13 +232,13 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
               {!recipe ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
                   <BookOpen className="h-8 w-8 opacity-30" />
-                  <p className="text-sm">No recipe found for this product</p>
+                  <p className="text-sm">{t($ => $.wave.drawer.recipe.noRecipe)}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {recipe.recipe_cost != null && (
                     <div className="flex items-center justify-between rounded border p-3 text-sm">
-                      <span className="text-muted-foreground">Recipe Cost</span>
+                      <span className="text-muted-foreground">{t($ => $.wave.drawer.recipe.recipeCost)}</span>
                       <span className="font-medium">{recipe.recipe_cost.toFixed(2)}</span>
                     </div>
                   )}
@@ -249,7 +253,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                         <div className="text-end shrink-0">
                           <p className="text-xs font-medium">{line.quantity} {line.unit_symbol}</p>
                           {line.waste_percentage > 0 && (
-                            <p className="text-[10px] text-amber-600">+{line.waste_percentage}% waste</p>
+                            <p className="text-[10px] text-amber-600">+{line.waste_percentage}% {t($ => $.wave.drawer.recipe.wastePercentage)}</p>
                           )}
                         </div>
                       </div>
@@ -264,7 +268,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
               {workspace.orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
                   <ShoppingCart className="h-8 w-8 opacity-30" />
-                  <p className="text-sm">No orders for this product in this wave</p>
+                  <p className="text-sm">{t($ => $.wave.drawer.orders.empty)}</p>
                 </div>
               ) : (
                 <div className="divide-y rounded border text-sm">
@@ -287,23 +291,25 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
             {/* Issues tab — report issue */}
             <TabsContent value="issues" className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               <div className="space-y-1.5">
-                <Label>Issue Type <span className="text-destructive">*</span></Label>
+                <Label>{t($ => $.wave.drawer.issues.issueTypeLabel)} <span className="text-destructive">*</span></Label>
                 <Select value={issueType} onValueChange={(v) => setIssueType(v as PreparationIssueType)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select issue type…" />
+                    <SelectValue placeholder={t($ => $.wave.drawer.issues.issueTypePlaceholder)} />
                   </SelectTrigger>
                   <SelectContent>
-                    {(Object.entries(ISSUE_LABELS) as [PreparationIssueType, string][]).map(([v, l]) => (
-                      <SelectItem key={v} value={v}>{l}</SelectItem>
+                    {ISSUE_TYPES.map((v) => (
+                      <SelectItem key={v} value={v}>
+                        {tAny(`wave.drawer.issueTypes.${v}`)}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label>Description <span className="text-destructive">*</span></Label>
+                <Label>{t($ => $.wave.drawer.issues.descriptionLabel)} <span className="text-destructive">*</span></Label>
                 <Textarea
-                  placeholder="Describe the issue in detail (min 10 chars)…"
+                  placeholder={t($ => $.wave.drawer.issues.descriptionPlaceholder)}
                   value={issueDesc}
                   onChange={(e) => setIssueDesc(e.target.value)}
                   rows={4}
@@ -318,7 +324,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
                 className="w-full"
               >
                 {reportIssue.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
-                Report Issue
+                {t($ => $.wave.drawer.issues.reportButton)}
               </Button>
             </TabsContent>
           </Tabs>

@@ -22,9 +22,9 @@ class CampaignDraftCreative extends Model
     ];
 
     protected $casts = [
-        'utm_params'  => 'array',
+        'utm_params' => 'array',
         'media_items' => 'array',
-        'asset_ids'   => 'array',
+        'asset_ids' => 'array',
     ];
 
     public function draft(): BelongsTo

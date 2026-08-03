@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Marketing\Connections\Domain\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,23 +15,23 @@ use Modules\Marketing\Connections\Domain\Enums\ConnectorType;
 use Modules\Marketing\Synchronization\Domain\Models\MarketingSyncLog;
 
 /**
- * @property string                  $id
- * @property string|null             $company_id
- * @property ConnectorType           $connector_type
- * @property string                  $label
- * @property ConnectionStatus        $status
- * @property string|null             $external_account_id
- * @property string|null             $access_token         (encrypted at rest)
- * @property string|null             $refresh_token        (encrypted at rest)
- * @property \Carbon\Carbon|null     $token_expires_at
- * @property array|null              $scopes
- * @property array|null              $required_scopes
- * @property \Carbon\Carbon|null     $permissions_validated_at
- * @property \Carbon\Carbon|null     $last_validated_at
- * @property string|null             $connected_by
- * @property \Carbon\Carbon|null     $disconnected_at
- * @property string|null             $disconnected_by
- * @property array|null              $connector_meta
+ * @property string $id
+ * @property string|null $company_id
+ * @property ConnectorType $connector_type
+ * @property string $label
+ * @property ConnectionStatus $status
+ * @property string|null $external_account_id
+ * @property string|null $access_token (encrypted at rest)
+ * @property string|null $refresh_token (encrypted at rest)
+ * @property \Carbon\Carbon|null $token_expires_at
+ * @property array|null $scopes
+ * @property array|null $required_scopes
+ * @property \Carbon\Carbon|null $permissions_validated_at
+ * @property \Carbon\Carbon|null $last_validated_at
+ * @property string|null $connected_by
+ * @property \Carbon\Carbon|null $disconnected_at
+ * @property string|null $disconnected_by
+ * @property array|null $connector_meta
  */
 class MarketingConnection extends Model
 {
@@ -66,15 +67,15 @@ class MarketingConnection extends Model
     protected function casts(): array
     {
         return [
-            'connector_type'           => ConnectorType::class,
-            'status'                   => ConnectionStatus::class,
-            'token_expires_at'         => 'datetime',
+            'connector_type' => ConnectorType::class,
+            'status' => ConnectionStatus::class,
+            'token_expires_at' => 'datetime',
             'permissions_validated_at' => 'datetime',
-            'last_validated_at'        => 'datetime',
-            'disconnected_at'          => 'datetime',
-            'scopes'                   => 'array',
-            'required_scopes'          => 'array',
-            'connector_meta'           => 'array',
+            'last_validated_at' => 'datetime',
+            'disconnected_at' => 'datetime',
+            'scopes' => 'array',
+            'required_scopes' => 'array',
+            'connector_meta' => 'array',
         ];
     }
 
@@ -93,7 +94,7 @@ class MarketingConnection extends Model
 
         try {
             return Crypt::decryptString($value);
-        } catch (\Exception) {
+        } catch (Exception) {
             return null;
         }
     }
@@ -111,7 +112,7 @@ class MarketingConnection extends Model
 
         try {
             return Crypt::decryptString($value);
-        } catch (\Exception) {
+        } catch (Exception) {
             return null;
         }
     }

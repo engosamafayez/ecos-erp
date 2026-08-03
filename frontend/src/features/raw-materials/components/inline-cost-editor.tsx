@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pencil } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export function InlineCostEditor({ materialId, currentCost, canEdit, isSaving, onSave }: Props) {
+  const { t } = useTranslation('raw-materials');
   const { currency, locale } = useCompany();
   const fmtCost = (n: number | null | undefined) =>
     n == null ? '—' : formatMoney(n, currency, locale);
@@ -72,7 +74,7 @@ export function InlineCostEditor({ materialId, currentCost, canEdit, isSaving, o
             'text-sm font-medium tabular-nums text-end',
             'hover:bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           )}
-          aria-label={`Edit cost for material: ${fmtCost(currentCost)}`}
+          aria-label={t($ => $.costEditor.ariaLabel, { cost: fmtCost(currentCost) })}
         >
           <span>{fmtCost(currentCost)}</span>
           <Pencil className="size-3 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
@@ -86,12 +88,13 @@ export function InlineCostEditor({ materialId, currentCost, canEdit, isSaving, o
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
-        <p className="text-sm font-semibold mb-3">Update Material Cost</p>
+        <p className="text-sm font-semibold mb-3">{t($ => $.costEditor.title)}</p>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor={`cost-input-${materialId}`} className="text-xs">
-              New Cost <span className="text-muted-foreground">({currency})</span>
+              {t($ => $.costEditor.newCostLabel)}{' '}
+              <span className="text-muted-foreground">({currency})</span>
             </Label>
             <Input
               id={`cost-input-${materialId}`}
@@ -101,28 +104,29 @@ export function InlineCostEditor({ materialId, currentCost, canEdit, isSaving, o
               step="0.01"
               value={cost}
               onChange={(e) => { setCost(e.target.value); setTouched(false); }}
-              placeholder="0.00"
+              placeholder={t($ => $.costEditor.newCostPlaceholder)}
               className={cn('h-8 text-sm', costError && 'border-destructive')}
             />
             {costError && (
-              <p className="text-xs text-destructive">Enter a valid cost (≥ 0).</p>
+              <p className="text-xs text-destructive">{t($ => $.costEditor.costError)}</p>
             )}
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor={`reason-input-${materialId}`} className="text-xs">
-              Reason <span className="text-destructive">*</span>
+              {t($ => $.costEditor.reasonLabel)}{' '}
+              <span className="text-destructive">{t($ => $.costEditor.reasonRequired)}</span>
             </Label>
             <Textarea
               id={`reason-input-${materialId}`}
               value={reason}
               onChange={(e) => { setReason(e.target.value); setTouched(false); }}
-              placeholder="e.g. New supplier invoice, market adjustment…"
+              placeholder={t($ => $.costEditor.reasonPlaceholder)}
               rows={3}
               className={cn('text-sm resize-none', reasonError && 'border-destructive')}
             />
             {reasonError && (
-              <p className="text-xs text-destructive">Reason is required (min 3 characters).</p>
+              <p className="text-xs text-destructive">{t($ => $.costEditor.reasonError)}</p>
             )}
           </div>
 
@@ -133,7 +137,7 @@ export function InlineCostEditor({ materialId, currentCost, canEdit, isSaving, o
               onClick={handleSave}
               disabled={!canSave}
             >
-              {isSaving ? 'Saving…' : 'Save'}
+              {isSaving ? t($ => $.costEditor.saving) : t($ => $.costEditor.save)}
             </Button>
             <Button
               size="sm"
@@ -142,7 +146,7 @@ export function InlineCostEditor({ materialId, currentCost, canEdit, isSaving, o
               onClick={() => setOpen(false)}
               disabled={isSaving}
             >
-              Cancel
+              {t($ => $.costEditor.cancel)}
             </Button>
           </div>
         </div>

@@ -6,10 +6,10 @@ namespace Modules\Inventory\InventoryControl\Application\Services;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Modules\Inventory\CountSessions\Domain\Enums\CountSessionStatus;
 use Modules\Inventory\InventoryControl\Domain\Enums\AbcClass;
 use Modules\Inventory\InventoryControl\Domain\Models\CycleCountPlan;
 use Modules\Inventory\InventoryControl\Domain\Models\InventoryAbcClassification;
-use Modules\Inventory\CountSessions\Domain\Enums\CountSessionStatus;
 
 /**
  * Implements Pareto ABC classification for inventory control.
@@ -59,28 +59,28 @@ final class AbcClassificationService
         $now = Carbon::now();
 
         foreach ($all as $row) {
-            $value   = (float) $row->total_value;
-            $cumPct  = $grandTotal > 0
+            $value = (float) $row->total_value;
+            $cumPct = $grandTotal > 0
                 ? round(($cumulative + $value) / $grandTotal * 100, 4)
                 : 100.0;
             $cumulative += $value;
 
-            $class = match(true) {
-                $grandTotal <= 0  => AbcClass::C,
-                $cumPct <= 70.0   => AbcClass::A,
-                $cumPct <= 90.0   => AbcClass::B,
-                default           => AbcClass::C,
+            $class = match (true) {
+                $grandTotal <= 0 => AbcClass::C,
+                $cumPct <= 70.0 => AbcClass::A,
+                $cumPct <= 90.0 => AbcClass::B,
+                default => AbcClass::C,
             };
 
             // Upsert classification
             InventoryAbcClassification::query()->updateOrCreate(
                 ['product_id' => $row->product_id],
                 [
-                    'classification'           => $class,
+                    'classification' => $class,
                     'annual_consumption_value' => round($value, 2),
-                    'cumulative_percentage'    => round($cumPct, 4),
-                    'calculated_at'            => $now,
-                ]
+                    'cumulative_percentage' => round($cumPct, 4),
+                    'calculated_at' => $now,
+                ],
             );
 
             $counts[$class->value]++;
@@ -113,12 +113,12 @@ final class AbcClassificationService
         CycleCountPlan::query()->updateOrCreate(
             ['product_id' => $productId],
             [
-                'abc_class'       => $class,
-                'frequency_days'  => $frequencyDays,
+                'abc_class' => $class,
+                'frequency_days' => $frequencyDays,
                 'last_counted_at' => $lastCountedDate,
-                'next_due_at'     => $nextDueDate,
-                'is_overdue'      => $isOverdue,
-            ]
+                'next_due_at' => $nextDueDate,
+                'is_overdue' => $isOverdue,
+            ],
         );
     }
 }

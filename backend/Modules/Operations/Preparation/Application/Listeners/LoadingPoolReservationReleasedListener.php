@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Operations\Preparation\Application\Events\Inbound\LoadingPoolReservationReleasedEvent;
 use Modules\Operations\Preparation\Domain\Enums\PoolMovementType;
+use Throwable;
 
 /**
  * When Loading OS releases a pool reservation (e.g., wave cancelled),
@@ -50,29 +51,29 @@ final class LoadingPoolReservationReleasedListener
                     ->where('id', $event->poolEntryId)
                     ->update([
                         'quantity_reserved' => max(0, $pool->quantity_reserved - $event->quantityReleased),
-                        'quantity_available'=> $pool->quantity_available + $event->quantityReleased,
-                        'updated_at'        => now(),
+                        'quantity_available' => $pool->quantity_available + $event->quantityReleased,
+                        'updated_at' => now(),
                     ]);
 
                 DB::table('prepared_pool_movements')->insert([
-                    'id'                   => Str::ulid()->toString(),
-                    'prepared_pool_id'     => $event->poolEntryId,
-                    'movement_type'        => PoolMovementType::ReservationReleased->value,
-                    'quantity'             => $event->quantityReleased,
-                    'reference_type'       => 'loading_wave',
-                    'reference_id'         => $event->loadingWaveId,
-                    'performed_by_type'    => 'system',
-                    'performed_by_id'      => null,
-                    'notes'                => "Reservation released by Loading Wave",
-                    'recorded_at'          => now(),
+                    'id' => Str::ulid()->toString(),
+                    'prepared_pool_id' => $event->poolEntryId,
+                    'movement_type' => PoolMovementType::ReservationReleased->value,
+                    'quantity' => $event->quantityReleased,
+                    'reference_type' => 'loading_wave',
+                    'reference_id' => $event->loadingWaveId,
+                    'performed_by_type' => 'system',
+                    'performed_by_id' => null,
+                    'notes' => 'Reservation released by Loading Wave',
+                    'recorded_at' => now(),
                 ]);
             });
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[Preparation] ReservationReleasedListener failed', [
-                'pool_entry_id'    => $event->poolEntryId,
-                'product_id'       => $event->productId,
-                'qty_released'     => $event->quantityReleased,
-                'error'            => $e->getMessage(),
+                'pool_entry_id' => $event->poolEntryId,
+                'product_id' => $event->productId,
+                'qty_released' => $event->quantityReleased,
+                'error' => $e->getMessage(),
             ]);
         }
     }

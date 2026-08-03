@@ -14,8 +14,8 @@ export function SyncStatusBadge({ status }: { status: SyncStatus }) {
   const { t } = useTranslation('product-mappings');
   const dotClass = DOT_CLASS[status] ?? 'bg-gray-400';
   const label = status === 'error'
-    ? t('syncStatus.failed')
-    : t(`syncStatus.${status}`);
+    ? t($ => $.syncStatus.failed)
+    : t($ => $.syncStatus[status]);
 
   return (
     <Badge variant="secondary" className="gap-1.5 whitespace-nowrap">

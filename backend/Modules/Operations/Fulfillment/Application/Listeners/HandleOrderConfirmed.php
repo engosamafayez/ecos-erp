@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Core\BusinessAttribution\Application\Services\BusinessEventBusService;
 use Modules\Operations\Fulfillment\Domain\Events\OrderConfirmedEvent;
+use Throwable;
 
 /**
  * Handles post-confirmation business integration:
@@ -25,44 +26,44 @@ final class HandleOrderConfirmed
     {
         try {
             OrderEvent::log(
-                orderId:     $event->orderId,
-                type:        'order_confirmed',
+                orderId: $event->orderId,
+                type: 'order_confirmed',
                 description: "Order #{$event->orderNumber} confirmed. Inventory reserved.",
-                payload:     [
-                    'warehouse_id'     => $event->warehouseId,
-                    'reserved_at'      => $event->reservedAt,
+                payload: [
+                    'warehouse_id' => $event->warehouseId,
+                    'reserved_at' => $event->reservedAt,
                     'snapshot_created' => $event->snapshotCreated,
                 ],
-                actorId:     $event->actorId,
+                actorId: $event->actorId,
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[HandleOrderConfirmed] Audit log failed', [
                 'order_id' => $event->orderId,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
 
         try {
             $this->eventBus->publish([
-                'event_name'      => 'order.confirmed',
-                'category'        => 'commerce',
+                'event_name' => 'order.confirmed',
+                'category' => 'commerce',
                 'producer_module' => 'Operations.Fulfillment',
                 'producer_entity' => 'Order',
-                'entity_id'       => $event->orderId,
-                'entity_type'     => 'order',
-                'company_id'      => $event->companyId,
-                'warehouse_id'    => $event->warehouseId,
-                'actor_id'        => $event->actorId,
-                'occurred_at'     => $event->reservedAt,
-                'payload'         => [
-                    'order_number'     => $event->orderNumber,
+                'entity_id' => $event->orderId,
+                'entity_type' => 'order',
+                'company_id' => $event->companyId,
+                'warehouse_id' => $event->warehouseId,
+                'actor_id' => $event->actorId,
+                'occurred_at' => $event->reservedAt,
+                'payload' => [
+                    'order_number' => $event->orderNumber,
                     'snapshot_created' => $event->snapshotCreated,
                 ],
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[HandleOrderConfirmed] BAE publish failed', [
                 'order_id' => $event->orderId,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

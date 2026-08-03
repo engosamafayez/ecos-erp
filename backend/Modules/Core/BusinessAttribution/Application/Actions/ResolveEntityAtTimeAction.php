@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Application\Actions;
 
 use Carbon\Carbon;
@@ -12,17 +14,17 @@ use Modules\Core\BusinessAttribution\Domain\ValueObjects\ReplayContext;
 class ResolveEntityAtTimeAction
 {
     public function __construct(
-        private readonly TimeMachineService    $timeMachine,
-        private readonly ReplayAuditService    $auditService,
+        private readonly TimeMachineService $timeMachine,
+        private readonly ReplayAuditService $auditService,
         private readonly EnhancedReplayService $replayService,
     ) {}
 
     public function execute(
-        string  $entityType,
-        string  $entityId,
-        Carbon  $asOf,
-        string  $purpose = 'Time Machine',
-        ?string $userId  = null,
+        string $entityType,
+        string $entityId,
+        Carbon $asOf,
+        string $purpose = 'Time Machine',
+        ?string $userId = null,
     ): EntityState {
         $context = ReplayContext::atTime($entityType, $entityId, $asOf)
             ->withPurpose($purpose);
@@ -39,9 +41,9 @@ class ResolveEntityAtTimeAction
 
         $this->auditService->log(
             context: $context,
-            result:  $replayResult,
-            status:  'completed',
-            userId:  $userId,
+            result: $replayResult,
+            status: 'completed',
+            userId: $userId,
         );
 
         return $state;

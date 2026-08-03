@@ -23,8 +23,8 @@ final class BrandTransferAnalysisService
 
     public function analyze(Brand $brand, string $targetCompanyId): BrandTransferImpactReport
     {
-        $brandId      = (string) $brand->id;
-        $fromCompany  = (string) $brand->company_id;
+        $brandId = (string) $brand->id;
+        $fromCompany = (string) $brand->company_id;
 
         // ── Blocker: code conflict ────────────────────────────────────────────
 
@@ -41,9 +41,9 @@ final class BrandTransferAnalysisService
 
         if ($slugConflict) {
             $counter = 2;
-            $base    = $brand->slug;
+            $base = $brand->slug;
             do {
-                $resolvedSlug = $base . '-' . $counter++;
+                $resolvedSlug = $base.'-'.$counter++;
             } while ($this->brands->existsBySlug($targetCompanyId, $resolvedSlug));
         }
 
@@ -125,25 +125,25 @@ final class BrandTransferAnalysisService
             + $cepConversationsCount;
 
         return new BrandTransferImpactReport(
-            brandId:               $brandId,
-            brandCode:             $brand->code,
-            brandSlug:             $brand->slug,
-            fromCompanyId:         $fromCompany,
-            toCompanyId:           $targetCompanyId,
-            channelsCount:         $channelsCount,
-            ordersCount:           $ordersCount,
-            productsCount:         $productsCount,
+            brandId: $brandId,
+            brandCode: $brand->code,
+            brandSlug: $brand->slug,
+            fromCompanyId: $fromCompany,
+            toCompanyId: $targetCompanyId,
+            channelsCount: $channelsCount,
+            ordersCount: $ordersCount,
+            productsCount: $productsCount,
             businessAccountsCount: $businessAccountsCount,
-            marketingCampaignsCount:    $marketingCampaignsCount,
-            automationWorkflowsCount:   $automationWorkflowsCount,
-            aiContextsCount:            $aiContextsCount,
-            cepConversationsCount:      $cepConversationsCount,
-            policiesCount:              $policiesCount,
-            totalRecordsAffected:       $totalRecordsAffected,
-            slugConflict:               $slugConflict,
-            resolvedSlug:               $resolvedSlug,
-            lockedSnapshotsCount:       $lockedSnapshotsCount,
-            codeConflict:               $codeConflict,
+            marketingCampaignsCount: $marketingCampaignsCount,
+            automationWorkflowsCount: $automationWorkflowsCount,
+            aiContextsCount: $aiContextsCount,
+            cepConversationsCount: $cepConversationsCount,
+            policiesCount: $policiesCount,
+            totalRecordsAffected: $totalRecordsAffected,
+            slugConflict: $slugConflict,
+            resolvedSlug: $resolvedSlug,
+            lockedSnapshotsCount: $lockedSnapshotsCount,
+            codeConflict: $codeConflict,
         );
     }
 }

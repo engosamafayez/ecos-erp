@@ -20,12 +20,12 @@ final class EloquentAuditLogRepository implements AuditLogRepositoryInterface
         ?string $taskId = null,
     ): AuditLog {
         return AuditLog::create([
-            'company_id'  => $companyId,
-            'actor_type'  => $actorType,
-            'actor_id'    => $actorId,
-            'actor_name'  => $actorName,
-            'action'      => $action,
-            'task_id'     => $taskId,
+            'company_id' => $companyId,
+            'actor_type' => $actorType,
+            'actor_id' => $actorId,
+            'actor_name' => $actorName,
+            'action' => $action,
+            'task_id' => $taskId,
             'description' => $description,
             'occurred_at' => now(),
         ]);

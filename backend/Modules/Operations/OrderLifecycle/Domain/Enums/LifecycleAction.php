@@ -21,21 +21,21 @@ namespace Modules\Operations\OrderLifecycle\Domain\Enums;
  */
 enum LifecycleAction: string
 {
-    case StatusIgnored               = 'status_ignored';
-    case PolicyRejected              = 'policy_rejected';
-    case ManufacturingTriggered      = 'manufacturing_triggered';
-    case ManufacturingBlocked        = 'manufacturing_blocked';
-    case ManufacturingNotRequired    = 'manufacturing_not_required';
+    case StatusIgnored = 'status_ignored';
+    case PolicyRejected = 'policy_rejected';
+    case ManufacturingTriggered = 'manufacturing_triggered';
+    case ManufacturingBlocked = 'manufacturing_blocked';
+    case ManufacturingNotRequired = 'manufacturing_not_required';
     case ManufacturingAlreadyExecuted = 'manufacturing_already_executed';
 
     public function label(): string
     {
         return match ($this) {
-            self::StatusIgnored               => 'Status ignored — no evaluation performed',
-            self::PolicyRejected              => 'Policy rejected — manufacturing not eligible',
-            self::ManufacturingTriggered      => 'Manufacturing triggered successfully',
-            self::ManufacturingBlocked        => 'Manufacturing attempted but workflow blocked',
-            self::ManufacturingNotRequired    => 'Manufacturing not required — sufficient stock on hand',
+            self::StatusIgnored => 'Status ignored — no evaluation performed',
+            self::PolicyRejected => 'Policy rejected — manufacturing not eligible',
+            self::ManufacturingTriggered => 'Manufacturing triggered successfully',
+            self::ManufacturingBlocked => 'Manufacturing attempted but workflow blocked',
+            self::ManufacturingNotRequired => 'Manufacturing not required — sufficient stock on hand',
             self::ManufacturingAlreadyExecuted => 'Manufacturing already completed for this order line',
         };
     }

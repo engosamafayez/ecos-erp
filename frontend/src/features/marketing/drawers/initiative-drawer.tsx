@@ -139,7 +139,7 @@ function OverviewTab({ initiative, onSave }: {
           </div>
           <div>
             <label className="text-xs text-muted-foreground uppercase tracking-wide">Currency</label>
-            <Input value={form.currency ?? 'EGP'} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="mt-1" />
+            <Input value={form.currency ?? DEFAULT_CURRENCY} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="mt-1" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -542,7 +542,7 @@ function CreateForm({ onCreated, onCancel }: {
 }) {
   const createInitiative = useCreateInitiative();
   const { toast } = useToast();
-  const [form, setForm] = useState<Partial<MarketingInitiative>>({ status: 'draft', currency: 'EGP' });
+  const [form, setForm] = useState<Partial<MarketingInitiative>>({ status: 'draft', currency: DEFAULT_CURRENCY });
 
   function handleCreate() {
     if (!form.name?.trim()) return;
@@ -618,7 +618,7 @@ function CreateForm({ onCreated, onCancel }: {
         </div>
         <div>
           <label className="text-xs text-muted-foreground uppercase tracking-wide">Currency</label>
-          <Input value={form.currency ?? 'EGP'} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="mt-1" />
+          <Input value={form.currency ?? DEFAULT_CURRENCY} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="mt-1" />
         </div>
       </div>
       <div className="flex gap-2 pt-2">

@@ -15,6 +15,7 @@ import {
 import {
   useDistributionBoard,
   useFinalizeBoard,
+  useValidateBoard,
   useZoneOrders,
 } from '../hooks/use-distribution-board';
 import { WaveHeader } from '../components/wave-header';
@@ -24,7 +25,7 @@ import { TripCard } from '../components/trip-card';
 import { TripFormDrawer } from '../components/trip-form-drawer';
 import { ValidationPanel } from '../components/validation-panel';
 import { WaveExceptionsPanel } from '../components/wave-exceptions-panel';
-import type { DistributionTrip, ValidationIssue } from '../types/distribution-board';
+import type { DistributionTrip } from '../types/distribution-board';
 
 export function DistributionBoardPage() {
   const { data, isLoading, isError } = useDistributionBoard();
@@ -33,10 +34,13 @@ export function DistributionBoardPage() {
   const [tripDrawerOpen, setTripDrawerOpen] = useState(false);
   const [editingTrip, setEditingTrip]       = useState<DistributionTrip | null>(null);
   const [finalizeOpen, setFinalizeOpen]     = useState(false);
-  const [, setValidationIssues] = useState<ValidationIssue[]>([]);
 
   const finalize    = useFinalizeBoard();
   const zoneOrdersQ = useZoneOrders(activeZoneId);
+  // Canonical finalize-readiness from the backend — single source of truth.
+  const { data: validation } = useValidateBoard(Boolean(data));
+  const issues = validation?.issues ?? [];
+  const canFinalize = validation?.ready ?? false;
 
   const zones = data?.zones ?? [];
   const allTrips = data?.trips ?? [];
@@ -47,44 +51,8 @@ export function DistributionBoardPage() {
     resolvedZoneId ? t.distribution_zone_id === resolvedZoneId : true,
   );
 
-  function computeValidation(): { ready: boolean; issues: ValidationIssue[] } {
-    const issues: ValidationIssue[] = [];
-    const summary = data?.wave?.summary;
-
-    if (summary && summary.unassigned_orders > 0) {
-      issues.push({
-        code: 'unassigned_orders',
-        message: `${summary.unassigned_orders} orders are not assigned to any trip.`,
-        severity: 'error',
-      });
-    }
-
-    for (const trip of allTrips) {
-      if (trip.status !== 'planning') continue;
-      if (trip.orders_count === 0) {
-        issues.push({
-          code: 'empty_trip',
-          message: `Trip ${trip.trip_number} (${trip.name}) has no orders.`,
-          severity: 'warning',
-        });
-        continue;
-      }
-      if (!trip.is_ready_for_loading) {
-        issues.push({
-          code: 'unassigned_resources',
-          message: `Trip ${trip.trip_number} (${trip.name}): resources incomplete.`,
-          severity: 'error',
-        });
-      }
-    }
-
-    return { ready: issues.filter((i) => i.severity === 'error').length === 0, issues };
-  }
-
   function handleFinalizeClick() {
-    const { ready, issues } = computeValidation();
-    setValidationIssues(issues);
-    if (ready) {
+    if (canFinalize) {
       setFinalizeOpen(true);
     }
   }
@@ -125,8 +93,6 @@ export function DistributionBoardPage() {
       </div>
     );
   }
-
-  const { ready: canFinalize, issues } = computeValidation();
 
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">

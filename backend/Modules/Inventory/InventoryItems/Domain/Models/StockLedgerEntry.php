@@ -67,12 +67,12 @@ class StockLedgerEntry extends Model
     protected function casts(): array
     {
         return [
-            'movement_type'  => LedgerMovementType::class,
-            'quantity'       => 'decimal:4',
+            'movement_type' => LedgerMovementType::class,
+            'quantity' => 'decimal:4',
             'on_hand_before' => 'decimal:4',
-            'on_hand_after'  => 'decimal:4',
+            'on_hand_after' => 'decimal:4',
             'reserved_before' => 'decimal:4',
-            'reserved_after'  => 'decimal:4',
+            'reserved_after' => 'decimal:4',
         ];
     }
 

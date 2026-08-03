@@ -18,6 +18,7 @@ use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Events\SaleItemPayload;
 use Modules\POS\Application\Events\SalePaymentPayload;
 use Modules\POS\Application\Listeners\PosSaleOrderListener;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -30,15 +31,22 @@ final class PosSaleOrderListenerTest extends TestCase
 {
     use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
-    private const SALE_ID        = 'sale-uuid-001';
+    private const SALE_ID = 'sale-uuid-001';
+
     private const RECEIPT_NUMBER = 'RCP-2026-000001';
-    private const CUSTOMER_ID    = 'customer-uuid-001';
-    private const GUEST_ID       = 'guest-customer-uuid-001';
-    private const PRODUCT_A      = 'product-uuid-aaa';
-    private const PRODUCT_B      = 'product-uuid-bbb';
-    private const ORDER_ID       = 'order-uuid-001';
+
+    private const CUSTOMER_ID = 'customer-uuid-001';
+
+    private const GUEST_ID = 'guest-customer-uuid-001';
+
+    private const PRODUCT_A = 'product-uuid-aaa';
+
+    private const PRODUCT_B = 'product-uuid-bbb';
+
+    private const ORDER_ID = 'order-uuid-001';
 
     private MockInterface $orderCreation;
+
     private PosSaleOrderListener $listener;
 
     protected function setUp(): void
@@ -46,7 +54,7 @@ final class PosSaleOrderListenerTest extends TestCase
         parent::setUp();
 
         $this->orderCreation = Mockery::mock(OrderCreationPortInterface::class);
-        $this->listener      = new PosSaleOrderListener($this->orderCreation);
+        $this->listener = new PosSaleOrderListener($this->orderCreation);
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────
@@ -61,13 +69,13 @@ final class PosSaleOrderListenerTest extends TestCase
             ->shouldReceive('create')
             ->once()
             ->withArgs(function (OrderDTO $dto) {
-                return $dto->customer_id       === self::CUSTOMER_ID
-                    && $dto->status            === OrderStatus::Completed
+                return $dto->customer_id === self::CUSTOMER_ID
+                    && $dto->status === OrderStatus::Completed
                     && $dto->external_order_id === self::SALE_ID
-                    && count($dto->lines)      === 1
+                    && count($dto->lines) === 1
                     && $dto->lines[0]['product_id'] === self::PRODUCT_A
-                    && $dto->lines[0]['quantity']   === 2.0
-                    && $dto->lines[0]['unit_price']  === 50.0;
+                    && $dto->lines[0]['quantity'] === 2.0
+                    && $dto->lines[0]['unit_price'] === 50.0;
             })
             ->andReturn(OperationResult::success($this->buildOrder()));
 
@@ -173,7 +181,7 @@ final class PosSaleOrderListenerTest extends TestCase
 
         $this->orderCreation
             ->shouldReceive('create')
-            ->andThrow(new \RuntimeException('DB error'));
+            ->andThrow(new RuntimeException('DB error'));
 
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Failed to create ERP order'));
@@ -199,55 +207,56 @@ final class PosSaleOrderListenerTest extends TestCase
     /** @param SaleItemPayload[] $items */
     private function makeEvent(
         ?string $customerId = self::CUSTOMER_ID,
-        array   $items      = [],
-        ?string $channelId  = null,
+        array $items = [],
+        ?string $channelId = null,
     ): SaleFinalized {
         if (empty($items)) {
             $items = [$this->item(self::PRODUCT_A, 1.0, '100.00')];
         }
 
         return new SaleFinalized(
-            eventId:       'event-uuid-001',
-            occurredAt:    new DateTimeImmutable('now'),
-            saleId:        self::SALE_ID,
+            eventId: 'event-uuid-001',
+            occurredAt: new DateTimeImmutable('now'),
+            saleId: self::SALE_ID,
             receiptNumber: self::RECEIPT_NUMBER,
-            companyId:     'company-uuid-001',
-            channelId:     $channelId,
-            warehouseId:   'warehouse-uuid-001',
-            sessionId:     'session-uuid-001',
-            shiftId:       'shift-uuid-001',
-            terminalId:    'terminal-uuid-001',
-            cashierId:     'cashier-uuid-001',
-            customerId:    $customerId,
-            items:         $items,
-            payments:      [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
-            subtotal:      '100.00',
+            companyId: 'company-uuid-001',
+            channelId: $channelId,
+            warehouseId: 'warehouse-uuid-001',
+            sessionId: 'session-uuid-001',
+            shiftId: 'shift-uuid-001',
+            terminalId: 'terminal-uuid-001',
+            cashierId: 'cashier-uuid-001',
+            customerId: $customerId,
+            items: $items,
+            payments: [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
+            subtotal: '100.00',
             discountTotal: '0.00',
-            grandTotal:    '100.00',
-            amountPaid:    '100.00',
-            changeGiven:   '0.00',
-            currency:      'EGP',
+            grandTotal: '100.00',
+            amountPaid: '100.00',
+            changeGiven: '0.00',
+            currency: 'EGP',
         );
     }
 
     private function item(string $productId, float $qty, string $unitPrice): SaleItemPayload
     {
         return new SaleItemPayload(
-            lineId:      'line-' . $productId,
-            productId:   $productId,
-            productName: 'Product ' . $productId,
-            sku:         'SKU-' . $productId,
-            quantity:    $qty,
-            unitPrice:   $unitPrice,
-            lineTotal:   (string) ($qty * (float) $unitPrice),
-            currency:    'EGP',
+            lineId: 'line-'.$productId,
+            productId: $productId,
+            productName: 'Product '.$productId,
+            sku: 'SKU-'.$productId,
+            quantity: $qty,
+            unitPrice: $unitPrice,
+            lineTotal: (string) ($qty * (float) $unitPrice),
+            currency: 'EGP',
         );
     }
 
     private function buildOrder(): Order
     {
-        $order     = new Order();
+        $order = new Order;
         $order->id = self::ORDER_ID;
+
         return $order;
     }
 }

@@ -15,7 +15,7 @@ use Modules\Marketing\CampaignStudio\Domain\Models\CampaignDraft;
 class CampaignPlacementController extends Controller
 {
     public function __construct(
-        private readonly CampaignDraftService     $draftService,
+        private readonly CampaignDraftService $draftService,
         private readonly CampaignVersioningService $versioningService,
     ) {}
 
@@ -29,14 +29,14 @@ class CampaignPlacementController extends Controller
     public function update(Request $request, CampaignDraft $draft): JsonResponse
     {
         $validated = $request->validate([
-            'placement_mode'   => ['required', 'in:auto,manual'],
-            'facebook_feed'    => ['sometimes', 'boolean'],
-            'instagram_feed'   => ['sometimes', 'boolean'],
+            'placement_mode' => ['required', 'in:auto,manual'],
+            'facebook_feed' => ['sometimes', 'boolean'],
+            'instagram_feed' => ['sometimes', 'boolean'],
             'facebook_stories' => ['sometimes', 'boolean'],
             'instagram_stories' => ['sometimes', 'boolean'],
-            'facebook_reels'   => ['sometimes', 'boolean'],
-            'instagram_reels'  => ['sometimes', 'boolean'],
-            'messenger_inbox'  => ['sometimes', 'boolean'],
+            'facebook_reels' => ['sometimes', 'boolean'],
+            'instagram_reels' => ['sometimes', 'boolean'],
+            'messenger_inbox' => ['sometimes', 'boolean'],
             'audience_network' => ['sometimes', 'boolean'],
             'excluded_placements' => ['nullable', 'array'],
         ]);

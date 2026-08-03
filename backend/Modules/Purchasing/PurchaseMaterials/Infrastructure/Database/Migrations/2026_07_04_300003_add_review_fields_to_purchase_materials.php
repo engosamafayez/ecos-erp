@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::table('purchase_materials', function (Blueprint $table): void {
             $table->text('review_notes')->nullable()->after('rejection_reason');
             $table->uuid('merged_into')->nullable()->after('review_notes')
-                  ->constrained('purchase_materials')->nullOnDelete();
+                ->constrained('purchase_materials')->nullOnDelete();
             $table->timestamp('clarification_requested_at')->nullable()->after('merged_into');
             $table->uuid('clarification_requested_by')->nullable()->after('clarification_requested_at');
         });

@@ -41,17 +41,17 @@ final class SearchCustomerByPhoneAction extends BaseAction
         if ($rawAddresses->isEmpty()) {
             $addresses = ($customer->governorate !== null || $customer->city !== null)
                 ? [[
-                    'id'              => null,
-                    'is_default'      => true,
-                    'governorate'     => $customer->governorate,
-                    'city'            => $customer->city,
-                    'area'            => $customer->area,
-                    'address_line'    => $customer->address,
-                    'building'        => null,
-                    'floor'           => null,
-                    'apartment'       => null,
-                    'landmark'        => null,
-                    'address_notes'   => null,
+                    'id' => null,
+                    'is_default' => true,
+                    'governorate' => $customer->governorate,
+                    'city' => $customer->city,
+                    'area' => $customer->area,
+                    'address_line' => $customer->address,
+                    'building' => null,
+                    'floor' => null,
+                    'apartment' => null,
+                    'landmark' => null,
+                    'address_notes' => null,
                     'google_maps_lat' => null,
                     'google_maps_lng' => null,
                     'google_maps_url' => null,
@@ -59,17 +59,17 @@ final class SearchCustomerByPhoneAction extends BaseAction
                 : [];
         } else {
             $addresses = $rawAddresses->map(fn ($a) => [
-                'id'              => $a->id,
-                'is_default'      => $a->is_default,
-                'governorate'     => $a->governorate,
-                'city'            => $a->city,
-                'area'            => $a->area,
-                'address_line'    => $a->address_line,
-                'building'        => $a->building,
-                'floor'           => $a->floor,
-                'apartment'       => $a->apartment,
-                'landmark'        => $a->landmark,
-                'address_notes'   => $a->address_notes,
+                'id' => $a->id,
+                'is_default' => $a->is_default,
+                'governorate' => $a->governorate,
+                'city' => $a->city,
+                'area' => $a->area,
+                'address_line' => $a->address_line,
+                'building' => $a->building,
+                'floor' => $a->floor,
+                'apartment' => $a->apartment,
+                'landmark' => $a->landmark,
+                'address_notes' => $a->address_notes,
                 'google_maps_lat' => $a->google_maps_lat,
                 'google_maps_lng' => $a->google_maps_lng,
                 'google_maps_url' => $a->google_maps_url,
@@ -79,17 +79,17 @@ final class SearchCustomerByPhoneAction extends BaseAction
 
         return OperationResult::success([
             'customer' => [
-                'id'          => $customer->id,
-                'name'        => $customer->name,
-                'phone'       => $customer->phone,
-                'mobile'      => $customer->mobile,
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'mobile' => $customer->mobile,
                 'governorate' => $customer->governorate,
-                'city'        => $customer->city,
-                'area'        => $customer->area,
-                'notes'       => $customer->notes,
+                'city' => $customer->city,
+                'area' => $customer->area,
+                'notes' => $customer->notes,
             ],
             'addresses' => $addresses,
-            'stats'     => $stats,
+            'stats' => $stats,
         ], 'Customer found.');
     }
 
@@ -104,14 +104,14 @@ final class SearchCustomerByPhoneAction extends BaseAction
             ->groupBy('status')
             ->get();
 
-        $totalOrders  = (int)   $orders->sum('cnt');
+        $totalOrders = (int) $orders->sum('cnt');
         $totalRevenue = (float) $orders->sum('revenue');
 
         // "Delivered" = both delivered + completed (order reached the customer)
-        $deliveredCount  = (int) ($orders->whereIn('status', ['delivered', 'completed'])->sum('cnt'));
-        $completedCount  = (int) $orders->where('status', 'completed')->sum('cnt');
-        $cancelledCount  = (int) $orders->where('status', 'cancelled')->sum('cnt');
-        $returnedCount   = (int) $orders->where('status', 'returned')->sum('cnt');
+        $deliveredCount = (int) ($orders->whereIn('status', ['delivered', 'completed'])->sum('cnt'));
+        $completedCount = (int) $orders->where('status', 'completed')->sum('cnt');
+        $cancelledCount = (int) $orders->where('status', 'cancelled')->sum('cnt');
+        $returnedCount = (int) $orders->where('status', 'returned')->sum('cnt');
 
         $successRate = $totalOrders > 0
             ? round(($deliveredCount / $totalOrders) * 100, 1)
@@ -132,16 +132,16 @@ final class SearchCustomerByPhoneAction extends BaseAction
             ->value('order_date');
 
         return [
-            'total_orders'     => $totalOrders,
-            'delivered'        => $deliveredCount,
-            'completed'        => $completedCount,
-            'cancelled'        => $cancelledCount,
-            'returned'         => $returnedCount,
-            'success_rate'     => $successRate,
-            'lifetime_value'   => $totalRevenue,
-            'avg_order_value'  => $avgOrderValue,
+            'total_orders' => $totalOrders,
+            'delivered' => $deliveredCount,
+            'completed' => $completedCount,
+            'cancelled' => $cancelledCount,
+            'returned' => $returnedCount,
+            'success_rate' => $successRate,
+            'lifetime_value' => $totalRevenue,
+            'avg_order_value' => $avgOrderValue,
             'first_order_date' => $firstOrderDate,
-            'last_order_date'  => $lastOrderDate,
+            'last_order_date' => $lastOrderDate,
         ];
     }
 }

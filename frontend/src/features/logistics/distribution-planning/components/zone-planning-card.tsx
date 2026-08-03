@@ -1,18 +1,22 @@
 import { CheckCircle2, Clock, ListOrdered, Package, ShoppingBag, Truck, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Badge }   from '@/components/ui/badge';
 import { Button }  from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useFormatter } from '@/hooks/use-formatter';
 import type { ZonePlanCard, ZonePlanningStatus } from '../types/distribution-planning';
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: ZonePlanningStatus }) {
+  const { t } = useTranslation('logistics');
+
   if (status === 'planned') {
     return (
       <Badge className="gap-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
         <CheckCircle2 className="h-3 w-3" />
-        Planned
+        {t($ => $.planning.status.planned)}
       </Badge>
     );
   }
@@ -20,19 +24,15 @@ function StatusBadge({ status }: { status: ZonePlanningStatus }) {
     return (
       <Badge className="gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
         <Clock className="h-3 w-3" />
-        In Planning
+        {t($ => $.planning.status.inPlanning)}
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="text-muted-foreground">
-      Ready
+      {t($ => $.planning.status.ready)}
     </Badge>
   );
-}
-
-function fmt(n: number) {
-  return n.toLocaleString('en-EG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function estimatedSessions(ordersCount: number): number {
@@ -59,12 +59,15 @@ export function ZonePlanningCard({
   onStartPlanning,
   isStarting,
 }: Props) {
+  const { t } = useTranslation('logistics');
+  const { money } = useFormatter();
+
   const startLabel =
     zone.planning_status === 'planned'
-      ? 'Planned ✓'
+      ? t($ => $.planning.actions.plannedDone)
       : zone.planning_status === 'in_planning'
-        ? 'Continue Planning'
-        : 'Start Planning';
+        ? t($ => $.planning.actions.continuePlanning)
+        : t($ => $.planning.actions.startPlanning);
 
   const isEmpty = zone.orders_count === 0;
   const sessions = estimatedSessions(zone.orders_count);
@@ -106,14 +109,16 @@ export function ZonePlanningCard({
             </p>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
               <ListOrdered className="h-3 w-3" />
-              Orders
+              {t($ => $.planning.metrics.orders)}
             </p>
           </div>
           <div className="text-end pb-0.5">
             <p className="text-xl font-bold tabular-nums leading-none">
-              {isEmpty ? '—' : `EGP ${fmt(zone.total_collection)}`}
+              {isEmpty ? '—' : money(zone.total_collection)}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">Collection</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t($ => $.planning.metrics.collection)}
+            </p>
           </div>
         </div>
 
@@ -123,21 +128,21 @@ export function ZonePlanningCard({
             <p className="text-sm font-medium tabular-nums">{isEmpty ? '—' : zone.customers_count}</p>
             <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
               <Users className="h-2.5 w-2.5" />
-              Customers
+              {t($ => $.planning.metrics.customers)}
             </p>
           </div>
           <div>
             <p className="text-sm font-medium tabular-nums">{isEmpty ? '—' : zone.distinct_products}</p>
             <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
               <Package className="h-2.5 w-2.5" />
-              Products
+              {t($ => $.planning.metrics.products)}
             </p>
           </div>
           <div>
             <p className="text-sm font-medium tabular-nums">{isEmpty ? '—' : zone.estimated_stops}</p>
             <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
               <ShoppingBag className="h-2.5 w-2.5" />
-              Stops
+              {t($ => $.planning.metrics.stops)}
             </p>
           </div>
         </div>
@@ -147,7 +152,7 @@ export function ZonePlanningCard({
           <div className="flex items-center justify-between rounded-md bg-muted/50 px-2.5 py-1.5 text-xs">
             <span className="flex items-center gap-1 text-muted-foreground">
               <Truck className="h-3 w-3" />
-              Est. Sessions
+              {t($ => $.planning.card.estSessions)}
             </span>
             <span className="font-semibold tabular-nums">{sessions}</span>
           </div>
@@ -158,13 +163,13 @@ export function ZonePlanningCard({
           <div className="space-y-2 pt-1">
             <div className="flex gap-1.5">
               <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={onViewOrders}>
-                Orders
+                {t($ => $.planning.metrics.orders)}
               </Button>
               <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={onViewProducts}>
-                Products
+                {t($ => $.planning.metrics.products)}
               </Button>
               <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={onViewCustomers}>
-                Customers
+                {t($ => $.planning.metrics.customers)}
               </Button>
             </div>
             <Button

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Download, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,9 @@ type ProductImportModalProps = {
 };
 
 export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImportModalProps) {
+  const { t } = useTranslation('products');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [result, setResult] = useState<{ success: number; errors: ImportError[] } | null>(null);
@@ -76,13 +80,8 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Import Products</DialogTitle>
-          <DialogDescription>
-            Upload a CSV file to import products. Required columns: <code className="text-xs">sku</code>,{' '}
-            <code className="text-xs">name</code>, <code className="text-xs">product_type</code>. Optional:{' '}
-            <code className="text-xs">category_name</code>, <code className="text-xs">regular_price</code>,{' '}
-            <code className="text-xs">sale_price</code>, <code className="text-xs">stock_status</code>.
-          </DialogDescription>
+          <DialogTitle>{t($ => $.importModal.title)}</DialogTitle>
+          <DialogDescription>{t($ => $.importModal.description)}</DialogDescription>
         </DialogHeader>
 
         {/* Drop zone */}
@@ -102,13 +101,13 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-medium">{file.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {(file.size / 1024).toFixed(1)} KB · Click to change
+                  {(file.size / 1024).toFixed(1)} {t($ => $.importModal.clickToChange)}
                 </p>
               </div>
             ) : (
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Drop CSV file here or click to browse</p>
-                <p className="text-xs text-muted-foreground">CSV files up to 10 MB</p>
+                <p className="text-sm font-medium">{t($ => $.importModal.dropzone)}</p>
+                <p className="text-xs text-muted-foreground">{t($ => $.importModal.dropzoneSize)}</p>
               </div>
             )}
             <input
@@ -131,8 +130,8 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
                 <AlertCircle className="size-4" />
               )}
               <AlertDescription className={result.errors.length === 0 ? 'text-emerald-700 dark:text-emerald-400' : ''}>
-                {result.success > 0 ? `${result.success} product(s) imported successfully.` : ''}
-                {result.errors.length > 0 ? ` ${result.errors.length} row(s) had errors.` : ''}
+                {result.success > 0 ? tAny('importModal.importedCount', { count: result.success }) : ''}
+                {result.errors.length > 0 ? ` ${tAny('importModal.errorCount', { count: result.errors.length })}` : ''}
               </AlertDescription>
             </Alert>
 
@@ -141,8 +140,8 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
                 <table className="w-full text-xs">
                   <thead className="border-b bg-muted/40">
                     <tr>
-                      <th className="px-3 py-2 text-start font-medium">Row</th>
-                      <th className="px-3 py-2 text-start font-medium">Error</th>
+                      <th className="px-3 py-2 text-start font-medium">{t($ => $.importModal.rowHeader)}</th>
+                      <th className="px-3 py-2 text-start font-medium">{t($ => $.importModal.errorHeader)}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -165,16 +164,16 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
           {result?.errors.length ? (
             <Button variant="outline" size="sm" onClick={downloadErrorReport}>
               <Download className="size-3.5" />
-              Download Error Report
+              {t($ => $.importModal.downloadErrorReport)}
             </Button>
           ) : null}
           {result && result.errors.length === 0 ? (
-            <Button onClick={handleClose}>Done</Button>
+            <Button onClick={handleClose}>{t($ => $.importModal.done)}</Button>
           ) : (
             <>
-              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button variant="outline" onClick={handleClose}>{t($ => $.importModal.cancel)}</Button>
               <Button onClick={handleImport} disabled={!file || isPending}>
-                {isPending ? 'Importing…' : 'Import'}
+                {isPending ? t($ => $.importModal.importing) : t($ => $.importModal.import)}
               </Button>
             </>
           )}

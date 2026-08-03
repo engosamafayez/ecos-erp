@@ -10,15 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Operations\Preparation\Domain\Enums\WorkerRole;
 
 /**
- * @property string          $id
- * @property string          $company_id
- * @property string          $preparation_wave_id
- * @property string          $user_id
- * @property WorkerRole      $role
- * @property \Carbon\Carbon  $assigned_at
- * @property string          $assigned_by
+ * @property string $id
+ * @property string $company_id
+ * @property string $preparation_wave_id
+ * @property string $user_id
+ * @property WorkerRole $role
+ * @property \Carbon\Carbon $assigned_at
+ * @property string $assigned_by
  * @property \Carbon\Carbon|null $released_at
- * @property string|null     $released_by
+ * @property string|null $released_by
  */
 class PreparationWaveWorker extends Model
 {
@@ -48,7 +48,7 @@ class PreparationWaveWorker extends Model
     protected function casts(): array
     {
         return [
-            'role'        => WorkerRole::class,
+            'role' => WorkerRole::class,
             'assigned_at' => 'datetime',
             'released_at' => 'datetime',
         ];

@@ -30,7 +30,7 @@ return new class extends Migration
         }
 
         Schema::table('orders', function (Blueprint $table): void {
-            $table->dropForeignIdFor(\Modules\MasterData\Warehouses\Domain\Models\Warehouse::class, 'assigned_warehouse_id');
+            $table->dropForeignIdFor(Modules\MasterData\Warehouses\Domain\Models\Warehouse::class, 'assigned_warehouse_id');
             $table->dropColumn('assigned_warehouse_id');
         });
     }

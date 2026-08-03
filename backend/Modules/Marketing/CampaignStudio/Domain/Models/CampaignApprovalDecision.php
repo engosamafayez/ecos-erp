@@ -12,8 +12,9 @@ class CampaignApprovalDecision extends Model
 {
     use HasUuids;
 
-    protected $table    = 'marketing_campaign_approval_decisions';
-    public    $timestamps = false;
+    protected $table = 'marketing_campaign_approval_decisions';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'campaign_approval_id', 'workflow_step_id',

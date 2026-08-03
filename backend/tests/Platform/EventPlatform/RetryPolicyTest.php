@@ -52,7 +52,7 @@ class RetryPolicyTest extends TestCase
     public function test_roundtrip_serialization(): void
     {
         $policy = RetryPolicy::standard();
-        $data   = $policy->toArray();
+        $data = $policy->toArray();
         $restored = RetryPolicy::fromArray($data);
 
         $this->assertEquals($policy->getDelays(), $restored->getDelays());

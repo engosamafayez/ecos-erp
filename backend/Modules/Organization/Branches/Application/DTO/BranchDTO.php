@@ -24,6 +24,9 @@ final class BranchDTO extends BaseDTO
         public readonly ?string $country = null,
         public readonly bool $is_head_office = false,
         public readonly bool $is_active = true,
+        public readonly ?string $default_warehouse_id = null,
+        public readonly ?float $latitude = null,
+        public readonly ?float $longitude = null,
     ) {}
 
     /**
@@ -43,6 +46,9 @@ final class BranchDTO extends BaseDTO
             country: self::nullableString($data, 'country'),
             is_head_office: (bool) ($data['is_head_office'] ?? false),
             is_active: (bool) ($data['is_active'] ?? true),
+            default_warehouse_id: self::nullableString($data, 'default_warehouse_id'),
+            latitude: isset($data['latitude']) && $data['latitude'] !== null ? (float) $data['latitude'] : null,
+            longitude: isset($data['longitude']) && $data['longitude'] !== null ? (float) $data['longitude'] : null,
         );
     }
 

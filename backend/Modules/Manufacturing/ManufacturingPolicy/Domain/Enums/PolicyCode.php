@@ -24,26 +24,26 @@ namespace Modules\Manufacturing\ManufacturingPolicy\Domain\Enums;
  */
 enum PolicyCode: string
 {
-    case Eligible                  = 'eligible';
-    case OrderCancelled            = 'order_cancelled';
-    case OrderStatusNotAllowed     = 'order_status_not_allowed';
-    case ProductCannotManufacture  = 'product_cannot_manufacture';
-    case RecipeNotFound            = 'recipe_not_found';
+    case Eligible = 'eligible';
+    case OrderCancelled = 'order_cancelled';
+    case OrderStatusNotAllowed = 'order_status_not_allowed';
+    case ProductCannotManufacture = 'product_cannot_manufacture';
+    case RecipeNotFound = 'recipe_not_found';
     case ProductNotInventoryManaged = 'product_not_inventory_managed';
-    case ManufacturingNotRequired  = 'manufacturing_not_required';
-    case AlreadyManufactured       = 'already_manufactured';
+    case ManufacturingNotRequired = 'manufacturing_not_required';
+    case AlreadyManufactured = 'already_manufactured';
 
     public function label(): string
     {
         return match ($this) {
-            self::Eligible                  => 'Eligible for manufacturing',
-            self::OrderCancelled            => 'Order is cancelled',
-            self::OrderStatusNotAllowed     => 'Order status does not allow manufacturing',
-            self::ProductCannotManufacture  => 'Product cannot be manufactured',
-            self::RecipeNotFound            => 'No active recipe exists for this product',
+            self::Eligible => 'Eligible for manufacturing',
+            self::OrderCancelled => 'Order is cancelled',
+            self::OrderStatusNotAllowed => 'Order status does not allow manufacturing',
+            self::ProductCannotManufacture => 'Product cannot be manufactured',
+            self::RecipeNotFound => 'No active recipe exists for this product',
             self::ProductNotInventoryManaged => 'Product is not managed by inventory',
-            self::ManufacturingNotRequired  => 'No quantity requires manufacturing',
-            self::AlreadyManufactured       => 'Product already manufactured for this order line',
+            self::ManufacturingNotRequired => 'No quantity requires manufacturing',
+            self::AlreadyManufactured => 'Product already manufactured for this order line',
         };
     }
 

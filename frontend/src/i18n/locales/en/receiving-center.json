@@ -63,5 +63,66 @@
     "receiveTitle": "Confirm Receipt",
     "saving": "Saving…",
     "errorTitle": "Unable to save"
+  },
+  "page": {
+    "title": "Receiving Center",
+    "subtitle": "Inspect and process incoming goods from suppliers.",
+    "kpis": {
+      "totalReceipts": "Total Receipts",
+      "draft": "Draft",
+      "posted": "Posted"
+    },
+    "columns": {
+      "receiptNo": "Receipt #",
+      "date": "Date",
+      "supplier": "Supplier",
+      "warehouse": "Warehouse",
+      "status": "Status",
+      "payment": "Payment",
+      "invoiceTotal": "Invoice Total"
+    },
+    "filters": {
+      "search": "Search receipts…",
+      "allStatuses": "All Statuses"
+    },
+    "empty": "No receipts found.",
+    "actions": {
+      "view": "View Details",
+      "post": "Post to Inventory",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "newReceipt": "New Receipt",
+      "receiveGoods": "Receive Goods"
+    },
+    "confirmPost": {
+      "title": "Post Receipt",
+      "description": "Post this goods receipt to inventory?",
+      "confirm": "Post"
+    },
+    "confirmCancel": {
+      "title": "Cancel Receipt",
+      "description": "Are you sure you want to cancel this receipt?",
+      "confirm": "Cancel Receipt"
+    },
+    "confirmDelete": {
+      "title": "Delete Receipt",
+      "description": "Are you sure you want to delete this receipt?",
+      "confirm": "Delete"
+    },
+    "toast": {
+      "posted": "Receipt posted to inventory.",
+      "postFailed": "Failed to post receipt.",
+      "cancelled": "Receipt cancelled.",
+      "cancelFailed": "Failed to cancel receipt.",
+      "deleted": "Receipt deleted.",
+      "deleteFailed": "Failed to delete receipt."
+    },
+    "pagination": {
+      "total": "{{count}} receipts",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} of {{last}}"
+    }
   }
 }

@@ -66,7 +66,7 @@ export function ViewGoodsReceiptPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <span className="text-muted-foreground text-sm">{t('detail.loading')}</span>
+        <span className="text-muted-foreground text-sm">{t($ => $.detail.loading)}</span>
       </div>
     );
   }
@@ -74,7 +74,7 @@ export function ViewGoodsReceiptPage() {
   if (isError || !receipt) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <span className="text-destructive text-sm">{t('detail.notFound')}</span>
+        <span className="text-destructive text-sm">{t($ => $.detail.notFound)}</span>
       </div>
     );
   }
@@ -92,8 +92,8 @@ export function ViewGoodsReceiptPage() {
           title={receipt.receipt_number}
           subtitle={<GrStatusBadge status={receipt.status} />}
           breadcrumbs={[
-            { label: tCommon('home'), to: ROUTES.dashboard },
-            { label: t('title'), to: ROUTES.goodsReceipts },
+            { label: tCommon($ => $.home), to: ROUTES.dashboard },
+            { label: t($ => $.title), to: ROUTES.goodsReceipts },
             { label: receipt.receipt_number },
           ]}
           actions={
@@ -104,15 +104,15 @@ export function ViewGoodsReceiptPage() {
                   onClick={() => navigate(`${ROUTES.goodsReceipts}/${receipt.id}/edit`)}
                 >
                   <Pencil className="size-4" />
-                  {tCommon('common.edit')}
+                  {tCommon($ => $.common.edit)}
                 </Button>
                 <Button variant="outline" onClick={() => setConfirmPost(true)}>
                   <Send className="size-4" />
-                  {t('actions.post')}
+                  {t($ => $.actions.post)}
                 </Button>
                 <Button variant="destructive" onClick={() => setConfirmDelete(true)}>
                   <Trash2 className="size-4" />
-                  {tCommon('common.delete')}
+                  {tCommon($ => $.common.delete)}
                 </Button>
               </div>
             ) : null
@@ -122,7 +122,7 @@ export function ViewGoodsReceiptPage() {
         {/* Receipt Details */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('detail.receiptDetails')}</CardTitle>
+            <CardTitle>{t($ => $.detail.receiptDetails)}</CardTitle>
           </CardHeader>
           <CardContent>
             <GoodsReceiptHeaderFields readOnly />
@@ -133,7 +133,7 @@ export function ViewGoodsReceiptPage() {
         {receipt.invoice_attachment_url && (
           <Card>
             <CardHeader>
-              <CardTitle>{t('detail.invoiceAttachment')}</CardTitle>
+              <CardTitle>{t($ => $.detail.invoiceAttachment)}</CardTitle>
             </CardHeader>
             <CardContent>
               <a
@@ -144,8 +144,8 @@ export function ViewGoodsReceiptPage() {
               >
                 <ExternalLink className="size-4" />
                 {receipt.supplier_invoice_number
-                  ? `${t('detail.invoice')} ${receipt.supplier_invoice_number}`
-                  : t('detail.viewInvoice')}
+                  ? `${t($ => $.detail.invoice)} ${receipt.supplier_invoice_number}`
+                  : t($ => $.detail.viewInvoice)}
               </a>
             </CardContent>
           </Card>
@@ -155,26 +155,26 @@ export function ViewGoodsReceiptPage() {
         {(receipt.invoice_total_amount > 0 || hasLandedCosts) && (
           <Card>
             <CardHeader>
-              <CardTitle>{t('detail.invoiceFinancials')}</CardTitle>
+              <CardTitle>{t($ => $.detail.invoiceFinancials)}</CardTitle>
             </CardHeader>
             <CardContent>
               <dl className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="flex justify-between gap-4 rounded-md bg-primary/5 px-3 py-2">
-                  <dt className="text-foreground text-sm font-semibold">{t('detail.invoiceTotal')}</dt>
+                  <dt className="text-foreground text-sm font-semibold">{t($ => $.detail.invoiceTotal)}</dt>
                   <dd className="text-foreground text-sm font-bold tabular-nums">
                     {fmt(receipt.invoice_total_amount, 2)}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('form.invoiceFinancials.freight')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.form.invoiceFinancials.freight)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{fmt(receipt.freight_amount, 2)}</dd>
                 </div>
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('form.invoiceFinancials.tax')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.form.invoiceFinancials.tax)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{fmt(receipt.tax_amount, 2)}</dd>
                 </div>
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('form.invoiceFinancials.additionalCosts')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.form.invoiceFinancials.additionalCosts)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{fmt(receipt.additional_costs, 2)}</dd>
                 </div>
               </dl>
@@ -185,12 +185,12 @@ export function ViewGoodsReceiptPage() {
         {/* Payment Information */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('detail.paymentInfo')}</CardTitle>
+            <CardTitle>{t($ => $.detail.paymentInfo)}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                <dt className="text-muted-foreground text-sm">{t('detail.paymentStatus')}</dt>
+                <dt className="text-muted-foreground text-sm">{t($ => $.detail.paymentStatus)}</dt>
                 <dd>
                   <PaymentStatusBadge
                     status={receipt.payment_status}
@@ -200,35 +200,35 @@ export function ViewGoodsReceiptPage() {
               </div>
               {receipt.invoice_total_amount > 0 && (
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('detail.paidAmount')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.detail.paidAmount)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{fmt(receipt.paid_amount, 2)}</dd>
                 </div>
               )}
               {receipt.invoice_total_amount > 0 && (
                 <div className="flex justify-between gap-4 rounded-md bg-amber-50 px-3 py-2 dark:bg-amber-900/20">
-                  <dt className="text-amber-700 text-sm dark:text-amber-300">{t('detail.outstandingAmount')}</dt>
+                  <dt className="text-amber-700 text-sm dark:text-amber-300">{t($ => $.detail.outstandingAmount)}</dt>
                   <dd className="text-amber-700 text-sm font-bold tabular-nums dark:text-amber-300">{fmt(receipt.outstanding_amount, 2)}</dd>
                 </div>
               )}
               {receipt.payment_method && (
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('detail.paymentMethod')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.detail.paymentMethod)}</dt>
                   <dd className="text-sm font-medium">{receipt.payment_method_label}</dd>
                 </div>
               )}
               {receipt.payment_terms_days != null && (
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('detail.paymentTerms')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.detail.paymentTerms)}</dt>
                   <dd className="text-sm font-medium tabular-nums">
                     {receipt.payment_terms_days === 0
-                      ? t('form.paymentInfo.termsImmediate')
-                      : t('detail.nDays', { n: receipt.payment_terms_days })}
+                      ? t($ => $.form.paymentInfo.termsImmediate)
+                      : t($ => $.detail.nDays, { n: receipt.payment_terms_days })}
                   </dd>
                 </div>
               )}
               {receipt.payment_due_date && (
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('detail.paymentDueDate')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.detail.paymentDueDate)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{receipt.payment_due_date}</dd>
                 </div>
               )}
@@ -239,7 +239,7 @@ export function ViewGoodsReceiptPage() {
         {/* Lines */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('detail.lineItems')}</CardTitle>
+            <CardTitle>{t($ => $.detail.lineItems)}</CardTitle>
           </CardHeader>
           <CardContent>
             <GoodsReceiptLinesEditor readOnly poLineInfos={poLineInfos} />
@@ -250,32 +250,32 @@ export function ViewGoodsReceiptPage() {
         {(hasLandedCosts || receipt.status === 'posted') && (
           <Card>
             <CardHeader>
-              <CardTitle>{t('detail.landedCostSummary')}</CardTitle>
+              <CardTitle>{t($ => $.detail.landedCostSummary)}</CardTitle>
             </CardHeader>
             <CardContent>
               <dl className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('form.invoiceFinancials.freight')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.form.invoiceFinancials.freight)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{fmt(receipt.freight_amount, 2)}</dd>
                 </div>
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('form.invoiceFinancials.tax')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.form.invoiceFinancials.tax)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{fmt(receipt.tax_amount, 2)}</dd>
                 </div>
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('form.invoiceFinancials.additionalCosts')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.form.invoiceFinancials.additionalCosts)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{fmt(receipt.additional_costs, 2)}</dd>
                 </div>
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('detail.totalExtraCosts')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.detail.totalExtraCosts)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{fmt(receipt.total_landed_costs, 2)}</dd>
                 </div>
                 <div className="flex justify-between gap-4 rounded-md bg-muted/50 px-3 py-2">
-                  <dt className="text-muted-foreground text-sm">{t('detail.totalNetQty')}</dt>
+                  <dt className="text-muted-foreground text-sm">{t($ => $.detail.totalNetQty)}</dt>
                   <dd className="text-sm font-medium tabular-nums">{fmt(totalNetQty, 4)}</dd>
                 </div>
                 <div className="flex justify-between gap-4 rounded-md bg-primary/5 px-3 py-2">
-                  <dt className="text-foreground text-sm font-semibold">{t('detail.extraCostPerUnit')}</dt>
+                  <dt className="text-foreground text-sm font-semibold">{t($ => $.detail.extraCostPerUnit)}</dt>
                   <dd className="text-foreground text-sm font-bold tabular-nums">{fmt(extraCostPerUnit, 4)}</dd>
                 </div>
               </dl>
@@ -285,10 +285,10 @@ export function ViewGoodsReceiptPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-muted-foreground border-b text-start">
-                        <th className="pb-2 pr-3 font-medium">{t('lines.columns.product')}</th>
-                        <th className="w-28 pb-2 pr-3 text-end font-medium">{t('detail.unitPrice')}</th>
-                        <th className="w-28 pb-2 pr-3 text-end font-medium">{t('detail.netQty')}</th>
-                        <th className="w-32 pb-2 text-end font-medium">{t('detail.landedUnitCost')}</th>
+                        <th className="pb-2 pr-3 font-medium">{t($ => $.lines.columns.product)}</th>
+                        <th className="w-28 pb-2 pr-3 text-end font-medium">{t($ => $.detail.unitPrice)}</th>
+                        <th className="w-28 pb-2 pr-3 text-end font-medium">{t($ => $.detail.netQty)}</th>
+                        <th className="w-32 pb-2 text-end font-medium">{t($ => $.detail.landedUnitCost)}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -314,9 +314,9 @@ export function ViewGoodsReceiptPage() {
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
-        title={t('dialogs.delete.title')}
-        description={t('dialogs.delete.description', { number: receipt.receipt_number })}
-        confirmLabel={t('dialogs.delete.confirm')}
+        title={t($ => $.dialogs.delete.title)}
+        description={t($ => $.dialogs.delete.description, { number: receipt.receipt_number })}
+        confirmLabel={t($ => $.dialogs.delete.confirm)}
         variant="destructive"
         loading={deleteGR.isPending}
         onConfirm={() => {
@@ -329,9 +329,9 @@ export function ViewGoodsReceiptPage() {
       <ConfirmDialog
         open={confirmPost}
         onOpenChange={setConfirmPost}
-        title={t('dialogs.post.title')}
-        description={t('dialogs.post.description', { number: receipt.receipt_number })}
-        confirmLabel={t('dialogs.post.confirm')}
+        title={t($ => $.dialogs.post.title)}
+        description={t($ => $.dialogs.post.description, { number: receipt.receipt_number })}
+        confirmLabel={t($ => $.dialogs.post.confirm)}
         loading={postGR.isPending}
         onConfirm={() => {
           postGR.mutate(receipt.id, {

@@ -34,9 +34,9 @@ final class SubmitPurchaseMaterialAction
         }
 
         $material->update([
-            'status'       => PurchaseMaterialStatus::UnderReview->value,
+            'status' => PurchaseMaterialStatus::UnderReview->value,
             'submitted_at' => now(),
-            'updated_by'   => (string) $request->user()?->id,
+            'updated_by' => (string) $request->user()?->id,
         ]);
 
         return OperationResult::success($material->refresh(), 'Purchase material submitted for procurement review.');

@@ -12,12 +12,12 @@ final class PriceReviewCreated
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public readonly string  $reviewId,
-        public readonly string  $productId,
-        public readonly string  $companyId,
-        public readonly float   $previousCost,
-        public readonly float   $newCost,
-        public readonly string  $triggerReason,
+        public readonly string $reviewId,
+        public readonly string $productId,
+        public readonly string $companyId,
+        public readonly float $previousCost,
+        public readonly float $newCost,
+        public readonly string $triggerReason,
         public readonly ?string $triggerSource = null,
     ) {}
 }

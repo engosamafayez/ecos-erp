@@ -22,7 +22,7 @@ final class PricingServiceProvider extends ServiceProvider
         $this->app->bind(PriceResolutionService::class, function ($app): PriceResolutionService {
             return new PriceResolutionService(
                 $app->make(PricingGatewayInterface::class),
-                new PriceValidator(),
+                new PriceValidator,
             );
         });
     }

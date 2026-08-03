@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Shift;
 
+use InvalidArgumentException;
 use Modules\POS\Shift\Domain\ValueObjects\ShiftNumber;
 use PHPUnit\Framework\TestCase;
 
@@ -24,7 +25,7 @@ final class ShiftNumberTest extends TestCase
 
     public function test_zero_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('positive integer');
 
         new ShiftNumber(0);
@@ -32,7 +33,7 @@ final class ShiftNumberTest extends TestCase
 
     public function test_negative_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new ShiftNumber(-5);
     }
@@ -55,7 +56,7 @@ final class ShiftNumberTest extends TestCase
 
     public function test_of_throws_for_zero(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         ShiftNumber::of(0);
     }
@@ -64,7 +65,7 @@ final class ShiftNumberTest extends TestCase
 
     public function test_next_returns_incremented_value(): void
     {
-        $sn   = ShiftNumber::of(5);
+        $sn = ShiftNumber::of(5);
         $next = $sn->next();
 
         $this->assertSame(6, $next->value);

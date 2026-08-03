@@ -47,13 +47,13 @@ return new class extends Migration
 
         foreach ($flags as $flag) {
             DB::table('feature_flags')->insert([
-                'id'          => \Illuminate\Support\Str::uuid()->toString(),
-                'company_id'  => null,
-                'key'         => $flag['key'],
-                'enabled'     => $flag['enabled'],
+                'id' => Illuminate\Support\Str::uuid()->toString(),
+                'company_id' => null,
+                'key' => $flag['key'],
+                'enabled' => $flag['enabled'],
                 'description' => $flag['description'],
-                'created_at'  => $now,
-                'updated_at'  => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
         }
     }

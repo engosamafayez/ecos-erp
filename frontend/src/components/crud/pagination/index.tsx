@@ -23,8 +23,8 @@ export function Pagination({ meta, onPageChange }: PaginationProps) {
     <div className="text-muted-foreground flex flex-col items-center justify-between gap-2 text-sm sm:flex-row">
       <span>
         {total === 0
-          ? t('pagination.noResults')
-          : t('pagination.pageOf', { page, lastPage: Math.max(lastPage, 1), total })}
+          ? t($ => $.pagination.noResults)
+          : t($ => $.pagination.pageOf, { page, lastPage: Math.max(lastPage, 1), total })}
       </span>
       <div className="flex items-center gap-2">
         <Button
@@ -34,7 +34,7 @@ export function Pagination({ meta, onPageChange }: PaginationProps) {
           onClick={() => onPageChange(page - 1)}
         >
           <PrevIcon className="size-4" aria-hidden />
-          {t('pagination.previous')}
+          {t($ => $.pagination.previous)}
         </Button>
         <Button
           variant="outline"
@@ -42,7 +42,7 @@ export function Pagination({ meta, onPageChange }: PaginationProps) {
           disabled={!canNext}
           onClick={() => onPageChange(page + 1)}
         >
-          {t('pagination.next')}
+          {t($ => $.pagination.next)}
           <NextIcon className="size-4" aria-hidden />
         </Button>
       </div>

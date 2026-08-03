@@ -18,16 +18,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * detached_at is set when an order is cancelled or completed and should no
  * longer be prepared.
  *
- * @property string      $id
- * @property string      $preparation_session_id
- * @property string      $order_id
- * @property string      $order_number_snapshot
+ * @property string $id
+ * @property string $preparation_session_id
+ * @property string $order_id
+ * @property string $order_number_snapshot
  * @property string|null $customer_name_snapshot
  * @property string|null $governorate_snapshot
  * @property string|null $area_snapshot
- * @property string      $attachment_source      auto|manual_supervisor|system_recovery
+ * @property string $attachment_source auto|manual_supervisor|system_recovery
  * @property \Carbon\Carbon $attached_at
- * @property string|null $attached_by            null = auto-attached
+ * @property string|null $attached_by null = auto-attached
  * @property \Carbon\Carbon|null $detached_at
  * @property string|null $detached_by
  * @property string|null $detachment_reason
@@ -60,8 +60,8 @@ class PreparationSessionOrder extends Model
 
     /** @var array<string, string> */
     protected $casts = [
-        'attached_at'  => 'datetime',
-        'detached_at'  => 'datetime',
+        'attached_at' => 'datetime',
+        'detached_at' => 'datetime',
     ];
 
     public function session(): BelongsTo

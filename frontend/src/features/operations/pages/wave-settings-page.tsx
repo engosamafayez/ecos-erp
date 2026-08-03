@@ -1,8 +1,7 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertCircle,
-  Bell,
-  CalendarDays,
   CheckCircle2,
   FlaskConical,
   Layers,
@@ -30,9 +29,10 @@ import { useWaveStatusLabels, WAVE_STATUS_COLORS } from '../hooks/use-operations
 // ── Coming Soon pill ──────────────────────────────────────────────────────────
 
 function ComingSoon() {
+  const { t } = useTranslation('settings');
   return (
     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground ml-2">
-      Coming soon
+      {t($ => $.wave.comingSoonBadge)}
     </span>
   );
 }
@@ -93,6 +93,7 @@ function ActionRow({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function WaveSettingsPage() {
+  const { t } = useTranslation('settings');
   const waveId = useSelectedWaveId();
   const toast  = useToastStore((s) => s.toast);
   const { waveStatusLabel } = useWaveStatusLabels();
@@ -116,9 +117,9 @@ export function WaveSettingsPage() {
     if (!waveId) return;
     try {
       await generateDemand.mutateAsync(waveId);
-      toast({ type: 'success', title: 'Demand generated successfully.' });
+      toast({ type: 'success', title: t($ => $.wave.toast.generateSuccess) });
     } catch {
-      toast({ type: 'error', title: 'Failed to generate demand.' });
+      toast({ type: 'error', title: t($ => $.wave.toast.generateFail) });
     }
   }
 
@@ -126,9 +127,9 @@ export function WaveSettingsPage() {
     if (!waveId) return;
     try {
       await analyzeMaterials.mutateAsync(waveId);
-      toast({ type: 'success', title: 'Material analysis complete.' });
+      toast({ type: 'success', title: t($ => $.wave.toast.analyzeSuccess) });
     } catch {
-      toast({ type: 'error', title: 'Failed to analyze materials.' });
+      toast({ type: 'error', title: t($ => $.wave.toast.analyzeFail) });
     }
   }
 
@@ -136,9 +137,9 @@ export function WaveSettingsPage() {
     if (!waveId) return;
     try {
       await approveWave.mutateAsync({ id: waveId, payload: { notes: notes || undefined } });
-      toast({ type: 'success', title: 'Wave approved.' });
+      toast({ type: 'success', title: t($ => $.wave.toast.approveSuccess) });
     } catch {
-      toast({ type: 'error', title: 'Failed to approve wave.' });
+      toast({ type: 'error', title: t($ => $.wave.toast.approveFail) });
     }
   }
 
@@ -146,9 +147,9 @@ export function WaveSettingsPage() {
     if (!waveId) return;
     try {
       await recalculate.mutateAsync({ id: waveId, payload: {} });
-      toast({ type: 'success', title: 'Wave recalculated.' });
+      toast({ type: 'success', title: t($ => $.wave.toast.recalcSuccess) });
     } catch {
-      toast({ type: 'error', title: 'Recalculation failed.' });
+      toast({ type: 'error', title: t($ => $.wave.toast.recalcFail) });
     }
   }
 
@@ -157,47 +158,45 @@ export function WaveSettingsPage() {
       {!waveId ? (
         <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
           <Waves className="h-8 w-8 opacity-30" />
-          <p className="text-sm">Select a wave to manage its settings.</p>
+          <p className="text-sm">{t($ => $.wave.emptyState)}</p>
         </div>
       ) : isLoading ? (
         <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Loading…</span>
+          <span className="text-sm">{t($ => $.wave.loading)}</span>
         </div>
       ) : !wave ? (
         <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
           <AlertCircle className="h-6 w-6" />
-          <p className="text-sm">Wave not found.</p>
+          <p className="text-sm">{t($ => $.wave.notFound)}</p>
         </div>
       ) : (
         <div className="flex-1 overflow-auto p-5">
           <Tabs defaultValue="general" className="space-y-4">
             <TabsList className="h-8">
-              <TabsTrigger value="general" className="text-xs">General</TabsTrigger>
-              <TabsTrigger value="automation" className="text-xs">Automation</TabsTrigger>
-              <TabsTrigger value="schedule" className="text-xs">Schedule</TabsTrigger>
-              <TabsTrigger value="notifications" className="text-xs">Notifications</TabsTrigger>
+              <TabsTrigger value="general" className="text-xs">{t($ => $.wave.tabs.general)}</TabsTrigger>
+              <TabsTrigger value="automation" className="text-xs">{t($ => $.wave.tabs.automation)}</TabsTrigger>
             </TabsList>
 
             {/* ── General tab ─────────────────────────────────────────────── */}
             <TabsContent value="general" className="mt-0 space-y-5">
               <div className="rounded-lg border border-border/60 bg-card px-4 py-1">
-                <InfoRow label="Wave #"         value={<span className="font-mono font-medium">{wave.wave_number}</span>} />
-                <InfoRow label="Status"         value={<Badge className={`text-xs ${WAVE_STATUS_COLORS[wave.status]}`}>{waveStatusLabel[wave.status]}</Badge>} />
-                <InfoRow label="Planning Date"  value={new Date(wave.planning_date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} />
-                <InfoRow label="Warehouse ID"   value={<span className="font-mono text-xs text-muted-foreground">{wave.warehouse_id}</span>} />
-                <InfoRow label="Orders"         value={wave.orders_count} />
-                <InfoRow label="Products"       value={wave.products_count} />
-                <InfoRow label="Completion"     value={`${wave.completion_pct.toFixed(1)}%`} />
+                <InfoRow label={t($ => $.wave.info.waveNumber)}   value={<span className="font-mono font-medium">{wave.wave_number}</span>} />
+                <InfoRow label={t($ => $.wave.info.status)}       value={<Badge className={`text-xs ${WAVE_STATUS_COLORS[wave.status]}`}>{waveStatusLabel[wave.status]}</Badge>} />
+                <InfoRow label={t($ => $.wave.info.planningDate)} value={new Date(wave.planning_date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} />
+                <InfoRow label={t($ => $.wave.info.warehouseId)}  value={<span className="font-mono text-xs text-muted-foreground">{wave.warehouse_id}</span>} />
+                <InfoRow label={t($ => $.wave.info.orders)}       value={wave.orders_count} />
+                <InfoRow label={t($ => $.wave.info.products)}     value={wave.products_count} />
+                <InfoRow label={t($ => $.wave.info.completion)}   value={`${wave.completion_pct.toFixed(1)}%`} />
                 {wave.approved_at && (
                   <InfoRow
-                    label="Approved At"
+                    label={t($ => $.wave.info.approvedAt)}
                     value={new Date(wave.approved_at).toLocaleString()}
                   />
                 )}
                 {wave.started_at && (
                   <InfoRow
-                    label="Started At"
+                    label={t($ => $.wave.info.startedAt)}
                     value={new Date(wave.started_at).toLocaleString()}
                   />
                 )}
@@ -206,18 +205,18 @@ export function WaveSettingsPage() {
               {/* Notes */}
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                  Wave Notes
+                  {t($ => $.wave.notes.title)}
                 </label>
                 <Textarea
                   value={notes}
                   onChange={(e) => { setNotes(e.target.value); setNotesChanged(true); }}
-                  placeholder="Add internal notes for this wave…"
+                  placeholder={t($ => $.wave.notes.placeholder)}
                   rows={4}
                   className="text-sm resize-none"
                 />
                 {notesChanged && (
                   <p className="text-[10px] text-amber-600 mt-1">
-                    Note: notes are for reference only and are saved when you Approve the wave.
+                    {t($ => $.wave.notes.hint)}
                   </p>
                 )}
               </div>
@@ -228,37 +227,37 @@ export function WaveSettingsPage() {
               <div className="rounded-lg border border-border/60 bg-card px-4 py-1 space-y-0">
                 <ActionRow
                   icon={<Layers className="h-4 w-4" />}
-                  title="Generate Demand"
-                  description="Calculate required product quantities from attached orders. Run this after adding or removing orders."
+                  title={t($ => $.wave.actions.generateDemand.title)}
+                  description={t($ => $.wave.actions.generateDemand.desc)}
                   action={handleGenerateDemand}
-                  actionLabel="Generate"
+                  actionLabel={t($ => $.wave.actions.generateDemand.button)}
                   loading={generateDemand.isPending}
                   disabled={wave.status === 'cancelled' || wave.status === 'completed'}
                 />
                 <ActionRow
                   icon={<FlaskConical className="h-4 w-4" />}
-                  title="Analyze Materials"
-                  description="Run material requirement analysis based on product recipes. Identifies shortages."
+                  title={t($ => $.wave.actions.analyzeMaterials.title)}
+                  description={t($ => $.wave.actions.analyzeMaterials.desc)}
                   action={handleAnalyzeMaterials}
-                  actionLabel="Analyze"
+                  actionLabel={t($ => $.wave.actions.analyzeMaterials.button)}
                   loading={analyzeMaterials.isPending}
                   disabled={wave.status === 'cancelled' || wave.status === 'completed'}
                 />
                 <ActionRow
                   icon={<RefreshCw className="h-4 w-4" />}
-                  title="Recalculate Wave"
-                  description="Recalculate totals and completion metrics. Use after manual adjustments."
+                  title={t($ => $.wave.actions.recalculate.title)}
+                  description={t($ => $.wave.actions.recalculate.desc)}
                   action={handleRecalculate}
-                  actionLabel="Recalculate"
+                  actionLabel={t($ => $.wave.actions.recalculate.button)}
                   loading={recalculate.isPending}
                   disabled={wave.status === 'cancelled'}
                 />
                 <ActionRow
                   icon={<CheckCircle2 className="h-4 w-4" />}
-                  title="Approve Wave"
-                  description="Mark this wave as approved and ready for loading. This action is recorded."
+                  title={t($ => $.wave.actions.approve.title)}
+                  description={t($ => $.wave.actions.approve.desc)}
                   action={handleApprove}
-                  actionLabel="Approve"
+                  actionLabel={t($ => $.wave.actions.approve.button)}
                   loading={approveWave.isPending}
                   disabled={wave.status !== 'completed'}
                 />
@@ -266,46 +265,19 @@ export function WaveSettingsPage() {
 
               <div className="mt-4 rounded-lg border border-border/40 bg-muted/30 px-4 py-3 space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Automation Rules <ComingSoon />
+                  {t($ => $.wave.automation.title)} <ComingSoon />
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Configure auto-triggers for demand generation and material analysis.
-                  Automation rules will fire based on wave lifecycle events.
+                  {t($ => $.wave.automation.desc)}
                 </p>
                 <div className="flex items-center gap-2 opacity-40">
                   <Zap className="h-3.5 w-3.5" />
-                  <span className="text-xs">Auto-generate demand on order attachment</span>
+                  <span className="text-xs">{t($ => $.wave.automation.autoGenerateDemand)}</span>
                 </div>
                 <div className="flex items-center gap-2 opacity-40">
                   <Zap className="h-3.5 w-3.5" />
-                  <span className="text-xs">Auto-analyze materials after demand generation</span>
+                  <span className="text-xs">{t($ => $.wave.automation.autoAnalyzeMaterials)}</span>
                 </div>
-              </div>
-            </TabsContent>
-
-            {/* ── Schedule tab ────────────────────────────────────────────── */}
-            <TabsContent value="schedule" className="mt-0">
-              <div className="rounded-lg border border-border/40 bg-muted/20 px-5 py-8 flex flex-col items-center gap-3 text-muted-foreground">
-                <CalendarDays className="h-8 w-8 opacity-40" />
-                <p className="text-sm font-medium">Wave Scheduling</p>
-                <p className="text-xs text-center max-w-sm">
-                  Schedule recurring wave creation and define cutoff times for order batching.
-                  Available in the next platform release.
-                </p>
-                <ComingSoon />
-              </div>
-            </TabsContent>
-
-            {/* ── Notifications tab ───────────────────────────────────────── */}
-            <TabsContent value="notifications" className="mt-0">
-              <div className="rounded-lg border border-border/40 bg-muted/20 px-5 py-8 flex flex-col items-center gap-3 text-muted-foreground">
-                <Bell className="h-8 w-8 opacity-40" />
-                <p className="text-sm font-medium">Wave Notifications</p>
-                <p className="text-xs text-center max-w-sm">
-                  Configure alerts for shortage detection, completion milestones, and approval
-                  requests. Notification channels will be available in a future update.
-                </p>
-                <ComingSoon />
               </div>
             </TabsContent>
           </Tabs>

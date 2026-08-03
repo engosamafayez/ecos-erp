@@ -41,7 +41,9 @@ class ManufacturingWorkflowTest extends TestCase
     use RefreshDatabase;
 
     private ManufacturingWorkflow $workflow;
+
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
@@ -58,7 +60,7 @@ class ManufacturingWorkflowTest extends TestCase
         );
         $this->app->forgetInstance(ManufacturingWorkflow::class);
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
 
         // Default rule: approve everything. Override per test when needed.
@@ -75,12 +77,12 @@ class ManufacturingWorkflowTest extends TestCase
             'manufacturing',
             new InMemoryRuleProvider(
                 new DecisionRule(
-                    rule_id:       $id,
-                    name:          "Test rule: {$type->label()}",
-                    priority:      1,
+                    rule_id: $id,
+                    name: "Test rule: {$type->label()}",
+                    priority: 1,
                     decision_type: $type,
-                    reason:        new DecisionReason(code: "test_{$type->value}", message: $type->label()),
-                    condition:     fn ($ctx) => true,
+                    reason: new DecisionReason(code: "test_{$type->value}", message: $type->label()),
+                    condition: fn ($ctx) => true,
                 ),
             ),
         );
@@ -114,11 +116,11 @@ class ManufacturingWorkflowTest extends TestCase
     private function makeRecipe(Product $output, int $version = 1): Recipe
     {
         return Recipe::create([
-            'bom_number'         => 'BOM-WF-' . uniqid(),
-            'product_id'         => $output->id,
-            'version'            => "{$version}.0",
+            'bom_number' => 'BOM-WF-'.uniqid(),
+            'product_id' => $output->id,
+            'version' => "{$version}.0",
             'bom_version_number' => $version,
-            'is_active'          => true,
+            'is_active' => true,
         ]);
     }
 
@@ -126,7 +128,7 @@ class ManufacturingWorkflowTest extends TestCase
     {
         $recipe->components()->create([
             'raw_material_id' => $component->id,
-            'quantity'        => $qty,
+            'quantity' => $qty,
         ]);
     }
 
@@ -134,9 +136,9 @@ class ManufacturingWorkflowTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => 0.0,
         ]);
     }
@@ -144,11 +146,11 @@ class ManufacturingWorkflowTest extends TestCase
     private function makeTrigger(): DecisionTrigger
     {
         return new DecisionTrigger(
-            trigger_type:    'manual',
-            trigger_id:      'test-trigger-' . uniqid(),
+            trigger_type: 'manual',
+            trigger_id: 'test-trigger-'.uniqid(),
             trigger_version: 'v1',
-            triggered_at:    (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-            actor_id:        'test-actor-001',
+            triggered_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
+            actor_id: 'test-actor-001',
         );
     }
 
@@ -158,11 +160,11 @@ class ManufacturingWorkflowTest extends TestCase
         array $metadata = [],
     ): ManufacturingWorkflowRequest {
         return new ManufacturingWorkflowRequest(
-            product_id:   $output->id,
+            product_id: $output->id,
             warehouse_id: $this->warehouse->id,
             required_qty: $requiredQty,
-            trigger:      $this->makeTrigger(),
-            metadata:     $metadata,
+            trigger: $this->makeTrigger(),
+            metadata: $metadata,
         );
     }
 
@@ -170,9 +172,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_successful_workflow_returns_plan_ready_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 2.0);
         $this->seedInventory($component, onHand: 100.0);
 
@@ -187,9 +189,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_successful_workflow_result_carries_all_engine_outputs(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, onHand: 50.0);
 
@@ -203,9 +205,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_successful_workflow_result_carries_workflow_id(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, onHand: 50.0);
 
@@ -220,9 +222,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_successful_workflow_result_has_completed_at_timestamp(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, onHand: 50.0);
 
@@ -237,13 +239,13 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_decision_reject_returns_blocked_at_decision_stage(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
 
         $workflow = $this->resetWorkflowWithRule(DecisionType::Reject);
-        $result   = $workflow->run($this->makeRequest($output));
+        $result = $workflow->run($this->makeRequest($output));
 
         $this->assertTrue($result->is_blocked);
         $this->assertSame(WorkflowStage::DecisionEvaluated, $result->stage);
@@ -252,13 +254,13 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_decision_defer_returns_deferred_blocking_reason(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
 
         $workflow = $this->resetWorkflowWithRule(DecisionType::Defer);
-        $result   = $workflow->run($this->makeRequest($output));
+        $result = $workflow->run($this->makeRequest($output));
 
         $this->assertTrue($result->is_blocked);
         $this->assertSame(WorkflowBlockingReason::DecisionDeferred, $result->blocking_reason);
@@ -266,13 +268,13 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_decision_blocked_does_not_call_availability_or_planner(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
 
         $workflow = $this->resetWorkflowWithRule(DecisionType::Reject);
-        $result   = $workflow->run($this->makeRequest($output));
+        $result = $workflow->run($this->makeRequest($output));
 
         // Availability and plan are null — engines were not called
         $this->assertNull($result->availability_result);
@@ -281,13 +283,13 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_decision_blocked_still_carries_decision_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
 
         $workflow = $this->resetWorkflowWithRule(DecisionType::Reject);
-        $result   = $workflow->run($this->makeRequest($output));
+        $result = $workflow->run($this->makeRequest($output));
 
         $this->assertNotNull($result->decision_result);
         $this->assertSame(DecisionType::Reject, $result->decision_result->decision);
@@ -297,9 +299,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_cannot_manufacture_returns_blocked_at_availability_stage(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent(allowNegative: false);
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 10.0);
         // No inventory seeded → component is short and allow_negative_stock = false
 
@@ -312,9 +314,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_availability_blocked_carries_availability_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent(allowNegative: false);
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 10.0);
 
         $result = $this->workflow->run($this->makeRequest($output, requiredQty: 5.0));
@@ -328,9 +330,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_availability_blocked_does_not_produce_plan(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent(allowNegative: false);
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 10.0);
 
         $result = $this->workflow->run($this->makeRequest($output));
@@ -353,9 +355,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_sufficient_fg_stock_returns_manufacturing_not_needed(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         // Seed MORE FG than needed → Sufficient eligibility
         $this->seedInventory($output, onHand: 100.0);
@@ -370,9 +372,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_manufacturing_not_needed_still_carries_plan(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($output, onHand: 100.0);
         $this->seedInventory($component, onHand: 100.0);
@@ -389,14 +391,14 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_caller_metadata_propagated_to_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, onHand: 50.0);
 
         $metadata = ['order_id' => 'ORD-999', 'source' => 'woocommerce'];
-        $result   = $this->workflow->run($this->makeRequest($output, metadata: $metadata));
+        $result = $this->workflow->run($this->makeRequest($output, metadata: $metadata));
 
         // Metadata propagated into the plan (which is in result.metadata)
         $this->assertArrayHasKey('order_id', $result->metadata);
@@ -405,9 +407,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_workflow_id_injected_into_plan_metadata(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, onHand: 50.0);
 
@@ -421,9 +423,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_recipe_snapshot_from_orchestrator_in_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 2.0);
         $this->seedInventory($component, onHand: 50.0);
 
@@ -436,9 +438,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_plan_carries_same_recipe_snapshot_as_workflow_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, onHand: 50.0);
 
@@ -456,13 +458,13 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_snapshot_carried_into_blocked_by_decision_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
 
         $workflow = $this->resetWorkflowWithRule(DecisionType::Reject);
-        $result   = $workflow->run($this->makeRequest($output));
+        $result = $workflow->run($this->makeRequest($output));
 
         // Snapshot was resolved before decision was evaluated — must be in result
         $this->assertNotNull($result->recipe_snapshot);
@@ -473,9 +475,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_plan_carries_correct_product_and_warehouse(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, onHand: 50.0);
 
@@ -488,9 +490,9 @@ class ManufacturingWorkflowTest extends TestCase
 
     public function test_availability_result_carried_into_successful_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, onHand: 50.0);
 
@@ -503,16 +505,16 @@ class ManufacturingWorkflowTest extends TestCase
 
     // ── 8. toArray() ──────────────────────────────────────────────────────────
 
-    public function test_result_toArray_has_expected_keys(): void
+    public function test_result_to_array_has_expected_keys(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, onHand: 50.0);
 
         $result = $this->workflow->run($this->makeRequest($output));
-        $array  = $result->toArray();
+        $array = $result->toArray();
 
         $this->assertArrayHasKey('workflow_id', $array);
         $this->assertArrayHasKey('stage', $array);

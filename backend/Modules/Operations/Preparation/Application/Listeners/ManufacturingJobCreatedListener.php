@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Operations\Preparation\Application\Events\Inbound\ManufacturingJobCreatedEvent;
 use Modules\Operations\Preparation\Domain\Enums\ProductionRequirementStatus;
+use Throwable;
 
 /**
  * When Manufacturing OS creates a production job in response to our PRP request,
@@ -36,15 +37,15 @@ final class ManufacturingJobCreatedListener
                 ->where('product_id', $event->productId)
                 ->update([
                     'manufacturing_job_id' => $event->jobId,
-                    'status'               => ProductionRequirementStatus::JobCreated->value,
-                    'updated_at'           => now(),
+                    'status' => ProductionRequirementStatus::JobCreated->value,
+                    'updated_at' => now(),
                 ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[Preparation] ManufacturingJobCreatedListener failed', [
-                'wave_id'    => $event->requestWaveId,
+                'wave_id' => $event->requestWaveId,
                 'product_id' => $event->productId,
-                'job_id'     => $event->jobId,
-                'error'      => $e->getMessage(),
+                'job_id' => $event->jobId,
+                'error' => $e->getMessage(),
             ]);
         }
     }

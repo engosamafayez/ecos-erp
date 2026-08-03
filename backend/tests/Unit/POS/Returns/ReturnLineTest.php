@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Returns;
 
+use InvalidArgumentException;
 use Modules\POS\Returns\Domain\ValueObjects\ReturnLine;
 use Modules\POS\Shared\Domain\Enums\ReturnReason;
 use Modules\POS\Shared\Domain\ValueObjects\Quantity;
@@ -16,21 +17,21 @@ use PHPUnit\Framework\TestCase;
 final class ReturnLineTest extends TestCase
 {
     private function makeSaleLineData(
-        string $lineId    = 'line-uuid-1',
-        string $price     = '50.00',
-        string $currency  = 'EGP',
+        string $lineId = 'line-uuid-1',
+        string $price = '50.00',
+        string $currency = 'EGP',
     ): array {
         return [
-            'line_id'        => $lineId,
-            'product_id'     => 'prod-uuid-1',
-            'product_name'   => 'Widget',
-            'sku'            => 'WGT-001',
-            'quantity'       => '2.0000',
-            'unit_price'     => ['amount' => $price, 'currency' => $currency],
-            'discount_type'  => null,
+            'line_id' => $lineId,
+            'product_id' => 'prod-uuid-1',
+            'product_name' => 'Widget',
+            'sku' => 'WGT-001',
+            'quantity' => '2.0000',
+            'unit_price' => ['amount' => $price, 'currency' => $currency],
+            'discount_type' => null,
             'discount_value' => null,
-            'line_total'     => ['amount' => bcmul($price, '2', 2), 'currency' => $currency],
-            'sort_order'     => 0,
+            'line_total' => ['amount' => bcmul($price, '2', 2), 'currency' => $currency],
+            'sort_order' => 0,
         ];
     }
 
@@ -105,13 +106,13 @@ final class ReturnLineTest extends TestCase
 
     public function test_from_sale_line_throws_for_zero_quantity(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         ReturnLine::fromSaleLine($this->makeSaleLineData(), Quantity::of('0'), ReturnReason::WrongItem);
     }
 
     public function test_from_sale_line_throws_for_negative_quantity(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         ReturnLine::fromSaleLine($this->makeSaleLineData(), Quantity::of('-1'), ReturnReason::WrongItem);
     }
 
@@ -171,8 +172,8 @@ final class ReturnLineTest extends TestCase
 
     public function test_from_array_restores_should_restock_correctly(): void
     {
-        $original  = ReturnLine::fromSaleLine($this->makeSaleLineData(), Quantity::of('1'), ReturnReason::Defective);
-        $restored  = ReturnLine::fromArray($original->toArray());
+        $original = ReturnLine::fromSaleLine($this->makeSaleLineData(), Quantity::of('1'), ReturnReason::Defective);
+        $restored = ReturnLine::fromArray($original->toArray());
         $this->assertFalse($restored->shouldRestock);
     }
 }

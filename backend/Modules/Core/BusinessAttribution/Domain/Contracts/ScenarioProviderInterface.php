@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Domain\Contracts;
 
 /**
@@ -19,7 +21,7 @@ interface ScenarioProviderInterface
      * Run multiple scenarios side-by-side and return a structured comparison.
      * Expected keys per scenario: name, outcome, delta, winner (bool).
      *
-     * @param array[] $scenarios  Each element is the output of defineScenario()
+     * @param  array[]  $scenarios  Each element is the output of defineScenario()
      */
     public function compareScenarios(array $scenarios): array;
 }

@@ -23,7 +23,9 @@ use Tests\TestCase;
 final class ReprintReceiptServiceTest extends TestCase
 {
     private ReceiptRepositoryInterface $receiptRepo;
+
     private DomainEventPublisherInterface $publisher;
+
     private ReprintReceiptService $service;
 
     protected function setUp(): void
@@ -31,10 +33,10 @@ final class ReprintReceiptServiceTest extends TestCase
         parent::setUp();
 
         $this->receiptRepo = $this->createMock(ReceiptRepositoryInterface::class);
-        $this->publisher   = $this->createMock(DomainEventPublisherInterface::class);
-        $this->service     = new ReprintReceiptService(
+        $this->publisher = $this->createMock(DomainEventPublisherInterface::class);
+        $this->service = new ReprintReceiptService(
             $this->receiptRepo,
-            new ReprintPolicy(),
+            new ReprintPolicy,
             $this->publisher,
         );
     }
@@ -47,7 +49,7 @@ final class ReprintReceiptServiceTest extends TestCase
         $this->publisher->method('publishAll');
 
         $result = $this->service->execute(
-            new ReprintReceiptCommand('rcpt-1', 'cashier-1', 'term-1', 'customer_request')
+            new ReprintReceiptCommand('rcpt-1', 'cashier-1', 'term-1', 'customer_request'),
         );
 
         $this->assertSame(1, $result->reprintCount);
@@ -61,7 +63,7 @@ final class ReprintReceiptServiceTest extends TestCase
         $this->publisher->method('publishAll');
 
         $result = $this->service->execute(
-            new ReprintReceiptCommand('rcpt-1', 'cashier-1', 'term-1', 'customer_request')
+            new ReprintReceiptCommand('rcpt-1', 'cashier-1', 'term-1', 'customer_request'),
         );
 
         $this->assertInstanceOf(ReprintReceiptResult::class, $result);
@@ -77,36 +79,35 @@ final class ReprintReceiptServiceTest extends TestCase
         $this->publisher
             ->expects($this->once())
             ->method('publishAll')
-            ->with($this->callback(fn(array $events) =>
-                count($events) === 1 && $events[0] instanceof ReceiptReprinted
+            ->with($this->callback(fn (array $events) => count($events) === 1 && $events[0] instanceof ReceiptReprinted,
             ));
 
         $this->service->execute(
-            new ReprintReceiptCommand('rcpt-1', 'cashier-1', 'term-1', 'customer_request')
+            new ReprintReceiptCommand('rcpt-1', 'cashier-1', 'term-1', 'customer_request'),
         );
     }
 
     private function makeReceipt(): Receipt
     {
         $receipt = Receipt::issue(
-            receiptNumber:             'RCP-001',
-            type:                      ReceiptType::Sale,
-            originalTransactionId:     'sale-1',
+            receiptNumber: 'RCP-001',
+            type: ReceiptType::Sale,
+            originalTransactionId: 'sale-1',
             originalTransactionNumber: 'SALE-001',
-            terminalId:                'term-1',
-            sessionId:                 'sess-1',
-            shiftId:                   'shift-1',
-            cashierId:                 'cashier-1',
-            cashierName:               'Test Cashier',
-            customerId:                null,
-            customerName:              null,
-            currency:                  'EGP',
-            lineItems:                 [
+            terminalId: 'term-1',
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            cashierId: 'cashier-1',
+            cashierName: 'Test Cashier',
+            customerId: null,
+            customerName: null,
+            currency: 'EGP',
+            lineItems: [
                 ReceiptLineItem::of('prod-1', 'Product A', 'SKU-001', '1', '100.00', '100.00', 'EGP'),
             ],
-            totals:                    ReceiptTotals::of('100.00', '0.00', '0.00', '100.00', '100.00', '0.00', 'EGP'),
-            payments:                  [ReceiptPayment::of('cash', '100.00', 'EGP')],
-            issuedAt:                  new DateTimeImmutable('now', new DateTimeZone('UTC')),
+            totals: ReceiptTotals::of('100.00', '0.00', '0.00', '100.00', '100.00', '0.00', 'EGP'),
+            payments: [ReceiptPayment::of('cash', '100.00', 'EGP')],
+            issuedAt: new DateTimeImmutable('now', new DateTimeZone('UTC')),
         );
 
         $receipt->pullDomainEvents();

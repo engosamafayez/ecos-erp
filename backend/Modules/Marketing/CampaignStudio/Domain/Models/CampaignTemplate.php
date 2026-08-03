@@ -25,13 +25,13 @@ class CampaignTemplate extends Model
     ];
 
     protected $casts = [
-        'category'           => TemplateCategory::class,
-        'default_audience'   => 'array',
+        'category' => TemplateCategory::class,
+        'default_audience' => 'array',
         'default_placements' => 'array',
-        'required_assets'    => 'array',
+        'required_assets' => 'array',
         'required_utm_params' => 'array',
         'default_daily_budget' => 'decimal:2',
-        'is_global'          => 'boolean',
-        'is_active'          => 'boolean',
+        'is_global' => 'boolean',
+        'is_active' => 'boolean',
     ];
 }

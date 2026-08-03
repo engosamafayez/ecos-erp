@@ -14,6 +14,7 @@ use Modules\POS\Application\Events\SaleItemPayload;
 use Modules\POS\Application\Events\SalePaymentPayload;
 use Modules\POS\Application\Listeners\PosLoyaltyListener;
 use Modules\POS\Customer\Domain\Contracts\LoyaltyGatewayInterface;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -25,17 +26,19 @@ final class PosLoyaltyListenerTest extends TestCase
 {
     use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
-    private const SALE_ID     = 'sale-uuid-001';
+    private const SALE_ID = 'sale-uuid-001';
+
     private const CUSTOMER_ID = 'customer-uuid-001';
 
     private MockInterface $loyalty;
+
     private PosLoyaltyListener $listener;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->loyalty  = Mockery::mock(LoyaltyGatewayInterface::class);
+        $this->loyalty = Mockery::mock(LoyaltyGatewayInterface::class);
         $this->listener = new PosLoyaltyListener($this->loyalty);
     }
 
@@ -71,7 +74,7 @@ final class PosLoyaltyListenerTest extends TestCase
             ->shouldReceive('earnPoints')
             ->once()
             ->withArgs(function (string $customerId, $saleTotal, string $transactionRef) {
-                return $customerId    === self::CUSTOMER_ID
+                return $customerId === self::CUSTOMER_ID
                     && $transactionRef === self::SALE_ID;
             })
             ->andReturn(10);
@@ -92,6 +95,7 @@ final class PosLoyaltyListenerTest extends TestCase
             ->once()
             ->withArgs(function ($cid, $total, string $ref) use (&$capturedRef) {
                 $capturedRef = $ref;
+
                 return true;
             })
             ->andReturn(5);
@@ -112,7 +116,7 @@ final class PosLoyaltyListenerTest extends TestCase
 
         $this->loyalty
             ->shouldReceive('earnPoints')
-            ->andThrow(new \RuntimeException('Loyalty gateway timeout'));
+            ->andThrow(new RuntimeException('Loyalty gateway timeout'));
 
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Failed to award loyalty points'));
@@ -125,26 +129,26 @@ final class PosLoyaltyListenerTest extends TestCase
     private function makeEvent(?string $customerId = self::CUSTOMER_ID): SaleFinalized
     {
         return new SaleFinalized(
-            eventId:       'event-uuid-001',
-            occurredAt:    new DateTimeImmutable('now'),
-            saleId:        self::SALE_ID,
+            eventId: 'event-uuid-001',
+            occurredAt: new DateTimeImmutable('now'),
+            saleId: self::SALE_ID,
             receiptNumber: 'RCP-2026-000001',
-            companyId:     'company-uuid-001',
-            channelId:     null,
-            warehouseId:   'warehouse-uuid-001',
-            sessionId:     'session-uuid-001',
-            shiftId:       'shift-uuid-001',
-            terminalId:    'terminal-uuid-001',
-            cashierId:     'cashier-uuid-001',
-            customerId:    $customerId,
-            items:         [new SaleItemPayload('l1', 'p1', 'Widget', 'WGT', 2.0, '75.00', '150.00', 'EGP')],
-            payments:      [new SalePaymentPayload('cash', '150.00', 'EGP', null)],
-            subtotal:      '150.00',
+            companyId: 'company-uuid-001',
+            channelId: null,
+            warehouseId: 'warehouse-uuid-001',
+            sessionId: 'session-uuid-001',
+            shiftId: 'shift-uuid-001',
+            terminalId: 'terminal-uuid-001',
+            cashierId: 'cashier-uuid-001',
+            customerId: $customerId,
+            items: [new SaleItemPayload('l1', 'p1', 'Widget', 'WGT', 2.0, '75.00', '150.00', 'EGP')],
+            payments: [new SalePaymentPayload('cash', '150.00', 'EGP', null)],
+            subtotal: '150.00',
             discountTotal: '0.00',
-            grandTotal:    '150.00',
-            amountPaid:    '150.00',
-            changeGiven:   '0.00',
-            currency:      'EGP',
+            grandTotal: '150.00',
+            amountPaid: '150.00',
+            changeGiven: '0.00',
+            currency: 'EGP',
         );
     }
 }

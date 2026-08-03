@@ -8,13 +8,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property string      $id
- * @property string      $company_id
- * @property string      $setting_group
- * @property string      $setting_key
- * @property mixed       $setting_value
+ * @property string $id
+ * @property string $company_id
+ * @property string $setting_group
+ * @property string $setting_key
+ * @property mixed $setting_value
  * @property string|null $description
- * @property int         $version
+ * @property int $version
  */
 class ConfigCompanySetting extends Model
 {
@@ -43,7 +43,7 @@ class ConfigCompanySetting extends Model
     {
         return [
             'setting_value' => 'array',
-            'version'       => 'integer',
+            'version' => 'integer',
         ];
     }
 }

@@ -48,7 +48,7 @@ export function ProductBrowser({ products, onAdd, isLoading = false }: Props) {
     return (
       <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
         <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        {t('productBrowser.loading')}
+        {t($ => $.productBrowser.loading)}
       </div>
     );
   }
@@ -57,7 +57,7 @@ export function ProductBrowser({ products, onAdd, isLoading = false }: Props) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
         <Package className="size-8 opacity-30" />
-        <span>{t('productBrowser.noProducts')}</span>
+        <span>{t($ => $.productBrowser.noProducts)}</span>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export function ProductBrowser({ products, onAdd, isLoading = false }: Props) {
         <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
-          placeholder={t('productBrowser.searchPlaceholder')}
+          placeholder={t($ => $.productBrowser.searchPlaceholder)}
           className="pl-8 text-sm"
           value={search}
           onChange={(e) => {
@@ -81,7 +81,7 @@ export function ProductBrowser({ products, onAdd, isLoading = false }: Props) {
 
       {filtered.length === 0 && (
         <p className="py-4 text-center text-sm text-muted-foreground">
-          {t('productBrowser.noResults', { query: search })}
+          {t($ => $.productBrowser.noResults, { query: search })}
         </p>
       )}
 
@@ -98,7 +98,7 @@ export function ProductBrowser({ products, onAdd, isLoading = false }: Props) {
           onClick={() => setShowAll(true)}
           className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
         >
-          {t('productBrowser.showMore', { count: hiddenCount })}
+          {t($ => $.productBrowser.showMore, { count: hiddenCount })}
         </button>
       )}
     </div>
@@ -146,10 +146,10 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: (p: Product)
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
           {/* Stock */}
           {isOutOfStock ? (
-            <Badge variant="destructive" className="h-4 px-1.5 text-[10px]">{t('productBrowser.outOfStock')}</Badge>
+            <Badge variant="destructive" className="h-4 px-1.5 text-[10px]">{t($ => $.productBrowser.outOfStock)}</Badge>
           ) : product.available_qty != null ? (
             <span className="text-[11px] text-emerald-700 dark:text-emerald-400">
-              {t('productBrowser.available', { qty: product.available_qty })}
+              {t($ => $.productBrowser.available, { qty: product.available_qty })}
             </span>
           ) : null}
 
@@ -160,7 +160,7 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: (p: Product)
               {fmt(price)}
             </span>
           ) : (
-            <span className="text-[11px] text-muted-foreground italic">{t('productBrowser.noPrice')}</span>
+            <span className="text-[11px] text-muted-foreground italic">{t($ => $.productBrowser.noPrice)}</span>
           )}
 
           {/* Unit */}
@@ -174,7 +174,7 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: (p: Product)
           {hasPendingReview && (
             <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
               <AlertTriangle className="size-2.5 shrink-0" />
-              {t('productBrowser.priceReviewPending')}
+              {t($ => $.productBrowser.priceReviewPending)}
             </span>
           )}
         </div>
@@ -190,7 +190,7 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: (p: Product)
           onClick={() => onAdd(product)}
         >
           <Plus className="size-3" />
-          {t('productBrowser.add')}
+          {t($ => $.productBrowser.add)}
         </Button>
       </div>
     </div>

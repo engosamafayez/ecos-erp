@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowDown,
   ArrowUp,
@@ -15,7 +16,6 @@ import {
   Pencil,
   RotateCcw,
   ShoppingCart,
-  Star,
   Tag,
   TrendingDown,
   TrendingUp,
@@ -32,8 +32,10 @@ import type { TabItem } from '@/components/ds/tabs';
 import {
   useRawMaterialCostHistory,
   useRawMaterialStockMovements,
+  useRawMaterialPurchaseHistory,
+  useRawMaterialWarehouseDistribution,
 } from '@/features/raw-materials/hooks/use-raw-materials';
-import type { RawMaterial } from '@/features/raw-materials/types';
+import type { RawMaterial, PurchaseLayer, SupplierHistoryRow } from '@/features/raw-materials/types';
 import type { MaterialCostHistoryEntry } from '@/features/cost-management/types/pricing-review';
 import type { MovementType } from '@/features/stock-ledger/types/stock-movement';
 import { PagePagination } from '@/components/page/pagination/page-pagination';
@@ -60,21 +62,21 @@ function stockStatusConfig(availableQty: number | null | undefined, allowNegativ
   const status = resolveMaterialStockStatus(availableQty, allowNegativeStock);
   if (status === 'in_stock') {
     return {
-      label: 'In Stock',
-      dot:   'bg-emerald-500',
-      text:  'text-emerald-700 dark:text-emerald-400',
-      badge: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800',
+      status: 'in_stock' as const,
+      dot:    'bg-emerald-500',
+      text:   'text-emerald-700 dark:text-emerald-400',
+      badge:  'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800',
     };
   }
   return {
-    label: 'Out of Stock',
-    dot:   'bg-red-500',
-    text:  'text-red-700 dark:text-red-400',
-    badge: 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800',
+    status: 'out_of_stock' as const,
+    dot:    'bg-red-500',
+    text:   'text-red-700 dark:text-red-400',
+    badge:  'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800',
   };
 }
 
-function formatCost(cost: number | null | undefined, unit?: string, currency = 'EGP', locale = 'en-US'): string {
+function formatCost(cost: number | null | undefined, unit: string | undefined, currency: string, locale = 'en-US'): string {
   if (cost == null) return '—';
   const formatted = formatMoney(cost, currency, locale);
   return unit ? `${formatted} / ${unit}` : formatted;
@@ -107,22 +109,28 @@ function formatDateTime(iso: string | null | undefined): string {
   }
 }
 
-function movementTypeMeta(type: MovementType): { label: string; color: string } {
+/**
+ * Canonical "current cost" resolver — the single source of truth for the
+ * material's current cost across every tab. Prefers the latest recorded cost
+ * event (material_cost_history) and falls back to the stored official cost.
+ * Never reads the write-only `manual_cost` field (RAW-004).
+ */
+function resolveCurrentCost(
+  material: RawMaterial,
+  latestCostEntry?: MaterialCostHistoryEntry | null,
+): number | null {
+  return latestCostEntry?.new_cost ?? material.material_cost ?? null;
+}
+
+function movementTypeColor(type: MovementType): string {
   switch (type) {
-    case 'purchase_receipt':
-      return { label: 'Purchase Receipt', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' };
-    case 'transfer_in':
-      return { label: 'Transfer In',      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' };
-    case 'transfer_out':
-      return { label: 'Transfer Out',     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' };
-    case 'adjustment_in':
-      return { label: 'Adjustment In',    color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' };
-    case 'adjustment_out':
-      return { label: 'Adjustment Out',   color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300' };
-    case 'sales_issue':
-      return { label: 'Sales Issue',      color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' };
-    default:
-      return { label: type,           color: 'bg-muted text-muted-foreground' };
+    case 'purchase_receipt': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300';
+    case 'transfer_in':      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
+    case 'transfer_out':     return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
+    case 'adjustment_in':    return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300';
+    case 'adjustment_out':   return 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300';
+    case 'sales_issue':      return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+    default:                 return 'bg-muted text-muted-foreground';
   }
 }
 
@@ -214,8 +222,9 @@ function SmartStatusPanel({
   material:         RawMaterial;
   latestCostEntry?: MaterialCostHistoryEntry | null;
 }) {
+  const { t } = useTranslation('raw-materials');
   const { currency, locale } = useCompany();
-  const cost      = latestCostEntry?.new_cost ?? material.manual_cost;
+  const cost      = resolveCurrentCost(material, latestCostEntry);
   const changePct = latestCostEntry?.change_pct;
   const updatedAt = latestCostEntry?.occurred_at;
   const source    = latestCostEntry?.source;
@@ -226,7 +235,7 @@ function SmartStatusPanel({
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium uppercase tracking-wide">
           <DollarSign className="size-3.5 flex-none text-blue-500" />
-          <span>Material Cost</span>
+          <span>{t($ => $.detail.smartPanel.materialCost)}</span>
           {source && (
             <span
               className={cn(
@@ -236,7 +245,9 @@ function SmartStatusPanel({
                   : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
               )}
             >
-              {source === 'purchase_invoice' ? 'PO' : 'Manual'}
+              {source === 'purchase_invoice'
+                ? t($ => $.detail.smartPanel.sourcePO)
+                : t($ => $.detail.smartPanel.sourceManual)}
             </span>
           )}
         </div>
@@ -262,33 +273,19 @@ function SmartStatusPanel({
       </div>
 
       <StatTile
-        label="Unit"
+        label={t($ => $.detail.smartPanel.unit)}
         value={material.unit?.name ?? '—'}
         icon={Box}
         iconClass="text-amber-500"
       />
       <StatTile
-        label="Category"
+        label={t($ => $.detail.smartPanel.category)}
         value={material.category?.name ?? '—'}
         icon={Tag}
         iconClass="text-cyan-500"
       />
       <StatTile
-        label="Reorder Point"
-        value={material.reorder_point != null ? String(material.reorder_point) : '—'}
-        sub={material.reorder_point != null ? material.unit?.name : undefined}
-        icon={TrendingDown}
-        iconClass="text-orange-500"
-      />
-      <StatTile
-        label="Min Stock"
-        value={material.minimum_stock != null ? String(material.minimum_stock) : '—'}
-        sub={material.minimum_stock != null ? material.unit?.name : undefined}
-        icon={Package}
-        iconClass="text-green-500"
-      />
-      <StatTile
-        label="Last Updated"
+        label={t($ => $.detail.smartPanel.lastUpdated)}
         value={formatDate(material.updated_at)}
         icon={Calendar}
         iconClass="text-slate-400"
@@ -299,32 +296,44 @@ function SmartStatusPanel({
 
 // ─── Tab: Overview ────────────────────────────────────────────────────────────
 
-function OverviewTab({ material }: { material: RawMaterial }) {
+function OverviewTab({
+  material,
+  latestCostEntry,
+}: {
+  material:         RawMaterial;
+  latestCostEntry?: MaterialCostHistoryEntry | null;
+}) {
+  const { t } = useTranslation('raw-materials');
   const { currency, locale } = useCompany();
   const hasDescription = Boolean(
     material.description || material.short_description || material.long_description,
   );
-  const hasNotes = Boolean(material.internal_notes);
+
+  function costSourceLabel(source: string | null | undefined): string {
+    if (source === 'manual')   return t($ => $.detail.overview.costManual);
+    if (source === 'purchase') return t($ => $.detail.overview.costPurchase);
+    return '—';
+  }
 
   return (
     <div className="space-y-7">
       <div>
-        <SectionTitle>General Information</SectionTitle>
+        <SectionTitle>{t($ => $.detail.overview.generalInfo)}</SectionTitle>
         <DetailGrid>
-          <DetailRow label="Full Name" value={material.name} />
+          <DetailRow label={t($ => $.detail.overview.fullName)} value={material.name} />
           <DetailRow
-            label="SKU"
+            label={t($ => $.detail.overview.sku)}
             value={
               <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                 {material.sku}
               </code>
             }
           />
-          <DetailRow label="Category"       value={material.category?.name} />
-          <DetailRow label="Unit of Measure" value={material.unit?.name} />
-          <DetailRow label="Material Type"  value="Raw Material" />
-          <DetailRow label="Created At" value={formatDate(material.created_at)} />
-          <DetailRow label="Last Updated"   value={formatDate(material.updated_at)} />
+          <DetailRow label={t($ => $.detail.overview.category)}       value={material.category?.name} />
+          <DetailRow label={t($ => $.detail.overview.unitOfMeasure)}  value={material.unit?.name} />
+          <DetailRow label={t($ => $.detail.overview.materialType)}   value={t($ => $.detail.overview.materialTypeValue)} />
+          <DetailRow label={t($ => $.detail.overview.createdAt)}      value={formatDate(material.created_at)} />
+          <DetailRow label={t($ => $.detail.overview.lastUpdated)}    value={formatDate(material.updated_at)} />
         </DetailGrid>
       </div>
 
@@ -332,7 +341,7 @@ function OverviewTab({ material }: { material: RawMaterial }) {
         <>
           <Separator />
           <div>
-            <SectionTitle>Description</SectionTitle>
+            <SectionTitle>{t($ => $.detail.overview.description)}</SectionTitle>
             {(material.short_description ?? material.description) && (
               <p className="text-sm text-foreground mb-2">
                 {material.short_description ?? material.description}
@@ -350,84 +359,22 @@ function OverviewTab({ material }: { material: RawMaterial }) {
       <Separator />
 
       <div>
-        <SectionTitle>Inventory Rules</SectionTitle>
+        <SectionTitle>{t($ => $.detail.overview.cost)}</SectionTitle>
         <DetailGrid>
           <DetailRow
-            label="Minimum Stock"
-            value={material.minimum_stock != null ? `${material.minimum_stock} ${material.unit?.name ?? ''}` : null}
+            label={t($ => $.detail.overview.currentCost)}
+            value={formatCost(resolveCurrentCost(material, latestCostEntry), material.unit?.name, currency, locale)}
           />
           <DetailRow
-            label="Reorder Point"
-            value={material.reorder_point != null ? `${material.reorder_point} ${material.unit?.name ?? ''}` : null}
+            label={t($ => $.detail.overview.lastUpdated)}
+            value={formatDate(latestCostEntry?.occurred_at ?? null)}
           />
           <DetailRow
-            label="Negative Stock"
-            value={material.allow_negative_stock ? 'Allowed' : 'Blocked'}
-          />
-          <DetailRow
-            label="Preferred Warehouse"
-            value={material.preferred_warehouse_id ?? null}
+            label={t($ => $.detail.overview.source)}
+            value={costSourceLabel(material.cost_source)}
           />
         </DetailGrid>
       </div>
-
-      <Separator />
-
-      <div>
-        <SectionTitle>Cost</SectionTitle>
-        <DetailGrid>
-          <DetailRow
-            label="Current Cost"
-            value={formatCost(material.material_cost, material.unit?.name, currency, locale)}
-          />
-          <DetailRow
-            label="Last Updated"
-            value={formatDate(material.updated_at)}
-          />
-          <DetailRow
-            label="Source"
-            value={
-              material.cost_source === 'manual'
-                ? 'Manual'
-                : material.cost_source === 'purchase'
-                  ? 'Purchase Invoice'
-                  : '—'
-            }
-          />
-        </DetailGrid>
-      </div>
-
-      <Separator />
-
-      <div>
-        <SectionTitle>Purchasing</SectionTitle>
-        <DetailGrid>
-          <DetailRow
-            label="Lead Time"
-            value={material.purchasing_lead_time_days != null
-              ? `${material.purchasing_lead_time_days} days`
-              : null}
-          />
-          <DetailRow
-            label="Min Order Qty"
-            value={material.purchasing_minimum_order_qty != null
-              ? `${material.purchasing_minimum_order_qty} ${material.unit?.name ?? ''}`
-              : null}
-          />
-        </DetailGrid>
-      </div>
-
-      {hasNotes && (
-        <>
-          <Separator />
-          <div>
-            <SectionTitle>Internal Notes</SectionTitle>
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-              {material.internal_notes}
-            </p>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -440,14 +387,19 @@ function fmtQtyStr(n: number | null | undefined, unit?: string): string {
   return unit ? `${fmt} ${unit}` : fmt;
 }
 
-function fmtCostStr(n: number | null | undefined, currency = 'EGP', locale = 'en-US'): string {
+function fmtCostStr(n: number | null | undefined, currency: string, locale = 'en-US'): string {
   if (n == null) return '—';
   return formatMoney(n, currency, locale);
 }
 
 function InventoryTab({ material }: { material: RawMaterial }) {
+  const { t } = useTranslation('raw-materials');
   const { currency, locale } = useCompany();
+  const { data: distribution } = useRawMaterialWarehouseDistribution(material.id);
   const avail    = stockStatusConfig(material.available_qty, material.allow_negative_stock);
+  const statusLabel = avail.status === 'in_stock'
+    ? t($ => $.detail.status.inStock)
+    : t($ => $.detail.status.outOfStock);
   const unit     = material.unit?.name;
   const onHand   = material.on_hand_qty   ?? null;
   const reserved = material.reserved_qty  ?? null;
@@ -456,25 +408,25 @@ function InventoryTab({ material }: { material: RawMaterial }) {
 
   const metrics = [
     {
-      label: 'Available',
+      label: t($ => $.detail.inventory.available),
       value: fmtQtyStr(available, unit),
-      sub:   'Available for use',
+      sub:   t($ => $.detail.inventory.availableSub),
       highlight: available != null && available <= 0 ? 'border-red-200 dark:border-red-800' : undefined,
     },
     {
-      label: 'Reserved',
+      label: t($ => $.detail.inventory.reserved),
       value: fmtQtyStr(reserved, unit),
-      sub:   'Allocated to orders',
+      sub:   t($ => $.detail.inventory.reservedSub),
     },
     {
-      label: 'On Hand',
+      label: t($ => $.detail.inventory.onHand),
       value: fmtQtyStr(onHand, unit),
-      sub:   'Total across all warehouses',
+      sub:   t($ => $.detail.inventory.onHandSub),
     },
     {
-      label: 'Inventory Value',
+      label: t($ => $.detail.inventory.inventoryValue),
       value: fmtCostStr(invValue, currency, locale),
-      sub:   'On hand × material cost',
+      sub:   t($ => $.detail.inventory.inventoryValueSub),
     },
   ];
 
@@ -484,16 +436,16 @@ function InventoryTab({ material }: { material: RawMaterial }) {
       <div className={cn('flex items-center gap-3 rounded-lg border px-4 py-3', avail.badge)}>
         <span className={cn('size-2.5 rounded-full flex-none', avail.dot)} />
         <div>
-          <p className={cn('text-sm font-semibold', avail.text)}>{avail.label}</p>
+          <p className={cn('text-sm font-semibold', avail.text)}>{statusLabel}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Aggregated from all warehouses.
+            {t($ => $.detail.inventory.aggregatedNote)}
           </p>
         </div>
       </div>
 
       {/* Inventory snapshot */}
       <div>
-        <SectionTitle>Inventory Snapshot</SectionTitle>
+        <SectionTitle>{t($ => $.detail.inventory.snapshotTitle)}</SectionTitle>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {metrics.map((card) => (
             <div
@@ -510,25 +462,55 @@ function InventoryTab({ material }: { material: RawMaterial }) {
         </div>
       </div>
 
-      {/* Inventory rules */}
+      {/* Warehouse distribution — per-warehouse breakdown from the canonical inventory service */}
       <div>
-        <SectionTitle>Inventory Rules</SectionTitle>
+        <SectionTitle>{t($ => $.detail.inventory.distributionTitle)}</SectionTitle>
+        {(distribution?.warehouses.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">{t($ => $.detail.inventory.distributionEmpty)}</p>
+        ) : (
+          <div className="rounded-md border overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  {[
+                    t($ => $.detail.inventory.colWarehouse),
+                    t($ => $.detail.inventory.onHand),
+                    t($ => $.detail.inventory.reserved),
+                    t($ => $.detail.inventory.available),
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-3 py-2.5 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {distribution!.warehouses.map((w) => (
+                  <tr key={w.warehouse_id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-3 py-2.5 text-sm font-medium">{w.warehouse_name ?? w.warehouse_code ?? '—'}</td>
+                    <td className="px-3 py-2.5 text-sm tabular-nums">{fmtQtyStr(w.on_hand_qty, unit)}</td>
+                    <td className="px-3 py-2.5 text-sm tabular-nums">{fmtQtyStr(w.reserved_qty, unit)}</td>
+                    <td className="px-3 py-2.5 text-sm font-semibold tabular-nums">{fmtQtyStr(w.available_qty, unit)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Inventory rules — canonical location, real fields only */}
+      <div>
+        <SectionTitle>{t($ => $.detail.inventory.rulesTitle)}</SectionTitle>
         <DetailGrid>
           <DetailRow
-            label="Negative Stock"
-            value={material.allow_negative_stock ? 'Allowed' : 'Blocked'}
-          />
-          <DetailRow
-            label="Minimum Stock"
-            value={fmtQtyStr(material.minimum_stock, unit) === '—' ? null : fmtQtyStr(material.minimum_stock, unit)}
-          />
-          <DetailRow
-            label="Reorder Point"
-            value={fmtQtyStr(material.reorder_point, unit) === '—' ? null : fmtQtyStr(material.reorder_point, unit)}
-          />
-          <DetailRow
-            label="Preferred Warehouse"
-            value={material.preferred_warehouse_id ?? null}
+            label={t($ => $.detail.inventory.negativeStock)}
+            value={material.allow_negative_stock
+              ? t($ => $.detail.inventory.negAllowed)
+              : t($ => $.detail.inventory.negBlocked)}
           />
         </DetailGrid>
       </div>
@@ -538,16 +520,58 @@ function InventoryTab({ material }: { material: RawMaterial }) {
 
 // ─── Tab: Suppliers ───────────────────────────────────────────────────────────
 
-function SuppliersTab({ material }: { material: RawMaterial }) {
-  const { currency, locale } = useCompany();
-  const suppliers = material.suppliers ?? [];
+/**
+ * Derive a per-supplier history from receipt layers: most-recent purchase date,
+ * that purchase's unit cost, total received, and receipt count. Sorted newest
+ * first, so the top row is the "Last Supplier". (RAW-003 — real data only.)
+ */
+function deriveSupplierHistory(layers: PurchaseLayer[]): SupplierHistoryRow[] {
+  const bySupplier = new Map<string, SupplierHistoryRow>();
+  for (const layer of layers) {
+    if (!layer.supplier) continue;
+    const key = layer.supplier.id;
+    const existing = bySupplier.get(key);
+    const isNewer =
+      !existing ||
+      (layer.receipt_date ?? '') > (existing.last_purchase_date ?? '');
+    if (!existing) {
+      bySupplier.set(key, {
+        supplier_id:        key,
+        supplier_name:      layer.supplier.name,
+        last_purchase_date: layer.receipt_date,
+        last_purchase_cost: layer.unit_cost,
+        total_received:     layer.received_qty,
+        receipts:           1,
+      });
+    } else {
+      existing.total_received += layer.received_qty;
+      existing.receipts += 1;
+      if (isNewer) {
+        existing.last_purchase_date = layer.receipt_date;
+        existing.last_purchase_cost = layer.unit_cost;
+      }
+    }
+  }
+  return Array.from(bySupplier.values()).sort(
+    (a, b) => (b.last_purchase_date ?? '').localeCompare(a.last_purchase_date ?? ''),
+  );
+}
 
-  if (suppliers.length === 0) {
+function SuppliersTab({ materialId, unit }: { materialId: string; unit?: string }) {
+  const { t } = useTranslation('raw-materials');
+  const { currency, locale } = useCompany();
+  const { data, isLoading } = useRawMaterialPurchaseHistory(materialId);
+
+  if (isLoading) return <TabLoading />;
+
+  const rows = deriveSupplierHistory(data?.receipt_layers ?? []);
+
+  if (rows.length === 0) {
     return (
       <EmptyState
         icon={Truck}
-        title="No linked suppliers"
-        description="Add suppliers for this raw material to track purchase prices, lead times, and preferred vendors."
+        title={t($ => $.detail.suppliers.emptyTitle)}
+        description={t($ => $.detail.suppliers.emptyDesc)}
       />
     );
   }
@@ -557,7 +581,12 @@ function SuppliersTab({ material }: { material: RawMaterial }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50">
-            {['Supplier', 'Last Cost', 'Min Qty', 'Default', 'Active'].map((h) => (
+            {[
+              t($ => $.detail.suppliers.colSupplier),
+              t($ => $.detail.suppliers.colLastPurchase),
+              t($ => $.detail.suppliers.colLastCost),
+              t($ => $.detail.suppliers.colTotalReceived),
+            ].map((h) => (
               <th
                 key={h}
                 className="px-3 py-2.5 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
@@ -568,33 +597,24 @@ function SuppliersTab({ material }: { material: RawMaterial }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {suppliers.map((s, i) => (
-            <tr key={s.supplier_id ?? i} className="hover:bg-muted/30 transition-colors">
-              <td className="px-3 py-2.5 text-sm font-medium">{s.supplier_id}</td>
-              <td className="px-3 py-2.5 text-sm">
-                {s.last_purchase_cost != null
-                  ? formatMoney(s.last_purchase_cost, currency, locale)
-                  : '—'}
-              </td>
-              <td className="px-3 py-2.5 text-sm">
-                {s.minimum_order_qty != null ? s.minimum_order_qty : '—'}
-              </td>
-              <td className="px-3 py-2.5">
-                {s.is_default && (
-                  <Star className="size-4 text-amber-500 fill-current" />
-                )}
-              </td>
-              <td className="px-3 py-2.5">
-                <span
-                  className={cn(
-                    'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                    s.is_active
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : 'bg-muted text-muted-foreground',
+          {rows.map((s, i) => (
+            <tr key={s.supplier_id} className="hover:bg-muted/30 transition-colors">
+              <td className="px-3 py-2.5 text-sm font-medium">
+                <span className="flex items-center gap-2">
+                  {s.supplier_name}
+                  {i === 0 && (
+                    <span className="rounded-full bg-amber-100 px-1.5 py-0 text-[10px] font-semibold uppercase text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                      {t($ => $.detail.suppliers.lastSupplier)}
+                    </span>
                   )}
-                >
-                  {s.is_active ? 'Active' : 'Inactive'}
                 </span>
+              </td>
+              <td className="px-3 py-2.5 text-sm text-muted-foreground">{formatDate(s.last_purchase_date)}</td>
+              <td className="px-3 py-2.5 text-sm">
+                {s.last_purchase_cost != null ? formatMoney(s.last_purchase_cost, currency, locale) : '—'}
+              </td>
+              <td className="px-3 py-2.5 text-sm tabular-nums">
+                {fmtQtyStr(s.total_received, unit)}
               </td>
             </tr>
           ))}
@@ -607,6 +627,7 @@ function SuppliersTab({ material }: { material: RawMaterial }) {
 // ─── Tab: Price History ───────────────────────────────────────────────────────
 
 function PriceHistoryTab({ materialId }: { materialId: string }) {
+  const { t } = useTranslation('raw-materials');
   const { currency, locale } = useCompany();
   const [page, setPage] = useState(1);
   const { data, isLoading } = useRawMaterialCostHistory(materialId, { page, per_page: 15 });
@@ -614,37 +635,32 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
   const entries    = data?.data ?? [];
   const pagination = data?.pagination;
 
-  const allCosts    = entries.map((e) => e.new_cost);
-  const highestCost = allCosts.length ? Math.max(...allCosts) : null;
-  const lowestCost  = allCosts.length ? Math.min(...allCosts) : null;
+  // Current cost = latest recorded cost event (first entry). Highest/Lowest were
+  // page-scoped (per_page:15) and misrepresented all-time extremes — removed (RAW-004).
   const currentCost = entries[0]?.new_cost ?? null;
 
   if (isLoading) return <TabLoading />;
 
   return (
     <div className="space-y-4">
-      {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Current Cost',  value: formatCost(currentCost,  undefined, currency, locale) },
-          { label: 'Highest Cost', value: formatCost(highestCost,  undefined, currency, locale) },
-          { label: 'Lowest Cost',  value: formatCost(lowestCost,   undefined, currency, locale) },
-        ].map((c) => (
-          <div key={c.label} className="rounded-lg border bg-card p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {c.label}
-            </p>
-            <p className="mt-1 text-xl font-bold text-foreground">{c.value}</p>
-          </div>
-        ))}
+      {/* Summary — single unified current cost (canonical source) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="rounded-lg border bg-card p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t($ => $.detail.priceHistory.currentCost)}
+          </p>
+          <p className="mt-1 text-xl font-bold text-foreground">
+            {formatCost(currentCost, undefined, currency, locale)}
+          </p>
+        </div>
       </div>
 
       {/* History table */}
       {entries.length === 0 ? (
         <EmptyState
           icon={TrendingUp}
-          title="No cost history"
-          description="Material cost changes are recorded here automatically every time the cost is updated."
+          title={t($ => $.detail.priceHistory.emptyTitle)}
+          description={t($ => $.detail.priceHistory.emptyDesc)}
         />
       ) : (
         <>
@@ -652,7 +668,15 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  {['Date', 'Previous Cost', 'New Cost', 'Change', 'Source', 'By', 'Recipes'].map((h) => (
+                  {[
+                    t($ => $.detail.priceHistory.colDate),
+                    t($ => $.detail.priceHistory.colPrevCost),
+                    t($ => $.detail.priceHistory.colNewCost),
+                    t($ => $.detail.priceHistory.colChange),
+                    t($ => $.detail.priceHistory.colSource),
+                    t($ => $.detail.priceHistory.colBy),
+                    t($ => $.detail.priceHistory.colRecipes),
+                  ].map((h) => (
                     <th
                       key={h}
                       className="px-3 py-2.5 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
@@ -702,7 +726,9 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
                               : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
                           )}
                         >
-                          {entry.source === 'purchase_invoice' ? 'Purchase' : 'Manual'}
+                          {entry.source === 'purchase_invoice'
+                            ? t($ => $.detail.priceHistory.sourcePurchase)
+                            : t($ => $.detail.priceHistory.sourceManual)}
                         </span>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
@@ -710,7 +736,9 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap text-xs">
                         {entry.affected_recipe_count > 0 ? (
-                          <span className="font-medium">{entry.affected_recipe_count} recipe{entry.affected_recipe_count !== 1 ? 's' : ''}</span>
+                          <span className="font-medium">
+                            {t($ => $.detail.priceHistory.recipesCount, { count: entry.affected_recipe_count })}
+                          </span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
@@ -746,6 +774,8 @@ function StockHistoryTab({
   material:   RawMaterial;
   onAddStock: () => void;
 }) {
+  const { t } = useTranslation('raw-materials');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const [page, setPage] = useState(1);
   const { data, isLoading } = useRawMaterialStockMovements(material.id, {
     page,
@@ -763,23 +793,23 @@ function StockHistoryTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {pagination ? `${pagination.total} movements total` : ''}
+          {pagination ? t($ => $.detail.stockHistory.movementsTotal, { count: pagination.total }) : ''}
         </p>
         <Button size="sm" className="gap-1.5" onClick={onAddStock}>
           <PackagePlus className="size-4" />
-          Add Stock
+          {t($ => $.detail.stockHistory.addStock)}
         </Button>
       </div>
 
       {movements.length === 0 ? (
         <EmptyState
           icon={RotateCcw}
-          title="No stock movements"
-          description="Every stock entry/exit will be recorded here for full traceability."
+          title={t($ => $.detail.stockHistory.emptyTitle)}
+          description={t($ => $.detail.stockHistory.emptyDesc)}
           action={
             <Button size="sm" onClick={onAddStock} className="gap-1.5 mt-1">
               <PackagePlus className="size-4" />
-              Add First Stock Entry
+              {t($ => $.detail.stockHistory.addFirstEntry)}
             </Button>
           }
         />
@@ -789,7 +819,14 @@ function StockHistoryTab({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  {['Date', 'Warehouse', 'Type', 'Qty', 'Balance After', 'Notes'].map((h) => (
+                  {[
+                    t($ => $.detail.stockHistory.colDate),
+                    t($ => $.detail.stockHistory.colWarehouse),
+                    t($ => $.detail.stockHistory.colType),
+                    t($ => $.detail.stockHistory.colQty),
+                    t($ => $.detail.stockHistory.colBalanceAfter),
+                    t($ => $.detail.stockHistory.colNotes),
+                  ].map((h) => (
                     <th
                       key={h}
                       className="px-3 py-2.5 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap"
@@ -801,7 +838,8 @@ function StockHistoryTab({
               </thead>
               <tbody className="divide-y divide-border">
                 {movements.map((m) => {
-                  const typeMeta = movementTypeMeta(m.movement_type);
+                  const typeLabel = tAny(`detail.movementTypes.${m.movement_type}`);
+                  const typeColor = movementTypeColor(m.movement_type);
                   const isPositive = ['purchase_receipt', 'adjustment_in', 'transfer_in'].includes(m.movement_type);
                   return (
                     <tr key={m.id} className="hover:bg-muted/30 transition-colors">
@@ -812,8 +850,8 @@ function StockHistoryTab({
                         {m.warehouse?.name ?? '—'}
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', typeMeta.color)}>
-                          {typeMeta.label}
+                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', typeColor)}>
+                          {typeLabel}
                         </span>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
@@ -857,11 +895,12 @@ function StockHistoryTab({
 // ─── Tab: Purchase History ────────────────────────────────────────────────────
 
 function PurchaseHistoryTab() {
+  const { t } = useTranslation('raw-materials');
   return (
     <EmptyState
       icon={ShoppingCart}
-      title="No purchase orders"
-      description="Purchase orders for this raw material will appear here once created."
+      title={t($ => $.detail.purchaseHistory.emptyTitle)}
+      description={t($ => $.detail.purchaseHistory.emptyDesc)}
     />
   );
 }
@@ -869,11 +908,12 @@ function PurchaseHistoryTab() {
 // ─── Tab: Manufacturing ───────────────────────────────────────────────────────
 
 function ManufacturingTab() {
+  const { t } = useTranslation('raw-materials');
   return (
     <EmptyState
       icon={Factory}
-      title="Not used in any recipe"
-      description="This material will appear here when added to a manufacturing recipe as a component."
+      title={t($ => $.detail.manufacturing.emptyTitle)}
+      description={t($ => $.detail.manufacturing.emptyDesc)}
     />
   );
 }
@@ -881,7 +921,9 @@ function ManufacturingTab() {
 // ─── Tab: Analytics ───────────────────────────────────────────────────────────
 
 function AnalyticsTab({ material }: { material: RawMaterial }) {
+  const { t } = useTranslation('raw-materials');
   const { currency, locale } = useCompany();
+
   const kpis: Array<{
     label:     string;
     value:     string;
@@ -889,21 +931,21 @@ function AnalyticsTab({ material }: { material: RawMaterial }) {
     icon:      LucideIcon;
     iconClass: string;
   }> = [
-    { label: 'Avg Purchase Cost',  value: '—', sub: 'Last 12 months',           icon: DollarSign,  iconClass: 'text-blue-500'   },
-    { label: 'Monthly Consumption', value: '—', sub: 'units/month on average', icon: TrendingDown, iconClass: 'text-purple-500' },
-    { label: 'Stock Coverage',     value: '—', sub: 'days at current rate',    icon: Calendar,    iconClass: 'text-green-500'  },
+    { label: t($ => $.detail.analytics.avgPurchaseCost),    value: '—', sub: t($ => $.detail.analytics.avgPurchaseSub),        icon: DollarSign,  iconClass: 'text-blue-500'   },
+    { label: t($ => $.detail.analytics.monthlyConsumption), value: '—', sub: t($ => $.detail.analytics.monthlyConsumptionSub), icon: TrendingDown, iconClass: 'text-purple-500' },
+    { label: t($ => $.detail.analytics.stockCoverage),      value: '—', sub: t($ => $.detail.analytics.stockCoverageSub),      icon: Calendar,    iconClass: 'text-green-500'  },
     {
-      label: 'Unit Cost',
+      label: t($ => $.detail.analytics.unitCost),
       value: formatCost(material.material_cost, undefined, currency, locale),
-      sub:   'Current material cost',
+      sub:   t($ => $.detail.analytics.unitCostSub),
       icon:  BarChart2,
       iconClass: 'text-amber-500',
     },
-    { label: 'Linked Suppliers',  value: '0', sub: 'active supplier',          icon: Truck,       iconClass: 'text-cyan-500'   },
-    { label: 'Used in Recipes',   value: '0', sub: 'manufacturing recipe',     icon: Factory,     iconClass: 'text-red-500'    },
-    { label: 'Stockout Events',   value: '—', sub: 'Last 90 days',             icon: TrendingDown, iconClass: 'text-orange-500' },
-    { label: 'Cost Changes',      value: '—', sub: 'Last 12 months',           icon: TrendingUp,  iconClass: 'text-indigo-500' },
-    { label: 'Avg Lead Time',     value: '—', sub: 'days from order to receipt', icon: Calendar,  iconClass: 'text-teal-500'   },
+    { label: t($ => $.detail.analytics.linkedSuppliers), value: '0', sub: t($ => $.detail.analytics.linkedSuppliersSub), icon: Truck,       iconClass: 'text-cyan-500'   },
+    { label: t($ => $.detail.analytics.usedInRecipes),   value: '0', sub: t($ => $.detail.analytics.usedInRecipesSub),  icon: Factory,     iconClass: 'text-red-500'    },
+    { label: t($ => $.detail.analytics.stockoutEvents),  value: '—', sub: t($ => $.detail.analytics.stockoutEventsSub), icon: TrendingDown, iconClass: 'text-orange-500' },
+    { label: t($ => $.detail.analytics.costChanges),     value: '—', sub: t($ => $.detail.analytics.costChangesSub),    icon: TrendingUp,  iconClass: 'text-indigo-500' },
+    { label: t($ => $.detail.analytics.avgLeadTime),     value: '—', sub: t($ => $.detail.analytics.avgLeadTimeSub),    icon: Calendar,    iconClass: 'text-teal-500'   },
   ];
 
   return (
@@ -923,9 +965,9 @@ function AnalyticsTab({ material }: { material: RawMaterial }) {
 
       <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 px-4 py-6 text-center">
         <BarChart2 className="mx-auto size-8 text-muted-foreground mb-2" />
-        <p className="text-sm font-medium text-muted-foreground">Analytics panel coming soon</p>
+        <p className="text-sm font-medium text-muted-foreground">{t($ => $.detail.analytics.comingSoon)}</p>
         <p className="text-xs text-muted-foreground mt-1">
-          Charts and trend analytics will appear here when connected to the reporting module.
+          {t($ => $.detail.analytics.comingSoonDesc)}
         </p>
       </div>
     </div>
@@ -941,6 +983,7 @@ export function RawMaterialDetailDrawer({
   onEdit,
   initialTab = 'overview',
 }: RawMaterialDetailDrawerProps) {
+  const { t } = useTranslation('raw-materials');
   const [activeTab,      setActiveTab]      = useState(initialTab);
   const [addStockOpen,   setAddStockOpen]   = useState(false);
 
@@ -958,6 +1001,9 @@ export function RawMaterialDetailDrawer({
   if (!material) return null;
 
   const avail = stockStatusConfig(material.available_qty, material.allow_negative_stock);
+  const statusLabel = avail.status === 'in_stock'
+    ? t($ => $.detail.status.inStock)
+    : t($ => $.detail.status.outOfStock);
 
   function openAddStock() {
     setAddStockOpen(true);
@@ -966,42 +1012,42 @@ export function RawMaterialDetailDrawer({
   const tabs: TabItem[] = [
     {
       key:     'overview',
-      label:   'Overview',
-      content: <OverviewTab material={material} />,
+      label:   t($ => $.detail.tabs.overview),
+      content: <OverviewTab material={material} latestCostEntry={latestCostEntry} />,
     },
     {
       key:     'inventory',
-      label:   'Inventory',
+      label:   t($ => $.detail.tabs.inventory),
       content: <InventoryTab material={material} />,
     },
     {
       key:     'suppliers',
-      label:   'Suppliers',
-      content: <SuppliersTab material={material} />,
+      label:   t($ => $.detail.tabs.suppliers),
+      content: <SuppliersTab materialId={material.id} unit={material.unit?.name} />,
     },
     {
       key:     'price-history',
-      label:   'Cost History',
+      label:   t($ => $.detail.tabs.priceHistory),
       content: <PriceHistoryTab materialId={material.id} />,
     },
     {
       key:     'stock-history',
-      label:   'Stock History',
+      label:   t($ => $.detail.tabs.stockHistory),
       content: <StockHistoryTab material={material} onAddStock={openAddStock} />,
     },
     {
       key:     'purchase-history',
-      label:   'Purchase History',
+      label:   t($ => $.detail.tabs.purchaseHistory),
       content: <PurchaseHistoryTab />,
     },
     {
       key:     'manufacturing',
-      label:   'Used in Recipes',
+      label:   t($ => $.detail.tabs.manufacturing),
       content: <ManufacturingTab />,
     },
     {
       key:     'analytics',
-      label:   'Analytics',
+      label:   t($ => $.detail.tabs.analytics),
       content: <AnalyticsTab material={material} />,
     },
   ];
@@ -1014,7 +1060,9 @@ export function RawMaterialDetailDrawer({
           className="flex flex-col gap-0 overflow-hidden p-0 sm:max-w-none w-full sm:w-[90vw] lg:w-[70vw]"
           style={{ maxWidth: 1400 }}
         >
-          <SheetTitle className="sr-only">{material.name} — Raw Material Details</SheetTitle>
+          <SheetTitle className="sr-only">
+            {t($ => $.detail.titleSr, { name: material.name })}
+          </SheetTitle>
 
           {/* ── Drawer Header ── */}
           <div className="flex items-start gap-4 border-b px-6 py-5 flex-none pr-14">
@@ -1038,7 +1086,7 @@ export function RawMaterialDetailDrawer({
                   )}
                 >
                   <span className={cn('size-1.5 rounded-full', avail.dot)} />
-                  {avail.label}
+                  {statusLabel}
                 </span>
 
                 {material.category && (
@@ -1046,8 +1094,6 @@ export function RawMaterialDetailDrawer({
                     {material.category.name}
                   </Badge>
                 )}
-
-
               </div>
 
               <h2 className="text-lg font-semibold text-foreground leading-tight">{material.name}</h2>
@@ -1071,7 +1117,7 @@ export function RawMaterialDetailDrawer({
                 onClick={openAddStock}
               >
                 <Zap className="size-3.5" />
-                Add Stock
+                {t($ => $.detail.addStock)}
               </Button>
               {onEdit && (
                 <Button
@@ -1084,7 +1130,7 @@ export function RawMaterialDetailDrawer({
                   }}
                 >
                   <Pencil className="size-3.5" />
-                  Edit
+                  {t($ => $.detail.edit)}
                 </Button>
               )}
             </div>
@@ -1114,7 +1160,6 @@ export function RawMaterialDetailDrawer({
         open={addStockOpen}
         onOpenChange={setAddStockOpen}
         onSuccess={() => {
-          // Stay on stock-history tab after adding stock
           setActiveTab('stock-history');
         }}
       />

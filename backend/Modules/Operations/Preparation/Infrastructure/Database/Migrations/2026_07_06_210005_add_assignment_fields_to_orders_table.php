@@ -28,14 +28,14 @@ return new class extends Migration
         });
 
         DB::statement(
-            "ALTER TABLE orders ADD CONSTRAINT chk_orders_warehouse_assignment_source "
-            . "CHECK (warehouse_assignment_source IS NULL OR warehouse_assignment_source IN ("
-            . "'auto_policy','manual_override','channel_default','unassigned'"
-            . "))"
+            'ALTER TABLE orders ADD CONSTRAINT chk_orders_warehouse_assignment_source '
+            .'CHECK (warehouse_assignment_source IS NULL OR warehouse_assignment_source IN ('
+            ."'auto_policy','manual_override','channel_default','unassigned'"
+            .'))',
         );
 
-        DB::statement("CREATE INDEX idx_orders_warehouse_assignment_source ON orders (warehouse_assignment_source)");
-        DB::statement("CREATE INDEX idx_orders_warehouse_assigned_at ON orders (warehouse_assigned_at)");
+        DB::statement('CREATE INDEX idx_orders_warehouse_assignment_source ON orders (warehouse_assignment_source)');
+        DB::statement('CREATE INDEX idx_orders_warehouse_assigned_at ON orders (warehouse_assigned_at)');
     }
 
     public function down(): void

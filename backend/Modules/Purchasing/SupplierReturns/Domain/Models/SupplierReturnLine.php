@@ -34,11 +34,11 @@ class SupplierReturnLine extends Model
     ];
 
     protected $casts = [
-        'return_quantity'     => 'decimal:4',
-        'unit_cost'           => 'decimal:4',
-        'total_cost'          => 'decimal:4',
+        'return_quantity' => 'decimal:4',
+        'unit_cost' => 'decimal:4',
+        'total_cost' => 'decimal:4',
         'original_received_qty' => 'decimal:4',
-        'original_unit_cost'  => 'decimal:4',
+        'original_unit_cost' => 'decimal:4',
     ];
 
     public function supplierReturn(): BelongsTo

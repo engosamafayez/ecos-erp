@@ -35,7 +35,7 @@ final class DisassemblyServiceProvider extends ServiceProvider
         $this->app->singleton(
             DisassemblyWorkflow::class,
             fn ($app): DisassemblyWorkflow => new DisassemblyWorkflow(
-                resolver:        $app->make(RecipeResolverInterface::class),
+                resolver: $app->make(RecipeResolverInterface::class),
                 inventoryReader: $app->make(InventoryReadInterface::class),
             ),
         );
@@ -44,14 +44,14 @@ final class DisassemblyServiceProvider extends ServiceProvider
             DisassemblyInventoryAdapter::class,
             fn ($app): DisassemblyInventoryAdapter => new DisassemblyInventoryAdapter(
                 inventoryItems: $app->make(InventoryItemRepositoryInterface::class),
-                layerService:   $app->make(InventoryLayerConsumptionService::class),
+                layerService: $app->make(InventoryLayerConsumptionService::class),
             ),
         );
 
         $this->app->singleton(
             DisassemblyExecutor::class,
             fn ($app): DisassemblyExecutor => new DisassemblyExecutor(
-                inventory:    $app->make(DisassemblyInventoryAdapter::class),
+                inventory: $app->make(DisassemblyInventoryAdapter::class),
                 transactions: $app->make(DisassemblyTransactionRepositoryInterface::class),
             ),
         );

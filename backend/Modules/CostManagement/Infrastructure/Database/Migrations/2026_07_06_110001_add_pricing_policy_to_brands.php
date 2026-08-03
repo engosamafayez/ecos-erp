@@ -16,7 +16,7 @@ return new class extends Migration
 
         Schema::table('brands', function (Blueprint $table): void {
             $table->decimal('default_target_margin', 8, 4)->nullable()->after('is_active');
-            $table->decimal('default_markup',        8, 4)->nullable()->after('default_target_margin');
+            $table->decimal('default_markup', 8, 4)->nullable()->after('default_target_margin');
         });
     }
 

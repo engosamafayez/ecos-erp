@@ -26,22 +26,22 @@ class GraphController extends Controller
 
         return response()->json([
             'data' => [
-                'node'     => new EntityNodeResource($data['node']),
+                'node' => new EntityNodeResource($data['node']),
                 'outgoing' => $data['outgoing']->map(static fn ($r) => [
-                    'id'                => $r->id,
+                    'id' => $r->id,
                     'relationship_type' => $r->relationship_type instanceof RelationshipType
                         ? $r->relationship_type->value
                         : $r->relationship_type,
-                    'weight'   => $r->weight,
-                    'to_node'  => $r->toNode ? new EntityNodeResource($r->toNode) : null,
+                    'weight' => $r->weight,
+                    'to_node' => $r->toNode ? new EntityNodeResource($r->toNode) : null,
                 ]),
                 'incoming' => $data['incoming']->map(static fn ($r) => [
-                    'id'                => $r->id,
+                    'id' => $r->id,
                     'relationship_type' => $r->relationship_type instanceof RelationshipType
                         ? $r->relationship_type->value
                         : $r->relationship_type,
-                    'weight'     => $r->weight,
-                    'from_node'  => $r->fromNode ? new EntityNodeResource($r->fromNode) : null,
+                    'weight' => $r->weight,
+                    'from_node' => $r->fromNode ? new EntityNodeResource($r->fromNode) : null,
                 ]),
             ],
         ]);
@@ -56,14 +56,14 @@ class GraphController extends Controller
         return response()->json([
             'data' => [
                 'root_node_id' => $entityNode->id,
-                'hops'         => $hops,
-                'node_count'   => count($data['nodes']),
-                'edge_count'   => count($data['edges']),
-                'nodes'        => EntityNodeResource::collection(collect($data['nodes']))->resolve(),
-                'edges'        => collect($data['edges'])->map(static fn ($r) => [
-                    'id'                => $r->id,
-                    'from_node_id'      => $r->from_node_id,
-                    'to_node_id'        => $r->to_node_id,
+                'hops' => $hops,
+                'node_count' => count($data['nodes']),
+                'edge_count' => count($data['edges']),
+                'nodes' => EntityNodeResource::collection(collect($data['nodes']))->resolve(),
+                'edges' => collect($data['edges'])->map(static fn ($r) => [
+                    'id' => $r->id,
+                    'from_node_id' => $r->from_node_id,
+                    'to_node_id' => $r->to_node_id,
                     'relationship_type' => $r->relationship_type instanceof RelationshipType
                         ? $r->relationship_type->value
                         : $r->relationship_type,
@@ -80,12 +80,12 @@ class GraphController extends Controller
     public function upsertNode(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'node_type'   => ['required', 'string'],
-            'entity_id'   => ['required', 'uuid'],
+            'node_type' => ['required', 'string'],
+            'entity_id' => ['required', 'uuid'],
             'entity_type' => ['required', 'string', 'max:100'],
-            'company_id'  => ['nullable', 'uuid'],
-            'label'       => ['nullable', 'string', 'max:255'],
-            'properties'  => ['nullable', 'array'],
+            'company_id' => ['nullable', 'uuid'],
+            'label' => ['nullable', 'string', 'max:255'],
+            'properties' => ['nullable', 'array'],
         ]);
 
         $node = $this->graphService->upsertNode(
@@ -106,11 +106,11 @@ class GraphController extends Controller
     public function createRelationship(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'from_node_id'      => ['required', 'uuid', 'exists:bae_entity_nodes,id'],
-            'to_node_id'        => ['required', 'uuid', 'exists:bae_entity_nodes,id'],
+            'from_node_id' => ['required', 'uuid', 'exists:bae_entity_nodes,id'],
+            'to_node_id' => ['required', 'uuid', 'exists:bae_entity_nodes,id'],
             'relationship_type' => ['required', 'string'],
-            'weight'            => ['nullable', 'numeric', 'min:0', 'max:1'],
-            'properties'        => ['nullable', 'array'],
+            'weight' => ['nullable', 'numeric', 'min:0', 'max:1'],
+            'properties' => ['nullable', 'array'],
         ]);
 
         $rel = $this->graphService->createRelationship(
@@ -122,11 +122,11 @@ class GraphController extends Controller
         );
 
         return response()->json(['data' => [
-            'id'                => $rel->id,
-            'from_node_id'      => $rel->from_node_id,
-            'to_node_id'        => $rel->to_node_id,
+            'id' => $rel->id,
+            'from_node_id' => $rel->from_node_id,
+            'to_node_id' => $rel->to_node_id,
             'relationship_type' => $rel->relationship_type->value,
-            'weight'            => $rel->weight,
+            'weight' => $rel->weight,
         ]], 201);
     }
 }

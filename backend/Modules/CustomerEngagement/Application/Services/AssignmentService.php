@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Application\Services;
 
 use Illuminate\Support\Collection;
@@ -19,8 +21,8 @@ class AssignmentService
     ): AssignmentLog {
         // Unassign current
         AssignmentLog::where('conversation_id', $conv->id)
-                     ->whereNull('unassigned_at')
-                     ->update(['unassigned_at' => now()]);
+            ->whereNull('unassigned_at')
+            ->update(['unassigned_at' => now()]);
 
         // Update conversation
         $updateData = [];
@@ -34,19 +36,19 @@ class AssignmentService
         // Log
         return AssignmentLog::create([
             'conversation_id' => $conv->id,
-            'assignee_type'   => $assigneeType,
-            'assignee_id'     => $assigneeId,
-            'assigned_by'     => $assignedBy,
+            'assignee_type' => $assigneeType,
+            'assignee_id' => $assigneeId,
+            'assigned_by' => $assignedBy,
             'assignment_type' => $type->value,
-            'notes'           => $notes,
+            'notes' => $notes,
         ]);
     }
 
     public function unassign(Conversation $conv): void
     {
         AssignmentLog::where('conversation_id', $conv->id)
-                     ->whereNull('unassigned_at')
-                     ->update(['unassigned_at' => now()]);
+            ->whereNull('unassigned_at')
+            ->update(['unassigned_at' => now()]);
 
         $conv->update(['assigned_employee_id' => null, 'assigned_team_id' => null]);
     }
@@ -54,8 +56,8 @@ class AssignmentService
     public function getHistory(string $conversationId): Collection
     {
         return AssignmentLog::where('conversation_id', $conversationId)
-                            ->latest()
-                            ->get();
+            ->latest()
+            ->get();
     }
 
     /**

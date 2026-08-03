@@ -11,8 +11,8 @@ final readonly class PaymentSummaryLine
 {
     public function __construct(
         public PaymentMethodType $type,
-        public Money             $amount,
-        public ?string           $reference,
+        public Money $amount,
+        public ?string $reference,
     ) {}
 
     /**
@@ -21,8 +21,8 @@ final readonly class PaymentSummaryLine
     public static function fromTender(array $data): self
     {
         return new self(
-            type:      PaymentMethodType::from($data['type']),
-            amount:    Money::fromArray($data['amount']),
+            type: PaymentMethodType::from($data['type']),
+            amount: Money::fromArray($data['amount']),
             reference: $data['reference'] ?? null,
         );
     }
@@ -30,8 +30,8 @@ final readonly class PaymentSummaryLine
     public function toArray(): array
     {
         return [
-            'type'      => $this->type->value,
-            'amount'    => $this->amount->toArray(),
+            'type' => $this->type->value,
+            'amount' => $this->amount->toArray(),
             'reference' => $this->reference,
         ];
     }
@@ -39,8 +39,8 @@ final readonly class PaymentSummaryLine
     public static function fromArray(array $data): self
     {
         return new self(
-            type:      PaymentMethodType::from($data['type']),
-            amount:    Money::fromArray($data['amount']),
+            type: PaymentMethodType::from($data['type']),
+            amount: Money::fromArray($data['amount']),
             reference: $data['reference'] ?? null,
         );
     }

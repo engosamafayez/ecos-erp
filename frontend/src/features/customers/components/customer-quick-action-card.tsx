@@ -20,20 +20,22 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { useOrdersQuery } from '@/features/orders/hooks/use-orders';
-import type { OrderStatus } from '@/features/orders/types/order';
+
 import type { Customer } from '@/features/customers/types/customer';
 import { cn } from '@/lib/utils';
 
-// Statuses that mean an order is in-flight (not terminal)
-const ACTIVE_ORDER_STATUSES = new Set<OrderStatus>([
-  'processing',
+// Statuses that mean an order is in-flight (not terminal). Aligned to the
+// canonical V3 OrderStatus union — the legacy values (processing/review/
+// confirmed/preparing/rescheduled) are no longer emitted by the backend.
+const ACTIVE_ORDER_STATUSES = new Set<string>([
+  'new',
+  'in_progress',
   'awaiting_payment',
-  'review',
-  'confirmed',
-  'preparing',
-  'out_for_delivery',
   'awaiting_stock',
-  'rescheduled',
+  'scheduled',
+  'ready_for_dispatch',
+  'out_for_delivery',
+  'on_hold',
 ]);
 
 type Props = {
@@ -122,12 +124,12 @@ export function CustomerQuickActionCard({
                   className="h-4 shrink-0 gap-0.5 px-1.5 text-[9px] text-blue-700 bg-blue-100 border-blue-200 dark:text-blue-400 dark:bg-blue-950/50 dark:border-blue-800"
                 >
                   <RefreshCw className="size-2.5" />
-                  {t('quickCard.returning')}
+                  {t($ => $.quickCard.returning)}
                 </Badge>
               ) : null}
               {!customer.is_active ? (
                 <Badge variant="secondary" className="h-4 shrink-0 px-1.5 text-[9px]">
-                  {t('tags.inactive')}
+                  {t($ => $.tags.inactive)}
                 </Badge>
               ) : null}
             </div>
@@ -147,7 +149,7 @@ export function CustomerQuickActionCard({
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <ShoppingBag className="size-3.5" />
                 <span className="font-medium text-foreground">{totalOrders ?? '—'}</span>
-                <span>{t('quickCard.totalOrders')}</span>
+                <span>{t($ => $.quickCard.totalOrders)}</span>
               </div>
               {lastOrderDate ? (
                 <>
@@ -170,7 +172,7 @@ export function CustomerQuickActionCard({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-medium text-amber-800 dark:text-amber-300">
-                  {t('quickCard.activeOrder')}
+                  {t($ => $.quickCard.activeOrder)}
                 </span>
                 <span className="font-mono text-xs text-amber-700 dark:text-amber-400">
                   {activeOrder.order_number}
@@ -187,7 +189,7 @@ export function CustomerQuickActionCard({
                 className="h-6 shrink-0 gap-1 border-amber-300 px-2 text-[10px] hover:bg-amber-100 dark:border-amber-700"
                 onClick={() => onOpenOrders(customer)}
               >
-                {t('quickCard.openActiveOrder')}
+                {t($ => $.quickCard.openActiveOrder)}
               </Button>
             ) : null}
           </div>
@@ -200,16 +202,16 @@ export function CustomerQuickActionCard({
             <span className="font-mono text-sm">{primaryPhone}</span>
             {secondaryPhone ? (
               <span className="text-xs text-muted-foreground">
-                {t('phone.more', { count: 1 })}
+                {t($ => $.phone.more, { count: 1 })}
               </span>
             ) : null}
             <div className="ms-auto flex items-center gap-0.5">
-              <Button size="icon" variant="ghost" className="size-6" asChild title={t('phone.call')}>
+              <Button size="icon" variant="ghost" className="size-6" asChild title={t($ => $.phone.call)}>
                 <a href={`tel:${primaryPhone.replace(/\D/g, '')}`}>
                   <Phone className="size-3" />
                 </a>
               </Button>
-              <Button size="icon" variant="ghost" className="size-6" asChild title={t('phone.whatsapp')}>
+              <Button size="icon" variant="ghost" className="size-6" asChild title={t($ => $.phone.whatsapp)}>
                 <a
                   href={`https://wa.me/${primaryPhone.replace(/\D/g, '')}`}
                   target="_blank"
@@ -218,7 +220,7 @@ export function CustomerQuickActionCard({
                   <MessageCircle className="size-3" />
                 </a>
               </Button>
-              <Button size="icon" variant="ghost" className="size-6" onClick={handleCopyPhone} title={t('phone.copy')}>
+              <Button size="icon" variant="ghost" className="size-6" onClick={handleCopyPhone} title={t($ => $.phone.copy)}>
                 <Copy className="size-3" />
               </Button>
             </div>
@@ -258,7 +260,7 @@ export function CustomerQuickActionCard({
             onClick={() => onOpen(customer)}
           >
             <ExternalLink className="size-3" />
-            {t('quickCard.openCustomer')}
+            {t($ => $.quickCard.openCustomer)}
           </Button>
 
           {onCreateOrder ? (
@@ -269,7 +271,7 @@ export function CustomerQuickActionCard({
               onClick={() => onCreateOrder(customer)}
             >
               <Plus className="size-3" />
-              {t('quickCard.createOrder')}
+              {t($ => $.quickCard.createOrder)}
             </Button>
           ) : null}
 
@@ -281,7 +283,7 @@ export function CustomerQuickActionCard({
               onClick={() => onEdit(customer)}
             >
               <Pencil className="size-3" />
-              {t('quickCard.editCustomer')}
+              {t($ => $.quickCard.editCustomer)}
             </Button>
           ) : null}
         </div>
@@ -298,7 +300,7 @@ export function CustomerQuickActionCard({
                   onClick={() => window.open(`tel:${primaryPhone.replace(/\D/g, '')}`, '_self')}
                 >
                   <Phone className="size-3" />
-                  {t('quickCard.call')}
+                  {t($ => $.quickCard.call)}
                 </Button>
                 <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[11px]" asChild>
                   <a
@@ -307,7 +309,7 @@ export function CustomerQuickActionCard({
                     rel="noopener noreferrer"
                   >
                     <MessageCircle className="size-3" />
-                    {t('quickCard.whatsapp')}
+                    {t($ => $.quickCard.whatsapp)}
                   </a>
                 </Button>
                 <Button
@@ -317,7 +319,7 @@ export function CustomerQuickActionCard({
                   onClick={handleCopyPhone}
                 >
                   <Copy className="size-3" />
-                  {t('quickCard.copyPhone')}
+                  {t($ => $.quickCard.copyPhone)}
                 </Button>
               </>
             ) : null}
@@ -330,7 +332,7 @@ export function CustomerQuickActionCard({
                   onClick={handleCopyAddress}
                 >
                   <Copy className="size-3" />
-                  {t('quickCard.copyAddress')}
+                  {t($ => $.quickCard.copyAddress)}
                 </Button>
                 <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-[11px]" asChild>
                   <a
@@ -339,7 +341,7 @@ export function CustomerQuickActionCard({
                     rel="noopener noreferrer"
                   >
                     <MapPin className="size-3" />
-                    {t('quickCard.openMap')}
+                    {t($ => $.quickCard.openMap)}
                   </a>
                 </Button>
               </>

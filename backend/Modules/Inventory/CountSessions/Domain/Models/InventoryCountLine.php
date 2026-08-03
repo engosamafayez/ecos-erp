@@ -21,7 +21,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
  * @property float|null $variance_qty
  * @property float|null $variance_value
  * @property string|null $notes
- * Phase 1.1: photo_path deferred — see PKG-COUNT-002
+ *                              Phase 1.1: photo_path deferred — see PKG-COUNT-002
  */
 class InventoryCountLine extends Model
 {
@@ -53,12 +53,12 @@ class InventoryCountLine extends Model
     protected function casts(): array
     {
         return [
-            'system_qty'         => 'decimal:4',
-            'counted_qty'        => 'decimal:4',
-            'damaged_qty'        => 'decimal:4',
-            'shortage_qty'       => 'decimal:4',
-            'variance_qty'       => 'decimal:4',
-            'variance_value'     => 'decimal:2',
+            'system_qty' => 'decimal:4',
+            'counted_qty' => 'decimal:4',
+            'damaged_qty' => 'decimal:4',
+            'shortage_qty' => 'decimal:4',
+            'variance_qty' => 'decimal:4',
+            'variance_value' => 'decimal:2',
             'unit_cost_snapshot' => 'decimal:4',
         ];
     }

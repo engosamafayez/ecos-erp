@@ -38,8 +38,13 @@ final class UpdateSupplierRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:50'],
             'mobile' => ['nullable', 'string', 'max:50'],
             'country' => ['nullable', 'string', 'max:100'],
+            'state' => ['nullable', 'string', 'max:100'],
             'city' => ['nullable', 'string', 'max:100'],
+            'district' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:255'],
+            'google_maps_url' => ['nullable', 'string', 'max:1000'],
+            'opening_balance_amount' => ['nullable', 'numeric', 'min:0'],
+            'opening_balance_type' => ['nullable', 'in:debit,credit'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'is_active' => ['boolean'],
         ];

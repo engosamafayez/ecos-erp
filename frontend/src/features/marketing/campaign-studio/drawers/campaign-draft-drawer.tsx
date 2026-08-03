@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import type { CampaignDraft } from '../types/campaign-studio';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useCreateCampaignDraft, useUpdateCampaignDraft } from '../hooks/use-campaign-studio';
 import { useCampaignAudience } from '../hooks/use-campaign-audience';
 import { useCampaignVersions } from '../hooks/use-campaign-versions';
@@ -153,6 +154,7 @@ export function CampaignDraftDrawer({ open, onClose, draft, creating = false }: 
 }
 
 function SettingsTab({ draft, onUpdate }: { draft: CampaignDraft; onUpdate: (p: Partial<CampaignDraft>) => void }) {
+  const { money } = useFormatter();
   return (
     <div className="space-y-4">
       <Field label="Name">
@@ -163,8 +165,8 @@ function SettingsTab({ draft, onUpdate }: { draft: CampaignDraft; onUpdate: (p: 
       </Field>
       <Field label="Budget">
         <span className="text-sm">
-          {draft.budget_type === 'daily' && draft.daily_budget && `$${parseFloat(draft.daily_budget).toLocaleString()}/day`}
-          {draft.budget_type === 'lifetime' && draft.lifetime_budget && `$${parseFloat(draft.lifetime_budget).toLocaleString()} lifetime`}
+          {draft.budget_type === 'daily' && draft.daily_budget && `${money(parseFloat(draft.daily_budget))}/day`}
+          {draft.budget_type === 'lifetime' && draft.lifetime_budget && `${money(parseFloat(draft.lifetime_budget))} lifetime`}
           {!draft.budget_type && <span className="text-muted-foreground">—</span>}
         </span>
       </Field>

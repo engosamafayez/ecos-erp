@@ -25,7 +25,7 @@ return new class extends Migration
             });
 
             // Backfill from orders table
-            DB::statement(<<<SQL
+            DB::statement(<<<'SQL'
                 UPDATE order_business_context_snapshots s
                 INNER JOIN orders o ON s.order_id = o.id
                 SET s.company_id = o.company_id
@@ -46,7 +46,7 @@ return new class extends Migration
                 $table->index('company_id', 'idx_ofs_company');
             });
 
-            DB::statement(<<<SQL
+            DB::statement(<<<'SQL'
                 UPDATE order_financial_snapshots s
                 INNER JOIN orders o ON s.order_id = o.id
                 SET s.company_id = o.company_id
@@ -59,7 +59,7 @@ return new class extends Migration
     {
         foreach (['order_business_context_snapshots', 'order_financial_snapshots'] as $tbl) {
             if (Schema::hasTable($tbl) && Schema::hasColumn($tbl, 'company_id')) {
-                Schema::table($tbl, function (Blueprint $table) use ($tbl): void {
+                Schema::table($tbl, function (Blueprint $table): void {
                     $table->dropForeign(['company_id']);
                     $table->dropColumn('company_id');
                 });

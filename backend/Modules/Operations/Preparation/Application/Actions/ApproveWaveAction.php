@@ -14,7 +14,7 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 final class ApproveWaveAction
 {
     public function __construct(
-        private readonly AuditService    $audit,
+        private readonly AuditService $audit,
         private readonly TimelineService $timeline,
     ) {}
 
@@ -30,29 +30,29 @@ final class ApproveWaveAction
             $wave->update([
                 'approved_by' => $actorId,
                 'approved_at' => now(),
-                'updated_by'  => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             $this->timeline->record(
-                companyId:    $wave->company_id,
-                subjectType:  'PreparationWave',
-                subjectId:    $wave->id,
-                eventType:    'wave.approved',
-                title:        "Wave {$wave->wave_number} approved",
-                description:  $notes ?? "Wave approved by supervisor",
-                actorId:      (int) $actorId,
+                companyId: $wave->company_id,
+                subjectType: 'PreparationWave',
+                subjectId: $wave->id,
+                eventType: 'wave.approved',
+                title: "Wave {$wave->wave_number} approved",
+                description: $notes ?? 'Wave approved by supervisor',
+                actorId: (int) $actorId,
                 sourceModule: 'Operations.Preparation',
             );
 
             $this->audit->record(
-                action:     'wave.approved',
+                action: 'wave.approved',
                 entityType: 'PreparationWave',
-                entityId:   $wave->id,
-                companyId:  $wave->company_id,
-                userId:     (int) $actorId,
-                oldValues:  ['approved_by' => null, 'approved_at' => null],
-                newValues:  ['approved_by' => $actorId, 'approved_at' => now()->toIso8601String()],
-                metadata:   $notes ? ['notes' => $notes] : [],
+                entityId: $wave->id,
+                companyId: $wave->company_id,
+                userId: (int) $actorId,
+                oldValues: ['approved_by' => null, 'approved_at' => null],
+                newValues: ['approved_by' => $actorId, 'approved_at' => now()->toIso8601String()],
+                metadata: $notes ? ['notes' => $notes] : [],
             );
 
             return $wave->fresh() ?? $wave;

@@ -34,8 +34,8 @@ return new class extends Migration
             $table->index('preparation_wave_id');
 
             $table->foreign('preparation_wave_id')
-                  ->references('id')->on('preparation_waves')
-                  ->cascadeOnDelete();
+                ->references('id')->on('preparation_waves')
+                ->cascadeOnDelete();
         });
     }
 

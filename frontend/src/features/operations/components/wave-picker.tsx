@@ -1,5 +1,6 @@
 import { Waves } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import {
   Select,
@@ -19,6 +20,7 @@ type Props = {
 
 /** Reads/writes ?wave_id= in the current URL. Drop into any toolbar. */
 export function WavePicker({ className, showBadge = true }: Props) {
+  const { t } = useTranslation('operations');
   const [searchParams, setSearchParams] = useSearchParams();
   const waveId = searchParams.get('wave_id') ?? '';
   const { waveStatusLabel } = useWaveStatusLabels();
@@ -41,7 +43,7 @@ export function WavePicker({ className, showBadge = true }: Props) {
       <Select value={waveId} onValueChange={handleChange}>
         <SelectTrigger className="h-7 text-xs w-52 border-dashed">
           <SelectValue
-            placeholder={isLoading ? 'Loading waves…' : 'Select a wave…'}
+            placeholder={isLoading ? t($ => $.wave.picker.loading) : t($ => $.wave.picker.placeholder)}
           />
         </SelectTrigger>
         <SelectContent>
@@ -55,7 +57,7 @@ export function WavePicker({ className, showBadge = true }: Props) {
           ))}
           {!isLoading && waves.length === 0 && (
             <SelectItem value="__none__" disabled className="text-xs text-muted-foreground">
-              No waves found
+              {t($ => $.wave.picker.noWaves)}
             </SelectItem>
           )}
         </SelectContent>

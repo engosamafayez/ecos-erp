@@ -14,8 +14,8 @@ type ErrorStateProps = {
  */
 export function ErrorState({ title, description, onRetry }: ErrorStateProps) {
   const { t } = useTranslation('common');
-  const displayTitle = title ?? t('error.title');
-  const displayDescription = description ?? t('error.description');
+  const displayTitle = title ?? t($ => $.error.title);
+  const displayDescription = description ?? t($ => $.error.description);
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
@@ -26,7 +26,7 @@ export function ErrorState({ title, description, onRetry }: ErrorStateProps) {
       <p className="text-muted-foreground max-w-sm text-sm">{displayDescription}</p>
       {onRetry ? (
         <Button variant="outline" size="sm" className="mt-2" onClick={onRetry}>
-          {t('error.retry')}
+          {t($ => $.error.retry)}
         </Button>
       ) : null}
     </div>

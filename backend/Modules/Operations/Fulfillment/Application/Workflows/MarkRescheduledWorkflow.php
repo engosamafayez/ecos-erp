@@ -23,27 +23,27 @@ final class MarkRescheduledWorkflow implements FulfillmentWorkflowInterface
     public function guard(FulfillmentContext $ctx): void
     {
         $blocked = [
-            OrderStatus::Rescheduled,     // already in this state
-            OrderStatus::Preparing,       // locked in execution chain
-            OrderStatus::OutForDelivery,  // locked in execution chain
-            OrderStatus::Delivered,       // locked in execution chain
-            OrderStatus::Returned,        // handled by Returns workflow
-            OrderStatus::Completed,       // terminal
+            OrderStatus::Scheduled,          // already in this state
+            OrderStatus::ReadyForDispatch,   // locked in execution chain
+            OrderStatus::OutForDelivery,     // locked in execution chain
+            OrderStatus::Delivered,          // locked in execution chain
+            OrderStatus::Returned,           // handled by Returns workflow
+            OrderStatus::Cancelled,          // terminal
         ];
 
         if (in_array($ctx->order->status, $blocked, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$ctx->order->id}] cannot be rescheduled from status [{$ctx->order->status->value}]."
+                "Order [{$ctx->order->id}] cannot be rescheduled from status [{$ctx->order->status->value}].",
             );
         }
     }
 
     public function execute(FulfillmentContext $ctx): FulfillmentResult
     {
-        $order  = $ctx->order;
+        $order = $ctx->order;
         $reason = $ctx->get('reason');
 
-        $order->update(['status' => OrderStatus::Rescheduled]);
+        $order->update(['status' => OrderStatus::Scheduled]);
         $order->refresh();
 
         return FulfillmentResult::success(

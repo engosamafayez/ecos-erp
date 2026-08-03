@@ -24,14 +24,14 @@ export function useWaveStatusLabels() {
   const { t } = useTranslation('operations');
 
   const waveStatusLabel: Record<WaveStatus, string> = {
-    draft:            t('wave.status.draft'),
-    collecting:       t('wave.status.collecting'),
-    planning:         t('wave.status.planning'),
-    shortage_blocked: t('wave.status.shortage_blocked'),
-    preparing:        t('wave.status.preparing'),
-    completed:        t('wave.status.completed'),
-    closed:           t('wave.status.closed'),
-    cancelled:        t('wave.status.cancelled'),
+    draft:            t($ => $.wave.status.draft),
+    collecting:       t($ => $.wave.status.collecting),
+    planning:         t($ => $.wave.status.planning),
+    shortage_blocked: t($ => $.wave.status.shortage_blocked),
+    preparing:        t($ => $.wave.status.preparing),
+    completed:        t($ => $.wave.status.completed),
+    closed:           t($ => $.wave.status.closed),
+    cancelled:        t($ => $.wave.status.cancelled),
   };
 
   return { waveStatusLabel };

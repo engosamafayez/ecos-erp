@@ -1,51 +1,57 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import type { FitnessLevel, FleetUnitLifecycle } from '../types/fleet';
 
-const FITNESS: Record<FitnessLevel, { label: string; className: string; Icon: typeof CheckCircle }> = {
+const FITNESS: Record<FitnessLevel, { labelKey: string; className: string; Icon: typeof CheckCircle }> = {
   fit: {
-    label: 'Fit',
+    labelKey: 'fleet.fitness.fit',
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
     Icon: CheckCircle,
   },
   fit_with_warnings: {
-    label: 'Warnings',
+    labelKey: 'fleet.fitness.warnings',
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
     Icon: AlertTriangle,
   },
   unfit: {
-    label: 'Unfit',
+    labelKey: 'fleet.fitness.unfit',
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
     Icon: XCircle,
   },
 };
 
 export function FitnessBadge({ level }: { level: FitnessLevel }) {
-  const { label, className, Icon } = FITNESS[level];
+  const { t } = useTranslation('logistics');
+  const { labelKey, className, Icon } = FITNESS[level];
 
   return (
     <Badge className={`gap-1 text-xs ${className}`}>
       <Icon className="size-3" />
-      {label}
+      {t(labelKey)}
     </Badge>
   );
 }
 
-const LIFECYCLE: Record<FleetUnitLifecycle, { label: string; className: string }> = {
-  draft: { label: 'Draft', className: 'bg-muted text-muted-foreground hover:bg-muted' },
-  commissioning: { label: 'Commissioning', className: 'bg-sky-600 hover:bg-sky-600 text-white' },
-  active: { label: 'Active', className: 'bg-emerald-600 hover:bg-emerald-600 text-white' },
-  suspended: { label: 'Suspended', className: 'bg-amber-600 hover:bg-amber-600 text-white' },
+const LIFECYCLE: Record<FleetUnitLifecycle, { labelKey: string; className: string }> = {
+  draft: { labelKey: 'fleet.lifecycle.draft', className: 'bg-muted text-muted-foreground hover:bg-muted' },
+  commissioning: {
+    labelKey: 'fleet.lifecycle.commissioning',
+    className: 'bg-sky-600 hover:bg-sky-600 text-white',
+  },
+  active: { labelKey: 'common.active', className: 'bg-emerald-600 hover:bg-emerald-600 text-white' },
+  suspended: { labelKey: 'fleet.lifecycle.suspended', className: 'bg-amber-600 hover:bg-amber-600 text-white' },
   decommissioning: {
-    label: 'Decommissioning',
+    labelKey: 'fleet.lifecycle.decommissioning',
     className: 'bg-orange-500 hover:bg-orange-500 text-white',
   },
-  retired: { label: 'Retired', className: 'bg-slate-600 hover:bg-slate-600 text-white' },
+  retired: { labelKey: 'fleet.lifecycle.retired', className: 'bg-slate-600 hover:bg-slate-600 text-white' },
 };
 
 export function LifecycleBadge({ state }: { state: FleetUnitLifecycle }) {
-  const { label, className } = LIFECYCLE[state];
+  const { t } = useTranslation('logistics');
+  const { labelKey, className } = LIFECYCLE[state];
 
-  return <Badge className={`text-xs ${className}`}>{label}</Badge>;
+  return <Badge className={`text-xs ${className}`}>{t(labelKey)}</Badge>;
 }

@@ -15,27 +15,27 @@ use Modules\POS\Sale\Domain\ValueObjects\SaleLine;
 final readonly class SaleItemPayload
 {
     public function __construct(
-        public string  $lineId,
-        public string  $productId,
-        public string  $productName,
-        public string  $sku,
-        public float   $quantity,
-        public string  $unitPrice,
-        public string  $lineTotal,
-        public string  $currency,
+        public string $lineId,
+        public string $productId,
+        public string $productName,
+        public string $sku,
+        public float $quantity,
+        public string $unitPrice,
+        public string $lineTotal,
+        public string $currency,
     ) {}
 
     public static function fromSaleLine(SaleLine $line, string $currency): self
     {
         return new self(
-            lineId:      $line->lineId,
-            productId:   $line->productId,
+            lineId: $line->lineId,
+            productId: $line->productId,
             productName: $line->productName,
-            sku:         $line->sku,
-            quantity:    $line->quantity->toFloat(),
-            unitPrice:   $line->unitPrice->amount,
-            lineTotal:   $line->lineTotal->amount,
-            currency:    $currency,
+            sku: $line->sku,
+            quantity: $line->quantity->toFloat(),
+            unitPrice: $line->unitPrice->amount,
+            lineTotal: $line->lineTotal->amount,
+            currency: $currency,
         );
     }
 
@@ -43,14 +43,14 @@ final readonly class SaleItemPayload
     public function toArray(): array
     {
         return [
-            'line_id'      => $this->lineId,
-            'product_id'   => $this->productId,
+            'line_id' => $this->lineId,
+            'product_id' => $this->productId,
             'product_name' => $this->productName,
-            'sku'          => $this->sku,
-            'quantity'     => $this->quantity,
-            'unit_price'   => $this->unitPrice,
-            'line_total'   => $this->lineTotal,
-            'currency'     => $this->currency,
+            'sku' => $this->sku,
+            'quantity' => $this->quantity,
+            'unit_price' => $this->unitPrice,
+            'line_total' => $this->lineTotal,
+            'currency' => $this->currency,
         ];
     }
 }

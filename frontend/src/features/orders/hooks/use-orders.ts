@@ -498,7 +498,7 @@ export function useCustomerOrderStats(customerId: string | null) {
       const preferredGovernorate = Object.entries(govCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
       return {
         total: result.meta.total,
-        completed: items.filter((o) => o.status === 'completed').length,
+        completed: items.filter((o) => o.status === 'delivered').length,
         cancelled: items.filter((o) => o.status === 'cancelled').length,
         totalSpend,
         lastOrderDate: items[0]?.order_date ?? null,

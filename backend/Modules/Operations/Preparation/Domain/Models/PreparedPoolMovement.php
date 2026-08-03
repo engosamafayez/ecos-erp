@@ -12,18 +12,18 @@ use Modules\Operations\Preparation\Domain\Enums\PoolMovementType;
  * Append-only audit log for prepared_products_pool quantity changes.
  * ULID primary key — no UUID trait.
  *
- * @property string          $id
- * @property string          $company_id
- * @property string          $pool_entry_id
+ * @property string $id
+ * @property string $company_id
+ * @property string $pool_entry_id
  * @property PoolMovementType $movement_type
- * @property float           $quantity_moved
- * @property string|null     $from_wave_id
- * @property string|null     $to_wave_id
- * @property string|null     $vehicle_id
- * @property string          $actor_id
- * @property string          $actor_type
- * @property string|null     $notes
- * @property \Carbon\Carbon  $recorded_at
+ * @property float $quantity_moved
+ * @property string|null $from_wave_id
+ * @property string|null $to_wave_id
+ * @property string|null $vehicle_id
+ * @property string $actor_id
+ * @property string $actor_type
+ * @property string|null $notes
+ * @property \Carbon\Carbon $recorded_at
  */
 class PreparedPoolMovement extends Model
 {
@@ -55,9 +55,9 @@ class PreparedPoolMovement extends Model
     protected function casts(): array
     {
         return [
-            'movement_type'  => PoolMovementType::class,
+            'movement_type' => PoolMovementType::class,
             'quantity_moved' => 'float',
-            'recorded_at'    => 'datetime',
+            'recorded_at' => 'datetime',
         ];
     }
 

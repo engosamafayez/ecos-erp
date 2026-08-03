@@ -11,15 +11,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Immutable audit log entry for a single reservation state transition.
  *
- * @property string      $id
- * @property string      $order_id
+ * @property string $id
+ * @property string $order_id
  * @property string|null $from_status
- * @property string      $to_status
+ * @property string $to_status
  * @property string|null $reason
  * @property string|null $warehouse_id
  * @property string|null $vehicle_id
- * @property array|null  $meta
- * @property int|null    $actor_id
+ * @property array|null $meta
+ * @property int|null $actor_id
  * @property string|null $actor_type
  */
 final class OrderReservationAudit extends Model
@@ -61,15 +61,15 @@ final class OrderReservationAudit extends Model
         string $actorType = 'system',
     ): self {
         return self::create([
-            'order_id'     => $orderId,
-            'from_status'  => $fromStatus,
-            'to_status'    => $toStatus,
-            'reason'       => $reason,
+            'order_id' => $orderId,
+            'from_status' => $fromStatus,
+            'to_status' => $toStatus,
+            'reason' => $reason,
             'warehouse_id' => $warehouseId,
-            'vehicle_id'   => $vehicleId,
-            'meta'         => $meta,
-            'actor_id'     => $actorId,
-            'actor_type'   => $actorType,
+            'vehicle_id' => $vehicleId,
+            'meta' => $meta,
+            'actor_id' => $actorId,
+            'actor_type' => $actorType,
         ]);
     }
 }

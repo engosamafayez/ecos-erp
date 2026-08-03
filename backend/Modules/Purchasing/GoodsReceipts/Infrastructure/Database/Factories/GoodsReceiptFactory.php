@@ -22,18 +22,18 @@ final class GoodsReceiptFactory extends Factory
     public function definition(): array
     {
         return [
-            'receipt_number'    => 'GR-' . str_pad((string) $this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
+            'receipt_number' => 'GR-'.str_pad((string) $this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
             'purchase_order_id' => PurchaseOrder::factory()->approved(),
-            'warehouse_id'      => Warehouse::factory(),
-            'receipt_date'      => now()->toDateString(),
-            'status'            => GoodsReceiptStatus::Draft->value,
+            'warehouse_id' => Warehouse::factory(),
+            'receipt_date' => now()->toDateString(),
+            'status' => GoodsReceiptStatus::Draft->value,
         ];
     }
 
     public function posted(): self
     {
         return $this->state(fn (): array => [
-            'status'    => GoodsReceiptStatus::Posted->value,
+            'status' => GoodsReceiptStatus::Posted->value,
             'posted_at' => now(),
         ]);
     }

@@ -34,9 +34,9 @@ final class InventorySyncJob implements ShouldQueue
         private readonly float $stockQuantity,
         // ── Phase B: correlation and event metadata ───────────────────────────
         private readonly ?string $correlationId = null,
-        private readonly ?string $eventName     = null,
-        private readonly ?int    $eventVersion  = null,
-        private readonly ?string $warehouseId   = null,
+        private readonly ?string $eventName = null,
+        private readonly ?int $eventVersion = null,
+        private readonly ?string $warehouseId = null,
     ) {
         // Ensure this job only runs after the DB transaction that recorded the stock
         // movement has committed. Without this, the queue worker could read stale data.
@@ -48,20 +48,20 @@ final class InventorySyncJob implements ShouldQueue
         $startedAt = hrtime(true);
 
         $log = $logService->createLog(
-            channel:       $this->channel,
-            entityType:    SyncEntityType::Inventory,
-            direction:     SyncDirection::Outbound,
-            action:        'inventory.sync',
-            entityId:      $this->product->id,
-            status:        SyncStatus::Processing,
+            channel: $this->channel,
+            entityType: SyncEntityType::Inventory,
+            direction: SyncDirection::Outbound,
+            action: 'inventory.sync',
+            entityId: $this->product->id,
+            status: SyncStatus::Processing,
             requestPayload: [
-                'product_id'     => $this->product->id,
+                'product_id' => $this->product->id,
                 'stock_quantity' => $this->stockQuantity,
             ],
             correlationId: $this->correlationId,
-            eventName:     $this->eventName,
-            eventVersion:  $this->eventVersion,
-            warehouseId:   $this->warehouseId,
+            eventName: $this->eventName,
+            eventVersion: $this->eventVersion,
+            warehouseId: $this->warehouseId,
         );
 
         $mapping = ProductMapping::query()
@@ -72,6 +72,7 @@ final class InventorySyncJob implements ShouldQueue
         if ($mapping === null) {
             $logService->markFailed($log, 'No product mapping found for this channel.');
             $this->logStructured('failed', 'no_mapping', null, $startedAt);
+
             return;
         }
 
@@ -80,6 +81,7 @@ final class InventorySyncJob implements ShouldQueue
         if ($credential === null) {
             $logService->markFailed($log, 'No credentials configured for this channel.');
             $this->logStructured('failed', 'no_credentials', null, $startedAt);
+
             return;
         }
 
@@ -115,15 +117,15 @@ final class InventorySyncJob implements ShouldQueue
     {
         Log::channel('daily')->info('[InventorySyncJob] Completed', [
             'correlation_id' => $this->correlationId,
-            'event_name'     => $this->eventName,
-            'event_version'  => $this->eventVersion,
-            'channel'        => $this->channel->name,
-            'product'        => $this->product->id,
-            'warehouse'      => $this->warehouseId,
-            'direction'      => SyncDirection::Outbound->value,
-            'result'         => $result,
-            'error'          => $error,
-            'duration_ms'    => $durationMs ?? $this->elapsedMs($startedAt),
+            'event_name' => $this->eventName,
+            'event_version' => $this->eventVersion,
+            'channel' => $this->channel->name,
+            'product' => $this->product->id,
+            'warehouse' => $this->warehouseId,
+            'direction' => SyncDirection::Outbound->value,
+            'result' => $result,
+            'error' => $error,
+            'duration_ms' => $durationMs ?? $this->elapsedMs($startedAt),
         ]);
     }
 

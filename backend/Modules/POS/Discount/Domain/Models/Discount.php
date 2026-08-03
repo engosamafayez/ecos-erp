@@ -21,13 +21,14 @@ final class Discount extends Model
 {
     use HasUuids;
 
-    protected $table  = 'pos_discounts';
+    protected $table = 'pos_discounts';
+
     protected $guarded = [];
 
     protected $casts = [
-        'discount_value'   => 'array',
+        'discount_value' => 'array',
         'requires_approval' => 'boolean',
-        'auto_approved'    => 'boolean',
+        'auto_approved' => 'boolean',
     ];
 
     // ── Factory ───────────────────────────────────────────────────────────────
@@ -41,11 +42,11 @@ final class Discount extends Model
      * Discounts between the cashier limit and supervisor limit remain Pending.
      */
     public static function request(
-        string               $cashierId,
-        DiscountScope        $scope,
-        DiscountValue        $value,
+        string $cashierId,
+        DiscountScope $scope,
+        DiscountValue $value,
         ManualDiscountPolicy $policy,
-        ?string              $notes = null,
+        ?string $notes = null,
     ): self {
         if (trim($cashierId) === '') {
             throw InvalidDiscountException::emptyCashierId();
@@ -55,36 +56,36 @@ final class Discount extends Model
 
         $requiresApproval = $policy->requiresApproval($value);
 
-        $discount = new self();
-        $discount->cashier_id        = $cashierId;
-        $discount->scope             = $scope->value;
-        $discount->discount_type     = $value->type->value;
-        $discount->discount_value    = $value->toArray();
-        $discount->notes             = $notes;
+        $discount = new self;
+        $discount->cashier_id = $cashierId;
+        $discount->scope = $scope->value;
+        $discount->discount_type = $value->type->value;
+        $discount->discount_value = $value->toArray();
+        $discount->notes = $notes;
         $discount->requires_approval = $requiresApproval;
-        $discount->auto_approved     = !$requiresApproval;
-        $discount->status            = $requiresApproval
+        $discount->auto_approved = ! $requiresApproval;
+        $discount->status = $requiresApproval
             ? DiscountStatus::Pending->value
             : DiscountStatus::Approved->value;
-        $discount->supervisor_id     = null;
-        $discount->approved_at       = $requiresApproval ? null : now();
-        $discount->rejected_at       = null;
-        $discount->rejection_reason  = null;
+        $discount->supervisor_id = null;
+        $discount->approved_at = $requiresApproval ? null : now();
+        $discount->rejected_at = null;
+        $discount->rejection_reason = null;
 
         $discount->dispatchDomainEvent(DiscountRequested::now(
-            discountId:       $discount->id ?? '',
-            cashierId:        $cashierId,
-            scope:            $scope->value,
-            discountType:     $value->type->value,
-            rawValue:         $value->rawValue,
-            currency:         $value->currency,
+            discountId: $discount->id ?? '',
+            cashierId: $cashierId,
+            scope: $scope->value,
+            discountType: $value->type->value,
+            rawValue: $value->rawValue,
+            currency: $value->currency,
             requiresApproval: $requiresApproval,
         ));
 
-        if (!$requiresApproval) {
+        if (! $requiresApproval) {
             $discount->dispatchDomainEvent(DiscountApproved::now(
-                discountId:   $discount->id ?? '',
-                cashierId:    $cashierId,
+                discountId: $discount->id ?? '',
+                cashierId: $cashierId,
                 supervisorId: null,
                 autoApproved: true,
             ));
@@ -100,14 +101,14 @@ final class Discount extends Model
         $this->guardPending();
         $policy->validateApprover($supervisorId);
 
-        $this->supervisor_id  = $supervisorId;
-        $this->status         = DiscountStatus::Approved->value;
-        $this->auto_approved  = false;
-        $this->approved_at    = now();
+        $this->supervisor_id = $supervisorId;
+        $this->status = DiscountStatus::Approved->value;
+        $this->auto_approved = false;
+        $this->approved_at = now();
 
         $this->dispatchDomainEvent(DiscountApproved::now(
-            discountId:   (string) $this->id,
-            cashierId:    (string) $this->cashier_id,
+            discountId: (string) $this->id,
+            cashierId: (string) $this->cashier_id,
             supervisorId: $supervisorId,
             autoApproved: false,
         ));
@@ -122,16 +123,16 @@ final class Discount extends Model
             throw InvalidDiscountException::rejectionReasonRequired();
         }
 
-        $this->supervisor_id     = $supervisorId;
-        $this->status            = DiscountStatus::Rejected->value;
-        $this->rejected_at       = now();
-        $this->rejection_reason  = $reason;
+        $this->supervisor_id = $supervisorId;
+        $this->status = DiscountStatus::Rejected->value;
+        $this->rejected_at = now();
+        $this->rejection_reason = $reason;
 
         $this->dispatchDomainEvent(DiscountRejected::now(
-            discountId:   (string) $this->id,
-            cashierId:    (string) $this->cashier_id,
+            discountId: (string) $this->id,
+            cashierId: (string) $this->cashier_id,
             supervisorId: $supervisorId,
-            reason:       $reason,
+            reason: $reason,
         ));
     }
 
@@ -143,9 +144,10 @@ final class Discount extends Model
      */
     public function computeAmount(Money $baseAmount): Money
     {
-        if (!$this->isApproved()) {
+        if (! $this->isApproved()) {
             throw InvalidDiscountException::notApproved((string) $this->id);
         }
+
         return $this->getDiscountValue()->apply($baseAmount);
     }
 
@@ -164,18 +166,36 @@ final class Discount extends Model
         return DiscountStatus::from($this->status);
     }
 
-    public function isPending(): bool  { return $this->getStatus() === DiscountStatus::Pending; }
-    public function isApproved(): bool { return $this->getStatus() === DiscountStatus::Approved; }
-    public function isRejected(): bool { return $this->getStatus() === DiscountStatus::Rejected; }
+    public function isPending(): bool
+    {
+        return $this->getStatus() === DiscountStatus::Pending;
+    }
 
-    public function isEffective(): bool    { return $this->isApproved(); }
-    public function wasAutoApproved(): bool { return (bool) $this->auto_approved; }
+    public function isApproved(): bool
+    {
+        return $this->getStatus() === DiscountStatus::Approved;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->getStatus() === DiscountStatus::Rejected;
+    }
+
+    public function isEffective(): bool
+    {
+        return $this->isApproved();
+    }
+
+    public function wasAutoApproved(): bool
+    {
+        return (bool) $this->auto_approved;
+    }
 
     // ── Guards ────────────────────────────────────────────────────────────────
 
     private function guardPending(): void
     {
-        if (!$this->isPending()) {
+        if (! $this->isPending()) {
             throw InvalidDiscountException::notPending((string) $this->id, $this->getStatus());
         }
     }
@@ -192,8 +212,9 @@ final class Discount extends Model
 
     public function pullDomainEvents(): array
     {
-        $events             = $this->domainEvents;
+        $events = $this->domainEvents;
         $this->domainEvents = [];
+
         return $events;
     }
 }

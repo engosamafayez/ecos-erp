@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Operations\DemandAnalysis\Application\Services;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
@@ -13,6 +15,7 @@ use Modules\Operations\DemandAnalysis\Domain\Enums\InventoryStatus;
 use Modules\Operations\DemandAnalysis\Events\DemandAnalysisCompleted;
 use Modules\Operations\DemandAnalysis\Events\DemandAnalysisFailed;
 use Modules\Operations\DemandAnalysis\Events\DemandAnalysisStarted;
+use Throwable;
 
 /**
  * Generates the Daily Demand Matrix.
@@ -25,30 +28,30 @@ final class DemandAnalysisService
 {
     /** Orders in these statuses require operational planning. */
     private const OPERATIONAL_STATUSES = [
-        OrderStatus::Pending->value,
-        OrderStatus::Processing->value,
+        OrderStatus::NewOrder->value,
+        OrderStatus::InProgress->value,
     ];
 
     public function analyze(?string $date = null): DemandAnalysisResult
     {
         $operationalDay = $date ?? now()->toDateString();
-        $correlationId  = Str::uuid()->toString();
-        $startedAt      = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $correlationId = Str::uuid()->toString();
+        $startedAt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 
         event(new DemandAnalysisStarted($operationalDay, $correlationId, $startedAt));
 
         try {
-            $rows         = $this->fetchDemandRows();
-            $totalOrders  = $this->countOperationalOrders();
-            $demandLines  = $rows->map(fn (object $row) => $this->buildDemandLine($row))->all();
+            $rows = $this->fetchDemandRows();
+            $totalOrders = $this->countOperationalOrders();
+            $demandLines = $rows->map(fn (object $row) => $this->buildDemandLine($row))->all();
 
             $result = new DemandAnalysisResult(
                 operationalDay: $operationalDay,
-                generatedAt:    new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
-                totalOrders:    $totalOrders,
-                totalProducts:  count($demandLines),
-                totalSkus:      count($demandLines),
-                demandLines:    $demandLines,
+                generatedAt: new DateTimeImmutable('now', new DateTimeZone('UTC')),
+                totalOrders: $totalOrders,
+                totalProducts: count($demandLines),
+                totalSkus: count($demandLines),
+                demandLines: $demandLines,
             );
 
             event(new DemandAnalysisCompleted(
@@ -56,16 +59,16 @@ final class DemandAnalysisService
                 $correlationId,
                 count($demandLines),
                 $totalOrders,
-                new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
+                new DateTimeImmutable('now', new DateTimeZone('UTC')),
             ));
 
             return $result;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             event(new DemandAnalysisFailed(
                 $operationalDay,
                 $correlationId,
                 $e->getMessage(),
-                new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
+                new DateTimeImmutable('now', new DateTimeZone('UTC')),
             ));
 
             throw $e;
@@ -133,29 +136,29 @@ final class DemandAnalysisService
 
     private function buildDemandLine(object $row): DemandLine
     {
-        $orderedQty  = (float) $row->ordered_qty;
+        $orderedQty = (float) $row->ordered_qty;
         $reservedQty = $row->reserved_qty !== null ? (float) $row->reserved_qty : 0.0;
         $availableQty = $row->on_hand_qty !== null ? (float) $row->on_hand_qty : null;
 
         $inventoryStatus = match (true) {
-            $availableQty === null   => InventoryStatus::Unknown,
-            $availableQty <= 0.0    => InventoryStatus::OutOfStock,
+            $availableQty === null => InventoryStatus::Unknown,
+            $availableQty <= 0.0 => InventoryStatus::OutOfStock,
             $availableQty < $orderedQty => InventoryStatus::Shortage,
-            default                  => InventoryStatus::Ready,
+            default => InventoryStatus::Ready,
         };
 
         return new DemandLine(
-            productId:            $row->product_id,
-            sku:                  $row->sku,
-            productName:          $row->product_name,
-            orderedQty:           $orderedQty,
-            reservedQty:          $reservedQty,
-            availableQty:         $availableQty,
-            requiredQty:          max(0.0, $orderedQty - $reservedQty),
-            affectedOrdersCount:  (int) $row->affected_orders_count,
+            productId: $row->product_id,
+            sku: $row->sku,
+            productName: $row->product_name,
+            orderedQty: $orderedQty,
+            reservedQty: $reservedQty,
+            availableQty: $availableQty,
+            requiredQty: max(0.0, $orderedQty - $reservedQty),
+            affectedOrdersCount: (int) $row->affected_orders_count,
             affectedChannelsCount: (int) $row->affected_channels_count,
-            warehouseCount:       (int) $row->warehouse_count,
-            inventoryStatus:      $inventoryStatus,
+            warehouseCount: (int) $row->warehouse_count,
+            inventoryStatus: $inventoryStatus,
         );
     }
 }

@@ -1,4 +1,5 @@
 import { Package, Plus, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 
@@ -15,19 +16,21 @@ export function ProductEmptyState({
   onImportProducts,
   onClearFilters,
 }: ProductEmptyStateProps) {
+  const { t } = useTranslation('products');
+
   if (hasFilters) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
           <Package className="size-8 text-muted-foreground" />
         </div>
-        <h3 className="mt-4 text-base font-semibold">No products match your filters</h3>
+        <h3 className="mt-4 text-base font-semibold">{t($ => $.emptyState.withFiltersTitle)}</h3>
         <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
-          Try adjusting or clearing your current filters to see more products.
+          {t($ => $.emptyState.withFiltersDescription)}
         </p>
         {onClearFilters ? (
           <Button variant="outline" size="sm" className="mt-4" onClick={onClearFilters}>
-            Clear filters
+            {t($ => $.emptyState.clearFilters)}
           </Button>
         ) : null}
       </div>
@@ -39,20 +42,19 @@ export function ProductEmptyState({
       <div className="flex size-20 items-center justify-center rounded-2xl bg-primary/10">
         <Package className="size-10 text-primary" />
       </div>
-      <h3 className="mt-5 text-lg font-semibold">No products yet</h3>
+      <h3 className="mt-5 text-lg font-semibold">{t($ => $.emptyState.noProductsTitle)}</h3>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-        Start building your product catalog. Create your first product manually or
-        import from a file.
+        {t($ => $.emptyState.noProductsDescription)}
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <Button onClick={onCreateProduct}>
           <Plus className="size-4" />
-          Create Product
+          {t($ => $.emptyState.createProduct)}
         </Button>
         {onImportProducts ? (
           <Button variant="outline" onClick={onImportProducts}>
             <Upload className="size-4" />
-            Import Products
+            {t($ => $.emptyState.importProducts)}
           </Button>
         ) : null}
       </div>

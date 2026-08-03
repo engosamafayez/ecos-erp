@@ -19,25 +19,25 @@ class MaterialCostHistoryResource extends JsonResource
         $product = $this->product;
 
         return [
-            'id'      => $this->id,
+            'id' => $this->id,
             'product' => [
-                'id'   => $product?->id,
+                'id' => $product?->id,
                 'name' => $product?->name,
-                'sku'  => $product?->sku,
+                'sku' => $product?->sku,
             ],
-            'previous_cost'        => $this->previous_cost,
-            'new_cost'             => $this->new_cost,
-            'difference'           => $this->difference,
-            'change_pct'           => $this->change_pct,
-            'source'               => $this->source?->value ?? $this->source,
-            'goods_receipt_id'     => $this->goods_receipt_id,
-            'updated_by'           => $this->updated_by,
-            'reason'               => $this->reason,
-            'affected_recipe_count'=> count((array) ($this->affected_recipe_ids ?? [])),
-            'affected_product_count'=> count((array) ($this->affected_product_ids ?? [])),
-            'affected_recipe_ids'  => $this->affected_recipe_ids ?? [],
+            'previous_cost' => $this->previous_cost,
+            'new_cost' => $this->new_cost,
+            'difference' => $this->difference,
+            'change_pct' => $this->change_pct,
+            'source' => $this->source?->value ?? $this->source,
+            'goods_receipt_id' => $this->goods_receipt_id,
+            'updated_by' => $this->updated_by,
+            'reason' => $this->reason,
+            'affected_recipe_count' => count((array) ($this->affected_recipe_ids ?? [])),
+            'affected_product_count' => count((array) ($this->affected_product_ids ?? [])),
+            'affected_recipe_ids' => $this->affected_recipe_ids ?? [],
             'affected_product_ids' => $this->affected_product_ids ?? [],
-            'occurred_at'          => $this->occurred_at?->toIso8601String(),
+            'occurred_at' => $this->occurred_at?->toIso8601String(),
         ];
     }
 }

@@ -41,17 +41,17 @@ final class PreparationPermissionsSeeder extends Seeder
 
         foreach (self::PERMISSIONS as $perm) {
             DB::table('permissions')->insertOrIgnore([
-                'id'          => Str::uuid()->toString(),
-                'name'        => $perm['name'],
-                'module'      => $perm['module'],
-                'resource'    => $perm['resource'],
-                'action'      => $perm['action'],
+                'id' => Str::uuid()->toString(),
+                'name' => $perm['name'],
+                'module' => $perm['module'],
+                'resource' => $perm['resource'],
+                'action' => $perm['action'],
                 'description' => "Preparation OS: {$perm['action']} {$perm['resource']}",
-                'created_at'  => $now,
-                'updated_at'  => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
         }
 
-        $this->command?->info('Preparation OS permissions seeded (' . count(self::PERMISSIONS) . ' permissions).');
+        $this->command?->info('Preparation OS permissions seeded ('.count(self::PERMISSIONS).' permissions).');
     }
 }

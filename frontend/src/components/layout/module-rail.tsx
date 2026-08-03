@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
-import { APP_MODULES, type AppModule } from '@/config/module-navigation';
+import { type AppModule } from '@/config/module-navigation';
+import { useNavigation } from '@/features/authorization';
 
 type ModuleRailProps = {
   activeModule: AppModule | undefined;
@@ -11,16 +12,19 @@ type ModuleRailProps = {
 
 export function ModuleRail({ activeModule, className }: ModuleRailProps) {
   const { t } = useTranslation('common');
+  // Dynamic sidebar (TASK-IAM-005): the rail builds itself from the user's effective
+  // navigation + feature flags instead of rendering every module unconditionally.
+  const { modules } = useNavigation();
   return (
     <nav
-      aria-label="Module navigation"
+      aria-label={t($ => $.nav.moduleNavigation)}
       className={cn(
         'w-[72px] shrink-0 flex-col border-e bg-sidebar',
         className,
       )}
     >
       <div className="flex flex-col items-center gap-0.5 overflow-y-auto py-2 px-1.5">
-        {APP_MODULES.map((mod) => {
+        {modules.map((mod) => {
           const Icon = mod.icon;
           const isActive = activeModule?.id === mod.id;
 
@@ -28,8 +32,8 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
             <Link
               key={mod.id}
               to={mod.defaultPath}
-              title={t(`nav.groups.${mod.id}`, { defaultValue: mod.label })}
-              aria-label={t(`nav.groups.${mod.id}`, { defaultValue: mod.label })}
+              title={t($ => $.nav.groups[mod.id], { defaultValue: mod.label })}
+              aria-label={t($ => $.nav.groups[mod.id], { defaultValue: mod.label })}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'group flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 transition-colors',
@@ -49,7 +53,7 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
                 <Icon className="size-[18px]" aria-hidden />
               </span>
               <span className="w-full truncate text-center text-[10px] font-medium leading-tight">
-                {t(`nav.groups.${mod.id}`, { defaultValue: mod.railLabel })}
+                {t($ => $.nav.groups[mod.id], { defaultValue: mod.railLabel })}
               </span>
             </Link>
           );

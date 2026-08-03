@@ -19,16 +19,16 @@ use Modules\Purchasing\PurchaseOrders\Domain\Models\PurchaseOrderLine;
  * @property string $goods_receipt_id
  * @property string $purchase_order_line_id
  * @property string $product_id
- * @property string|null $uom_id_snapshot      UUID of the product's unit at receipt time (immutable)
- * @property string|null $uom_name_snapshot     Unit name at receipt time (immutable)
- * @property string|null $uom_symbol_snapshot   Unit symbol at receipt time (immutable)
+ * @property string|null $uom_id_snapshot UUID of the product's unit at receipt time (immutable)
+ * @property string|null $uom_name_snapshot Unit name at receipt time (immutable)
+ * @property string|null $uom_symbol_snapshot Unit symbol at receipt time (immutable)
  * @property numeric-string $ordered_quantity
- * @property numeric-string $received_quantity         Legacy field; new code uses net_received_quantity
+ * @property numeric-string $received_quantity Legacy field; new code uses net_received_quantity
  * @property numeric-string|null $gross_received_quantity
- * @property numeric-string|null $net_received_quantity  Authoritative quantity used for stock movements
- * @property numeric-string|null $variance_quantity       net - ordered
+ * @property numeric-string|null $net_received_quantity Authoritative quantity used for stock movements
+ * @property numeric-string|null $variance_quantity net - ordered
  * @property numeric-string $unit_price
- * @property numeric-string|null $landed_unit_cost       Computed on post
+ * @property numeric-string|null $landed_unit_cost Computed on post
  * @property string|null $weight_photo_path
  * @property string|null $notes
  */
@@ -73,13 +73,13 @@ class GoodsReceiptLine extends Model
     protected function casts(): array
     {
         return [
-            'ordered_quantity'        => 'decimal:4',
-            'received_quantity'       => 'decimal:4',
+            'ordered_quantity' => 'decimal:4',
+            'received_quantity' => 'decimal:4',
             'gross_received_quantity' => 'decimal:4',
-            'net_received_quantity'   => 'decimal:4',
-            'variance_quantity'       => 'decimal:4',
-            'unit_price'              => 'decimal:2',
-            'landed_unit_cost'        => 'decimal:4',
+            'net_received_quantity' => 'decimal:4',
+            'variance_quantity' => 'decimal:4',
+            'unit_price' => 'decimal:2',
+            'landed_unit_cost' => 'decimal:4',
         ];
     }
 

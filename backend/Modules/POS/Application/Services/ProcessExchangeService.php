@@ -24,17 +24,17 @@ use Modules\POS\Receipt\Domain\ValueObjects\ReceiptLineItem;
 use Modules\POS\Receipt\Domain\ValueObjects\ReceiptPayment;
 use Modules\POS\Receipt\Domain\ValueObjects\ReceiptTotals;
 use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
-use Modules\POS\Shared\Domain\ValueObjects\Money;
+use RuntimeException;
 
 final class ProcessExchangeService
 {
     public function __construct(
-        private readonly SaleRepositoryInterface              $saleRepo,
-        private readonly ExchangeRepositoryInterface          $exchangeRepo,
-        private readonly ReceiptRepositoryInterface           $receiptRepo,
-        private readonly ReceiptNumberingStrategyInterface    $receiptNumbering,
-        private readonly DomainEventPublisherInterface        $publisher,
-        private readonly ?ExchangeNumberingStrategyInterface  $exchangeNumbering = null,
+        private readonly SaleRepositoryInterface $saleRepo,
+        private readonly ExchangeRepositoryInterface $exchangeRepo,
+        private readonly ReceiptRepositoryInterface $receiptRepo,
+        private readonly ReceiptNumberingStrategyInterface $receiptNumbering,
+        private readonly DomainEventPublisherInterface $publisher,
+        private readonly ?ExchangeNumberingStrategyInterface $exchangeNumbering = null,
     ) {}
 
     public function execute(ProcessExchangeCommand $command): ProcessExchangeResult
@@ -45,49 +45,49 @@ final class ProcessExchangeService
             throw SaleNotFoundException::withId($command->originalSaleId);
         }
 
-        $exchange      = null;
-        $receipt       = null;
+        $exchange = null;
+        $receipt = null;
         $receiptNumber = null;
 
         $exchangeNumber = null;
 
         DB::transaction(function () use ($command, $sale, &$exchange, &$receipt, &$receiptNumber, &$exchangeNumber) {
-            $now            = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-            $receiptNumber  = $this->receiptNumbering->next($command->terminalId, $now);
+            $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+            $receiptNumber = $this->receiptNumbering->next($command->terminalId, $now);
             $exchangeNumber = $command->exchangeNumber
                 ?? ($this->exchangeNumbering?->next($command->terminalId, $now)
-                    ?? throw new \RuntimeException('No exchange number: provide via command or inject ExchangeNumberingStrategyInterface'));
+                    ?? throw new RuntimeException('No exchange number: provide via command or inject ExchangeNumberingStrategyInterface'));
             $returnedLines = array_map(
-                fn(array $line) => ExchangeLine::fromArray($line),
+                fn (array $line) => ExchangeLine::fromArray($line),
                 $command->returnedLines,
             );
 
             $replacementLines = array_map(
-                fn(array $line) => ExchangeLine::fromArray($line),
+                fn (array $line) => ExchangeLine::fromArray($line),
                 $command->replacementLines,
             );
 
             $exchange = Exchange::initiate(
-                exchangeNumber:   $exchangeNumber,
-                originalSaleId:   $command->originalSaleId,
+                exchangeNumber: $exchangeNumber,
+                originalSaleId: $command->originalSaleId,
                 originalSaleNumber: $command->originalSaleNumber,
-                terminalId:       $command->terminalId,
-                sessionId:        $command->sessionId,
-                shiftId:          $command->shiftId,
-                cashierId:        $command->cashierId,
-                customerId:       $command->customerId,
-                currency:         $command->currency,
-                returnedLines:    $returnedLines,
+                terminalId: $command->terminalId,
+                sessionId: $command->sessionId,
+                shiftId: $command->shiftId,
+                cashierId: $command->cashierId,
+                customerId: $command->customerId,
+                currency: $command->currency,
+                returnedLines: $returnedLines,
                 replacementLines: $replacementLines,
-                reason:           ExchangeReason::from($command->reason),
-                notes:            $command->notes,
+                reason: ExchangeReason::from($command->reason),
+                notes: $command->notes,
             );
 
             $exchange->confirm();
             $exchange->complete();
             $this->exchangeRepo->save($exchange);
 
-            $returnedTotal    = $exchange->getReturnedTotal();
+            $returnedTotal = $exchange->getReturnedTotal();
             $replacementTotal = $exchange->getReplacementTotal();
 
             if (bccomp($returnedTotal->amount, $sale->getTotal()->amount, 2) >= 0) {
@@ -96,46 +96,46 @@ final class ProcessExchangeService
                 $sale->markPartiallyRefunded();
             }
             $this->saleRepo->save($sale);
-            $valueDiff         = $exchange->getValueDifference();
+            $valueDiff = $exchange->getValueDifference();
 
             $receiptLineItems = [];
 
             foreach ($returnedLines as $i => $rl) {
                 $receiptLineItems[] = ReceiptLineItem::of(
-                    productId:       $rl->productId,
-                    productName:     '(Return) ' . $rl->productName,
-                    sku:             $rl->sku,
-                    quantityValue:   $rl->quantity->value,
+                    productId: $rl->productId,
+                    productName: '(Return) '.$rl->productName,
+                    sku: $rl->sku,
+                    quantityValue: $rl->quantity->value,
                     unitPriceAmount: $rl->unitPrice->amount,
                     lineTotalAmount: $rl->lineTotal->amount,
-                    currency:        $rl->lineTotal->currency,
+                    currency: $rl->lineTotal->currency,
                 );
             }
 
             foreach ($replacementLines as $i => $rl) {
                 $receiptLineItems[] = ReceiptLineItem::of(
-                    productId:       $rl->productId,
-                    productName:     $rl->productName,
-                    sku:             $rl->sku,
-                    quantityValue:   $rl->quantity->value,
+                    productId: $rl->productId,
+                    productName: $rl->productName,
+                    sku: $rl->sku,
+                    quantityValue: $rl->quantity->value,
                     unitPriceAmount: $rl->unitPrice->amount,
                     lineTotalAmount: $rl->lineTotal->amount,
-                    currency:        $rl->lineTotal->currency,
+                    currency: $rl->lineTotal->currency,
                 );
             }
 
-            $netAmount    = $valueDiff->absolute();
-            $tenderedAmt  = $valueDiff->isNegative() ? $netAmount->amount : '0.00';
-            $changeAmt    = $valueDiff->isPositive() ? $netAmount->amount : '0.00';
+            $netAmount = $valueDiff->absolute();
+            $tenderedAmt = $valueDiff->isNegative() ? $netAmount->amount : '0.00';
+            $changeAmt = $valueDiff->isPositive() ? $netAmount->amount : '0.00';
 
             $receiptTotals = ReceiptTotals::of(
                 subtotalAmount: $replacementTotal->amount,
                 discountAmount: '0.00',
-                taxAmount:      '0.00',
-                totalAmount:    $replacementTotal->amount,
+                taxAmount: '0.00',
+                totalAmount: $replacementTotal->amount,
                 tenderedAmount: $tenderedAmt,
-                changeAmount:   $changeAmt,
-                currency:       $command->currency,
+                changeAmount: $changeAmt,
+                currency: $command->currency,
             );
 
             $receiptPayments = [
@@ -143,22 +143,22 @@ final class ProcessExchangeService
             ];
 
             $receipt = Receipt::issue(
-                receiptNumber:             $receiptNumber,
-                type:                      ReceiptType::Exchange,
-                originalTransactionId:     (string) $exchange->id,
+                receiptNumber: $receiptNumber,
+                type: ReceiptType::Exchange,
+                originalTransactionId: (string) $exchange->id,
                 originalTransactionNumber: $exchangeNumber,
-                terminalId:                $command->terminalId,
-                sessionId:                 $command->sessionId,
-                shiftId:                   $command->shiftId,
-                cashierId:                 $command->cashierId,
-                cashierName:               $command->cashierName,
-                customerId:                $command->customerId,
-                customerName:              $command->customerName,
-                currency:                  $command->currency,
-                lineItems:                 $receiptLineItems,
-                totals:                    $receiptTotals,
-                payments:                  $receiptPayments,
-                issuedAt:                  new DateTimeImmutable('now', new DateTimeZone('UTC')),
+                terminalId: $command->terminalId,
+                sessionId: $command->sessionId,
+                shiftId: $command->shiftId,
+                cashierId: $command->cashierId,
+                cashierName: $command->cashierName,
+                customerId: $command->customerId,
+                customerName: $command->customerName,
+                currency: $command->currency,
+                lineItems: $receiptLineItems,
+                totals: $receiptTotals,
+                payments: $receiptPayments,
+                issuedAt: new DateTimeImmutable('now', new DateTimeZone('UTC')),
             );
 
             $this->receiptRepo->save($receipt);
@@ -171,10 +171,10 @@ final class ProcessExchangeService
         ));
 
         return new ProcessExchangeResult(
-            exchangeId:     (string) $exchange->id,
+            exchangeId: (string) $exchange->id,
             exchangeNumber: $exchangeNumber,
-            receiptId:      (string) $receipt->id,
-            receiptNumber:  $receiptNumber,
+            receiptId: (string) $receipt->id,
+            receiptNumber: $receiptNumber,
         );
     }
 }

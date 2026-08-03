@@ -27,23 +27,23 @@ final class DemandAnalysisService
 
     public function analyze(string $productId, ?string $warehouseId = null): DemandAnalysisDTO
     {
-        $inventoryHealth         = $this->inventoryHealth($productId, $warehouseId);
-        $demandIntelligence      = $this->demandIntelligence($productId, $warehouseId);
-        $coverageIntelligence    = $this->coverageIntelligence($inventoryHealth, $demandIntelligence);
+        $inventoryHealth = $this->inventoryHealth($productId, $warehouseId);
+        $demandIntelligence = $this->demandIntelligence($productId, $warehouseId);
+        $coverageIntelligence = $this->coverageIntelligence($inventoryHealth, $demandIntelligence);
         $procurementIntelligence = $this->procurementIntelligence($productId);
-        $businessImpact          = $this->businessImpact($productId, $inventoryHealth, $demandIntelligence);
-        $recommendations         = $this->recommendations($inventoryHealth, $demandIntelligence, $coverageIntelligence, $procurementIntelligence);
-        $timeline                = $this->timeline($productId, $warehouseId);
+        $businessImpact = $this->businessImpact($productId, $inventoryHealth, $demandIntelligence);
+        $recommendations = $this->recommendations($inventoryHealth, $demandIntelligence, $coverageIntelligence, $procurementIntelligence);
+        $timeline = $this->timeline($productId, $warehouseId);
 
         return new DemandAnalysisDTO(
-            product_id:               $productId,
-            inventory_health:         $inventoryHealth,
-            demand_intelligence:      $demandIntelligence,
-            coverage_intelligence:    $coverageIntelligence,
+            product_id: $productId,
+            inventory_health: $inventoryHealth,
+            demand_intelligence: $demandIntelligence,
+            coverage_intelligence: $coverageIntelligence,
             procurement_intelligence: $procurementIntelligence,
-            business_impact:          $businessImpact,
-            recommendations:          $recommendations,
-            timeline:                 $timeline,
+            business_impact: $businessImpact,
+            recommendations: $recommendations,
+            timeline: $timeline,
         );
     }
 
@@ -63,7 +63,7 @@ final class DemandAnalysisService
             DB::raw('COALESCE(SUM(reserved_qty), 0) as reserved'),
         )->first();
 
-        $onHand   = (float) ($row?->on_hand ?? 0);
+        $onHand = (float) ($row?->on_hand ?? 0);
         $reserved = (float) ($row?->reserved ?? 0);
         $available = max(0.0, $onHand - $reserved);
 
@@ -71,15 +71,15 @@ final class DemandAnalysisService
         $incoming = $this->incomingQty($productId, $warehouseId);
 
         return [
-            'on_hand'    => round($onHand, 4),
-            'reserved'   => round($reserved, 4),
-            'available'  => round($available, 4),
-            'incoming'   => round($incoming, 4),
-            'in_transfer'  => 0.0,   // reserved for future transfer tracking
-            'damaged'      => null,  // requires dedicated stock status field
-            'expired'      => null,  // requires expiry date tracking
-            'near_expiry'  => null,  // requires expiry date tracking
-            'quarantine'   => null,  // requires quarantine status tracking
+            'on_hand' => round($onHand, 4),
+            'reserved' => round($reserved, 4),
+            'available' => round($available, 4),
+            'incoming' => round($incoming, 4),
+            'in_transfer' => 0.0,   // reserved for future transfer tracking
+            'damaged' => null,  // requires dedicated stock status field
+            'expired' => null,  // requires expiry date tracking
+            'near_expiry' => null,  // requires expiry date tracking
+            'quarantine' => null,  // requires quarantine status tracking
         ];
     }
 
@@ -109,21 +109,24 @@ final class DemandAnalysisService
             $base->where('warehouse_id', $warehouseId);
         }
 
-        $sum30   = (float) (clone $base)->where('movement_date', '>=', now()->subDays(30))->sum(DB::raw('ABS(quantity)'));
-        $sum7    = (float) (clone $base)->where('movement_date', '>=', now()->subDays(7))->sum(DB::raw('ABS(quantity)'));
-        $sum90   = (float) (clone $base)->where('movement_date', '>=', now()->subDays(90))->sum(DB::raw('ABS(quantity)'));
+        $sum30 = (float) (clone $base)->where('movement_date', '>=', now()->subDays(30))->sum(DB::raw('ABS(quantity)'));
+        $sum7 = (float) (clone $base)->where('movement_date', '>=', now()->subDays(7))->sum(DB::raw('ABS(quantity)'));
+        $sum90 = (float) (clone $base)->where('movement_date', '>=', now()->subDays(90))->sum(DB::raw('ABS(quantity)'));
 
-        $dailyAvg   = $sum30 / 30;
-        $weeklyAvg  = $dailyAvg * 7;
+        $dailyAvg = $sum30 / 30;
+        $weeklyAvg = $dailyAvg * 7;
         $monthlyAvg = $dailyAvg * 30;
-        $rolling90  = $sum90 / 90;
+        $rolling90 = $sum90 / 90;
 
         // Trend: compare last 7-day daily rate vs last 30-day daily rate
         $last7Avg = $sum7 / 7;
         $trend = 'normal';
         if ($dailyAvg > 0) {
-            if ($last7Avg > $dailyAvg * 1.15) $trend = 'higher';
-            elseif ($last7Avg < $dailyAvg * 0.85) $trend = 'lower';
+            if ($last7Avg > $dailyAvg * 1.15) {
+                $trend = 'higher';
+            } elseif ($last7Avg < $dailyAvg * 0.85) {
+                $trend = 'lower';
+            }
         }
 
         // Volatility: standard deviation of daily consumption over last 30 days
@@ -137,14 +140,14 @@ final class DemandAnalysisService
         $peak = (float) ($peakRow?->peak ?? 0);
 
         return [
-            'daily_avg'      => round($dailyAvg, 4),
-            'weekly_avg'     => round($weeklyAvg, 4),
-            'monthly_avg'    => round($monthlyAvg, 4),
-            'rolling_90d_avg'=> round($rolling90, 4),
-            'trend'          => $trend,
-            'volatility'     => $volatility !== null ? round($volatility, 4) : null,
+            'daily_avg' => round($dailyAvg, 4),
+            'weekly_avg' => round($weeklyAvg, 4),
+            'monthly_avg' => round($monthlyAvg, 4),
+            'rolling_90d_avg' => round($rolling90, 4),
+            'trend' => $trend,
+            'volatility' => $volatility !== null ? round($volatility, 4) : null,
             'peak_consumption' => round($peak, 4),
-            'seasonality'    => null, // future extension point
+            'seasonality' => null, // future extension point
         ];
     }
 
@@ -168,7 +171,7 @@ final class DemandAnalysisService
         }
 
         $values = $rows->pluck('daily_qty')->map(fn ($v) => (float) $v)->toArray();
-        $mean   = array_sum($values) / count($values);
+        $mean = array_sum($values) / count($values);
         $variance = array_sum(array_map(fn ($v) => ($v - $mean) ** 2, $values)) / count($values);
 
         return sqrt($variance);
@@ -181,22 +184,22 @@ final class DemandAnalysisService
     private function coverageIntelligence(array $inventory, array $demand): array
     {
         $available = $inventory['available'];
-        $daily     = $demand['daily_avg'];
+        $daily = $demand['daily_avg'];
 
         $daysRemaining = null;
-        $stockoutDate  = null;
+        $stockoutDate = null;
         $risk = 'unknown';
 
         if ($daily > 0) {
             $daysRemaining = $available / $daily;
-            $stockoutDate  = now()->addDays((int) $daysRemaining)->toDateString();
+            $stockoutDate = now()->addDays((int) $daysRemaining)->toDateString();
 
             $risk = match (true) {
-                $daysRemaining <= 0  => 'critical',
-                $daysRemaining <= 3  => 'critical',
-                $daysRemaining <= 7  => 'high',
+                $daysRemaining <= 0 => 'critical',
+                $daysRemaining <= 3 => 'critical',
+                $daysRemaining <= 7 => 'high',
                 $daysRemaining <= 14 => 'medium',
-                default              => 'low',
+                default => 'low',
             };
         }
 
@@ -209,15 +212,15 @@ final class DemandAnalysisService
         }
 
         return [
-            'current_coverage_days'    => $daysRemaining !== null ? round($daysRemaining, 1) : null,
-            'risk'                     => $risk,
-            'stockout_date'            => $stockoutDate,
-            'suggested_purchase_date'  => $suggestedPurchaseDate,
+            'current_coverage_days' => $daysRemaining !== null ? round($daysRemaining, 1) : null,
+            'risk' => $risk,
+            'stockout_date' => $stockoutDate,
+            'suggested_purchase_date' => $suggestedPurchaseDate,
             // Requires separate stock-level config table — returning null until implemented
-            'safety_stock'   => null,
-            'min_stock'      => null,
-            'max_stock'      => null,
-            'reorder_point'  => null,
+            'safety_stock' => null,
+            'min_stock' => null,
+            'max_stock' => null,
+            'reorder_point' => null,
             'coverage_trend' => $demand['trend'],
         ];
     }
@@ -228,27 +231,27 @@ final class DemandAnalysisService
 
     private function procurementIntelligence(string $productId): array
     {
-        $lastPurchase    = $this->lastPurchaseData($productId);
-        $altSuppliers    = $this->alternativeSuppliers($productId);
-        $costStats       = $this->costStats($productId);
-        $purchaseFreq    = $this->purchaseFrequency($productId);
-        $priceTrend      = $this->priceTrend($productId);
+        $lastPurchase = $this->lastPurchaseData($productId);
+        $altSuppliers = $this->alternativeSuppliers($productId);
+        $costStats = $this->costStats($productId);
+        $purchaseFreq = $this->purchaseFrequency($productId);
+        $priceTrend = $this->priceTrend($productId);
 
         $preferredSupplier = count($altSuppliers) > 0 ? $altSuppliers[0] : null;
 
         return [
-            'preferred_supplier'    => $preferredSupplier,
-            'last_purchase'         => $lastPurchase,
+            'preferred_supplier' => $preferredSupplier,
+            'last_purchase' => $lastPurchase,
             'alternative_suppliers' => $altSuppliers,
-            'last_cost'             => $lastPurchase['last_price'] ?? null,
-            'avg_cost'              => $costStats['avg'],
-            'lowest_cost'           => $costStats['min'],
-            'highest_cost'          => $costStats['max'],
-            'lead_time_days'        => null, // requires supplier lead-time table
-            'moq'                   => null, // requires supplier MOQ table
-            'last_purchase_date'    => $lastPurchase['purchase_date'] ?? null,
-            'purchase_frequency'    => $purchaseFreq,
-            'price_trend'           => $priceTrend,
+            'last_cost' => $lastPurchase['last_price'] ?? null,
+            'avg_cost' => $costStats['avg'],
+            'lowest_cost' => $costStats['min'],
+            'highest_cost' => $costStats['max'],
+            'lead_time_days' => null, // requires supplier lead-time table
+            'moq' => null, // requires supplier MOQ table
+            'last_purchase_date' => $lastPurchase['purchase_date'] ?? null,
+            'purchase_frequency' => $purchaseFreq,
+            'price_trend' => $priceTrend,
         ];
     }
 
@@ -264,12 +267,14 @@ final class DemandAnalysisService
             ->orderByDesc('gr.receipt_date')
             ->first();
 
-        if (!$row) return null;
+        if (! $row) {
+            return null;
+        }
 
         return [
-            'supplier_id'   => $row->supplier_id,
+            'supplier_id' => $row->supplier_id,
             'supplier_name' => $row->supplier_name,
-            'last_price'    => (float) $row->last_price,
+            'last_price' => (float) $row->last_price,
             'purchase_date' => $row->purchase_date,
         ];
     }
@@ -299,12 +304,12 @@ final class DemandAnalysisService
             ->get();
 
         return $rows->map(fn ($r) => [
-            'supplier_id'        => $r->supplier_id,
-            'supplier_name'      => $r->supplier_name,
-            'last_price'         => $r->last_price !== null ? (float) $r->last_price : null,
+            'supplier_id' => $r->supplier_id,
+            'supplier_name' => $r->supplier_name,
+            'last_price' => $r->last_price !== null ? (float) $r->last_price : null,
             'last_delivery_date' => $r->last_delivery_date,
-            'lead_time_days'     => null,
-            'moq'                => null,
+            'lead_time_days' => null,
+            'moq' => null,
         ])->values()->toArray();
     }
 
@@ -353,20 +358,24 @@ final class DemandAnalysisService
             ->map(fn ($v) => (float) $v)
             ->toArray();
 
-        if (count($rows) < 2) return null;
+        if (count($rows) < 2) {
+            return null;
+        }
 
         // Rising if latest > earliest by >5%, falling if <5% lower
-        $latest   = $rows[0];
+        $latest = $rows[0];
         $earliest = $rows[count($rows) - 1];
 
-        if ($earliest <= 0) return null;
+        if ($earliest <= 0) {
+            return null;
+        }
 
         $change = ($latest - $earliest) / $earliest;
 
         return match (true) {
-            $change >  0.05 => 'rising',
+            $change > 0.05 => 'rising',
             $change < -0.05 => 'falling',
-            default         => 'stable',
+            default => 'stable',
         };
     }
 
@@ -408,17 +417,17 @@ final class DemandAnalysisService
         }
 
         return [
-            'warehouses_carrying'  => $warehousesCarrying,
-            'total_inventory_value'=> $totalValue,
-            'selling_channels'     => null, // requires channel product assignment table
-            'companies_count'      => null, // requires company product assignment table
-            'open_orders'          => null, // requires order_lines join — populated when available
-            'reserved_qty'         => $inventory['reserved'],
-            'backordered_qty'      => null, // requires backorder tracking
-            'pending_preparation'  => null, // future Preparation OS
-            'sales_last_7d'        => round($sales7d, 4),
-            'sales_last_30d'       => round($sales30d, 4),
-            'revenue_last_30d'     => $revenue30d,
+            'warehouses_carrying' => $warehousesCarrying,
+            'total_inventory_value' => $totalValue,
+            'selling_channels' => null, // requires channel product assignment table
+            'companies_count' => null, // requires company product assignment table
+            'open_orders' => null, // requires order_lines join — populated when available
+            'reserved_qty' => $inventory['reserved'],
+            'backordered_qty' => null, // requires backorder tracking
+            'pending_preparation' => null, // future Preparation OS
+            'sales_last_7d' => round($sales7d, 4),
+            'sales_last_30d' => round($sales30d, 4),
+            'revenue_last_30d' => $revenue30d,
             'estimated_stockout_date' => $stockoutDate,
         ];
     }
@@ -431,11 +440,11 @@ final class DemandAnalysisService
     {
         $recs = [];
 
-        $available   = $inventory['available'];
-        $daily       = $demand['daily_avg'];
-        $days        = $coverage['current_coverage_days'];
-        $risk        = $coverage['risk'];
-        $lastCost    = $procurement['last_cost'];
+        $available = $inventory['available'];
+        $daily = $demand['daily_avg'];
+        $days = $coverage['current_coverage_days'];
+        $risk = $coverage['risk'];
+        $lastCost = $procurement['last_cost'];
         $altSuppliers = $procurement['alternative_suppliers'];
 
         // ── Healthy stock ────────────────────────────────────────────────────
@@ -509,9 +518,9 @@ final class DemandAnalysisService
     private function rec(string $type, string $severity, string $emoji, string $message): array
     {
         return [
-            'type'            => $type,
-            'severity'        => $severity,
-            'message'         => $message,
+            'type' => $type,
+            'severity' => $severity,
+            'message' => $message,
             'recommended_qty' => null,
         ];
     }
@@ -534,13 +543,13 @@ final class DemandAnalysisService
 
         foreach ($movements as $m) {
             $events[] = [
-                'type'        => 'inventory_event',
-                'subtype'     => $m->movement_type,
-                'date'        => $m->movement_date,
+                'type' => 'inventory_event',
+                'subtype' => $m->movement_type,
+                'date' => $m->movement_date,
                 'description' => ucfirst(str_replace('_', ' ', $m->movement_type)),
-                'quantity'    => (float) $m->quantity,
-                'supplier'    => null,
-                'value'       => null,
+                'quantity' => (float) $m->quantity,
+                'supplier' => null,
+                'value' => null,
             ];
         }
 
@@ -565,13 +574,13 @@ final class DemandAnalysisService
             $qty = (float) ($r->quantity ?? 0);
             $price = (float) ($r->price ?? 0);
             $events[] = [
-                'type'        => 'purchase_event',
-                'subtype'     => 'goods_receipt',
-                'date'        => $r->date,
+                'type' => 'purchase_event',
+                'subtype' => 'goods_receipt',
+                'date' => $r->date,
                 'description' => 'Goods Receipt',
-                'quantity'    => $qty,
-                'supplier'    => $r->supplier_name,
-                'value'       => $qty * $price,
+                'quantity' => $qty,
+                'supplier' => $r->supplier_name,
+                'value' => $qty * $price,
             ];
         }
 

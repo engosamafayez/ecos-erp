@@ -1,4 +1,5 @@
 import { Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,6 +30,8 @@ type ChannelCellProps = {
 
 /** Renders up to 2 channel badges. Overflow count shows a tooltip listing all channels. */
 export function ChannelCell({ channels }: ChannelCellProps) {
+  const { t } = useTranslation('products');
+
   if (!channels || channels.length === 0) {
     return <span className="text-muted-foreground text-xs">—</span>;
   }
@@ -50,7 +53,7 @@ export function ChannelCell({ channels }: ChannelCellProps) {
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-64">
-              <p className="text-xs font-medium mb-1 text-muted-foreground">All channels</p>
+              <p className="text-xs font-medium mb-1 text-muted-foreground">{t($ => $.badges.allChannels)}</p>
               <p className="text-xs">
                 {channels.map((ch) => ch.name).join(' • ')}
               </p>

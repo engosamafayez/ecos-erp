@@ -11,11 +11,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\ApprovePurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\CancelPurchaseOrderAction;
-use Modules\Purchasing\PurchaseOrders\Application\Actions\SubmitPurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\CreatePurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\DeletePurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\GetPurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\ListPurchaseOrdersAction;
+use Modules\Purchasing\PurchaseOrders\Application\Actions\SubmitPurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\Actions\UpdatePurchaseOrderAction;
 use Modules\Purchasing\PurchaseOrders\Application\DTO\PurchaseOrderDTO;
 use Modules\Purchasing\PurchaseOrders\Presentation\Http\Requests\StorePurchaseOrderRequest;
@@ -31,15 +31,15 @@ final class PurchaseOrderController extends Controller
     public function index(Request $request, ListPurchaseOrdersAction $action): JsonResponse
     {
         $filters = [
-            'search'      => $request->query('search'),
+            'search' => $request->query('search'),
             'supplier_id' => $request->query('supplier_id'),
-            'status'      => $request->query('status', 'all'),
-            'date_from'   => $request->query('date_from'),
-            'date_to'     => $request->query('date_to'),
-            'sort_by'     => $request->query('sort_by', 'created_at'),
-            'sort_dir'    => $request->query('sort_dir', 'desc'),
-            'per_page'    => $request->query('per_page', 10),
-            'company_id'  => $this->currentCompany->id(),
+            'status' => $request->query('status', 'all'),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+            'sort_by' => $request->query('sort_by', 'created_at'),
+            'sort_dir' => $request->query('sort_dir', 'desc'),
+            'per_page' => $request->query('per_page', 10),
+            'company_id' => $this->currentCompany->id(),
         ];
 
         $paginator = $action->execute($filters)->data();

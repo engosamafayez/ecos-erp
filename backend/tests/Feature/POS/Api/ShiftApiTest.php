@@ -19,30 +19,34 @@ final class ShiftApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User   $user;
+    private User $user;
+
     private string $sessionId;
+
     private string $cashierId;
 
-    private const COMPANY_ID   = 'c0000000-0000-4000-c000-000000000002';
+    private const COMPANY_ID = 'c0000000-0000-4000-c000-000000000002';
+
     private const WAREHOUSE_ID = 'd0000000-0000-4000-d000-000000000002';
-    private const CASHIER_ID   = 'b0000000-0000-4000-b000-000000000002';
+
+    private const CASHIER_ID = 'b0000000-0000-4000-b000-000000000002';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user      = User::factory()->create();
+        $this->user = User::factory()->create();
         $this->cashierId = self::CASHIER_ID;
 
         $sessionRepo = app(SessionRepositoryInterface::class);
-        $session     = Session::open(
-            cashierId:   self::CASHIER_ID,
-            companyId:   self::COMPANY_ID,
-            channelId:   null,
+        $session = Session::open(
+            cashierId: self::CASHIER_ID,
+            companyId: self::COMPANY_ID,
+            channelId: null,
             warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of('fp-shift-test'),
-            ipAddress:   '127.0.0.1',
-            deviceType:  DeviceType::Browser,
+            ipAddress: '127.0.0.1',
+            deviceType: DeviceType::Browser,
         );
         $sessionRepo->save($session);
         $this->sessionId = (string) $session->id;
@@ -52,9 +56,9 @@ final class ShiftApiTest extends TestCase
     {
         $response = $this->actingAs($this->user)
             ->postJson('/api/pos/shifts', [
-                'session_id'   => $this->sessionId,
-                'terminal_id'  => self::CASHIER_ID, // terminal_id = cashier_id after refactor
-                'cashier_id'   => self::CASHIER_ID,
+                'session_id' => $this->sessionId,
+                'terminal_id' => self::CASHIER_ID, // terminal_id = cashier_id after refactor
+                'cashier_id' => self::CASHIER_ID,
                 'opening_cash' => ['amount' => '500.00', 'currency' => 'EGP'],
             ]);
 
@@ -76,16 +80,16 @@ final class ShiftApiTest extends TestCase
     {
         $openResponse = $this->actingAs($this->user)
             ->postJson('/api/pos/shifts', [
-                'session_id'   => $this->sessionId,
-                'terminal_id'  => self::CASHIER_ID,
-                'cashier_id'   => self::CASHIER_ID,
+                'session_id' => $this->sessionId,
+                'terminal_id' => self::CASHIER_ID,
+                'cashier_id' => self::CASHIER_ID,
                 'opening_cash' => ['amount' => '200.00', 'currency' => 'EGP'],
             ]);
 
         $shiftId = $openResponse->json('data.id');
 
         $response = $this->actingAs($this->user)
-            ->getJson('/api/pos/shifts/' . $shiftId);
+            ->getJson('/api/pos/shifts/'.$shiftId);
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)

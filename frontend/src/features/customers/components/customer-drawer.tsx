@@ -63,17 +63,17 @@ function PhoneRow({
       <Badge variant="secondary" className="h-4 shrink-0 px-1.5 text-[9px]">
         {label}
       </Badge>
-      <Button size="icon" variant="ghost" className="size-7" asChild title={t('phone.call')}>
+      <Button size="icon" variant="ghost" className="size-7" asChild title={t($ => $.phone.call)}>
         <a href={`tel:${bare}`}>
           <Phone className="size-3.5" />
         </a>
       </Button>
-      <Button size="icon" variant="ghost" className="size-7" asChild title={t('phone.whatsapp')}>
+      <Button size="icon" variant="ghost" className="size-7" asChild title={t($ => $.phone.whatsapp)}>
         <a href={`https://wa.me/${bare}`} target="_blank" rel="noopener noreferrer">
           <MessageCircle className="size-3.5" />
         </a>
       </Button>
-      <Button size="icon" variant="ghost" className="size-7" onClick={doCopy} title={t('phone.copy')}>
+      <Button size="icon" variant="ghost" className="size-7" onClick={doCopy} title={t($ => $.phone.copy)}>
         {copied ? (
           <span className="text-[9px] text-emerald-600">✓</span>
         ) : (
@@ -117,7 +117,7 @@ function SummaryTab({ customer }: { customer: Customer }) {
           <>
             <div className="flex flex-col items-center gap-0.5 text-center">
               <span className="text-lg font-semibold tabular-nums">{stats?.total ?? '—'}</span>
-              <span className="text-[11px] text-muted-foreground">{t('drawer.summary.totalOrders')}</span>
+              <span className="text-[11px] text-muted-foreground">{t($ => $.drawer.summary.totalOrders)}</span>
             </div>
             <div className="flex flex-col items-center gap-0.5 border-x text-center">
               <span className="text-base font-semibold tabular-nums">
@@ -125,7 +125,7 @@ function SummaryTab({ customer }: { customer: Customer }) {
                   ? new Date(stats.lastOrderDate).toLocaleDateString()
                   : '—'}
               </span>
-              <span className="text-[11px] text-muted-foreground">{t('drawer.summary.lastOrder')}</span>
+              <span className="text-[11px] text-muted-foreground">{t($ => $.drawer.summary.lastOrder)}</span>
             </div>
             <div className="flex flex-col items-center gap-0.5 text-center">
               <span className="text-base font-semibold tabular-nums">
@@ -133,7 +133,7 @@ function SummaryTab({ customer }: { customer: Customer }) {
                   ? stats.totalSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })
                   : '—'}
               </span>
-              <span className="text-[11px] text-muted-foreground">{t('drawer.summary.totalSpend')}</span>
+              <span className="text-[11px] text-muted-foreground">{t($ => $.drawer.summary.totalSpend)}</span>
             </div>
           </>
         )}
@@ -142,27 +142,60 @@ function SummaryTab({ customer }: { customer: Customer }) {
       {/* Info rows */}
       <div className="flex flex-col gap-2.5 rounded-lg border p-3 text-sm">
         {customer.code ? (
-          <InfoRow label={t('drawer.summary.code')} value={customer.code} />
+          <InfoRow label={t($ => $.drawer.summary.code)} value={customer.code} />
         ) : null}
         {customer.contact_person ? (
-          <InfoRow label={t('drawer.summary.contactPerson')} value={customer.contact_person} />
+          <InfoRow label={t($ => $.drawer.summary.contactPerson)} value={customer.contact_person} />
         ) : null}
         {customer.email ? (
-          <InfoRow label={t('drawer.summary.email')} value={customer.email} />
+          <InfoRow label={t($ => $.drawer.summary.email)} value={customer.email} />
         ) : null}
         {customer.created_at ? (
           <InfoRow
-            label={t('drawer.summary.memberSince')}
+            label={t($ => $.drawer.summary.memberSince)}
             value={new Date(customer.created_at).toLocaleDateString()}
           />
         ) : null}
         {customer.updated_at ? (
           <InfoRow
-            label={t('drawer.summary.lastUpdated')}
+            label={t($ => $.drawer.summary.lastUpdated)}
             value={new Date(customer.updated_at).toLocaleDateString()}
           />
         ) : null}
       </div>
+
+      {/* Brands */}
+      {customer.brands && customer.brands.length > 0 ? (
+        <div className="flex flex-col gap-1.5 rounded-lg border p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {t($ => $.drawer.summary.brands, 'Brands')}
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {customer.brands.map((b) => (
+              <div
+                key={b.id}
+                className="flex items-center justify-between gap-2 rounded-md border bg-muted/20 px-2.5 py-1.5"
+              >
+                <span className="flex min-w-0 items-center gap-1.5 truncate text-xs font-medium">
+                  {b.is_primary && <span className="text-primary">★</span>}
+                  <span className="truncate">{b.brand_name ?? b.brand_code ?? '—'}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-3 text-[11px] text-muted-foreground">
+                  <span>{b.orders_count} {t($ => $.drawer.summary.brandOrders, 'orders')}</span>
+                  <span className="font-medium tabular-nums text-foreground">
+                    {Number(b.lifetime_value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </span>
+                  {b.last_order_at && (
+                    <span className="hidden sm:inline">
+                      {new Date(b.last_order_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -178,19 +211,19 @@ function PhonesTab({ customer }: { customer: Customer }) {
       {hasAny ? (
         <div className="flex flex-col gap-2 rounded-lg border p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('drawer.phonesTab.title')}
+            {t($ => $.drawer.phonesTab.title)}
           </p>
           {customer.phone ? (
-            <PhoneRow phone={customer.phone} label={t('drawer.phonesTab.primary')} />
+            <PhoneRow phone={customer.phone} label={t($ => $.drawer.phonesTab.primary)} />
           ) : null}
           {customer.mobile ? (
-            <PhoneRow phone={customer.mobile} label={t('drawer.phonesTab.secondary')} />
+            <PhoneRow phone={customer.mobile} label={t($ => $.drawer.phonesTab.secondary)} />
           ) : null}
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <Phone className="size-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">{t('drawer.phonesTab.noPhone')}</p>
+          <p className="text-sm text-muted-foreground">{t($ => $.drawer.phonesTab.noPhone)}</p>
         </div>
       )}
     </div>
@@ -221,7 +254,7 @@ function AddressesTab({ customer }: { customer: Customer }) {
         <div className="flex flex-col gap-3 rounded-lg border p-3">
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="text-[10px]">
-              {t('drawer.addresses.default')}
+              {t($ => $.drawer.addresses.default)}
             </Badge>
           </div>
 
@@ -243,7 +276,7 @@ function AddressesTab({ customer }: { customer: Customer }) {
               onClick={doCopy}
             >
               <Copy className="size-3" />
-              {copied ? '✓' : t('drawer.addresses.copyAddress')}
+              {copied ? '✓' : t($ => $.drawer.addresses.copyAddress)}
             </Button>
             <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs" asChild>
               <a
@@ -252,7 +285,7 @@ function AddressesTab({ customer }: { customer: Customer }) {
                 rel="noopener noreferrer"
               >
                 <MapPin className="size-3" />
-                {t('drawer.addresses.openMap')}
+                {t($ => $.drawer.addresses.openMap)}
               </a>
             </Button>
           </div>
@@ -260,7 +293,7 @@ function AddressesTab({ customer }: { customer: Customer }) {
       ) : (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <MapPin className="size-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">{t('drawer.addresses.noAddress')}</p>
+          <p className="text-sm text-muted-foreground">{t($ => $.drawer.addresses.noAddress)}</p>
         </div>
       )}
     </div>
@@ -294,7 +327,7 @@ function OrdersTab({ customer }: { customer: Customer }) {
     return (
       <div className="flex flex-col items-center gap-2 py-8 text-center">
         <ShoppingBag className="size-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">{t('drawer.orders.empty')}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.drawer.orders.empty)}</p>
       </div>
     );
   }
@@ -323,7 +356,7 @@ function OrdersTab({ customer }: { customer: Customer }) {
       ))}
       {data && data.meta.total > 15 ? (
         <p className="text-center text-xs text-muted-foreground">
-          {t('drawer.orders.more', { count: data.meta.total - 15 })}
+          {t($ => $.drawer.orders.more, { count: data.meta.total - 15 })}
         </p>
       ) : null}
     </div>
@@ -351,7 +384,7 @@ function MemoryTab({
             <FileText className="mt-0.5 size-4 shrink-0 text-amber-500" />
             <div className="min-w-0 flex-1">
               <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {t('drawer.memory.note')}
+                {t($ => $.drawer.memory.note)}
               </p>
               <p className="whitespace-pre-wrap text-sm">{customer.notes}</p>
             </div>
@@ -366,13 +399,13 @@ function MemoryTab({
             }}
           >
             <Pencil className="size-3" />
-            {t('drawer.memory.edit')}
+            {t($ => $.drawer.memory.edit)}
           </Button>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3 py-8 text-center">
           <FileText className="size-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">{t('drawer.memory.empty')}</p>
+          <p className="text-sm text-muted-foreground">{t($ => $.drawer.memory.empty)}</p>
           <Button
             size="sm"
             variant="outline"
@@ -383,23 +416,10 @@ function MemoryTab({
             }}
           >
             <Pencil className="size-3" />
-            {t('drawer.memory.edit')}
+            {t($ => $.drawer.memory.edit)}
           </Button>
         </div>
       )}
-    </div>
-  );
-}
-
-// ── Activity tab (coming soon placeholder) ────────────────────────────────────
-
-function ActivityTab() {
-  const { t } = useTranslation('customers');
-  return (
-    <div className="flex flex-col items-center gap-2 py-12 text-center">
-      <Calendar className="size-10 text-muted-foreground/30" />
-      <p className="text-sm font-medium text-muted-foreground">{t('drawer.activity.title')}</p>
-      <p className="text-xs text-muted-foreground/70">{t('drawer.activity.empty')}</p>
     </div>
   );
 }
@@ -437,35 +457,30 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
   const tabs = [
     {
       key: 'summary',
-      label: t('drawer.tabs.summary'),
+      label: t($ => $.drawer.tabs.summary),
       content: <SummaryTab customer={customer} />,
     },
     {
       key: 'phones',
-      label: t('drawer.tabs.phones'),
+      label: t($ => $.drawer.tabs.phones),
       content: <PhonesTab customer={customer} />,
     },
     {
       key: 'addresses',
-      label: t('drawer.tabs.addresses'),
+      label: t($ => $.drawer.tabs.addresses),
       content: <AddressesTab customer={customer} />,
     },
     {
       key: 'orders',
-      label: t('drawer.tabs.orders'),
+      label: t($ => $.drawer.tabs.orders),
       content: <OrdersTab customer={customer} />,
     },
     {
       key: 'memory',
-      label: t('drawer.tabs.memory'),
+      label: t($ => $.drawer.tabs.memory),
       content: (
         <MemoryTab customer={customer} onEdit={onEdit} onOpenChange={onOpenChange} />
       ),
-    },
-    {
-      key: 'activity',
-      label: t('drawer.tabs.activity'),
-      content: <ActivityTab />,
     },
   ];
 
@@ -489,7 +504,7 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
                     variant="ghost"
                     className="size-5"
                     asChild
-                    title={t('phone.call')}
+                    title={t($ => $.phone.call)}
                   >
                     <a href={`tel:${primaryPhone.replace(/\D/g, '')}`}>
                       <Phone className="size-3" />
@@ -500,7 +515,7 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
                     variant="ghost"
                     className="size-5"
                     asChild
-                    title={t('phone.whatsapp')}
+                    title={t($ => $.phone.whatsapp)}
                   >
                     <a
                       href={`https://wa.me/${primaryPhone.replace(/\D/g, '')}`}
@@ -533,7 +548,7 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
                 }}
               >
                 <Pencil className="size-3" />
-                {t('actions.edit')}
+                {t($ => $.actions.edit)}
               </Button>
               <SheetClose asChild>
                 <Button variant="ghost" size="icon" className="size-7">

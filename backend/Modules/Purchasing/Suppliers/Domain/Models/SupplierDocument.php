@@ -12,11 +12,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property string $id
  * @property string $supplier_id
- * @property string $document_type  commercial_registration|tax_card|contract|certificate|attachment
+ * @property string $document_type commercial_registration|tax_card|contract|certificate|attachment
  * @property string $name
  * @property string $file_path
  * @property string $mime_type
- * @property int    $file_size
+ * @property int $file_size
  * @property string|null $notes
  * @property string|null $uploaded_by
  * @property \Illuminate\Support\Carbon $created_at

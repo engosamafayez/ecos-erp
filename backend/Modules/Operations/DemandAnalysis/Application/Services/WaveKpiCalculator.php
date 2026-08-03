@@ -40,13 +40,13 @@ final class WaveKpiCalculator
             ')
             ->first();
 
-        $productsCount          = (int)   ($productStats->products_count  ?? 0);
-        $preparedCount          = (int)   ($productStats->prepared_count  ?? 0);
-        $remainingCount         = (int)   ($productStats->remaining_count ?? 0);
-        $totalRequired          = (float) ($productStats->total_required  ?? 0.0);
-        $totalPrepared          = (float) ($productStats->total_prepared  ?? 0.0);
-        $materialsCount         = (int)   ($materialStats->materials_count          ?? 0);
-        $missingMaterialsCount  = (int)   ($materialStats->missing_materials_count  ?? 0);
+        $productsCount = (int) ($productStats->products_count ?? 0);
+        $preparedCount = (int) ($productStats->prepared_count ?? 0);
+        $remainingCount = (int) ($productStats->remaining_count ?? 0);
+        $totalRequired = (float) ($productStats->total_required ?? 0.0);
+        $totalPrepared = (float) ($productStats->total_prepared ?? 0.0);
+        $materialsCount = (int) ($materialStats->materials_count ?? 0);
+        $missingMaterialsCount = (int) ($materialStats->missing_materials_count ?? 0);
 
         $completionPct = $totalRequired > 0.0
             ? round(($totalPrepared / $totalRequired) * 100.0, 2)
@@ -55,23 +55,23 @@ final class WaveKpiCalculator
         $now = now()->toDateTimeString();
 
         return [
-            'id'                      => Str::uuid()->toString(),
-            'company_id'              => $wave->company_id,
-            'warehouse_id'            => $wave->warehouse_id,
-            'preparation_wave_id'     => $wave->id,
-            'orders_count'            => $wave->orders_count ?? 0,
-            'products_count'          => $productsCount,
-            'materials_count'         => $materialsCount,
+            'id' => Str::uuid()->toString(),
+            'company_id' => $wave->company_id,
+            'warehouse_id' => $wave->warehouse_id,
+            'preparation_wave_id' => $wave->id,
+            'orders_count' => $wave->orders_count ?? 0,
+            'products_count' => $productsCount,
+            'materials_count' => $materialsCount,
             'missing_materials_count' => $missingMaterialsCount,
-            'prepared_count'          => $preparedCount,
-            'remaining_count'         => $remainingCount,
-            'completion_pct'          => $completionPct,
+            'prepared_count' => $preparedCount,
+            'remaining_count' => $remainingCount,
+            'completion_pct' => $completionPct,
             // Exposed for wave header sync — NOT stored in wave_kpis table
-            '_total_units_required'   => $totalRequired,
-            '_total_units_prepared'   => $totalPrepared,
-            'last_calculated_at'      => $now,
-            'created_at'              => $now,
-            'updated_at'              => $now,
+            '_total_units_required' => $totalRequired,
+            '_total_units_prepared' => $totalPrepared,
+            'last_calculated_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
         ];
     }
 }

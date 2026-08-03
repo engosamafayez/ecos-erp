@@ -9,6 +9,7 @@ import {
   PackagePlus,
   Trash2,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { ActionMenu } from '@/components/crud/action-menu';
 import { ErrorState } from '@/components/crud/error-state';
@@ -43,12 +44,6 @@ function fmtCost(n: number | null | undefined, currency: string, locale: string)
   return formatMoney(n, currency, locale);
 }
 
-function materialTypeLabel(type: string): string {
-  if (type === 'packaging_material') return 'Packaging';
-  if (type === 'raw_material')       return 'Raw Material';
-  return type;
-}
-
 // ─── Cell sub-components ──────────────────────────────────────────────────────
 
 function AllowNegativeToggle({
@@ -58,6 +53,7 @@ function AllowNegativeToggle({
   material: RawMaterial;
   canEdit:  boolean;
 }) {
+  const { t } = useTranslation('raw-materials');
   const toggle  = useToggleAllowNegative();
   const allowed = material.allow_negative_stock ?? false;
 
@@ -66,7 +62,7 @@ function AllowNegativeToggle({
       checked={allowed}
       onCheckedChange={(checked) => toggle.mutate({ id: material.id, allow_negative_stock: checked })}
       disabled={!canEdit || toggle.isPending}
-      aria-label={allowed ? 'Allow negative stock (on)' : 'Allow negative stock (off)'}
+      aria-label={allowed ? t($ => $.table.allowNegativeOn) : t($ => $.table.allowNegativeOff)}
       onClick={(e) => e.stopPropagation()}
     />
   );
@@ -77,7 +73,7 @@ function AllowNegativeToggle({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>{switchEl}</TooltipTrigger>
-        <TooltipContent>You don't have permission to edit the stock policy.</TooltipContent>
+        <TooltipContent>{t($ => $.table.noPermission)}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -156,6 +152,7 @@ export function RawMaterialTable({
   visibleColumns,
   onCostSave, savingCostId, canEditCost = true,
 }: RawMaterialTableProps) {
+  const { t } = useTranslation('raw-materials');
   const { currency, locale } = useCompany();
   const allSelected  = data.length > 0 && data.every((m) => selectedIds.has(m.id));
   const someSelected = !allSelected && data.some((m) => selectedIds.has(m.id));
@@ -197,59 +194,59 @@ export function RawMaterialTable({
               <Checkbox
                 checked={allSelected ? true : someSelected ? 'indeterminate' : false}
                 onCheckedChange={toggleAll}
-                aria-label="Select all"
+                aria-label={t($ => $.table.name)}
               />
             </TableHead>
 
             {/* 1 — Image */}
-            {show('image') && <TableHead className="w-14">Image</TableHead>}
+            {show('image') && <TableHead className="w-14">{t($ => $.table.image)}</TableHead>}
 
             {/* 2 — Name (locked) */}
             {show('name') && (
-              <SortableHead field="name" label="Name" sort={sort} onSort={onSortChange} />
+              <SortableHead field="name" label={t($ => $.table.name)} sort={sort} onSort={onSortChange} />
             )}
 
             {/* 3 — Material Type */}
-            {show('material_type') && <TableHead>Material Type</TableHead>}
+            {show('material_type') && <TableHead>{t($ => $.table.materialType)}</TableHead>}
 
             {/* 4 — Category */}
-            {show('category') && <TableHead>Category</TableHead>}
+            {show('category') && <TableHead>{t($ => $.table.category)}</TableHead>}
 
             {/* 5 — Unit */}
-            {show('unit') && <TableHead>Unit</TableHead>}
+            {show('unit') && <TableHead>{t($ => $.table.unit)}</TableHead>}
 
             {/* 6 — Stock Status */}
-            {show('stock_status') && <TableHead>Stock Status</TableHead>}
+            {show('stock_status') && <TableHead>{t($ => $.table.stockStatus)}</TableHead>}
 
             {/* 7 — On Hand */}
             {show('on_hand') && (
-              <SortableHead field="on_hand_qty" label="On Hand" sort={sort} onSort={onSortChange} align="right" />
+              <SortableHead field="on_hand_qty" label={t($ => $.table.onHand)} sort={sort} onSort={onSortChange} align="right" />
             )}
 
             {/* 8 — Reserved */}
-            {show('reserved') && <TableHead className="text-end">Reserved</TableHead>}
+            {show('reserved') && <TableHead className="text-end">{t($ => $.table.reserved)}</TableHead>}
 
             {/* 9 — Available */}
-            {show('available') && <TableHead className="text-end">Available</TableHead>}
+            {show('available') && <TableHead className="text-end">{t($ => $.table.available)}</TableHead>}
 
             {/* 10 — Current Cost */}
             {show('current_cost') && (
-              <SortableHead field="material_cost" label="Current Cost" sort={sort} onSort={onSortChange} align="right" />
+              <SortableHead field="material_cost" label={t($ => $.table.currentCost)} sort={sort} onSort={onSortChange} align="right" />
             )}
 
             {/* 11 — Inventory Value */}
-            {show('inventory_value') && <TableHead className="text-end">Inventory Value</TableHead>}
+            {show('inventory_value') && <TableHead className="text-end">{t($ => $.table.inventoryValue)}</TableHead>}
 
             {/* 12 — Allow Negative */}
-            {show('allow_negative') && <TableHead>Allow Negative</TableHead>}
+            {show('allow_negative') && <TableHead>{t($ => $.table.allowNegative)}</TableHead>}
 
             {/* 13 — SKU */}
             {show('sku') && (
-              <SortableHead field="sku" label="SKU" sort={sort} onSort={onSortChange} />
+              <SortableHead field="sku" label={t($ => $.table.sku)} sort={sort} onSort={onSortChange} />
             )}
 
             {/* 14 — Actions (locked) */}
-            {show('actions') && <TableHead className="w-12 text-end">Actions</TableHead>}
+            {show('actions') && <TableHead className="w-12 text-end">{t($ => $.table.actions)}</TableHead>}
           </TableRow>
         </TableHeader>
 
@@ -272,14 +269,14 @@ export function RawMaterialTable({
             <TableRow>
               <TableCell colSpan={colCount} className="p-0">
                 <EmptyState
-                  title="No materials"
-                  description="Add the first material to get started, or adjust filters."
+                  title={t($ => $.table.empty.title)}
+                  description={t($ => $.table.empty.description)}
                 />
               </TableCell>
             </TableRow>
           ) : (
             data.map((m) => {
-              const isSelected = selectedIds.has(m.id);
+              const isSelected  = selectedIds.has(m.id);
               const stockStatus = resolveMaterialStockStatus(m.available_qty, m.allow_negative_stock);
 
               return (
@@ -300,7 +297,7 @@ export function RawMaterialTable({
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => toggleOne(m.id)}
-                      aria-label={`Select ${m.name}`}
+                      aria-label={t($ => $.table.actionsLabel, { name: m.name })}
                     />
                   </TableCell>
 
@@ -341,7 +338,9 @@ export function RawMaterialTable({
                             : 'border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400',
                         )}
                       >
-                        {materialTypeLabel(m.product_type)}
+                        {m.product_type === 'packaging_material'
+                          ? t($ => $.table.typePackaging)
+                          : t($ => $.table.typeRaw)}
                       </Badge>
                     </TableCell>
                   )}
@@ -365,11 +364,11 @@ export function RawMaterialTable({
                     <TableCell>
                       {stockStatus === 'in_stock' ? (
                         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 text-xs">
-                          In Stock
+                          {t($ => $.table.inStock)}
                         </Badge>
                       ) : (
                         <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 text-xs">
-                          Out of Stock
+                          {t($ => $.table.outOfStock)}
                         </Badge>
                       )}
                     </TableCell>
@@ -434,14 +433,14 @@ export function RawMaterialTable({
                   {show('actions') && (
                     <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu
-                        label={`Actions for ${m.name}`}
+                        label={t($ => $.table.actionsLabel, { name: m.name })}
                         items={[
-                          { key: 'view',          label: 'View',          icon: Package,     onSelect: () => onRowClick(m) },
-                          { key: 'edit',          label: 'Edit',          icon: Edit,        onSelect: () => onEdit(m) },
-                          { key: 'price-history', label: 'Price History', icon: BarChart2,   onSelect: () => onPriceHistory(m) },
-                          { key: 'stock-history', label: 'Stock History', icon: History,     onSelect: () => onStockHistory(m) },
-                          { key: 'add-stock',     label: 'Add Stock',     icon: PackagePlus, onSelect: () => onAddStock(m) },
-                          { key: 'delete', label: 'Delete', icon: Trash2, onSelect: () => onDelete(m), variant: 'destructive' },
+                          { key: 'view',          label: t($ => $.table.actionView),         icon: Package,     onSelect: () => onRowClick(m) },
+                          { key: 'edit',          label: t($ => $.table.actionEdit),         icon: Edit,        onSelect: () => onEdit(m) },
+                          { key: 'price-history', label: t($ => $.table.actionPriceHistory), icon: BarChart2,   onSelect: () => onPriceHistory(m) },
+                          { key: 'stock-history', label: t($ => $.table.actionStockHistory), icon: History,     onSelect: () => onStockHistory(m) },
+                          { key: 'add-stock',     label: t($ => $.table.actionAddStock),     icon: PackagePlus, onSelect: () => onAddStock(m) },
+                          { key: 'delete', label: t($ => $.table.actionDelete), icon: Trash2, onSelect: () => onDelete(m), variant: 'destructive' },
                         ]}
                       />
                     </TableCell>

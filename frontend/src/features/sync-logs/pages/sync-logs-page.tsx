@@ -37,14 +37,14 @@ function StatusBadge({ status }: { status: SyncStatus }) {
     pending: 'outline',
     skipped: 'outline',
   };
-  return <Badge variant={variantMap[status]}>{t(`status.${status}`)}</Badge>;
+  return <Badge variant={variantMap[status]}>{t($ => $.status[status])}</Badge>;
 }
 
 function DirectionBadge({ direction }: { direction: SyncDirection }) {
   const { t } = useTranslation('sync-logs');
   return (
     <Badge variant={direction === 'inbound' ? 'secondary' : 'outline'}>
-      {t(`direction.${direction}`)}
+      {t($ => $.direction[direction])}
     </Badge>
   );
 }
@@ -101,40 +101,40 @@ export function SyncLogsPage() {
   const columns: ColumnDef<SyncLog>[] = [
     {
       key: 'synced_at',
-      header: t('columns.date'),
+      header: t($ => $.columns.date),
       sortable: true,
       cell: (log) => (log.synced_at ? new Date(log.synced_at).toLocaleString() : '—'),
     },
     {
       key: 'channel',
-      header: t('columns.channel'),
+      header: t($ => $.columns.channel),
       cell: (log) => <span className="font-medium">{log.channel?.name ?? '—'}</span>,
     },
     {
       key: 'entity_type',
-      header: t('columns.entityType'),
-      cell: (log) => t(`entityType.${log.entity_type}`),
+      header: t($ => $.columns.entityType),
+      cell: (log) => t($ => $.entityType[log.entity_type]),
     },
     {
       key: 'direction',
-      header: t('columns.direction'),
+      header: t($ => $.columns.direction),
       cell: (log) => <DirectionBadge direction={log.direction} />,
     },
     {
       key: 'action',
-      header: t('columns.action'),
+      header: t($ => $.columns.action),
       cell: (log) => (
         <span className="font-mono text-xs">{log.action ?? '—'}</span>
       ),
     },
     {
       key: 'status',
-      header: t('columns.status'),
+      header: t($ => $.columns.status),
       cell: (log) => <StatusBadge status={log.status} />,
     },
     {
       key: 'error_message',
-      header: t('columns.error'),
+      header: t($ => $.columns.error),
       cell: (log) => (
         <span className="text-muted-foreground max-w-xs truncate text-xs">
           {log.error_message ?? '—'}
@@ -146,18 +146,18 @@ export function SyncLogsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.title) },
         ]}
       />
 
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={t($ => $.search)}
             onSearchChange={() => undefined}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -173,13 +173,13 @@ export function SyncLogsPage() {
             filterPanel={
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.channel')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.channel)}</span>
                   <select
                     value={channelFilter}
                     onChange={(e) => { setChannelFilter(e.target.value); setPage(1); }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">{t('filters.allChannels')}</option>
+                    <option value="">{t($ => $.filters.allChannels)}</option>
                     {channelOptions.map((c) => (
                       <option key={c.value} value={c.value}>{c.label}</option>
                     ))}
@@ -187,7 +187,7 @@ export function SyncLogsPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.entityType')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.entityType)}</span>
                   <select
                     value={entityTypeFilter}
                     onChange={(e) => { setEntityTypeFilter(e.target.value as SyncEntityType | 'all'); setPage(1); }}
@@ -195,14 +195,14 @@ export function SyncLogsPage() {
                   >
                     {ENTITY_TYPES.map((val) => (
                       <option key={val} value={val}>
-                        {val === 'all' ? t('filters.allEntityTypes') : t(`entityType.${val}`)}
+                        {val === 'all' ? t($ => $.filters.allEntityTypes) : t($ => $.entityType[val])}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.direction')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.direction)}</span>
                   <select
                     value={directionFilter}
                     onChange={(e) => { setDirectionFilter(e.target.value as SyncDirection | 'all'); setPage(1); }}
@@ -210,14 +210,14 @@ export function SyncLogsPage() {
                   >
                     {DIRECTIONS.map((val) => (
                       <option key={val} value={val}>
-                        {val === 'all' ? t('filters.allDirections') : t(`direction.${val}`)}
+                        {val === 'all' ? t($ => $.filters.allDirections) : t($ => $.direction[val])}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.status')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.status)}</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => { setStatusFilter(e.target.value as SyncStatus | 'all'); setPage(1); }}
@@ -225,14 +225,14 @@ export function SyncLogsPage() {
                   >
                     {STATUSES.map((val) => (
                       <option key={val} value={val}>
-                        {t(`status.${val}`)}
+                        {t($ => $.status[val])}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.dateFrom')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.dateFrom)}</span>
                   <input
                     type="date"
                     value={dateFrom}
@@ -242,7 +242,7 @@ export function SyncLogsPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.dateTo')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.dateTo)}</span>
                   <input
                     type="date"
                     value={dateTo}
@@ -271,7 +271,7 @@ export function SyncLogsPage() {
                   onClick={() => retrySyncLog.mutate(log.id)}
                 >
                   <RefreshCw className="size-3.5" />
-                  {retrySyncLog.isPending ? t('actions.retrying') : t('actions.retry')}
+                  {retrySyncLog.isPending ? t($ => $.actions.retrying) : t($ => $.actions.retry)}
                 </Button>
               ) : null
             }

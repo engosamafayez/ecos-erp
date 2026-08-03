@@ -11,22 +11,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Commerce\Orders\Domain\Models\Order;
 
 /**
- * @property string           $id
- * @property string           $company_id
- * @property string           $order_id
- * @property string           $return_number
- * @property string           $status              pending_inspection | accepted | rejected
- * @property string           $return_reason
- * @property string|null      $driver_notes
- * @property string|null      $warehouse_notes
- * @property string|null      $inspector_id
- * @property string|null      $inspected_at
- * @property string|null      $accepted_at
- * @property string|null      $rejected_at
- * @property string|null      $inventory_restored_at
- * @property string           $recorded_by
- * @property \Carbon\Carbon   $created_at
- * @property \Carbon\Carbon   $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $order_id
+ * @property string $return_number
+ * @property string $status pending_inspection | accepted | rejected
+ * @property string $return_reason
+ * @property string|null $driver_notes
+ * @property string|null $warehouse_notes
+ * @property string|null $inspector_id
+ * @property string|null $inspected_at
+ * @property string|null $accepted_at
+ * @property string|null $rejected_at
+ * @property string|null $inventory_restored_at
+ * @property string $recorded_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class CustomerReturn extends Model
 {
@@ -59,9 +59,9 @@ class CustomerReturn extends Model
     protected function casts(): array
     {
         return [
-            'inspected_at'          => 'datetime',
-            'accepted_at'           => 'datetime',
-            'rejected_at'           => 'datetime',
+            'inspected_at' => 'datetime',
+            'accepted_at' => 'datetime',
+            'rejected_at' => 'datetime',
             'inventory_restored_at' => 'datetime',
         ];
     }

@@ -12,8 +12,10 @@ final class Document extends Model
     use SoftDeletes;
 
     public $incrementing = false;
-    protected $keyType   = 'string';
-    protected $table     = 'documents';
+
+    protected $keyType = 'string';
+
+    protected $table = 'documents';
 
     protected $fillable = [
         'id',

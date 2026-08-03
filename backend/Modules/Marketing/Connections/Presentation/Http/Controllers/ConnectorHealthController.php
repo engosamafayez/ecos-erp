@@ -24,7 +24,7 @@ final class ConnectorHealthController extends Controller
      */
     public function show(string $connection): JsonResponse
     {
-        $conn       = MarketingConnection::findOrFail($connection);
+        $conn = MarketingConnection::findOrFail($connection);
         $healthData = $this->healthService->check($conn);
 
         return response()->json([

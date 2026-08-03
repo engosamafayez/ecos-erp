@@ -28,11 +28,11 @@ final class GetOrderInventoryStatusQuery
         }
 
         return [
-            'reserved'              => $order->inventory_reserved_at !== null,
-            'shipped'               => $order->inventory_shipped_at !== null,
-            'released'              => $order->inventory_released_at !== null,
+            'reserved' => $order->inventory_reserved_at !== null,
+            'shipped' => $order->inventory_shipped_at !== null,
+            'released' => $order->inventory_released_at !== null,
             'inventory_reserved_at' => $order->inventory_reserved_at?->toIso8601String(),
-            'inventory_shipped_at'  => $order->inventory_shipped_at?->toIso8601String(),
+            'inventory_shipped_at' => $order->inventory_shipped_at?->toIso8601String(),
             'inventory_released_at' => $order->inventory_released_at?->toIso8601String(),
         ];
     }

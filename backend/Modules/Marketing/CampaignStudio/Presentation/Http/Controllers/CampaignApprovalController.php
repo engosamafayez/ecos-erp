@@ -17,9 +17,9 @@ use Modules\Marketing\CampaignStudio\Presentation\Http\Resources\CampaignApprova
 class CampaignApprovalController extends Controller
 {
     public function __construct(
-        private readonly SubmitForApprovalAction    $submitAction,
+        private readonly SubmitForApprovalAction $submitAction,
         private readonly ProcessApprovalDecisionAction $decisionAction,
-        private readonly CampaignApprovalService    $approvalService,
+        private readonly CampaignApprovalService $approvalService,
     ) {}
 
     /** POST /mkt/studio/drafts/{draft}/submit-for-approval */
@@ -38,6 +38,7 @@ class CampaignApprovalController extends Controller
     public function show(CampaignDraft $draft): JsonResponse
     {
         $approval = $draft->currentApproval?->load(['workflowTemplate.steps', 'decisions']);
+
         return response()->json(['data' => $approval ? new CampaignApprovalResource($approval) : null]);
     }
 
@@ -46,7 +47,7 @@ class CampaignApprovalController extends Controller
     {
         $validated = $request->validate([
             'decision' => ['required', 'in:approved,rejected,skipped'],
-            'notes'    => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
         ]);
 
         $decision = $this->decisionAction->execute(
@@ -63,6 +64,7 @@ class CampaignApprovalController extends Controller
     public function cancel(Request $request, CampaignApproval $approval): JsonResponse
     {
         $this->approvalService->cancel($approval, (string) $request->user()->id);
+
         return response()->json(['message' => 'Approval cancelled.']);
     }
 

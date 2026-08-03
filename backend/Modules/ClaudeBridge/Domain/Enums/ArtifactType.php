@@ -6,7 +6,7 @@ namespace Modules\ClaudeBridge\Domain\Enums;
 
 enum ArtifactType: string
 {
-    case Diff   = 'diff';
+    case Diff = 'diff';
     case Report = 'report';
-    case Log    = 'log';
+    case Log = 'log';
 }

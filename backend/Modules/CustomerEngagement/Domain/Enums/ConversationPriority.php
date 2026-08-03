@@ -1,20 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Enums;
 
 enum ConversationPriority: string
 {
-    case Low    = 'low';
+    case Low = 'low';
     case Medium = 'medium';
-    case High   = 'high';
+    case High = 'high';
     case Urgent = 'urgent';
 
     public function label(): string
     {
-        return match($this) {
-            self::Low    => 'Low',
+        return match ($this) {
+            self::Low => 'Low',
             self::Medium => 'Medium',
-            self::High   => 'High',
+            self::High => 'High',
             self::Urgent => 'Urgent',
         };
     }

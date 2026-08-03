@@ -12,27 +12,27 @@ final class DisconnectConnectionAction
 {
     public function execute(
         MarketingConnection $connection,
-        string              $actorId,
-        ?string             $reason = null,
+        string $actorId,
+        ?string $reason = null,
     ): MarketingConnection {
         $previousStatus = $connection->status->value;
 
         $connection->update([
-            'status'           => ConnectionStatus::Disconnected->value,
-            'previous_status'  => $previousStatus,
-            'access_token'     => null,
-            'refresh_token'    => null,
+            'status' => ConnectionStatus::Disconnected->value,
+            'previous_status' => $previousStatus,
+            'access_token' => null,
+            'refresh_token' => null,
             'token_expires_at' => null,
-            'disconnected_at'  => now(),
-            'disconnected_by'  => $actorId,
+            'disconnected_at' => now(),
+            'disconnected_by' => $actorId,
         ]);
 
         event(new ConnectionDisconnected(
-            connectionId:   $connection->id,
-            connectorType:  $connection->connector_type,
-            actorId:        $actorId,
+            connectionId: $connection->id,
+            connectorType: $connection->connector_type,
+            actorId: $actorId,
             previousStatus: $previousStatus,
-            reason:         $reason,
+            reason: $reason,
         ));
 
         return $connection->fresh() ?? $connection;

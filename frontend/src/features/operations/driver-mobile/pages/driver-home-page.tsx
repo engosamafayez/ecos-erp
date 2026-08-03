@@ -1,10 +1,12 @@
 import { RefreshCw, Smartphone } from 'lucide-react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDriverTrips } from '../hooks/use-driver-mobile';
 import { DriverTripCard } from '../components/driver-trip-card';
 
 export function DriverHomePage() {
+  const { money } = useFormatter();
   const { data: trips, isLoading, refetch, isFetching } = useDriverTrips();
 
   const totalOrders    = trips?.reduce((s, t) => s + t.orders_count, 0) ?? 0;
@@ -37,7 +39,7 @@ export function DriverHomePage() {
           {[
             { label: 'Active Trips', value: trips?.length ?? 0 },
             { label: 'Total Orders', value: totalOrders },
-            { label: `EGP ${totalCollected.toLocaleString('ar-EG', { minimumFractionDigits: 2 })}`, value: 'Collected' },
+            { label: money(totalCollected), value: 'Collected' },
           ].map((kpi) => (
             <div key={kpi.label} className="bg-background px-3 py-3 text-center">
               <p className="font-bold text-base">{kpi.value}</p>

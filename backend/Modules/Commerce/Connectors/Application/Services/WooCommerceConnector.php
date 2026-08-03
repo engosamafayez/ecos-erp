@@ -14,7 +14,7 @@ final class WooCommerceConnector
         try {
             $response = Http::withBasicAuth($consumerKey, $consumerSecret)
                 ->timeout(10)
-                ->get(rtrim($storeUrl, '/') . '/wp-json/wc/v3/system_status');
+                ->get(rtrim($storeUrl, '/').'/wp-json/wc/v3/system_status');
 
             return $response->successful();
         } catch (Throwable) {

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Operations\Preparation\Application\Events\Inbound\LoadingProductLoadedEvent;
 use Modules\Operations\Preparation\Domain\Enums\PoolMovementType;
+use Throwable;
 
 /**
  * When Loading OS physically loads units onto a vehicle,
@@ -50,29 +51,29 @@ final class LoadingProductLoadedListener
                     ->where('id', $event->poolEntryId)
                     ->update([
                         'quantity_reserved' => max(0, $pool->quantity_reserved - $event->quantityLoaded),
-                        'quantity_loaded'   => $pool->quantity_loaded + $event->quantityLoaded,
-                        'updated_at'        => now(),
+                        'quantity_loaded' => $pool->quantity_loaded + $event->quantityLoaded,
+                        'updated_at' => now(),
                     ]);
 
                 DB::table('prepared_pool_movements')->insert([
-                    'id'                   => Str::ulid()->toString(),
-                    'prepared_pool_id'     => $event->poolEntryId,
-                    'movement_type'        => PoolMovementType::Loaded->value,
-                    'quantity'             => $event->quantityLoaded,
-                    'reference_type'       => 'vehicle',
-                    'reference_id'         => $event->vehicleId,
-                    'performed_by_type'    => 'system',
-                    'performed_by_id'      => null,
-                    'notes'                => "Loaded onto vehicle",
-                    'recorded_at'          => now(),
+                    'id' => Str::ulid()->toString(),
+                    'prepared_pool_id' => $event->poolEntryId,
+                    'movement_type' => PoolMovementType::Loaded->value,
+                    'quantity' => $event->quantityLoaded,
+                    'reference_type' => 'vehicle',
+                    'reference_id' => $event->vehicleId,
+                    'performed_by_type' => 'system',
+                    'performed_by_id' => null,
+                    'notes' => 'Loaded onto vehicle',
+                    'recorded_at' => now(),
                 ]);
             });
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[Preparation] LoadingProductLoadedListener failed', [
-                'pool_entry_id'    => $event->poolEntryId,
-                'product_id'       => $event->productId,
-                'qty_loaded'       => $event->quantityLoaded,
-                'error'            => $e->getMessage(),
+                'pool_entry_id' => $event->poolEntryId,
+                'product_id' => $event->productId,
+                'qty_loaded' => $event->quantityLoaded,
+                'error' => $e->getMessage(),
             ]);
         }
     }

@@ -24,6 +24,7 @@ use Modules\Organization\Brands\Presentation\Http\Requests\BrandTransferRequest;
 use Modules\Organization\Brands\Presentation\Http\Requests\StoreBrandRequest;
 use Modules\Organization\Brands\Presentation\Http\Requests\UpdateBrandRequest;
 use Modules\Organization\Brands\Presentation\Http\Resources\BrandResource;
+use RuntimeException;
 
 final class BrandController extends Controller
 {
@@ -34,29 +35,29 @@ final class BrandController extends Controller
         $companyId = $request->query('company_id');
 
         $paginator = $action->execute([
-            'search'     => $request->query('search'),
+            'search' => $request->query('search'),
             'company_id' => $companyId,
-            'status'     => $request->query('status', 'all'),
-            'sort_by'    => $request->query('sort_by', 'created_at'),
-            'sort_dir'   => $request->query('sort_dir', 'desc'),
-            'per_page'   => $request->query('per_page', 10),
+            'status' => $request->query('status', 'all'),
+            'sort_by' => $request->query('sort_by', 'created_at'),
+            'sort_dir' => $request->query('sort_dir', 'desc'),
+            'per_page' => $request->query('per_page', 10),
         ])->data();
 
         $totalActiveChannels = Channel::query()
             ->where('is_active', true)
             ->when(
                 $companyId,
-                fn ($q) => $q->whereHas('brand', fn ($q) => $q->where('company_id', $companyId))
+                fn ($q) => $q->whereHas('brand', fn ($q) => $q->where('company_id', $companyId)),
             )
             ->count();
 
         return $this->success([
             'items' => BrandResource::collection($paginator->items()),
-            'meta'  => [
+            'meta' => [
                 'current_page' => $paginator->currentPage(),
-                'per_page'     => $paginator->perPage(),
-                'total'        => $paginator->total(),
-                'last_page'    => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
             ],
             'summary' => [
                 'total_active_channels' => $totalActiveChannels,
@@ -111,7 +112,7 @@ final class BrandController extends Controller
         BrandTransferAnalysisService $analysis,
     ): JsonResponse {
         try {
-            $model  = $get->execute($brand)->data();
+            $model = $get->execute($brand)->data();
             $report = $analysis->analyze($model, $request->string('target_company_id')->value());
 
             return $this->success($report->toArray(), 'Impact analysis complete.');
@@ -128,8 +129,8 @@ final class BrandController extends Controller
         BrandTransferAnalysisService $analysis,
     ): JsonResponse {
         try {
-            $model    = $get->execute($brand)->data();
-            $actorId  = (string) (Auth::id() ?? '');
+            $model = $get->execute($brand)->data();
+            $actorId = (string) (Auth::id() ?? '');
             $targetId = $request->string('target_company_id')->value();
 
             // Run analysis to attach to the audit log and surface blocker errors.
@@ -139,19 +140,21 @@ final class BrandController extends Controller
                 $msg = $report->codeConflict
                     ? "Transfer blocked: brand code \"{$model->code}\" already exists in the target company. Codes are permanent business identifiers and cannot be auto-renamed. Rename this brand's code before retrying the transfer."
                     : 'Transfer blocked: one or more blocking issues were detected.';
+
                 return $this->error($msg, 409);
             }
 
             $transfer = $service->execute($model, $targetId, $actorId, $report);
 
             return $this->success([
-                'brand'    => new BrandResource($model->fresh()->load('company')),
+                'brand' => new BrandResource($model->fresh()->load('company')),
                 'transfer' => $transfer,
             ], 'Brand transferred successfully.');
         } catch (BrandNotFoundException $e) {
             return $this->error($e->getMessage(), 404);
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             $isConflict = str_contains($e->getMessage(), 'Transfer blocked');
+
             return $this->error($e->getMessage(), $isConflict ? 409 : 422);
         }
     }

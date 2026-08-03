@@ -111,7 +111,7 @@ export type AppModule = {
   items: ModuleNavItem[];
 };
 
-export const APP_MODULES: AppModule[] = [
+const ALL_MODULES: AppModule[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
@@ -415,6 +415,27 @@ export const APP_MODULES: AppModule[] = [
     ],
   },
 ];
+
+/**
+ * Modules hidden from navigation for the Commerce & Operations go-live scope
+ * (TASK-GOLIVE-BLOCKERS-001, BLOCKER-2). Navigation only — backends/routes are
+ * untouched; a direct URL still resolves. Remove an id here once its UI is
+ * production-ready.
+ *   • finance      — Accounting UI not built (backend F1–F5 complete, no frontend)
+ *   • crm          — Advanced CRM UI not built (service/sales/loyalty/intelligence)
+ *   • engineering  — AI Platform experimental (no LLM logic wired)
+ * (Stock Transfers was already removed from the Inventory sidebar.)
+ */
+const HIDDEN_MODULE_IDS: ReadonlySet<ModuleId> = new Set<ModuleId>([
+  'finance',
+  'crm',
+  'engineering',
+]);
+
+/** Navigation-visible modules (hidden ids filtered out for go-live scope). */
+export const APP_MODULES: AppModule[] = ALL_MODULES.filter(
+  (m) => !HIDDEN_MODULE_IDS.has(m.id),
+);
 
 /** Find the module that owns a given pathname. */
 export function findModuleByPath(pathname: string): AppModule | undefined {

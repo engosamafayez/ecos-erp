@@ -12,11 +12,11 @@ use Modules\Commerce\Orders\Application\Adapters\OrderSnapshotPersistenceAdapter
 use Modules\Commerce\Orders\Domain\Exceptions\SnapshotConsistencyException;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderFinancialSnapshot;
+use Modules\Common\Snapshots\Application\Services\SnapshotManager;
+use Modules\Common\Snapshots\Domain\Engine\IntegrityEngine;
+use Modules\Common\Snapshots\Domain\Exceptions\SnapshotConsistencyException as PlatformConsistencyException;
 use Modules\CostManagement\Application\Services\CostCalculationEngine;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
-use Modules\Common\Snapshots\Application\Services\SnapshotManager;
-use Modules\Common\Snapshots\Domain\Exceptions\SnapshotConsistencyException as PlatformConsistencyException;
-use Modules\Common\Snapshots\Domain\Engine\IntegrityEngine;
 
 /**
  * Thin wrapper: builds Order-specific line data then delegates snapshot
@@ -36,10 +36,10 @@ use Modules\Common\Snapshots\Domain\Engine\IntegrityEngine;
 final class CreateOrderSnapshotService
 {
     public function __construct(
-        private readonly CostCalculationEngine        $costEngine,
-        private readonly ResolveProductPricingAction  $pricingAction,
-        private readonly SnapshotManager              $snapshotManager,
-        private readonly IntegrityEngine              $integrityEngine,
+        private readonly CostCalculationEngine $costEngine,
+        private readonly ResolveProductPricingAction $pricingAction,
+        private readonly SnapshotManager $snapshotManager,
+        private readonly IntegrityEngine $integrityEngine,
     ) {}
 
     /**
@@ -57,12 +57,12 @@ final class CreateOrderSnapshotService
         $order->loadMissing(['lines.product.brand', 'lines.product.activeRecipe', 'channel.brand', 'customer']);
 
         $companyId = Auth::user()?->company_id;
-        $actorId   = Auth::id() !== null ? (string) Auth::id() : null;
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
 
         $lineData = $this->buildLineData($order, $companyId);
 
-        $contextAdapter     = new OrderBusinessContextAdapter($order, $actorId, $companyId);
-        $financialAdapter   = new OrderFinancialSnapshotAdapter($order, $lineData, $companyId, $actorId);
+        $contextAdapter = new OrderBusinessContextAdapter($order, $actorId, $companyId);
+        $financialAdapter = new OrderFinancialSnapshotAdapter($order, $lineData, $companyId, $actorId);
         $persistenceAdapter = new OrderSnapshotPersistenceAdapter($order, $actorId);
 
         try {
@@ -93,7 +93,7 @@ final class CreateOrderSnapshotService
                 number_format((float) ($line->quantity ?? 0), 4, '.', ''),
                 number_format((float) ($line->unit_price_at_sale ?? 0), 4, '.', ''),
                 number_format((float) ($line->line_total ?? 0), 4, '.', ''),
-            ])
+            ]),
         )->all();
 
         usort($lineParts, static fn ($a, $b) => strcmp($a, $b));
@@ -126,23 +126,23 @@ final class CreateOrderSnapshotService
                 ->where('is_active', true)
                 ->first();
 
-            $costSummary      = null;
-            $unitCost         = null;
+            $costSummary = null;
+            $unitCost = null;
             $bomVersionNumber = null;
-            $recipeVersion    = null;
+            $recipeVersion = null;
 
             if ($bom !== null) {
-                $costSummary      = $this->costEngine->calculate($bom);
-                $unitCost         = $costSummary->finishedProductCost;
+                $costSummary = $this->costEngine->calculate($bom);
+                $unitCost = $costSummary->finishedProductCost;
                 $bomVersionNumber = $bom->bom_version_number;
-                $recipeVersion    = $bom->version ?? null;
+                $recipeVersion = $bom->version ?? null;
             }
 
             $pricing = $this->pricingAction->execute($line->product_id, $companyId);
 
-            $lineCost    = $unitCost !== null ? round($unitCost * $line->quantity, 4) : null;
+            $lineCost = $unitCost !== null ? round($unitCost * $line->quantity, 4) : null;
             $grossProfit = $lineCost !== null ? round($line->line_total - $lineCost, 4) : null;
-            $marginPct   = ($grossProfit !== null && $line->line_total > 0.0)
+            $marginPct = ($grossProfit !== null && $line->line_total > 0.0)
                 ? round(($grossProfit / $line->line_total) * 100.0, 4)
                 : null;
 
@@ -152,31 +152,31 @@ final class CreateOrderSnapshotService
                 $this->resolveReview($line->product_id, $companyId);
 
             $lines[] = [
-                'order_id'                 => $line->order_id,
-                'order_line_id'            => $line->id,
-                'product_id'               => $line->product_id,
-                'product_sku'              => $line->product?->sku,
-                'product_name'             => $line->product?->name,
-                'quantity'                 => $line->quantity,
-                'unit_price_at_sale'       => $line->unit_price,
-                'regular_price_at_sale'    => $pricing['regular_price'],
-                'sale_price_at_sale'       => $pricing['sale_price'],
-                'line_total'               => $line->line_total,
-                'raw_material_cost'        => $costSummary?->rawMaterialCost,
-                'packaging_cost'           => $costSummary?->packagingCost,
-                'manufacturing_cost'       => $costSummary?->manufacturingCost,
-                'other_cost'               => $costSummary?->otherCost,
-                'recipe_cost'              => $costSummary?->recipeCost,
-                'unit_cost'                => $unitCost,
-                'line_cost'                => $lineCost,
-                'target_margin_percent'    => $targetMargin,
-                'bom_id'                   => $bom?->id,
-                'bom_version_number'       => $bomVersionNumber,
-                'source_recipe_version'    => $recipeVersion,
-                'price_review_id'          => $reviewId,
+                'order_id' => $line->order_id,
+                'order_line_id' => $line->id,
+                'product_id' => $line->product_id,
+                'product_sku' => $line->product?->sku,
+                'product_name' => $line->product?->name,
+                'quantity' => $line->quantity,
+                'unit_price_at_sale' => $line->unit_price,
+                'regular_price_at_sale' => $pricing['regular_price'],
+                'sale_price_at_sale' => $pricing['sale_price'],
+                'line_total' => $line->line_total,
+                'raw_material_cost' => $costSummary?->rawMaterialCost,
+                'packaging_cost' => $costSummary?->packagingCost,
+                'manufacturing_cost' => $costSummary?->manufacturingCost,
+                'other_cost' => $costSummary?->otherCost,
+                'recipe_cost' => $costSummary?->recipeCost,
+                'unit_cost' => $unitCost,
+                'line_cost' => $lineCost,
+                'target_margin_percent' => $targetMargin,
+                'bom_id' => $bom?->id,
+                'bom_version_number' => $bomVersionNumber,
+                'source_recipe_version' => $recipeVersion,
+                'price_review_id' => $reviewId,
                 'price_review_approved_at' => $reviewApprovedAt,
                 'price_review_approved_by' => $reviewApprovedBy,
-                'cost_snapshot'            => $costSummary?->toArray(),
+                'cost_snapshot' => $costSummary?->toArray(),
             ];
         }
 

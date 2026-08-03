@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Session\Domain\Exceptions;
 
-final class SessionNotFoundException extends \DomainException
+use DomainException;
+
+final class SessionNotFoundException extends DomainException
 {
     public static function withId(string $id): self
     {

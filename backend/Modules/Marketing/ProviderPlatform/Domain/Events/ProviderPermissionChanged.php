@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderPermissionChanged extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.permission_changed'; }
+    public function eventName(): string
+    {
+        return 'provider.permission_changed';
+    }
 }

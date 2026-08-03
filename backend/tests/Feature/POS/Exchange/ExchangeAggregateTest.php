@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\Exchange;
 
+use InvalidArgumentException;
 use Modules\POS\Exchange\Domain\Enums\ExchangeReason;
 use Modules\POS\Exchange\Domain\Enums\ExchangeStatus;
 use Modules\POS\Exchange\Domain\Events\ExchangeCancelled;
@@ -23,7 +24,7 @@ final class ExchangeAggregateTest extends TestCase
 
     public function test_rejects_empty_exchange_number(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Exchange number cannot be empty');
 
         $this->makeExchange(exchangeNumber: '');
@@ -31,7 +32,7 @@ final class ExchangeAggregateTest extends TestCase
 
     public function test_rejects_empty_original_sale_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Original sale ID cannot be empty');
 
         $this->makeExchange(originalSaleId: '');
@@ -39,7 +40,7 @@ final class ExchangeAggregateTest extends TestCase
 
     public function test_rejects_empty_original_sale_number(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Original sale number cannot be empty');
 
         $this->makeExchange(originalSaleNumber: '');
@@ -47,7 +48,7 @@ final class ExchangeAggregateTest extends TestCase
 
     public function test_rejects_empty_terminal_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Terminal ID cannot be empty');
 
         $this->makeExchange(terminalId: '');
@@ -55,7 +56,7 @@ final class ExchangeAggregateTest extends TestCase
 
     public function test_rejects_empty_cashier_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Cashier ID cannot be empty');
 
         $this->makeExchange(cashierId: '');
@@ -63,7 +64,7 @@ final class ExchangeAggregateTest extends TestCase
 
     public function test_rejects_empty_returned_lines(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('at least one returned line');
 
         $this->makeExchange(returnedLines: []);
@@ -71,7 +72,7 @@ final class ExchangeAggregateTest extends TestCase
 
     public function test_rejects_empty_replacement_lines(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('at least one replacement line');
 
         $this->makeExchange(replacementLines: []);
@@ -79,7 +80,7 @@ final class ExchangeAggregateTest extends TestCase
 
     public function test_rejects_non_instance_returned_line(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ExchangeLine instance');
 
         $this->makeExchange(returnedLines: ['not-an-exchange-line']);
@@ -87,7 +88,7 @@ final class ExchangeAggregateTest extends TestCase
 
     public function test_rejects_non_instance_replacement_line(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ExchangeLine instance');
 
         $this->makeExchange(replacementLines: ['not-an-exchange-line']);
@@ -125,7 +126,7 @@ final class ExchangeAggregateTest extends TestCase
     public function test_initiate_fires_exchange_initiated_event(): void
     {
         $exchange = $this->makeExchange();
-        $events   = $exchange->pullDomainEvents();
+        $events = $exchange->pullDomainEvents();
 
         $this->assertCount(1, $events);
         $this->assertInstanceOf(ExchangeInitiated::class, $events[0]);
@@ -146,7 +147,7 @@ final class ExchangeAggregateTest extends TestCase
         $exchange = $this->makeExchange(returnPrice: '100.00', replacementPrice: '120.00');
 
         $this->assertSame('100.00', $exchange->getReturnedTotal()->amount);
-        $this->assertSame('EGP',    $exchange->getReturnedTotal()->currency);
+        $this->assertSame('EGP', $exchange->getReturnedTotal()->currency);
     }
 
     public function test_replacement_total_sums_replacement_lines(): void
@@ -379,18 +380,18 @@ final class ExchangeAggregateTest extends TestCase
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private function makeExchange(
-        string       $exchangeNumber    = 'EXC-001',
-        string       $originalSaleId    = 'sale-001',
-        string       $originalSaleNumber = 'SALE-0001',
-        string       $terminalId        = 'term-1',
-        string       $cashierId         = 'usr-1',
-        string       $currency          = 'EGP',
-        string       $returnPrice       = '100.00',
-        string       $replacementPrice  = '100.00',
-        ?array       $returnedLines     = null,
-        ?array       $replacementLines  = null,
+        string $exchangeNumber = 'EXC-001',
+        string $originalSaleId = 'sale-001',
+        string $originalSaleNumber = 'SALE-0001',
+        string $terminalId = 'term-1',
+        string $cashierId = 'usr-1',
+        string $currency = 'EGP',
+        string $returnPrice = '100.00',
+        string $replacementPrice = '100.00',
+        ?array $returnedLines = null,
+        ?array $replacementLines = null,
     ): Exchange {
-        $returned     = $returnedLines ?? [
+        $returned = $returnedLines ?? [
             ExchangeLine::returned('line-01', 'prod-1', 'Blue Shirt S', 'SKU-S', Quantity::of('1'), Money::of($returnPrice, 'EGP')),
         ];
         $replacements = $replacementLines ?? [

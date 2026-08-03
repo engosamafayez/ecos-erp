@@ -10,6 +10,7 @@ use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockExceptio
 use Modules\POS\Application\Contracts\StockIssuePortInterface;
 use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Events\SaleItemPayload;
+use Throwable;
 
 /**
  * CRIT-003 — Decrements inventory for every line item when a POS sale completes.
@@ -43,31 +44,31 @@ final class PosSaleInventoryListener
             /** @var SaleItemPayload $item */
             try {
                 $this->stockIssue->issue(new StockOperationDTO(
-                    warehouse_id:   $event->warehouseId,
-                    product_id:     $item->productId,
-                    company_id:     $event->companyId,
-                    quantity:       (float) $item->quantity,
+                    warehouse_id: $event->warehouseId,
+                    product_id: $item->productId,
+                    company_id: $event->companyId,
+                    quantity: (float) $item->quantity,
                     reference_type: 'pos_sale',
-                    reference_id:   $event->saleId,
-                    notes:          "POS #{$event->receiptNumber} · {$item->productName}",
+                    reference_id: $event->saleId,
+                    notes: "POS #{$event->receiptNumber} · {$item->productName}",
                 ));
             } catch (InsufficientStockException $e) {
                 $level = $allowNegative ? 'warning' : 'error';
 
                 Log::channel('daily')->{$level}('[POS][Inventory] Insufficient stock — inventory not decremented', [
-                    'sale_id'        => $event->saleId,
+                    'sale_id' => $event->saleId,
                     'receipt_number' => $event->receiptNumber,
-                    'product_id'     => $item->productId,
-                    'sku'            => $item->sku,
-                    'requested'      => $item->quantity,
-                    'error'          => $e->getMessage(),
-                ]);
-            } catch (\Throwable $e) {
-                Log::channel('daily')->error('[POS][Inventory] Unexpected error decreasing inventory', [
-                    'sale_id'    => $event->saleId,
                     'product_id' => $item->productId,
-                    'error'      => $e->getMessage(),
-                    'trace'      => $e->getTraceAsString(),
+                    'sku' => $item->sku,
+                    'requested' => $item->quantity,
+                    'error' => $e->getMessage(),
+                ]);
+            } catch (Throwable $e) {
+                Log::channel('daily')->error('[POS][Inventory] Unexpected error decreasing inventory', [
+                    'sale_id' => $event->saleId,
+                    'product_id' => $item->productId,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
         }

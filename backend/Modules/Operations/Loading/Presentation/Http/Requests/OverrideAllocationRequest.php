@@ -17,9 +17,9 @@ final class OverrideAllocationRequest extends FormRequest
     {
         return [
             'allocation_record_id' => ['required', 'uuid'],
-            'new_quantity'         => ['required', 'numeric', 'min:0'],
-            'reason'               => ['required', 'string', 'min:10', 'max:1000'],
-            'actor_type'           => ['required', 'in:dispatcher,driver'],
+            'new_quantity' => ['required', 'numeric', 'min:0'],
+            'reason' => ['required', 'string', 'min:10', 'max:1000'],
+            'actor_type' => ['required', 'in:dispatcher,driver'],
         ];
     }
 }

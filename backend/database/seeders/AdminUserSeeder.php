@@ -17,9 +17,9 @@ class AdminUserSeeder extends Seeder
         $admin = User::updateOrCreate(
             ['email' => 'admin@ecos.local'],
             [
-                'name'     => 'Administrator',
+                'name' => 'Administrator',
                 'password' => 'Admin@123456',
-            ]
+            ],
         );
 
         // Ensure the super-admin role is always assigned.

@@ -234,27 +234,27 @@ export function OrderSmartToolbar(ctx: Props) {
   const { t } = useTranslation('orders');
 
   const opLabel: Record<OpKey, string> = {
-    repeatedCustomers:     t('smartToolbar.repeatedCustomers'),
-    repeatedSameStatus:    t('smartToolbar.repeatedSameStatus'),
-    sameProduct:           t('smartToolbar.sameProduct'),
-    sameShippingCompany:   t('smartToolbar.sameShippingCompany'),
-    ordersWithoutLocation: t('smartToolbar.ordersWithoutLocation'),
-    multipleAttempts:      t('smartToolbar.multipleAttempts'),
-    printOrders:           t('smartToolbar.printOrders'),
-    callCustomer:          t('smartToolbar.callCustomer'),
-    codOrders:             t('smartToolbar.codOrders'),
+    repeatedCustomers:     t($ => $.smartToolbar.repeatedCustomers),
+    repeatedSameStatus:    t($ => $.smartToolbar.repeatedSameStatus),
+    sameProduct:           t($ => $.smartToolbar.sameProduct),
+    sameShippingCompany:   t($ => $.smartToolbar.sameShippingCompany),
+    ordersWithoutLocation: t($ => $.smartToolbar.ordersWithoutLocation),
+    multipleAttempts:      t($ => $.smartToolbar.multipleAttempts),
+    printOrders:           t($ => $.smartToolbar.printOrders),
+    callCustomer:          t($ => $.smartToolbar.callCustomer),
+    codOrders:             t($ => $.smartToolbar.codOrders),
   };
 
   const groupLabel: Record<GroupLabelKey, string> = {
-    groupCustomer: t('smartToolbar.groupCustomer'),
-    groupShipping: t('smartToolbar.groupShipping'),
-    groupProduct:  t('smartToolbar.groupProduct'),
+    groupCustomer: t($ => $.smartToolbar.groupCustomer),
+    groupShipping: t($ => $.smartToolbar.groupShipping),
+    groupProduct:  t($ => $.smartToolbar.groupProduct),
   };
 
   const moreLabel: Record<MoreLabelKey, string> = {
-    vipCustomers:           t('smartToolbar.vipCustomers'),
-    repeatedSameProduct:    t('smartToolbar.repeatedSameProduct'),
-    repeatedSameShippingCo: t('smartToolbar.repeatedSameShippingCo'),
+    vipCustomers:           t($ => $.smartToolbar.vipCustomers),
+    repeatedSameProduct:    t($ => $.smartToolbar.repeatedSameProduct),
+    repeatedSameShippingCo: t($ => $.smartToolbar.repeatedSameShippingCo),
   };
 
   const counts = useMemo(() => computeCounts(ctx.orders), [ctx.orders]);
@@ -313,7 +313,7 @@ export function OrderSmartToolbar(ctx: Props) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-7 shrink-0 gap-1 px-2.5 text-xs">
-              {t('smartToolbar.more')}
+              {t($ => $.smartToolbar.more)}
               <ChevronDown className="size-3" />
             </Button>
           </DropdownMenuTrigger>

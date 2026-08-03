@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ErrorState, LoadingState, PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ const TAG_CLASS: Record<string, string> = {
  * VIP candidate" a query instead of a guess.
  */
 export function ApplicantTagsPage() {
+  const { t } = useTranslation('hr');
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [matchAll, setMatchAll] = useState(false);
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | undefined>(undefined);
@@ -46,13 +48,13 @@ export function ApplicantTagsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Applicant Tags"
-        subtitle="A company catalogue, not typed words — which is why filtering by one actually finds everybody."
+        title={t($ => $.tags.title)}
+        subtitle={t($ => $.tags.subtitle)}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Catalogue</CardTitle>
+          <CardTitle>{t($ => $.tags.catalogue)}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-2">
@@ -69,7 +71,7 @@ export function ApplicantTagsPage() {
                 title={tag.description ?? undefined}
               >
                 {tag.name}
-                <span className="ml-1.5 opacity-70">{tag.applicant_count}</span>
+                <span className="ms-1.5 opacity-70">{tag.applicant_count}</span>
               </button>
             ))}
           </div>
@@ -77,12 +79,14 @@ export function ApplicantTagsPage() {
           {selectedKeys.length > 0 && (
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <Button size="sm" variant={matchAll ? 'default' : 'outline'} onClick={() => setMatchAll((v) => !v)}>
-                {matchAll ? 'Matching ALL selected tags' : 'Matching ANY selected tag'}
+                {matchAll ? t($ => $.tags.matchAll) : t($ => $.tags.matchAny)}
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setSelectedKeys([])}>
-                Clear
+                {t($ => $.common.clear)}
               </Button>
-              <span className="text-muted-foreground">{search?.total ?? 0} applicant(s)</span>
+              <span className="text-muted-foreground">
+                {t($ => $.tags.applicantCount, { count: search?.total ?? 0 })}
+              </span>
             </div>
           )}
         </CardContent>
@@ -91,14 +95,16 @@ export function ApplicantTagsPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Matching applicants</CardTitle>
+            <CardTitle>{t($ => $.tags.matchingApplicants)}</CardTitle>
           </CardHeader>
           <CardContent>
             {selectedKeys.length === 0 && (
-              <p className="text-muted-foreground text-sm">Select a tag above to filter the pool.</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.tags.selectTagHint)}</p>
             )}
             {selectedKeys.length > 0 && (search?.items ?? []).length === 0 && (
-              <p className="text-muted-foreground text-sm">Nobody carries {matchAll ? 'all' : 'any'} of these tags.</p>
+              <p className="text-muted-foreground text-sm">
+                {matchAll ? t($ => $.tags.emptyAll) : t($ => $.tags.emptyAny)}
+              </p>
             )}
             <ul className="flex flex-col gap-2">
               {(search?.items ?? []).map((applicant) => (
@@ -106,7 +112,7 @@ export function ApplicantTagsPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedApplicantId(applicant.id)}
-                    className={`hover:bg-muted/50 w-full rounded-md border p-3 text-left ${
+                    className={`hover:bg-muted/50 w-full rounded-md border p-3 text-start ${
                       selectedApplicantId === applicant.id ? 'bg-muted/60' : ''
                     }`}
                   >
@@ -116,7 +122,7 @@ export function ApplicantTagsPage() {
                     </div>
                     <p className="text-muted-foreground text-xs">
                       {applicant.mobile ?? '—'} · {applicant.status}
-                      {applicant.in_talent_pool ? ' · talent pool' : ''}
+                      {applicant.in_talent_pool ? ` · ${t($ => $.tags.talentPool)}` : ''}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {applicant.tags.map((tag: AssignedTag) => (
@@ -139,18 +145,18 @@ export function ApplicantTagsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Timeline</CardTitle>
+            <CardTitle>{t($ => $.tags.timeline)}</CardTitle>
           </CardHeader>
           <CardContent>
             {!selectedApplicantId && (
-              <p className="text-muted-foreground text-sm">Pick an applicant to read their whole story in order.</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.tags.pickApplicantHint)}</p>
             )}
             {selectedApplicantId && (timeline?.events ?? []).length === 0 && (
-              <p className="text-muted-foreground text-sm">Nothing recorded yet.</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.tags.timelineEmpty)}</p>
             )}
             <ol className="flex flex-col gap-3">
               {(timeline?.events ?? []).map((event: TimelineEvent) => (
-                <li key={event.id} className="border-l-2 pl-3">
+                <li key={event.id} className="border-s-2 ps-3">
                   <div className="flex flex-wrap items-baseline gap-2 text-sm">
                     <span className={event.is_milestone ? 'font-medium' : ''}>{event.title}</span>
                     <span className="text-muted-foreground text-[10px] uppercase">{event.category}</span>
@@ -158,7 +164,7 @@ export function ApplicantTagsPage() {
                   {event.summary && <p className="text-muted-foreground text-sm">{event.summary}</p>}
                   <p className="text-muted-foreground text-xs">
                     {event.occurred_at}
-                    {event.is_system ? ' · system' : event.actor_name ? ` · ${event.actor_name}` : ''}
+                    {event.is_system ? ` · ${t($ => $.common.system)}` : event.actor_name ? ` · ${event.actor_name}` : ''}
                   </p>
                 </li>
               ))}

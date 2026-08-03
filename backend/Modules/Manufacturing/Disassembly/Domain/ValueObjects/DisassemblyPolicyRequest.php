@@ -23,8 +23,8 @@ final readonly class DisassemblyPolicyRequest
         public bool $has_active_recipe,
         public bool $is_inventory_managed,
         public bool $already_disassembled,
-        public ?string $trigger_id   = null,
-        public string $trigger_type  = 'manual',
-        public array $metadata       = [],
+        public ?string $trigger_id = null,
+        public string $trigger_type = 'manual',
+        public array $metadata = [],
     ) {}
 }

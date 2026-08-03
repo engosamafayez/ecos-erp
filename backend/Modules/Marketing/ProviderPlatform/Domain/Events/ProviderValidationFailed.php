@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderValidationFailed extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.validation_failed'; }
+    public function eventName(): string
+    {
+        return 'provider.validation_failed';
+    }
 }

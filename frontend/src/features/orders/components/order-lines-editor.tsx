@@ -38,7 +38,7 @@ export function OrderLinesEditor() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{t('workspace.lineItems')}</span>
+        <span className="text-sm font-medium">{t($ => $.workspace.lineItems)}</span>
         <Button
           type="button"
           size="sm"
@@ -46,7 +46,7 @@ export function OrderLinesEditor() {
           onClick={() => append({ product_id: '', quantity: '', unit_price: '' })}
         >
           <Plus className="size-3.5" />
-          {t('workspace.addLine')}
+          {t($ => $.workspace.addLine)}
         </Button>
       </div>
 
@@ -58,10 +58,10 @@ export function OrderLinesEditor() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-start">
-              <th className="pb-2 pr-3 font-medium">{t('workspace.colProduct')}</th>
-              <th className="w-28 pb-2 pr-3 font-medium">{t('workspace.colQty')}</th>
-              <th className="w-32 pb-2 pr-3 font-medium">{t('workspace.colUnitPrice')}</th>
-              <th className="w-32 pb-2 pr-3 font-medium text-end">{t('detail.lineTotal')}</th>
+              <th className="pb-2 pr-3 font-medium">{t($ => $.workspace.colProduct)}</th>
+              <th className="w-28 pb-2 pr-3 font-medium">{t($ => $.workspace.colQty)}</th>
+              <th className="w-32 pb-2 pr-3 font-medium">{t($ => $.workspace.colUnitPrice)}</th>
+              <th className="w-32 pb-2 pr-3 font-medium text-end">{t($ => $.detail.lineTotal)}</th>
               <th className="w-10 pb-2" />
             </tr>
           </thead>
@@ -81,7 +81,7 @@ export function OrderLinesEditor() {
                       onChange={(v) =>
                         setValue(`lines.${index}.product_id`, v, { shouldValidate: true })
                       }
-                      placeholder={t('workspace.selectProduct')}
+                      placeholder={t($ => $.workspace.selectProduct)}
                       loading={loadingProducts}
                     />
                     {fieldError(errs, 'product_id') && (

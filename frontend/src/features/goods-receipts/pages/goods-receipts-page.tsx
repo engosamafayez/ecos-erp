@@ -90,51 +90,51 @@ export function GoodsReceiptsPage() {
   const columns: ColumnDef<GoodsReceipt>[] = [
     {
       key: 'receipt_number',
-      header: t('columns.number'),
+      header: t($ => $.columns.number),
       sortable: true,
       cell: (gr) => <span className="font-medium">{gr.receipt_number}</span>,
     },
     {
       key: 'supplier',
-      header: t('columns.supplier'),
+      header: t($ => $.columns.supplier),
       cell: (gr) => gr.purchase_order?.supplier?.name ?? '—',
     },
     {
       key: 'purchase_order',
-      header: t('columns.purchaseOrder'),
+      header: t($ => $.columns.purchaseOrder),
       cell: (gr) => gr.purchase_order?.po_number ?? '—',
     },
     {
       key: 'receipt_date',
-      header: t('columns.receiptDate'),
+      header: t($ => $.columns.receiptDate),
       sortable: true,
       cell: (gr) => gr.receipt_date,
     },
     {
       key: 'supplier_invoice_number',
-      header: t('columns.invoiceNumber'),
+      header: t($ => $.columns.invoiceNumber),
       cell: (gr) => gr.supplier_invoice_number ?? '—',
     },
     {
       key: 'supplier_invoice_date',
-      header: t('columns.invoiceDate'),
+      header: t($ => $.columns.invoiceDate),
       cell: (gr) => gr.supplier_invoice_date ?? '—',
     },
     {
       key: 'invoice_total_amount',
-      header: t('columns.invoiceTotal'),
+      header: t($ => $.columns.invoiceTotal),
       cell: (gr) => gr.invoice_total_amount > 0
         ? gr.invoice_total_amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : '—',
     },
     {
       key: 'payment_status',
-      header: t('columns.paymentStatus'),
+      header: t($ => $.columns.paymentStatus),
       cell: (gr) => <GrPaymentStatusBadge status={gr.payment_status} />,
     },
     {
       key: 'status',
-      header: t('columns.status'),
+      header: t($ => $.columns.status),
       sortable: true,
       cell: (gr) => <GrStatusBadge status={gr.status} />,
     },
@@ -143,13 +143,13 @@ export function GoodsReceiptsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
+        breadcrumbs={[{ label: tCommon($ => $.home), to: ROUTES.dashboard }, { label: t($ => $.title) }]}
         actions={
           <Button onClick={() => navigate(ROUTES.goodsReceiptsNew)}>
             <Plus className="size-4" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -157,7 +157,7 @@ export function GoodsReceiptsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={t($ => $.search)}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -166,40 +166,40 @@ export function GoodsReceiptsPage() {
             filterPanel={
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{tCommon('filters.status')}</span>
+                  <span className="text-sm font-medium">{tCommon($ => $.filters.status)}</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => { setStatusFilter(e.target.value as GoodsReceiptStatus | 'all'); setPage(1); }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">{tCommon('status.all')}</option>
-                    <option value="draft">{t('status.draft')}</option>
-                    <option value="posted">{t('status.posted')}</option>
+                    <option value="all">{tCommon($ => $.status.all)}</option>
+                    <option value="draft">{t($ => $.status.draft)}</option>
+                    <option value="posted">{t($ => $.status.posted)}</option>
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.paymentStatus')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.paymentStatus)}</span>
                   <select
                     value={paymentStatusFilter}
                     onChange={(e) => { setPaymentStatusFilter(e.target.value as PaymentStatus | 'all'); setPage(1); }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">{t('filters.allPaymentStatuses')}</option>
-                    <option value="unpaid">{t('paymentStatus.unpaid')}</option>
-                    <option value="partially_paid">{t('paymentStatus.partiallyPaid')}</option>
-                    <option value="paid">{t('paymentStatus.paid')}</option>
+                    <option value="all">{t($ => $.filters.allPaymentStatuses)}</option>
+                    <option value="unpaid">{t($ => $.paymentStatus.unpaid)}</option>
+                    <option value="partially_paid">{t($ => $.paymentStatus.partiallyPaid)}</option>
+                    <option value="paid">{t($ => $.paymentStatus.paid)}</option>
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.supplier')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.supplier)}</span>
                   <select
                     value={supplierFilter}
                     onChange={(e) => { setSupplierFilter(e.target.value); setPage(1); }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">{tCommon('status.all')}</option>
+                    <option value="">{tCommon($ => $.status.all)}</option>
                     {(supplierOptions ?? []).map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
@@ -223,7 +223,7 @@ export function GoodsReceiptsPage() {
                 items={[
                   {
                     key: 'view',
-                    label: tCommon('actions.view'),
+                    label: tCommon($ => $.actions.view),
                     icon: Eye,
                     onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}`),
                   },
@@ -231,19 +231,19 @@ export function GoodsReceiptsPage() {
                     ? [
                         {
                           key: 'edit',
-                          label: tCommon('common.edit'),
+                          label: tCommon($ => $.common.edit),
                           icon: Pencil,
                           onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}/edit`),
                         },
                         {
                           key: 'post',
-                          label: t('actions.post'),
+                          label: t($ => $.actions.post),
                           icon: Send,
                           onSelect: () => setPosting(gr),
                         },
                         {
                           key: 'delete',
-                          label: tCommon('common.delete'),
+                          label: tCommon($ => $.common.delete),
                           icon: Trash2,
                           variant: 'destructive' as const,
                           onSelect: () => setDeleting(gr),
@@ -267,9 +267,9 @@ export function GoodsReceiptsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('dialogs.delete.title')}
-        description={t('dialogs.delete.description', { number: deleting?.receipt_number ?? '' })}
-        confirmLabel={t('dialogs.delete.confirm')}
+        title={t($ => $.dialogs.delete.title)}
+        description={t($ => $.dialogs.delete.description, { number: deleting?.receipt_number ?? '' })}
+        confirmLabel={t($ => $.dialogs.delete.confirm)}
         variant="destructive"
         loading={deleteGR.isPending}
         onConfirm={() => {
@@ -280,9 +280,9 @@ export function GoodsReceiptsPage() {
       <ConfirmDialog
         open={posting !== null}
         onOpenChange={(open) => { if (!open) setPosting(null); }}
-        title={t('dialogs.post.title')}
-        description={t('dialogs.post.description', { number: posting?.receipt_number ?? '' })}
-        confirmLabel={t('dialogs.post.confirm')}
+        title={t($ => $.dialogs.post.title)}
+        description={t($ => $.dialogs.post.description, { number: posting?.receipt_number ?? '' })}
+        confirmLabel={t($ => $.dialogs.post.confirm)}
         loading={postGR.isPending}
         onConfirm={() => {
           if (posting) postGR.mutate(posting.id, { onSuccess: () => setPosting(null) });

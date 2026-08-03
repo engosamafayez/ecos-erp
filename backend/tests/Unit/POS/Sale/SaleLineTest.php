@@ -15,26 +15,26 @@ use PHPUnit\Framework\TestCase;
 final class SaleLineTest extends TestCase
 {
     private function makeCartLineData(
-        string  $lineId       = 'line-uuid-1',
-        string  $qty          = '2.0000',
-        string  $price        = '10.00',
-        string  $lineTotal    = '20.00',
-        string  $currency     = 'EGP',
+        string $lineId = 'line-uuid-1',
+        string $qty = '2.0000',
+        string $price = '10.00',
+        string $lineTotal = '20.00',
+        string $currency = 'EGP',
         ?string $discountType = null,
         ?string $discountValue = null,
-        int     $sortOrder    = 0,
+        int $sortOrder = 0,
     ): array {
         return [
-            'id'             => $lineId,
-            'product_id'     => 'prod-uuid-1',
-            'product_name'   => 'Widget',
-            'sku'            => 'WGT-001',
-            'quantity'       => $qty,
-            'unit_price'     => ['amount' => $price, 'currency' => $currency],
-            'discount_type'  => $discountType,
+            'id' => $lineId,
+            'product_id' => 'prod-uuid-1',
+            'product_name' => 'Widget',
+            'sku' => 'WGT-001',
+            'quantity' => $qty,
+            'unit_price' => ['amount' => $price, 'currency' => $currency],
+            'discount_type' => $discountType,
             'discount_value' => $discountValue,
-            'line_total'     => ['amount' => $lineTotal, 'currency' => $currency],
-            'sort_order'     => $sortOrder,
+            'line_total' => ['amount' => $lineTotal, 'currency' => $currency],
+            'sort_order' => $sortOrder,
         ];
     }
 
@@ -83,9 +83,9 @@ final class SaleLineTest extends TestCase
     public function test_from_cart_line_stores_percentage_discount(): void
     {
         $line = SaleLine::fromCartLine($this->makeCartLineData(
-            discountType:  'percentage',
+            discountType: 'percentage',
             discountValue: '10',
-            lineTotal:     '18.00',
+            lineTotal: '18.00',
         ));
         $this->assertSame(DiscountType::Percentage, $line->discountType);
         $this->assertSame('10', $line->discountValue);
@@ -103,8 +103,8 @@ final class SaleLineTest extends TestCase
     {
         $array = SaleLine::fromCartLine($this->makeCartLineData())->toArray();
         foreach (['line_id', 'product_id', 'product_name', 'sku', 'quantity',
-                  'unit_price', 'discount_type', 'discount_value',
-                  'line_total', 'sort_order'] as $key) {
+            'unit_price', 'discount_type', 'discount_value',
+            'line_total', 'sort_order'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }
@@ -136,11 +136,11 @@ final class SaleLineTest extends TestCase
     public function test_roundtrip_to_array_from_array(): void
     {
         $original = SaleLine::fromCartLine($this->makeCartLineData(
-            lineId:        'line-roundtrip',
-            qty:           '5.0000',
-            price:         '15.00',
-            lineTotal:     '67.50',
-            discountType:  'percentage',
+            lineId: 'line-roundtrip',
+            qty: '5.0000',
+            price: '15.00',
+            lineTotal: '67.50',
+            discountType: 'percentage',
             discountValue: '10',
         ));
 
@@ -156,16 +156,16 @@ final class SaleLineTest extends TestCase
     public function test_from_array_handles_null_discount(): void
     {
         $line = SaleLine::fromArray([
-            'line_id'        => 'uuid-x',
-            'product_id'     => 'p',
-            'product_name'   => 'P',
-            'sku'            => 'SKU',
-            'quantity'       => '1.0000',
-            'unit_price'     => ['amount' => '5.00', 'currency' => 'EGP'],
-            'discount_type'  => null,
+            'line_id' => 'uuid-x',
+            'product_id' => 'p',
+            'product_name' => 'P',
+            'sku' => 'SKU',
+            'quantity' => '1.0000',
+            'unit_price' => ['amount' => '5.00', 'currency' => 'EGP'],
+            'discount_type' => null,
             'discount_value' => null,
-            'line_total'     => ['amount' => '5.00', 'currency' => 'EGP'],
-            'sort_order'     => 0,
+            'line_total' => ['amount' => '5.00', 'currency' => 'EGP'],
+            'sort_order' => 0,
         ]);
 
         $this->assertNull($line->discountType);

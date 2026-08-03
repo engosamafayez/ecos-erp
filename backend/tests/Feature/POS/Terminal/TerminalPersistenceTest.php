@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\Terminal;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Branches\Domain\Models\Branch;
@@ -29,7 +31,9 @@ final class TerminalPersistenceTest extends TestCase
     use RefreshDatabase;
 
     private TerminalRepositoryInterface $repository;
+
     private Branch $branch;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
@@ -38,18 +42,18 @@ final class TerminalPersistenceTest extends TestCase
 
         $this->repository = app(TerminalRepositoryInterface::class);
 
-        $company         = Company::factory()->create();
-        $this->branch    = Branch::factory()->create(['company_id' => $company->id]);
+        $company = Company::factory()->create();
+        $this->branch = Branch::factory()->create(['company_id' => $company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $company->id]);
     }
 
     private function makeTerminal(string $code = 'POS-01'): Terminal
     {
         return Terminal::register(
-            terminalCode:   $code,
-            name:           'Test Terminal',
-            branchId:       $this->branch->id,
-            warehouseId:    $this->warehouse->id,
+            terminalCode: $code,
+            name: 'Test Terminal',
+            branchId: $this->branch->id,
+            warehouseId: $this->warehouse->id,
             hardwareConfig: HardwareConfig::default(),
         );
     }
@@ -100,7 +104,7 @@ final class TerminalPersistenceTest extends TestCase
 
     public function test_hardware_config_round_trips_through_database(): void
     {
-        $config   = new HardwareConfig('thermal_58mm', true, false, true, 'ws://agent:9000');
+        $config = new HardwareConfig('thermal_58mm', true, false, true, 'ws://agent:9000');
         $terminal = Terminal::register('POS-06', 'Name', $this->branch->id, $this->warehouse->id, $config);
         $this->repository->save($terminal);
 
@@ -130,7 +134,7 @@ final class TerminalPersistenceTest extends TestCase
 
         $this->assertFalse(
             $this->repository->existsByCode('POS-08', $terminal->id),
-            'A terminal should not conflict with itself when updating'
+            'A terminal should not conflict with itself when updating',
         );
     }
 
@@ -160,7 +164,7 @@ final class TerminalPersistenceTest extends TestCase
         $terminal = $this->makeTerminal('POS-12');
         $this->repository->save($terminal);
 
-        $at = new \DateTimeImmutable('2026-07-01 10:00:00', new \DateTimeZone('UTC'));
+        $at = new DateTimeImmutable('2026-07-01 10:00:00', new DateTimeZone('UTC'));
         $terminal->recordHeartbeat($at, '192.168.1.50');
         $this->repository->save($terminal);
 

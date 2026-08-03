@@ -6,6 +6,7 @@ namespace Tests\Feature\Operations\WaveEngine;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use LogicException;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\DemandRefreshDispatcher;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
@@ -22,19 +23,21 @@ class WavePreparationTransitionTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company   $company;
+    private Company $company;
+
     private Warehouse $warehouse;
+
     private WavePreparationService $preparationSvc;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
 
         $this->preparationSvc = new WavePreparationService(
-            new DemandRefreshDispatcher(),
+            new DemandRefreshDispatcher,
         );
     }
 
@@ -101,7 +104,7 @@ class WavePreparationTransitionTest extends TestCase
     {
         $wave = $this->makeWave(WaveStatus::Planning);
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->preparationSvc->startPreparation($wave);
     }
 
@@ -110,35 +113,35 @@ class WavePreparationTransitionTest extends TestCase
     private function makeWave(WaveStatus $status): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $this->warehouse->id,
-            'wave_number'          => 'PREP-' . now()->format('Ym') . '-' . str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
-            'planning_date'        => today()->toDateString(),
-            'status'               => $status->value,
-            'orders_count'         => 0,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'wave_number' => 'PREP-'.now()->format('Ym').'-'.str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
+            'planning_date' => today()->toDateString(),
+            'status' => $status->value,
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'wave_type'            => 'engine',
-            'created_by'           => 'system',
-            'updated_by'           => 'system',
+            'shortage_detected' => false,
+            'wave_type' => 'engine',
+            'created_by' => 'system',
+            'updated_by' => 'system',
         ]);
     }
 
     private function attachOrderRecord(PreparationWave $wave, string $orderId, string $orderNumber): void
     {
         PreparationWaveOrder::create([
-            'company_id'          => $wave->company_id,
+            'company_id' => $wave->company_id,
             'preparation_wave_id' => $wave->id,
-            'order_id'            => $orderId,
-            'order_number'        => $orderNumber,
-            'order_confirmed_at'  => now(),
-            'is_paid'             => false,
-            'preparation_priority'=> 5,
-            'added_at'            => now(),
-            'added_by'            => 'system',
+            'order_id' => $orderId,
+            'order_number' => $orderNumber,
+            'order_confirmed_at' => now(),
+            'is_paid' => false,
+            'preparation_priority' => 5,
+            'added_at' => now(),
+            'added_by' => 'system',
         ]);
 
         $wave->increment('orders_count');

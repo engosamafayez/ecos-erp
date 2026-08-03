@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-                if (Schema::hasTable('shipping_pricing_rules')) {
+        if (Schema::hasTable('shipping_pricing_rules')) {
             return;
         }
 

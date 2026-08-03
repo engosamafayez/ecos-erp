@@ -34,7 +34,7 @@ class TeamCrudTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user    = User::factory()->create();
+        $this->user = User::factory()->create();
         $this->company = Company::factory()->create();
     }
 
@@ -49,7 +49,7 @@ class TeamCrudTest extends TestCase
     {
         return array_merge([
             'company_id' => $this->company->id,
-            'name'       => 'Sales Team Alpha',
+            'name' => 'Sales Team Alpha',
         ], $overrides);
     }
 
@@ -105,9 +105,9 @@ class TeamCrudTest extends TestCase
         $team = Team::factory()->create(['company_id' => $this->company->id]);
 
         $this->auth()->putJson("/api/teams/{$team->id}", [
-            'name'        => 'Delivery Team Beta',
+            'name' => 'Delivery Team Beta',
             'leader_name' => 'Jane Doe',
-            'is_active'   => false,
+            'is_active' => false,
         ])->assertOk()
             ->assertJsonPath('data.name', 'Delivery Team Beta')
             ->assertJsonPath('data.leader_name', 'Jane Doe')

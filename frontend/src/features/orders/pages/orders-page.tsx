@@ -254,7 +254,9 @@ export function OrdersPage() {
   const bulkReturnToConfirmed   = useBulkReturnToConfirmed();
   const bulkResumeToConfirmed   = useBulkResumeToConfirmed();
 
-  const orders = data?.items ?? [];
+  // useMemo, not a bare `?? []`: the fallback minted a new array on every render
+  // while the page was loading, re-running every dependent effect and memo.
+  const orders = useMemo(() => data?.items ?? [], [data]);
 
   // ── Row selection ─────────────────────────────────────────────────────────────
   const selectionHook = useRowSelection({ items: orders, getId: (o) => o.id });
@@ -484,7 +486,7 @@ export function OrdersPage() {
       case 'resume':
       case 'retry_reservation':        bulkResume.mutate(ids); break;
       case 'resume_confirmed':         bulkResumeToConfirmed.mutate(ids); break;
-      case 'review':
+      case 'review':                   // on_hold action
       case 'delivery_failed':          bulkReview.mutate({ ids }); break;
       case 'return':                   bulkReturn.mutate({ ids }); break;
       case 'return_to_confirmed':
@@ -520,15 +522,15 @@ export function OrdersPage() {
     <span className="inline-flex items-center gap-2">
       {totalCount !== undefined ? (
         <span className="font-medium text-foreground">
-          {totalCount.toLocaleString()} {t('title').toLowerCase()}
+          {totalCount.toLocaleString()} {t($ => $.title).toLowerCase()}
         </span>
       ) : (
-        <span>{t('subtitle')}</span>
+        <span>{t($ => $.subtitle)}</span>
       )}
       {activeFilterCount > 0 ? (
         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
           <Filter className="size-3" />
-          {activeFilterCount} {activeFilterCount === 1 ? t('filters.filterSingular') : t('filters.filterPlural')}
+          {activeFilterCount} {activeFilterCount === 1 ? t($ => $.filters.filterSingular) : t($ => $.filters.filterPlural)}
         </span>
       ) : null}
     </span>
@@ -539,11 +541,11 @@ export function OrdersPage() {
       {/* ── Page header ── */}
       <div className="border-b bg-background px-6 py-4">
         <PageHeader
-          title={t('title')}
+          title={t($ => $.title)}
           subtitle={headerSubtitle}
           breadcrumbs={[
-            { label: tCommon('home'), to: ROUTES.dashboard },
-            { label: t('title') },
+            { label: tCommon($ => $.home), to: ROUTES.dashboard },
+            { label: t($ => $.title) },
           ]}
         />
       </div>
@@ -584,7 +586,7 @@ export function OrdersPage() {
               key={searchKey}
               ref={searchRef}
               type="search"
-              placeholder={`${t('search')} · / or Ctrl+K`}
+              placeholder={`${t($ => $.search)} · / or Ctrl+K`}
               defaultValue={search}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSearchCommit(e.currentTarget.value);
@@ -599,10 +601,10 @@ export function OrdersPage() {
           <select
             value={channelId ?? ''}
             onChange={(e) => { setChannelId(e.target.value || null); resetPage(); }}
-            aria-label={t('filters.channel')}
+            aria-label={t($ => $.filters.channel)}
             className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           >
-            <option value="">{t('filters.allChannels')}</option>
+            <option value="">{t($ => $.filters.allChannels)}</option>
             {channelOptions.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
             ))}
@@ -615,10 +617,10 @@ export function OrdersPage() {
             size="sm"
             onClick={() => setShowAdvancedFilters((v) => !v)}
             aria-expanded={showAdvancedFilters}
-            aria-label={t('filters.advanced')}
+            aria-label={t($ => $.filters.advanced)}
           >
             <Filter className="size-3.5" />
-            {t('filters.advanced')}
+            {t($ => $.filters.advanced)}
             {advancedActiveCount > 0 ? (
               <span className={cn(
                 'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold',
@@ -636,10 +638,10 @@ export function OrdersPage() {
             size="sm"
             onClick={() => setShowCustomerIntelligence((v) => !v)}
             aria-expanded={showCustomerIntelligence}
-            aria-label={t('customerIntelligence.title')}
+            aria-label={t($ => $.customerIntelligence.title)}
           >
             <Users className="size-3.5" />
-            {t('customerIntelligence.title')}
+            {t($ => $.customerIntelligence.title)}
             {customerFilters.length > 0 ? (
               <span className={cn(
                 'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold',
@@ -697,11 +699,11 @@ export function OrdersPage() {
             || advancedFilters.minAmount || advancedFilters.maxAmount
             || advancedFilters.dateFrom || advancedFilters.dateTo;
           const contextualEmptyState = search
-            ? <EmptyState title={t('table.empty')} description={`No orders matching "${search}". Try a different search term.`} />
+            ? <EmptyState title={t($ => $.table.empty)} description={`No orders matching "${search}". Try a different search term.`} />
             : activeStatus !== 'all'
-              ? <EmptyState title={t('table.empty')} description={`No orders with status "${statusTabLabel[activeStatus as OrderStatus]}".`} />
+              ? <EmptyState title={t($ => $.table.empty)} description={`No orders with status "${statusTabLabel[activeStatus as OrderStatus]}".`} />
               : hasFilters
-                ? <EmptyState title={t('table.empty')} description="No orders match the current filters. Try clearing some filters." />
+                ? <EmptyState title={t($ => $.table.empty)} description="No orders match the current filters. Try clearing some filters." />
                 : undefined;
           return (
             <OrderTable
@@ -748,9 +750,9 @@ export function OrdersPage() {
       <ConfirmDialog
         open={deletingOrder !== null}
         onOpenChange={(open) => { if (!open) setDeletingOrder(null); }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deletingOrder?.order_number ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={tCommon($ => $.dialogs.softDeleteMessage, { name: deletingOrder?.order_number ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteOrder.isPending}
         onConfirm={() => {
@@ -817,7 +819,7 @@ export function OrdersPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" size="sm" onClick={() => setPendingBulkAction(null)}>
-                  {tCommon('common.cancel')}
+                  {tCommon($ => $.common.cancel)}
                 </Button>
                 <Button
                   size="sm"
@@ -836,11 +838,11 @@ export function OrdersPage() {
       <Dialog open={bulkRescheduleOpen} onOpenChange={setBulkRescheduleOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>{t('bulk.rescheduleTitle', { count: pendingRescheduleIds.length })}</DialogTitle>
+            <DialogTitle>{t($ => $.bulk.rescheduleTitle, { count: pendingRescheduleIds.length })}</DialogTitle>
           </DialogHeader>
           <div className="py-2">
             <label className="mb-1 block text-sm font-medium text-foreground">
-              {t('bulk.rescheduleDate')}
+              {t($ => $.bulk.rescheduleDate)}
             </label>
             <input
               type="date"
@@ -852,14 +854,14 @@ export function OrdersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setBulkRescheduleOpen(false)}>
-              {tCommon('common.cancel')}
+              {tCommon($ => $.common.cancel)}
             </Button>
             <Button
               size="sm"
               disabled={!bulkRescheduleDate || bulkReschedule.isPending}
               onClick={confirmBulkReschedule}
             >
-              {t('bulk.rescheduleConfirm')}
+              {t($ => $.bulk.rescheduleConfirm)}
             </Button>
           </DialogFooter>
         </DialogContent>

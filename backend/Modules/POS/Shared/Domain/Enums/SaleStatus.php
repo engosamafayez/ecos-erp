@@ -6,11 +6,11 @@ namespace Modules\POS\Shared\Domain\Enums;
 
 enum SaleStatus: string
 {
-    case Pending            = 'pending';
-    case Completed          = 'completed';
-    case Voided             = 'voided';
-    case Refunded           = 'refunded';
-    case PartiallyRefunded  = 'partially_refunded';
+    case Pending = 'pending';
+    case Completed = 'completed';
+    case Voided = 'voided';
+    case Refunded = 'refunded';
+    case PartiallyRefunded = 'partially_refunded';
 
     public function isTerminal(): bool
     {

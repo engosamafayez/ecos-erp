@@ -88,17 +88,17 @@ export function PurchaseOrdersPage() {
   const columns: ColumnDef<PurchaseOrder>[] = [
     {
       key: 'po_number',
-      header: t('columns.number'),
+      header: t($ => $.columns.number),
       sortable: true,
       cell: (po) => <span className="font-medium">{po.po_number}</span>,
     },
-    { key: 'supplier', header: t('columns.supplier'), cell: (po) => po.supplier?.name ?? '—' },
-    { key: 'warehouse', header: t('columns.warehouse'), cell: (po) => po.warehouse?.name ?? '—' },
-    { key: 'order_date', header: t('columns.orderDate'), sortable: true, cell: (po) => po.order_date },
-    { key: 'expected_date', header: t('columns.expectedDate'), sortable: true, cell: (po) => po.expected_date ?? '—' },
+    { key: 'supplier', header: t($ => $.columns.supplier), cell: (po) => po.supplier?.name ?? '—' },
+    { key: 'warehouse', header: t($ => $.columns.warehouse), cell: (po) => po.warehouse?.name ?? '—' },
+    { key: 'order_date', header: t($ => $.columns.orderDate), sortable: true, cell: (po) => po.order_date },
+    { key: 'expected_date', header: t($ => $.columns.expectedDate), sortable: true, cell: (po) => po.expected_date ?? '—' },
     {
       key: 'grand_total',
-      header: t('columns.total'),
+      header: t($ => $.columns.total),
       sortable: true,
       cell: (po) => (
         <span className="font-medium">
@@ -108,7 +108,7 @@ export function PurchaseOrdersPage() {
     },
     {
       key: 'received_percentage',
-      header: t('columns.receivedPct'),
+      header: t($ => $.columns.receivedPct),
       cell: (po) => {
         if (po.received_percentage === null || po.received_percentage === undefined) return '—';
         const pct = Math.min(100, Math.max(0, po.received_percentage));
@@ -122,19 +122,19 @@ export function PurchaseOrdersPage() {
         );
       },
     },
-    { key: 'status', header: t('columns.status'), sortable: true, cell: (po) => <PoStatusBadge status={po.status} /> },
+    { key: 'status', header: t($ => $.columns.status), sortable: true, cell: (po) => <PoStatusBadge status={po.status} /> },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
+        breadcrumbs={[{ label: tCommon($ => $.home), to: ROUTES.dashboard }, { label: t($ => $.title) }]}
         actions={
           <Button onClick={() => navigate(ROUTES.purchaseOrdersNew)}>
             <Plus className="size-4" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -142,7 +142,7 @@ export function PurchaseOrdersPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={t($ => $.search)}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -150,19 +150,19 @@ export function PurchaseOrdersPage() {
             onClearFilters={() => { setStatusFilter('all'); setPage(1); }}
             filterPanel={
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{t('filters.status')}</span>
+                <span className="text-sm font-medium">{t($ => $.filters.status)}</span>
                 <select
                   value={statusFilter}
                   onChange={(event) => { setStatusFilter(event.target.value as StatusFilter); setPage(1); }}
                   className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                 >
-                  <option value="all">{tCommon('status.all')}</option>
-                  <option value="draft">{t('status.draft')}</option>
-                  <option value="submitted">{t('status.submitted')}</option>
-                  <option value="approved">{t('status.approved')}</option>
-                  <option value="partially_received">{t('status.partially_received')}</option>
-                  <option value="received">{t('status.received')}</option>
-                  <option value="cancelled">{t('status.cancelled')}</option>
+                  <option value="all">{tCommon($ => $.status.all)}</option>
+                  <option value="draft">{t($ => $.status.draft)}</option>
+                  <option value="submitted">{t($ => $.status.submitted)}</option>
+                  <option value="approved">{t($ => $.status.approved)}</option>
+                  <option value="partially_received">{t($ => $.status.partially_received)}</option>
+                  <option value="received">{t($ => $.status.received)}</option>
+                  <option value="cancelled">{t($ => $.status.cancelled)}</option>
                 </select>
               </div>
             }
@@ -180,21 +180,21 @@ export function PurchaseOrdersPage() {
               <ActionMenu
                 label={`Actions for ${po.po_number}`}
                 items={[
-                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => navigate(`${ROUTES.purchaseOrders}/${po.id}`) },
+                  { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => navigate(`${ROUTES.purchaseOrders}/${po.id}`) },
                   ...(po.status === 'draft'
                     ? [
-                        { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => navigate(`${ROUTES.purchaseOrders}/${po.id}/edit`) },
-                        { key: 'submit', label: t('actions.submit'), icon: SendHorizonal, onSelect: () => setSubmitting(po) },
+                        { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => navigate(`${ROUTES.purchaseOrders}/${po.id}/edit`) },
+                        { key: 'submit', label: t($ => $.actions.submit), icon: SendHorizonal, onSelect: () => setSubmitting(po) },
                       ]
                     : []),
                   ...(po.status === 'submitted'
-                    ? [{ key: 'approve', label: t('actions.approve'), icon: CheckCircle, onSelect: () => setApproving(po) }]
+                    ? [{ key: 'approve', label: t($ => $.actions.approve), icon: CheckCircle, onSelect: () => setApproving(po) }]
                     : []),
                   ...(!['cancelled', 'received'].includes(po.status)
-                    ? [{ key: 'cancel', label: tCommon('common.cancel'), icon: XCircle, variant: 'destructive' as const, onSelect: () => setCancelling(po) }]
+                    ? [{ key: 'cancel', label: tCommon($ => $.common.cancel), icon: XCircle, variant: 'destructive' as const, onSelect: () => setCancelling(po) }]
                     : []),
                   ...(po.status === 'draft'
-                    ? [{ key: 'delete', label: tCommon('common.delete'), icon: Trash2, variant: 'destructive' as const, onSelect: () => setDeleting(po) }]
+                    ? [{ key: 'delete', label: tCommon($ => $.common.delete), icon: Trash2, variant: 'destructive' as const, onSelect: () => setDeleting(po) }]
                     : []),
                 ]}
               />
@@ -213,9 +213,9 @@ export function PurchaseOrdersPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.po_number ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={tCommon($ => $.dialogs.softDeleteMessage, { name: deleting?.po_number ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deletePO.isPending}
         onConfirm={() => { if (deleting) deletePO.mutate(deleting.id, { onSuccess: () => setDeleting(null) }); }}
@@ -224,9 +224,9 @@ export function PurchaseOrdersPage() {
       <ConfirmDialog
         open={submitting !== null}
         onOpenChange={(open) => { if (!open) setSubmitting(null); }}
-        title={t('dialogs.submit.title')}
-        description={t('dialogs.submit.description', { number: submitting?.po_number ?? '' })}
-        confirmLabel={t('dialogs.submit.confirm')}
+        title={t($ => $.dialogs.submit.title)}
+        description={t($ => $.dialogs.submit.description, { number: submitting?.po_number ?? '' })}
+        confirmLabel={t($ => $.dialogs.submit.confirm)}
         loading={submitPO.isPending}
         onConfirm={() => { if (submitting) submitPO.mutate(submitting.id, { onSuccess: () => setSubmitting(null) }); }}
       />
@@ -234,9 +234,9 @@ export function PurchaseOrdersPage() {
       <ConfirmDialog
         open={approving !== null}
         onOpenChange={(open) => { if (!open) setApproving(null); }}
-        title={t('dialogs.approve.title')}
-        description={t('dialogs.approve.description', { number: approving?.po_number ?? '' })}
-        confirmLabel={t('dialogs.approve.confirm')}
+        title={t($ => $.dialogs.approve.title)}
+        description={t($ => $.dialogs.approve.description, { number: approving?.po_number ?? '' })}
+        confirmLabel={t($ => $.dialogs.approve.confirm)}
         loading={approvePO.isPending}
         onConfirm={() => { if (approving) approvePO.mutate(approving.id, { onSuccess: () => setApproving(null) }); }}
       />
@@ -244,9 +244,9 @@ export function PurchaseOrdersPage() {
       <ConfirmDialog
         open={cancelling !== null}
         onOpenChange={(open) => { if (!open) setCancelling(null); }}
-        title={t('dialogs.cancel.title')}
-        description={t('dialogs.cancel.description', { number: cancelling?.po_number ?? '' })}
-        confirmLabel={t('dialogs.cancel.confirm')}
+        title={t($ => $.dialogs.cancel.title)}
+        description={t($ => $.dialogs.cancel.description, { number: cancelling?.po_number ?? '' })}
+        confirmLabel={t($ => $.dialogs.cancel.confirm)}
         variant="destructive"
         loading={cancelPO.isPending}
         onConfirm={() => { if (cancelling) cancelPO.mutate(cancelling.id, { onSuccess: () => setCancelling(null) }); }}

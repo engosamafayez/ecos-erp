@@ -28,7 +28,7 @@ final class UpsertCategoryPreferencesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payload'   => ['required', 'array'],
+            'payload' => ['required', 'array'],
             // Accept any string keys inside the payload — consuming modules
             // perform their own validation before writing preferences.
             'payload.*' => ['present'],
@@ -40,7 +40,7 @@ final class UpsertCategoryPreferencesRequest extends FormRequest
     {
         return [
             'payload.required' => 'The preference payload is required.',
-            'payload.array'    => 'The preference payload must be a JSON object.',
+            'payload.array' => 'The preference payload must be a JSON object.',
         ];
     }
 }

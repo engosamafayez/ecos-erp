@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\POS\Exchange\Domain\ValueObjects;
 
+use InvalidArgumentException;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Quantity;
 
@@ -20,14 +21,14 @@ use Modules\POS\Shared\Domain\ValueObjects\Quantity;
 final readonly class ExchangeLine
 {
     public function __construct(
-        public ?string  $originalLineId,
-        public string   $productId,
-        public string   $productName,
-        public string   $sku,
+        public ?string $originalLineId,
+        public string $productId,
+        public string $productName,
+        public string $sku,
         public Quantity $quantity,
-        public Money    $unitPrice,
-        public Money    $lineTotal,
-        public int      $sortOrder,
+        public Money $unitPrice,
+        public Money $lineTotal,
+        public int $sortOrder,
     ) {}
 
     /**
@@ -35,16 +36,16 @@ final readonly class ExchangeLine
      * Requires a reference to the original SaleLine for traceability.
      */
     public static function returned(
-        string   $originalLineId,
-        string   $productId,
-        string   $productName,
-        string   $sku,
+        string $originalLineId,
+        string $productId,
+        string $productName,
+        string $sku,
         Quantity $quantity,
-        Money    $unitPrice,
-        int      $sortOrder = 0,
+        Money $unitPrice,
+        int $sortOrder = 0,
     ): self {
         if (trim($originalLineId) === '') {
-            throw new \InvalidArgumentException('Original line ID is required for returned exchange lines.');
+            throw new InvalidArgumentException('Original line ID is required for returned exchange lines.');
         }
 
         return self::build($originalLineId, $productId, $productName, $sku, $quantity, $unitPrice, $sortOrder);
@@ -55,52 +56,52 @@ final readonly class ExchangeLine
      * No original sale line reference needed.
      */
     public static function replacement(
-        string   $productId,
-        string   $productName,
-        string   $sku,
+        string $productId,
+        string $productName,
+        string $sku,
         Quantity $quantity,
-        Money    $unitPrice,
-        int      $sortOrder = 0,
+        Money $unitPrice,
+        int $sortOrder = 0,
     ): self {
         return self::build(null, $productId, $productName, $sku, $quantity, $unitPrice, $sortOrder);
     }
 
     private static function build(
-        ?string  $originalLineId,
-        string   $productId,
-        string   $productName,
-        string   $sku,
+        ?string $originalLineId,
+        string $productId,
+        string $productName,
+        string $sku,
         Quantity $quantity,
-        Money    $unitPrice,
-        int      $sortOrder,
+        Money $unitPrice,
+        int $sortOrder,
     ): self {
         if (trim($productId) === '') {
-            throw new \InvalidArgumentException('Product ID cannot be empty.');
+            throw new InvalidArgumentException('Product ID cannot be empty.');
         }
 
         if (trim($productName) === '') {
-            throw new \InvalidArgumentException('Product name cannot be empty.');
+            throw new InvalidArgumentException('Product name cannot be empty.');
         }
 
-        if (!$quantity->isPositive()) {
-            throw new \InvalidArgumentException('Exchange line quantity must be positive.');
+        if (! $quantity->isPositive()) {
+            throw new InvalidArgumentException('Exchange line quantity must be positive.');
         }
 
         if ($unitPrice->isNegative()) {
-            throw new \InvalidArgumentException('Exchange line unit price cannot be negative.');
+            throw new InvalidArgumentException('Exchange line unit price cannot be negative.');
         }
 
         $lineTotal = $unitPrice->multiply($quantity->value);
 
         return new self(
             originalLineId: $originalLineId,
-            productId:      $productId,
-            productName:    $productName,
-            sku:            $sku,
-            quantity:       $quantity,
-            unitPrice:      $unitPrice,
-            lineTotal:      $lineTotal,
-            sortOrder:      $sortOrder,
+            productId: $productId,
+            productName: $productName,
+            sku: $sku,
+            quantity: $quantity,
+            unitPrice: $unitPrice,
+            lineTotal: $lineTotal,
+            sortOrder: $sortOrder,
         );
     }
 
@@ -118,13 +119,13 @@ final readonly class ExchangeLine
     {
         return [
             'original_line_id' => $this->originalLineId,
-            'product_id'       => $this->productId,
-            'product_name'     => $this->productName,
-            'sku'              => $this->sku,
-            'quantity'         => $this->quantity->value,
-            'unit_price'       => $this->unitPrice->toArray(),
-            'line_total'       => $this->lineTotal->toArray(),
-            'sort_order'       => $this->sortOrder,
+            'product_id' => $this->productId,
+            'product_name' => $this->productName,
+            'sku' => $this->sku,
+            'quantity' => $this->quantity->value,
+            'unit_price' => $this->unitPrice->toArray(),
+            'line_total' => $this->lineTotal->toArray(),
+            'sort_order' => $this->sortOrder,
         ];
     }
 
@@ -132,13 +133,13 @@ final readonly class ExchangeLine
     {
         return new self(
             originalLineId: $data['original_line_id'] ?? null,
-            productId:      $data['product_id'],
-            productName:    $data['product_name'],
-            sku:            $data['sku'],
-            quantity:       Quantity::of($data['quantity']),
-            unitPrice:      Money::fromArray($data['unit_price']),
-            lineTotal:      Money::fromArray($data['line_total']),
-            sortOrder:      (int) ($data['sort_order'] ?? 0),
+            productId: $data['product_id'],
+            productName: $data['product_name'],
+            sku: $data['sku'],
+            quantity: Quantity::of($data['quantity']),
+            unitPrice: Money::fromArray($data['unit_price']),
+            lineTotal: Money::fromArray($data['line_total']),
+            sortOrder: (int) ($data['sort_order'] ?? 0),
         );
     }
 }

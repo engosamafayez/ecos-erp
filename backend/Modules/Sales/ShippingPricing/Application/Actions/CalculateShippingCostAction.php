@@ -20,9 +20,9 @@ final class CalculateShippingCostAction extends BaseAction
         $params = $arguments[0];
 
         $governorate = (string) ($params['governorate'] ?? '');
-        $city        = $params['city'] ? (string) $params['city'] : null;
-        $area        = $params['area'] ? (string) $params['area'] : null;
-        $companyId   = $params['company_id'] ? (string) $params['company_id'] : null;
+        $city = $params['city'] ? (string) $params['city'] : null;
+        $area = $params['area'] ? (string) $params['area'] : null;
+        $companyId = $params['company_id'] ? (string) $params['company_id'] : null;
 
         $rule = $this->findRule($governorate, $city, $area, $companyId);
 
@@ -36,9 +36,9 @@ final class CalculateShippingCostAction extends BaseAction
         }
 
         return OperationResult::success([
-            'found'         => true,
+            'found' => true,
             'standard_cost' => $rule->standard_cost,
-            'express_cost'  => $rule->express_cost,
+            'express_cost' => $rule->express_cost,
             'matched_level' => $this->matchedLevel($rule),
         ], 'Shipping cost calculated.');
     }

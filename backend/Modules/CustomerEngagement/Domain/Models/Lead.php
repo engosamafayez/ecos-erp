@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Modules\CustomerEngagement\Domain\Enums\LeadStatus;
 use Modules\CustomerEngagement\Domain\Enums\ConversationPriority;
+use Modules\CustomerEngagement\Domain\Enums\LeadStatus;
 
 class Lead extends Model
 {
@@ -19,14 +21,14 @@ class Lead extends Model
     protected function casts(): array
     {
         return [
-            'status'       => LeadStatus::class,
-            'priority'     => ConversationPriority::class,
-            'tags'         => 'array',
-            'metadata'     => 'array',
-            'score'        => 'integer',
+            'status' => LeadStatus::class,
+            'priority' => ConversationPriority::class,
+            'tags' => 'array',
+            'metadata' => 'array',
+            'score' => 'integer',
             'qualified_at' => 'datetime',
             'converted_at' => 'datetime',
-            'lost_at'      => 'datetime',
+            'lost_at' => 'datetime',
         ];
     }
 

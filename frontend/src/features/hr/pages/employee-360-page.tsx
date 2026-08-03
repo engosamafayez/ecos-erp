@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { AlertTriangle, Briefcase, CalendarCheck, FileText, Users } from 'lucide-react';
 
@@ -34,6 +35,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
  * this page shows it without HR ever calculating it.
  */
 export function Employee360Page() {
+  const { t } = useTranslation('hr');
   const { employeeId = '' } = useParams();
   const { data, isLoading, isError, refetch } = useEmployee360Query(employeeId);
 
@@ -47,10 +49,10 @@ export function Employee360Page() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={identity.name}
-        subtitle={`${identity.employee_number} · ${placement.position?.title ?? 'No position'}`}
+        subtitle={`${identity.employee_number} · ${placement.position?.title ?? t($ => $.orgChart.noPosition)}`}
         breadcrumbs={[
-          { label: 'Workforce', to: ROUTES.hr },
-          { label: 'Employees', to: ROUTES.hrEmployees },
+          { label: t($ => $.employee360.breadcrumbWorkforce), to: ROUTES.hr },
+          { label: t($ => $.employees.title), to: ROUTES.hrEmployees },
           { label: identity.name },
         ]}
         actions={<StatusBadge status={STATUS_TONE[identity.status]} label={identity.status_label} />}
@@ -60,27 +62,29 @@ export function Employee360Page() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Tenure</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employee360.stats.tenure)}</div>
             <div className="text-2xl font-bold">
-              {placement.tenure_days === null ? '—' : `${placement.tenure_days}d`}
+              {placement.tenure_days === null
+                ? '—'
+                : t($ => $.employee360.stats.tenureDays, { count: placement.tenure_days })}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Present (30d)</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employee360.stats.present30d)}</div>
             <div className="text-2xl font-bold text-emerald-600">{attendance.present}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Absent (30d)</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employee360.stats.absent30d)}</div>
             <div className="text-2xl font-bold text-red-600">{attendance.absent}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Attendance Rate</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employee360.stats.attendanceRate)}</div>
             <div className="text-2xl font-bold">{attendance.attendance_rate_percent}%</div>
           </CardContent>
         </Card>
@@ -90,10 +94,7 @@ export function Employee360Page() {
         <Card>
           <CardContent className="flex items-center gap-3 pt-6">
             <AlertTriangle className="size-5 text-amber-600" />
-            <div className="text-sm">
-              <span className="font-medium">{expiringDocuments.length}</span> document
-              {expiringDocuments.length === 1 ? '' : 's'} expiring soon or already expired.
-            </div>
+            <div className="text-sm">{t($ => $.employee360.expiringDocuments, { count: expiringDocuments.length })}</div>
           </CardContent>
         </Card>
       ) : null}
@@ -103,15 +104,15 @@ export function Employee360Page() {
           <CardContent className="flex flex-col gap-4 pt-6">
             <h2 className="flex items-center gap-2 font-semibold">
               <Briefcase className="size-4" />
-              Placement
+              {t($ => $.employee360.placement.title)}
             </h2>
-            <Field label="Department" value={placement.department?.name} />
-            <Field label="Position" value={placement.position?.title} />
-            <Field label="Job Grade" value={placement.job_grade?.name} />
-            <Field label="Employment Type" value={placement.employment_type?.name} />
-            <Field label="Hire Date" value={placement.hire_date} />
+            <Field label={t($ => $.employee360.placement.department)} value={placement.department?.name} />
+            <Field label={t($ => $.employee360.placement.position)} value={placement.position?.title} />
+            <Field label={t($ => $.employee360.placement.jobGrade)} value={placement.job_grade?.name} />
+            <Field label={t($ => $.employee360.placement.employmentType)} value={placement.employment_type?.name} />
+            <Field label={t($ => $.employee360.placement.hireDate)} value={placement.hire_date} />
             {placement.termination_date ? (
-              <Field label="Termination Date" value={placement.termination_date} />
+              <Field label={t($ => $.employee360.placement.terminationDate)} value={placement.termination_date} />
             ) : null}
           </CardContent>
         </Card>
@@ -120,20 +121,23 @@ export function Employee360Page() {
           <CardContent className="flex flex-col gap-4 pt-6">
             <h2 className="flex items-center gap-2 font-semibold">
               <CalendarCheck className="size-4" />
-              Contract
+              {t($ => $.employee360.contract.title)}
             </h2>
             {contract === null ? (
-              <p className="text-muted-foreground text-sm">No active contract.</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.employee360.contract.none)}</p>
             ) : (
               <>
-                <Field label="Number" value={contract.contract_number} />
-                <Field label="Type" value={contract.type} />
-                <Field label="Status" value={contract.status} />
-                <Field label="Start" value={contract.start_date} />
-                <Field label="End" value={contract.end_date ?? 'Open-ended'} />
-                <Field label="Weekly Hours" value={contract.weekly_hours} />
+                <Field label={t($ => $.employee360.contract.number)} value={contract.contract_number} />
+                <Field label={t($ => $.employee360.contract.type)} value={contract.type} />
+                <Field label={t($ => $.employee360.contract.status)} value={contract.status} />
+                <Field label={t($ => $.employee360.contract.start)} value={contract.start_date} />
+                <Field
+                  label={t($ => $.employee360.contract.end)}
+                  value={contract.end_date ?? t($ => $.employee360.contract.openEnded)}
+                />
+                <Field label={t($ => $.employee360.contract.weeklyHours)} value={contract.weekly_hours} />
                 {contract.days_until_expiry !== null ? (
-                  <Field label="Days Until Expiry" value={contract.days_until_expiry} />
+                  <Field label={t($ => $.employee360.contract.daysUntilExpiry)} value={contract.days_until_expiry} />
                 ) : null}
               </>
             )}
@@ -145,11 +149,11 @@ export function Employee360Page() {
           <CardContent className="flex flex-col gap-4 pt-6">
             <h2 className="flex items-center gap-2 font-semibold">
               <Users className="size-4" />
-              Reporting
+              {t($ => $.employee360.reporting.title)}
             </h2>
-            <Field label="Manager" value={reporting.manager?.name} />
+            <Field label={t($ => $.employee360.reporting.manager)} value={reporting.manager?.name} />
             <Field
-              label="Chain"
+              label={t($ => $.employee360.reporting.chain)}
               value={
                 reporting.management_chain.length === 0
                   ? '—'
@@ -158,7 +162,7 @@ export function Employee360Page() {
             />
             <div className="flex flex-col gap-1">
               <span className="text-muted-foreground text-xs uppercase tracking-wide">
-                Direct Reports ({reporting.direct_reports.length})
+                {t($ => $.employee360.reporting.directReports, { count: reporting.direct_reports.length })}
               </span>
               {reporting.direct_reports.length === 0 ? (
                 <span className="text-sm">—</span>
@@ -179,16 +183,16 @@ export function Employee360Page() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardContent className="flex flex-col gap-4 pt-6">
-            <h2 className="font-semibold">Contact</h2>
+            <h2 className="font-semibold">{t($ => $.employee360.contact.title)}</h2>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Work Email" value={contact.work_email} />
-              <Field label="Personal Email" value={contact.personal_email} />
-              <Field label="Mobile" value={contact.mobile} />
-              <Field label="Phone" value={contact.phone} />
-              <Field label="City" value={contact.city} />
-              <Field label="Country" value={contact.country} />
-              <Field label="Emergency Contact" value={contact.emergency_contact_name} />
-              <Field label="Emergency Phone" value={contact.emergency_contact_phone} />
+              <Field label={t($ => $.employee360.contact.workEmail)} value={contact.work_email} />
+              <Field label={t($ => $.employee360.contact.personalEmail)} value={contact.personal_email} />
+              <Field label={t($ => $.employee360.contact.mobile)} value={contact.mobile} />
+              <Field label={t($ => $.employee360.contact.phone)} value={contact.phone} />
+              <Field label={t($ => $.employee360.contact.city)} value={contact.city} />
+              <Field label={t($ => $.employee360.contact.country)} value={contact.country} />
+              <Field label={t($ => $.employee360.contact.emergencyContact)} value={contact.emergency_contact_name} />
+              <Field label={t($ => $.employee360.contact.emergencyPhone)} value={contact.emergency_contact_phone} />
             </div>
           </CardContent>
         </Card>
@@ -197,10 +201,10 @@ export function Employee360Page() {
           <CardContent className="flex flex-col gap-4 pt-6">
             <h2 className="flex items-center gap-2 font-semibold">
               <FileText className="size-4" />
-              Documents ({documents.length})
+              {t($ => $.employee360.documents.title, { count: documents.length })}
             </h2>
             {documents.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No documents on file.</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.employee360.documents.none)}</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {documents.map((document) => (
@@ -215,7 +219,9 @@ export function Employee360Page() {
                             : 'text-muted-foreground'
                       }
                     >
-                      {document.expires_at ? `Expires ${document.expires_at}` : 'No expiry'}
+                      {document.expires_at
+                        ? t($ => $.employee360.documents.expires, { date: document.expires_at })
+                        : t($ => $.employee360.documents.noExpiry)}
                     </span>
                   </li>
                 ))}

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Manufacturing;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use Modules\Manufacturing\AvailabilityEngine\Domain\Enums\ManufacturingEligibility;
 use Modules\Manufacturing\AvailabilityEngine\Domain\ValueObjects\AvailabilityResult;
 use Modules\Manufacturing\AvailabilityEngine\Domain\ValueObjects\RawMaterialAvailability;
@@ -33,7 +35,7 @@ class ManufacturingPlannerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->planner = new ManufacturingPlanner();
+        $this->planner = new ManufacturingPlanner;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -49,25 +51,25 @@ class ManufacturingPlannerTest extends TestCase
         $reason = new DecisionReason(code: $reasonCode, message: 'Test decision');
 
         return new DecisionResult(
-            decision:     $type,
-            reason:       $reason,
+            decision: $type,
+            reason: $reason,
             matched_rule: new DecisionEvaluation(
-                rule_id:       'rule-001',
-                rule_name:     'Test Rule',
-                priority:      100,
-                matched:       true,
+                rule_id: 'rule-001',
+                rule_name: 'Test Rule',
+                priority: 100,
+                matched: true,
                 decision_type: $type,
-                reason:        $reason,
+                reason: $reason,
             ),
-            context:    new DecisionContext('manufacturing'),
-            trigger:    new DecisionTrigger(
-                trigger_type:    $triggerType,
-                trigger_id:      $triggerId,
+            context: new DecisionContext('manufacturing'),
+            trigger: new DecisionTrigger(
+                trigger_type: $triggerType,
+                trigger_id: $triggerId,
                 trigger_version: $triggerVersion,
-                triggered_at:    (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
-                actor_id:        $actorId,
+                triggered_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
+                actor_id: $actorId,
             ),
-            decided_at: (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            decided_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
         );
     }
 
@@ -79,15 +81,15 @@ class ManufacturingPlannerTest extends TestCase
         array $components = [],
     ): RecipeSnapshot {
         return new RecipeSnapshot(
-            recipe_id:          'recipe-' . uniqid(),
-            bom_number:         'BOM-001',
-            version:            "{$version}.0",
+            recipe_id: 'recipe-'.uniqid(),
+            bom_number: 'BOM-001',
+            version: "{$version}.0",
             bom_version_number: $version,
-            product_id:         $productId,
-            product_sku:        $sku,
-            product_name:       $name,
-            components:         $components,
-            resolved_at:        (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            product_id: $productId,
+            product_sku: $sku,
+            product_name: $name,
+            components: $components,
+            resolved_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
         );
     }
 
@@ -98,13 +100,13 @@ class ManufacturingPlannerTest extends TestCase
         bool $allowNegative = false,
     ): RecipeComponent {
         return new RecipeComponent(
-            component_id:         $id,
-            sku:                  $sku,
-            name:                 "Component {$sku}",
-            unit_id:              'unit-001',
-            unit_name:            'Kilogram',
-            unit_symbol:          'kg',
-            quantity:             $qty,
+            component_id: $id,
+            sku: $sku,
+            name: "Component {$sku}",
+            unit_id: 'unit-001',
+            unit_name: 'Kilogram',
+            unit_symbol: 'kg',
+            quantity: $qty,
             allow_negative_stock: $allowNegative,
         );
     }
@@ -116,19 +118,19 @@ class ManufacturingPlannerTest extends TestCase
         float $availableQty = 10.0,
         bool $allowNegative = false,
     ): RawMaterialAvailability {
-        $missingQty  = max(0.0, $requiredQty - $availableQty);
+        $missingQty = max(0.0, $requiredQty - $availableQty);
         $isSatisfied = $missingQty === 0.0 || $allowNegative;
 
         return new RawMaterialAvailability(
-            component_id:         $componentId,
-            sku:                  $sku,
-            name:                 "Component {$sku}",
-            unit_symbol:          'kg',
-            required_qty:         $requiredQty,
-            available_qty:        $availableQty,
-            missing_qty:          $missingQty,
+            component_id: $componentId,
+            sku: $sku,
+            name: "Component {$sku}",
+            unit_symbol: 'kg',
+            required_qty: $requiredQty,
+            available_qty: $availableQty,
+            missing_qty: $missingQty,
             allow_negative_stock: $allowNegative,
-            is_satisfied:         $isSatisfied,
+            is_satisfied: $isSatisfied,
         );
     }
 
@@ -144,17 +146,17 @@ class ManufacturingPlannerTest extends TestCase
         ManufacturingEligibility $eligibility = ManufacturingEligibility::CanManufacture,
     ): AvailabilityResult {
         return new AvailabilityResult(
-            product_id:               $productId,
-            warehouse_id:             'wh-001',
-            required_qty:             $requiredQty,
+            product_id: $productId,
+            warehouse_id: 'wh-001',
+            required_qty: $requiredQty,
             available_finished_goods: $availableFg,
-            qty_to_manufacture:       $qtyToManufacture,
-            needs_manufacturing:      $needsManufacturing,
-            recipe_snapshot:          $snapshot,
-            raw_materials:            $rawMaterials,
-            can_manufacture:          $canManufacture,
-            eligibility:              $eligibility,
-            evaluated_at:             (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            qty_to_manufacture: $qtyToManufacture,
+            needs_manufacturing: $needsManufacturing,
+            recipe_snapshot: $snapshot,
+            raw_materials: $rawMaterials,
+            can_manufacture: $canManufacture,
+            eligibility: $eligibility,
+            evaluated_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
         );
     }
 
@@ -167,12 +169,12 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_full_manufacture_plan_when_can_manufacture_and_approved(): void
     {
-        $snapshot     = $this->makeSnapshot();
-        $rawMaterial  = $this->makeRawMaterial(requiredQty: 20.0, availableQty: 20.0);
+        $snapshot = $this->makeSnapshot();
+        $rawMaterial = $this->makeRawMaterial(requiredQty: 20.0, availableQty: 20.0);
         $availability = $this->makeAvailability(
-            snapshot:            $snapshot,
-            rawMaterials:        [$rawMaterial],
-            eligibility:         ManufacturingEligibility::CanManufacture,
+            snapshot: $snapshot,
+            rawMaterials: [$rawMaterial],
+            eligibility: ManufacturingEligibility::CanManufacture,
         );
 
         $plan = $this->plan($availability);
@@ -188,11 +190,11 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_finished_goods_to_produce_equals_qty_to_manufacture(): void
     {
-        $snapshot     = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $availability = $this->makeAvailability(
             qtyToManufacture: 7.0,
-            snapshot:         $snapshot,
-            rawMaterials:     [$this->makeRawMaterial(requiredQty: 14.0, availableQty: 14.0)],
+            snapshot: $snapshot,
+            rawMaterials: [$this->makeRawMaterial(requiredQty: 14.0, availableQty: 14.0)],
         );
 
         $plan = $this->plan($availability);
@@ -206,14 +208,14 @@ class ManufacturingPlannerTest extends TestCase
     public function test_rc1_only_shortage_quantity_in_plan(): void
     {
         // FG available = 3, required = 10 → shortage = 7 → RC-1
-        $snapshot     = $this->makeSnapshot();
-        $rawMaterial  = $this->makeRawMaterial(requiredQty: 14.0, availableQty: 20.0); // scaled by 7
+        $snapshot = $this->makeSnapshot();
+        $rawMaterial = $this->makeRawMaterial(requiredQty: 14.0, availableQty: 20.0); // scaled by 7
         $availability = $this->makeAvailability(
-            requiredQty:      10.0,
-            availableFg:      3.0,
+            requiredQty: 10.0,
+            availableFg: 3.0,
             qtyToManufacture: 7.0,  // RC-1: max(0, 10 - 3)
-            snapshot:         $snapshot,
-            rawMaterials:     [$rawMaterial],
+            snapshot: $snapshot,
+            rawMaterials: [$rawMaterial],
         );
 
         $plan = $this->plan($availability);
@@ -228,12 +230,12 @@ class ManufacturingPlannerTest extends TestCase
     public function test_sufficient_stock_no_manufacture_required(): void
     {
         $availability = $this->makeAvailability(
-            requiredQty:      5.0,
-            availableFg:      10.0,
+            requiredQty: 5.0,
+            availableFg: 10.0,
             qtyToManufacture: 0.0,
             needsManufacturing: false,
-            canManufacture:   true,
-            eligibility:      ManufacturingEligibility::Sufficient,
+            canManufacture: true,
+            eligibility: ManufacturingEligibility::Sufficient,
         );
 
         $plan = $this->plan($availability);
@@ -251,9 +253,9 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_can_proceed_false_when_decision_deferred(): void
     {
-        $snapshot     = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $availability = $this->makeAvailability(
-            snapshot:     $snapshot,
+            snapshot: $snapshot,
             rawMaterials: [$this->makeRawMaterial(requiredQty: 10.0, availableQty: 10.0)],
         );
         $decision = $this->makeDecision(DecisionType::Defer, reasonCode: 'deferred_insufficient_context');
@@ -267,9 +269,9 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_can_proceed_false_when_decision_escalated(): void
     {
-        $snapshot     = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $availability = $this->makeAvailability(
-            snapshot:     $snapshot,
+            snapshot: $snapshot,
             rawMaterials: [$this->makeRawMaterial(requiredQty: 10.0, availableQty: 10.0)],
         );
 
@@ -287,10 +289,10 @@ class ManufacturingPlannerTest extends TestCase
     public function test_no_recipe_plan_has_no_components_and_cannot_proceed(): void
     {
         $availability = $this->makeAvailability(
-            qtyToManufacture:  5.0,
+            qtyToManufacture: 5.0,
             needsManufacturing: true,
-            canManufacture:    false,
-            eligibility:       ManufacturingEligibility::NoRecipe,
+            canManufacture: false,
+            eligibility: ManufacturingEligibility::NoRecipe,
         );
         $decision = $this->makeDecision(DecisionType::Reject, reasonCode: 'no_active_recipe');
 
@@ -309,17 +311,17 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_blocked_plan_when_cannot_manufacture(): void
     {
-        $snapshot    = $this->makeSnapshot(components: [$this->makeComponent(allowNegative: false)]);
+        $snapshot = $this->makeSnapshot(components: [$this->makeComponent(allowNegative: false)]);
         $rawMaterial = $this->makeRawMaterial(
-            requiredQty:   10.0,
-            availableQty:  2.0,    // short by 8, no negative stock
+            requiredQty: 10.0,
+            availableQty: 2.0,    // short by 8, no negative stock
             allowNegative: false,
         );
         $availability = $this->makeAvailability(
             canManufacture: false,
-            eligibility:    ManufacturingEligibility::CannotManufacture,
-            snapshot:       $snapshot,
-            rawMaterials:   [$rawMaterial],
+            eligibility: ManufacturingEligibility::CannotManufacture,
+            snapshot: $snapshot,
+            rawMaterials: [$rawMaterial],
         );
         $decision = $this->makeDecision(DecisionType::Reject, reasonCode: 'insufficient_raw_materials');
 
@@ -339,14 +341,14 @@ class ManufacturingPlannerTest extends TestCase
     public function test_blocked_components_helper_excludes_covered_components(): void
     {
         $snapshot = $this->makeSnapshot();
-        $covered  = $this->makeRawMaterial('comp-a', 'SKU-A', requiredQty: 5.0, availableQty: 10.0);
-        $blocked  = $this->makeRawMaterial('comp-b', 'SKU-B', requiredQty: 10.0, availableQty: 2.0, allowNegative: false);
+        $covered = $this->makeRawMaterial('comp-a', 'SKU-A', requiredQty: 5.0, availableQty: 10.0);
+        $blocked = $this->makeRawMaterial('comp-b', 'SKU-B', requiredQty: 10.0, availableQty: 2.0, allowNegative: false);
 
         $availability = $this->makeAvailability(
             canManufacture: false,
-            eligibility:    ManufacturingEligibility::CannotManufacture,
-            snapshot:       $snapshot,
-            rawMaterials:   [$covered, $blocked],
+            eligibility: ManufacturingEligibility::CannotManufacture,
+            snapshot: $snapshot,
+            rawMaterials: [$covered, $blocked],
         );
 
         $plan = $this->planner->plan($availability, $this->makeDecision(DecisionType::Reject));
@@ -360,17 +362,17 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_partial_plan_with_negative_stock_decisions(): void
     {
-        $snapshot    = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $rawMaterial = $this->makeRawMaterial(
-            requiredQty:   10.0,
-            availableQty:  2.0,   // short by 8, but negative stock allowed (RC-2)
+            requiredQty: 10.0,
+            availableQty: 2.0,   // short by 8, but negative stock allowed (RC-2)
             allowNegative: true,
         );
         $availability = $this->makeAvailability(
             canManufacture: true,
-            eligibility:    ManufacturingEligibility::Partial,
-            snapshot:       $snapshot,
-            rawMaterials:   [$rawMaterial],
+            eligibility: ManufacturingEligibility::Partial,
+            snapshot: $snapshot,
+            rawMaterials: [$rawMaterial],
         );
         $decision = $this->makeDecision(DecisionType::Partial, reasonCode: 'mfg_partial_negative_stock');
 
@@ -390,15 +392,15 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_negative_stock_decision_projected_balance_is_correct(): void
     {
-        $snapshot    = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $rawMaterial = $this->makeRawMaterial(
-            requiredQty:   15.0,
-            availableQty:  3.0,  // will go to 3 - 15 = -12
+            requiredQty: 15.0,
+            availableQty: 3.0,  // will go to 3 - 15 = -12
             allowNegative: true,
         );
         $availability = $this->makeAvailability(
-            eligibility:  ManufacturingEligibility::Partial,
-            snapshot:     $snapshot,
+            eligibility: ManufacturingEligibility::Partial,
+            snapshot: $snapshot,
             rawMaterials: [$rawMaterial],
         );
 
@@ -409,8 +411,8 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_no_negative_stock_decisions_when_all_materials_covered(): void
     {
-        $snapshot     = $this->makeSnapshot();
-        $rawMaterial  = $this->makeRawMaterial(requiredQty: 10.0, availableQty: 20.0);
+        $snapshot = $this->makeSnapshot();
+        $rawMaterial = $this->makeRawMaterial(requiredQty: 10.0, availableQty: 20.0);
         $availability = $this->makeAvailability(snapshot: $snapshot, rawMaterials: [$rawMaterial]);
 
         $plan = $this->plan($availability);
@@ -423,9 +425,9 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_recipe_snapshot_hash_is_64_char_sha256_hex(): void
     {
-        $snapshot     = $this->makeSnapshot(components: [$this->makeComponent()]);
+        $snapshot = $this->makeSnapshot(components: [$this->makeComponent()]);
         $availability = $this->makeAvailability(
-            snapshot:     $snapshot,
+            snapshot: $snapshot,
             rawMaterials: [$this->makeRawMaterial()],
         );
 
@@ -437,8 +439,8 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_same_snapshot_always_produces_same_hash(): void
     {
-        $snapshot     = $this->makeSnapshot(productId: 'fixed-id', sku: 'FIXED-SKU', version: 3);
-        $rawMaterial  = $this->makeRawMaterial();
+        $snapshot = $this->makeSnapshot(productId: 'fixed-id', sku: 'FIXED-SKU', version: 3);
+        $rawMaterial = $this->makeRawMaterial();
         $availability = $this->makeAvailability(snapshot: $snapshot, rawMaterials: [$rawMaterial]);
 
         $planA = $this->planner->plan($availability, $this->makeDecision());
@@ -449,9 +451,9 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_different_snapshots_produce_different_hashes(): void
     {
-        $snapshotA     = $this->makeSnapshot(productId: 'prod-A', sku: 'SKU-A', version: 1);
-        $snapshotB     = $this->makeSnapshot(productId: 'prod-B', sku: 'SKU-B', version: 2);
-        $rawMaterial   = $this->makeRawMaterial();
+        $snapshotA = $this->makeSnapshot(productId: 'prod-A', sku: 'SKU-A', version: 1);
+        $snapshotB = $this->makeSnapshot(productId: 'prod-B', sku: 'SKU-B', version: 2);
+        $rawMaterial = $this->makeRawMaterial();
         $availabilityA = $this->makeAvailability(productId: 'prod-A', snapshot: $snapshotA, rawMaterials: [$rawMaterial]);
         $availabilityB = $this->makeAvailability(productId: 'prod-B', snapshot: $snapshotB, rawMaterials: [$rawMaterial]);
 
@@ -464,9 +466,9 @@ class ManufacturingPlannerTest extends TestCase
     public function test_snapshot_hash_null_for_sufficient(): void
     {
         $availability = $this->makeAvailability(
-            qtyToManufacture:  0.0,
+            qtyToManufacture: 0.0,
             needsManufacturing: false,
-            eligibility:       ManufacturingEligibility::Sufficient,
+            eligibility: ManufacturingEligibility::Sufficient,
         );
 
         $plan = $this->plan($availability);
@@ -478,7 +480,7 @@ class ManufacturingPlannerTest extends TestCase
     {
         $availability = $this->makeAvailability(
             canManufacture: false,
-            eligibility:    ManufacturingEligibility::NoRecipe,
+            eligibility: ManufacturingEligibility::NoRecipe,
         );
 
         $plan = $this->planner->plan($availability, $this->makeDecision(DecisionType::Reject));
@@ -507,8 +509,8 @@ class ManufacturingPlannerTest extends TestCase
     public function test_each_plan_has_unique_plan_id(): void
     {
         $availability = $this->makeAvailability(
-            eligibility:       ManufacturingEligibility::Sufficient,
-            qtyToManufacture:  0.0,
+            eligibility: ManufacturingEligibility::Sufficient,
+            qtyToManufacture: 0.0,
             needsManufacturing: false,
         );
 
@@ -521,15 +523,15 @@ class ManufacturingPlannerTest extends TestCase
     public function test_planned_at_is_iso_8601(): void
     {
         $availability = $this->makeAvailability(
-            eligibility:       ManufacturingEligibility::Sufficient,
-            qtyToManufacture:  0.0,
+            eligibility: ManufacturingEligibility::Sufficient,
+            qtyToManufacture: 0.0,
             needsManufacturing: false,
         );
 
         $plan = $this->plan($availability);
 
         $this->assertNotFalse(
-            \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $plan->planned_at),
+            DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $plan->planned_at),
             "planned_at is not a valid ISO 8601 date: {$plan->planned_at}",
         );
     }
@@ -538,9 +540,9 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_decision_type_and_reason_forwarded_to_plan(): void
     {
-        $snapshot     = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $availability = $this->makeAvailability(
-            snapshot:     $snapshot,
+            snapshot: $snapshot,
             rawMaterials: [$this->makeRawMaterial()],
         );
         $decision = $this->makeDecision(
@@ -556,16 +558,16 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_trigger_info_present_in_metadata(): void
     {
-        $snapshot     = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $availability = $this->makeAvailability(
-            snapshot:     $snapshot,
+            snapshot: $snapshot,
             rawMaterials: [$this->makeRawMaterial()],
         );
         $decision = $this->makeDecision(
-            triggerType:    'order_line',
-            triggerId:      'line-abc',
+            triggerType: 'order_line',
+            triggerId: 'line-abc',
             triggerVersion: 2,
-            actorId:        'user-xyz',
+            actorId: 'user-xyz',
         );
 
         $plan = $this->planner->plan($availability, $decision);
@@ -579,8 +581,8 @@ class ManufacturingPlannerTest extends TestCase
     public function test_caller_metadata_merged_into_plan_metadata(): void
     {
         $availability = $this->makeAvailability(
-            eligibility:       ManufacturingEligibility::Sufficient,
-            qtyToManufacture:  0.0,
+            eligibility: ManufacturingEligibility::Sufficient,
+            qtyToManufacture: 0.0,
             needsManufacturing: false,
         );
 
@@ -597,8 +599,8 @@ class ManufacturingPlannerTest extends TestCase
     public function test_warehouse_id_in_metadata(): void
     {
         $availability = $this->makeAvailability(
-            eligibility:       ManufacturingEligibility::Sufficient,
-            qtyToManufacture:  0.0,
+            eligibility: ManufacturingEligibility::Sufficient,
+            qtyToManufacture: 0.0,
             needsManufacturing: false,
         );
 
@@ -611,9 +613,9 @@ class ManufacturingPlannerTest extends TestCase
 
     public function test_to_array_has_all_expected_keys(): void
     {
-        $snapshot     = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $availability = $this->makeAvailability(
-            snapshot:     $snapshot,
+            snapshot: $snapshot,
             rawMaterials: [$this->makeRawMaterial()],
         );
 
@@ -638,7 +640,7 @@ class ManufacturingPlannerTest extends TestCase
         // Caller built an AvailabilityResult that says CanManufacture but forgot the snapshot
         $availability = $this->makeAvailability(
             eligibility: ManufacturingEligibility::CanManufacture,
-            snapshot:    null,  // invariant violation
+            snapshot: null,  // invariant violation
         );
 
         $this->expectException(PlannerException::class);
@@ -651,7 +653,7 @@ class ManufacturingPlannerTest extends TestCase
     {
         $availability = $this->makeAvailability(
             eligibility: ManufacturingEligibility::Partial,
-            snapshot:    null,  // invariant violation
+            snapshot: null,  // invariant violation
         );
 
         $this->expectException(PlannerException::class);
@@ -663,7 +665,7 @@ class ManufacturingPlannerTest extends TestCase
     {
         $availability = $this->makeAvailability(
             eligibility: ManufacturingEligibility::CanManufacture,
-            snapshot:    null,
+            snapshot: null,
         );
 
         try {

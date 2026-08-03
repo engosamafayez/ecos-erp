@@ -20,9 +20,9 @@ return new class extends Migration
 {
     /** @var array<string, string> */
     private const VALUE_MAP = [
-        'warning_only'   => 'warn_only',
+        'warning_only' => 'warn_only',
         'block_creation' => 'block_new_customer',
-        'allow_duplicate'=> 'always_create_new',
+        'allow_duplicate' => 'always_create_new',
     ];
 
     public function up(): void

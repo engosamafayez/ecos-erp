@@ -6,34 +6,34 @@ namespace Modules\Purchasing\SupplierInvoices\Domain\Enums;
 
 enum SupplierInvoiceStatus: string
 {
-    case Draft          = 'draft';
-    case Validated      = 'validated';
+    case Draft = 'draft';
+    case Validated = 'validated';
     case AutoProcessing = 'auto_processing';
-    case Posted         = 'posted';
-    case Failed         = 'failed';
-    case Cancelled      = 'cancelled';
+    case Posted = 'posted';
+    case Failed = 'failed';
+    case Cancelled = 'cancelled';
 
     public function label(): string
     {
         return match ($this) {
-            self::Draft          => 'Draft',
-            self::Validated      => 'Validated',
+            self::Draft => 'Draft',
+            self::Validated => 'Validated',
             self::AutoProcessing => 'Processing…',
-            self::Posted         => 'Posted',
-            self::Failed         => 'Failed',
-            self::Cancelled      => 'Cancelled',
+            self::Posted => 'Posted',
+            self::Failed => 'Failed',
+            self::Cancelled => 'Cancelled',
         };
     }
 
     public function color(): string
     {
         return match ($this) {
-            self::Draft          => 'gray',
-            self::Validated      => 'blue',
+            self::Draft => 'gray',
+            self::Validated => 'blue',
             self::AutoProcessing => 'yellow',
-            self::Posted         => 'green',
-            self::Failed         => 'red',
-            self::Cancelled      => 'red',
+            self::Posted => 'green',
+            self::Failed => 'red',
+            self::Cancelled => 'red',
         };
     }
 

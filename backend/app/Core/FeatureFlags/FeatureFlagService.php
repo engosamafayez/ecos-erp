@@ -16,7 +16,7 @@ final class FeatureFlagService
      */
     public function isEnabled(string $key, ?string $companyId = null): bool
     {
-        $cacheKey = "feature_flag.{$key}." . ($companyId ?? 'global');
+        $cacheKey = "feature_flag.{$key}.".($companyId ?? 'global');
 
         return (bool) Cache::remember($cacheKey, self::TTL, function () use ($key, $companyId): bool {
             // Company-specific override takes precedence
@@ -41,7 +41,7 @@ final class FeatureFlagService
 
     public function isDisabled(string $key, ?string $companyId = null): bool
     {
-        return !$this->isEnabled($key, $companyId);
+        return ! $this->isEnabled($key, $companyId);
     }
 
     public function enable(string $key, ?string $companyId = null): void
@@ -61,6 +61,6 @@ final class FeatureFlagService
             ['enabled' => $enabled],
         );
 
-        Cache::forget("feature_flag.{$key}." . ($companyId ?? 'global'));
+        Cache::forget("feature_flag.{$key}.".($companyId ?? 'global'));
     }
 }

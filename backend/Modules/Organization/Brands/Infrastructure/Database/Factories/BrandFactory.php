@@ -22,7 +22,7 @@ final class BrandFactory extends Factory
 
         return [
             'company_id' => Company::factory(),
-            'code' => 'BRD-' . str_pad((string) $this->faker->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
+            'code' => 'BRD-'.str_pad((string) $this->faker->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
             'name' => $name,
             'slug' => Str::slug($name),
             'logo' => null,

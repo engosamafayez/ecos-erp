@@ -62,14 +62,14 @@ export function OrderConfirmCustomerDialog({ order, open, onOpenChange }: Props)
       { id: order.id, communication_method: method, result, notes: notes || undefined },
       {
         onSuccess: () => {
-          toast({ title: t('confirmation.success', 'Confirmation recorded'), description: t('confirmation.successDesc', 'Customer confirmation has been saved.') });
+          toast({ title: t($ => $.confirmation.success, 'Confirmation recorded'), description: t($ => $.confirmation.successDesc, 'Customer confirmation has been saved.') });
           onOpenChange(false);
           setNotes('');
           setMethod('phone');
           setResult('confirmed');
         },
         onError: () => {
-          toast({ title: t('confirmation.error', 'Failed to save'), variant: 'destructive' });
+          toast({ title: t($ => $.confirmation.error, 'Failed to save'), variant: 'destructive' });
         },
       },
     );
@@ -84,7 +84,7 @@ export function OrderConfirmCustomerDialog({ order, open, onOpenChange }: Props)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Phone className="size-4 text-muted-foreground" />
-            {t('confirmation.title', 'Confirm with Customer')}
+            {t($ => $.confirmation.title, 'Confirm with Customer')}
           </DialogTitle>
           <DialogDescription>
             {customerName}
@@ -98,7 +98,7 @@ export function OrderConfirmCustomerDialog({ order, open, onOpenChange }: Props)
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label>{t('confirmation.method', 'Communication Method')}</Label>
+            <Label>{t($ => $.confirmation.method, 'Communication Method')}</Label>
             <Select value={method} onValueChange={setMethod}>
               <SelectTrigger>
                 <SelectValue />
@@ -112,7 +112,7 @@ export function OrderConfirmCustomerDialog({ order, open, onOpenChange }: Props)
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t('confirmation.result', 'Result')}</Label>
+            <Label>{t($ => $.confirmation.result, 'Result')}</Label>
             <Select value={result} onValueChange={setResult}>
               <SelectTrigger>
                 <SelectValue />
@@ -126,11 +126,11 @@ export function OrderConfirmCustomerDialog({ order, open, onOpenChange }: Props)
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t('confirmation.notes', 'Notes')} <span className="text-muted-foreground text-xs">({t('common.optional', 'optional')})</span></Label>
+            <Label>{t($ => $.confirmation.notes, 'Notes')} <span className="text-muted-foreground text-xs">({t($ => $.common.optional, 'optional')})</span></Label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('confirmation.notesPlaceholder', 'e.g. customer requested to call back tomorrow')}
+              placeholder={t($ => $.confirmation.notesPlaceholder, 'e.g. customer requested to call back tomorrow')}
               rows={3}
               maxLength={1000}
             />
@@ -139,10 +139,10 @@ export function OrderConfirmCustomerDialog({ order, open, onOpenChange }: Props)
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            {t('workspace.cancel', 'Cancel')}
+            {t($ => $.workspace.cancel, 'Cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isPending}>
-            {isPending ? t('confirmation.saving', 'Saving…') : t('confirmation.save', 'Save Confirmation')}
+            {isPending ? t($ => $.confirmation.saving, 'Saving…') : t($ => $.confirmation.save, 'Save Confirmation')}
           </Button>
         </DialogFooter>
       </DialogContent>

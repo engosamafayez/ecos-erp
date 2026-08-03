@@ -52,16 +52,22 @@ export function TeamFormDrawer({ open, onOpenChange, team }: TeamFormDrawerProps
 
   const isPending = createTeam.isPending || updateTeam.isPending;
 
+  // `reset` is a stable reference in react-hook-form, so the effect depends on
+  // the two reset functions rather than on the whole form objects — whose
+  // identity changes each render and would re-reset the form continuously.
+  const { reset: resetCreate } = createForm;
+  const { reset: resetUpdate } = updateForm;
+
   useEffect(() => {
     if (open) {
       setServerError(null);
       if (isEdit && team) {
-        updateForm.reset(toUpdateFormValues(team));
+        resetUpdate(toUpdateFormValues(team));
       } else {
-        createForm.reset(toCreateFormValues());
+        resetCreate(toCreateFormValues());
       }
     }
-  }, [open, team, isEdit]);
+  }, [open, team, isEdit, resetCreate, resetUpdate]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) setServerError(null);

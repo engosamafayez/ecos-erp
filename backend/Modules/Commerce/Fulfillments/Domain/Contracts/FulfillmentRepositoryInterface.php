@@ -15,14 +15,14 @@ interface FulfillmentRepositoryInterface
     public function findById(string $id): ?Fulfillment;
 
     /**
-     * @param array<string, mixed> $attributes
-     * @param array<int, array<string, mixed>> $lines
+     * @param  array<string, mixed>  $attributes
+     * @param  array<int, array<string, mixed>>  $lines
      */
     public function create(array $attributes, array $lines): Fulfillment;
 
     /**
-     * @param array<string, mixed> $attributes
-     * @param array<int, array<string, mixed>> $lines
+     * @param  array<string, mixed>  $attributes
+     * @param  array<int, array<string, mixed>>  $lines
      */
     public function update(Fulfillment $fulfillment, array $attributes, array $lines): Fulfillment;
 

@@ -13,7 +13,7 @@ use Modules\Commerce\Synchronization\Domain\Models\SyncLog;
 final class SyncLogService
 {
     /**
-     * @param array<string, mixed>|null $requestPayload
+     * @param  array<string, mixed>|null  $requestPayload
      */
     public function createLog(
         ?Channel $channel,
@@ -30,23 +30,23 @@ final class SyncLogService
         ?string $warehouseId = null,
     ): SyncLog {
         return SyncLog::create([
-            'channel_id'      => $channel?->id,
-            'entity_type'     => $entityType->value,
-            'entity_id'       => $entityId,
-            'direction'       => $direction->value,
-            'action'          => $action,
-            'correlation_id'  => $correlationId,
-            'event_name'      => $eventName,
-            'event_version'   => $eventVersion,
-            'warehouse_id'    => $warehouseId,
-            'status'          => $status->value,
+            'channel_id' => $channel?->id,
+            'entity_type' => $entityType->value,
+            'entity_id' => $entityId,
+            'direction' => $direction->value,
+            'action' => $action,
+            'correlation_id' => $correlationId,
+            'event_name' => $eventName,
+            'event_version' => $eventVersion,
+            'warehouse_id' => $warehouseId,
+            'status' => $status->value,
             'request_payload' => $requestPayload,
-            'synced_at'       => now(),
+            'synced_at' => now(),
         ]);
     }
 
     /**
-     * @param array<string, mixed>|null $responsePayload
+     * @param  array<string, mixed>|null  $responsePayload
      */
     public function markSuccess(
         SyncLog $log,
@@ -55,21 +55,21 @@ final class SyncLogService
         ?int $durationMs = null,
     ): void {
         $log->update([
-            'status'           => SyncStatus::Success->value,
+            'status' => SyncStatus::Success->value,
             'response_payload' => $responsePayload,
-            'error_message'    => null,
-            'duration_ms'      => $durationMs,
-            'synced_at'        => now(),
+            'error_message' => null,
+            'duration_ms' => $durationMs,
+            'synced_at' => now(),
         ]);
 
         $channel?->update([
-            'last_sync_at'            => now(),
+            'last_sync_at' => now(),
             'last_successful_sync_at' => now(),
         ]);
     }
 
     /**
-     * @param array<string, mixed>|null $responsePayload
+     * @param  array<string, mixed>|null  $responsePayload
      */
     public function markFailed(
         SyncLog $log,
@@ -79,15 +79,15 @@ final class SyncLogService
         ?int $durationMs = null,
     ): void {
         $log->update([
-            'status'           => SyncStatus::Failed->value,
-            'error_message'    => $errorMessage,
+            'status' => SyncStatus::Failed->value,
+            'error_message' => $errorMessage,
             'response_payload' => $responsePayload,
-            'duration_ms'      => $durationMs,
-            'synced_at'        => now(),
+            'duration_ms' => $durationMs,
+            'synced_at' => now(),
         ]);
 
         $channel?->update([
-            'last_error_at'      => now(),
+            'last_error_at' => now(),
             'last_error_message' => mb_substr($errorMessage, 0, 1000),
         ]);
     }
@@ -95,7 +95,7 @@ final class SyncLogService
     /**
      * Create a skipped log entry (e.g. duplicate webhook detection).
      *
-     * @param array<string, mixed>|null $requestPayload
+     * @param  array<string, mixed>|null  $requestPayload
      */
     public function createSkippedLog(
         ?Channel $channel,
@@ -107,15 +107,15 @@ final class SyncLogService
         ?string $correlationId = null,
     ): SyncLog {
         return SyncLog::create([
-            'channel_id'      => $channel?->id,
-            'entity_type'     => $entityType->value,
-            'entity_id'       => $entityId,
-            'direction'       => $direction->value,
-            'action'          => $action,
-            'correlation_id'  => $correlationId,
-            'status'          => SyncStatus::Skipped->value,
+            'channel_id' => $channel?->id,
+            'entity_type' => $entityType->value,
+            'entity_id' => $entityId,
+            'direction' => $direction->value,
+            'action' => $action,
+            'correlation_id' => $correlationId,
+            'status' => SyncStatus::Skipped->value,
             'request_payload' => $requestPayload,
-            'synced_at'       => now(),
+            'synced_at' => now(),
         ]);
     }
 }

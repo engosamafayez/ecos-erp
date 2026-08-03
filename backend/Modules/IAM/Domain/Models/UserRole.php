@@ -13,9 +13,9 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * Replaces the old `user_role` composite-PK pivot. Now a first-class entity
  * with its own UUID PK and optional scope columns for future scoped RBAC.
  *
- * @property string      $id
- * @property int         $user_id
- * @property string      $role_id
+ * @property string $id
+ * @property int $user_id
+ * @property string $role_id
  * @property string|null $company_id
  * @property string|null $branch_id
  * @property string|null $warehouse_id

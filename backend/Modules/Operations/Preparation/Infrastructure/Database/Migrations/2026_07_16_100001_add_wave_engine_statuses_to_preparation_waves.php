@@ -29,7 +29,7 @@ return new class extends Migration
         } else {
             try {
                 DB::statement("ALTER TABLE preparation_waves DROP CHECK {$name}");
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Constraint does not exist — safe to continue
             }
         }

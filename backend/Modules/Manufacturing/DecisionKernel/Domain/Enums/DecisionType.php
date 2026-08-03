@@ -30,10 +30,10 @@ enum DecisionType: string
     public function label(): string
     {
         return match ($this) {
-            self::Approve  => 'Approved',
-            self::Reject   => 'Rejected',
-            self::Defer    => 'Deferred',
-            self::Partial  => 'Partial Approval',
+            self::Approve => 'Approved',
+            self::Reject => 'Rejected',
+            self::Defer => 'Deferred',
+            self::Partial => 'Partial Approval',
             self::Escalate => 'Escalated',
         };
     }

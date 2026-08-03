@@ -12,7 +12,7 @@ use Modules\Marketing\CampaignStudio\Domain\Models\CampaignDraft;
 class DuplicateCampaignDraftAction
 {
     public function __construct(
-        private readonly CampaignDraftService     $draftService,
+        private readonly CampaignDraftService $draftService,
         private readonly CampaignVersioningService $versioningService,
     ) {}
 
@@ -20,6 +20,7 @@ class DuplicateCampaignDraftAction
     {
         $draft = $this->draftService->duplicate($original, $userId);
         $this->versioningService->snapshot($draft, VersionChangeType::INITIAL, $userId, "Duplicated from campaign: {$original->name}");
+
         return $draft->fresh(['audience', 'placement', 'creatives']);
     }
 }

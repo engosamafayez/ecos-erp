@@ -33,9 +33,9 @@ final readonly class BrandTransferImpactReport
         public readonly int $totalRecordsAffected,
 
         // Warnings (non-blocking — transfer can proceed)
-        public readonly bool   $slugConflict,
+        public readonly bool $slugConflict,
         public readonly string $resolvedSlug,
-        public readonly int    $lockedSnapshotsCount,
+        public readonly int $lockedSnapshotsCount,
 
         // Blockers (transfer cannot proceed until resolved)
         public readonly bool $codeConflict,
@@ -50,27 +50,27 @@ final readonly class BrandTransferImpactReport
     public function toArray(): array
     {
         return [
-            'brand_id'        => $this->brandId,
-            'brand_code'      => $this->brandCode,
-            'brand_slug'      => $this->brandSlug,
+            'brand_id' => $this->brandId,
+            'brand_code' => $this->brandCode,
+            'brand_slug' => $this->brandSlug,
             'from_company_id' => $this->fromCompanyId,
-            'to_company_id'   => $this->toCompanyId,
-            'counts'          => [
-                'channels'             => $this->channelsCount,
-                'orders'               => $this->ordersCount,
-                'products'             => $this->productsCount,
-                'business_accounts'    => $this->businessAccountsCount,
-                'marketing_campaigns'  => $this->marketingCampaignsCount,
+            'to_company_id' => $this->toCompanyId,
+            'counts' => [
+                'channels' => $this->channelsCount,
+                'orders' => $this->ordersCount,
+                'products' => $this->productsCount,
+                'business_accounts' => $this->businessAccountsCount,
+                'marketing_campaigns' => $this->marketingCampaignsCount,
                 'automation_workflows' => $this->automationWorkflowsCount,
-                'ai_contexts'          => $this->aiContextsCount,
-                'cep_conversations'    => $this->cepConversationsCount,
-                'policies'             => $this->policiesCount,
-                'total_records'        => $this->totalRecordsAffected,
+                'ai_contexts' => $this->aiContextsCount,
+                'cep_conversations' => $this->cepConversationsCount,
+                'policies' => $this->policiesCount,
+                'total_records' => $this->totalRecordsAffected,
             ],
             'warnings' => [
-                'slug_conflict'     => $this->slugConflict,
-                'resolved_slug'     => $this->resolvedSlug,
-                'locked_snapshots'  => $this->lockedSnapshotsCount,
+                'slug_conflict' => $this->slugConflict,
+                'resolved_slug' => $this->resolvedSlug,
+                'locked_snapshots' => $this->lockedSnapshotsCount,
             ],
             'blockers' => [
                 'code_conflict' => $this->codeConflict,

@@ -44,7 +44,7 @@ final class InventoryAvailabilityEngine
         float $requiredQty,
         string $companyId,
     ): AvailabilityResult {
-        $evaluatedAt = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $evaluatedAt = (new DateTimeImmutable)->format(DateTimeInterface::ATOM);
 
         $availableFg = $this->inventory->availableQty($warehouseId, $productId, $companyId);
 
@@ -76,20 +76,20 @@ final class InventoryAvailabilityEngine
         }
 
         $rawMaterials = $this->analyseComponents($snapshot, $warehouseId, $companyId, $qtyToManufacture);
-        $eligibility  = $this->classifyEligibility($rawMaterials);
+        $eligibility = $this->classifyEligibility($rawMaterials);
 
         return new AvailabilityResult(
-            product_id:               $productId,
-            warehouse_id:             $warehouseId,
-            required_qty:             $requiredQty,
+            product_id: $productId,
+            warehouse_id: $warehouseId,
+            required_qty: $requiredQty,
             available_finished_goods: $availableFg,
-            qty_to_manufacture:       $qtyToManufacture,
-            needs_manufacturing:      true,
-            recipe_snapshot:          $snapshot,
-            raw_materials:            $rawMaterials,
-            can_manufacture:          $eligibility->allowsManufacturing(),
-            eligibility:              $eligibility,
-            evaluated_at:             $evaluatedAt,
+            qty_to_manufacture: $qtyToManufacture,
+            needs_manufacturing: true,
+            recipe_snapshot: $snapshot,
+            raw_materials: $rawMaterials,
+            can_manufacture: $eligibility->allowsManufacturing(),
+            eligibility: $eligibility,
+            evaluated_at: $evaluatedAt,
         );
     }
 
@@ -124,23 +124,23 @@ final class InventoryAvailabilityEngine
         float $qtyToManufacture,
     ): RawMaterialAvailability {
         // Scale: absolute quantity needed for the full manufacturing run
-        $requiredQty  = $component->quantity * $qtyToManufacture;
+        $requiredQty = $component->quantity * $qtyToManufacture;
         $availableQty = $this->inventory->availableQty($warehouseId, $component->component_id, $companyId);
-        $missingQty   = max(0.0, $requiredQty - $availableQty);
+        $missingQty = max(0.0, $requiredQty - $availableQty);
 
         // RC-2: satisfied when stock covers the need OR negative stock is permitted
         $isSatisfied = $missingQty === 0.0 || $component->allow_negative_stock;
 
         return new RawMaterialAvailability(
-            component_id:         $component->component_id,
-            sku:                  $component->sku,
-            name:                 $component->name,
-            unit_symbol:          $component->unit_symbol,
-            required_qty:         $requiredQty,
-            available_qty:        $availableQty,
-            missing_qty:          $missingQty,
+            component_id: $component->component_id,
+            sku: $component->sku,
+            name: $component->name,
+            unit_symbol: $component->unit_symbol,
+            required_qty: $requiredQty,
+            available_qty: $availableQty,
+            missing_qty: $missingQty,
             allow_negative_stock: $component->allow_negative_stock,
-            is_satisfied:         $isSatisfied,
+            is_satisfied: $isSatisfied,
         );
     }
 
@@ -155,7 +155,7 @@ final class InventoryAvailabilityEngine
             return ManufacturingEligibility::CanManufacture;
         }
 
-        $hasHardBlocker  = false;
+        $hasHardBlocker = false;
         $hasSoftShortage = false;
 
         foreach ($materials as $material) {
@@ -187,17 +187,17 @@ final class InventoryAvailabilityEngine
         string $evaluatedAt,
     ): AvailabilityResult {
         return new AvailabilityResult(
-            product_id:               $productId,
-            warehouse_id:             $warehouseId,
-            required_qty:             $requiredQty,
+            product_id: $productId,
+            warehouse_id: $warehouseId,
+            required_qty: $requiredQty,
             available_finished_goods: $availableFg,
-            qty_to_manufacture:       0.0,
-            needs_manufacturing:      false,
-            recipe_snapshot:          null,
-            raw_materials:            [],
-            can_manufacture:          true,
-            eligibility:              ManufacturingEligibility::Sufficient,
-            evaluated_at:             $evaluatedAt,
+            qty_to_manufacture: 0.0,
+            needs_manufacturing: false,
+            recipe_snapshot: null,
+            raw_materials: [],
+            can_manufacture: true,
+            eligibility: ManufacturingEligibility::Sufficient,
+            evaluated_at: $evaluatedAt,
         );
     }
 
@@ -210,17 +210,17 @@ final class InventoryAvailabilityEngine
         string $evaluatedAt,
     ): AvailabilityResult {
         return new AvailabilityResult(
-            product_id:               $productId,
-            warehouse_id:             $warehouseId,
-            required_qty:             $requiredQty,
+            product_id: $productId,
+            warehouse_id: $warehouseId,
+            required_qty: $requiredQty,
             available_finished_goods: $availableFg,
-            qty_to_manufacture:       $qtyToManufacture,
-            needs_manufacturing:      true,
-            recipe_snapshot:          null,
-            raw_materials:            [],
-            can_manufacture:          false,
-            eligibility:              ManufacturingEligibility::NoRecipe,
-            evaluated_at:             $evaluatedAt,
+            qty_to_manufacture: $qtyToManufacture,
+            needs_manufacturing: true,
+            recipe_snapshot: null,
+            raw_materials: [],
+            can_manufacture: false,
+            eligibility: ManufacturingEligibility::NoRecipe,
+            evaluated_at: $evaluatedAt,
         );
     }
 }

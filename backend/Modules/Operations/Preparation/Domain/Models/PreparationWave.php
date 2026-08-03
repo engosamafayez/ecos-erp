@@ -6,49 +6,49 @@ namespace Modules\Operations\Preparation\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
 
 /**
- * @property string              $id
- * @property string              $company_id
- * @property string              $warehouse_id
- * @property string|null         $preparation_session_id
- * @property string              $wave_number
- * @property \Carbon\Carbon      $planning_date
- * @property WaveStatus          $status
- * @property int                 $orders_count
- * @property int                 $products_count
- * @property int                 $lines_count
- * @property float               $total_units_required
- * @property float               $total_units_prepared
- * @property bool                $shortage_detected
- * @property string|null         $shortage_resolved_by
+ * @property string $id
+ * @property string $company_id
+ * @property string $warehouse_id
+ * @property string|null $preparation_session_id
+ * @property string $wave_number
+ * @property \Carbon\Carbon $planning_date
+ * @property WaveStatus $status
+ * @property int $orders_count
+ * @property int $products_count
+ * @property int $lines_count
+ * @property float $total_units_required
+ * @property float $total_units_prepared
+ * @property bool $shortage_detected
+ * @property string|null $shortage_resolved_by
  * @property \Carbon\Carbon|null $shortage_resolved_at
- * @property string|null         $approved_by
+ * @property string|null $approved_by
  * @property \Carbon\Carbon|null $approved_at
- * @property string|null         $started_by
+ * @property string|null $started_by
  * @property \Carbon\Carbon|null $started_at
- * @property string|null         $completed_by
+ * @property string|null $completed_by
  * @property \Carbon\Carbon|null $completed_at
- * @property string|null         $cancelled_by
+ * @property string|null $cancelled_by
  * @property \Carbon\Carbon|null $cancelled_at
- * @property string|null         $cancellation_reason
- * @property string|null         $brand_id
- * @property string|null         $channel_id
- * @property string|null         $delivery_window_id
- * @property string|null         $delivery_window_label
- * @property array|null          $policy_snapshot
- * @property string              $wave_type
- * @property int|null            $priority_score
- * @property string|null         $config_version_id
- * @property string|null         $notes
- * @property string              $created_by
- * @property string              $updated_by
- * @property \Carbon\Carbon      $created_at
- * @property \Carbon\Carbon      $updated_at
+ * @property string|null $cancellation_reason
+ * @property string|null $brand_id
+ * @property string|null $channel_id
+ * @property string|null $delivery_window_id
+ * @property string|null $delivery_window_label
+ * @property array|null $policy_snapshot
+ * @property string $wave_type
+ * @property int|null $priority_score
+ * @property string|null $config_version_id
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class PreparationWave extends Model
 {
@@ -102,21 +102,21 @@ class PreparationWave extends Model
     protected function casts(): array
     {
         return [
-            'planning_date'        => 'date:Y-m-d',
-            'status'               => WaveStatus::class,
-            'shortage_detected'    => 'boolean',
-            'orders_count'         => 'integer',
-            'products_count'       => 'integer',
-            'lines_count'          => 'integer',
+            'planning_date' => 'date:Y-m-d',
+            'status' => WaveStatus::class,
+            'shortage_detected' => 'boolean',
+            'orders_count' => 'integer',
+            'products_count' => 'integer',
+            'lines_count' => 'integer',
             'total_units_required' => 'float',
             'total_units_prepared' => 'float',
             'shortage_resolved_at' => 'datetime',
-            'approved_at'          => 'datetime',
-            'started_at'           => 'datetime',
-            'completed_at'         => 'datetime',
-            'cancelled_at'         => 'datetime',
-            'policy_snapshot'      => 'array',
-            'priority_score'       => 'integer',
+            'approved_at' => 'datetime',
+            'started_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+            'policy_snapshot' => 'array',
+            'priority_score' => 'integer',
         ];
     }
 

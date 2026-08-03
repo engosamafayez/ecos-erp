@@ -21,12 +21,16 @@ use Throwable;
  */
 final class ExecutionException extends RuntimeException
 {
-    public const INVALID_CONTEXT   = 'invalid_context';
+    public const INVALID_CONTEXT = 'invalid_context';
+
     public const PLAN_NOT_APPROVED = 'plan_not_approved';
-    public const SNAPSHOT_MISSING  = 'snapshot_missing';
+
+    public const SNAPSHOT_MISSING = 'snapshot_missing';
+
     public const SNAPSHOT_MISMATCH = 'snapshot_mismatch';
 
     private string $reason;
+
     private string $planId;
 
     private function __construct(string $message, string $reason, string $planId, ?Throwable $previous = null)
@@ -40,7 +44,7 @@ final class ExecutionException extends RuntimeException
     {
         return new self(
             "Execution context for plan '{$planId}' is invalid: {$failureCount} validation failure(s) present. "
-            . 'Run ExecutionPipeline::prepare() and check context->isValid() before calling execute().',
+            .'Run ExecutionPipeline::prepare() and check context->isValid() before calling execute().',
             self::INVALID_CONTEXT,
             $planId,
         );
@@ -50,7 +54,7 @@ final class ExecutionException extends RuntimeException
     {
         return new self(
             "Plan '{$planId}' cannot be executed: should_manufacture is false (eligibility={$eligibility}). "
-            . 'Only plans where should_manufacture = true may be executed.',
+            .'Only plans where should_manufacture = true may be executed.',
             self::PLAN_NOT_APPROVED,
             $planId,
         );
@@ -60,7 +64,7 @@ final class ExecutionException extends RuntimeException
     {
         return new self(
             "Plan '{$planId}' has should_manufacture = true but recipe_snapshot_hash is null. "
-            . 'This indicates the plan was built without a recipe, which is an invariant violation.',
+            .'This indicates the plan was built without a recipe, which is an invariant violation.',
             self::SNAPSHOT_MISSING,
             $planId,
         );
@@ -70,8 +74,8 @@ final class ExecutionException extends RuntimeException
     {
         return new self(
             "Plan '{$planId}' snapshot hash mismatch. "
-            . "Stored hash: {$stored}. Computed hash: {$computed}. "
-            . 'The plan may have been tampered with or the recipe changed after planning.',
+            ."Stored hash: {$stored}. Computed hash: {$computed}. "
+            .'The plan may have been tampered with or the recipe changed after planning.',
             self::SNAPSHOT_MISMATCH,
             $planId,
         );

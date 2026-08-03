@@ -38,13 +38,13 @@ return new class extends Migration
             if (! in_array('city_key', $cols, true)) {
                 DB::statement(
                     "ALTER TABLE shipping_pricing_rules
-                     ADD COLUMN city_key VARCHAR(100) GENERATED ALWAYS AS (COALESCE(city, '')) STORED"
+                     ADD COLUMN city_key VARCHAR(100) GENERATED ALWAYS AS (COALESCE(city, '')) STORED",
                 );
             }
             if (! in_array('area_key', $cols, true)) {
                 DB::statement(
                     "ALTER TABLE shipping_pricing_rules
-                     ADD COLUMN area_key VARCHAR(100) GENERATED ALWAYS AS (COALESCE(area, '')) STORED"
+                     ADD COLUMN area_key VARCHAR(100) GENERATED ALWAYS AS (COALESCE(area, '')) STORED",
                 );
             }
 
@@ -57,7 +57,7 @@ return new class extends Migration
                 DB::statement(
                     'ALTER TABLE shipping_pricing_rules
                      ADD UNIQUE KEY spr_company_geo_unique
-                     (company_id, governorate, city_key, area_key)'
+                     (company_id, governorate, city_key, area_key)',
                 );
             }
         }

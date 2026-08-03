@@ -49,6 +49,7 @@ export type PurchaseMaterial = {
   company_id: string | null;
   company: { id: string; name: string } | null;
   channel_id: string | null;
+  channel: { id: string; name: string; code: string } | null;
   warehouse_id: string;
   warehouse: { id: string; name: string } | null;
   status: PurchaseMaterialStatus;

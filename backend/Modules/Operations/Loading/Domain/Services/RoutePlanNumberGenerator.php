@@ -10,16 +10,16 @@ final class RoutePlanNumberGenerator
 {
     public function next(string $companyId): string
     {
-        $prefix    = 'ROUTE-' . now()->format('Ym') . '-';
+        $prefix = 'ROUTE-'.now()->format('Ym').'-';
         $prefixLen = strlen($prefix);
 
         $max = DB::table('route_plans')
             ->where('company_id', $companyId)
-            ->where('route_number', 'like', $prefix . '%')
-            ->max(DB::raw("CAST(SUBSTR(route_number, " . ($prefixLen + 1) . ") AS UNSIGNED)"));
+            ->where('route_number', 'like', $prefix.'%')
+            ->max(DB::raw('CAST(SUBSTR(route_number, '.($prefixLen + 1).') AS UNSIGNED)'));
 
         $next = ($max ?? 0) + 1;
 
-        return $prefix . str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
     }
 }

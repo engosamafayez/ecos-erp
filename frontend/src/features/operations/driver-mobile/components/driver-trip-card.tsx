@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Package, DollarSign } from 'lucide-react';
@@ -16,6 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function DriverTripCard({ trip }: DriverTripCardProps) {
+  const { money } = useFormatter();
   const navigate = useNavigate();
 
   const statusLabel =
@@ -24,11 +26,9 @@ export function DriverTripCard({ trip }: DriverTripCardProps) {
     trip.status;
 
   const collected =
-    (Number(trip.total_cash_collected) +
-     Number(trip.total_bank_transfers) +
-     Number(trip.total_already_paid)).toLocaleString('ar-EG', {
-       minimumFractionDigits: 2,
-     });
+    Number(trip.total_cash_collected) +
+    Number(trip.total_bank_transfers) +
+    Number(trip.total_already_paid);
 
   return (
     <div className="rounded-xl border bg-card shadow-sm p-4 space-y-3">
@@ -59,7 +59,7 @@ export function DriverTripCard({ trip }: DriverTripCardProps) {
         </span>
         <span className="flex items-center gap-1">
           <DollarSign className="h-3.5 w-3.5" />
-          EGP {collected}
+          {money(collected)}
         </span>
       </div>
 

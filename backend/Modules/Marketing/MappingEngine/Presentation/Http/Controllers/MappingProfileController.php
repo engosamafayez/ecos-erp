@@ -16,7 +16,7 @@ final class MappingProfileController extends Controller
 {
     public function __construct(
         private readonly MappingSuggestionService $suggestions,
-        private readonly MapAssetAction           $mapAsset,
+        private readonly MapAssetAction $mapAsset,
     ) {}
 
     /**
@@ -34,9 +34,9 @@ final class MappingProfileController extends Controller
         return response()->json([
             'data' => $profiles->items(),
             'meta' => [
-                'page'      => $profiles->currentPage(),
-                'per_page'  => $profiles->perPage(),
-                'total'     => $profiles->total(),
+                'page' => $profiles->currentPage(),
+                'per_page' => $profiles->perPage(),
+                'total' => $profiles->total(),
                 'last_page' => $profiles->lastPage(),
             ],
         ]);
@@ -48,37 +48,37 @@ final class MappingProfileController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'company_id'     => ['nullable', 'string'],
-            'name'           => ['required', 'string', 'max:255'],
-            'description'    => ['nullable', 'string'],
+            'company_id' => ['nullable', 'string'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
             'connector_type' => ['nullable', 'string'],
-            'is_active'      => ['boolean'],
-            'auto_apply'     => ['boolean'],
-            'rules'          => ['sometimes', 'array'],
+            'is_active' => ['boolean'],
+            'auto_apply' => ['boolean'],
+            'rules' => ['sometimes', 'array'],
             'rules.*.match_field' => ['required_with:rules', 'string', 'in:name,name_contains,external_id,asset_type'],
             'rules.*.match_value' => ['required_with:rules', 'string'],
             'rules.*.related_type' => ['required_with:rules', 'string'],
-            'rules.*.related_id'   => ['required_with:rules', 'string'],
-            'rules.*.priority'     => ['nullable', 'integer'],
+            'rules.*.related_id' => ['required_with:rules', 'string'],
+            'rules.*.priority' => ['nullable', 'integer'],
         ]);
 
         $profile = MappingProfile::create([
-            'company_id'     => $data['company_id'] ?? null,
-            'name'           => $data['name'],
-            'description'    => $data['description'] ?? null,
+            'company_id' => $data['company_id'] ?? null,
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
             'connector_type' => $data['connector_type'] ?? null,
-            'is_active'      => $data['is_active'] ?? true,
-            'auto_apply'     => $data['auto_apply'] ?? false,
-            'created_by'     => (string) (string) $request->user()->id,
+            'is_active' => $data['is_active'] ?? true,
+            'auto_apply' => $data['auto_apply'] ?? false,
+            'created_by' => (string) (string) $request->user()->id,
         ]);
 
         foreach ($data['rules'] ?? [] as $i => $rule) {
             $profile->rules()->create([
-                'match_field'  => $rule['match_field'],
-                'match_value'  => $rule['match_value'],
+                'match_field' => $rule['match_field'],
+                'match_value' => $rule['match_value'],
                 'related_type' => $rule['related_type'],
-                'related_id'   => $rule['related_id'],
-                'priority'     => $rule['priority'] ?? ($i + 1),
+                'related_id' => $rule['related_id'],
+                'priority' => $rule['priority'] ?? ($i + 1),
             ]);
         }
 
@@ -103,11 +103,11 @@ final class MappingProfileController extends Controller
     public function update(Request $request, MappingProfile $mappingProfile): JsonResponse
     {
         $data = $request->validate([
-            'name'           => ['sometimes', 'string', 'max:255'],
-            'description'    => ['nullable', 'string'],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
             'connector_type' => ['nullable', 'string'],
-            'is_active'      => ['boolean'],
-            'auto_apply'     => ['boolean'],
+            'is_active' => ['boolean'],
+            'auto_apply' => ['boolean'],
         ]);
 
         $mappingProfile->update($data);

@@ -27,8 +27,8 @@ return new class extends Migration
             ->update(['status' => 'processing', 'updated_at' => now()]);
 
         if ($converted > 0) {
-            \Illuminate\Support\Facades\Log::warning(
-                "[ARCH-001] Converted {$converted} legacy in_progress order(s) to processing."
+            Illuminate\Support\Facades\Log::warning(
+                "[ARCH-001] Converted {$converted} legacy in_progress order(s) to processing.",
             );
         }
     }

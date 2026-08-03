@@ -18,7 +18,7 @@ final class CompleteProductRequest extends FormRequest
     {
         return [
             'quantity_prepared' => ['required', 'numeric', 'min:0'],
-            'notes'             => ['nullable', 'string', 'max:2000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

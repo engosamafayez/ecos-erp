@@ -16,20 +16,20 @@ use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
  * object_type (page, instagram, catalog, leadgen, commerce, whatsapp).
  * The verify_token is encrypted at rest.
  *
- * @property string               $id
- * @property string               $company_id
- * @property string               $marketing_connection_id
- * @property string               $object_type
- * @property string|null          $object_id
- * @property string               $callback_url
- * @property string               $verify_token
- * @property array                $subscribed_fields
- * @property string               $status
- * @property \Carbon\Carbon|null  $verified_at
- * @property \Carbon\Carbon|null  $last_delivery_at
- * @property string|null          $last_error
- * @property int                  $retry_count
- * @property \Carbon\Carbon|null  $last_verified_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $marketing_connection_id
+ * @property string $object_type
+ * @property string|null $object_id
+ * @property string $callback_url
+ * @property string $verify_token
+ * @property array $subscribed_fields
+ * @property string $status
+ * @property \Carbon\Carbon|null $verified_at
+ * @property \Carbon\Carbon|null $last_delivery_at
+ * @property string|null $last_error
+ * @property int $retry_count
+ * @property \Carbon\Carbon|null $last_verified_at
  */
 class MetaWebhook extends Model
 {
@@ -64,10 +64,10 @@ class MetaWebhook extends Model
     {
         return [
             'subscribed_fields' => 'array',
-            'verified_at'       => 'datetime',
-            'last_delivery_at'  => 'datetime',
-            'last_verified_at'  => 'datetime',
-            'verify_token'      => 'encrypted',
+            'verified_at' => 'datetime',
+            'last_delivery_at' => 'datetime',
+            'last_verified_at' => 'datetime',
+            'verify_token' => 'encrypted',
         ];
     }
 
@@ -79,18 +79,18 @@ class MetaWebhook extends Model
     public function markVerified(): void
     {
         $this->update([
-            'status'          => 'active',
-            'verified_at'     => now(),
+            'status' => 'active',
+            'verified_at' => now(),
             'last_verified_at' => now(),
-            'last_error'      => null,
+            'last_error' => null,
         ]);
     }
 
     public function markFailed(string $error): void
     {
         $this->update([
-            'status'      => 'failed',
-            'last_error'  => $error,
+            'status' => 'failed',
+            'last_error' => $error,
             'retry_count' => $this->retry_count + 1,
         ]);
     }

@@ -28,17 +28,19 @@ final class UpdateCustomerAction extends BaseAction
         }
 
         $updated = $this->customers->update($customer, [
-            'code' => $dto->code,
-            'name' => $dto->name,
+            // company_id is intentionally omitted — immutable after creation.
+            // brand_id is intentionally omitted — managed through customer_brands relationship.
+            'code'           => $dto->code,
+            'name'           => $dto->name,
             'contact_person' => $dto->contact_person,
-            'email' => $dto->email,
-            'phone' => $dto->phone,
-            'mobile' => $dto->mobile,
-            'country' => $dto->country,
-            'city' => $dto->city,
-            'address' => $dto->address,
-            'notes' => $dto->notes,
-            'is_active' => $dto->is_active,
+            'email'          => $dto->email,
+            'phone'          => $dto->phone,
+            'mobile'         => $dto->mobile,
+            'country'        => $dto->country,
+            'city'           => $dto->city,
+            'address'        => $dto->address,
+            'notes'          => $dto->notes,
+            'is_active'      => $dto->is_active,
         ]);
 
         return OperationResult::success($updated, 'Customer updated successfully.');

@@ -48,7 +48,7 @@ final class WooCommerceProductImporter
             ]);
         }
 
-        $baseUrl = rtrim($channel->store_url, '/') . '/wp-json/wc/v3';
+        $baseUrl = rtrim($channel->store_url, '/').'/wp-json/wc/v3';
 
         $wooCategoryMap = $this->fetchAllWooCategories(
             $baseUrl,
@@ -62,7 +62,7 @@ final class WooCommerceProductImporter
         $failed = 0;
         $errors = [];
         $page = 1;
-        $productsUrl = $baseUrl . '/products';
+        $productsUrl = $baseUrl.'/products';
 
         while (true) {
             try {
@@ -88,6 +88,7 @@ final class WooCommerceProductImporter
                     if ($sku === '') {
                         $failed++;
                         $errors[] = sprintf('Product #%s skipped: no SKU.', $wooProduct['id'] ?? '?');
+
                         continue;
                     }
 
@@ -144,13 +145,13 @@ final class WooCommerceProductImporter
     /**
      * Fetch all WooCommerce categories in one paginated pass.
      *
-     * @return array<int, array<string, mixed>>  keyed by WooCommerce category ID
+     * @return array<int, array<string, mixed>> keyed by WooCommerce category ID
      */
     private function fetchAllWooCategories(string $baseUrl, string $key, string $secret): array
     {
         $categories = [];
         $page = 1;
-        $url = $baseUrl . '/products/categories';
+        $url = $baseUrl.'/products/categories';
 
         while (true) {
             try {
@@ -401,7 +402,7 @@ final class WooCommerceProductImporter
      * Build ancestry chain from root to leaf, clamped to MAX_CATEGORY_DEPTH levels.
      *
      * @param  array<int, array<string, mixed>>  $wooCategoryMap
-     * @return list<int>  WooCommerce category IDs ordered root → leaf
+     * @return list<int> WooCommerce category IDs ordered root → leaf
      */
     private function buildAncestryChain(int $wooCatId, array $wooCategoryMap): array
     {
@@ -466,6 +467,7 @@ final class WooCommerceProductImporter
                 $parentEcosId = $existing->id;
                 $lastId = $existing->id;
                 $level++;
+
                 continue;
             }
 
@@ -473,7 +475,7 @@ final class WooCommerceProductImporter
             $code = $slug;
             $suffix = 1;
             while (Category::query()->where('code', $code)->exists()) {
-                $code = $slug . '-' . $suffix;
+                $code = $slug.'-'.$suffix;
                 $suffix++;
             }
 

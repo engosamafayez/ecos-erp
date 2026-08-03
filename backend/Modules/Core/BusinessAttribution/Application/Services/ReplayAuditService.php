@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Application\Services;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -12,24 +14,24 @@ class ReplayAuditService
 {
     public function log(
         ReplayContext $context,
-        ReplayResult  $result,
-        string        $status = 'completed',
-        ?string       $userId = null,
+        ReplayResult $result,
+        string $status = 'completed',
+        ?string $userId = null,
     ): ReplayAuditLog {
         return ReplayAuditLog::create([
-            'user_id'            => $userId ?? $context->userId,
-            'user_type'          => 'user',
+            'user_id' => $userId ?? $context->userId,
+            'user_type' => 'user',
             'target_entity_type' => $context->entityType !== 'module' ? $context->entityType : null,
-            'target_entity_id'   => $context->entityType !== 'module' ? $context->entityId  : null,
-            'replay_type'        => $context->replayType,
-            'replay_from'        => $context->from,
-            'replay_to'          => $context->to,
-            'replay_as_of'       => $context->asOf,
-            'replay_purpose'     => $context->purpose ?: null,
-            'events_replayed'    => $result->totalEvents,
-            'duration_ms'        => $result->durationMs,
-            'status'             => $status,
-            'metadata'           => $result->metadata ?: null,
+            'target_entity_id' => $context->entityType !== 'module' ? $context->entityId : null,
+            'replay_type' => $context->replayType,
+            'replay_from' => $context->from,
+            'replay_to' => $context->to,
+            'replay_as_of' => $context->asOf,
+            'replay_purpose' => $context->purpose ?: null,
+            'events_replayed' => $result->totalEvents,
+            'duration_ms' => $result->durationMs,
+            'status' => $status,
+            'metadata' => $result->metadata ?: null,
         ]);
     }
 
@@ -71,18 +73,18 @@ class ReplayAuditService
 
     public function getStats(): array
     {
-        $total       = ReplayAuditLog::count();
-        $today       = ReplayAuditLog::whereDate('executed_at', today())->count();
-        $byType      = ReplayAuditLog::selectRaw('replay_type, count(*) as cnt')
+        $total = ReplayAuditLog::count();
+        $today = ReplayAuditLog::whereDate('executed_at', today())->count();
+        $byType = ReplayAuditLog::selectRaw('replay_type, count(*) as cnt')
             ->groupBy('replay_type')
             ->pluck('cnt', 'replay_type')
             ->toArray();
         $avgDuration = ReplayAuditLog::whereNotNull('duration_ms')->avg('duration_ms');
 
         return [
-            'total'           => $total,
-            'today'           => $today,
-            'by_type'         => $byType,
+            'total' => $total,
+            'today' => $today,
+            'by_type' => $byType,
             'avg_duration_ms' => (int) ($avgDuration ?? 0),
         ];
     }

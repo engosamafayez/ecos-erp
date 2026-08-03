@@ -14,17 +14,18 @@ class AutomationWorkflowTemplate extends Model
 {
     use HasUuids, SoftDeletes;
 
-    protected $table    = 'automation_workflow_templates';
+    protected $table = 'automation_workflow_templates';
+
     protected $fillable = [
         'name', 'description', 'category', 'trigger_type', 'nodes_graph',
         'company_id', 'is_global', 'is_active', 'usage_count', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
-        'category'     => WorkflowTemplateCategory::class,
+        'category' => WorkflowTemplateCategory::class,
         'trigger_type' => WorkflowTriggerType::class,
-        'nodes_graph'  => 'array',
-        'is_global'    => 'boolean',
-        'is_active'    => 'boolean',
+        'nodes_graph' => 'array',
+        'is_global' => 'boolean',
+        'is_active' => 'boolean',
     ];
 }

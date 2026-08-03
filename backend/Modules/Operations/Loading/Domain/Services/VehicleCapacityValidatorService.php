@@ -36,28 +36,28 @@ final class VehicleCapacityValidatorService
         $newWeight = $assignment->loading_weight_kg + $additionalWeightKg;
         $newVolume = $assignment->loading_volume_m3 + $additionalVolumeM3;
 
-        $weightPct  = $maxWeight > 0 ? round(($newWeight / $maxWeight) * 100, 2) : 0.0;
-        $volumePct  = $maxVolume > 0 ? round(($newVolume / $maxVolume) * 100, 2) : 0.0;
+        $weightPct = $maxWeight > 0 ? round(($newWeight / $maxWeight) * 100, 2) : 0.0;
+        $volumePct = $maxVolume > 0 ? round(($newVolume / $maxVolume) * 100, 2) : 0.0;
         $overallPct = max($weightPct, $volumePct);
 
-        $isOverloaded       = false;
+        $isOverloaded = false;
         $violatedConstraint = null;
 
         // 5% tolerance
         if ($weightPct > 105) {
-            $isOverloaded       = true;
+            $isOverloaded = true;
             $violatedConstraint = "Weight capacity exceeded: {$weightPct}% utilization";
         } elseif ($volumePct > 105) {
-            $isOverloaded       = true;
+            $isOverloaded = true;
             $violatedConstraint = "Volume capacity exceeded: {$volumePct}% utilization";
         }
 
         return new VehicleCapacityCheckResult(
-            isOverloaded:          $isOverloaded,
-            weightUtilizationPct:  $weightPct,
-            volumeUtilizationPct:  $volumePct,
+            isOverloaded: $isOverloaded,
+            weightUtilizationPct: $weightPct,
+            volumeUtilizationPct: $volumePct,
             overallUtilizationPct: $overallPct,
-            violatedConstraint:    $violatedConstraint,
+            violatedConstraint: $violatedConstraint,
         );
     }
 }

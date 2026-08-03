@@ -34,12 +34,12 @@ class MaterialCostController extends Controller
             ->paginate($perPage);
 
         return response()->json([
-            'data'       => MaterialCostHistoryResource::collection($history->items()),
+            'data' => MaterialCostHistoryResource::collection($history->items()),
             'pagination' => [
-                'total'        => $history->total(),
-                'per_page'     => $history->perPage(),
+                'total' => $history->total(),
+                'per_page' => $history->perPage(),
                 'current_page' => $history->currentPage(),
-                'last_page'    => $history->lastPage(),
+                'last_page' => $history->lastPage(),
             ],
         ]);
     }
@@ -51,10 +51,10 @@ class MaterialCostController extends Controller
     public function globalHistory(Request $request): JsonResponse
     {
         $perPage = (int) $request->query('per_page', 30);
-        $search  = $request->query('search');
-        $source  = $request->query('source');
-        $from    = $request->query('from');
-        $to      = $request->query('to');
+        $search = $request->query('search');
+        $source = $request->query('source');
+        $from = $request->query('from');
+        $to = $request->query('to');
 
         $query = MaterialCostHistory::query()
             ->with('product')
@@ -63,7 +63,7 @@ class MaterialCostController extends Controller
         if ($search) {
             $query->whereHas('product', function ($q) use ($search) {
                 $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('sku', 'ilike', "%{$search}%");
+                    ->orWhere('sku', 'ilike', "%{$search}%");
             });
         }
 
@@ -82,12 +82,12 @@ class MaterialCostController extends Controller
         $history = $query->paginate($perPage);
 
         return response()->json([
-            'data'       => MaterialCostHistoryResource::collection($history->items()),
+            'data' => MaterialCostHistoryResource::collection($history->items()),
             'pagination' => [
-                'total'        => $history->total(),
-                'per_page'     => $history->perPage(),
+                'total' => $history->total(),
+                'per_page' => $history->perPage(),
                 'current_page' => $history->currentPage(),
-                'last_page'    => $history->lastPage(),
+                'last_page' => $history->lastPage(),
             ],
         ]);
     }
@@ -99,18 +99,18 @@ class MaterialCostController extends Controller
     public function update(UpdateMaterialCostRequest $request, string $productId): JsonResponse
     {
         $material = Product::query()->findOrFail($productId);
-        $newCost  = (float) $request->validated('material_cost');
+        $newCost = (float) $request->validated('material_cost');
 
         // Resolve user name from auth context
         $updatedBy = $request->user()?->name ?? $request->user()?->email;
 
         $history = $this->service->update(
             material: $material,
-            newCost:  $newCost,
-            source:   CostUpdateSource::Manual,
+            newCost: $newCost,
+            source: CostUpdateSource::Manual,
             meta: [
                 'updated_by' => $updatedBy,
-                'reason'     => $request->validated('reason'),
+                'reason' => $request->validated('reason'),
             ],
         );
 

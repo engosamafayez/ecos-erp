@@ -39,19 +39,19 @@ final class UpdateBrandAction extends BaseAction
         $baseSlug = $slug;
         $counter = 1;
         while ($this->brands->existsBySlug($brand->company_id, $slug, $id)) {
-            $slug = $baseSlug . '-' . $counter++;
+            $slug = $baseSlug.'-'.$counter++;
         }
 
         // default_target_margin is intentionally excluded — it is managed exclusively
         // through Configuration OS (the canonical source). BrandPolicyUpdatedListener
         // syncs the Config OS value back into this column as a projection.
         $attributes = [
-            'name'                 => $dto->name,
-            'slug'                 => $slug,
-            'logo'                 => $dto->logo,
-            'description'          => $dto->description,
-            'is_active'            => $dto->is_active,
-            'default_markup'       => $dto->default_markup,
+            'name' => $dto->name,
+            'slug' => $slug,
+            'logo' => $dto->logo,
+            'description' => $dto->description,
+            'is_active' => $dto->is_active,
+            'default_markup' => $dto->default_markup,
             'default_discount_pct' => $dto->default_discount_pct,
         ];
 
@@ -65,12 +65,12 @@ final class UpdateBrandAction extends BaseAction
         // BrandPolicyUpdated fires → BrandPolicyUpdatedListener updates brands.default_target_margin.
         if ($dto->default_target_margin !== null) {
             $this->config->updateBrandPolicy(
-                brandId:   $brand->id,
+                brandId: $brand->id,
                 companyId: (string) $brand->company_id,
-                group:     'pricing',
-                settings:  ['minimum_margin_pct' => $dto->default_target_margin],
-                actorId:   (string) (Auth::id() ?? ''),
-                reason:    'Updated via Brand page',
+                group: 'pricing',
+                settings: ['minimum_margin_pct' => $dto->default_target_margin],
+                actorId: (string) (Auth::id() ?? ''),
+                reason: 'Updated via Brand page',
             );
         }
 

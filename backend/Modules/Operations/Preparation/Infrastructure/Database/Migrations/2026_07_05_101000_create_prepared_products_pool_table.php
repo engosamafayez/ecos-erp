@@ -38,7 +38,7 @@ return new class extends Migration
 
             $table->unique(
                 ['preparation_wave_id', 'product_id', 'warehouse_id'],
-                'uq_pool_wave_product_warehouse'
+                'uq_pool_wave_product_warehouse',
             );
             $table->index('company_id', 'idx_pool_company_id');
             $table->index('product_id', 'idx_pool_product_id');

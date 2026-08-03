@@ -25,48 +25,49 @@ use Modules\Marketing\Initiatives\Domain\Enums\InitiativeStatus;
  * It is the primary entity for executive reporting, marketing finance,
  * budget planning, and strategic intelligence.
  *
- * @property string                    $id
- * @property string|null               $company_id
- * @property string|null               $brand_id
- * @property string|null               $channel_id
- * @property string|null               $template_id
- * @property string                    $name
- * @property string|null               $description
- * @property InitiativeStatus          $status
- * @property string|null               $business_unit
- * @property Season|null               $season
- * @property BusinessGoal|null         $business_goal
- * @property string|null               $cost_center
- * @property float|null                $budget
- * @property string                    $currency
- * @property \Carbon\Carbon|null       $start_date
- * @property \Carbon\Carbon|null       $end_date
- * @property string|null               $owner_id
- * @property string|null               $marketing_team
- * @property string|null               $internal_notes
- * @property array|null                $tags
- * @property string|null               $created_by
- * @property string|null               $updated_by
- * @property \Carbon\Carbon            $created_at
- * @property \Carbon\Carbon            $updated_at
+ * @property string $id
+ * @property string|null $company_id
+ * @property string|null $brand_id
+ * @property string|null $channel_id
+ * @property string|null $template_id
+ * @property string $name
+ * @property string|null $description
+ * @property InitiativeStatus $status
+ * @property string|null $business_unit
+ * @property Season|null $season
+ * @property BusinessGoal|null $business_goal
+ * @property string|null $cost_center
+ * @property float|null $budget
+ * @property string $currency
+ * @property \Carbon\Carbon|null $start_date
+ * @property \Carbon\Carbon|null $end_date
+ * @property string|null $owner_id
+ * @property string|null $marketing_team
+ * @property string|null $internal_notes
+ * @property array|null $tags
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class MarketingInitiative extends Model
 {
     use HasUuids;
 
-    protected $table   = 'marketing_initiatives';
+    protected $table = 'marketing_initiatives';
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'status'        => InitiativeStatus::class,
-            'season'        => Season::class,
+            'status' => InitiativeStatus::class,
+            'season' => Season::class,
             'business_goal' => BusinessGoal::class,
-            'budget'        => 'decimal:2',
-            'start_date'    => 'date',
-            'end_date'      => 'date',
-            'tags'          => 'array',
+            'budget' => 'decimal:2',
+            'start_date' => 'date',
+            'end_date' => 'date',
+            'tags' => 'array',
         ];
     }
 
@@ -80,6 +81,7 @@ class MarketingInitiative extends Model
     public function isOnSchedule(): bool
     {
         $today = now()->toDateString();
+
         return $this->start_date !== null
             && $this->end_date !== null
             && $today >= $this->start_date->toDateString()
@@ -91,6 +93,7 @@ class MarketingInitiative extends Model
         if ($this->end_date === null) {
             return null;
         }
+
         return max(0, (int) now()->diffInDays($this->end_date, false));
     }
 
@@ -99,11 +102,12 @@ class MarketingInitiative extends Model
         if ($this->start_date === null || $this->end_date === null) {
             return null;
         }
-        $total   = $this->start_date->diffInDays($this->end_date);
+        $total = $this->start_date->diffInDays($this->end_date);
         $elapsed = $this->start_date->diffInDays(now(), false);
         if ($total <= 0) {
             return 100.0;
         }
+
         return round(min(100.0, max(0.0, ($elapsed / $total) * 100)), 1);
     }
 

@@ -24,16 +24,18 @@ class OrderExclusivityTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->user      = User::factory()->create(['company_id' => $this->company->id]);
+        $this->user = User::factory()->create(['company_id' => $this->company->id]);
 
         $flags = app(FeatureFlagService::class);
         $flags->enable('modules.preparation_os', $this->company->id);
@@ -43,8 +45,8 @@ class OrderExclusivityTest extends TestCase
     private function orderLine(?string $orderId = null): array
     {
         return [
-            'order_id'     => $orderId ?? Str::uuid()->toString(),
-            'order_number' => 'ORD-' . rand(1000, 9999),
+            'order_id' => $orderId ?? Str::uuid()->toString(),
+            'order_number' => 'ORD-'.rand(1000, 9999),
             'confirmed_at' => now()->toDateTimeString(),
         ];
     }
@@ -52,11 +54,11 @@ class OrderExclusivityTest extends TestCase
     private function makeDto(array $orderLines): CreateWaveDTO
     {
         return new CreateWaveDTO(
-            companyId:    $this->company->id,
-            warehouseId:  $this->warehouse->id,
+            companyId: $this->company->id,
+            warehouseId: $this->warehouse->id,
             planningDate: now()->toDateString(),
-            orderLines:   $orderLines,
-            actorId:      (string) $this->user->id,
+            orderLines: $orderLines,
+            actorId: (string) $this->user->id,
         );
     }
 
@@ -66,7 +68,7 @@ class OrderExclusivityTest extends TestCase
         $wave = app(CreateWaveAction::class)->execute($this->makeDto([$line]));
 
         $this->assertDatabaseHas('preparation_wave_orders', [
-            'order_id'            => $line['order_id'],
+            'order_id' => $line['order_id'],
             'preparation_wave_id' => $wave->id,
         ]);
     }
@@ -111,7 +113,7 @@ class OrderExclusivityTest extends TestCase
 
         // Try to add the claimed order to the second wave
         $dto = new RecalculateWaveDTO(
-            actorId:       (string) $this->user->id,
+            actorId: (string) $this->user->id,
             addOrderLines: [$sharedOrder],
         );
 
@@ -122,11 +124,11 @@ class OrderExclusivityTest extends TestCase
     {
         $line1 = $this->orderLine();
         $line2 = $this->orderLine();
-        $wave  = app(CreateWaveAction::class)->execute($this->makeDto([$line1, $line2]));
+        $wave = app(CreateWaveAction::class)->execute($this->makeDto([$line1, $line2]));
 
         // Re-adding line1 (already in the same wave) must not throw
         $dto = new RecalculateWaveDTO(
-            actorId:       (string) $this->user->id,
+            actorId: (string) $this->user->id,
             addOrderLines: [$line1],
         );
 
@@ -137,39 +139,39 @@ class OrderExclusivityTest extends TestCase
     public function test_db_unique_constraint_prevents_duplicate_company_order_pair(): void
     {
         $orderId = Str::uuid()->toString();
-        $wave    = PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $this->warehouse->id,
-            'wave_number'          => 'PREP-' . now()->format('Ym') . '-000001',
-            'planning_date'        => now()->addDay()->toDateString(),
-            'status'               => 'draft',
-            'orders_count'         => 0,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+        $wave = PreparationWave::create([
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'wave_number' => 'PREP-'.now()->format('Ym').'-000001',
+            'planning_date' => now()->addDay()->toDateString(),
+            'status' => 'draft',
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'created_by'           => (string) $this->user->id,
-            'updated_by'           => (string) $this->user->id,
+            'shortage_detected' => false,
+            'created_by' => (string) $this->user->id,
+            'updated_by' => (string) $this->user->id,
         ]);
 
         PreparationWaveOrder::create([
-            'company_id'          => $this->company->id,
+            'company_id' => $this->company->id,
             'preparation_wave_id' => $wave->id,
-            'order_id'            => $orderId,
-            'order_number'        => 'ORD-001',
-            'added_by'            => (string) $this->user->id,
+            'order_id' => $orderId,
+            'order_number' => 'ORD-001',
+            'added_by' => (string) $this->user->id,
         ]);
 
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         // Same company_id + order_id — must violate the unique constraint
         PreparationWaveOrder::create([
-            'company_id'          => $this->company->id,
+            'company_id' => $this->company->id,
             'preparation_wave_id' => $wave->id,
-            'order_id'            => $orderId,
-            'order_number'        => 'ORD-001-DUP',
-            'added_by'            => (string) $this->user->id,
+            'order_id' => $orderId,
+            'order_number' => 'ORD-001-DUP',
+            'added_by' => (string) $this->user->id,
         ]);
     }
 }

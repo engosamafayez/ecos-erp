@@ -17,11 +17,15 @@ final class ReceiptApiTest extends TestCase
 
     private User $user;
 
-    private const SESSION_ID  = 'a0000000-0000-4000-a000-000000000030';
-    private const SHIFT_ID    = 'b0000000-0000-4000-b000-000000000030';
+    private const SESSION_ID = 'a0000000-0000-4000-a000-000000000030';
+
+    private const SHIFT_ID = 'b0000000-0000-4000-b000-000000000030';
+
     private const TERMINAL_ID = 'c0000000-0000-4000-c000-000000000030';
-    private const CASHIER_ID  = 'd0000000-0000-4000-d000-000000000030';
-    private const PRODUCT_ID  = 'e0000000-0000-4000-e000-000000000030';
+
+    private const CASHIER_ID = 'd0000000-0000-4000-d000-000000000030';
+
+    private const PRODUCT_ID = 'e0000000-0000-4000-e000-000000000030';
 
     protected function setUp(): void
     {
@@ -33,27 +37,27 @@ final class ReceiptApiTest extends TestCase
     {
         $cartResponse = $this->actingAs($this->user)
             ->postJson('/api/pos/carts', [
-                'session_id'  => self::SESSION_ID,
-                'shift_id'    => self::SHIFT_ID,
+                'session_id' => self::SESSION_ID,
+                'shift_id' => self::SHIFT_ID,
                 'terminal_id' => self::TERMINAL_ID,
-                'cashier_id'  => self::CASHIER_ID,
-                'currency'    => 'EGP',
+                'cashier_id' => self::CASHIER_ID,
+                'currency' => 'EGP',
             ]);
         $cartId = $cartResponse->json('data.id');
 
         $this->actingAs($this->user)
-            ->postJson('/api/pos/carts/' . $cartId . '/lines', [
-                'product_id'   => self::PRODUCT_ID,
+            ->postJson('/api/pos/carts/'.$cartId.'/lines', [
+                'product_id' => self::PRODUCT_ID,
                 'product_name' => 'Receipt Test Product',
-                'sku'          => 'RCP-001',
-                'quantity'     => '1',
-                'unit_price'   => '75.00',
-                'currency'     => 'EGP',
+                'sku' => 'RCP-001',
+                'quantity' => '1',
+                'unit_price' => '75.00',
+                'currency' => 'EGP',
             ]);
 
         $saleResponse = $this->actingAs($this->user)
             ->postJson('/api/pos/sales', [
-                'cart_id'  => $cartId,
+                'cart_id' => $cartId,
                 'payments' => [['method' => 'cash', 'amount' => '75.00']],
             ]);
 
@@ -62,11 +66,11 @@ final class ReceiptApiTest extends TestCase
 
     public function test_get_receipt_returns_receipt_data(): void
     {
-        $saleData  = $this->processASale();
+        $saleData = $this->processASale();
         $receiptId = $saleData['receipt_id'];
 
         $response = $this->actingAs($this->user)
-            ->getJson('/api/pos/receipts/' . $receiptId);
+            ->getJson('/api/pos/receipts/'.$receiptId);
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
@@ -86,14 +90,14 @@ final class ReceiptApiTest extends TestCase
 
     public function test_reprint_receipt_returns_200(): void
     {
-        $saleData  = $this->processASale();
+        $saleData = $this->processASale();
         $receiptId = $saleData['receipt_id'];
 
         $response = $this->actingAs($this->user)
-            ->postJson('/api/pos/receipts/' . $receiptId . '/reprint', [
-                'cashier_id'  => self::CASHIER_ID,
+            ->postJson('/api/pos/receipts/'.$receiptId.'/reprint', [
+                'cashier_id' => self::CASHIER_ID,
                 'terminal_id' => self::TERMINAL_ID,
-                'reason'      => 'Customer request',
+                'reason' => 'Customer request',
             ]);
 
         $response->assertStatus(200)
@@ -103,13 +107,13 @@ final class ReceiptApiTest extends TestCase
 
     public function test_void_receipt_returns_200(): void
     {
-        $saleData  = $this->processASale();
+        $saleData = $this->processASale();
         $receiptId = $saleData['receipt_id'];
 
         $response = $this->actingAs($this->user)
-            ->deleteJson('/api/pos/receipts/' . $receiptId, [
+            ->deleteJson('/api/pos/receipts/'.$receiptId, [
                 'cashier_id' => self::CASHIER_ID,
-                'reason'     => 'Manager override',
+                'reason' => 'Manager override',
             ]);
 
         $response->assertStatus(200)
@@ -118,19 +122,19 @@ final class ReceiptApiTest extends TestCase
 
     public function test_reprint_voided_receipt_returns_422(): void
     {
-        $saleData  = $this->processASale();
+        $saleData = $this->processASale();
         $receiptId = $saleData['receipt_id'];
 
         $this->actingAs($this->user)
-            ->deleteJson('/api/pos/receipts/' . $receiptId, [
+            ->deleteJson('/api/pos/receipts/'.$receiptId, [
                 'cashier_id' => self::CASHIER_ID,
             ]);
 
         $this->actingAs($this->user)
-            ->postJson('/api/pos/receipts/' . $receiptId . '/reprint', [
-                'cashier_id'  => self::CASHIER_ID,
+            ->postJson('/api/pos/receipts/'.$receiptId.'/reprint', [
+                'cashier_id' => self::CASHIER_ID,
                 'terminal_id' => self::TERMINAL_ID,
-                'reason'      => 'Retry after void',
+                'reason' => 'Retry after void',
             ])
             ->assertStatus(422);
     }

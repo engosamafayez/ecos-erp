@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\POS\Session\Domain\Models;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use Modules\POS\Session\Domain\Enums\DeviceType;
 use Modules\POS\Session\Domain\Events\SessionClosed;
 use Modules\POS\Session\Domain\Events\SessionOpened;
@@ -48,12 +52,12 @@ final class Session extends Model
     protected function casts(): array
     {
         return [
-            'status'       => SessionStatus::class,
-            'device_type'  => DeviceType::class,
-            'metadata'     => 'array',
-            'opened_at'    => 'datetime',
+            'status' => SessionStatus::class,
+            'device_type' => DeviceType::class,
+            'metadata' => 'array',
+            'opened_at' => 'datetime',
             'suspended_at' => 'datetime',
-            'closed_at'    => 'datetime',
+            'closed_at' => 'datetime',
         ];
     }
 
@@ -66,16 +70,18 @@ final class Session extends Model
 
     public function pullDomainEvents(): array
     {
-        $events             = $this->domainEvents;
+        $events = $this->domainEvents;
         $this->domainEvents = [];
+
         return $events;
     }
 
     private static function generateUuid(): string
     {
-        $bytes    = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        $bytes = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0F) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3F) | 0x80);
+
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
     }
 
@@ -91,45 +97,45 @@ final class Session extends Model
      * The returned session is NOT persisted — call $repository->save() after.
      */
     public static function open(
-        string            $cashierId,
-        string            $companyId,
-        ?string           $channelId,
-        string            $warehouseId,
+        string $cashierId,
+        string $companyId,
+        ?string $channelId,
+        string $warehouseId,
         DeviceFingerprint $fingerprint,
-        string            $ipAddress,
-        DeviceType        $deviceType = DeviceType::Browser,
+        string $ipAddress,
+        DeviceType $deviceType = DeviceType::Browser,
     ): self {
         if (trim($cashierId) === '') {
-            throw new \InvalidArgumentException('Cashier ID cannot be empty.');
+            throw new InvalidArgumentException('Cashier ID cannot be empty.');
         }
         if (trim($companyId) === '') {
-            throw new \InvalidArgumentException('Company ID cannot be empty.');
+            throw new InvalidArgumentException('Company ID cannot be empty.');
         }
         if (trim($warehouseId) === '') {
-            throw new \InvalidArgumentException('Warehouse ID cannot be empty.');
+            throw new InvalidArgumentException('Warehouse ID cannot be empty.');
         }
 
-        $session                     = new self();
-        $session->id                 = self::generateUuid();
-        $session->terminal_id        = $cashierId; // cashier_id doubles as terminal for downstream tables
-        $session->cashier_id         = $cashierId;
-        $session->company_id         = $companyId;
-        $session->channel_id         = $channelId;
-        $session->warehouse_id       = $warehouseId;
-        $session->status             = SessionStatus::Open;
+        $session = new self;
+        $session->id = self::generateUuid();
+        $session->terminal_id = $cashierId; // cashier_id doubles as terminal for downstream tables
+        $session->cashier_id = $cashierId;
+        $session->company_id = $companyId;
+        $session->channel_id = $channelId;
+        $session->warehouse_id = $warehouseId;
+        $session->status = SessionStatus::Open;
         $session->terminal_open_lock = $cashierId; // unique per-cashier lock
         $session->device_fingerprint = $fingerprint->value;
-        $session->device_type        = $deviceType;
-        $session->ip_address         = $ipAddress;
-        $session->opened_at          = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+        $session->device_type = $deviceType;
+        $session->ip_address = $ipAddress;
+        $session->opened_at = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
 
         $session->addEvent(SessionOpened::now(
-            sessionId:         $session->id,
-            terminalId:        $cashierId,
-            cashierId:         $cashierId,
+            sessionId: $session->id,
+            terminalId: $cashierId,
+            cashierId: $cashierId,
             deviceFingerprint: $fingerprint->value,
-            deviceType:        $deviceType->value,
-            ipAddress:         $ipAddress,
+            deviceType: $deviceType->value,
+            ipAddress: $ipAddress,
         ));
 
         return $session;
@@ -146,14 +152,14 @@ final class Session extends Model
             );
         }
 
-        $this->status             = SessionStatus::Suspended;
+        $this->status = SessionStatus::Suspended;
         $this->terminal_open_lock = null;
-        $this->suspended_at       = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+        $this->suspended_at = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
 
         $this->addEvent(SessionSuspended::now(
-            sessionId:  (string) $this->id,
+            sessionId: (string) $this->id,
             terminalId: (string) $this->terminal_id,
-            cashierId:  (string) $this->cashier_id,
+            cashierId: (string) $this->cashier_id,
         ));
     }
 
@@ -180,7 +186,7 @@ final class Session extends Model
      */
     public function resume(bool $sameDevice = true): void
     {
-        if (!in_array($this->status, [SessionStatus::Suspended, SessionStatus::RecoveryPending], true)) {
+        if (! in_array($this->status, [SessionStatus::Suspended, SessionStatus::RecoveryPending], true)) {
             throw InvalidSessionTransitionException::cannotTransition(
                 (string) $this->id,
                 $this->status,
@@ -188,14 +194,14 @@ final class Session extends Model
             );
         }
 
-        $this->status             = SessionStatus::Open;
+        $this->status = SessionStatus::Open;
         $this->terminal_open_lock = (string) $this->terminal_id;
-        $this->suspended_at       = null;
+        $this->suspended_at = null;
 
         $this->addEvent(SessionResumed::now(
-            sessionId:  (string) $this->id,
+            sessionId: (string) $this->id,
             terminalId: (string) $this->terminal_id,
-            cashierId:  (string) $this->cashier_id,
+            cashierId: (string) $this->cashier_id,
             sameDevice: $sameDevice,
         ));
     }
@@ -210,20 +216,20 @@ final class Session extends Model
             );
         }
 
-        $now       = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $openedAt  = $this->opened_at instanceof \DateTimeInterface
-            ? \DateTimeImmutable::createFromInterface($this->opened_at)
-            : new \DateTimeImmutable((string) $this->opened_at, new \DateTimeZone('UTC'));
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $openedAt = $this->opened_at instanceof DateTimeInterface
+            ? DateTimeImmutable::createFromInterface($this->opened_at)
+            : new DateTimeImmutable((string) $this->opened_at, new DateTimeZone('UTC'));
         $durationMinutes = (int) max(0, (int) ceil(($now->getTimestamp() - $openedAt->getTimestamp()) / 60));
 
-        $this->status             = SessionStatus::Closed;
+        $this->status = SessionStatus::Closed;
         $this->terminal_open_lock = null;
-        $this->closed_at          = $now->format('Y-m-d H:i:s');
+        $this->closed_at = $now->format('Y-m-d H:i:s');
 
         $this->addEvent(SessionClosed::now(
-            sessionId:       (string) $this->id,
-            terminalId:      (string) $this->terminal_id,
-            cashierId:       (string) $this->cashier_id,
+            sessionId: (string) $this->id,
+            terminalId: (string) $this->terminal_id,
+            cashierId: (string) $this->cashier_id,
             durationMinutes: $durationMinutes,
         ));
     }

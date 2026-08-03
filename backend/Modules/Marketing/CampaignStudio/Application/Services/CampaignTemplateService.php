@@ -42,6 +42,7 @@ class CampaignTemplateService
     public function update(CampaignTemplate $template, array $data, string $userId): CampaignTemplate
     {
         $template->update(array_merge($data, ['updated_by' => $userId]));
+
         return $template->fresh();
     }
 
@@ -53,20 +54,20 @@ class CampaignTemplateService
     public function createDraftFromTemplate(CampaignTemplate $template, array $overrides, string $userId): CampaignDraft
     {
         $draft = CampaignDraft::create(array_merge([
-            'name'                 => $overrides['name'] ?? "New {$template->name}",
-            'objective'            => $template->default_objective,
-            'buying_type'          => $template->default_buying_type,
-            'budget_type'          => $template->default_budget_type,
-            'daily_budget'         => $template->default_daily_budget,
-            'bid_strategy'         => $template->default_bid_strategy,
-            'optimization_goal'    => $template->default_optimization_goal,
-            'business_goal'        => $template->default_business_goal,
-            'season'               => $template->default_season,
-            'template_id'          => $template->id,
-            'internal_status'      => CampaignInternalStatus::DRAFT,
+            'name' => $overrides['name'] ?? "New {$template->name}",
+            'objective' => $template->default_objective,
+            'buying_type' => $template->default_buying_type,
+            'budget_type' => $template->default_budget_type,
+            'daily_budget' => $template->default_daily_budget,
+            'bid_strategy' => $template->default_bid_strategy,
+            'optimization_goal' => $template->default_optimization_goal,
+            'business_goal' => $template->default_business_goal,
+            'season' => $template->default_season,
+            'template_id' => $template->id,
+            'internal_status' => CampaignInternalStatus::DRAFT,
             'current_version_number' => 1,
-            'created_by'           => $userId,
-            'updated_by'           => $userId,
+            'created_by' => $userId,
+            'updated_by' => $userId,
         ], array_filter($overrides)));
 
         // Apply default audience
@@ -81,9 +82,9 @@ class CampaignTemplateService
         $defaultPlacements = $template->default_placements ?? [];
         CampaignDraftPlacement::create(array_merge([
             'campaign_draft_id' => $draft->id,
-            'placement_mode'    => 'auto',
-            'facebook_feed'     => true,
-            'instagram_feed'    => true,
+            'placement_mode' => 'auto',
+            'facebook_feed' => true,
+            'instagram_feed' => true,
         ], $defaultPlacements));
 
         // Increment usage count

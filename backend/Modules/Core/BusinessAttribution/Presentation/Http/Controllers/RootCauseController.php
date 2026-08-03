@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
@@ -11,8 +13,8 @@ use Modules\Core\BusinessAttribution\Presentation\Http\Resources\CauseEffectChai
 class RootCauseController
 {
     public function __construct(
-        private readonly TraverseCauseEffectAction  $traverseAction,
-        private readonly RootCauseTraversalService  $traversalService,
+        private readonly TraverseCauseEffectAction $traverseAction,
+        private readonly RootCauseTraversalService $traversalService,
     ) {}
 
     /**
@@ -22,7 +24,7 @@ class RootCauseController
     public function traverse(Request $request, string $eventId): JsonResponse
     {
         $direction = (string) $request->query('direction', 'both');
-        $maxDepth  = min((int) $request->query('depth', 10), 20);
+        $maxDepth = min((int) $request->query('depth', 10), 20);
 
         $chain = $this->traverseAction->execute($eventId, $direction, $maxDepth);
 
@@ -38,8 +40,8 @@ class RootCauseController
         $causes = $this->traversalService->findRootCauses($eventId);
 
         return response()->json([
-            'data'         => $causes,
-            'event_id'     => $eventId,
+            'data' => $causes,
+            'event_id' => $eventId,
             'total_causes' => count($causes),
         ]);
     }
@@ -53,8 +55,8 @@ class RootCauseController
         $effects = $this->traversalService->findDownstreamEffects($eventId);
 
         return response()->json([
-            'data'          => $effects,
-            'event_id'      => $eventId,
+            'data' => $effects,
+            'event_id' => $eventId,
             'total_effects' => count($effects),
         ]);
     }
@@ -67,15 +69,15 @@ class RootCauseController
     {
         $validated = $request->validate([
             'from' => ['required', 'string'],
-            'to'   => ['required', 'string'],
+            'to' => ['required', 'string'],
         ]);
 
         $path = $this->traversalService->getCriticalPath($validated['from'], $validated['to']);
 
         return response()->json([
-            'data'        => $path,
-            'from'        => $validated['from'],
-            'to'          => $validated['to'],
+            'data' => $path,
+            'from' => $validated['from'],
+            'to' => $validated['to'],
             'path_length' => count($path),
         ]);
     }

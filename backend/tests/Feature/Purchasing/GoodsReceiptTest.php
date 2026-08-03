@@ -8,11 +8,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\InventoryItems\Domain\Models\StockLedgerEntry;
+use Modules\MasterData\Units\Domain\Models\Unit;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Companies\Domain\Models\Company;
-use Modules\Purchasing\GoodsReceipts\Application\Actions\PostGoodsReceiptAction;
-use Modules\MasterData\Units\Domain\Models\Unit;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\CreateGoodsReceiptAction;
+use Modules\Purchasing\GoodsReceipts\Application\Actions\PostGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\DTO\GoodsReceiptDTO;
 use Modules\Purchasing\GoodsReceipts\Application\DTO\GoodsReceiptLineDTO;
 use Modules\Purchasing\GoodsReceipts\Domain\Enums\GoodsReceiptStatus;
@@ -35,12 +35,13 @@ class GoodsReceiptTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
     }
 
@@ -58,10 +59,10 @@ class GoodsReceiptTest extends TestCase
 
         $poLine = PurchaseOrderLine::factory()->create([
             'purchase_order_id' => $po->id,
-            'product_id'        => $product->id,
-            'quantity'          => $orderedQty,
-            'received_qty'      => 0,
-            'unit_price'        => $unitPrice,
+            'product_id' => $product->id,
+            'quantity' => $orderedQty,
+            'received_qty' => 0,
+            'unit_price' => $unitPrice,
         ]);
 
         return [$po, $poLine, $product];
@@ -82,19 +83,19 @@ class GoodsReceiptTest extends TestCase
 
         $receipt = GoodsReceipt::factory()->create(array_merge([
             'purchase_order_id' => $po->id,
-            'warehouse_id'      => $this->warehouse->id,
+            'warehouse_id' => $this->warehouse->id,
         ], $headerExtras));
 
         GoodsReceiptLine::factory()->create([
-            'goods_receipt_id'        => $receipt->id,
-            'purchase_order_line_id'  => $poLine->id,
-            'product_id'              => $poLine->product_id,
-            'ordered_quantity'        => (float) $poLine->quantity,
-            'received_quantity'       => $netQty,
+            'goods_receipt_id' => $receipt->id,
+            'purchase_order_line_id' => $poLine->id,
+            'product_id' => $poLine->product_id,
+            'ordered_quantity' => (float) $poLine->quantity,
+            'received_quantity' => $netQty,
             'gross_received_quantity' => $gross,
-            'net_received_quantity'   => $netQty,
-            'variance_quantity'       => $netQty - (float) $poLine->quantity,
-            'unit_price'              => (float) $poLine->unit_price,
+            'net_received_quantity' => $netQty,
+            'variance_quantity' => $netQty - (float) $poLine->quantity,
+            'unit_price' => (float) $poLine->unit_price,
         ]);
 
         return $receipt->refresh();
@@ -170,8 +171,8 @@ class GoodsReceiptTest extends TestCase
         [$po, $poLine] = $this->makeApprovedPo(orderedQty: 100.0, unitPrice: 100.0);
 
         $receipt = $this->makeReceipt($po, $poLine, netQty: 9.0, grossQty: 10.0, headerExtras: [
-            'freight_amount'   => 100.00,
-            'tax_amount'       => 50.00,
+            'freight_amount' => 100.00,
+            'tax_amount' => 50.00,
             'additional_costs' => 0.00,
         ]);
 
@@ -213,7 +214,7 @@ class GoodsReceiptTest extends TestCase
 
         $receipt = $this->makeReceipt($po, $poLine, netQty: 10.0, headerExtras: [
             'supplier_invoice_date' => '2026-06-25',
-            'payment_terms_days'    => 30,
+            'payment_terms_days' => 30,
         ]);
 
         // payment_due_date not set by factory — it would be set by CreateGoodsReceiptAction
@@ -225,9 +226,9 @@ class GoodsReceiptTest extends TestCase
     public function test_payment_due_date_auto_calculation_logic(): void
     {
         // Verify Carbon date arithmetic: 2026-06-25 + 30 days = 2026-07-25
-        $invoiceDate   = \Illuminate\Support\Carbon::parse('2026-06-25');
-        $termsDays     = 30;
-        $expectedDue   = '2026-07-25';
+        $invoiceDate = \Illuminate\Support\Carbon::parse('2026-06-25');
+        $termsDays = 30;
+        $expectedDue = '2026-07-25';
 
         $this->assertEquals($expectedDue, $invoiceDate->addDays($termsDays)->toDateString());
     }
@@ -245,9 +246,9 @@ class GoodsReceiptTest extends TestCase
 
         $receipt = $this->makeReceipt($po, $poLine, netQty: 20.0, headerExtras: [
             'invoice_total_amount' => 5000.00,
-            'freight_amount'       => 200.00,
-            'tax_amount'           => 150.00,
-            'additional_costs'     => 50.00,
+            'freight_amount' => 200.00,
+            'tax_amount' => 150.00,
+            'additional_costs' => 50.00,
         ]);
 
         $fresh = $receipt->fresh();
@@ -275,8 +276,8 @@ class GoodsReceiptTest extends TestCase
         [$po, $poLine] = $this->makeApprovedPo();
 
         $receipt = $this->makeReceipt($po, $poLine, netQty: 10.0, headerExtras: [
-            'freight_amount'   => 100.00,
-            'tax_amount'       => 75.50,
+            'freight_amount' => 100.00,
+            'tax_amount' => 75.50,
             'additional_costs' => 24.50,
         ]);
 
@@ -368,7 +369,7 @@ class GoodsReceiptTest extends TestCase
 
         $receipt = GoodsReceipt::factory()->create([
             'purchase_order_id' => $po->id,
-            'warehouse_id'      => $this->warehouse->id,
+            'warehouse_id' => $this->warehouse->id,
         ]);
 
         $this->expectException(EmptyGoodsReceiptException::class);
@@ -403,14 +404,14 @@ class GoodsReceiptTest extends TestCase
 
     public function test_uom_snapshot_captured_on_line_creation(): void
     {
-        $unit    = Unit::factory()->create(['name' => 'Kilogram', 'symbol' => 'KG']);
+        $unit = Unit::factory()->create(['name' => 'Kilogram', 'symbol' => 'KG']);
         $product = \Modules\Inventory\Products\Domain\Models\Product::factory()->create(['unit_id' => $unit->id]);
-        $po      = PurchaseOrder::factory()->approved()->create(['company_id' => $this->company->id]);
-        $poLine  = PurchaseOrderLine::factory()->create([
+        $po = PurchaseOrder::factory()->approved()->create(['company_id' => $this->company->id]);
+        $poLine = PurchaseOrderLine::factory()->create([
             'purchase_order_id' => $po->id,
-            'product_id'        => $product->id,
-            'quantity'          => 10.0,
-            'unit_price'        => 50.0,
+            'product_id' => $product->id,
+            'quantity' => 10.0,
+            'unit_price' => 50.0,
         ]);
 
         $dto = new GoodsReceiptDTO(
@@ -434,7 +435,7 @@ class GoodsReceiptTest extends TestCase
         $this->assertTrue($result->isSuccess());
 
         $receipt = $result->data();
-        $line    = $receipt->lines()->first();
+        $line = $receipt->lines()->first();
 
         $this->assertEquals($unit->id, $line->uom_id_snapshot);
         $this->assertEquals('Kilogram', $line->uom_name_snapshot);
@@ -443,15 +444,15 @@ class GoodsReceiptTest extends TestCase
 
     public function test_uom_snapshot_immutable_after_product_unit_change(): void
     {
-        $unit1   = Unit::factory()->create(['name' => 'Kilogram', 'symbol' => 'KG']);
-        $unit2   = Unit::factory()->create(['name' => 'Gram', 'symbol' => 'G']);
+        $unit1 = Unit::factory()->create(['name' => 'Kilogram', 'symbol' => 'KG']);
+        $unit2 = Unit::factory()->create(['name' => 'Gram', 'symbol' => 'G']);
         $product = \Modules\Inventory\Products\Domain\Models\Product::factory()->create(['unit_id' => $unit1->id]);
-        $po      = PurchaseOrder::factory()->approved()->create(['company_id' => $this->company->id]);
-        $poLine  = PurchaseOrderLine::factory()->create([
+        $po = PurchaseOrder::factory()->approved()->create(['company_id' => $this->company->id]);
+        $poLine = PurchaseOrderLine::factory()->create([
             'purchase_order_id' => $po->id,
-            'product_id'        => $product->id,
-            'quantity'          => 10.0,
-            'unit_price'        => 50.0,
+            'product_id' => $product->id,
+            'quantity' => 10.0,
+            'unit_price' => 50.0,
         ]);
 
         $dto = new GoodsReceiptDTO(
@@ -472,7 +473,7 @@ class GoodsReceiptTest extends TestCase
         );
 
         $receipt = app(CreateGoodsReceiptAction::class)->execute($dto)->data();
-        $line    = $receipt->lines()->first();
+        $line = $receipt->lines()->first();
 
         // Snapshot captured at time of receipt creation
         $this->assertEquals('KG', $line->uom_symbol_snapshot);
@@ -491,19 +492,19 @@ class GoodsReceiptTest extends TestCase
 
         $receipt = GoodsReceipt::factory()->create([
             'purchase_order_id' => $po->id,
-            'warehouse_id'      => $this->warehouse->id,
+            'warehouse_id' => $this->warehouse->id,
         ]);
 
         GoodsReceiptLine::factory()->create([
-            'goods_receipt_id'        => $receipt->id,
-            'purchase_order_line_id'  => $poLine->id,
-            'product_id'              => $poLine->product_id,
-            'ordered_quantity'        => 100.0,
-            'received_quantity'       => 0.0,
+            'goods_receipt_id' => $receipt->id,
+            'purchase_order_line_id' => $poLine->id,
+            'product_id' => $poLine->product_id,
+            'ordered_quantity' => 100.0,
+            'received_quantity' => 0.0,
             'gross_received_quantity' => 0.0,
-            'net_received_quantity'   => 0.0,
-            'variance_quantity'       => -100.0,
-            'unit_price'              => 10.0,
+            'net_received_quantity' => 0.0,
+            'variance_quantity' => -100.0,
+            'unit_price' => 10.0,
         ]);
 
         $this->expectException(EmptyGoodsReceiptException::class);

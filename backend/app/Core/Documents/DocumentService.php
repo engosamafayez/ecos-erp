@@ -15,16 +15,16 @@ final class DocumentService
     /**
      * Attach a file to any entity.
      *
-     * @param array<string, mixed> $metadata
+     * @param  array<string, mixed>  $metadata
      */
     public function attach(
-        string       $companyId,
-        string       $subjectType,
-        string       $subjectId,
-        string       $documentType,
+        string $companyId,
+        string $subjectType,
+        string $subjectId,
+        string $documentType,
         UploadedFile $file,
-        ?int         $uploadedBy = null,
-        ?string      $notes      = null,
+        ?int $uploadedBy = null,
+        ?string $notes = null,
     ): Document {
         $path = $file->store(
             "documents/{$companyId}/{$subjectType}/{$subjectId}",
@@ -32,19 +32,19 @@ final class DocumentService
         );
 
         return Document::create([
-            'id'            => Str::uuid()->toString(),
-            'company_id'    => $companyId,
-            'subject_type'  => $subjectType,
-            'subject_id'    => $subjectId,
+            'id' => Str::uuid()->toString(),
+            'company_id' => $companyId,
+            'subject_type' => $subjectType,
+            'subject_id' => $subjectId,
             'document_type' => $documentType,
-            'name'          => $file->getClientOriginalName(),
-            'file_path'     => $path,
-            'mime_type'     => $file->getMimeType(),
-            'file_size'     => $file->getSize(),
-            'uploaded_by'   => $uploadedBy,
-            'notes'         => $notes,
-            'version'       => '1.0',
-            'is_active'     => true,
+            'name' => $file->getClientOriginalName(),
+            'file_path' => $path,
+            'mime_type' => $file->getMimeType(),
+            'file_size' => $file->getSize(),
+            'uploaded_by' => $uploadedBy,
+            'notes' => $notes,
+            'version' => '1.0',
+            'is_active' => true,
         ]);
     }
 

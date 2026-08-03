@@ -6,17 +6,17 @@ namespace Modules\Inventory\WasteInvestigations\Domain\Enums;
 
 enum WasteInvestigationOutcome: string
 {
-    case OperationalWaste          = 'operational_waste';
-    case WarehouseResponsibility   = 'warehouse_responsibility';
-    case SupplierResponsibility    = 'supplier_responsibility';
+    case OperationalWaste = 'operational_waste';
+    case WarehouseResponsibility = 'warehouse_responsibility';
+    case SupplierResponsibility = 'supplier_responsibility';
     case PreparationResponsibility = 'preparation_responsibility';
 
     public function label(): string
     {
         return match ($this) {
-            self::OperationalWaste          => 'Operational Waste',
-            self::WarehouseResponsibility   => 'Warehouse Responsibility',
-            self::SupplierResponsibility    => 'Supplier Responsibility',
+            self::OperationalWaste => 'Operational Waste',
+            self::WarehouseResponsibility => 'Warehouse Responsibility',
+            self::SupplierResponsibility => 'Supplier Responsibility',
             self::PreparationResponsibility => 'Preparation Responsibility',
         };
     }

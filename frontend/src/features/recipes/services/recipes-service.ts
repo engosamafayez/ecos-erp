@@ -42,6 +42,7 @@ export const recipesService = {
       version:                 recipe.version,
       is_active:               !recipe.is_active,
       notes:                   recipe.notes,
+      yield_quantity:          recipe.yield_quantity ?? 1,
       manufacturing_cost:      recipe.manufacturing_cost ?? 0,
       other_costs:             recipe.other_costs ?? 0,
       execution_instructions:  recipe.execution_instructions,

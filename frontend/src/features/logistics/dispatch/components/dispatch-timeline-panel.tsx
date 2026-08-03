@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Circle, Info, XCircle } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,28 +26,31 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
  * Both feeds are append-only on the server — this is a record, not a status.
  */
 export function DispatchTimelinePanel({ boardId }: { boardId: string | null }) {
+  const { t } = useTranslation('logistics');
   const { data: events, isLoading } = useBoardTimeline(boardId);
   const { data: audit } = useAuditTrail(true);
 
   return (
     <div className="space-y-4">
-      <Panel title="Board timeline">
+      <Panel title={t($ => $.dispatch.timeline.boardTitle)}>
         {boardId === null ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Pick a board to see its timeline.
+            {t($ => $.dispatch.timeline.pickBoard)}
           </p>
         ) : isLoading ? (
           <Skeleton className="h-40 w-full" />
         ) : !events || events.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Nothing recorded yet.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {t($ => $.dispatch.timeline.empty)}
+          </p>
         ) : (
-          <ol className="relative space-y-4 border-l pl-5">
+          <ol className="relative space-y-4 border-s ps-5">
             {events.map((event) => {
               const { Icon, className } = SEVERITY[event.severity] ?? SEVERITY.info;
 
               return (
                 <li key={event.id} className="relative">
-                  <span className="absolute -left-[27px] top-0.5 rounded-full bg-background p-0.5">
+                  <span className="absolute -start-[27px] top-0.5 rounded-full bg-background p-0.5">
                     <Icon className={`size-3.5 ${className}`} />
                   </span>
                   <p className="text-sm font-medium">{event.title}</p>
@@ -64,10 +68,10 @@ export function DispatchTimelinePanel({ boardId }: { boardId: string | null }) {
         )}
       </Panel>
 
-      <Panel title="Overrides">
+      <Panel title={t($ => $.dispatch.timeline.overridesTitle)}>
         {!audit || audit.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Nothing has been overridden.
+            {t($ => $.dispatch.timeline.overridesEmpty)}
           </p>
         ) : (
           <ul className="space-y-2">

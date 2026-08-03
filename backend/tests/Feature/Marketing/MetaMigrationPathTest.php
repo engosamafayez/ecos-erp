@@ -21,45 +21,45 @@ class MetaMigrationPathTest extends TestCase
     public function test_connection_service_provider_migration_path_exists(): void
     {
         $providerDir = base_path('Modules/Marketing/Connections/Infrastructure/Providers');
-        $migPath     = realpath($providerDir . '/../Database/Migrations');
+        $migPath = realpath($providerDir.'/../Database/Migrations');
 
         $this->assertNotFalse(
             $migPath,
-            'ConnectionServiceProvider migration path `/../Database/Migrations` does not resolve to a real directory.'
+            'ConnectionServiceProvider migration path `/../Database/Migrations` does not resolve to a real directory.',
         );
         $this->assertDirectoryExists($migPath);
 
-        $files = glob($migPath . '/*.php') ?: [];
+        $files = glob($migPath.'/*.php') ?: [];
         $this->assertNotEmpty($files, 'ConnectionServiceProvider migration directory contains no PHP files.');
     }
 
     public function test_marketing_asset_service_provider_migration_path_exists(): void
     {
         $providerDir = base_path('Modules/Marketing/Assets/Infrastructure/Providers');
-        $migPath     = realpath($providerDir . '/../Database/Migrations');
+        $migPath = realpath($providerDir.'/../Database/Migrations');
 
         $this->assertNotFalse(
             $migPath,
-            'MarketingAssetServiceProvider migration path `/../Database/Migrations` does not resolve to a real directory.'
+            'MarketingAssetServiceProvider migration path `/../Database/Migrations` does not resolve to a real directory.',
         );
         $this->assertDirectoryExists($migPath);
 
-        $files = glob($migPath . '/*.php') ?: [];
+        $files = glob($migPath.'/*.php') ?: [];
         $this->assertNotEmpty($files, 'MarketingAssetServiceProvider migration directory contains no PHP files.');
     }
 
     public function test_meta_connector_service_provider_migration_path_exists(): void
     {
         $providerDir = base_path('Modules/Marketing/MetaConnector/Infrastructure/Providers');
-        $migPath     = realpath($providerDir . '/../Database/Migrations');
+        $migPath = realpath($providerDir.'/../Database/Migrations');
 
         $this->assertNotFalse(
             $migPath,
-            'MetaConnectorServiceProvider migration path `/../Database/Migrations` does not resolve to a real directory.'
+            'MetaConnectorServiceProvider migration path `/../Database/Migrations` does not resolve to a real directory.',
         );
         $this->assertDirectoryExists($migPath);
 
-        $files = glob($migPath . '/*.php') ?: [];
+        $files = glob($migPath.'/*.php') ?: [];
         $this->assertNotEmpty($files, 'MetaConnectorServiceProvider migration directory contains no PHP files.');
     }
 
@@ -84,7 +84,7 @@ class MetaMigrationPathTest extends TestCase
             $this->assertStringNotContainsString(
                 "'/../../",
                 $source,
-                "ServiceProvider $relative uses a double-dot-dot migration path; should be '/../Database/Migrations'."
+                "ServiceProvider $relative uses a double-dot-dot migration path; should be '/../Database/Migrations'.",
             );
         }
     }

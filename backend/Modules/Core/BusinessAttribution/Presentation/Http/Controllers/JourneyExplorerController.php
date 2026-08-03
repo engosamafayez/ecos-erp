@@ -33,7 +33,7 @@ class JourneyExplorerController extends Controller
             'initiative_id', 'has_stage', 'customer_lifetime_stage',
         ]);
 
-        $perPage  = min((int) $request->query('per_page', 25), 100);
+        $perPage = min((int) $request->query('per_page', 25), 100);
         $journeys = $this->journeyService->searchJourneys($filters, $perPage);
 
         return BusinessDnaResource::collection($journeys);
@@ -58,17 +58,17 @@ class JourneyExplorerController extends Controller
     public function recordStep(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'entity_type'         => ['required', 'string'],
-            'entity_id'           => ['required', 'uuid'],
-            'journey_stage'       => ['required', 'string'],
-            'event_id'            => ['nullable', 'uuid'],
-            'actor_id'            => ['nullable', 'uuid'],
-            'actor_type'          => ['nullable', 'string', 'max:100'],
-            'occurred_at'         => ['nullable', 'date'],
-            'related_entity_id'   => ['nullable', 'uuid'],
+            'entity_type' => ['required', 'string'],
+            'entity_id' => ['required', 'uuid'],
+            'journey_stage' => ['required', 'string'],
+            'event_id' => ['nullable', 'uuid'],
+            'actor_id' => ['nullable', 'uuid'],
+            'actor_type' => ['nullable', 'string', 'max:100'],
+            'occurred_at' => ['nullable', 'date'],
+            'related_entity_id' => ['nullable', 'uuid'],
             'related_entity_type' => ['nullable', 'string', 'max:100'],
-            'payload'             => ['nullable', 'array'],
-            'dna_defaults'        => ['nullable', 'array'],
+            'payload' => ['nullable', 'array'],
+            'dna_defaults' => ['nullable', 'array'],
         ]);
 
         $step = $this->recordStepAction->execute(

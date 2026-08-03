@@ -22,9 +22,9 @@ final class UserPreferenceFactory extends Factory
         $category = $this->faker->randomElement(PreferenceCategory::cases())->value;
 
         return [
-            'user_id'  => User::factory(),
+            'user_id' => User::factory(),
             'category' => $category,
-            'payload'  => PreferenceCategory::from($category)->defaultPayload() ?? [],
+            'payload' => PreferenceCategory::from($category)->defaultPayload() ?? [],
         ];
     }
 
@@ -35,7 +35,7 @@ final class UserPreferenceFactory extends Factory
     {
         return $this->state([
             'category' => $category->value,
-            'payload'  => $category->defaultPayload() ?? [],
+            'payload' => $category->defaultPayload() ?? [],
         ]);
     }
 }

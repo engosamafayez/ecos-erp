@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\POS\Shared\Domain\Contracts;
 
+use DateTimeImmutable;
+
 /**
  * Marker contract for all POS domain events.
  *
@@ -25,7 +27,7 @@ interface DomainEvent
     public function eventName(): string;
 
     /** Wall-clock time when the business fact occurred (UTC). */
-    public function occurredAt(): \DateTimeImmutable;
+    public function occurredAt(): DateTimeImmutable;
 
     /** Schema version. Must return 1 until a breaking payload change requires a new version. */
     public function eventVersion(): int;

@@ -39,7 +39,7 @@ final class HoldPurchaseMaterialAction
         }
 
         $material->update([
-            'status'     => PurchaseMaterialStatus::OnHold->value,
+            'status' => PurchaseMaterialStatus::OnHold->value,
             'updated_by' => (string) $request->user()?->id,
         ]);
 

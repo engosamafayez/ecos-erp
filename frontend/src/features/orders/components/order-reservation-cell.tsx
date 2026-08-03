@@ -56,7 +56,7 @@ function getState(order: Order): ReservationState {
     };
   }
 
-  if (order.status === 'cancelled' || order.status === 'completed') {
+  if (order.status === 'cancelled' || order.status === 'delivered' || order.status === 'returned') {
     return { code: 'dash', cls: '' };
   }
 
@@ -73,19 +73,21 @@ function getState(order: Order): ReservationState {
 export function OrderReservationCell({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
   const state = getState(order);
+  // Show the human-readable warehouse name from line data, not the raw UUID (W2 FIX-1).
+  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
 
   if (state.code === 'dash') return <span className="text-muted-foreground">—</span>;
 
   const label =
     state.code === 'partial'
-      ? t('reservationCell.partial')
-      : t(`reservationCell.${state.code}`);
+      ? t($ => $.reservationCell.partial)
+      : t($ => $.reservationCell[state.code]);
 
   let qtyStr: string | undefined;
   if (state.code === 'partial' && state.reservedQty != null && state.totalQty != null) {
-    qtyStr = t('reservationCell.unitsPartialReserved', { reserved: state.reservedQty, total: state.totalQty });
+    qtyStr = t($ => $.reservationCell.unitsPartialReserved, { reserved: state.reservedQty, total: state.totalQty });
   } else if (state.code === 'reserved' && state.totalQty != null) {
-    qtyStr = t('reservationCell.unitsReserved', { count: state.totalQty });
+    qtyStr = t($ => $.reservationCell.unitsReserved, { count: state.totalQty });
   }
 
   const badge = (
@@ -108,11 +110,11 @@ export function OrderReservationCell({ order }: { order: Order }) {
           <span className="cursor-default">{badge}</span>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="text-xs space-y-0.5">
-          <p className="font-medium">{t('reservationCell.inventoryReserved')}</p>
+          <p className="font-medium">{t($ => $.reservationCell.inventoryReserved)}</p>
           {qtyStr ? <p className="text-muted-foreground">{qtyStr}</p> : null}
           <p className="text-muted-foreground">{state.detail}</p>
-          {order.assigned_warehouse_id ? (
-            <p className="font-mono text-[10px] text-muted-foreground">{order.assigned_warehouse_id}</p>
+          {warehouseName ? (
+            <p className="text-[10px] text-muted-foreground">{warehouseName}</p>
           ) : null}
         </TooltipContent>
       </Tooltip>

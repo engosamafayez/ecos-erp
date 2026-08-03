@@ -31,19 +31,19 @@ final class WarehouseAssignmentController extends Controller
     {
         $request->validate([
             'warehouse_id' => ['nullable', 'uuid'],
-            'channel_id'   => ['nullable', 'uuid'],
-            'is_active'    => ['nullable', 'boolean'],
-            'per_page'     => ['nullable', 'integer', 'min:1', 'max:100'],
+            'channel_id' => ['nullable', 'uuid'],
+            'is_active' => ['nullable', 'boolean'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         $companyId = $request->user()->company_id;
-        $perPage   = (int) ($request->query('per_page', 25));
+        $perPage = (int) ($request->query('per_page', 25));
 
         $query = WarehouseAssignmentPolicy::with(['channel', 'warehouse'])
             ->where('company_id', $companyId)
             ->when($request->query('warehouse_id'), fn ($q, $v) => $q->where('warehouse_id', $v))
-            ->when($request->query('channel_id'),   fn ($q, $v) => $q->where('channel_id', $v))
-            ->when($request->filled('is_active'),    fn ($q)     => $q->where('is_active', filter_var($request->query('is_active'), FILTER_VALIDATE_BOOLEAN)))
+            ->when($request->query('channel_id'), fn ($q, $v) => $q->where('channel_id', $v))
+            ->when($request->filled('is_active'), fn ($q) => $q->where('is_active', filter_var($request->query('is_active'), FILTER_VALIDATE_BOOLEAN)))
             ->orderBy('priority')
             ->orderByDesc('created_at');
 
@@ -55,9 +55,9 @@ final class WarehouseAssignmentController extends Controller
                 $paginator->items(),
             ),
             'meta' => [
-                'page'      => $paginator->currentPage(),
-                'per_page'  => $paginator->perPage(),
-                'total'     => $paginator->total(),
+                'page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
             ],
         ]);
@@ -66,12 +66,12 @@ final class WarehouseAssignmentController extends Controller
     public function storePolicy(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'channel_id'   => ['nullable', 'uuid', 'exists:channels,id'],
-            'governorate'  => ['nullable', 'string', 'max:100'],
-            'zone'         => ['nullable', 'string', 'max:100'],
+            'channel_id' => ['nullable', 'uuid', 'exists:channels,id'],
+            'governorate' => ['nullable', 'string', 'max:100'],
+            'zone' => ['nullable', 'string', 'max:100'],
             'warehouse_id' => ['required', 'uuid', 'exists:warehouses,id'],
-            'priority'     => ['nullable', 'integer', 'min:1', 'max:9999'],
-            'notes'        => ['nullable', 'string', 'max:500'],
+            'priority' => ['nullable', 'integer', 'min:1', 'max:9999'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         $companyId = $request->user()->company_id;
@@ -82,16 +82,16 @@ final class WarehouseAssignmentController extends Controller
             ->firstOrFail();
 
         $policy = WarehouseAssignmentPolicy::create([
-            'company_id'   => $companyId,
-            'channel_id'   => $validated['channel_id'] ?? null,
-            'governorate'  => $validated['governorate'] ?? null,
-            'zone'         => $validated['zone'] ?? null,
+            'company_id' => $companyId,
+            'channel_id' => $validated['channel_id'] ?? null,
+            'governorate' => $validated['governorate'] ?? null,
+            'zone' => $validated['zone'] ?? null,
             'warehouse_id' => $warehouse->id,
-            'priority'     => $validated['priority'] ?? 100,
-            'is_active'    => true,
-            'notes'        => $validated['notes'] ?? null,
-            'created_by'   => (string) $request->user()->id,
-            'updated_by'   => (string) $request->user()->id,
+            'priority' => $validated['priority'] ?? 100,
+            'is_active' => true,
+            'notes' => $validated['notes'] ?? null,
+            'created_by' => (string) $request->user()->id,
+            'updated_by' => (string) $request->user()->id,
         ]);
 
         $policy->load(['channel', 'warehouse']);
@@ -106,13 +106,13 @@ final class WarehouseAssignmentController extends Controller
             ->firstOrFail();
 
         $validated = $request->validate([
-            'channel_id'   => ['nullable', 'uuid', 'exists:channels,id'],
-            'governorate'  => ['nullable', 'string', 'max:100'],
-            'zone'         => ['nullable', 'string', 'max:100'],
+            'channel_id' => ['nullable', 'uuid', 'exists:channels,id'],
+            'governorate' => ['nullable', 'string', 'max:100'],
+            'zone' => ['nullable', 'string', 'max:100'],
             'warehouse_id' => ['sometimes', 'required', 'uuid', 'exists:warehouses,id'],
-            'priority'     => ['nullable', 'integer', 'min:1', 'max:9999'],
-            'is_active'    => ['nullable', 'boolean'],
-            'notes'        => ['nullable', 'string', 'max:500'],
+            'priority' => ['nullable', 'integer', 'min:1', 'max:9999'],
+            'is_active' => ['nullable', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         if (isset($validated['warehouse_id'])) {
@@ -150,11 +150,11 @@ final class WarehouseAssignmentController extends Controller
         $order->refresh();
 
         return $this->success([
-            'order_id'       => $order->id,
-            'warehouse_id'   => $order->assigned_warehouse_id,
+            'order_id' => $order->id,
+            'warehouse_id' => $order->assigned_warehouse_id,
             'warehouse_name' => $order->assignedWarehouse?->name,
-            'source'         => $order->warehouse_assignment_source,
-            'assigned_at'    => $order->warehouse_assigned_at?->toIso8601String(),
+            'source' => $order->warehouse_assignment_source,
+            'assigned_at' => $order->warehouse_assigned_at?->toIso8601String(),
         ]);
     }
 
@@ -162,7 +162,7 @@ final class WarehouseAssignmentController extends Controller
     {
         $validated = $request->validate([
             'warehouse_id' => ['required', 'uuid', 'exists:warehouses,id'],
-            'reason'       => ['required', 'string', 'min:10', 'max:500'],
+            'reason' => ['required', 'string', 'min:10', 'max:500'],
         ]);
 
         $order = Order::where('id', $orderId)->firstOrFail();
@@ -174,20 +174,20 @@ final class WarehouseAssignmentController extends Controller
             ->firstOrFail();
 
         $this->engine->override(
-            order:          $order,
+            order: $order,
             newWarehouseId: $validated['warehouse_id'],
-            reason:         $validated['reason'],
-            supervisorId:   (string) $request->user()->id,
+            reason: $validated['reason'],
+            supervisorId: (string) $request->user()->id,
         );
 
         $order->refresh();
 
         return $this->success([
-            'order_id'       => $order->id,
-            'warehouse_id'   => $order->assigned_warehouse_id,
+            'order_id' => $order->id,
+            'warehouse_id' => $order->assigned_warehouse_id,
             'warehouse_name' => $order->assignedWarehouse?->name,
-            'source'         => $order->warehouse_assignment_source,
-            'assigned_at'    => $order->warehouse_assigned_at?->toIso8601String(),
+            'source' => $order->warehouse_assignment_source,
+            'assigned_at' => $order->warehouse_assigned_at?->toIso8601String(),
         ]);
     }
 
@@ -203,14 +203,14 @@ final class WarehouseAssignmentController extends Controller
 
         return $this->success([
             'data' => $overrides->map(fn (WarehouseAssignmentOverride $o) => [
-                'id'                      => $o->id,
-                'previous_warehouse_id'   => $o->previous_warehouse_id,
+                'id' => $o->id,
+                'previous_warehouse_id' => $o->previous_warehouse_id,
                 'previous_warehouse_name' => null, // loaded below if needed
-                'new_warehouse_id'        => $o->new_warehouse_id,
-                'new_warehouse_name'      => $o->newWarehouse?->name,
-                'reason'                  => $o->reason,
-                'overridden_by'           => $o->overridden_by,
-                'overridden_at'           => $o->overridden_at->toIso8601String(),
+                'new_warehouse_id' => $o->new_warehouse_id,
+                'new_warehouse_name' => $o->newWarehouse?->name,
+                'reason' => $o->reason,
+                'overridden_by' => $o->overridden_by,
+                'overridden_at' => $o->overridden_at->toIso8601String(),
             ])->all(),
         ]);
     }
@@ -220,18 +220,18 @@ final class WarehouseAssignmentController extends Controller
     private function formatPolicy(WarehouseAssignmentPolicy $p): array
     {
         return [
-            'id'             => $p->id,
-            'channel_id'     => $p->channel_id,
-            'channel_name'   => $p->channel?->name,
-            'governorate'    => $p->governorate,
-            'zone'           => $p->zone,
-            'warehouse_id'   => $p->warehouse_id,
+            'id' => $p->id,
+            'channel_id' => $p->channel_id,
+            'channel_name' => $p->channel?->name,
+            'governorate' => $p->governorate,
+            'zone' => $p->zone,
+            'warehouse_id' => $p->warehouse_id,
             'warehouse_name' => $p->warehouse?->name,
-            'priority'       => $p->priority,
-            'specificity'    => $p->specificity(),
-            'is_active'      => $p->is_active,
-            'notes'          => $p->notes,
-            'created_at'     => $p->created_at->toIso8601String(),
+            'priority' => $p->priority,
+            'specificity' => $p->specificity(),
+            'is_active' => $p->is_active,
+            'notes' => $p->notes,
+            'created_at' => $p->created_at->toIso8601String(),
         ];
     }
 

@@ -35,7 +35,7 @@ return new class extends Migration
         // Backfill: set company_id from the first non-deleted channel mapping.
         // Products with no channel assignments (e.g. raw materials) remain null
         // and must be assigned via the Product form.
-        DB::statement("
+        DB::statement('
             UPDATE products p
             SET company_id = (
                 SELECT ch.company_id
@@ -49,7 +49,7 @@ return new class extends Migration
             )
             WHERE p.deleted_at IS NULL
               AND p.company_id IS NULL
-        ");
+        ');
     }
 
     public function down(): void

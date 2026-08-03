@@ -46,24 +46,24 @@ export function OrderShippingSection() {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <FormField name="governorate" label={t('workspace.fields.governorate')} required>
-        <Input placeholder={t('workspace.governoratePlaceholder')} {...register('governorate')} />
+      <FormField name="governorate" label={t($ => $.workspace.fields.governorate)} required>
+        <Input placeholder={t($ => $.workspace.governoratePlaceholder)} {...register('governorate')} />
       </FormField>
 
-      <FormField name="city" label={t('workspace.fields.city')}>
-        <Input placeholder={t('workspace.cityPlaceholder')} {...register('city')} />
+      <FormField name="city" label={t($ => $.workspace.fields.city)}>
+        <Input placeholder={t($ => $.workspace.cityPlaceholder)} {...register('city')} />
       </FormField>
 
-      <FormField name="area" label={t('workspace.fields.area')}>
-        <Input placeholder={t('workspace.areaPlaceholder')} {...register('area')} />
+      <FormField name="area" label={t($ => $.workspace.fields.area)}>
+        <Input placeholder={t($ => $.workspace.areaPlaceholder)} {...register('area')} />
       </FormField>
 
-      <FormField name="shipping_address" label={t('workspace.fields.shippingAddress')}>
-        <Input placeholder={t('workspace.shippingAddressPlaceholder')} {...register('shipping_address')} />
+      <FormField name="shipping_address" label={t($ => $.workspace.fields.shippingAddress)}>
+        <Input placeholder={t($ => $.workspace.shippingAddressPlaceholder)} {...register('shipping_address')} />
       </FormField>
 
       <div className="sm:col-span-2">
-        <FormField name="shipping_cost" label={t('workspace.fields.shippingCost')}>
+        <FormField name="shipping_cost" label={t($ => $.workspace.fields.shippingCost)}>
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Input
@@ -84,18 +84,18 @@ export function OrderShippingSection() {
               variant="outline"
               size="icon"
               onClick={handleOverrideToggle}
-              title={overrideUnlocked ? t('workspace.lockToAutoRate') : t('workspace.overrideShippingCost')}
+              title={overrideUnlocked ? t($ => $.workspace.lockToAutoRate) : t($ => $.workspace.overrideShippingCost)}
             >
               {overrideUnlocked ? <Lock className="size-4" /> : <Unlock className="size-4" />}
             </Button>
           </div>
           {calc?.found && !overrideUnlocked && (
             <p className="mt-1 text-xs text-muted-foreground">
-              {t('workspace.autoCalculated', { level: calc.matched_level })}
+              {t($ => $.workspace.autoCalculated, { level: calc.matched_level })}
             </p>
           )}
           {shippingCostSource === 'override' && (
-            <p className="mt-1 text-xs text-amber-600">{t('workspace.manualOverrideActive')}</p>
+            <p className="mt-1 text-xs text-amber-600">{t($ => $.workspace.manualOverrideActive)}</p>
           )}
         </FormField>
       </div>

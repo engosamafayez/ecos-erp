@@ -25,15 +25,15 @@ class CampaignDraftPlacement extends Model
     ];
 
     protected $casts = [
-        'placement_mode'      => PlacementMode::class,
-        'facebook_feed'       => 'boolean',
-        'instagram_feed'      => 'boolean',
-        'facebook_stories'    => 'boolean',
-        'instagram_stories'   => 'boolean',
-        'facebook_reels'      => 'boolean',
-        'instagram_reels'     => 'boolean',
-        'messenger_inbox'     => 'boolean',
-        'audience_network'    => 'boolean',
+        'placement_mode' => PlacementMode::class,
+        'facebook_feed' => 'boolean',
+        'instagram_feed' => 'boolean',
+        'facebook_stories' => 'boolean',
+        'instagram_stories' => 'boolean',
+        'facebook_reels' => 'boolean',
+        'instagram_reels' => 'boolean',
+        'messenger_inbox' => 'boolean',
+        'audience_network' => 'boolean',
         'excluded_placements' => 'array',
     ];
 

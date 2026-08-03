@@ -26,7 +26,7 @@ final class DispatchVehicleAction
 
         if ($status !== VehicleAssignmentStatus::LoadingComplete) {
             throw new RuntimeException(
-                "Cannot dispatch vehicle assignment '{$assignment->assignment_number}': status must be 'loading_complete', current status is '{$status->value}'."
+                "Cannot dispatch vehicle assignment '{$assignment->assignment_number}': status must be 'loading_complete', current status is '{$status->value}'.",
             );
         }
 
@@ -37,21 +37,21 @@ final class DispatchVehicleAction
 
             if ($driverAssignment === null) {
                 throw new RuntimeException(
-                    "Cannot dispatch vehicle assignment '{$assignment->assignment_number}': no active driver assignment found."
+                    "Cannot dispatch vehicle assignment '{$assignment->assignment_number}': no active driver assignment found.",
                 );
             }
 
             $assignment->update([
-                'status'        => VehicleAssignmentStatus::Dispatched->value,
+                'status' => VehicleAssignmentStatus::Dispatched->value,
                 'dispatched_at' => now(),
                 'dispatched_by' => $actorId,
-                'updated_by'    => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             $driverAssignment->update([
-                'status'                => DriverAssignmentStatus::OnTrip->value,
+                'status' => DriverAssignmentStatus::OnTrip->value,
                 'departure_time_actual' => now(),
-                'updated_by'            => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             // Ship inventory for all orders on this vehicle and advance their status to out_for_delivery.
@@ -59,13 +59,13 @@ final class DispatchVehicleAction
             $this->loadVehicleWorkflow->execute($assignment, $actorId);
 
             event(new VehicleReleased(
-                companyId:    $assignment->company_id,
+                companyId: $assignment->company_id,
                 assignmentId: $assignment->id,
-                sessionId:    $assignment->loading_session_id,
-                vehicleId:    $assignment->vehicle_id,
-                driverId:     $driverAssignment->driver_id,
-                actorId:      $actorId,
-                occurredAt:   now()->toIso8601String(),
+                sessionId: $assignment->loading_session_id,
+                vehicleId: $assignment->vehicle_id,
+                driverId: $driverAssignment->driver_id,
+                actorId: $actorId,
+                occurredAt: now()->toIso8601String(),
             ));
 
             return $assignment->fresh() ?? $assignment;

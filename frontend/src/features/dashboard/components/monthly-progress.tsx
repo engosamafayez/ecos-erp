@@ -1,16 +1,8 @@
+import { useTranslation } from 'react-i18next';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Target } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { MonthlyPerformance } from '@/features/dashboard/services/executive-dashboard.service';
-
-function fmt(n: number) {
-  if (n >= 1_000_000) return `EGP ${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000)     return `EGP ${(n / 1_000).toFixed(1)}K`;
-  return `EGP ${n.toLocaleString()}`;
-}
-
-function MonthName() {
-  return <>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</>;
-}
 
 interface Props {
   data?:    MonthlyPerformance;
@@ -18,6 +10,11 @@ interface Props {
 }
 
 export function MonthlyProgress({ data, loading }: Props) {
+  const { moneyCompact } = useFormatter();
+  const { t, i18n } = useTranslation('dashboard');
+
+  const monthLabel = new Date().toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric' });
+
   const pct    = data?.progress_pct ?? null;
   const target = data?.revenue_target ?? null;
 
@@ -42,7 +39,7 @@ export function MonthlyProgress({ data, loading }: Props) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Target className="h-4 w-4 text-indigo-500" />
-            Monthly Performance — <MonthName />
+            {t($ => $.monthly.title)} — {monthLabel}
           </CardTitle>
           {progress !== null && (
             <span className="text-sm font-bold text-foreground">
@@ -65,10 +62,10 @@ export function MonthlyProgress({ data, loading }: Props) {
             {/* Progress bar */}
             <div>
               <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
-                <span>{fmt(data?.monthly_revenue ?? 0)} actual</span>
+                <span>{moneyCompact(data?.monthly_revenue ?? 0)} {t($ => $.monthly.actual)}</span>
                 {target !== null
-                  ? <span>{fmt(target)} target</span>
-                  : <span className="italic">No target set</span>
+                  ? <span>{moneyCompact(target)} {t($ => $.monthly.target)}</span>
+                  : <span className="italic">{t($ => $.monthly.noTarget)}</span>
                 }
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
@@ -81,9 +78,9 @@ export function MonthlyProgress({ data, loading }: Props) {
 
             {/* 3 stat tiles */}
             <div className="grid grid-cols-3 gap-3">
-              <StatTile label="Revenue" value={fmt(data?.monthly_revenue ?? 0)} />
-              <StatTile label="Net Revenue" value={fmt(data?.monthly_revenue_net ?? 0)} />
-              <StatTile label="Orders" value={(data?.monthly_orders ?? 0).toLocaleString()} />
+              <StatTile label={t($ => $.monthly.revenue)} value={moneyCompact(data?.monthly_revenue ?? 0)} />
+              <StatTile label={t($ => $.monthly.netRevenue)} value={moneyCompact(data?.monthly_revenue_net ?? 0)} />
+              <StatTile label={t($ => $.monthly.orders)} value={(data?.monthly_orders ?? 0).toLocaleString()} />
             </div>
           </>
         )}

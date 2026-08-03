@@ -13,23 +13,23 @@ use Modules\ClaudeBridge\Domain\Enums\TaskPriority;
 use Modules\ClaudeBridge\Domain\Enums\TaskStatus;
 
 /**
- * @property string           $id
- * @property string           $company_id
- * @property string           $created_by_user_id
- * @property string           $title
- * @property string           $description
- * @property string           $repository_path
- * @property string           $target_branch
- * @property TaskStatus       $status
- * @property TaskPriority     $priority
- * @property string|null      $worker_id
- * @property string|null      $failure_reason
- * @property string|null      $review_comment
- * @property string|null      $reviewed_by
+ * @property string $id
+ * @property string $company_id
+ * @property string $created_by_user_id
+ * @property string $title
+ * @property string $description
+ * @property string $repository_path
+ * @property string $target_branch
+ * @property TaskStatus $status
+ * @property TaskPriority $priority
+ * @property string|null $worker_id
+ * @property string|null $failure_reason
+ * @property string|null $review_comment
+ * @property string|null $reviewed_by
  * @property \Carbon\Carbon|null $reviewed_at
  * @property \Carbon\Carbon|null $cancelled_at
- * @property \Carbon\Carbon   $created_at
- * @property \Carbon\Carbon   $updated_at
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 final class Task extends Model
 {
@@ -55,9 +55,9 @@ final class Task extends Model
     ];
 
     protected $casts = [
-        'status'       => TaskStatus::class,
-        'priority'     => TaskPriority::class,
-        'reviewed_at'  => 'datetime',
+        'status' => TaskStatus::class,
+        'priority' => TaskPriority::class,
+        'reviewed_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
 

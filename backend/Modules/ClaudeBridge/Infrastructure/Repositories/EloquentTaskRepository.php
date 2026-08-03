@@ -38,6 +38,7 @@ final class EloquentTaskRepository implements TaskRepositoryInterface
     public function update(Task $task, array $attributes): Task
     {
         $task->update($attributes);
+
         return $task->fresh();
     }
 

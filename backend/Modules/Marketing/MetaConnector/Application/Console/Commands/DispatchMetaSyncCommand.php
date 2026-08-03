@@ -44,6 +44,7 @@ final class DispatchMetaSyncCommand extends Command
 
         if ($connections->isEmpty()) {
             $this->info('No active Meta connections found.');
+
             return self::SUCCESS;
         }
 

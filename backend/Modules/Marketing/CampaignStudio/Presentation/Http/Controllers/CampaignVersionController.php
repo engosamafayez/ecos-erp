@@ -20,6 +20,7 @@ class CampaignVersionController extends Controller
     public function index(CampaignDraft $draft): JsonResponse
     {
         $versions = $this->versioningService->getHistory($draft);
+
         return response()->json(['data' => CampaignVersionResource::collection($versions)->resolve()]);
     }
 
@@ -35,7 +36,7 @@ class CampaignVersionController extends Controller
     /** POST /mkt/studio/drafts/{draft}/versions/{version}/restore */
     public function restore(Request $request, CampaignDraft $draft, string $version): JsonResponse
     {
-        $v       = CampaignVersion::where('campaign_draft_id', $draft->id)->findOrFail($version);
+        $v = CampaignVersion::where('campaign_draft_id', $draft->id)->findOrFail($version);
         $updated = $this->versioningService->restoreToVersion($draft, $v, (string) $request->user()->id);
 
         return response()->json(['data' => $updated, 'message' => "Restored to version {$v->version_number}"]);

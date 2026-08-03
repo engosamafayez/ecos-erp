@@ -59,9 +59,9 @@ class CustomerAddress extends Model
     protected function casts(): array
     {
         return [
-            'is_default'       => 'boolean',
-            'google_maps_lat'  => 'float',
-            'google_maps_lng'  => 'float',
+            'is_default' => 'boolean',
+            'google_maps_lat' => 'float',
+            'google_maps_lng' => 'float',
         ];
     }
 

@@ -41,17 +41,17 @@ final class DeliveryGeographyController extends Controller
     public function store(Request $request, string $brandId): JsonResponse
     {
         $validated = $request->validate([
-            'name'                  => 'required|string|max:150',
-            'name_ar'               => 'nullable|string|max:150',
-            'code'                  => 'nullable|string|max:50',
-            'sort_order'            => 'nullable|integer|min:0',
-            'is_active'             => 'nullable|boolean',
+            'name' => 'required|string|max:150',
+            'name_ar' => 'nullable|string|max:150',
+            'code' => 'nullable|string|max:50',
+            'sort_order' => 'nullable|integer|min:0',
+            'is_active' => 'nullable|boolean',
             'default_shipping_cost' => 'nullable|numeric|min:0',
             'master_governorate_id' => 'nullable|uuid|exists:master_governorates,id',
         ]);
 
         $companyId = Auth::user()?->company_id ?? '';
-        $actorId   = Auth::id() ?? '';
+        $actorId = Auth::id() ?? '';
 
         $geography = DeliveryGeography::updateOrCreate(
             ['brand_id' => $brandId, 'name' => $validated['name']],
@@ -60,7 +60,7 @@ final class DeliveryGeographyController extends Controller
 
         // Auto-create all master zones when a master-linked governorate is activated
         $isActive = $validated['is_active'] ?? true;
-        if (!empty($validated['master_governorate_id']) && $isActive) {
+        if (! empty($validated['master_governorate_id']) && $isActive) {
             $masterZones = MasterZone::where('master_governorate_id', $validated['master_governorate_id'])
                 ->orderBy('sort_order')
                 ->get();
@@ -69,14 +69,14 @@ final class DeliveryGeographyController extends Controller
                 DeliveryZone::updateOrCreate(
                     [
                         'delivery_geography_id' => $geography->id,
-                        'master_zone_id'        => $masterZone->id,
+                        'master_zone_id' => $masterZone->id,
                     ],
                     [
-                        'brand_id'    => $brandId,
-                        'name'        => $masterZone->name,
-                        'sort_order'  => $masterZone->sort_order,
-                        'created_by'  => $actorId,
-                        'updated_by'  => $actorId,
+                        'brand_id' => $brandId,
+                        'name' => $masterZone->name,
+                        'sort_order' => $masterZone->sort_order,
+                        'created_by' => $actorId,
+                        'updated_by' => $actorId,
                     ],
                 );
             }
@@ -84,12 +84,12 @@ final class DeliveryGeographyController extends Controller
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'delivery_geography',
-            category:  'geography',
-            action:    $geography->wasRecentlyCreated ? 'create' : 'update',
-            oldValue:  null,
-            newValue:  $geography->toArray(),
-            brandId:   $brandId,
+            module: 'delivery_geography',
+            category: 'geography',
+            action: $geography->wasRecentlyCreated ? 'create' : 'update',
+            oldValue: null,
+            newValue: $geography->toArray(),
+            brandId: $brandId,
         );
 
         return $this->created($geography->load('zones'), 'Governorate enabled.');
@@ -100,11 +100,11 @@ final class DeliveryGeographyController extends Controller
         $geography = DeliveryGeography::where('brand_id', $brandId)->findOrFail($id);
 
         $validated = $request->validate([
-            'name'                  => 'sometimes|required|string|max:150',
-            'name_ar'               => 'nullable|string|max:150',
-            'code'                  => 'nullable|string|max:50',
-            'sort_order'            => 'nullable|integer|min:0',
-            'is_active'             => 'nullable|boolean',
+            'name' => 'sometimes|required|string|max:150',
+            'name_ar' => 'nullable|string|max:150',
+            'code' => 'nullable|string|max:50',
+            'sort_order' => 'nullable|integer|min:0',
+            'is_active' => 'nullable|boolean',
             'default_shipping_cost' => 'nullable|numeric|min:0',
         ]);
 
@@ -113,12 +113,12 @@ final class DeliveryGeographyController extends Controller
 
         $this->audit->record(
             companyId: Auth::user()?->company_id ?? '',
-            module:    'delivery_geography',
-            category:  'geography',
-            action:    'update',
-            oldValue:  $old,
-            newValue:  $geography->fresh()?->toArray() ?? [],
-            brandId:   $brandId,
+            module: 'delivery_geography',
+            category: 'geography',
+            action: 'update',
+            oldValue: $old,
+            newValue: $geography->fresh()?->toArray() ?? [],
+            brandId: $brandId,
         );
 
         return $this->updated($geography->load('zones'), 'Governorate updated.');
@@ -130,12 +130,12 @@ final class DeliveryGeographyController extends Controller
 
         $this->audit->record(
             companyId: Auth::user()?->company_id ?? '',
-            module:    'delivery_geography',
-            category:  'geography',
-            action:    'delete',
-            oldValue:  $geography->toArray(),
-            newValue:  null,
-            brandId:   $brandId,
+            module: 'delivery_geography',
+            category: 'geography',
+            action: 'delete',
+            oldValue: $geography->toArray(),
+            newValue: null,
+            brandId: $brandId,
         );
 
         $geography->delete();

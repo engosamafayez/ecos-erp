@@ -14,30 +14,30 @@ use Modules\Admin\Configuration\Domain\Models\ConfigAuditEntry;
 final class ConfigAuditService
 {
     public function record(
-        string  $companyId,
-        string  $module,
-        string  $category,
-        string  $action,
-        mixed   $oldValue,
-        mixed   $newValue,
-        ?string $brandId   = null,
+        string $companyId,
+        string $module,
+        string $category,
+        string $action,
+        mixed $oldValue,
+        mixed $newValue,
+        ?string $brandId = null,
         ?string $configKey = null,
-        ?string $reason    = null,
+        ?string $reason = null,
     ): ConfigAuditEntry {
         $user = Auth::user();
 
         return ConfigAuditEntry::create([
-            'company_id'  => $companyId,
-            'brand_id'    => $brandId,
-            'module'      => $module,
-            'category'    => $category,
-            'config_key'  => $configKey,
-            'old_value'   => $oldValue !== null ? (is_array($oldValue) ? $oldValue : ['value' => $oldValue]) : null,
-            'new_value'   => $newValue !== null ? (is_array($newValue) ? $newValue : ['value' => $newValue]) : null,
-            'action'      => $action,
-            'actor_id'    => $user?->id,
-            'actor_name'  => $user?->name,
-            'reason'      => $reason,
+            'company_id' => $companyId,
+            'brand_id' => $brandId,
+            'module' => $module,
+            'category' => $category,
+            'config_key' => $configKey,
+            'old_value' => $oldValue !== null ? (is_array($oldValue) ? $oldValue : ['value' => $oldValue]) : null,
+            'new_value' => $newValue !== null ? (is_array($newValue) ? $newValue : ['value' => $newValue]) : null,
+            'action' => $action,
+            'actor_id' => $user?->id,
+            'actor_name' => $user?->name,
+            'reason' => $reason,
             'occurred_at' => now(),
         ]);
     }

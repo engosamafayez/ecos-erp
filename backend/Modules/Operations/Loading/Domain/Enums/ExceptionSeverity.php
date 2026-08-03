@@ -6,8 +6,8 @@ namespace Modules\Operations\Loading\Domain\Enums;
 
 enum ExceptionSeverity: string
 {
-    case Low      = 'low';
-    case Medium   = 'medium';
+    case Low = 'low';
+    case Medium = 'medium';
     case Critical = 'critical';
 
     public function isCritical(): bool

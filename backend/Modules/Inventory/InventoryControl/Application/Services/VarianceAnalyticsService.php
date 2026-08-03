@@ -46,11 +46,11 @@ final class VarianceAnalyticsService
             ->limit($limit)
             ->get()
             ->map(fn ($r) => [
-                'product_id'           => $r->product_id,
-                'product_name'         => $r->product_name,
-                'product_sku'          => $r->product_sku,
-                'variance_count'       => (int) $r->variance_count,
-                'total_variance_qty'   => round((float) $r->total_variance_qty, 4),
+                'product_id' => $r->product_id,
+                'product_name' => $r->product_name,
+                'product_sku' => $r->product_sku,
+                'variance_count' => (int) $r->variance_count,
+                'total_variance_qty' => round((float) $r->total_variance_qty, 4),
                 'total_variance_value' => round((float) $r->total_variance_value, 2),
             ])
             ->all();
@@ -75,10 +75,10 @@ final class VarianceAnalyticsService
             ->orderByRaw('SUM(ABS(icl.variance_value)) DESC')
             ->get()
             ->map(fn ($r) => [
-                'warehouse_id'       => $r->warehouse_id,
-                'warehouse_name'     => $r->warehouse_name,
-                'adj_in_value'       => round((float) $r->adj_in_value, 2),
-                'adj_out_value'      => round((float) $r->adj_out_value, 2),
+                'warehouse_id' => $r->warehouse_id,
+                'warehouse_name' => $r->warehouse_name,
+                'adj_in_value' => round((float) $r->adj_in_value, 2),
+                'adj_out_value' => round((float) $r->adj_out_value, 2),
                 'net_variance_value' => round((float) $r->net_variance_value, 2),
             ])
             ->all();
@@ -104,10 +104,10 @@ final class VarianceAnalyticsService
             ->orderByRaw('SUM(ABS(icl.variance_value)) DESC')
             ->get()
             ->map(fn ($r) => [
-                'category_id'        => $r->category_id,
-                'category_name'      => $r->category_name,
-                'adj_in_value'       => round((float) $r->adj_in_value, 2),
-                'adj_out_value'      => round((float) $r->adj_out_value, 2),
+                'category_id' => $r->category_id,
+                'category_name' => $r->category_name,
+                'adj_in_value' => round((float) $r->adj_in_value, 2),
+                'adj_out_value' => round((float) $r->adj_out_value, 2),
                 'net_variance_value' => round((float) $r->net_variance_value, 2),
             ])
             ->all();
@@ -142,10 +142,10 @@ final class VarianceAnalyticsService
             $key = Carbon::now()->subMonths($i)->format('Y-m');
             $row = $rows->get($key);
             $months[] = [
-                'month'          => $key,
-                'adj_in_value'   => round((float) ($row?->adj_in_value ?? 0), 2),
-                'adj_out_value'  => round((float) ($row?->adj_out_value ?? 0), 2),
-                'net_variance'   => round((float) ($row?->net_variance ?? 0), 2),
+                'month' => $key,
+                'adj_in_value' => round((float) ($row?->adj_in_value ?? 0), 2),
+                'adj_out_value' => round((float) ($row?->adj_out_value ?? 0), 2),
+                'net_variance' => round((float) ($row?->net_variance ?? 0), 2),
             ];
         }
 

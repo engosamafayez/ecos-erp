@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Domain\Contracts;
 
 /**
@@ -13,8 +15,8 @@ interface PredictionHookInterface
      * Convention: keys mirror the entity state keys; each value MAY carry a
      * confidence meta-key (e.g. ['status' => 'converted', '_confidence' => 0.82]).
      *
-     * @param array $currentState      Reconstructed state as of now
-     * @param array $historicalEvents  Ordered array of past BusinessEvent arrays
+     * @param  array  $currentState  Reconstructed state as of now
+     * @param  array  $historicalEvents  Ordered array of past BusinessEvent arrays
      */
     public function predict(array $currentState, array $historicalEvents): array;
 

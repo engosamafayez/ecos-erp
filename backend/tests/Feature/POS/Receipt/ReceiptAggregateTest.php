@@ -6,6 +6,7 @@ namespace Tests\Feature\POS\Receipt;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use InvalidArgumentException;
 use Modules\POS\Receipt\Domain\Enums\ReceiptStatus;
 use Modules\POS\Receipt\Domain\Enums\ReceiptType;
 use Modules\POS\Receipt\Domain\Enums\ReprintReason;
@@ -26,7 +27,7 @@ final class ReceiptAggregateTest extends TestCase
 
     public function test_rejects_empty_receipt_number(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Receipt number cannot be empty');
 
         $this->makeReceipt(receiptNumber: '');
@@ -34,7 +35,7 @@ final class ReceiptAggregateTest extends TestCase
 
     public function test_rejects_empty_original_transaction_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Original transaction ID cannot be empty');
 
         $this->makeReceipt(originalTransactionId: '');
@@ -42,7 +43,7 @@ final class ReceiptAggregateTest extends TestCase
 
     public function test_rejects_empty_original_transaction_number(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Original transaction number cannot be empty');
 
         $this->makeReceipt(originalTransactionNumber: '');
@@ -50,7 +51,7 @@ final class ReceiptAggregateTest extends TestCase
 
     public function test_rejects_empty_terminal_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Terminal ID cannot be empty');
 
         $this->makeReceipt(terminalId: '');
@@ -58,7 +59,7 @@ final class ReceiptAggregateTest extends TestCase
 
     public function test_rejects_empty_cashier_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Cashier ID cannot be empty');
 
         $this->makeReceipt(cashierId: '');
@@ -66,7 +67,7 @@ final class ReceiptAggregateTest extends TestCase
 
     public function test_rejects_empty_line_items(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('at least one line item');
 
         $this->makeReceipt(lineItems: []);
@@ -74,7 +75,7 @@ final class ReceiptAggregateTest extends TestCase
 
     public function test_rejects_non_instance_line_item(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ReceiptLineItem instance');
 
         $this->makeReceipt(lineItems: ['not-a-line-item']);
@@ -82,7 +83,7 @@ final class ReceiptAggregateTest extends TestCase
 
     public function test_rejects_non_instance_payment(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('ReceiptPayment instance');
 
         $this->makeReceipt(payments: ['not-a-payment']);
@@ -118,7 +119,7 @@ final class ReceiptAggregateTest extends TestCase
     public function test_issue_fires_receipt_issued_event(): void
     {
         $receipt = $this->makeReceipt();
-        $events  = $receipt->pullDomainEvents();
+        $events = $receipt->pullDomainEvents();
 
         $this->assertCount(1, $events);
         $this->assertInstanceOf(ReceiptIssued::class, $events[0]);
@@ -157,8 +158,8 @@ final class ReceiptAggregateTest extends TestCase
         $records = $receipt->getReprintRecords();
 
         $this->assertCount(1, $records);
-        $this->assertSame('cashier-1',        $records[0]->cashierId);
-        $this->assertSame('term-1',           $records[0]->terminalId);
+        $this->assertSame('cashier-1', $records[0]->cashierId);
+        $this->assertSame('term-1', $records[0]->terminalId);
         $this->assertSame('customer_request', $records[0]->reason);
     }
 
@@ -188,7 +189,7 @@ final class ReceiptAggregateTest extends TestCase
 
     public function test_reprint_throws_when_limit_exceeded(): void
     {
-        $receipt    = $this->makeReceipt();
+        $receipt = $this->makeReceipt();
         $maxReprints = 2;
 
         $receipt->reprint('cashier-1', 'term-1', ReprintReason::CustomerRequest, $maxReprints);
@@ -233,7 +234,7 @@ final class ReceiptAggregateTest extends TestCase
         $this->assertCount(1, $events);
         $this->assertInstanceOf(ReceiptVoided::class, $events[0]);
         $this->assertSame('cashier-1', $events[0]->voidedBy);
-        $this->assertSame('Error',     $events[0]->voidReason);
+        $this->assertSame('Error', $events[0]->voidReason);
     }
 
     public function test_void_stores_cashier_and_reason(): void
@@ -241,7 +242,7 @@ final class ReceiptAggregateTest extends TestCase
         $receipt = $this->makeReceipt();
         $receipt->void('cashier-2', 'Printed in error');
 
-        $this->assertSame('cashier-2',       $receipt->voided_by);
+        $this->assertSame('cashier-2', $receipt->voided_by);
         $this->assertSame('Printed in error', $receipt->void_reason);
         $this->assertNotNull($receipt->voided_at);
     }
@@ -280,7 +281,7 @@ final class ReceiptAggregateTest extends TestCase
         $totals = $receipt->getTotals();
 
         $this->assertSame('114.00', $totals->totalAmount);
-        $this->assertSame('EGP',    $totals->currency);
+        $this->assertSame('EGP', $totals->currency);
     }
 
     public function test_get_payments_returns_array(): void
@@ -293,34 +294,34 @@ final class ReceiptAggregateTest extends TestCase
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private function makeReceipt(
-        string  $receiptNumber            = 'RCP-20260701-T01-00001',
-        string  $originalTransactionId    = 'sale-1',
-        string  $originalTransactionNumber = 'SALE-0001',
-        string  $terminalId               = 'term-1',
-        string  $cashierId                = 'cashier-1',
-        string  $currency                 = 'EGP',
-        ?array  $lineItems                = null,
-        ?array  $payments                 = null,
+        string $receiptNumber = 'RCP-20260701-T01-00001',
+        string $originalTransactionId = 'sale-1',
+        string $originalTransactionNumber = 'SALE-0001',
+        string $terminalId = 'term-1',
+        string $cashierId = 'cashier-1',
+        string $currency = 'EGP',
+        ?array $lineItems = null,
+        ?array $payments = null,
     ): Receipt {
         return Receipt::issue(
-            receiptNumber:             $receiptNumber,
-            type:                      ReceiptType::Sale,
-            originalTransactionId:     $originalTransactionId,
+            receiptNumber: $receiptNumber,
+            type: ReceiptType::Sale,
+            originalTransactionId: $originalTransactionId,
             originalTransactionNumber: $originalTransactionNumber,
-            terminalId:                $terminalId,
-            sessionId:                 'sess-1',
-            shiftId:                   'shift-1',
-            cashierId:                 $cashierId,
-            cashierName:               'Test Cashier',
-            customerId:                null,
-            customerName:              null,
-            currency:                  $currency,
-            lineItems:                 $lineItems ?? [
+            terminalId: $terminalId,
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            cashierId: $cashierId,
+            cashierName: 'Test Cashier',
+            customerId: null,
+            customerName: null,
+            currency: $currency,
+            lineItems: $lineItems ?? [
                 ReceiptLineItem::of('prod-1', 'Blue Shirt', 'SKU-001', '1', '100.00', '100.00', 'EGP'),
             ],
-            totals:                    ReceiptTotals::of('100.00', '0.00', '14.00', '114.00', '120.00', '6.00', 'EGP'),
-            payments:                  $payments ?? [ReceiptPayment::of('cash', '120.00', 'EGP')],
-            issuedAt:                  new DateTimeImmutable('2026-07-01 10:00:00', new DateTimeZone('UTC')),
+            totals: ReceiptTotals::of('100.00', '0.00', '14.00', '114.00', '120.00', '6.00', 'EGP'),
+            payments: $payments ?? [ReceiptPayment::of('cash', '120.00', 'EGP')],
+            issuedAt: new DateTimeImmutable('2026-07-01 10:00:00', new DateTimeZone('UTC')),
         );
     }
 }

@@ -16,18 +16,18 @@ final class SessionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'                 => $this->id,
-            'cashier_id'         => $this->cashier_id,
-            'company_id'         => $this->company_id,
-            'channel_id'         => $this->channel_id,
-            'warehouse_id'       => $this->warehouse_id,
-            'status'             => $this->status->value,
+            'id' => $this->id,
+            'cashier_id' => $this->cashier_id,
+            'company_id' => $this->company_id,
+            'channel_id' => $this->channel_id,
+            'warehouse_id' => $this->warehouse_id,
+            'status' => $this->status->value,
             'device_fingerprint' => $this->device_fingerprint,
-            'device_type'        => $this->device_type?->value,
-            'ip_address'         => $this->ip_address,
-            'opened_at'          => $this->opened_at?->toIso8601String(),
-            'suspended_at'       => $this->suspended_at?->toIso8601String(),
-            'closed_at'          => $this->closed_at?->toIso8601String(),
+            'device_type' => $this->device_type?->value,
+            'ip_address' => $this->ip_address,
+            'opened_at' => $this->opened_at?->toIso8601String(),
+            'suspended_at' => $this->suspended_at?->toIso8601String(),
+            'closed_at' => $this->closed_at?->toIso8601String(),
         ];
     }
 }

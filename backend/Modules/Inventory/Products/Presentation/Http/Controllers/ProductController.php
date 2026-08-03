@@ -6,27 +6,29 @@ namespace Modules\Inventory\Products\Presentation\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
+use BackedEnum;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Modules\Commerce\ProductMappings\Domain\Enums\SyncStatus;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
-use Modules\MasterData\Categories\Domain\Models\Category;
+use Modules\CostManagement\Domain\Enums\CostUpdateSource;
+use Modules\CostManagement\Domain\Services\MaterialCostService;
 use Modules\Inventory\Products\Application\Actions\CreateProductAction;
 use Modules\Inventory\Products\Application\Actions\DeleteProductAction;
 use Modules\Inventory\Products\Application\Actions\GetProductAction;
 use Modules\Inventory\Products\Application\Actions\ListProductsAction;
-use Modules\CostManagement\Domain\Enums\CostUpdateSource;
-use Modules\CostManagement\Domain\Services\MaterialCostService;
 use Modules\Inventory\Products\Application\Actions\UpdateProductAction;
 use Modules\Inventory\Products\Application\DTO\ProductDTO;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ManufacturingAvailabilityService;
 use Modules\Inventory\Products\Presentation\Http\Requests\PatchProductRequest;
 use Modules\Inventory\Products\Presentation\Http\Requests\StoreProductRequest;
 use Modules\Inventory\Products\Presentation\Http\Requests\UpdateProductRequest;
 use Modules\Inventory\Products\Presentation\Http\Resources\ProductResource;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ManufacturingAvailabilityService;
+use Modules\MasterData\Categories\Domain\Models\Category;
+use Throwable;
 
 /**
  * Products CRUD endpoints. Controllers stay thin — behavior lives in actions,
@@ -39,26 +41,26 @@ final class ProductController extends Controller
     public function index(Request $request, ListProductsAction $action): JsonResponse
     {
         $filters = [
-            'search'         => $request->query('search'),
-            'category_id'    => $request->query('category_id'),
-            'unit_id'        => $request->query('unit_id'),
-            'product_type'   => $request->query('product_type'),
-            'product_types'  => $request->query('product_types'),
-            'status'         => $request->query('status', 'all'),
-            'stock_status'   => $request->query('stock_status'),
+            'search' => $request->query('search'),
+            'category_id' => $request->query('category_id'),
+            'unit_id' => $request->query('unit_id'),
+            'product_type' => $request->query('product_type'),
+            'product_types' => $request->query('product_types'),
+            'status' => $request->query('status', 'all'),
+            'stock_status' => $request->query('stock_status'),
             'allow_negative' => $request->query('allow_negative'),
-            'warehouse_id'   => $request->query('warehouse_id'),
-            'sort_by'             => $request->query('sort_by', 'created_at'),
-            'sort_dir'            => $request->query('sort_dir', 'desc'),
-            'per_page'            => $request->query('per_page', 10),
-            'brand_id'            => $request->query('brand_id'),
-            'company_id'          => $request->query('company_id'),  // resolves via brand.company_id
-            'channel_id'          => $request->query('channel_id'),
-            'eligible_for_recipe'  => $request->boolean('eligible_for_recipe'),
-            'has_recipe'           => $request->query('has_recipe'),
-            'needs_pricing_review'    => $request->boolean('needs_pricing_review'),
-            'low_margin'              => $request->boolean('low_margin'),
-            'manufacturing_ready'     => $request->boolean('manufacturing_ready'),
+            'warehouse_id' => $request->query('warehouse_id'),
+            'sort_by' => $request->query('sort_by', 'created_at'),
+            'sort_dir' => $request->query('sort_dir', 'desc'),
+            'per_page' => $request->query('per_page', 10),
+            'brand_id' => $request->query('brand_id'),
+            'company_id' => $request->query('company_id'),  // resolves via brand.company_id
+            'channel_id' => $request->query('channel_id'),
+            'eligible_for_recipe' => $request->boolean('eligible_for_recipe'),
+            'has_recipe' => $request->query('has_recipe'),
+            'needs_pricing_review' => $request->boolean('needs_pricing_review'),
+            'low_margin' => $request->boolean('low_margin'),
+            'manufacturing_ready' => $request->boolean('manufacturing_ready'),
             'manufacturing_availability' => $request->query('manufacturing_availability'),
         ];
 
@@ -82,8 +84,8 @@ final class ProductController extends Controller
         if ($model->product_type === Product::TYPE_FINISHED_GOOD) {
             $result = $availabilityService->evaluate($model);
             $model->manufacturing_availability = $result['status'];
-            $model->blocking_materials         = $result['blocking_materials'];
-            $model->recipe_components          = $result['components'];
+            $model->blocking_materials = $result['blocking_materials'];
+            $model->recipe_components = $result['components'];
         }
 
         return $this->success(new ProductResource($model));
@@ -96,8 +98,8 @@ final class ProductController extends Controller
     ): JsonResponse {
         $validated = $request->validated();
 
-        [$productModel, $message] = DB::transaction(function () use ($request, $validated, $action, $costService): array {
-            $result       = $action->execute(ProductDTO::fromArray($validated));
+        [$productModel, $message] = DB::transaction(function () use ($request, $validated, $action): array {
+            $result = $action->execute(ProductDTO::fromArray($validated));
             $productModel = $result->data();
 
             $manualCost = isset($validated['manual_cost']) && is_numeric($validated['manual_cost'])
@@ -145,13 +147,13 @@ final class ProductController extends Controller
             }
         }
         if (! $request->has('cost_source')) {
-            $validated['cost_source'] = $existing->cost_source instanceof \BackedEnum
+            $validated['cost_source'] = $existing->cost_source instanceof BackedEnum
                 ? $existing->cost_source->value
                 : (string) $existing->cost_source;
         }
 
         [$productModel, $message] = DB::transaction(function () use ($request, $product, $validated, $action, $costService): array {
-            $result       = $action->execute($product, ProductDTO::fromArray($validated));
+            $result = $action->execute($product, ProductDTO::fromArray($validated));
             $productModel = $result->data();
 
             $this->applyExtendedFields($request, $productModel, $validated);
@@ -177,8 +179,8 @@ final class ProductController extends Controller
         if ($productModel->product_type === Product::TYPE_FINISHED_GOOD) {
             $result = $availabilityService->evaluate($productModel);
             $productModel->manufacturing_availability = $result['status'];
-            $productModel->blocking_materials         = $result['blocking_materials'];
-            $productModel->recipe_components          = $result['components'];
+            $productModel->blocking_materials = $result['blocking_materials'];
+            $productModel->recipe_components = $result['components'];
         }
 
         return $this->updated(new ProductResource($productModel), $message);
@@ -189,7 +191,7 @@ final class ProductController extends Controller
         string $product,
         MaterialCostService $costService,
     ): JsonResponse {
-        $model     = Product::findOrFail($product);
+        $model = Product::findOrFail($product);
         $validated = $request->validated();
 
         if (isset($validated['manual_cost'])) {
@@ -225,7 +227,7 @@ final class ProductController extends Controller
 
         // ── Product type scope ────────────────────────────────────────────────
         $productTypes = trim((string) ($request->query('product_types') ?? ''));
-        $productType  = trim((string) ($request->query('product_type') ?? ''));
+        $productType = trim((string) ($request->query('product_type') ?? ''));
 
         if ($productTypes !== '') {
             $validTypes = array_values(array_filter(
@@ -246,44 +248,66 @@ final class ProductController extends Controller
 
         $warehouseId = trim((string) ($request->query('warehouse_id') ?? ''));
 
+        // Canonical inventory summary flag (EPIC-DATA-CONSOLIDATION-001, Phase B/D).
+        // OFF (default): legacy sum-then-clamp + material_cost — byte-identical.
+        // ON: canonical clamp-per-warehouse-then-sum + FIFO value.
+        $canonicalSummary = (bool) config('inventory_ledger.canonical_summary');
+
         $inventorySubquery = DB::table('inventory_items')
             ->whereNull('deleted_at')
-            ->selectRaw('product_id, SUM(on_hand_qty) as inv_on_hand, SUM(reserved_qty) as inv_reserved')
+            ->selectRaw('product_id, SUM(on_hand_qty) as inv_on_hand, SUM(reserved_qty) as inv_reserved, SUM(GREATEST(on_hand_qty - reserved_qty, 0)) as inv_available')
             ->groupBy('product_id');
 
         if ($warehouseId !== '') {
             $inventorySubquery->where('warehouse_id', $warehouseId);
         }
 
+        $totalAvailableExpr = $canonicalSummary
+            ? 'COALESCE(SUM(inv_agg.inv_available), 0)'
+            : 'GREATEST(COALESCE(SUM(inv_agg.inv_on_hand), 0) - COALESCE(SUM(inv_agg.inv_reserved), 0), 0)';
+
+        $totalValueExpr = $canonicalSummary
+            ? 'COALESCE(SUM(COALESCE(fifo_agg.fifo_value, 0)), 0)'
+            : 'COALESCE(SUM(inv_agg.inv_on_hand * COALESCE(products.material_cost, 0)), 0)';
+
+        $query->leftJoinSub($inventorySubquery, 'inv_agg', 'products.id', '=', 'inv_agg.product_id');
+
+        if ($canonicalSummary) {
+            $fifoSubquery = DB::table('inventory_receipt_layers')
+                ->where('remaining_qty', '>', 0)
+                ->selectRaw('product_id, SUM(remaining_qty * landed_unit_cost) as fifo_value')
+                ->groupBy('product_id');
+            $query->leftJoinSub($fifoSubquery, 'fifo_agg', 'products.id', '=', 'fifo_agg.product_id');
+        }
+
         $result = $query
-            ->leftJoinSub($inventorySubquery, 'inv_agg', 'products.id', '=', 'inv_agg.product_id')
-            ->selectRaw('
+            ->selectRaw("
                 COUNT(*) as total_count,
                 COALESCE(SUM(inv_agg.inv_on_hand), 0) as total_on_hand,
                 COALESCE(SUM(inv_agg.inv_reserved), 0) as total_reserved,
-                GREATEST(COALESCE(SUM(inv_agg.inv_on_hand), 0) - COALESCE(SUM(inv_agg.inv_reserved), 0), 0) as total_available,
-                COALESCE(SUM(inv_agg.inv_on_hand * COALESCE(products.material_cost, 0)), 0) as total_inventory_value
-            ')
+                {$totalAvailableExpr} as total_available,
+                {$totalValueExpr} as total_inventory_value
+            ")
             ->first();
 
         return $this->success([
-            'total_count'           => (int) ($result->total_count ?? 0),
-            'total_on_hand'         => (float) ($result->total_on_hand ?? 0),
-            'total_reserved'        => (float) ($result->total_reserved ?? 0),
-            'total_available'       => (float) ($result->total_available ?? 0),
+            'total_count' => (int) ($result->total_count ?? 0),
+            'total_on_hand' => (float) ($result->total_on_hand ?? 0),
+            'total_reserved' => (float) ($result->total_reserved ?? 0),
+            'total_available' => (float) ($result->total_available ?? 0),
             'total_inventory_value' => (float) ($result->total_inventory_value ?? 0),
         ]);
     }
 
     public function nextSku(Request $request): JsonResponse
     {
-        $prefix    = strtoupper(trim((string) $request->query('prefix', 'RM')));
+        $prefix = strtoupper(trim((string) $request->query('prefix', 'RM')));
         $companyId = $request->user()?->company_id;
 
         $last = Product::query()
             ->whereHas('brand', fn ($q) => $q->where('company_id', $companyId))
             ->where('sku', 'like', "{$prefix}-%")
-            ->orderByRaw("CAST(SUBSTRING(sku, " . (strlen($prefix) + 2) . ") AS UNSIGNED) DESC")
+            ->orderByRaw('CAST(SUBSTRING(sku, '.(strlen($prefix) + 2).') AS UNSIGNED) DESC')
             ->value('sku');
 
         $nextNum = 1;
@@ -292,7 +316,7 @@ final class ProductController extends Controller
             $nextNum = $numPart + 1;
         }
 
-        return $this->success(['sku' => $prefix . '-' . str_pad((string) $nextNum, 6, '0', STR_PAD_LEFT)]);
+        return $this->success(['sku' => $prefix.'-'.str_pad((string) $nextNum, 6, '0', STR_PAD_LEFT)]);
     }
 
     /**
@@ -305,32 +329,35 @@ final class ProductController extends Controller
             'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
         ]);
 
-        $handle  = fopen($request->file('file')->getPathname(), 'r');
+        $handle = fopen($request->file('file')->getPathname(), 'r');
         $headers = fgetcsv($handle);
 
         if ($headers === false || $headers === null) {
             fclose($handle);
+
             return $this->error('The CSV file is empty or has no header row.', 422);
         }
 
-        $headers     = array_map('trim', $headers);
-        $required    = ['sku', 'name', 'product_type'];
+        $headers = array_map('trim', $headers);
+        $required = ['sku', 'name', 'product_type'];
         $missingCols = array_diff($required, $headers);
 
         if ($missingCols !== []) {
             fclose($handle);
-            return $this->error('Missing required columns: ' . implode(', ', $missingCols), 422);
+
+            return $this->error('Missing required columns: '.implode(', ', $missingCols), 422);
         }
 
         $successCount = 0;
-        $errors       = [];
-        $rowNum       = 1;
+        $errors = [];
+        $rowNum = 1;
 
         while (($row = fgetcsv($handle)) !== false) {
             $rowNum++;
 
             if (count($row) !== count($headers)) {
                 $errors[] = ['row' => $rowNum, 'message' => 'Column count mismatch.'];
+
                 continue;
             }
 
@@ -338,24 +365,25 @@ final class ProductController extends Controller
 
             $isMaterialRow = in_array(trim($data['product_type'] ?? ''), ['raw_material', 'packaging_material'], true);
             $validation = Validator::make($data, [
-                'sku'          => ['required', 'string', 'max:100'],
-                'name'         => ['required', 'string', 'max:255'],
+                'sku' => ['required', 'string', 'max:100'],
+                'name' => ['required', 'string', 'max:255'],
                 'product_type' => ['required', 'string', 'in:finished_good,raw_material,packaging_material'],
-                'brand_id'     => $isMaterialRow
+                'brand_id' => $isMaterialRow
                     ? ['nullable', 'uuid', 'exists:brands,id']
                     : ['required', 'uuid', 'exists:brands,id'],
             ]);
 
             if ($validation->fails()) {
                 $errors[] = ['row' => $rowNum, 'message' => implode('; ', $validation->errors()->all())];
+
                 continue;
             }
 
             try {
-                $sku        = trim($data['sku']);
+                $sku = trim($data['sku']);
                 $categoryId = null;
 
-                if (!empty($data['category_name'])) {
+                if (! empty($data['category_name'])) {
                     $cat = Category::query()
                         ->where('name', trim($data['category_name']))
                         ->value('id');
@@ -363,17 +391,17 @@ final class ProductController extends Controller
                 }
 
                 $payload = array_filter([
-                    'brand_id'     => trim($data['brand_id']),
-                    'name'         => trim($data['name']),
+                    'brand_id' => trim($data['brand_id']),
+                    'name' => trim($data['name']),
                     'product_type' => trim($data['product_type']),
-                    'category_id'  => $categoryId,
+                    'category_id' => $categoryId,
                     'regular_price' => isset($data['regular_price']) && is_numeric($data['regular_price'])
                         ? (float) $data['regular_price'] : null,
-                    'sale_price'   => isset($data['sale_price']) && is_numeric($data['sale_price'])
+                    'sale_price' => isset($data['sale_price']) && is_numeric($data['sale_price'])
                         ? (float) $data['sale_price'] : null,
                     'stock_status' => isset($data['stock_status']) && in_array($data['stock_status'], ['instock', 'outofstock', 'onbackorder'])
                         ? $data['stock_status'] : null,
-                    'is_active'    => true,
+                    'is_active' => true,
                 ], fn ($v) => $v !== null);
 
                 $existing = Product::query()->where('sku', $sku)->whereNull('deleted_at')->first();
@@ -385,7 +413,7 @@ final class ProductController extends Controller
                 }
 
                 $successCount++;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $errors[] = ['row' => $rowNum, 'message' => $e->getMessage()];
             }
         }
@@ -394,7 +422,7 @@ final class ProductController extends Controller
 
         return $this->success([
             'success' => $successCount,
-            'errors'  => $errors,
+            'errors' => $errors,
         ]);
     }
 
@@ -405,7 +433,7 @@ final class ProductController extends Controller
      * @param  array<string, mixed>  $validated
      */
     private function applyExtendedFields(
-        \Illuminate\Http\Request $request,
+        Request $request,
         Product $product,
         array $validated,
     ): void {
@@ -413,7 +441,7 @@ final class ProductController extends Controller
             'regular_price', 'sale_price', 'short_description', 'long_description', 'stock_status',
             'pricing_mode', 'custom_target_margin', 'custom_markup', 'custom_discount_pct',
         ];
-        $extra  = [];
+        $extra = [];
 
         foreach ($fields as $field) {
             if ($request->has($field)) {
@@ -453,7 +481,7 @@ final class ProductController extends Controller
                 ->toArray();
 
             if ($wrongBrand !== []) {
-                abort(422, 'Cross-brand channel assignment is prohibited. Channels not belonging to this product\'s brand: ' . implode(', ', $wrongBrand));
+                abort(422, 'Cross-brand channel assignment is prohibited. Channels not belonging to this product\'s brand: '.implode(', ', $wrongBrand));
             }
         }
 
@@ -461,7 +489,7 @@ final class ProductController extends Controller
             ->pluck('channel_id')
             ->toArray();
 
-        $toAdd    = array_diff($channelIds, $existing);
+        $toAdd = array_diff($channelIds, $existing);
         $toRemove = array_diff($existing, $channelIds);
 
         foreach ($toAdd as $channelId) {
@@ -478,14 +506,14 @@ final class ProductController extends Controller
                 }
                 $existing->update([
                     'external_product_id' => '',
-                    'sync_status'         => SyncStatus::Pending->value,
+                    'sync_status' => SyncStatus::Pending->value,
                 ]);
             } else {
                 ProductMapping::create([
-                    'product_id'          => $product->id,
-                    'channel_id'          => $channelId,
+                    'product_id' => $product->id,
+                    'channel_id' => $channelId,
                     'external_product_id' => '',
-                    'sync_status'         => SyncStatus::Pending->value,
+                    'sync_status' => SyncStatus::Pending->value,
                 ]);
             }
         }

@@ -26,12 +26,19 @@ use Tests\TestCase;
 final class ProcessSaleServiceTest extends TestCase
 {
     private CartRepositoryInterface $cartRepo;
+
     private PaymentRepositoryInterface $paymentRepo;
+
     private SaleRepositoryInterface $saleRepo;
+
     private ReceiptRepositoryInterface $receiptRepo;
+
     private ReceiptNumberingStrategyInterface $numbering;
+
     private DomainEventPublisherInterface $publisher;
+
     private SessionRepositoryInterface $sessionRepo;
+
     private ProcessSaleService $service;
 
     protected function setUp(): void
@@ -39,24 +46,24 @@ final class ProcessSaleServiceTest extends TestCase
         parent::setUp();
 
         DB::shouldReceive('transaction')
-            ->andReturnUsing(fn(callable $cb) => $cb());
+            ->andReturnUsing(fn (callable $cb) => $cb());
 
-        $this->cartRepo    = $this->createMock(CartRepositoryInterface::class);
+        $this->cartRepo = $this->createMock(CartRepositoryInterface::class);
         $this->paymentRepo = $this->createMock(PaymentRepositoryInterface::class);
-        $this->saleRepo    = $this->createMock(SaleRepositoryInterface::class);
+        $this->saleRepo = $this->createMock(SaleRepositoryInterface::class);
         $this->receiptRepo = $this->createMock(ReceiptRepositoryInterface::class);
-        $this->numbering   = $this->createMock(ReceiptNumberingStrategyInterface::class);
-        $this->publisher   = $this->createMock(DomainEventPublisherInterface::class);
+        $this->numbering = $this->createMock(ReceiptNumberingStrategyInterface::class);
+        $this->publisher = $this->createMock(DomainEventPublisherInterface::class);
         $this->sessionRepo = $this->createMock(SessionRepositoryInterface::class);
 
         $this->numbering->method('next')->willReturn('RCP-20260701-TRM001-00001');
 
         // Provide a session with company + warehouse context so SaleFinalized can be built.
-        $session               = new Session();
-        $session->id           = 'sess-1';
-        $session->company_id   = 'company-unit-001';
+        $session = new Session;
+        $session->id = 'sess-1';
+        $session->company_id = 'company-unit-001';
         $session->warehouse_id = 'warehouse-unit-001';
-        $session->channel_id   = null;
+        $session->channel_id = null;
 
         $this->sessionRepo->method('findById')->willReturn($session);
 
@@ -110,9 +117,9 @@ final class ProcessSaleServiceTest extends TestCase
         $cart = $this->makeCartWithLine();
         $this->cartRepo->method('findById')->willReturn($cart);
         $this->paymentRepo->expects($this->once())->method('save')
-            ->willReturnCallback(fn($p) => $p->id = 'pay-unit-001');
+            ->willReturnCallback(fn ($p) => $p->id = 'pay-unit-001');
         $this->saleRepo->expects($this->once())->method('save')
-            ->willReturnCallback(fn($s) => $s->id = 'sale-unit-001');
+            ->willReturnCallback(fn ($s) => $s->id = 'sale-unit-001');
         $this->cartRepo->expects($this->once())->method('save')->with($cart);
         $this->receiptRepo->expects($this->once())->method('save');
         $this->publisher->method('publishAll');
@@ -127,8 +134,8 @@ final class ProcessSaleServiceTest extends TestCase
     {
         $cart = $this->makeCartWithLine();
         $this->cartRepo->method('findById')->willReturn($cart);
-        $this->paymentRepo->method('save')->willReturnCallback(fn($p) => $p->id = 'pay-unit-001');
-        $this->saleRepo->method('save')->willReturnCallback(fn($s) => $s->id = 'sale-unit-001');
+        $this->paymentRepo->method('save')->willReturnCallback(fn ($p) => $p->id = 'pay-unit-001');
+        $this->saleRepo->method('save')->willReturnCallback(fn ($s) => $s->id = 'sale-unit-001');
         $this->cartRepo->method('save');
         $this->receiptRepo->method('save');
         $this->publisher->method('publishAll');
@@ -137,16 +144,16 @@ final class ProcessSaleServiceTest extends TestCase
 
         $this->assertSame('100.00', $result->totalAmount);
         $this->assertSame('100.00', $result->amountPaid);
-        $this->assertSame('0.00',   $result->changeGiven);
-        $this->assertSame('EGP',    $result->currency);
+        $this->assertSame('0.00', $result->changeGiven);
+        $this->assertSame('EGP', $result->currency);
     }
 
     public function test_publishes_sale_and_receipt_events(): void
     {
         $cart = $this->makeCartWithLine();
         $this->cartRepo->method('findById')->willReturn($cart);
-        $this->paymentRepo->method('save')->willReturnCallback(fn($p) => $p->id = 'pay-unit-001');
-        $this->saleRepo->method('save')->willReturnCallback(fn($s) => $s->id = 'sale-unit-001');
+        $this->paymentRepo->method('save')->willReturnCallback(fn ($p) => $p->id = 'pay-unit-001');
+        $this->saleRepo->method('save')->willReturnCallback(fn ($s) => $s->id = 'sale-unit-001');
         $this->cartRepo->method('save');
         $this->receiptRepo->method('save');
 
@@ -154,7 +161,7 @@ final class ProcessSaleServiceTest extends TestCase
         $this->publisher
             ->expects($this->once())
             ->method('publishAll')
-            ->with($this->callback(fn(array $events) => count($events) >= 3));
+            ->with($this->callback(fn (array $events) => count($events) >= 3));
 
         $this->service->execute($this->makeCommand());
     }
@@ -163,8 +170,8 @@ final class ProcessSaleServiceTest extends TestCase
     {
         $cart = $this->makeCartWithLine();
         $this->cartRepo->method('findById')->willReturn($cart);
-        $this->paymentRepo->method('save')->willReturnCallback(fn($p) => $p->id = 'pay-unit-001');
-        $this->saleRepo->method('save')->willReturnCallback(fn($s) => $s->id = 'sale-unit-001');
+        $this->paymentRepo->method('save')->willReturnCallback(fn ($p) => $p->id = 'pay-unit-001');
+        $this->saleRepo->method('save')->willReturnCallback(fn ($s) => $s->id = 'sale-unit-001');
         $this->cartRepo->method('save');
         $this->receiptRepo->method('save');
 
@@ -178,29 +185,30 @@ final class ProcessSaleServiceTest extends TestCase
 
         $this->service->execute($this->makeCommand());
 
-        $eventNames = array_map(fn($e) => $e->eventName(), $capturedEvents);
+        $eventNames = array_map(fn ($e) => $e->eventName(), $capturedEvents);
         $this->assertContains('pos.sale.finalized', $eventNames);
     }
 
     private function makeCartWithLine(): Cart
     {
-        $cart     = Cart::open('sess-1', 'shift-1', 'term-1', 'cashier-1', 'EGP');
+        $cart = Cart::open('sess-1', 'shift-1', 'term-1', 'cashier-1', 'EGP');
         $cart->id = 'cart-unit-001';
         $cart->addLine('prod-1', 'Product A', 'SKU-001', Quantity::of('1'), Money::of('100.00', 'EGP'));
+
         return $cart;
     }
 
     private function makeCommand(): ProcessSaleCommand
     {
         return new ProcessSaleCommand(
-            cartId:      'cart-1',
-            sessionId:   'sess-1',
-            shiftId:     'shift-1',
-            terminalId:  'term-1',
-            cashierId:   'cashier-1',
-            customerId:  null,
-            currency:    'EGP',
-            payments:    [
+            cartId: 'cart-1',
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            terminalId: 'term-1',
+            cashierId: 'cashier-1',
+            customerId: null,
+            currency: 'EGP',
+            payments: [
                 ['type' => 'cash', 'amount' => '100.00', 'currency' => 'EGP'],
             ],
             cashierName: 'Ali Hassan',

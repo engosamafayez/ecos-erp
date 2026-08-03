@@ -24,7 +24,7 @@ final class NoProviderForContextException extends RuntimeException
     {
         return new self(
             "No rule provider registered for context type [{$contextType}]. "
-            . 'Call RuleProviderRegistryInterface::register() before orchestrating.',
+            .'Call RuleProviderRegistryInterface::register() before orchestrating.',
             $contextType,
         );
     }

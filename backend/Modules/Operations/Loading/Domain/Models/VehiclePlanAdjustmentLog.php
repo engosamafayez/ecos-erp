@@ -8,20 +8,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property string              $id
- * @property string              $company_id
- * @property string              $vehicle_plan_id
- * @property string              $action_type
- * @property string              $actor_id
- * @property string|null         $slot_id_from
- * @property string|null         $slot_id_to
- * @property string|null         $order_id
- * @property string|null         $vehicle_id_before
- * @property string|null         $vehicle_id_after
- * @property array|null          $before_state
- * @property array|null          $after_state
- * @property string              $reason
- * @property \Carbon\Carbon      $recorded_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $vehicle_plan_id
+ * @property string $action_type
+ * @property string $actor_id
+ * @property string|null $slot_id_from
+ * @property string|null $slot_id_to
+ * @property string|null $order_id
+ * @property string|null $vehicle_id_before
+ * @property string|null $vehicle_id_after
+ * @property array|null $before_state
+ * @property array|null $after_state
+ * @property string $reason
+ * @property \Carbon\Carbon $recorded_at
  */
 class VehiclePlanAdjustmentLog extends Model
 {
@@ -56,8 +56,8 @@ class VehiclePlanAdjustmentLog extends Model
     {
         return [
             'before_state' => 'array',
-            'after_state'  => 'array',
-            'recorded_at'  => 'datetime',
+            'after_state' => 'array',
+            'recorded_at' => 'datetime',
         ];
     }
 

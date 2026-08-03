@@ -17,22 +17,22 @@ use Modules\Manufacturing\ManufacturingExecution\Domain\Enums\TransactionStatus;
  * RC-10: UNIQUE(order_line_id, bom_id, bom_version_number) WHERE status != 'failed'
  * is enforced at the DB level once order_line_id is populated (Order integration — future).
  *
- * @property string                         $id
- * @property string                         $execution_id
- * @property string|null                    $decision_key
- * @property string|null                    $correlation_id
- * @property string                         $plan_id
- * @property string                         $product_id
- * @property string                         $warehouse_id
- * @property string|null                    $bom_id
- * @property int|null                       $bom_version_number
- * @property string|null                    $recipe_snapshot_hash
- * @property numeric-string                 $qty_produced
- * @property TransactionStatus              $status
- * @property string                         $executed_at
- * @property int|null                       $duration_ms
- * @property string|null                    $order_line_id
- * @property array|null                     $metadata
+ * @property string $id
+ * @property string $execution_id
+ * @property string|null $decision_key
+ * @property string|null $correlation_id
+ * @property string $plan_id
+ * @property string $product_id
+ * @property string $warehouse_id
+ * @property string|null $bom_id
+ * @property int|null $bom_version_number
+ * @property string|null $recipe_snapshot_hash
+ * @property numeric-string $qty_produced
+ * @property TransactionStatus $status
+ * @property string $executed_at
+ * @property int|null $duration_ms
+ * @property string|null $order_line_id
+ * @property array|null $metadata
  */
 class ManufacturingTransaction extends Model
 {
@@ -67,9 +67,9 @@ class ManufacturingTransaction extends Model
     protected function casts(): array
     {
         return [
-            'status'       => TransactionStatus::class,
+            'status' => TransactionStatus::class,
             'qty_produced' => 'decimal:4',
-            'metadata'     => 'array',
+            'metadata' => 'array',
         ];
     }
 }

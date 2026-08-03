@@ -19,11 +19,11 @@ final readonly class CreateWaveDTO
      * }> $orderLines
      */
     public function __construct(
-        public string  $companyId,
-        public string  $warehouseId,
-        public string  $planningDate,
-        public array   $orderLines,
-        public string  $actorId,
+        public string $companyId,
+        public string $warehouseId,
+        public string $planningDate,
+        public array $orderLines,
+        public string $actorId,
         public ?string $brandId = null,
         public ?string $channelId = null,
         public ?string $configVersionId = null,

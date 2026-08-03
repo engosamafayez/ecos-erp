@@ -1,4 +1,5 @@
 import { Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 
@@ -8,6 +9,8 @@ type PublishBadgeProps = {
 };
 
 export function PublishBadge({ published, className }: PublishBadgeProps) {
+  const { t } = useTranslation('products');
+
   if (published === null || published === undefined) {
     return <span className="text-muted-foreground text-xs">—</span>;
   }
@@ -21,7 +24,7 @@ export function PublishBadge({ published, className }: PublishBadgeProps) {
       )}
     >
       <Eye className="size-3 shrink-0" />
-      Published
+      {t($ => $.badges.published)}
     </span>
   ) : (
     <span
@@ -31,7 +34,7 @@ export function PublishBadge({ published, className }: PublishBadgeProps) {
       )}
     >
       <EyeOff className="size-3 shrink-0" />
-      Draft
+      {t($ => $.badges.draft)}
     </span>
   );
 }

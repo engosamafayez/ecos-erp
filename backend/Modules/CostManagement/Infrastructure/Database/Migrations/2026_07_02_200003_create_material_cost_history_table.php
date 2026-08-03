@@ -29,9 +29,9 @@ return new class extends Migration
 
             // The cost change itself
             $table->decimal('previous_cost', 15, 4)->nullable();
-            $table->decimal('new_cost',      15, 4);
-            $table->decimal('difference',    15, 4);         // new_cost − previous_cost
-            $table->decimal('change_pct',    8,  4)->nullable(); // null when previous_cost is null
+            $table->decimal('new_cost', 15, 4);
+            $table->decimal('difference', 15, 4);         // new_cost − previous_cost
+            $table->decimal('change_pct', 8, 4)->nullable(); // null when previous_cost is null
 
             // Update source
             $table->string('source', 30);                    // 'manual' | 'purchase_invoice'

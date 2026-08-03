@@ -7,7 +7,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         if (Schema::hasColumn('supplier_invoices', 'company_id')) {
@@ -21,12 +22,12 @@ return new class extends Migration {
         });
 
         // Backfill from warehouse
-        DB::statement("
+        DB::statement('
             UPDATE supplier_invoices si
             INNER JOIN warehouses w ON si.warehouse_id = w.id
             SET si.company_id = w.company_id
             WHERE si.company_id IS NULL AND si.deleted_at IS NULL
-        ");
+        ');
     }
 
     public function down(): void

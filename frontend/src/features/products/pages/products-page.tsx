@@ -110,6 +110,7 @@ function useProductStats(): ProductStatsData {
 
 export function ProductsPage() {
   const { t } = useTranslation('products');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const { t: tCommon } = useTranslation('common');
   const { toast } = useToast();
   const location = useLocation();
@@ -213,7 +214,8 @@ export function ProductsPage() {
   const { data, isLoading, isError, isFetching, refetch } = useProductsQuery(params);
   const deleteProduct   = useDeleteProduct();
   const toggleStatus    = useToggleProductStatus();
-  const products        = data?.items ?? [];
+  // Memoised so the empty-state fallback keeps a stable identity between renders.
+  const products        = useMemo(() => data?.items ?? [], [data]);
   const meta            = data?.meta;
 
   const hasFilters =
@@ -260,7 +262,7 @@ export function ProductsPage() {
 
   const handleBulkAction = (label: string) => {
     if (!selection.selectedCount) return;
-    toast({ type: 'info', title: label, description: `${selection.selectedCount} product(s) queued.` });
+    toast({ type: 'info', title: label, description: tAny('toasts.queued', { count: selection.selectedCount }) });
     selection.clearSelection();
   };
 
@@ -273,14 +275,14 @@ export function ProductsPage() {
         onSuccess: () => {
           toast({
             type: 'success',
-            title: availDialog.status === 'instock' ? 'Marked Available' : 'Marked Unavailable',
-            description: `${ids.length} product(s) updated.`,
+            title: availDialog.status === 'instock' ? t($ => $.availabilityDialog.successInstock) : t($ => $.availabilityDialog.successOutofstock),
+            description: tAny('availabilityDialog.successDescription', { count: ids.length }),
           });
           selection.clearSelection();
           setAvailDialog(null);
         },
         onError: () => {
-          toast({ type: 'error', title: 'Error', description: 'Failed to update stock status.' });
+          toast({ type: 'error', title: t($ => $.availabilityDialog.errorTitle), description: t($ => $.availabilityDialog.errorDescription) });
         },
       },
     );
@@ -327,7 +329,7 @@ export function ProductsPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast({ type: 'error', title: 'Export failed', description: 'Could not export products.' });
+      toast({ type: 'error', title: t($ => $.toasts.exportFailed), description: t($ => $.toasts.exportFailedDescription) });
     }
   };
 
@@ -389,7 +391,7 @@ export function ProductsPage() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   // ── Pagination config ─────────────────────────────────────────────────────
@@ -409,20 +411,20 @@ export function ProductsPage() {
 
       {/* ── Page Header ── */}
       <PageHeader
-        title={t('finishedGoods.title')}
-        subtitle={t('finishedGoods.subtitle')}
+        title={t($ => $.finishedGoods.title)}
+        subtitle={t($ => $.finishedGoods.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('finishedGoods.title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.finishedGoods.title) },
         ]}
         actions={
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:block">
-              {meta ? `${meta.total.toLocaleString()} products` : null}
+              {meta ? tAny('page.totalCount', { count: meta.total.toLocaleString() }) : null}
             </span>
             <Button size="sm" onClick={openCreate}>
               <Plus className="size-3.5" />
-              {t('actions.new')}
+              {t($ => $.actions.new)}
             </Button>
           </div>
         }
@@ -438,37 +440,37 @@ export function ProductsPage() {
       {/* ── Smart Toolbar ── */}
       <SmartToolbar
         primaryAction={{
-          label: t('actions.new'),
+          label: t($ => $.actions.new),
           onClick: openCreate,
           icon: Plus,
         }}
         secondaryActions={[
           {
             key: 'import',
-            label: t('actions.import'),
+            label: t($ => $.actions.import),
             icon: Upload,
             onClick: handleImport,
             hideOnMobile: true,
           },
           {
             key: 'export',
-            label: t('actions.export'),
+            label: t($ => $.actions.export),
             icon: Download,
             onClick: handleExport,
             hideOnMobile: true,
           },
         ]}
         bulkActions={[
-          { key: 'mark-available',       label: '🟢 Mark Available',    onClick: () => setAvailDialog({ status: 'instock' }) },
-          { key: 'mark-unavailable',     label: '🔴 Mark Unavailable',  onClick: () => setAvailDialog({ status: 'outofstock' }) },
-          { key: 'activate',             label: 'Activate',             onClick: () => handleBulkAction('Activate'), separator: true },
-          { key: 'deactivate',           label: 'Deactivate',           onClick: () => handleBulkAction('Deactivate') },
-          { key: 'publish',              label: 'Publish to channels',  onClick: () => handleBulkAction('Publish to channels') },
-          { key: 'assign-category',      label: 'Assign category',      onClick: () => handleBulkAction('Assign category'), separator: true },
-          { key: 'create-price-review',  label: 'Create Price Review',  onClick: () => navigate(ROUTES.costManagementPriceReview), separator: true },
-          { key: 'export-selected',      label: 'Export selected',      onClick: handleExport, separator: true },
+          { key: 'mark-available',       label: t($ => $.bulkActions.markAvailable),     onClick: () => setAvailDialog({ status: 'instock' }) },
+          { key: 'mark-unavailable',     label: t($ => $.bulkActions.markUnavailable),   onClick: () => setAvailDialog({ status: 'outofstock' }) },
+          { key: 'activate',             label: t($ => $.bulkActions.activate),          onClick: () => handleBulkAction(t($ => $.bulkActions.activate)), separator: true },
+          { key: 'deactivate',           label: t($ => $.bulkActions.deactivate),        onClick: () => handleBulkAction(t($ => $.bulkActions.deactivate)) },
+          { key: 'publish',              label: t($ => $.bulkActions.publishToChannels), onClick: () => handleBulkAction(t($ => $.bulkActions.publishToChannels)) },
+          { key: 'assign-category',      label: t($ => $.bulkActions.assignCategory),    onClick: () => handleBulkAction(t($ => $.bulkActions.assignCategory)), separator: true },
+          { key: 'create-price-review',  label: t($ => $.bulkActions.createPriceReview), onClick: () => navigate(ROUTES.costManagementPriceReview), separator: true },
+          { key: 'export-selected',      label: t($ => $.bulkActions.exportSelected),    onClick: handleExport, separator: true },
         ]}
-        bulkActionsLabel="Bulk Actions"
+        bulkActionsLabel={t($ => $.bulkActions.label)}
         selectedCount={selection.selectedCount}
         onRefresh={() => void refetch()}
         isFetching={isFetching}
@@ -481,7 +483,7 @@ export function ProductsPage() {
                 key={searchKey}
                 ref={searchRef}
                 type="search"
-                placeholder={`${t('search')} · /`}
+                placeholder={`${t($ => $.search)} · /`}
                 defaultValue={search}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSearch(e.currentTarget.value);
@@ -509,7 +511,7 @@ export function ProductsPage() {
         <input
           key={`m-${searchKey}`}
           type="search"
-          placeholder={t('search')}
+          placeholder={t($ => $.search)}
           defaultValue={search}
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSearch(e.currentTarget.value);
@@ -538,8 +540,8 @@ export function ProductsPage() {
         onEdit={openEdit}
         onDelete={(p) =>
           deleteProduct.mutate(p.id, {
-            onSuccess: () => toast({ type: 'success', title: 'Archived',  description: `"${p.name}" has been archived.` }),
-            onError:   () => toast({ type: 'error',   title: 'Error',     description: 'Failed to archive product.' }),
+            onSuccess: () => toast({ type: 'success', title: t($ => $.toasts.archived), description: tAny('toasts.archivedDescription', { name: p.name }) }),
+            onError:   () => toast({ type: 'error',   title: t($ => $.availabilityDialog.errorTitle), description: t($ => $.toasts.archiveError) }),
           })
         }
         onStatusToggle={(p) => toggleStatus.mutate(p)}
@@ -550,9 +552,9 @@ export function ProductsPage() {
         pagination={pagination}
         emptyState={
           hasFilters ? (
-            <EmptyState title="No products match your filters" />
+            <EmptyState title={t($ => $.emptyState.withFiltersTitle)} />
           ) : (
-            <EmptyState title="No products yet" />
+            <EmptyState title={t($ => $.emptyState.noProductsTitle)} />
           )
         }
       />
@@ -573,20 +575,20 @@ export function ProductsPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Availability Change</AlertDialogTitle>
+            <AlertDialogTitle>{t($ => $.availabilityDialog.title)}</AlertDialogTitle>
             <AlertDialogDescription>
               {availDialog?.status === 'instock'
-                ? `Mark ${selection.selectedCount} selected product(s) as 🟢 Available (In Stock)?`
-                : `Mark ${selection.selectedCount} selected product(s) as 🔴 Unavailable (Out of Stock)?`}
+                ? tAny('availabilityDialog.confirmInstock', { count: selection.selectedCount })
+                : tAny('availabilityDialog.confirmOutofstock', { count: selection.selectedCount })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t($ => $.availabilityDialog.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkAvailability}
               disabled={bulkUpdateStock.isPending}
             >
-              {bulkUpdateStock.isPending ? 'Updating…' : 'Confirm'}
+              {bulkUpdateStock.isPending ? t($ => $.availabilityDialog.updating) : t($ => $.availabilityDialog.confirm)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

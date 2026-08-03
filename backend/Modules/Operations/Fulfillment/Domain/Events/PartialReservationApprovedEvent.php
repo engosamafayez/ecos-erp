@@ -12,10 +12,10 @@ final class PartialReservationApprovedEvent
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public readonly string  $orderId,
-        public readonly string  $orderNumber,
-        public readonly string  $companyId,
-        public readonly string  $approvedAt,
+        public readonly string $orderId,
+        public readonly string $orderNumber,
+        public readonly string $companyId,
+        public readonly string $approvedAt,
         public readonly ?string $approvedBy,
         public readonly ?string $notes,
     ) {}

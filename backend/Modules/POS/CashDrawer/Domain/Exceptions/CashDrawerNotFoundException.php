@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\CashDrawer\Domain\Exceptions;
 
-final class CashDrawerNotFoundException extends \DomainException
+use DomainException;
+
+final class CashDrawerNotFoundException extends DomainException
 {
     public static function withId(string $id): self
     {

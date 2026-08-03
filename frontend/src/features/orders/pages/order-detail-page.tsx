@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Activity,
   ArrowLeft,
   ArrowRightCircle,
+  Banknote,
   Bot,
   Box,
   Building2,
@@ -54,19 +56,8 @@ import {
   useCustomerOrderStats,
   useOrderActivities,
   useOrderQuery,
-  useOrderWorkflowCancel,
-  useOrderWorkflowComplete,
-  useOrderWorkflowCompleteDelivery,
-  useOrderWorkflowConfirm,
-  useOrderWorkflowDispatch,
-  useOrderWorkflowMarkAwaitingStock,
-  useOrderWorkflowMoveToPreparation,
-  useOrderWorkflowMoveToReview,
   useOrderWorkflowReschedule,
-  useOrderWorkflowResume,
-  useOrderWorkflowResumeToConfirmed,
-  useOrderWorkflowReturn,
-  useOrderWorkflowReturnToConfirmed,
+  useOrderWorkflowTransition,
 } from '@/features/orders/hooks/use-orders';
 import type { Order, OrderActivity, OrderActivityActionType } from '@/features/orders/types/order';
 import { getMediaUrl } from '@/lib/media';
@@ -74,10 +65,6 @@ import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 
 // ── Shared formatting helpers ─────────────────────────────────────────────────
-
-function fmtMoney(n: number) {
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 function fmtDate(d: string | null | undefined): string {
   if (!d) return '—';
@@ -207,6 +194,7 @@ function KpiCard({ label, value, sub, highlight }: {
 }
 
 function KpiRow({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const totalQty = order.lines.reduce((s, l) => s + l.quantity, 0);
   const remaining = order.remaining_balance;
@@ -214,18 +202,18 @@ function KpiRow({ order }: { order: Order }) {
 
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-      <KpiCard label={t('orderDetail.kpiProducts')} value={order.lines.length} sub={`${totalQty} units`} />
-      <KpiCard label={t('orderDetail.kpiQuantity')} value={totalQty.toLocaleString()} />
-      <KpiCard label={t('orderDetail.kpiReserved')} value={reservedCount} highlight={reservedCount === order.lines.length ? 'success' : reservedCount > 0 ? 'warning' : undefined} />
-      <KpiCard label={t('orderDetail.kpiShipping')} value={`${fmtMoney(order.shipping_amount)} EGP`} />
-      <KpiCard label={t('orderDetail.kpiGrandTotal')} value={`${fmtMoney(order.grand_total)} EGP`} highlight="success" />
+      <KpiCard label={t($ => $.orderDetail.kpiProducts)} value={order.lines.length} sub={`${totalQty} units`} />
+      <KpiCard label={t($ => $.orderDetail.kpiQuantity)} value={totalQty.toLocaleString()} />
+      <KpiCard label={t($ => $.orderDetail.kpiReserved)} value={reservedCount} highlight={reservedCount === order.lines.length ? 'success' : reservedCount > 0 ? 'warning' : undefined} />
+      <KpiCard label={t($ => $.orderDetail.kpiShipping)} value={money(order.shipping_amount)} />
+      <KpiCard label={t($ => $.orderDetail.kpiGrandTotal)} value={money(order.grand_total)} highlight="success" />
       <KpiCard
-        label={t('orderDetail.kpiRemaining')}
-        value={`${fmtMoney(remaining)} EGP`}
+        label={t($ => $.orderDetail.kpiRemaining)}
+        value={money(remaining)}
         highlight={remaining > 0 ? 'warning' : 'success'}
       />
       <KpiCard
-        label={t('orderDetail.kpiProgress')}
+        label={t($ => $.orderDetail.kpiProgress)}
         value={order.status_label ?? order.status.replace(/_/g, ' ')}
         sub={order.order_date ? fmtDate(order.order_date) : undefined}
       />
@@ -248,6 +236,9 @@ function OrderHeader({
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation('orders');
+  // Resolve the assigned warehouse name from line data the backend already supplies,
+  // instead of rendering the raw assigned_warehouse_id UUID (W2 FIX-1).
+  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border bg-card px-5 py-4">
@@ -258,7 +249,7 @@ function OrderHeader({
           size="icon"
           className="size-7 shrink-0"
           onClick={() => navigate(ROUTES.orders)}
-          aria-label={t('orderDetail.backToOrders')}
+          aria-label={t($ => $.orderDetail.backToOrders)}
         >
           <ArrowLeft className="size-4" />
         </Button>
@@ -273,15 +264,15 @@ function OrderHeader({
         <div className="ms-auto flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onPrint}>
             <Printer className="size-3.5" />
-            {t('orderDetail.print')}
+            {t($ => $.orderDetail.print)}
           </Button>
           <Button variant="outline" size="sm" onClick={onConfirmCustomer}>
             <UserCheck className="size-3.5" />
-            {t('orderDetail.confirmCustomer')}
+            {t($ => $.orderDetail.confirmCustomer)}
           </Button>
           <Button size="sm" onClick={onEdit}>
             <Edit className="size-3.5" />
-            {t('orderDetail.edit')}
+            {t($ => $.orderDetail.edit)}
           </Button>
         </div>
       </div>
@@ -301,20 +292,20 @@ function OrderHeader({
             {order.customer.code ? ` · ${order.customer.code}` : ''}
           </span>
         ) : null}
-        {order.assigned_warehouse_id ? (
+        {warehouseName ? (
           <span className="flex items-center gap-1">
             <Warehouse className="size-3" />
-            {order.assigned_warehouse_id}
+            {warehouseName}
           </span>
         ) : null}
         {order.inventory_reserved_at ? (
           <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300 dark:border-emerald-800 dark:text-emerald-400">
             <CheckCircle2 className="size-2.5 mr-0.5" />
-            {t('orderDetail.headerReserved', { date: fmtDate(order.inventory_reserved_at) })}
+            {t($ => $.orderDetail.headerReserved, { date: fmtDate(order.inventory_reserved_at) })}
           </Badge>
         ) : (
           <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 dark:border-amber-800 dark:text-amber-400">
-            {t('orderDetail.headerNotReserved')}
+            {t($ => $.orderDetail.headerNotReserved)}
           </Badge>
         )}
         {order.tracking_number ? (
@@ -329,10 +320,10 @@ function OrderHeader({
           datePaid={order.date_paid}
         />
         {order.created_at ? (
-          <span>{t('orderDetail.created', { datetime: fmtDateTime(order.created_at) })}</span>
+          <span>{t($ => $.orderDetail.created, { datetime: fmtDateTime(order.created_at) })}</span>
         ) : null}
         {order.status_entered_by ? (
-          <span>{t('orderDetail.by', { name: order.status_entered_by })}</span>
+          <span>{t($ => $.orderDetail.by, { name: order.status_entered_by })}</span>
         ) : null}
       </div>
     </div>
@@ -342,19 +333,20 @@ function OrderHeader({
 // ── Part 2 — Financial Summary ────────────────────────────────────────────────
 
 function FinancialSummaryCard({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const remaining = order.remaining_balance;
 
   const rows: Array<{ label: string; value: number; always?: boolean }> = [
-    { label: t('orderDetail.productsTotal'), value: order.products_total, always: true },
-    { label: t('orderDetail.shippingRow'),   value: order.shipping_amount },
-    { label: t('orderDetail.discountRow'),   value: -order.discount_amount },
-    { label: t('orderDetail.taxRow'),        value: order.tax_amount },
-    { label: t('orderDetail.depositPaidRow'),value: -order.deposit_paid },
+    { label: t($ => $.orderDetail.productsTotal), value: order.products_total, always: true },
+    { label: t($ => $.orderDetail.shippingRow),   value: order.shipping_amount },
+    { label: t($ => $.orderDetail.discountRow),   value: -order.discount_amount },
+    { label: t($ => $.orderDetail.taxRow),        value: order.tax_amount },
+    { label: t($ => $.orderDetail.depositPaidRow),value: -order.deposit_paid },
   ];
 
   return (
-    <InfoCard title={t('orderDetail.financialSummaryTitle')} icon={ShoppingBag}>
+    <InfoCard title={t($ => $.orderDetail.financialSummaryTitle)} icon={ShoppingBag}>
       <div className="flex flex-col gap-1.5 text-sm">
         {rows.map(({ label, value, always }) => {
           if (!always && (!value || value === 0)) return null;
@@ -363,28 +355,28 @@ function FinancialSummaryCard({ order }: { order: Order }) {
             <div key={label} className="flex items-center justify-between gap-4">
               <span className="text-muted-foreground">{label}</span>
               <span className={cn('tabular-nums', isNeg && 'text-emerald-600 dark:text-emerald-400')}>
-                {isNeg ? `−${fmtMoney(-value)}` : fmtMoney(value)} EGP
+                {money(value)}
               </span>
             </div>
           );
         })}
         <Separator className="my-1" />
         <div className="flex items-center justify-between gap-4 font-semibold">
-          <span>{t('orderDetail.grandTotal')}</span>
-          <span className="tabular-nums">{fmtMoney(order.grand_total)} EGP</span>
+          <span>{t($ => $.orderDetail.grandTotal)}</span>
+          <span className="tabular-nums">{money(order.grand_total)}</span>
         </div>
         {remaining > 0 && (
           <div className="flex items-center justify-between gap-4 rounded-md bg-amber-50 px-2 py-1.5 dark:bg-amber-950/30">
-            <span className="text-amber-700 dark:text-amber-400 text-xs font-medium">{t('orderDetail.remainingBalance')}</span>
+            <span className="text-amber-700 dark:text-amber-400 text-xs font-medium">{t($ => $.orderDetail.remainingBalance)}</span>
             <span className="tabular-nums font-semibold text-amber-700 dark:text-amber-400">
-              {fmtMoney(remaining)} EGP
+              {money(remaining)}
             </span>
           </div>
         )}
         {remaining <= 0 && (
           <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1.5 dark:bg-emerald-950/30">
             <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-emerald-700 dark:text-emerald-400 text-xs font-medium">{t('orderDetail.fullyPaid')}</span>
+            <span className="text-emerald-700 dark:text-emerald-400 text-xs font-medium">{t($ => $.orderDetail.fullyPaid)}</span>
           </div>
         )}
       </div>
@@ -395,14 +387,15 @@ function FinancialSummaryCard({ order }: { order: Order }) {
 // ── Part 3 — Customer 360 Card ────────────────────────────────────────────────
 
 function CustomerCard({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const customer = order.customer;
   const { data: stats, isLoading } = useCustomerOrderStats(customer?.id ?? null);
 
   if (!customer) {
     return (
-      <InfoCard title={t('orderDetail.customerTitle')} icon={UserCheck}>
-        <EmptyState icon={UserCheck} message={t('orderDetail.noCustomer')} />
+      <InfoCard title={t($ => $.orderDetail.customerTitle)} icon={UserCheck}>
+        <EmptyState icon={UserCheck} message={t($ => $.orderDetail.noCustomer)} />
       </InfoCard>
     );
   }
@@ -415,7 +408,7 @@ function CustomerCard({ order }: { order: Order }) {
   const hasReturned = false; // not in stats yet
 
   return (
-    <InfoCard title={t('orderDetail.customer360Title')} icon={UserCheck}>
+    <InfoCard title={t($ => $.orderDetail.customer360Title)} icon={UserCheck}>
       <div className="flex flex-col gap-4">
         {/* Identity */}
         <div className="flex items-start justify-between gap-2">
@@ -429,17 +422,17 @@ function CustomerCard({ order }: { order: Order }) {
               )}
               {!isVip && isReturning && (
                 <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                  {t('orderDetail.returning')}
+                  {t($ => $.orderDetail.returning)}
                 </span>
               )}
               {hasRejected && (
                 <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                  {t('orderDetail.rejectedBefore')}
+                  {t($ => $.orderDetail.rejectedBefore)}
                 </span>
               )}
               {hasReturned && (
                 <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-                  {t('orderDetail.returnedBefore')}
+                  {t($ => $.orderDetail.returnedBefore)}
                 </span>
               )}
             </div>
@@ -450,13 +443,13 @@ function CustomerCard({ order }: { order: Order }) {
             className="inline-flex shrink-0 items-center gap-1 text-xs text-primary hover:underline"
           >
             <ExternalLink className="size-3" />
-            {t('orderDetail.open')}
+            {t($ => $.orderDetail.open)}
           </a>
         </div>
 
         {/* Contact */}
         <FieldGrid cols={2}>
-          <Field label={t('orderDetail.primaryPhone')}>
+          <Field label={t($ => $.orderDetail.primaryPhone)}>
             {primaryPhone ? (
               <div className="flex items-center gap-1.5">
                 <span className="font-mono text-xs">{primaryPhone}</span>
@@ -474,15 +467,15 @@ function CustomerCard({ order }: { order: Order }) {
               </div>
             ) : null}
           </Field>
-          <Field label={t('orderDetail.secondaryPhone')}>
+          <Field label={t($ => $.orderDetail.secondaryPhone)}>
             {customer.mobile && customer.mobile !== primaryPhone ? (
               <span className="font-mono text-xs">{customer.mobile}</span>
             ) : null}
           </Field>
-          <Field label={t('orderDetail.email')}>{order.billing_email}</Field>
-          <Field label={t('orderDetail.governorate')}>{order.governorate ?? order.shipping_state}</Field>
-          <Field label={t('orderDetail.city')}>{order.city ?? order.shipping_city ?? order.billing_city}</Field>
-          <Field label={t('orderDetail.street')}>{order.shipping_address ?? order.shipping_address_1 ?? order.billing_address_1}</Field>
+          <Field label={t($ => $.orderDetail.email)}>{order.billing_email}</Field>
+          <Field label={t($ => $.orderDetail.governorate)}>{order.governorate ?? order.shipping_state}</Field>
+          <Field label={t($ => $.orderDetail.city)}>{order.city ?? order.shipping_city ?? order.billing_city}</Field>
+          <Field label={t($ => $.orderDetail.street)}>{order.shipping_address ?? order.shipping_address_1 ?? order.billing_address_1}</Field>
         </FieldGrid>
 
         {/* Intelligence Stats */}
@@ -494,12 +487,12 @@ function CustomerCard({ order }: { order: Order }) {
         ) : stats ? (
           <>
             <Separator />
-            <SectionLabel>{t('orderDetail.customerIntelligence')}</SectionLabel>
+            <SectionLabel>{t($ => $.orderDetail.customerIntelligence)}</SectionLabel>
             <div className="grid grid-cols-3 gap-2">
               {([
-                { label: t('orderDetail.statsOrders'),    value: stats.total,     colorCls: '' },
-                { label: t('orderDetail.statsDelivered'), value: stats.completed, colorCls: 'text-emerald-600 dark:text-emerald-400' },
-                { label: t('orderDetail.statsCancelled'), value: stats.cancelled, colorCls: stats.cancelled > 0 ? 'text-red-500 dark:text-red-400' : '' },
+                { label: t($ => $.orderDetail.statsOrders),    value: stats.total,     colorCls: '' },
+                { label: t($ => $.orderDetail.statsDelivered), value: stats.completed, colorCls: 'text-emerald-600 dark:text-emerald-400' },
+                { label: t($ => $.orderDetail.statsCancelled), value: stats.cancelled, colorCls: stats.cancelled > 0 ? 'text-red-500 dark:text-red-400' : '' },
               ] as Array<{ label: string; value: number; colorCls: string }>).map(({ label, value, colorCls }) => (
                 <div key={label} className="rounded-md border bg-muted/20 px-2 py-1.5 text-center">
                   <p className={cn('text-base font-semibold tabular-nums', colorCls)}>{value}</p>
@@ -508,15 +501,15 @@ function CustomerCard({ order }: { order: Order }) {
               ))}
             </div>
             <FieldGrid cols={2}>
-              <Field label={t('orderDetail.lifetimeValue')}>
-                <span className="font-semibold tabular-nums">{fmtMoney(stats.totalSpend)} EGP</span>
+              <Field label={t($ => $.orderDetail.lifetimeValue)}>
+                <span className="font-semibold tabular-nums">{money(stats.totalSpend)}</span>
               </Field>
-              <Field label={t('orderDetail.avgOrderValue')}>
-                {stats.aov !== null ? <span className="tabular-nums">{fmtMoney(stats.aov)} EGP</span> : null}
+              <Field label={t($ => $.orderDetail.avgOrderValue)}>
+                {stats.aov !== null ? <span className="tabular-nums">{money(stats.aov)}</span> : null}
               </Field>
-              <Field label={t('orderDetail.firstOrder')}>{fmtDate(stats.firstOrderDate)}</Field>
-              <Field label={t('orderDetail.lastOrder')}>{fmtDate(stats.lastOrderDate)}</Field>
-              <Field label={t('orderDetail.preferredZone')}>{stats.preferredGovernorate}</Field>
+              <Field label={t($ => $.orderDetail.firstOrder)}>{fmtDate(stats.firstOrderDate)}</Field>
+              <Field label={t($ => $.orderDetail.lastOrder)}>{fmtDate(stats.lastOrderDate)}</Field>
+              <Field label={t($ => $.orderDetail.preferredZone)}>{stats.preferredGovernorate}</Field>
             </FieldGrid>
           </>
         ) : null}
@@ -541,56 +534,56 @@ function AddressCard({ order }: { order: Order }) {
 
   if (!hasAddress && !loc) {
     return (
-      <InfoCard title={t('orderDetail.deliveryAddressTitle')} icon={MapPin}>
-        <EmptyState icon={MapPin} message={t('orderDetail.noAddress')} />
+      <InfoCard title={t($ => $.orderDetail.deliveryAddressTitle)} icon={MapPin}>
+        <EmptyState icon={MapPin} message={t($ => $.orderDetail.noAddress)} />
       </InfoCard>
     );
   }
 
   return (
-    <InfoCard title={t('orderDetail.deliveryAddressTitle')} icon={MapPin}>
+    <InfoCard title={t($ => $.orderDetail.deliveryAddressTitle)} icon={MapPin}>
       <div className="flex flex-col gap-4">
         <FieldGrid cols={2}>
-          <Field label={t('orderDetail.governorate')}>{order.governorate ?? order.shipping_state}</Field>
-          <Field label={t('orderDetail.city')}>{order.city ?? order.shipping_city ?? order.billing_city}</Field>
-          <Field label={t('orderDetail.zoneArea')}>{order.delivery_zone ?? order.area}</Field>
-          <Field label={t('orderDetail.street')}>{order.shipping_address ?? order.shipping_address_1 ?? order.billing_address_1}</Field>
-          {order.building ? <Field label={t('orderDetail.building')}>{order.building}</Field> : null}
-          {order.floor ? <Field label={t('orderDetail.floor')}>{order.floor}</Field> : null}
-          {order.apartment ? <Field label={t('orderDetail.apartment')}>{order.apartment}</Field> : null}
-          {order.landmark ? <Field label={t('orderDetail.landmark')}>{order.landmark}</Field> : null}
-          {!order.building && order.shipping_address_2 ? <Field label={t('orderDetail.buildingUnit')}>{order.shipping_address_2}</Field> : null}
+          <Field label={t($ => $.orderDetail.governorate)}>{order.governorate ?? order.shipping_state}</Field>
+          <Field label={t($ => $.orderDetail.city)}>{order.city ?? order.shipping_city ?? order.billing_city}</Field>
+          <Field label={t($ => $.orderDetail.zoneArea)}>{order.delivery_zone ?? order.area}</Field>
+          <Field label={t($ => $.orderDetail.street)}>{order.shipping_address ?? order.shipping_address_1 ?? order.billing_address_1}</Field>
+          {order.building ? <Field label={t($ => $.orderDetail.building)}>{order.building}</Field> : null}
+          {order.floor ? <Field label={t($ => $.orderDetail.floor)}>{order.floor}</Field> : null}
+          {order.apartment ? <Field label={t($ => $.orderDetail.apartment)}>{order.apartment}</Field> : null}
+          {order.landmark ? <Field label={t($ => $.orderDetail.landmark)}>{order.landmark}</Field> : null}
+          {!order.building && order.shipping_address_2 ? <Field label={t($ => $.orderDetail.buildingUnit)}>{order.shipping_address_2}</Field> : null}
         </FieldGrid>
 
         {coordsText ? (
           <>
             <Separator />
             <div className="flex flex-col gap-2">
-              <SectionLabel>{t('orderDetail.gpsCoords')}</SectionLabel>
+              <SectionLabel>{t($ => $.orderDetail.gpsCoords)}</SectionLabel>
               <div className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
                 <MapPin className="size-3 shrink-0" />
                 {coordsText}
-                {loc?.set_by ? <span className="ml-1 capitalize">{t('orderDetail.setBy', { name: loc.set_by })}</span> : null}
+                {loc?.set_by ? <span className="ml-1 capitalize">{t($ => $.orderDetail.setBy, { name: loc.set_by })}</span> : null}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {mapsUrl ? (
                   <Button variant="outline" size="sm" asChild className="h-7 text-xs">
                     <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                       <Navigation className="size-3" />
-                      {t('orderDetail.openMaps')}
+                      {t($ => $.orderDetail.openMaps)}
                     </a>
                   </Button>
                 ) : null}
                 {mapsUrl ? (
                   <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void navigator.clipboard.writeText(mapsUrl)}>
                     <Copy className="size-3" />
-                    {t('orderDetail.copyLink')}
+                    {t($ => $.orderDetail.copyLink)}
                   </Button>
                 ) : null}
                 {coordsText ? (
                   <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void navigator.clipboard.writeText(coordsText)}>
                     <Copy className="size-3" />
-                    {t('orderDetail.copyCoords')}
+                    {t($ => $.orderDetail.copyCoords)}
                   </Button>
                 ) : null}
                 {loc?.lat && loc?.lng ? (
@@ -601,7 +594,7 @@ function AddressCard({ order }: { order: Order }) {
                       rel="noopener noreferrer"
                     >
                       <Navigation className="size-3" />
-                      {t('orderDetail.waze')}
+                      {t($ => $.orderDetail.waze)}
                     </a>
                   </Button>
                 ) : null}
@@ -617,51 +610,52 @@ function AddressCard({ order }: { order: Order }) {
 // ── Part 4 — Shipping Card ────────────────────────────────────────────────────
 
 function ShippingCard({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const hasMeaningfulShipping = order.shipping_company_name || order.shipping_method ||
     order.tracking_number || order.requested_delivery_date || order.delivery_window;
 
   if (!hasMeaningfulShipping) {
     return (
-      <InfoCard title={t('orderDetail.shippingTitle')} icon={Truck}>
-        <EmptyState icon={Truck} message={t('orderDetail.noShipping')} />
+      <InfoCard title={t($ => $.orderDetail.shippingTitle)} icon={Truck}>
+        <EmptyState icon={Truck} message={t($ => $.orderDetail.noShipping)} />
       </InfoCard>
     );
   }
 
   return (
-    <InfoCard title={t('orderDetail.shippingTitle')} icon={Truck}>
+    <InfoCard title={t($ => $.orderDetail.shippingTitle)} icon={Truck}>
       <FieldGrid cols={2}>
-        <Field label={t('orderDetail.carrierCompany')}>{order.shipping_company_name}</Field>
-        <Field label={t('orderDetail.shippingMethod')}>{order.shipping_method}</Field>
-        <Field label={t('orderDetail.trackingNumber')}>
+        <Field label={t($ => $.orderDetail.carrierCompany)}>{order.shipping_company_name}</Field>
+        <Field label={t($ => $.orderDetail.shippingMethod)}>{order.shipping_method}</Field>
+        <Field label={t($ => $.orderDetail.trackingNumber)}>
           {order.tracking_number ? (
             <span className="font-mono text-xs">{order.tracking_number}</span>
           ) : null}
         </Field>
-        <Field label={t('orderDetail.deliveryAttempts')}>
+        <Field label={t($ => $.orderDetail.deliveryAttempts)}>
           <span className={cn('font-semibold', order.shipping_attempts > 0 && 'text-amber-600 dark:text-amber-400')}>
             {order.shipping_attempts ?? 0}
           </span>
         </Field>
-        <Field label={t('orderDetail.deliveryWindow')}>{order.delivery_window}</Field>
-        <Field label={t('orderDetail.requestedDelivery')}>{fmtDate(order.requested_delivery_date)}</Field>
-        <Field label={t('orderDetail.preferredTime')}>
+        <Field label={t($ => $.orderDetail.deliveryWindow)}>{order.delivery_window}</Field>
+        <Field label={t($ => $.orderDetail.requestedDelivery)}>{fmtDate(order.requested_delivery_date)}</Field>
+        <Field label={t($ => $.orderDetail.preferredTime)}>
           {order.preferred_delivery_time ? (
             <span className="capitalize">{order.preferred_delivery_time}</span>
           ) : null}
         </Field>
-        <Field label={t('orderDetail.deliveryZone')}>{order.delivery_zone}</Field>
-        <Field label={t('orderDetail.shippingCost')}>
-          {order.shipping_cost != null ? `${fmtMoney(order.shipping_cost)} EGP` : null}
+        <Field label={t($ => $.orderDetail.deliveryZone)}>{order.delivery_zone}</Field>
+        <Field label={t($ => $.orderDetail.shippingCost)}>
+          {order.shipping_cost != null ? money(order.shipping_cost) : null}
         </Field>
-        <Field label={t('orderDetail.costSource')}>
+        <Field label={t($ => $.orderDetail.costSource)}>
           {order.shipping_cost_source ? (
             <span className="capitalize">{order.shipping_cost_source}</span>
           ) : null}
         </Field>
         {order.inventory_shipped_at ? (
-          <Field label={t('orderDetail.dispatchedAt')}>{fmtDateTime(order.inventory_shipped_at)}</Field>
+          <Field label={t($ => $.orderDetail.dispatchedAt)}>{fmtDateTime(order.inventory_shipped_at)}</Field>
         ) : null}
       </FieldGrid>
     </InfoCard>
@@ -674,30 +668,32 @@ function InventoryCard({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
   const isReserved = Boolean(order.inventory_reserved_at);
   const isShipped = Boolean(order.inventory_shipped_at);
+  // Reuse the warehouse name the backend already ships on order lines (W2 FIX-1).
+  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
 
   return (
-    <InfoCard title={t('orderDetail.inventoryTitle')} icon={Warehouse}>
+    <InfoCard title={t($ => $.orderDetail.inventoryTitle)} icon={Warehouse}>
       <div className="flex flex-col gap-4">
         <FieldGrid cols={2}>
-          <Field label={t('orderDetail.reservationStatus')}>
+          <Field label={t($ => $.orderDetail.reservationStatus)}>
             {isReserved ? (
               <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="size-3.5" />
-                {t('orderDetail.reservedStatus')}
+                {t($ => $.orderDetail.reservedStatus)}
               </span>
             ) : (
-              <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t('orderDetail.notReservedStatus')}</span>
+              <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t($ => $.orderDetail.notReservedStatus)}</span>
             )}
           </Field>
-          <Field label={t('orderDetail.reservedAt')}>{fmtDateTime(order.inventory_reserved_at)}</Field>
-          <Field label={t('orderDetail.warehouse')}>{order.assigned_warehouse_id ?? '—'}</Field>
-          <Field label={t('orderDetail.dispatchedAt')}>{isShipped ? fmtDateTime(order.inventory_shipped_at) : null}</Field>
+          <Field label={t($ => $.orderDetail.reservedAt)}>{fmtDateTime(order.inventory_reserved_at)}</Field>
+          <Field label={t($ => $.orderDetail.warehouse)}>{warehouseName ?? '—'}</Field>
+          <Field label={t($ => $.orderDetail.dispatchedAt)}>{isShipped ? fmtDateTime(order.inventory_shipped_at) : null}</Field>
         </FieldGrid>
         <Separator />
-        <SectionLabel>{t('orderDetail.linesTitle', { count: order.lines.length })}</SectionLabel>
+        <SectionLabel>{t($ => $.orderDetail.linesTitle, { count: order.lines.length })}</SectionLabel>
         <div className="flex flex-col gap-1.5">
           {order.lines.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('orderDetail.noLines')}</p>
+            <p className="text-sm text-muted-foreground">{t($ => $.orderDetail.noLines)}</p>
           ) : order.lines.map((line) => (
             <div key={line.id} className="flex items-center gap-2.5 rounded-md border bg-muted/20 px-3 py-2 text-sm">
               <Box className="size-3.5 shrink-0 text-muted-foreground" />
@@ -719,33 +715,34 @@ function InventoryCard({ order }: { order: Order }) {
 // ── Part 7 — Products Grid ────────────────────────────────────────────────────
 
 function ProductsGrid({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
 
   if (order.lines.length === 0) {
     return (
-      <InfoCard title={t('orderDetail.productsTitle')} icon={Package}>
-        <EmptyState icon={Package} message={t('orderDetail.noProducts')} />
+      <InfoCard title={t($ => $.orderDetail.productsTitle)} icon={Package}>
+        <EmptyState icon={Package} message={t($ => $.orderDetail.noProducts)} />
       </InfoCard>
     );
   }
 
   return (
-    <InfoCard title={t('orderDetail.productsTitleCount', { count: order.lines.length })} icon={Package}>
+    <InfoCard title={t($ => $.orderDetail.productsTitleCount, { count: order.lines.length })} icon={Package}>
       <div className="flex flex-col gap-0 -mx-4">
         {/* Price protection banner */}
         <div className="mx-4 mb-3 flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900/50 dark:bg-emerald-950/30">
           <Lock className="mt-0.5 size-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-            <span className="font-semibold">{t('orderDetail.priceProtectionActive')}</span>
-            {t('orderDetail.priceProtectionDesc')}
+            <span className="font-semibold">{t($ => $.orderDetail.priceProtectionActive)}</span>
+            {t($ => $.orderDetail.priceProtectionDesc)}
           </p>
         </div>
         {/* Header */}
         <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-2 border-b px-4 pb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          <span>{t('orderDetail.colProduct')}</span>
-          <span className="text-center">{t('orderDetail.colQty')}</span>
-          <span className="text-end">{t('orderDetail.colUnitPrice')}</span>
-          <span className="text-end">{t('orderDetail.colLineTotal')}</span>
+          <span>{t($ => $.orderDetail.colProduct)}</span>
+          <span className="text-center">{t($ => $.orderDetail.colQty)}</span>
+          <span className="text-end">{t($ => $.orderDetail.colUnitPrice)}</span>
+          <span className="text-end">{t($ => $.orderDetail.colLineTotal)}</span>
         </div>
         {/* Rows */}
         {order.lines.map((line) => (
@@ -773,25 +770,25 @@ function ProductsGrid({ order }: { order: Order }) {
               </div>
             </div>
             <p className="text-center text-sm tabular-nums font-medium">{line.quantity}</p>
-            <p className="text-end text-sm tabular-nums">{fmtMoney(line.unit_price)}</p>
-            <p className="text-end text-sm tabular-nums font-semibold">{fmtMoney(line.line_total)}</p>
+            <p className="text-end text-sm tabular-nums">{money(line.unit_price)}</p>
+            <p className="text-end text-sm tabular-nums font-semibold">{money(line.line_total)}</p>
           </div>
         ))}
         {/* Totals row */}
         <div className="flex items-center justify-between gap-4 border-t px-4 pt-3 text-sm">
-          <span className="text-muted-foreground">{t('orderDetail.subtotalRow')}</span>
-          <span className="font-semibold tabular-nums">{fmtMoney(order.products_total)} EGP</span>
+          <span className="text-muted-foreground">{t($ => $.orderDetail.subtotalRow)}</span>
+          <span className="font-semibold tabular-nums">{money(order.products_total)}</span>
         </div>
         {order.fees.length > 0 ? order.fees.map((f) => (
           <div key={f.id} className="flex items-center justify-between gap-4 px-4 py-1 text-sm">
             <span className="text-muted-foreground">{f.name}</span>
-            <span className="tabular-nums">{fmtMoney(f.total)} EGP</span>
+            <span className="tabular-nums">{money(f.total)}</span>
           </div>
         )) : null}
         {order.coupons.length > 0 ? order.coupons.map((c) => (
           <div key={c.id} className="flex items-center justify-between gap-4 px-4 py-1 text-sm">
             <span className="font-mono text-xs text-muted-foreground">{c.code}</span>
-            <span className="tabular-nums text-emerald-600 dark:text-emerald-400">-{fmtMoney(c.discount)} EGP</span>
+            <span className="tabular-nums text-emerald-600 dark:text-emerald-400">-{money(c.discount)}</span>
           </div>
         )) : null}
       </div>
@@ -802,35 +799,36 @@ function ProductsGrid({ order }: { order: Order }) {
 // ── Part 8 — Payment Card ─────────────────────────────────────────────────────
 
 function PaymentCard({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const method = order.payment_method_manual ?? order.payment_method;
   const remaining = order.remaining_balance;
 
   return (
-    <InfoCard title={t('orderDetail.paymentTitle')} icon={ShoppingBag}>
+    <InfoCard title={t($ => $.orderDetail.paymentTitle)} icon={ShoppingBag}>
       <FieldGrid cols={2}>
-        <Field label={t('orderDetail.paymentMethod')}>
+        <Field label={t($ => $.orderDetail.paymentMethod)}>
           <OrderPaymentBadge
             method={method}
             methodTitle={order.payment_method_title}
             datePaid={order.date_paid}
           />
         </Field>
-        <Field label={t('orderDetail.transactionId')}>
+        <Field label={t($ => $.orderDetail.transactionId)}>
           {order.transaction_id ? (
             <span className="font-mono text-xs">{order.transaction_id}</span>
           ) : null}
         </Field>
-        <Field label={t('orderDetail.paymentDate')}>{fmtDate(order.date_paid)}</Field>
-        <Field label={t('orderDetail.paymentStatus')}>
+        <Field label={t($ => $.orderDetail.paymentDate)}>{fmtDate(order.date_paid)}</Field>
+        <Field label={t($ => $.orderDetail.paymentStatus)}>
           {order.date_paid ? (
-            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{t('orderDetail.paymentVerifiedStatus')}</span>
+            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{t($ => $.orderDetail.paymentVerifiedStatus)}</span>
           ) : (
-            <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t('orderDetail.paymentPendingStatus')}</span>
+            <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t($ => $.orderDetail.paymentPendingStatus)}</span>
           )}
         </Field>
         {order.payment_proof_path ? (
-          <Field label={t('orderDetail.proofUploaded')}>
+          <Field label={t($ => $.orderDetail.proofUploaded)}>
             <a
               href={getMediaUrl(order.payment_proof_path) ?? '#'}
               target="_blank"
@@ -838,20 +836,20 @@ function PaymentCard({ order }: { order: Order }) {
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
             >
               <ExternalLink className="size-3" />
-              {t('orderDetail.viewProof')}
+              {t($ => $.orderDetail.viewProof)}
             </a>
           </Field>
         ) : null}
         {order.deposit_amount ? (
-          <Field label={t('orderDetail.depositPaidField')}>
+          <Field label={t($ => $.orderDetail.depositPaidField)}>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-              {fmtMoney(order.deposit_amount)} EGP
+              {money(order.deposit_amount)}
             </span>
           </Field>
         ) : null}
-        <Field label={t('orderDetail.remainingBalanceField')}>
+        <Field label={t($ => $.orderDetail.remainingBalanceField)}>
           <span className={cn('font-semibold tabular-nums', remaining > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
-            {fmtMoney(remaining)} EGP
+            {money(remaining)}
           </span>
         </Field>
       </FieldGrid>
@@ -916,13 +914,13 @@ function AuditSourceBadge({ source }: { source: string | null }) {
   const { t } = useTranslation('orders');
   if (!source) return null;
   const labelMap: Record<string, string> = {
-    dashboard:  t('orderDetail.sourceDashboard'),
-    mobile_app: t('orderDetail.sourceMobile'),
-    api:        t('orderDetail.sourceApi'),
-    woocommerce:t('orderDetail.sourceWooCommerce'),
-    automation: t('orderDetail.sourceAutomation'),
-    cron:       t('orderDetail.sourceCron'),
-    webhook:    t('orderDetail.sourceWebhook'),
+    dashboard:  t($ => $.orderDetail.sourceDashboard),
+    mobile_app: t($ => $.orderDetail.sourceMobile),
+    api:        t($ => $.orderDetail.sourceApi),
+    woocommerce:t($ => $.orderDetail.sourceWooCommerce),
+    automation: t($ => $.orderDetail.sourceAutomation),
+    cron:       t($ => $.orderDetail.sourceCron),
+    webhook:    t($ => $.orderDetail.sourceWebhook),
   };
   return (
     <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal">
@@ -935,11 +933,11 @@ function AuditActorBadge({ actorType }: { actorType: string | null }) {
   const { t } = useTranslation('orders');
   if (!actorType || actorType === 'user') return null;
   const cfg: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }>; cls: string }> = {
-    system:      { label: t('orderDetail.actorSystem'),       Icon: Bot,       cls: 'text-slate-500' },
-    api:         { label: t('orderDetail.actorApi'),          Icon: Globe,     cls: 'text-slate-500' },
-    automation:  { label: t('orderDetail.actorAuto'),         Icon: RefreshCw, cls: 'text-violet-600' },
-    woocommerce: { label: t('orderDetail.actorWooCommerce'),  Icon: Store,     cls: 'text-orange-600' },
-    webhook:     { label: t('orderDetail.actorWebhook'),      Icon: Globe,     cls: 'text-slate-500' },
+    system:      { label: t($ => $.orderDetail.actorSystem),       Icon: Bot,       cls: 'text-slate-500' },
+    api:         { label: t($ => $.orderDetail.actorApi),          Icon: Globe,     cls: 'text-slate-500' },
+    automation:  { label: t($ => $.orderDetail.actorAuto),         Icon: RefreshCw, cls: 'text-violet-600' },
+    woocommerce: { label: t($ => $.orderDetail.actorWooCommerce),  Icon: Store,     cls: 'text-orange-600' },
+    webhook:     { label: t($ => $.orderDetail.actorWebhook),      Icon: Globe,     cls: 'text-slate-500' },
   };
   const c = cfg[actorType];
   if (!c) return null;
@@ -961,7 +959,7 @@ function ChangeDiff({ prev, next, fields }: {
   if (keys.length === 0) return null;
   return (
     <div className="mt-2 rounded-md border bg-muted/30 px-3 py-2">
-      <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{t('orderDetail.changedFields')}</p>
+      <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{t($ => $.orderDetail.changedFields)}</p>
       <div className="flex flex-col gap-1">
         {keys.map(k => (
           <div key={k} className="flex items-baseline gap-1.5 text-xs font-mono">
@@ -1043,7 +1041,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
 
   return (
     <InfoCard
-      title={t('orderDetail.timelineTitle')}
+      title={t($ => $.orderDetail.timelineTitle)}
       icon={Activity}
       headerExtra={
         <div className="flex items-center gap-1.5">
@@ -1093,7 +1091,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
         <Input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder={t('orderDetail.searchEvents')}
+          placeholder={t($ => $.orderDetail.searchEvents)}
           className="pl-8 h-8 text-sm"
         />
       </div>
@@ -1112,7 +1110,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={Activity} message={search || filter !== 'all' ? t('orderDetail.noEventsFilter') : t('orderDetail.noEvents')} />
+        <EmptyState icon={Activity} message={search || filter !== 'all' ? t($ => $.orderDetail.noEventsFilter) : t($ => $.orderDetail.noEvents)} />
       ) : (
         <div className="relative mt-3">
           <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
@@ -1178,7 +1176,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
                     <div className="ml-11 mb-2 rounded-md border bg-muted/20 px-3 py-2.5 text-sm">
                       {ev.reason && (
                         <div className="mb-2">
-                          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t('orderDetail.reason')}</span>
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t($ => $.orderDetail.reason)}</span>
                           <p className="text-sm mt-0.5">{ev.reason}</p>
                         </div>
                       )}
@@ -1191,7 +1189,7 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
 
                       {(ev.payload && Object.keys(ev.payload).length > 0 && !ev.previous_value && !ev.new_value) && (
                         <div className="mt-2 rounded-md border bg-muted/30 px-3 py-2">
-                          <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{t('orderDetail.details')}</p>
+                          <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{t($ => $.orderDetail.details)}</p>
                           <div className="flex flex-col gap-1">
                             {Object.entries(ev.payload).map(([k, v]) => (
                               <div key={k} className="flex items-baseline gap-1.5 text-xs font-mono">
@@ -1226,35 +1224,35 @@ function EnterpriseAuditTimeline({ order }: { order: Order }) {
 function WorkflowHistoryCard({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
   return (
-    <InfoCard title={t('orderDetail.workflowHistoryTitle')} icon={GitBranch}>
+    <InfoCard title={t($ => $.orderDetail.workflowHistoryTitle)} icon={GitBranch}>
       <div className="flex flex-col gap-4">
         <div className="rounded-md border bg-muted/20 px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs text-muted-foreground">{t('orderDetail.currentStatus')}</span>
+            <span className="text-xs text-muted-foreground">{t($ => $.orderDetail.currentStatus)}</span>
             <OrderStatusBadge status={order.status} />
           </div>
           {order.status_entered_at ? (
-            <p className="text-xs text-muted-foreground">{t('orderDetail.enteredAt', { datetime: fmtDateTime(order.status_entered_at) })}</p>
+            <p className="text-xs text-muted-foreground">{t($ => $.orderDetail.enteredAt, { datetime: fmtDateTime(order.status_entered_at) })}</p>
           ) : null}
           {order.status_entered_by ? (
-            <p className="text-xs text-muted-foreground">{t('orderDetail.byUser', { name: order.status_entered_by })}</p>
+            <p className="text-xs text-muted-foreground">{t($ => $.orderDetail.byUser, { name: order.status_entered_by })}</p>
           ) : null}
         </div>
         {order.previous_status ? (
           <div className="rounded-md border px-4 py-2">
-            <p className="text-xs text-muted-foreground mb-0.5">{t('orderDetail.previousStatus')}</p>
+            <p className="text-xs text-muted-foreground mb-0.5">{t($ => $.orderDetail.previousStatus)}</p>
             <p className="text-sm font-medium capitalize">{String(order.previous_status).replace(/_/g, ' ')}</p>
           </div>
         ) : null}
         <FieldGrid cols={2}>
-          <Field label={t('orderDetail.wfDateCreated')}>{fmtDate(order.created_at)}</Field>
-          {order.date_paid ? <Field label={t('orderDetail.wfDatePaymentVerified')}>{fmtDate(order.date_paid)}</Field> : null}
-          {order.inventory_reserved_at ? <Field label={t('orderDetail.wfDateReserved')}>{fmtDate(order.inventory_reserved_at)}</Field> : null}
-          {order.inventory_shipped_at ? <Field label={t('orderDetail.wfDateDispatched')}>{fmtDate(order.inventory_shipped_at)}</Field> : null}
-          {order.requested_delivery_date ? <Field label={t('orderDetail.wfDateRequestedDelivery')}>{fmtDate(order.requested_delivery_date)}</Field> : null}
+          <Field label={t($ => $.orderDetail.wfDateCreated)}>{fmtDate(order.created_at)}</Field>
+          {order.date_paid ? <Field label={t($ => $.orderDetail.wfDatePaymentVerified)}>{fmtDate(order.date_paid)}</Field> : null}
+          {order.inventory_reserved_at ? <Field label={t($ => $.orderDetail.wfDateReserved)}>{fmtDate(order.inventory_reserved_at)}</Field> : null}
+          {order.inventory_shipped_at ? <Field label={t($ => $.orderDetail.wfDateDispatched)}>{fmtDate(order.inventory_shipped_at)}</Field> : null}
+          {order.requested_delivery_date ? <Field label={t($ => $.orderDetail.wfDateRequestedDelivery)}>{fmtDate(order.requested_delivery_date)}</Field> : null}
         </FieldGrid>
         <div className="rounded-md border px-3 py-2 text-xs text-muted-foreground">
-          {t('orderDetail.auditNote')}
+          {t($ => $.orderDetail.auditNote)}
         </div>
       </div>
     </InfoCard>
@@ -1265,17 +1263,19 @@ function WorkflowHistoryCard({ order }: { order: Order }) {
 
 function RelatedRecordsCard({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
+  // Reuse the warehouse name from line data instead of the raw UUID (W2 FIX-1).
+  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
   const records: Array<{ label: string; value: string | null | undefined; href?: string; icon: React.ComponentType<{ className?: string }> }> = [
-    { label: t('orderDetail.relatedCustomer'), value: order.customer?.name, href: order.customer ? `/app/customers/${order.customer.id}` : undefined, icon: UserCheck },
-    { label: t('orderDetail.relatedChannel'), value: order.channel?.name, icon: Store },
-    { label: t('orderDetail.relatedWarehouse'), value: order.assigned_warehouse_id, icon: Warehouse },
+    { label: t($ => $.orderDetail.relatedCustomer), value: order.customer?.name, href: order.customer ? `/app/customers/${order.customer.id}` : undefined, icon: UserCheck },
+    { label: t($ => $.orderDetail.relatedChannel), value: order.channel?.name, icon: Store },
+    { label: t($ => $.orderDetail.relatedWarehouse), value: warehouseName, icon: Warehouse },
   ];
 
   const filled = records.filter((r) => r.value);
   if (filled.length === 0) return null;
 
   return (
-    <InfoCard title={t('orderDetail.relatedTitle')} icon={ExternalLink}>
+    <InfoCard title={t($ => $.orderDetail.relatedTitle)} icon={ExternalLink}>
       <div className="flex flex-col gap-2">
         {filled.map(({ label, value, href, icon: Icon }) => (
           <div key={label} className="flex items-center gap-2.5 rounded-md border px-3 py-2 text-sm">
@@ -1298,90 +1298,20 @@ function RelatedRecordsCard({ order }: { order: Order }) {
 
 // ── Part 12 — Quick Actions + Workflow ───────────────────────────────────────
 
-type WorkflowLabelKey =
-  | 'orderDetail.wfConfirmOrder'
-  | 'orderDetail.wfCancelOrder'
-  | 'orderDetail.wfMoveToPrep'
-  | 'orderDetail.wfMarkAwaitingStock'
-  | 'orderDetail.wfSendToReview'
-  | 'orderDetail.wfResume'
-  | 'orderDetail.wfReschedule'
-  | 'orderDetail.wfDispatch'
-  | 'orderDetail.wfMarkDelivered'
-  | 'orderDetail.wfProcessReturn'
-  | 'orderDetail.wfCompleteReview'
-  | 'orderDetail.wfResumeToConfirmed'
-  | 'orderDetail.wfReturnToConfirmed'
-  | 'orderDetail.wfMoveToReview';
-
-type WorkflowAction = {
-  key: string;
-  labelKey: WorkflowLabelKey;
-  icon: React.ComponentType<{ className?: string }>;
-  variant: 'default' | 'outline' | 'destructive';
-};
-
-const WORKFLOW_ACTIONS: Record<string, WorkflowAction[]> = {
-  pending: [
-    { key: 'confirm',          labelKey: 'orderDetail.wfConfirmOrder',      icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  awaiting_payment: [
-    { key: 'confirm',          labelKey: 'orderDetail.wfConfirmOrder',      icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  processing: [
-    { key: 'prepare',          labelKey: 'orderDetail.wfMoveToPrep',        icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'awaiting_stock',   labelKey: 'orderDetail.wfMarkAwaitingStock', icon: Box,              variant: 'outline'     },
-    { key: 'review',           labelKey: 'orderDetail.wfSendToReview',      icon: Activity,         variant: 'outline'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  awaiting_stock: [
-    { key: 'resume',           labelKey: 'orderDetail.wfResume',            icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  confirmed: [
-    { key: 'prepare',          labelKey: 'orderDetail.wfMoveToPrep',        icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule',       labelKey: 'orderDetail.wfReschedule',        icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  preparing: [
-    { key: 'dispatch',         labelKey: 'orderDetail.wfDispatch',          icon: Truck,            variant: 'default'     },
-    { key: 'review',           labelKey: 'orderDetail.wfSendToReview',      icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',       labelKey: 'orderDetail.wfReschedule',        icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  out_for_delivery: [
-    { key: 'complete_delivery', labelKey: 'orderDetail.wfMarkDelivered',    icon: CheckCircle2,     variant: 'default'     },
-    { key: 'return',            labelKey: 'orderDetail.wfProcessReturn',    icon: RotateCcw,        variant: 'outline'     },
-    { key: 'review',            labelKey: 'orderDetail.wfSendToReview',     icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',        labelKey: 'orderDetail.wfReschedule',       icon: Clock,            variant: 'outline'     },
-  ],
-  delivered: [
-    { key: 'complete',          labelKey: 'orderDetail.wfCompleteReview',   icon: CheckCircle2,     variant: 'default'     },
-    { key: 'review',            labelKey: 'orderDetail.wfSendToReview',     icon: Activity,         variant: 'outline'     },
-    { key: 'resume',            labelKey: 'orderDetail.wfResume',           icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'resume_confirmed',  labelKey: 'orderDetail.wfResumeToConfirmed',icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'reschedule',        labelKey: 'orderDetail.wfReschedule',       icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',            labelKey: 'orderDetail.wfCancelOrder',      icon: XCircle,          variant: 'destructive' },
-  ],
-  returned: [
-    { key: 'return_to_confirmed', labelKey: 'orderDetail.wfReturnToConfirmed', icon: RotateCcw,     variant: 'default'     },
-    { key: 'review',              labelKey: 'orderDetail.wfMoveToReview',      icon: Activity,      variant: 'outline'     },
-    { key: 'cancel',              labelKey: 'orderDetail.wfCancelOrder',        icon: XCircle,      variant: 'destructive' },
-  ],
-  review: [
-    { key: 'resume',    labelKey: 'orderDetail.wfResume',     icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule', labelKey: 'orderDetail.wfReschedule', icon: Clock,           variant: 'outline'     },
-    { key: 'cancel',    labelKey: 'orderDetail.wfCancelOrder', icon: XCircle,         variant: 'destructive' },
-  ],
-  rescheduled: [
-    { key: 'resume',    labelKey: 'orderDetail.wfResume',     icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule', labelKey: 'orderDetail.wfReschedule', icon: Clock,           variant: 'outline'     },
-    { key: 'cancel',    labelKey: 'orderDetail.wfCancelOrder', icon: XCircle,         variant: 'destructive' },
-  ],
-  completed: [],
-  cancelled: [],
+const QUICK_TARGET_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  pending:          RotateCcw,
+  processing:       ArrowRightCircle,
+  confirmed:        CheckCircle2,
+  awaiting_payment: Banknote,
+  preparing:        ArrowRightCircle,
+  out_for_delivery: Truck,
+  delivered:        CheckCircle2,
+  completed:        CheckCircle2,
+  cancelled:        XCircle,
+  awaiting_stock:   Box,
+  rescheduled:      Clock,
+  review:           Activity,
+  returned:         RotateCcw,
 };
 
 function QuickActionsPanel({
@@ -1396,48 +1326,22 @@ function QuickActionsPanel({
   onPrint: () => void;
 }) {
   const { t } = useTranslation('orders');
-  const confirm          = useOrderWorkflowConfirm();
-  const moveToPrep       = useOrderWorkflowMoveToPreparation();
-  const completeDeliv    = useOrderWorkflowCompleteDelivery();
-  const completeOrder    = useOrderWorkflowComplete();
-  const processReturn    = useOrderWorkflowReturn();
-  const cancelOrder      = useOrderWorkflowCancel();
-  const moveToReview     = useOrderWorkflowMoveToReview();
-  const resume           = useOrderWorkflowResume();
-  const dispatch         = useOrderWorkflowDispatch();
-  const reschedule       = useOrderWorkflowReschedule();
-  const markAwaitingStock = useOrderWorkflowMarkAwaitingStock();
-  const resumeConfirmed  = useOrderWorkflowResumeToConfirmed();
-  const returnConfirmed  = useOrderWorkflowReturnToConfirmed();
+  const transition = useOrderWorkflowTransition();
+  const reschedule = useOrderWorkflowReschedule();
 
   const today = new Date().toISOString().slice(0, 10);
   const [showReschedule, setShowReschedule] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState(today);
 
-  const isPending = [
-    confirm, moveToPrep, completeDeliv, completeOrder, processReturn,
-    cancelOrder, moveToReview, resume, dispatch, reschedule,
-    markAwaitingStock, resumeConfirmed, returnConfirmed,
-  ].some((m) => m.isPending);
+  const transitions = order.allowed_status_transitions ?? [];
+  const isPending   = transition.isPending || reschedule.isPending;
 
-  const actions = WORKFLOW_ACTIONS[order.status as keyof typeof WORKFLOW_ACTIONS] ?? [];
-
-  function handleAction(key: string) {
-    switch (key) {
-      case 'confirm':             confirm.mutate(order.id); break;
-      case 'prepare':             moveToPrep.mutate(order.id); break;
-      case 'complete_delivery':   completeDeliv.mutate(order.id); break;
-      case 'complete':            completeOrder.mutate(order.id); break;
-      case 'return':              processReturn.mutate({ id: order.id }); break;
-      case 'cancel':              cancelOrder.mutate({ id: order.id }); break;
-      case 'review':              moveToReview.mutate({ id: order.id }); break;
-      case 'resume':              resume.mutate(order.id); break;
-      case 'dispatch':            dispatch.mutate(order.id); break;
-      case 'awaiting_stock':      markAwaitingStock.mutate({ id: order.id }); break;
-      case 'resume_confirmed':    resumeConfirmed.mutate(order.id); break;
-      case 'return_to_confirmed': returnConfirmed.mutate(order.id); break;
-      case 'reschedule':          setShowReschedule(true); break;
+  function handleAction(targetStatus: string) {
+    if (targetStatus === 'scheduled') {
+      setShowReschedule(true);
+      return;
     }
+    transition.mutate({ id: order.id, targetStatus });
   }
 
   function handleRescheduleConfirm() {
@@ -1450,82 +1354,85 @@ function QuickActionsPanel({
   return (
     <Card className="gap-0">
       <CardHeader className="px-4 py-3 border-b">
-        <CardTitle className="text-sm font-semibold">{t('orderDetail.quickActionsTitle')}</CardTitle>
+        <CardTitle className="text-sm font-semibold">{t($ => $.orderDetail.quickActionsTitle)}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 px-4 py-4">
         {/* Static actions */}
         <Button variant="outline" size="sm" className="justify-start gap-2" onClick={onEdit}>
-          <Edit className="size-4" /> {t('orderDetail.editOrderBtn')}
+          <Edit className="size-4" /> {t($ => $.orderDetail.editOrderBtn)}
         </Button>
         <Button variant="outline" size="sm" className="justify-start gap-2" onClick={onPrint}>
-          <Printer className="size-4" /> {t('orderDetail.printInvoice')}
+          <Printer className="size-4" /> {t($ => $.orderDetail.printInvoice)}
         </Button>
         <Button variant="outline" size="sm" className="justify-start gap-2" onClick={onConfirmCustomer}>
-          <UserCheck className="size-4" /> {t('orderDetail.confirmCustomerBtn')}
+          <UserCheck className="size-4" /> {t($ => $.orderDetail.confirmCustomerBtn)}
         </Button>
         {order.customer ? (
           <Button variant="outline" size="sm" className="justify-start gap-2" asChild>
             <a href={`/app/customers/${order.customer.id}`}>
-              <ExternalLink className="size-4" /> {t('orderDetail.openCustomer')}
+              <ExternalLink className="size-4" /> {t($ => $.orderDetail.openCustomer)}
             </a>
           </Button>
         ) : null}
         {order.assigned_warehouse_id ? (
           <Button variant="outline" size="sm" className="justify-start gap-2" asChild>
             <a href={ROUTES.warehouses}>
-              <Warehouse className="size-4" /> {t('orderDetail.openWarehouse')}
+              <Warehouse className="size-4" /> {t($ => $.orderDetail.openWarehouse)}
             </a>
           </Button>
         ) : null}
 
         {/* Workflow actions */}
-        {actions.length > 0 ? (
+        {transitions.length > 0 ? (
           <>
             <Separator className="my-1" />
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('orderDetail.workflowSection')}</p>
-            {actions.map((action) => {
-              if (action.key === 'reschedule' && showReschedule) {
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t($ => $.orderDetail.workflowSection)}</p>
+            {showReschedule ? (
+              <div className="flex flex-col gap-2 rounded-md border p-3">
+                <label className="text-xs font-medium text-muted-foreground">{t($ => $.orderDetail.newDeliveryDate)}</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  min={today}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleRescheduleConfirm}
+                    disabled={reschedule.isPending || !rescheduleDate}
+                    className="gap-1.5"
+                  >
+                    {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
+                    {t($ => $.orderDetail.confirmBtn)}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowReschedule(false)}>
+                    {t($ => $.orderDetail.cancelBtn)}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              transitions.map((tr, idx) => {
+                const Icon    = QUICK_TARGET_ICON[tr.target_status] ?? ArrowRightCircle;
+                const variant = tr.target_status === 'cancelled' ? 'destructive'
+                              : idx === 0                        ? 'default'
+                              : 'outline';
                 return (
-                  <div key="reschedule-form" className="flex flex-col gap-2 rounded-md border p-3">
-                    <label className="text-xs font-medium text-muted-foreground">{t('orderDetail.newDeliveryDate')}</label>
-                    <input
-                      type="date"
-                      value={rescheduleDate}
-                      min={today}
-                      onChange={(e) => setRescheduleDate(e.target.value)}
-                      className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleRescheduleConfirm}
-                        disabled={reschedule.isPending || !rescheduleDate}
-                        className="gap-1.5"
-                      >
-                        {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
-                        {t('orderDetail.confirmBtn')}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setShowReschedule(false)}>
-                        {t('orderDetail.cancelBtn')}
-                      </Button>
-                    </div>
-                  </div>
+                  <Button
+                    key={tr.target_status}
+                    variant={variant as 'default' | 'outline' | 'destructive'}
+                    size="sm"
+                    onClick={() => handleAction(tr.target_status)}
+                    disabled={isPending}
+                    className="justify-start gap-2"
+                  >
+                    {isPending ? <Loader2 className="size-4 animate-spin" /> : <Icon className="size-4" />}
+                    {tr.label}
+                  </Button>
                 );
-              }
-              return (
-                <Button
-                  key={action.key}
-                  variant={action.variant}
-                  size="sm"
-                  onClick={() => handleAction(action.key)}
-                  disabled={isPending}
-                  className="justify-start gap-2"
-                >
-                  {isPending ? <Loader2 className="size-4 animate-spin" /> : <action.icon className="size-4" />}
-                  {t(action.labelKey)}
-                </Button>
-              );
-            })}
+              })
+            )}
           </>
         ) : null}
       </CardContent>
@@ -1557,9 +1464,9 @@ export function OrderDetailPage() {
     return (
       <div className="flex flex-col items-center gap-4 py-20 text-center">
         <Package className="size-12 text-destructive/40" />
-        <p className="text-lg font-medium">{t('orderDetail.failedToLoad')}</p>
-        <p className="text-sm text-muted-foreground">{t('orderDetail.failedToLoadDesc')}</p>
-        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>{t('orderDetail.retry')}</Button>
+        <p className="text-lg font-medium">{t($ => $.orderDetail.failedToLoad)}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.orderDetail.failedToLoadDesc)}</p>
+        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>{t($ => $.orderDetail.retry)}</Button>
       </div>
     );
   }
@@ -1569,8 +1476,8 @@ export function OrderDetailPage() {
     return (
       <div className="flex flex-col items-center gap-4 py-20 text-center">
         <Package className="size-12 text-muted-foreground/40" />
-        <p className="text-lg font-medium">{t('detail.notFound')}</p>
-        <p className="text-sm text-muted-foreground">{t('detail.notFoundMessage')}</p>
+        <p className="text-lg font-medium">{t($ => $.detail.notFound)}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.detail.notFoundMessage)}</p>
       </div>
     );
   }
@@ -1639,17 +1546,17 @@ export function OrderDetailPage() {
 
           {/* Notes (contextual) */}
           {(order.notes || order.customer_note) ? (
-            <InfoCard title={t('orderDetail.notesTitle')} icon={Building2}>
+            <InfoCard title={t($ => $.orderDetail.notesTitle)} icon={Building2}>
               <div className="flex flex-col gap-3">
                 {order.notes ? (
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t('orderDetail.notesInternal')}</p>
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t($ => $.orderDetail.notesInternal)}</p>
                     <p className="text-sm whitespace-pre-wrap">{order.notes}</p>
                   </div>
                 ) : null}
                 {order.customer_note ? (
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t('orderDetail.notesCustomer')}</p>
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t($ => $.orderDetail.notesCustomer)}</p>
                     <p className="rounded-md border bg-muted/30 px-3 py-2 text-sm italic">{order.customer_note}</p>
                   </div>
                 ) : null}

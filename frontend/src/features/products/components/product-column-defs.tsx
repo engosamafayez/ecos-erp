@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Edit, Eye, Loader2, MoreHorizontal, Package, Power, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from '@/components/ds/use-toast';
 import { ROUTES } from '@/router/routes';
 
@@ -33,9 +34,10 @@ function fmt(n: number | null | undefined): string {
 }
 
 function PendingCostBadge() {
+  const { t } = useTranslation('products');
   return (
     <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-400">
-      Pending Cost
+      {t($ => $.colDefs.pendingCost)}
     </span>
   );
 }
@@ -47,27 +49,28 @@ function fmtDate(d: string | null | undefined): string {
 
 // PART 6: 3-state for finished goods (manufacturing_availability), 2-state for other types (stock_status)
 function StockStatusCell({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
   if (!product) return <span className="text-muted-foreground text-xs">—</span>;
   if (product.product_type === 'finished_good') {
     const mav = product.manufacturing_availability;
     if (mav === 'instock') {
       return (
         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
-          🟢 In Stock
+          {t($ => $.colDefs.mfgInStock)}
         </Badge>
       );
     }
     if (mav === 'outofstock') {
       return (
         <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">
-          🔴 Out of Stock
+          {t($ => $.colDefs.mfgOutOfStock)}
         </Badge>
       );
     }
     if (mav === 'recipe_missing') {
       return (
         <Badge className="bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700">
-          ⚪ Recipe Missing
+          {t($ => $.colDefs.mfgRecipeMissing)}
         </Badge>
       );
     }
@@ -78,13 +81,13 @@ function StockStatusCell({ product }: { product: Product }) {
   if (status === 'instock') {
     return (
       <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
-        In Stock
+        {t($ => $.stockStatus.instock)}
       </Badge>
     );
   }
   return (
     <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">
-      Out of Stock
+      {t($ => $.stockStatus.outofstock)}
     </Badge>
   );
 }
@@ -110,6 +113,7 @@ function InlineEditNumber({
   min = 0,
   step = 0.01,
 }: InlineEditNumberProps) {
+  const { t } = useTranslation('products');
   const [editing, setEditing] = useState(false);
   const [localVal, setLocalVal] = useState('');
   const [saving, setSaving] = useState(false);
@@ -130,7 +134,7 @@ function InlineEditNumber({
         await onSave(product.id, n);
         queryClient.invalidateQueries({ queryKey: ['products'] });
       } catch {
-        toast.error('Failed to save. Please try again.');
+        toast.error(t($ => $.toasts.inlineSaveFailed));
       } finally {
         setSaving(false);
         setEditing(false);
@@ -160,7 +164,7 @@ function InlineEditNumber({
         onBlur={() => void commit()}
         autoFocus
         className="h-7 w-24 rounded border border-input bg-background px-2 text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
-        aria-label="Edit value"
+        aria-label={t($ => $.colDefs.editValue)}
       />
     );
   }
@@ -169,7 +173,7 @@ function InlineEditNumber({
     <button
       type="button"
       onClick={startEdit}
-      title="Click to edit"
+      title={t($ => $.colDefs.clickToEdit)}
       className="group/inline flex items-center gap-0.5 rounded px-1 py-0.5 text-sm tabular-nums transition-colors hover:bg-accent"
     >
       <span className="font-medium">
@@ -192,10 +196,15 @@ export type ProductColumnCallbacks = {
   onCreateRecipe?: (product: Product) => void; // PART 8: navigates to create-recipe
 };
 
+// ── t function type ───────────────────────────────────────────────────────────
+
+type TFn = (key: string, opts?: Record<string, unknown>) => string;
+
 // ── Factory ───────────────────────────────────────────────────────────────────
 
 export function createProductColumns(
   callbacks: ProductColumnCallbacks,
+  t: TFn,
 ): DataGridColumnDef<Product>[] {
   const { onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe } = callbacks;
 
@@ -203,7 +212,7 @@ export function createProductColumns(
     // ── Image ─────────────────────────────────────────────────────────────────
     {
       key: 'image',
-      label: 'Image',
+      label: t($ => $.colDefs.image),
       alwaysVisible: false,
       defaultVisible: true,
       width: 56,
@@ -221,7 +230,7 @@ export function createProductColumns(
     // ── Name (pinned left) ────────────────────────────────────────────────────
     {
       key: 'name',
-      label: 'Name',
+      label: t($ => $.colDefs.name),
       alwaysVisible: true,
       pin: 'left',
       width: 220,
@@ -245,7 +254,7 @@ export function createProductColumns(
     // ── Category ──────────────────────────────────────────────────────────────
     {
       key: 'category',
-      label: 'Category',
+      label: t($ => $.colDefs.category),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-20',
       cell: (product) => (
@@ -256,7 +265,7 @@ export function createProductColumns(
     // ── Brand ─────────────────────────────────────────────────────────────────
     {
       key: 'brand',
-      label: 'Brand',
+      label: t($ => $.colDefs.brand),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-20',
       cell: (product) => {
@@ -274,7 +283,7 @@ export function createProductColumns(
     // ── Channels ──────────────────────────────────────────────────────────────
     {
       key: 'channels',
-      label: 'Channels',
+      label: t($ => $.colDefs.channels),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-28',
       cell: (product) => <ChannelCell channels={product.channels} />,
@@ -283,7 +292,7 @@ export function createProductColumns(
     // ── Product Cost ──────────────────────────────────────────────────────────
     {
       key: 'product_cost',
-      label: 'Product Cost',
+      label: t($ => $.colDefs.productCost),
       defaultVisible: true,
       align: 'end',
       skeletonClassName: 'h-4 w-14',
@@ -306,7 +315,7 @@ export function createProductColumns(
     // ── Regular Price ─────────────────────────────────────────────────────────
     {
       key: 'regular_price',
-      label: 'Regular Price',
+      label: t($ => $.colDefs.regularPrice),
       defaultVisible: true,
       sortable: true,
       align: 'end',
@@ -318,7 +327,7 @@ export function createProductColumns(
     // ── Sale Price (inline editable) ─────────────────────────────────────────
     {
       key: 'sale_price',
-      label: 'Sale Price',
+      label: t($ => $.colDefs.salePrice),
       defaultVisible: true,
       align: 'end',
       skeletonClassName: 'h-4 w-14',
@@ -335,7 +344,7 @@ export function createProductColumns(
     // ── Markup % (inline editable — saves as new regular_price) ──────────────
     {
       key: 'markup_pct',
-      label: 'Markup %',
+      label: t($ => $.colDefs.markupPct),
       defaultVisible: true,
       align: 'end',
       skeletonClassName: 'h-4 w-10',
@@ -363,7 +372,7 @@ export function createProductColumns(
     // ── Gross Profit % ───────────────────────────────────────────────────────
     {
       key: 'gross_profit',
-      label: 'Gross Profit %',
+      label: t($ => $.colDefs.grossProfit),
       defaultVisible: true,
       align: 'end',
       skeletonClassName: 'h-4 w-10',
@@ -382,7 +391,7 @@ export function createProductColumns(
     // ── Final Margin % ────────────────────────────────────────────────────────
     {
       key: 'final_margin',
-      label: 'Final Margin %',
+      label: t($ => $.colDefs.finalMargin),
       defaultVisible: true,
       align: 'end',
       skeletonClassName: 'h-4 w-10',
@@ -394,7 +403,7 @@ export function createProductColumns(
         return (
           <span
             className={`text-sm font-medium ${marginColorClass(pct)}`}
-            title={hasSale ? 'Based on sale price' : 'Based on regular price'}
+            title={hasSale ? t($ => $.colDefs.basedOnSalePrice) : t($ => $.colDefs.basedOnRegularPrice)}
           >
             {pct.toFixed(1)}%{hasSale ? ' ↓' : ''}
           </span>
@@ -405,7 +414,7 @@ export function createProductColumns(
     // ── Stock Status (PART 9: In Stock / Out of Stock only) ────────────────────
     {
       key: 'stock_status',
-      label: 'Stock Status',
+      label: t($ => $.colDefs.stockStatus),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-20 rounded-full',
       cell: (product) => <StockStatusCell product={product} />,
@@ -414,7 +423,7 @@ export function createProductColumns(
     // ── Recipe (PART 8: clickable) ────────────────────────────────────────────
     {
       key: 'recipe',
-      label: 'Recipe',
+      label: t($ => $.colDefs.recipe),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-24 rounded-full',
       cell: (product) => {
@@ -427,10 +436,10 @@ export function createProductColumns(
               type="button"
               onClick={() => (onViewRecipe ? onViewRecipe(product) : onView(product))}
               className="cursor-pointer transition-opacity hover:opacity-80"
-              title="View recipe"
+              title={t($ => $.colDefs.viewRecipeTitle)}
             >
               <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 gap-1">
-                🟢 Recipe Available
+                {t($ => $.colDefs.recipeAvailable)}
               </Badge>
             </button>
           );
@@ -440,10 +449,10 @@ export function createProductColumns(
             type="button"
             onClick={() => (onCreateRecipe ? onCreateRecipe(product) : onView(product))}
             className="cursor-pointer transition-opacity hover:opacity-80"
-            title="Create recipe"
+            title={t($ => $.colDefs.createRecipeTitle)}
           >
             <Badge className="text-[11px] px-2 py-0.5 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 gap-1">
-              🟠 Missing
+              {t($ => $.colDefs.recipeMissing)}
             </Badge>
           </button>
         );
@@ -453,7 +462,7 @@ export function createProductColumns(
     // ── SKU (hidden by default) ───────────────────────────────────────────────
     {
       key: 'sku',
-      label: 'SKU',
+      label: t($ => $.colDefs.sku),
       alwaysVisible: false,
       defaultVisible: false,
       width: 108,
@@ -473,7 +482,7 @@ export function createProductColumns(
     // ── Published (hidden by default) ─────────────────────────────────────────
     {
       key: 'is_published',
-      label: 'Published',
+      label: t($ => $.colDefs.isPublished),
       defaultVisible: false,
       skeletonClassName: 'h-5 w-20 rounded-md',
       cell: (product) => <PublishBadge published={product.is_published} />,
@@ -482,7 +491,7 @@ export function createProductColumns(
     // ── Sync Status (hidden by default) ───────────────────────────────────────
     {
       key: 'sync_status',
-      label: 'Sync',
+      label: t($ => $.colDefs.sync),
       defaultVisible: false,
       skeletonClassName: 'h-5 w-16 rounded-md',
       cell: (product) => <SyncBadge status={product.sync_status} />,
@@ -491,7 +500,7 @@ export function createProductColumns(
     // ── Updated At (hidden by default) ────────────────────────────────────────
     {
       key: 'updated_at',
-      label: 'Updated',
+      label: t($ => $.colDefs.updatedAt),
       defaultVisible: false,
       sortable: true,
       skeletonClassName: 'h-4 w-20',
@@ -505,7 +514,7 @@ export function createProductColumns(
     // ── Pricing Review ────────────────────────────────────────────────────────
     {
       key: 'pricing_review',
-      label: 'Price Review',
+      label: t($ => $.colDefs.priceReview),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-20 rounded-full',
       cell: (product) => {
@@ -514,10 +523,10 @@ export function createProductColumns(
             <Link
               to={ROUTES.costManagementPriceReview}
               className="inline-flex"
-              title="Open Price Review Center"
+              title={t($ => $.colDefs.openPriceReviewCenter)}
             >
               <Badge className="text-[11px] px-2 py-0.5 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 gap-1 cursor-pointer hover:opacity-80 transition-opacity">
-                🟠 Review Required
+                {t($ => $.colDefs.reviewRequired)}
               </Badge>
             </Link>
           );
@@ -525,7 +534,7 @@ export function createProductColumns(
         if (product.pending_review === false) {
           return (
             <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 gap-1">
-              🟢 OK
+              {t($ => $.colDefs.ok)}
             </Badge>
           );
         }
@@ -550,7 +559,7 @@ export function createProductColumns(
                 variant="ghost"
                 size="icon"
                 className="size-7"
-                aria-label={`Actions for ${product.name}`}
+                aria-label={t($ => $.colDefs.actionsFor, { name: product.name })}
               >
                 <MoreHorizontal className="size-3.5" />
               </Button>
@@ -558,21 +567,21 @@ export function createProductColumns(
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={() => onView(product)}>
                 <Eye className="size-3.5" />
-                View
+                {t($ => $.colDefs.view)}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(product)}>
                 <Edit className="size-3.5" />
-                Edit
+                {t($ => $.colDefs.edit)}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onStatusToggle(product)}>
                 <Power className="size-3.5" />
-                {product.is_active ? 'Deactivate' : 'Activate'}
+                {product.is_active ? t($ => $.colDefs.deactivate) : t($ => $.colDefs.activate)}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={() => onDelete(product)}>
                 <Trash2 className="size-3.5" />
-                Delete
+                {t($ => $.colDefs.delete)}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

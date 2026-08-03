@@ -5,6 +5,7 @@ export type AuthUser = {
   id: number;
   name: string;
   email: string;
+  company_id: string | null;
 };
 
 export type LoginCredentials = {

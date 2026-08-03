@@ -29,7 +29,7 @@ final class PromotionEligibilityPolicy
      */
     public function isEligible(Promotion $promotion, PromotionContext $context): bool
     {
-        if (!$promotion->isActive()) {
+        if (! $promotion->isActive()) {
             return false;
         }
 
@@ -44,12 +44,12 @@ final class PromotionEligibilityPolicy
             return false;
         }
 
-        if (!$promotion->hasRemainingUses()) {
+        if (! $promotion->hasRemainingUses()) {
             return false;
         }
 
         foreach ($promotion->getConditions() as $condition) {
-            if (!$this->isConditionSatisfied($condition, $context)) {
+            if (! $this->isConditionSatisfied($condition, $context)) {
                 return false;
             }
         }
@@ -67,7 +67,7 @@ final class PromotionEligibilityPolicy
     {
         return array_values(array_filter(
             $promotion->getConditions(),
-            fn(PromotionCondition $cond) => !$this->isConditionSatisfied($cond, $context),
+            fn (PromotionCondition $cond) => ! $this->isConditionSatisfied($cond, $context),
         ));
     }
 
@@ -80,7 +80,7 @@ final class PromotionEligibilityPolicy
     {
         return array_values(array_filter(
             $promotion->getConditions(),
-            fn(PromotionCondition $cond) => $this->isConditionSatisfied($cond, $context),
+            fn (PromotionCondition $cond) => $this->isConditionSatisfied($cond, $context),
         ));
     }
 
@@ -90,24 +90,24 @@ final class PromotionEligibilityPolicy
             PromotionConditionType::AnyPurchase => true,
 
             PromotionConditionType::MinimumCartTotal => $context->cartTotal->isGreaterThanOrEqual(
-                Money::fromArray($condition->parameters['min_amount'])
+                Money::fromArray($condition->parameters['min_amount']),
             ),
 
             PromotionConditionType::MinimumQuantity => $this->checkMinimumQuantity($condition, $context),
 
             PromotionConditionType::SpecificProduct => $context->hasProduct(
-                $condition->parameters['product_id']
+                $condition->parameters['product_id'],
             ),
 
             PromotionConditionType::CustomerGroup => $context->isInGroup(
-                $condition->parameters['group_id']
+                $condition->parameters['group_id'],
             ),
         };
     }
 
     private function checkMinimumQuantity(PromotionCondition $condition, PromotionContext $context): bool
     {
-        $minQty    = $condition->parameters['min_quantity'];
+        $minQty = $condition->parameters['min_quantity'];
         $productId = $condition->parameters['product_id'] ?? null;
 
         $actualQty = $productId !== null

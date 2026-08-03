@@ -30,7 +30,7 @@ final readonly class DecisionReason
     public function toArray(): array
     {
         return [
-            'code'    => $this->code,
+            'code' => $this->code,
             'message' => $this->message,
             'context' => $this->context,
         ];

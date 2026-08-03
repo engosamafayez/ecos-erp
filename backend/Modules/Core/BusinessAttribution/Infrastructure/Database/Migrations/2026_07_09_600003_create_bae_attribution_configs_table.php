@@ -26,7 +26,7 @@ return new class extends Migration
             $table->uuid('updated_by')->nullable();
             $table->timestamps();
 
-            $table->index('company_id',               'bae_ac_co_idx');
+            $table->index('company_id', 'bae_ac_co_idx');
             $table->index(['company_id', 'is_default'], 'bae_ac_co_def_idx');
         });
     }

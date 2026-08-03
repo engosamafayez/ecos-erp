@@ -45,7 +45,7 @@ final class DiscountAggregateTest extends TestCase
     public function test_auto_approved_discount_fires_requested_and_approved_events(): void
     {
         $discount = $this->requestPercentage('5', cashierMax: '10', supervisorMax: '30');
-        $events   = $discount->pullDomainEvents();
+        $events = $discount->pullDomainEvents();
 
         $this->assertCount(2, $events);
         $this->assertInstanceOf(DiscountRequested::class, $events[0]);
@@ -75,7 +75,7 @@ final class DiscountAggregateTest extends TestCase
     public function test_pending_discount_fires_only_requested_event(): void
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
-        $events   = $discount->pullDomainEvents();
+        $events = $discount->pullDomainEvents();
 
         $this->assertCount(1, $events);
         $this->assertInstanceOf(DiscountRequested::class, $events[0]);
@@ -94,7 +94,7 @@ final class DiscountAggregateTest extends TestCase
     public function test_request_stores_notes(): void
     {
         $discount = $this->requestPercentage(
-            '5', cashierMax: '10', supervisorMax: '30', notes: 'Loyal customer'
+            '5', cashierMax: '10', supervisorMax: '30', notes: 'Loyal customer',
         );
         $this->assertSame('Loyal customer', $discount->notes);
     }
@@ -124,7 +124,7 @@ final class DiscountAggregateTest extends TestCase
     public function test_approve_transitions_pending_to_approved(): void
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
-        $discount->approve('mgr-001', new SupervisorApprovalPolicy());
+        $discount->approve('mgr-001', new SupervisorApprovalPolicy);
 
         $this->assertSame(DiscountStatus::Approved, $discount->getStatus());
         $this->assertTrue($discount->isApproved());
@@ -134,14 +134,14 @@ final class DiscountAggregateTest extends TestCase
     public function test_approve_stores_supervisor_id(): void
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
-        $discount->approve('mgr-001', new SupervisorApprovalPolicy());
+        $discount->approve('mgr-001', new SupervisorApprovalPolicy);
         $this->assertSame('mgr-001', $discount->supervisor_id);
     }
 
     public function test_approve_sets_approved_at(): void
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
-        $discount->approve('mgr-001', new SupervisorApprovalPolicy());
+        $discount->approve('mgr-001', new SupervisorApprovalPolicy);
         $this->assertNotNull($discount->approved_at);
     }
 
@@ -149,7 +149,7 @@ final class DiscountAggregateTest extends TestCase
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
         $discount->pullDomainEvents();  // clear requested event
-        $discount->approve('mgr-001', new SupervisorApprovalPolicy());
+        $discount->approve('mgr-001', new SupervisorApprovalPolicy);
         $events = $discount->pullDomainEvents();
 
         $this->assertCount(1, $events);
@@ -162,22 +162,22 @@ final class DiscountAggregateTest extends TestCase
     {
         $discount = $this->requestPercentage('5', cashierMax: '10', supervisorMax: '30');
         $this->expectException(InvalidDiscountException::class);
-        $discount->approve('mgr-001', new SupervisorApprovalPolicy());
+        $discount->approve('mgr-001', new SupervisorApprovalPolicy);
     }
 
     public function test_approve_throws_on_rejected_discount(): void
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
-        $discount->reject('mgr-001', 'too high', new SupervisorApprovalPolicy());
+        $discount->reject('mgr-001', 'too high', new SupervisorApprovalPolicy);
         $this->expectException(InvalidDiscountException::class);
-        $discount->approve('mgr-001', new SupervisorApprovalPolicy());
+        $discount->approve('mgr-001', new SupervisorApprovalPolicy);
     }
 
     public function test_approve_throws_on_empty_supervisor_id(): void
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
         $this->expectException(InvalidDiscountException::class);
-        $discount->approve('', new SupervisorApprovalPolicy());
+        $discount->approve('', new SupervisorApprovalPolicy);
     }
 
     // ── reject() ──────────────────────────────────────────────────────────────
@@ -185,7 +185,7 @@ final class DiscountAggregateTest extends TestCase
     public function test_reject_transitions_pending_to_rejected(): void
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
-        $discount->reject('mgr-001', 'Excessive discount', new SupervisorApprovalPolicy());
+        $discount->reject('mgr-001', 'Excessive discount', new SupervisorApprovalPolicy);
 
         $this->assertSame(DiscountStatus::Rejected, $discount->getStatus());
         $this->assertTrue($discount->isRejected());
@@ -194,7 +194,7 @@ final class DiscountAggregateTest extends TestCase
     public function test_reject_stores_reason(): void
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
-        $discount->reject('mgr-001', 'Too large', new SupervisorApprovalPolicy());
+        $discount->reject('mgr-001', 'Too large', new SupervisorApprovalPolicy);
         $this->assertSame('Too large', $discount->rejection_reason);
     }
 
@@ -202,7 +202,7 @@ final class DiscountAggregateTest extends TestCase
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
         $discount->pullDomainEvents();
-        $discount->reject('mgr-001', 'Too large', new SupervisorApprovalPolicy());
+        $discount->reject('mgr-001', 'Too large', new SupervisorApprovalPolicy);
         $events = $discount->pullDomainEvents();
 
         $this->assertCount(1, $events);
@@ -214,14 +214,14 @@ final class DiscountAggregateTest extends TestCase
     {
         $discount = $this->requestPercentage('20', cashierMax: '10', supervisorMax: '30');
         $this->expectException(InvalidDiscountException::class);
-        $discount->reject('mgr-001', '', new SupervisorApprovalPolicy());
+        $discount->reject('mgr-001', '', new SupervisorApprovalPolicy);
     }
 
     public function test_reject_throws_on_already_approved_discount(): void
     {
         $discount = $this->requestPercentage('5', cashierMax: '10', supervisorMax: '30');
         $this->expectException(InvalidDiscountException::class);
-        $discount->reject('mgr-001', 'reason', new SupervisorApprovalPolicy());
+        $discount->reject('mgr-001', 'reason', new SupervisorApprovalPolicy);
     }
 
     // ── computeAmount() ───────────────────────────────────────────────────────
@@ -229,8 +229,8 @@ final class DiscountAggregateTest extends TestCase
     public function test_compute_amount_percentage_uses_bcmath(): void
     {
         $discount = $this->requestPercentage('10', cashierMax: '20', supervisorMax: '30');
-        $base     = Money::of('200.00', 'EGP');
-        $result   = $discount->computeAmount($base);
+        $base = Money::of('200.00', 'EGP');
+        $result = $discount->computeAmount($base);
 
         $this->assertSame('20.00', $result->amount);
         $this->assertSame('EGP', $result->currency);
@@ -239,8 +239,8 @@ final class DiscountAggregateTest extends TestCase
     public function test_compute_amount_fixed_returns_fixed(): void
     {
         $discount = $this->requestFixed('50.00', cashierMax: '100.00', supervisorMax: '200.00');
-        $base     = Money::of('300.00', 'EGP');
-        $result   = $discount->computeAmount($base);
+        $base = Money::of('300.00', 'EGP');
+        $result = $discount->computeAmount($base);
 
         $this->assertSame('50.00', $result->amount);
     }
@@ -257,8 +257,8 @@ final class DiscountAggregateTest extends TestCase
     public function test_pull_domain_events_clears_queue(): void
     {
         $discount = $this->requestPercentage('5', cashierMax: '10', supervisorMax: '30');
-        $first    = $discount->pullDomainEvents();
-        $second   = $discount->pullDomainEvents();
+        $first = $discount->pullDomainEvents();
+        $second = $discount->pullDomainEvents();
         $this->assertNotEmpty($first);
         $this->assertEmpty($second);
     }
@@ -274,9 +274,9 @@ final class DiscountAggregateTest extends TestCase
     ): Discount {
         return Discount::request(
             cashierId: $cashierId,
-            scope:     DiscountScope::LineItem,
-            value:     $this->percentageValue($pct),
-            policy:    ManualDiscountPolicy::withLimits(
+            scope: DiscountScope::LineItem,
+            value: $this->percentageValue($pct),
+            policy: ManualDiscountPolicy::withLimits(
                 DiscountLimit::percentageOnly(Percentage::of($cashierMax)),
                 DiscountLimit::percentageOnly(Percentage::of($supervisorMax)),
             ),
@@ -292,9 +292,9 @@ final class DiscountAggregateTest extends TestCase
     ): Discount {
         return Discount::request(
             cashierId: $cashierId,
-            scope:     DiscountScope::CartTotal,
-            value:     DiscountValue::fixed(Money::of($amount, 'EGP')),
-            policy:    ManualDiscountPolicy::withLimits(
+            scope: DiscountScope::CartTotal,
+            value: DiscountValue::fixed(Money::of($amount, 'EGP')),
+            policy: ManualDiscountPolicy::withLimits(
                 DiscountLimit::fixedOnly(Money::of($cashierMax, 'EGP')),
                 DiscountLimit::fixedOnly(Money::of($supervisorMax, 'EGP')),
             ),

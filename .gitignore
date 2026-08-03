@@ -56,6 +56,23 @@ backend/coverage/
 *.orig
 *.tmp
 
+# Database dumps. Scoped deliberately: docker/mysql/init/*.sql is tracked
+# schema bootstrap and must stay tracked, so this must never become `*.sql`.
+/storage-backup-*.sql
+/*-backup-*.sql
+
+# Guardian pre-commit scratch project. The validator removes this via
+# `trap … EXIT`, which does not fire on SIGKILL or a closed terminal, so a
+# killed run can strand it next to tsconfig.app.json where it looks tracked.
+frontend/tsconfig.guardian-precommit.json
+
+# Measurement artifacts (EPIC-1 Platform Foundation).
+# engineering/baselines/*.jsonl IS tracked — it is the measurement record.
+# Traces and probes are regenerable and run to hundreds of MB.
+engineering/traces/
+frontend/.measurement-probes/
+frontend/tsconfig.probe-*.json
+
 # Laravel debug helpers (never commit generated helpers)
 backend/_ide_helper_models.php
 

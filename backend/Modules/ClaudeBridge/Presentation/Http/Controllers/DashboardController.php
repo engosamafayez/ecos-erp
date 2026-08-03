@@ -14,10 +14,10 @@ final class DashboardController extends Controller
     {
         return response()->json([
             'data' => [
-                'worker'         => null,
-                'counts'         => ['queued' => 0, 'running' => 0, 'awaiting_review' => 0, 'approved_today' => 0],
-                'active_task'    => null,
-                'recent_tasks'   => [],
+                'worker' => null,
+                'counts' => ['queued' => 0, 'running' => 0, 'awaiting_review' => 0, 'approved_today' => 0],
+                'active_task' => null,
+                'recent_tasks' => [],
             ],
         ]);
     }

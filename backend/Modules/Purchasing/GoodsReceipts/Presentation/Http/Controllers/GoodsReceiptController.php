@@ -9,7 +9,8 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Modules\Commerce\Channels\Domain\Models\Channel;
+use Modules\Commerce\StockSync\Application\Actions\SyncStockAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\CreateGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\DeleteGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\GetGoodsReceiptAction;
@@ -17,11 +18,10 @@ use Modules\Purchasing\GoodsReceipts\Application\Actions\ListGoodsReceiptsAction
 use Modules\Purchasing\GoodsReceipts\Application\Actions\PostGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\UpdateGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\DTO\GoodsReceiptDTO;
-use Modules\Commerce\Channels\Domain\Models\Channel;
-use Modules\Commerce\StockSync\Application\Actions\SyncStockAction;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Requests\StoreGoodsReceiptRequest;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Requests\UpdateGoodsReceiptRequest;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Resources\GoodsReceiptResource;
+use Throwable;
 
 final class GoodsReceiptController extends Controller
 {
@@ -32,27 +32,27 @@ final class GoodsReceiptController extends Controller
     public function index(Request $request, ListGoodsReceiptsAction $action): JsonResponse
     {
         $filters = [
-            'search'            => $request->query('search'),
+            'search' => $request->query('search'),
             'purchase_order_id' => $request->query('purchase_order_id'),
-            'warehouse_id'      => $request->query('warehouse_id'),
-            'status'            => $request->query('status', 'all'),
-            'date_from'         => $request->query('date_from'),
-            'date_to'           => $request->query('date_to'),
-            'sort_by'           => $request->query('sort_by', 'created_at'),
-            'sort_dir'          => $request->query('sort_dir', 'desc'),
-            'per_page'          => $request->query('per_page', 10),
-            'company_id'        => $this->currentCompany->id(),
+            'warehouse_id' => $request->query('warehouse_id'),
+            'status' => $request->query('status', 'all'),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+            'sort_by' => $request->query('sort_by', 'created_at'),
+            'sort_dir' => $request->query('sort_dir', 'desc'),
+            'per_page' => $request->query('per_page', 10),
+            'company_id' => $this->currentCompany->id(),
         ];
 
         $paginator = $action->execute($filters)->data();
 
         return $this->success([
             'items' => GoodsReceiptResource::collection($paginator->items()),
-            'meta'  => [
+            'meta' => [
                 'current_page' => $paginator->currentPage(),
-                'per_page'     => $paginator->perPage(),
-                'total'        => $paginator->total(),
-                'last_page'    => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
             ],
         ]);
     }
@@ -96,7 +96,7 @@ final class GoodsReceiptController extends Controller
 
     public function post(string $goodsReceipt, PostGoodsReceiptAction $postAction, SyncStockAction $syncAction): JsonResponse
     {
-        $result  = $postAction->execute($goodsReceipt);
+        $result = $postAction->execute($goodsReceipt);
         $receipt = $result->data();
 
         $productIds = $receipt->lines->pluck('product_id')->all();
@@ -108,7 +108,7 @@ final class GoodsReceiptController extends Controller
             ->each(function (Channel $channel) use ($syncAction, $productIds): void {
                 try {
                     $syncAction->execute($channel->id, $productIds);
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     // Swallow sync errors — stock posting succeeded
                 }
             });

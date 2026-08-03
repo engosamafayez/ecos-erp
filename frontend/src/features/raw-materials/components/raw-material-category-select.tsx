@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import { Combobox } from '@/components/crud';
 import { categoriesService } from '@/features/categories/services/categories-service';
@@ -18,10 +19,12 @@ type Props = {
 export function RawMaterialCategorySelect({
   value,
   onChange,
-  placeholder = 'Select category…',
+  placeholder,
   disabled,
   className,
 }: Props) {
+  const { t } = useTranslation('raw-materials');
+
   const { data, isLoading } = useQuery({
     queryKey: ['rm-category-options', 'material'],
     queryFn:  () =>
@@ -40,9 +43,9 @@ export function RawMaterialCategorySelect({
       value={value ?? ''}
       onChange={onChange}
       loading={isLoading}
-      placeholder={placeholder}
-      searchPlaceholder="Search categories…"
-      emptyText="No material categories"
+      placeholder={placeholder ?? t($ => $.categorySelect.placeholder)}
+      searchPlaceholder={t($ => $.categorySelect.searchPlaceholder)}
+      emptyText={t($ => $.categorySelect.emptyText)}
       disabled={disabled}
       className={className}
     />

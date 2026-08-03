@@ -37,7 +37,7 @@ return new class extends Migration
 
             $table->index(['from_node_id', 'relationship_type'], 'bae_er_from_type_idx');
             $table->index(['to_node_id',   'relationship_type'], 'bae_er_to_type_idx');
-            $table->index('relationship_type',                   'bae_er_type_idx');
+            $table->index('relationship_type', 'bae_er_type_idx');
         });
     }
 

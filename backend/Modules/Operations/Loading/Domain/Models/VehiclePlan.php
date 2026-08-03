@@ -10,35 +10,35 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Operations\Loading\Domain\Enums\VehiclePlanStatus;
 
 /**
- * @property string               $id
- * @property string               $company_id
- * @property \Carbon\Carbon       $operational_date
- * @property string               $plan_number
- * @property string|null          $geography_group_id
- * @property string               $shipping_company_id
- * @property string               $zone_id
- * @property string               $governorate_id
- * @property VehiclePlanStatus    $status
- * @property string               $distribution_policy
- * @property int                  $version
- * @property string|null          $superseded_by_id
- * @property int                  $slots_count
- * @property int                  $orders_count
- * @property float                $total_weight_kg
- * @property float                $total_volume_m3
- * @property \Carbon\Carbon|null  $proposed_at
- * @property string|null          $proposed_by
- * @property \Carbon\Carbon|null  $approved_at
- * @property string|null          $approved_by
- * @property \Carbon\Carbon|null  $cancelled_at
- * @property string|null          $cancelled_by
- * @property string|null          $cancellation_reason
- * @property string|null          $replan_trigger
- * @property string|null          $notes
- * @property string               $created_by
- * @property string               $updated_by
- * @property \Carbon\Carbon       $created_at
- * @property \Carbon\Carbon       $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property \Carbon\Carbon $operational_date
+ * @property string $plan_number
+ * @property string|null $geography_group_id
+ * @property string $shipping_company_id
+ * @property string $zone_id
+ * @property string $governorate_id
+ * @property VehiclePlanStatus $status
+ * @property string $distribution_policy
+ * @property int $version
+ * @property string|null $superseded_by_id
+ * @property int $slots_count
+ * @property int $orders_count
+ * @property float $total_weight_kg
+ * @property float $total_volume_m3
+ * @property \Carbon\Carbon|null $proposed_at
+ * @property string|null $proposed_by
+ * @property \Carbon\Carbon|null $approved_at
+ * @property string|null $approved_by
+ * @property \Carbon\Carbon|null $cancelled_at
+ * @property string|null $cancelled_by
+ * @property string|null $cancellation_reason
+ * @property string|null $replan_trigger
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class VehiclePlan extends Model
 {
@@ -84,16 +84,16 @@ class VehiclePlan extends Model
     protected function casts(): array
     {
         return [
-            'status'           => VehiclePlanStatus::class,
+            'status' => VehiclePlanStatus::class,
             'operational_date' => 'date:Y-m-d',
-            'version'          => 'integer',
-            'slots_count'      => 'integer',
-            'orders_count'     => 'integer',
-            'total_weight_kg'  => 'float',
-            'total_volume_m3'  => 'float',
-            'proposed_at'      => 'datetime',
-            'approved_at'      => 'datetime',
-            'cancelled_at'     => 'datetime',
+            'version' => 'integer',
+            'slots_count' => 'integer',
+            'orders_count' => 'integer',
+            'total_weight_kg' => 'float',
+            'total_volume_m3' => 'float',
+            'proposed_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 

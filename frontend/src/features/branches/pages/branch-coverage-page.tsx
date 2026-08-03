@@ -55,7 +55,8 @@ export function BranchCoveragePage() {
     sort_by: 'name',
     sort_dir: 'asc',
   });
-  const branches = branchesData?.items ?? [];
+  // Memoised so the empty-state fallback keeps a stable identity between renders.
+  const branches = useMemo(() => branchesData?.items ?? [], [branchesData]);
 
   const selectedBranch = useMemo(
     () => branches.find((b) => b.id === selectedBranchId) ?? null,

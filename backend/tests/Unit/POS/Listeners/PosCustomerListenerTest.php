@@ -11,6 +11,7 @@ use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Events\SaleItemPayload;
 use Modules\POS\Application\Events\SalePaymentPayload;
 use Modules\POS\Application\Listeners\PosCustomerListener;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -20,7 +21,8 @@ use Tests\TestCase;
  */
 final class PosCustomerListenerTest extends TestCase
 {
-    private const SALE_ID     = 'sale-uuid-001';
+    private const SALE_ID = 'sale-uuid-001';
+
     private const CUSTOMER_ID = 'customer-uuid-001';
 
     private PosCustomerListener $listener;
@@ -28,7 +30,7 @@ final class PosCustomerListenerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->listener = new PosCustomerListener();
+        $this->listener = new PosCustomerListener;
     }
 
     // ── Skip on anonymous ─────────────────────────────────────────────────────
@@ -72,6 +74,7 @@ final class PosCustomerListenerTest extends TestCase
             ->once()
             ->withArgs(function (string $sql) use (&$capturedSql) {
                 $capturedSql = $sql;
+
                 return true;
             });
 
@@ -90,7 +93,7 @@ final class PosCustomerListenerTest extends TestCase
     {
         $event = $this->makeEvent();
 
-        DB::shouldReceive('statement')->andThrow(new \RuntimeException('Connection lost'));
+        DB::shouldReceive('statement')->andThrow(new RuntimeException('Connection lost'));
 
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Failed to update customer statistics'));
@@ -103,26 +106,26 @@ final class PosCustomerListenerTest extends TestCase
     private function makeEvent(?string $customerId = self::CUSTOMER_ID): SaleFinalized
     {
         return new SaleFinalized(
-            eventId:       'event-uuid-001',
-            occurredAt:    new DateTimeImmutable('now'),
-            saleId:        self::SALE_ID,
+            eventId: 'event-uuid-001',
+            occurredAt: new DateTimeImmutable('now'),
+            saleId: self::SALE_ID,
             receiptNumber: 'RCP-2026-000001',
-            companyId:     'company-uuid-001',
-            channelId:     null,
-            warehouseId:   'warehouse-uuid-001',
-            sessionId:     'session-uuid-001',
-            shiftId:       'shift-uuid-001',
-            terminalId:    'terminal-uuid-001',
-            cashierId:     'cashier-uuid-001',
-            customerId:    $customerId,
-            items:         [new SaleItemPayload('l1', 'p1', 'Widget', 'WGT', 3.0, '50.00', '150.00', 'EGP')],
-            payments:      [new SalePaymentPayload('cash', '150.00', 'EGP', null)],
-            subtotal:      '150.00',
+            companyId: 'company-uuid-001',
+            channelId: null,
+            warehouseId: 'warehouse-uuid-001',
+            sessionId: 'session-uuid-001',
+            shiftId: 'shift-uuid-001',
+            terminalId: 'terminal-uuid-001',
+            cashierId: 'cashier-uuid-001',
+            customerId: $customerId,
+            items: [new SaleItemPayload('l1', 'p1', 'Widget', 'WGT', 3.0, '50.00', '150.00', 'EGP')],
+            payments: [new SalePaymentPayload('cash', '150.00', 'EGP', null)],
+            subtotal: '150.00',
             discountTotal: '0.00',
-            grandTotal:    '150.00',
-            amountPaid:    '150.00',
-            changeGiven:   '0.00',
-            currency:      'EGP',
+            grandTotal: '150.00',
+            amountPaid: '150.00',
+            changeGiven: '0.00',
+            currency: 'EGP',
         );
     }
 }

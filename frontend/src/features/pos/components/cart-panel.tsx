@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { ShoppingCart, PauseCircle, X, CreditCard } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ type CartPanelProps = {
 };
 
 export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
+  const { money } = useFormatter();
   const { cartId, currency, openPayment, heldCartSnapshots } = usePosStore();
 
   const { data: cart } = useCart();
@@ -246,17 +248,17 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
         <div className="px-3 py-2 space-y-1 shrink-0 text-sm">
           <div className="flex justify-between text-muted-foreground">
             <span>Subtotal</span>
-            <span className="tabular-nums">{cart.subtotal.amount}</span>
+            <span className="tabular-nums">{money(Number(cart.subtotal.amount), currencyCode)}</span>
           </div>
           {parseFloat(cart.discount_total.amount) > 0 && (
             <div className="flex justify-between text-emerald-600">
               <span>Discount</span>
-              <span className="tabular-nums">−{cart.discount_total.amount}</span>
+              <span className="tabular-nums">−{money(Number(cart.discount_total.amount), currencyCode)}</span>
             </div>
           )}
           <div className="flex justify-between text-base font-bold">
             <span>Total</span>
-            <span className="tabular-nums">{currencyCode} {total}</span>
+            <span className="tabular-nums">{money(Number(total), currencyCode)}</span>
           </div>
         </div>
       )}
@@ -276,7 +278,7 @@ export function CartPanel({ onCheckout, onViewHeld }: CartPanelProps) {
           aria-label={`Proceed to payment. Total: ${currencyCode} ${total}`}
         >
           <CreditCard className="size-4" />
-          Pay {currencyCode} {total}
+          Pay {money(Number(total), currencyCode)}
           <span className="ms-auto text-xs opacity-70">F8</span>
         </Button>
       </div>

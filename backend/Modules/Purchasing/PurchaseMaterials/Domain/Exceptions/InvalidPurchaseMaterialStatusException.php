@@ -13,7 +13,7 @@ final class InvalidPurchaseMaterialStatusException extends UnprocessableEntityHt
     {
         $allowedList = implode(', ', $allowed);
         parent::__construct(
-            "Purchase material [{$requestNumber}] cannot transition from [{$currentStatus}]. Allowed from: [{$allowedList}]."
+            "Purchase material [{$requestNumber}] cannot transition from [{$currentStatus}]. Allowed from: [{$allowedList}].",
         );
     }
 }

@@ -26,9 +26,9 @@ class City extends Model
     {
         return [
             'shipping_price' => 'decimal:2',
-            'display_order'  => 'integer',
-            'is_active'      => 'boolean',
-            'is_system'      => 'boolean',
+            'display_order' => 'integer',
+            'is_active' => 'boolean',
+            'is_system' => 'boolean',
         ];
     }
 

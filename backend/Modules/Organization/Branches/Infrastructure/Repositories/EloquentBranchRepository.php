@@ -19,7 +19,7 @@ final class EloquentBranchRepository implements BranchRepositoryInterface
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = Branch::query()->with('company');
+        $query = Branch::query()->with(['company', 'defaultWarehouse']);
 
         $companyId = trim((string) ($filters['company_id'] ?? ''));
         if ($companyId !== '') {
@@ -60,21 +60,21 @@ final class EloquentBranchRepository implements BranchRepositoryInterface
 
     public function findById(string $id): ?Branch
     {
-        return Branch::query()->with('company')->find($id);
+        return Branch::query()->with(['company', 'defaultWarehouse'])->find($id);
     }
 
     public function create(array $attributes): Branch
     {
         $branch = Branch::query()->create($attributes);
 
-        return $branch->load('company');
+        return $branch->load(['company', 'defaultWarehouse']);
     }
 
     public function update(Branch $branch, array $attributes): Branch
     {
         $branch->update($attributes);
 
-        return $branch->load('company');
+        return $branch->load(['company', 'defaultWarehouse']);
     }
 
     public function delete(Branch $branch): void

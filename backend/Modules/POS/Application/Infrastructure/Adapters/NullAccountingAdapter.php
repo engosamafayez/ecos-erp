@@ -25,11 +25,11 @@ final class NullAccountingAdapter implements AccountingPortInterface
     public function recordSale(SaleFinalized $event): void
     {
         Log::channel('daily')->info('[POS][Accounting] Sale recorded — no accounting module installed', [
-            'sale_id'        => $event->saleId,
+            'sale_id' => $event->saleId,
             'receipt_number' => $event->receiptNumber,
-            'grand_total'    => $event->grandTotal,
-            'currency'       => $event->currency,
-            'company_id'     => $event->companyId,
+            'grand_total' => $event->grandTotal,
+            'currency' => $event->currency,
+            'company_id' => $event->companyId,
         ]);
     }
 }

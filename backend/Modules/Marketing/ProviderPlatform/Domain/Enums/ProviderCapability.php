@@ -12,18 +12,29 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Enums;
  */
 final class ProviderCapability
 {
-    public const OAUTH      = 'oauth';
-    public const WEBHOOKS   = 'webhooks';
-    public const CAMPAIGNS  = 'campaigns';
-    public const ADS        = 'ads';
-    public const ANALYTICS  = 'analytics';
-    public const CATALOGS   = 'catalogs';
-    public const COMMERCE   = 'commerce';
-    public const MESSAGING  = 'messaging';
+    public const OAUTH = 'oauth';
+
+    public const WEBHOOKS = 'webhooks';
+
+    public const CAMPAIGNS = 'campaigns';
+
+    public const ADS = 'ads';
+
+    public const ANALYTICS = 'analytics';
+
+    public const CATALOGS = 'catalogs';
+
+    public const COMMERCE = 'commerce';
+
+    public const MESSAGING = 'messaging';
+
     public const LEAD_FORMS = 'lead_forms';
-    public const INSTAGRAM  = 'instagram';
-    public const YOUTUBE    = 'youtube';
-    public const WHATSAPP   = 'whatsapp';
+
+    public const INSTAGRAM = 'instagram';
+
+    public const YOUTUBE = 'youtube';
+
+    public const WHATSAPP = 'whatsapp';
 
     /** @return list<string> all defined capability constants */
     public static function all(): array

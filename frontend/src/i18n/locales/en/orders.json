@@ -68,6 +68,10 @@
     "review": "Review",
     "scheduled": "Scheduled",
     "rescheduled": "Rescheduled",
+    "new": "New",
+    "in_progress": "In Progress",
+    "ready_for_dispatch": "Ready for Dispatch",
+    "on_hold": "On Hold",
     "scrollLeft": "Scroll left",
     "scrollRight": "Scroll right"
   },
@@ -121,8 +125,8 @@
     "paymentProof": "Payment Proof",
     "withProof": "With Proof",
     "withoutProof": "Without Proof",
-    "minAmount": "Min Amount (EGP)",
-    "maxAmount": "Max Amount (EGP)"
+    "minAmount": "Min Amount",
+    "maxAmount": "Max Amount"
   },
   "customerIntelligence": {
     "title": "Customer Intelligence",
@@ -223,7 +227,11 @@
     "cancelled": "Cancelled",
     "review": "Review",
     "rescheduled": "Rescheduled",
-    "returned": "Returned"
+    "returned": "Returned",
+    "new": "New",
+    "in_progress": "In Progress",
+    "ready_for_dispatch": "Ready for Dispatch",
+    "on_hold": "On Hold"
   },
   "columns": {
     "number": "Order Number",
@@ -484,7 +492,17 @@
       "assignedWarehouse": "Assigned Warehouse",
       "lineItems": "Line Items",
       "inventoryItems": "Inventory Items",
-      "itemCount": "{{count}} item(s)"
+      "itemCount": "{{count}} item(s)",
+      "qty": {
+        "reserved": "Reserved",
+        "prepared": "Prepared",
+        "packed": "Packed",
+        "loaded": "Loaded",
+        "delivered": "Delivered",
+        "returned": "Returned",
+        "cancelled": "Cancelled",
+        "batch": "Batch"
+      }
     },
     "products_tab": {
       "priceLockTitle": "Order Price Lock Active",

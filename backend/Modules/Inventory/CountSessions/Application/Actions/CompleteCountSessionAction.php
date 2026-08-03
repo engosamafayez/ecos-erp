@@ -16,7 +16,7 @@ final class CompleteCountSessionAction
     {
         if (! $session->status->canTransitionTo(CountSessionStatus::Completed)) {
             throw new UnprocessableEntityHttpException(
-                "Count session [{$session->count_number}] cannot be completed from status [{$session->status->value}]."
+                "Count session [{$session->count_number}] cannot be completed from status [{$session->status->value}].",
             );
         }
 
@@ -31,28 +31,28 @@ final class CompleteCountSessionAction
 
                 $line->loadMissing('product');
 
-                $countedStr  = (string) $line->counted_qty;
-                $damagedStr  = (string) ($line->damaged_qty ?? '0');
-                $systemStr   = (string) $line->system_qty;
-                $avgCostStr  = (string) ($line->product?->average_cost ?? '0');
+                $countedStr = (string) $line->counted_qty;
+                $damagedStr = (string) ($line->damaged_qty ?? '0');
+                $systemStr = (string) $line->system_qty;
+                $avgCostStr = (string) ($line->product?->average_cost ?? '0');
 
                 // shortage = system - counted - damaged  (> 0 means units are unaccounted)
                 $totalAccountedStr = bcadd($countedStr, $damagedStr, 4);
-                $shortageQty       = bcsub($systemStr, $totalAccountedStr, 4);
+                $shortageQty = bcsub($systemStr, $totalAccountedStr, 4);
 
                 // variance = counted - system  (kept for compatibility; negative when there's a shortage)
-                $varianceQty   = bcsub($countedStr, $systemStr, 4);
+                $varianceQty = bcsub($countedStr, $systemStr, 4);
                 $varianceValue = bcmul($varianceQty, $avgCostStr, 2);
 
                 $line->update([
-                    'shortage_qty'   => $shortageQty,
-                    'variance_qty'   => $varianceQty,
+                    'shortage_qty' => $shortageQty,
+                    'variance_qty' => $varianceQty,
                     'variance_value' => $varianceValue,
                 ]);
             }
 
             $session->update([
-                'status'       => CountSessionStatus::Completed,
+                'status' => CountSessionStatus::Completed,
                 'completed_at' => now(),
             ]);
 

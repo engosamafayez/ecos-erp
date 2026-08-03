@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::table('products', function (Blueprint $table): void {
             $table->string('pricing_mode', 20)->default('brand_policy')->after('product_cost');
             $table->decimal('custom_target_margin', 8, 4)->nullable()->after('pricing_mode');
-            $table->decimal('custom_markup',        8, 4)->nullable()->after('custom_target_margin');
+            $table->decimal('custom_markup', 8, 4)->nullable()->after('custom_target_margin');
         });
     }
 

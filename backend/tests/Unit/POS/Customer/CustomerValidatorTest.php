@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Customer;
 
+use InvalidArgumentException;
 use Modules\POS\Customer\Domain\Enums\CustomerLookupType;
 use Modules\POS\Customer\Domain\Services\CustomerValidator;
 use PHPUnit\Framework\TestCase;
@@ -14,7 +15,7 @@ final class CustomerValidatorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->validator = new CustomerValidator();
+        $this->validator = new CustomerValidator;
     }
 
     // ── validateCustomerId() ──────────────────────────────────────────────────
@@ -27,7 +28,7 @@ final class CustomerValidatorTest extends TestCase
 
     public function test_rejects_empty_customer_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Customer ID cannot be empty');
 
         $this->validator->validateCustomerId('');
@@ -35,14 +36,14 @@ final class CustomerValidatorTest extends TestCase
 
     public function test_rejects_whitespace_customer_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->validator->validateCustomerId('   ');
     }
 
     public function test_rejects_non_uuid_format(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid customer ID format');
 
         $this->validator->validateCustomerId('not-a-uuid');
@@ -58,7 +59,7 @@ final class CustomerValidatorTest extends TestCase
 
     public function test_rejects_empty_value_for_by_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->validator->validateLookupValue('', CustomerLookupType::ById);
     }
@@ -73,7 +74,7 @@ final class CustomerValidatorTest extends TestCase
 
     public function test_rejects_invalid_email(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid email address');
 
         $this->validator->validateLookupValue('not-an-email', CustomerLookupType::ByEmail);
@@ -81,7 +82,7 @@ final class CustomerValidatorTest extends TestCase
 
     public function test_rejects_empty_email(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->validator->validateLookupValue('', CustomerLookupType::ByEmail);
     }
@@ -102,7 +103,7 @@ final class CustomerValidatorTest extends TestCase
 
     public function test_rejects_phone_that_is_too_short(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid phone number format');
 
         $this->validator->validateLookupValue('123', CustomerLookupType::ByPhone);
@@ -110,14 +111,14 @@ final class CustomerValidatorTest extends TestCase
 
     public function test_rejects_phone_with_letters(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->validator->validateLookupValue('abc1234567', CustomerLookupType::ByPhone);
     }
 
     public function test_rejects_empty_phone(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->validator->validateLookupValue('', CustomerLookupType::ByPhone);
     }
@@ -133,7 +134,7 @@ final class CustomerValidatorTest extends TestCase
 
     public function test_rejects_empty_code(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->validator->validateLookupValue('', CustomerLookupType::ByCode);
     }

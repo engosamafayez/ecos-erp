@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-                if (Schema::hasTable('order_events')) {
+        if (Schema::hasTable('order_events')) {
             return;
         }
 

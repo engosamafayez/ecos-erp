@@ -28,12 +28,12 @@ final class LoadingExceptionController extends Controller
 
         $request->validate([
             'severity' => ['nullable', 'string'],
-            'status'   => ['nullable', 'string'],
+            'status' => ['nullable', 'string'],
         ]);
 
         $exceptions = LoadingException::where('loading_session_id', $session->id)
             ->when($request->query('severity'), fn ($q, $v) => $q->where('severity', $v))
-            ->when($request->query('status'),   fn ($q, $v) => $q->where('status', $v))
+            ->when($request->query('status'), fn ($q, $v) => $q->where('status', $v))
             ->orderByDesc('created_at')
             ->get();
 
@@ -50,14 +50,14 @@ final class LoadingExceptionController extends Controller
 
         $validated = $request->validated();
         $exception = $action->execute(
-            session:              $session,
-            exceptionType:        $validated['exception_type'],
-            severity:             $validated['severity'],
-            description:          $validated['description'],
-            actorId:              (string) $request->user()->id,
-            vehicleAssignmentId:  $validated['vehicle_assignment_id'] ?? null,
-            entityType:           $validated['entity_type'] ?? null,
-            entityId:             $validated['entity_id'] ?? null,
+            session: $session,
+            exceptionType: $validated['exception_type'],
+            severity: $validated['severity'],
+            description: $validated['description'],
+            actorId: (string) $request->user()->id,
+            vehicleAssignmentId: $validated['vehicle_assignment_id'] ?? null,
+            entityType: $validated['entity_type'] ?? null,
+            entityId: $validated['entity_id'] ?? null,
         );
 
         return $this->created(new LoadingExceptionResource($exception));
@@ -81,9 +81,9 @@ final class LoadingExceptionController extends Controller
         }
 
         $result = $action->execute(
-            exception:        $exception,
-            actorId:          (string) $request->user()->id,
-            resolutionNotes:  $request->validated('resolution_notes'),
+            exception: $exception,
+            actorId: (string) $request->user()->id,
+            resolutionNotes: $request->validated('resolution_notes'),
         );
 
         return $this->success(new LoadingExceptionResource($result));

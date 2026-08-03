@@ -7,16 +7,16 @@ namespace Modules\POS\Pricing\Domain\Enums;
 enum PriceSource: string
 {
     case RegularPrice = 'regular_price';
-    case SalePrice    = 'sale_price';
+    case SalePrice = 'sale_price';
     /** Reserved: price manually entered by an authorised cashier. */
-    case Manual       = 'manual';
+    case Manual = 'manual';
 
     public function label(): string
     {
         return match ($this) {
             self::RegularPrice => 'Regular Price',
-            self::SalePrice    => 'Sale Price',
-            self::Manual       => 'Manual Override',
+            self::SalePrice => 'Sale Price',
+            self::Manual => 'Manual Override',
         };
     }
 

@@ -23,7 +23,7 @@ class CampaignProduct extends Model
 
     protected $casts = [
         'warn_if_unavailable' => 'boolean',
-        'last_checked_at'     => 'datetime',
+        'last_checked_at' => 'datetime',
     ];
 
     public function draft(): BelongsTo

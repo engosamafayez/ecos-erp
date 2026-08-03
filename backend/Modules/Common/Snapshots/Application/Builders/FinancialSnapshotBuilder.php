@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Common\Snapshots\Application\Builders;
 
+use Closure;
 use Illuminate\Support\Str;
 use Modules\Common\Snapshots\Domain\Contracts\FinancialSnapshotProvider;
 use Modules\Common\Snapshots\Domain\DTOs\FinancialLineSnapshotDTO;
@@ -25,10 +26,14 @@ use Modules\Common\Snapshots\Domain\Engine\IntegrityEngine;
  */
 final class FinancialSnapshotBuilder
 {
-    private const MARGIN_TOLERANCE    = 2.0;
-    private const PRICING_ENGINE_VER  = '1.0.0';
-    private const COST_ENGINE_VER     = '1.0.0';
-    private const PRICING_POLICY_VER  = '1.0.0';
+    private const MARGIN_TOLERANCE = 2.0;
+
+    private const PRICING_ENGINE_VER = '1.0.0';
+
+    private const COST_ENGINE_VER = '1.0.0';
+
+    private const PRICING_POLICY_VER = '1.0.0';
+
     private const SHIPPING_POLICY_VER = '1.0.0';
 
     public function __construct(private readonly IntegrityEngine $integrityEngine) {}
@@ -38,17 +43,17 @@ final class FinancialSnapshotBuilder
         $lines = $provider->getLineItems();
 
         // ── Aggregate cost totals ─────────────────────────────────────────────
-        $totalCogs              = $this->sumColumn($lines, fn ($l) => $l->lineCost);
-        $totalRawMaterialCost   = $this->sumColumn($lines, fn ($l) => $l->rawMaterialCost);
-        $totalPackagingCost     = $this->sumColumn($lines, fn ($l) => $l->packagingCost);
+        $totalCogs = $this->sumColumn($lines, fn ($l) => $l->lineCost);
+        $totalRawMaterialCost = $this->sumColumn($lines, fn ($l) => $l->rawMaterialCost);
+        $totalPackagingCost = $this->sumColumn($lines, fn ($l) => $l->packagingCost);
         $totalManufacturingCost = $this->sumColumn($lines, fn ($l) => $l->manufacturingCost);
-        $totalOtherCost         = $this->sumColumn($lines, fn ($l) => $l->otherCost);
+        $totalOtherCost = $this->sumColumn($lines, fn ($l) => $l->otherCost);
 
-        $totalCogs              = $totalCogs              > 0 ? round($totalCogs, 4)              : null;
-        $totalRawMaterialCost   = $totalRawMaterialCost   > 0 ? round($totalRawMaterialCost, 4)   : null;
-        $totalPackagingCost     = $totalPackagingCost     > 0 ? round($totalPackagingCost, 4)     : null;
+        $totalCogs = $totalCogs > 0 ? round($totalCogs, 4) : null;
+        $totalRawMaterialCost = $totalRawMaterialCost > 0 ? round($totalRawMaterialCost, 4) : null;
+        $totalPackagingCost = $totalPackagingCost > 0 ? round($totalPackagingCost, 4) : null;
         $totalManufacturingCost = $totalManufacturingCost > 0 ? round($totalManufacturingCost, 4) : null;
-        $totalOtherCost         = $totalOtherCost         > 0 ? round($totalOtherCost, 4)         : null;
+        $totalOtherCost = $totalOtherCost > 0 ? round($totalOtherCost, 4) : null;
 
         $grossProfit = $totalCogs !== null
             ? round($provider->getGrandTotal() - $totalCogs, 4)
@@ -65,57 +70,57 @@ final class FinancialSnapshotBuilder
         $integrityHash = $this->integrityEngine->compute($provider->buildIntegrityCanonical());
 
         return new FinancialSnapshotDTO(
-            aggregateId:   $provider->getSnapshotAggregateId(),
+            aggregateId: $provider->getSnapshotAggregateId(),
             aggregateType: $provider->getSnapshotAggregateType(),
-            snapshotUuid:  Str::uuid()->toString(),
+            snapshotUuid: Str::uuid()->toString(),
             snapshotVersion: 1,
 
             // Parties
-            companyId:    $provider->getSnapshotCompanyId(),
-            brandId:      $provider->getBrandId(),
-            channelId:    $provider->getChannelId(),
-            channelName:  $provider->getChannelName(),
-            customerId:   $provider->getCustomerId(),
+            companyId: $provider->getSnapshotCompanyId(),
+            brandId: $provider->getBrandId(),
+            channelId: $provider->getChannelId(),
+            channelName: $provider->getChannelName(),
+            customerId: $provider->getCustomerId(),
             customerName: $provider->getCustomerName(),
 
             // Financials
-            currency:         $provider->getCurrency(),
-            paymentMethod:    $provider->getPaymentMethod(),
-            subtotal:         $provider->getSubtotal(),
-            discountAmount:   $provider->getDiscountAmount(),
-            discountType:     $provider->getDiscountType(),
-            shippingCost:     $provider->getShippingCost(),
-            depositAmount:    $provider->getDepositAmount(),
+            currency: $provider->getCurrency(),
+            paymentMethod: $provider->getPaymentMethod(),
+            subtotal: $provider->getSubtotal(),
+            discountAmount: $provider->getDiscountAmount(),
+            discountType: $provider->getDiscountType(),
+            shippingCost: $provider->getShippingCost(),
+            depositAmount: $provider->getDepositAmount(),
             remainingBalance: $provider->getRemainingBalance(),
-            grandTotal:       $provider->getGrandTotal(),
+            grandTotal: $provider->getGrandTotal(),
 
             // Shipping
-            shippingRuleId:         $provider->getShippingRuleId(),
-            shippingRuleName:       $provider->getShippingRuleName(),
-            shippingZone:           $provider->getShippingZone(),
+            shippingRuleId: $provider->getShippingRuleId(),
+            shippingRuleName: $provider->getShippingRuleName(),
+            shippingZone: $provider->getShippingZone(),
             shippingOverrideApplied: $provider->getShippingOverrideApplied(),
-            shippingOverrideBy:     $provider->getShippingOverrideBy(),
+            shippingOverrideBy: $provider->getShippingOverrideBy(),
 
             // Computed aggregates
-            totalCogs:              $totalCogs,
-            grossProfit:            $grossProfit,
-            totalRawMaterialCost:   $totalRawMaterialCost,
-            totalPackagingCost:     $totalPackagingCost,
+            totalCogs: $totalCogs,
+            grossProfit: $grossProfit,
+            totalRawMaterialCost: $totalRawMaterialCost,
+            totalPackagingCost: $totalPackagingCost,
             totalManufacturingCost: $totalManufacturingCost,
-            totalOtherCost:         $totalOtherCost,
+            totalOtherCost: $totalOtherCost,
 
             // Computed margin diagnostics
             targetMarginPercent: $targetMarginPct,
             actualMarginPercent: $actualMarginPct,
-            marginDifference:    $marginDiff,
-            marginStatus:        $marginStatus,
+            marginDifference: $marginDiff,
+            marginStatus: $marginStatus,
 
             // Engine metadata
-            pricingEngineVersion:       self::PRICING_ENGINE_VER,
-            costEngineVersion:          self::COST_ENGINE_VER,
-            recipeVersion:              $recipeVersion,
-            brandPricingPolicyVersion:  self::PRICING_POLICY_VER,
-            shippingPricingVersion:     self::SHIPPING_POLICY_VER,
+            pricingEngineVersion: self::PRICING_ENGINE_VER,
+            costEngineVersion: self::COST_ENGINE_VER,
+            recipeVersion: $recipeVersion,
+            brandPricingPolicyVersion: self::PRICING_POLICY_VER,
+            shippingPricingVersion: self::SHIPPING_POLICY_VER,
 
             // Integrity
             integrityHash: $integrityHash,
@@ -130,9 +135,9 @@ final class FinancialSnapshotBuilder
     /**
      * Sum a nullable float column from line DTOs, returning 0 if all are null.
      *
-     * @param  FinancialLineSnapshotDTO[] $lines
+     * @param  FinancialLineSnapshotDTO[]  $lines
      */
-    private function sumColumn(array $lines, \Closure $getter): float
+    private function sumColumn(array $lines, Closure $getter): float
     {
         return array_reduce($lines, static function (float $carry, FinancialLineSnapshotDTO $l) use ($getter): float {
             $val = $getter($l);
@@ -142,15 +147,15 @@ final class FinancialSnapshotBuilder
     }
 
     /**
-     * @param  FinancialLineSnapshotDTO[] $lines
+     * @param  FinancialLineSnapshotDTO[]  $lines
      * @return array{float|null, float|null, float|null, string|null}
      */
     private function computeMarginDiagnostics(FinancialSnapshotProvider $provider, array $lines, ?float $totalCogs): array
     {
         $actualMarginPct = null;
         $targetMarginPct = null;
-        $marginDiff      = null;
-        $marginStatus    = null;
+        $marginDiff = null;
+        $marginStatus = null;
 
         if ($totalCogs !== null && $provider->getGrandTotal() > 0.0) {
             $actualMarginPct = round(
@@ -174,7 +179,7 @@ final class FinancialSnapshotBuilder
         }
 
         if ($actualMarginPct !== null && $targetMarginPct !== null) {
-            $marginDiff   = round($actualMarginPct - $targetMarginPct, 4);
+            $marginDiff = round($actualMarginPct - $targetMarginPct, 4);
             $marginStatus = $this->deriveMarginStatus($actualMarginPct, $targetMarginPct);
         }
 

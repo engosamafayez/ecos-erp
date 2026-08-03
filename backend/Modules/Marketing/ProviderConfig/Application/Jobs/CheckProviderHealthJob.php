@@ -25,7 +25,8 @@ final class CheckProviderHealthJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 2;
+    public int $tries = 2;
+
     public int $timeout = 30;
 
     public function __construct(

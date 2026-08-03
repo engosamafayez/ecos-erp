@@ -19,10 +19,10 @@ use Modules\Operations\Preparation\Domain\Services\FulfillmentPolicyService;
 final class CompleteProductAction
 {
     public function __construct(
-        private readonly AuditService             $audit,
-        private readonly TimelineService          $timeline,
+        private readonly AuditService $audit,
+        private readonly TimelineService $timeline,
         private readonly FulfillmentPolicyService $fulfillmentPolicy,
-        private readonly FeatureFlagService       $flags,
+        private readonly FeatureFlagService $flags,
     ) {}
 
     public function execute(
@@ -60,49 +60,49 @@ final class CompleteProductAction
 
             $item->update([
                 'quantity_prepared' => $quantityPrepared,
-                'quantity_short'    => $quantityShort,
-                'status'            => $status->value,
-                'prepared_at'       => $now,
-                'prepared_by'       => $actorId,
-                'notes'             => $notes,
-                'updated_by'        => $actorId,
+                'quantity_short' => $quantityShort,
+                'status' => $status->value,
+                'prepared_at' => $now,
+                'prepared_by' => $actorId,
+                'notes' => $notes,
+                'updated_by' => $actorId,
             ]);
 
             $wave->increment('total_units_prepared', $quantityPrepared);
             $wave->update(['updated_by' => $actorId]);
 
             event(new ProductPrepared(
-                waveId:           $wave->id,
-                companyId:        $wave->company_id,
-                waveItemId:       $item->id,
-                productId:        $item->product_id,
-                sku:              $item->sku_snapshot,
+                waveId: $wave->id,
+                companyId: $wave->company_id,
+                waveItemId: $item->id,
+                productId: $item->product_id,
+                sku: $item->sku_snapshot,
                 quantityRequired: $item->quantity_required,
                 quantityPrepared: $quantityPrepared,
-                quantityShort:    $quantityShort,
-                status:           $status->value,
-                preparedBy:       $actorId,
-                preparedAt:       $now->toIso8601String(),
+                quantityShort: $quantityShort,
+                status: $status->value,
+                preparedBy: $actorId,
+                preparedAt: $now->toIso8601String(),
             ));
 
             $this->timeline->record(
-                companyId:   $wave->company_id,
+                companyId: $wave->company_id,
                 subjectType: 'PreparationWave',
-                subjectId:   $wave->id,
-                eventType:   'wave.product_prepared',
-                title:       "Product {$item->sku_snapshot} prepared",
-                description: "{$quantityPrepared}/{$item->quantity_required} units" . ($quantityShort > 0 ? " ({$quantityShort} short)" : ''),
-                actorId:     (int) $actorId,
-                sourceModule:'Operations.Preparation',
+                subjectId: $wave->id,
+                eventType: 'wave.product_prepared',
+                title: "Product {$item->sku_snapshot} prepared",
+                description: "{$quantityPrepared}/{$item->quantity_required} units".($quantityShort > 0 ? " ({$quantityShort} short)" : ''),
+                actorId: (int) $actorId,
+                sourceModule: 'Operations.Preparation',
             );
 
             $this->audit->record(
-                action:     'preparation.wave_item.completed',
+                action: 'preparation.wave_item.completed',
                 entityType: 'PreparationWaveItem',
-                entityId:   $item->id,
-                companyId:  $wave->company_id,
-                userId:     (int) $actorId,
-                newValues:  ['quantity_prepared' => $quantityPrepared, 'quantity_short' => $quantityShort, 'status' => $status->value],
+                entityId: $item->id,
+                companyId: $wave->company_id,
+                userId: (int) $actorId,
+                newValues: ['quantity_prepared' => $quantityPrepared, 'quantity_short' => $quantityShort, 'status' => $status->value],
             );
 
             return $item->fresh() ?? $item;

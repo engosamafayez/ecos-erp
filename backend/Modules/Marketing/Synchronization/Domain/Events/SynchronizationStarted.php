@@ -10,8 +10,8 @@ final class SynchronizationStarted
 {
     public function __construct(
         public readonly MarketingSyncLog $syncLog,
-        public readonly string           $connectionId,
-        public readonly string           $syncType,
-        public readonly ?string          $triggeredBy,
+        public readonly string $connectionId,
+        public readonly string $syncType,
+        public readonly ?string $triggeredBy,
     ) {}
 }

@@ -24,18 +24,18 @@ class CampaignDraftAudience extends Model
     ];
 
     protected $casts = [
-        'countries'           => 'array',
-        'governorates'        => 'array',
-        'cities'              => 'array',
-        'genders'             => 'array',
-        'languages'           => 'array',
-        'interests'           => 'array',
-        'behaviors'           => 'array',
+        'countries' => 'array',
+        'governorates' => 'array',
+        'cities' => 'array',
+        'genders' => 'array',
+        'languages' => 'array',
+        'interests' => 'array',
+        'behaviors' => 'array',
         'lookalike_audiences' => 'array',
-        'custom_audiences'    => 'array',
-        'saved_audiences'     => 'array',
-        'exclusions'          => 'array',
-        'raw_targeting'       => 'array',
+        'custom_audiences' => 'array',
+        'saved_audiences' => 'array',
+        'exclusions' => 'array',
+        'raw_targeting' => 'array',
     ];
 
     public function draft(): BelongsTo

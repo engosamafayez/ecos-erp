@@ -13,18 +13,18 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
  * Read model: aggregated product demand for a preparation wave.
  * Written by the Demand Engine, consumed by the Preparation Workspace UI.
  *
- * @property string  $id
- * @property string  $company_id
- * @property string  $warehouse_id
- * @property string  $preparation_wave_id
- * @property string  $product_id
- * @property string  $product_name
+ * @property string $id
+ * @property string $company_id
+ * @property string $warehouse_id
+ * @property string $preparation_wave_id
+ * @property string $product_id
+ * @property string $product_name
  * @property string|null $product_sku
- * @property float   $required_qty
- * @property float   $prepared_qty
- * @property float   $remaining_qty
- * @property int     $orders_count
- * @property float   $completion_pct
+ * @property float $required_qty
+ * @property float $prepared_qty
+ * @property float $remaining_qty
+ * @property int $orders_count
+ * @property float $completion_pct
  * @property string|null $data_hash
  * @property \Carbon\Carbon $last_calculated_at
  */
@@ -52,11 +52,11 @@ final class WaveProductDemand extends Model
     ];
 
     protected $casts = [
-        'required_qty'    => 'float',
-        'prepared_qty'    => 'float',
-        'remaining_qty'   => 'float',
-        'orders_count'    => 'integer',
-        'completion_pct'  => 'float',
+        'required_qty' => 'float',
+        'prepared_qty' => 'float',
+        'remaining_qty' => 'float',
+        'orders_count' => 'integer',
+        'completion_pct' => 'float',
         'last_calculated_at' => 'datetime',
     ];
 

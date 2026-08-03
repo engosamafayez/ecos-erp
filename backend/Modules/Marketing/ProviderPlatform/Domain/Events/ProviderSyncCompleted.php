@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderSyncCompleted extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.sync_completed'; }
+    public function eventName(): string
+    {
+        return 'provider.sync_completed';
+    }
 }

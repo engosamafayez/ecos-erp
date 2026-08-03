@@ -12,16 +12,18 @@ use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveMembershi
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
 use Modules\Operations\Preparation\Domain\Models\WaveEngineConfiguration;
+use Throwable;
 
 final class RunWaveSchedulerCommand extends Command
 {
-    protected $signature   = 'wave:run-scheduler';
+    protected $signature = 'wave:run-scheduler';
+
     protected $description = 'Process wave lifecycle transitions (collection open, preparation start, wave close+rotate) based on per-warehouse schedule configuration.';
 
     public function __construct(
-        private readonly WaveManager            $waveManager,
-        private readonly WaveLifecycleService   $lifecycle,
-        private readonly WaveMembershipService  $membership,
+        private readonly WaveManager $waveManager,
+        private readonly WaveLifecycleService $lifecycle,
+        private readonly WaveMembershipService $membership,
         private readonly WavePreparationService $preparation,
     ) {
         parent::__construct();
@@ -33,16 +35,17 @@ final class RunWaveSchedulerCommand extends Command
 
         if ($configs->isEmpty()) {
             $this->line('No active wave engine configurations found.');
+
             return Command::SUCCESS;
         }
 
         foreach ($configs as $config) {
             try {
                 $this->processWarehouse($config);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Log and continue — one bad warehouse must not block others
                 $this->error(
-                    "Wave scheduler error for warehouse {$config->warehouse_id}: {$e->getMessage()}"
+                    "Wave scheduler error for warehouse {$config->warehouse_id}: {$e->getMessage()}",
                 );
                 report($e);
             }
@@ -53,9 +56,9 @@ final class RunWaveSchedulerCommand extends Command
 
     private function processWarehouse(WaveEngineConfiguration $config): void
     {
-        $now   = Carbon::now()->setTimezone($config->timezone);
+        $now = Carbon::now()->setTimezone($config->timezone);
         $today = $now->toDateString();
-        $time  = $now->format('H:i');
+        $time = $now->format('H:i');
 
         // ── Step 1: Open collection window ───────────────────────────────────────
         if (

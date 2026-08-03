@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Archive,
   CheckCircle,
@@ -60,12 +61,14 @@ function TableSkeleton() {
 // ── Empty State ────────────────────────────────────────────────────────────────
 
 function EmptyVehicles({ hasFilter, onCreateFirst }: { hasFilter: boolean; onCreateFirst: () => void }) {
+  const { t } = useTranslation('logistics');
+
   if (hasFilter) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
         <Truck className="mb-3 size-10 text-muted-foreground/30" />
-        <p className="text-sm font-medium">No vehicles match your filters</p>
-        <p className="mt-1 text-xs text-muted-foreground">Try a different keyword or clear your filters.</p>
+        <p className="text-sm font-medium">{t($ => $.vehicles.empty.filteredTitle)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t($ => $.vehicles.empty.filteredDescription)}</p>
       </div>
     );
   }
@@ -73,13 +76,13 @@ function EmptyVehicles({ hasFilter, onCreateFirst }: { hasFilter: boolean; onCre
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <Truck className="mb-3 size-12 text-muted-foreground/20" />
-      <p className="text-sm font-medium">No vehicles yet</p>
+      <p className="text-sm font-medium">{t($ => $.vehicles.empty.title)}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Register the fleet — capacities, documents and maintenance all live here.
+        {t($ => $.vehicles.empty.description)}
       </p>
       <Button size="sm" className="mt-4 gap-1.5" onClick={onCreateFirst}>
         <Plus className="size-3.5" />
-        Add First Vehicle
+        {t($ => $.vehicles.empty.action)}
       </Button>
     </div>
   );
@@ -100,6 +103,8 @@ function VehiclesTable({
   onRowClick: (vehicle: Vehicle) => void;
   onCreateFirst: () => void;
 }) {
+  const { t } = useTranslation('logistics');
+
   if (isLoading) return <TableSkeleton />;
   if (rows.length === 0) return <EmptyVehicles hasFilter={hasFilter} onCreateFirst={onCreateFirst} />;
 
@@ -109,13 +114,13 @@ function VehiclesTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/60">
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Code</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Vehicle</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Type</th>
-              <th className="h-10 px-3 text-end text-xs font-medium text-muted-foreground">Capacity</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Driver</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Status</th>
-              <th className="h-10 w-28 px-3 text-center text-xs font-medium text-muted-foreground">Dispatch</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.code)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.vehicles.table.colVehicle)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.type)}</th>
+              <th className="h-10 px-3 text-end text-xs font-medium text-muted-foreground">{t($ => $.common.capacity)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.driver)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.status)}</th>
+              <th className="h-10 w-28 px-3 text-center text-xs font-medium text-muted-foreground">{t($ => $.vehicles.table.colDispatch)}</th>
               <th className="h-10 w-10 px-3" />
             </tr>
           </thead>

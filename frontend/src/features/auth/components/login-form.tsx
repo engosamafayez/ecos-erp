@@ -80,8 +80,8 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const loginSchema = z.object({
-    email: z.email(t('login.email.validation')),
-    password: z.string().min(1, t('login.password.validation')),
+    email: z.email(t($ => $.login.email.validation)),
+    password: z.string().min(1, t($ => $.login.password.validation)),
     remember: z.boolean(),
   });
 
@@ -98,10 +98,15 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
     setFormError(null);
     try {
       await login(values);
-      navigate(ROUTES.dashboard, { replace: true });
+      // Dynamic landing page (TASK-IAM-005): open the workspace assigned by the user's
+      // Role Templates; fall back to the dashboard when none is set.
+      const landingKey = useAuthStore.getState().user?.authorization?.landing_page;
+      const landingPath =
+        (landingKey && (ROUTES as Record<string, string>)[landingKey]) || ROUTES.dashboard;
+      navigate(landingPath, { replace: true });
     } catch (error) {
       if (!axios.isAxiosError(error)) {
-        setFormError(t('login.error.message'));
+        setFormError(t($ => $.login.error.message));
         return;
       }
 
@@ -113,23 +118,23 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
 
       if (!error.response) {
         // Network failure — could not reach the server at all
-        setFormError(t('login.error.serverUnavailable'));
+        setFormError(t($ => $.login.error.serverUnavailable));
       } else if (status === 429) {
-        setFormError(t('login.error.tooManyAttempts'));
+        setFormError(t($ => $.login.error.tooManyAttempts));
       } else if (status === 403 || status === 423) {
-        setFormError(typeof data?.message === 'string' ? data.message : t('login.error.accountDisabled'));
+        setFormError(typeof data?.message === 'string' ? data.message : t($ => $.login.error.accountDisabled));
       } else if (status === 422) {
         const firstFieldError = data?.errors
           ? Object.values(data.errors)[0]?.[0]
           : undefined;
-        setFormError(firstFieldError ?? (typeof data?.message === 'string' ? data.message : t('login.error.validation')));
+        setFormError(firstFieldError ?? (typeof data?.message === 'string' ? data.message : t($ => $.login.error.validation)));
       } else if (status !== undefined && status >= 500) {
-        setFormError(t('login.error.serverUnavailable'));
+        setFormError(t($ => $.login.error.serverUnavailable));
       } else if (typeof data?.message === 'string' && data.message) {
         // 401 invalid credentials, or any other backend message
         setFormError(data.message);
       } else {
-        setFormError(t('login.error.message'));
+        setFormError(t($ => $.login.error.message));
       }
     }
   };
@@ -279,10 +284,10 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
               lineHeight: 1.15,
             }}
           >
-            {t('login.welcomeBack') || 'Welcome Back'}
+            {t($ => $.login.welcomeBack) || 'Welcome Back'}
           </h2>
           <p style={{ margin: 0, color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
-            {t('login.subtitle')}
+            {t($ => $.login.subtitle)}
           </p>
         </div>
 
@@ -318,7 +323,7 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
               htmlFor="email"
               style={{ color: '#94A3B8', fontSize: '13px', fontWeight: 500 }}
             >
-              {t('login.email.label')}
+              {t($ => $.login.email.label)}
             </label>
             <div style={{ position: 'relative' }}>
               <span style={iconStyle}>
@@ -328,7 +333,7 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder={t('login.email.placeholder')}
+                placeholder={t($ => $.login.email.placeholder)}
                 className="ecos-input"
                 style={errors.email ? inputErrorStyle : inputBase}
                 onFocus={handleFocus}
@@ -351,7 +356,7 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
               htmlFor="password"
               style={{ color: '#94A3B8', fontSize: '13px', fontWeight: 500 }}
             >
-              {t('login.password.label')}
+              {t($ => $.login.password.label)}
             </label>
             <div style={{ position: 'relative' }}>
               <span style={iconStyle}>
@@ -361,7 +366,7 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
-                placeholder={t('login.password.placeholder')}
+                placeholder={t($ => $.login.password.placeholder)}
                 className="ecos-input"
                 style={{
                   ...(errors.password ? inputErrorStyle : inputBase),
@@ -377,7 +382,7 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
                 type="button"
                 className="ecos-eye"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? t('login.hidePassword') || 'Hide password' : t('login.showPassword') || 'Show password'}
+                aria-label={showPassword ? t($ => $.login.hidePassword) || 'Hide password' : t($ => $.login.showPassword) || 'Show password'}
                 style={eyeStyle}
               >
                 <EyeIcon open={showPassword} />
@@ -401,7 +406,7 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
                 {...register('remember')}
               />
               <span style={{ color: '#64748B', fontSize: '13px', userSelect: 'none' }}>
-                {t('login.rememberMe')}
+                {t($ => $.login.rememberMe)}
               </span>
             </label>
             <button
@@ -418,7 +423,7 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
                 flexShrink: 0,
               }}
             >
-              {t('login.forgotPassword')}
+              {t($ => $.login.forgotPassword)}
             </button>
           </div>
 
@@ -452,10 +457,10 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
             {isSubmitting ? (
               <>
                 <SpinnerIcon />
-                <span>{t('login.submitting')}</span>
+                <span>{t($ => $.login.submitting)}</span>
               </>
             ) : (
-              t('login.submit')
+              t($ => $.login.submit)
             )}
           </button>
         </form>

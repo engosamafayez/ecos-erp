@@ -17,7 +17,7 @@ final class NullGatewaysTest extends TestCase
 
     public function test_loyalty_get_balance_returns_zero(): void
     {
-        $gateway = new NullLoyaltyGateway();
+        $gateway = new NullLoyaltyGateway;
         $balance = $gateway->getBalance('cust-1', 'EGP');
 
         $this->assertSame(0, $balance->points);
@@ -27,16 +27,16 @@ final class NullGatewaysTest extends TestCase
 
     public function test_loyalty_earn_points_returns_zero(): void
     {
-        $gateway = new NullLoyaltyGateway();
-        $earned  = $gateway->earnPoints('cust-1', Money::of('100.00', 'EGP'), 'TXN-001');
+        $gateway = new NullLoyaltyGateway;
+        $earned = $gateway->earnPoints('cust-1', Money::of('100.00', 'EGP'), 'TXN-001');
 
         $this->assertSame(0, $earned);
     }
 
     public function test_loyalty_redeem_zero_points_returns_zero_money(): void
     {
-        $gateway = new NullLoyaltyGateway();
-        $money   = $gateway->redeemPoints('cust-1', 0, 'EGP', 'TXN-001');
+        $gateway = new NullLoyaltyGateway;
+        $money = $gateway->redeemPoints('cust-1', 0, 'EGP', 'TXN-001');
 
         $this->assertSame('0.00', $money->amount);
         $this->assertSame('EGP', $money->currency);
@@ -44,7 +44,7 @@ final class NullGatewaysTest extends TestCase
 
     public function test_loyalty_redeem_positive_points_throws(): void
     {
-        $gateway = new NullLoyaltyGateway();
+        $gateway = new NullLoyaltyGateway;
 
         $this->expectException(InsufficientLoyaltyPointsException::class);
         $this->expectExceptionMessage('requested 10 loyalty points');
@@ -56,7 +56,7 @@ final class NullGatewaysTest extends TestCase
 
     public function test_store_credit_get_balance_returns_zero(): void
     {
-        $gateway = new NullStoreCreditGateway();
+        $gateway = new NullStoreCreditGateway;
         $balance = $gateway->getBalance('cust-1', 'EGP');
 
         $this->assertSame('0.00', $balance->available->amount);
@@ -66,7 +66,7 @@ final class NullGatewaysTest extends TestCase
 
     public function test_store_credit_apply_zero_does_not_throw(): void
     {
-        $gateway = new NullStoreCreditGateway();
+        $gateway = new NullStoreCreditGateway;
         $gateway->applyCredit('cust-1', Money::zero('EGP'), 'TXN-001');
 
         $this->assertTrue(true);
@@ -74,7 +74,7 @@ final class NullGatewaysTest extends TestCase
 
     public function test_store_credit_apply_positive_throws(): void
     {
-        $gateway = new NullStoreCreditGateway();
+        $gateway = new NullStoreCreditGateway;
 
         $this->expectException(InsufficientStoreCreditException::class);
         $this->expectExceptionMessage('store credit');
@@ -84,7 +84,7 @@ final class NullGatewaysTest extends TestCase
 
     public function test_store_credit_apply_shows_customer_id_in_message(): void
     {
-        $gateway = new NullStoreCreditGateway();
+        $gateway = new NullStoreCreditGateway;
 
         try {
             $gateway->applyCredit('cust-abc', Money::of('10.00', 'EGP'), 'TXN-001');

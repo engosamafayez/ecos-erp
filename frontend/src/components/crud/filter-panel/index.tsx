@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -18,10 +19,12 @@ type FilterPanelProps = {
 export function FilterPanel({
   open,
   children,
-  title = 'Filters',
+  title,
   onClear,
   className,
 }: FilterPanelProps) {
+  const { t } = useTranslation('common');
+
   if (!open) {
     return null;
   }
@@ -29,10 +32,10 @@ export function FilterPanel({
   return (
     <div className={cn('bg-muted/30 flex flex-col gap-3 rounded-lg border p-4', className)}>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{title}</span>
+        <span className="text-sm font-medium">{title ?? t($ => $.toolbar.filters)}</span>
         {onClear ? (
           <Button type="button" variant="ghost" size="sm" onClick={onClear}>
-            Clear
+            {t($ => $.actions.clear)}
           </Button>
         ) : null}
       </div>

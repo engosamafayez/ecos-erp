@@ -26,16 +26,16 @@ final class ResolveLoadingExceptionAction
 
         if (! in_array($status, $resolvableStatuses, true)) {
             throw new RuntimeException(
-                "Cannot resolve loading exception: status must be 'open' or 'investigating', current status is '{$status->value}'."
+                "Cannot resolve loading exception: status must be 'open' or 'investigating', current status is '{$status->value}'.",
             );
         }
 
         $exception->update([
-            'status'           => LoadingExceptionStatus::Resolved->value,
-            'resolved_at'      => now(),
-            'resolved_by'      => $actorId,
+            'status' => LoadingExceptionStatus::Resolved->value,
+            'resolved_at' => now(),
+            'resolved_by' => $actorId,
             'resolution_notes' => $resolutionNotes,
-            'updated_by'       => $actorId,
+            'updated_by' => $actorId,
         ]);
 
         return $exception->fresh() ?? $exception;

@@ -12,7 +12,7 @@ enum AbcClass: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::A => 'Class A — High Value',
             self::B => 'Class B — Medium Value',
             self::C => 'Class C — Low Value',
@@ -21,7 +21,7 @@ enum AbcClass: string
 
     public function frequencyDays(): int
     {
-        return match($this) {
+        return match ($this) {
             self::A => 30,
             self::B => 90,
             self::C => 180,
@@ -30,7 +30,7 @@ enum AbcClass: string
 
     public function frequencyLabel(): string
     {
-        return match($this) {
+        return match ($this) {
             self::A => 'Monthly',
             self::B => 'Quarterly',
             self::C => 'Semi-Annual',
@@ -40,7 +40,7 @@ enum AbcClass: string
     /** Cumulative threshold at which a product is no longer in this class. */
     public static function thresholdFor(self $class): float
     {
-        return match($class) {
+        return match ($class) {
             self::A => 70.0,
             self::B => 90.0,
             self::C => 100.0,

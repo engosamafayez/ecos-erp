@@ -14,7 +14,7 @@ use Modules\Marketing\ProviderPlatform\Application\Services\ProviderRegistry;
 final class ProviderPlatformController extends Controller
 {
     public function __construct(
-        private readonly ProviderRegistry        $registry,
+        private readonly ProviderRegistry $registry,
         private readonly ProviderCapabilityEngine $capabilities,
         private readonly ProviderMetricsCollector $metrics,
     ) {}
@@ -34,11 +34,11 @@ final class ProviderPlatformController extends Controller
         return response()->json([
             'data' => array_map(
                 fn ($def) => [
-                    'key'               => $def->providerKey,
-                    'display_name'      => $def->displayName,
-                    'provider_type'     => $def->providerType,
-                    'version'           => $def->version,
-                    'capabilities'      => $def->capabilities,
+                    'key' => $def->providerKey,
+                    'display_name' => $def->displayName,
+                    'provider_type' => $def->providerType,
+                    'version' => $def->version,
+                    'capabilities' => $def->capabilities,
                     'documentation_url' => $def->documentationUrl,
                 ],
                 $definitions,
@@ -56,15 +56,15 @@ final class ProviderPlatformController extends Controller
     public function metrics(Request $request, string $provider): JsonResponse
     {
         $companyId = (string) $request->user()->company_id;
-        $days      = (int) ($request->query('days', 7));
+        $days = (int) ($request->query('days', 7));
 
         $snapshot = $this->metrics->getMetrics($companyId, $provider);
-        $history  = $this->metrics->getEventCounts($companyId, $provider, $days);
+        $history = $this->metrics->getEventCounts($companyId, $provider, $days);
 
         return response()->json([
-            'provider'     => $provider,
-            'period_days'  => $days,
-            'counters'     => $snapshot,
+            'provider' => $provider,
+            'period_days' => $days,
+            'counters' => $snapshot,
             'event_counts' => $history,
         ]);
     }

@@ -20,11 +20,11 @@ interface EnterpriseEventBusInterface
     /**
      * Register a subscriber class for a given event name.
      *
-     * @param string      $eventName       Dot-notation event name, e.g. 'orders.order_created'
-     * @param string      $subscriberClass FQCN of the subscriber class (must have handle() method)
-     * @param RetryPolicy $retryPolicy     Retry policy for this subscriber
-     * @param int         $priority        Lower number = higher dispatch priority
-     * @param string      $queue           Laravel queue name
+     * @param  string  $eventName  Dot-notation event name, e.g. 'orders.order_created'
+     * @param  string  $subscriberClass  FQCN of the subscriber class (must have handle() method)
+     * @param  RetryPolicy  $retryPolicy  Retry policy for this subscriber
+     * @param  int  $priority  Lower number = higher dispatch priority
+     * @param  string  $queue  Laravel queue name
      */
     public function subscribe(
         string $eventName,

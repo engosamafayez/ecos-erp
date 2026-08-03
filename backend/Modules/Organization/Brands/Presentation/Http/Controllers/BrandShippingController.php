@@ -28,6 +28,7 @@ class BrandShippingController extends Controller
     {
         $brand = Brand::findOrFail($brandId);
         $settings = $this->service->getOrCreateSettings($brand->id);
+
         return new BrandShippingSettingsResource($settings);
     }
 
@@ -38,11 +39,11 @@ class BrandShippingController extends Controller
         $brand = Brand::findOrFail($brandId);
 
         $data = $request->validate([
-            'unsupported_governorate_action'  => 'sometimes|string|in:allow,pending_review,reject',
-            'unsupported_city_action'         => 'sometimes|string|in:allow,pending_review,reject',
-            'default_cod_enabled'             => 'sometimes|boolean',
+            'unsupported_governorate_action' => 'sometimes|string|in:allow,pending_review,reject',
+            'unsupported_city_action' => 'sometimes|string|in:allow,pending_review,reject',
+            'default_cod_enabled' => 'sometimes|boolean',
             'default_free_shipping_threshold' => 'sometimes|nullable|numeric|min:0',
-            'default_shipping_provider'       => 'sometimes|nullable|string|max:50',
+            'default_shipping_provider' => 'sometimes|nullable|string|max:50',
         ]);
 
         $settings = $this->service->getOrCreateSettings($brand->id);
@@ -73,21 +74,23 @@ class BrandShippingController extends Controller
             if ($brandSettings->has($gov->id)) {
                 $row = $brandSettings->get($gov->id);
                 $row->setRelation('governorate', $gov);
+
                 return $row;
             }
 
             // Synthetic default (not persisted) so the frontend can render defaults
             $synthetic = new BrandGovernorateSettings([
-                'brand_id'                => $brandId,
-                'governorate_id'          => $gov->id,
-                'is_enabled'              => true,
-                'shipping_price'          => null,
+                'brand_id' => $brandId,
+                'governorate_id' => $gov->id,
+                'is_enabled' => true,
+                'shipping_price' => null,
                 'estimated_delivery_days' => null,
-                'same_day_supported'      => false,
-                'display_order'           => $gov->display_order,
+                'same_day_supported' => false,
+                'display_order' => $gov->display_order,
             ]);
             $synthetic->id = null;
             $synthetic->setRelation('governorate', $gov);
+
             return $synthetic;
         });
 
@@ -102,17 +105,17 @@ class BrandShippingController extends Controller
         Governorate::findOrFail($governorateId);
 
         $data = $request->validate([
-            'is_enabled'              => 'sometimes|boolean',
-            'shipping_price'          => 'sometimes|nullable|numeric|min:0',
+            'is_enabled' => 'sometimes|boolean',
+            'shipping_price' => 'sometimes|nullable|numeric|min:0',
             'estimated_delivery_days' => 'sometimes|nullable|integer|min:1|max:365',
-            'same_day_supported'      => 'sometimes|boolean',
-            'display_order'           => 'sometimes|integer|min:0',
-            'preferred_provider'      => 'sometimes|nullable|string|max:50',
+            'same_day_supported' => 'sometimes|boolean',
+            'display_order' => 'sometimes|integer|min:0',
+            'preferred_provider' => 'sometimes|nullable|string|max:50',
         ]);
 
         $settings = BrandGovernorateSettings::updateOrCreate(
             ['brand_id' => $brandId, 'governorate_id' => $governorateId],
-            $data
+            $data,
         );
 
         return new BrandGovernorateSettingsResource($settings->load('governorate'));
@@ -137,8 +140,7 @@ class BrandShippingController extends Controller
         $cities = $query->get();
 
         $brandSettings = BrandCitySetting::where('brand_id', $brandId)
-            ->when($governorateId, fn ($q) =>
-                $q->whereIn('city_id', $cities->pluck('id'))
+            ->when($governorateId, fn ($q) => $q->whereIn('city_id', $cities->pluck('id')),
             )
             ->get()
             ->keyBy('city_id');
@@ -147,19 +149,21 @@ class BrandShippingController extends Controller
             if ($brandSettings->has($city->id)) {
                 $row = $brandSettings->get($city->id);
                 $row->setRelation('city', $city);
+
                 return $row;
             }
 
             $synthetic = new BrandCitySetting([
-                'brand_id'          => $brandId,
-                'city_id'           => $city->id,
-                'is_enabled'        => null,
-                'shipping_price'    => null,
-                'supports_cod'      => null,
+                'brand_id' => $brandId,
+                'city_id' => $city->id,
+                'is_enabled' => null,
+                'shipping_price' => null,
+                'supports_cod' => null,
                 'is_remote_override' => null,
             ]);
             $synthetic->id = null;
             $synthetic->setRelation('city', $city);
+
             return $synthetic;
         });
 
@@ -174,15 +178,15 @@ class BrandShippingController extends Controller
         City::findOrFail($cityId);
 
         $data = $request->validate([
-            'is_enabled'        => 'sometimes|nullable|boolean',
-            'shipping_price'    => 'sometimes|nullable|numeric|min:0',
-            'supports_cod'      => 'sometimes|nullable|boolean',
+            'is_enabled' => 'sometimes|nullable|boolean',
+            'shipping_price' => 'sometimes|nullable|numeric|min:0',
+            'supports_cod' => 'sometimes|nullable|boolean',
             'is_remote_override' => 'sometimes|nullable|boolean',
         ]);
 
         $setting = BrandCitySetting::updateOrCreate(
             ['brand_id' => $brandId, 'city_id' => $cityId],
-            $data
+            $data,
         );
 
         return new BrandCitySettingsResource($setting->load('city'));
@@ -196,15 +200,15 @@ class BrandShippingController extends Controller
 
         $data = $request->validate([
             'governorate_id' => 'required|integer|exists:logistics_governorates,id',
-            'city_id'        => 'nullable|integer|exists:logistics_cities,id',
+            'city_id' => 'nullable|integer|exists:logistics_cities,id',
         ]);
 
-        $price      = $this->service->calculateShippingPrice($brandId, $data['governorate_id'], $data['city_id'] ?? null);
+        $price = $this->service->calculateShippingPrice($brandId, $data['governorate_id'], $data['city_id'] ?? null);
         $validation = $this->service->validateShippingArea($brandId, $data['governorate_id'], $data['city_id'] ?? null);
 
         return response()->json([
             'shipping_price' => $price,
-            'validation'     => $validation,
+            'validation' => $validation,
         ]);
     }
 }

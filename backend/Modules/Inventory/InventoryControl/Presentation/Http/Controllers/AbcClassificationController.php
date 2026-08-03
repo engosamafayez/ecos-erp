@@ -39,7 +39,7 @@ final class AbcClassificationController extends Controller
         $summary = $this->service->recalculate();
 
         return $this->success([
-            'summary'     => $summary,
+            'summary' => $summary,
             'recalculated_at' => now()->toIso8601String(),
         ], 'ABC classifications recalculated successfully.');
     }

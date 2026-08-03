@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -22,7 +24,7 @@ return new class extends Migration
             $table->timestamp('last_order_at')->nullable();
 
             $table->index(['intent', 'company_id'], 'cep_cv_intent_co_idx');
-            $table->index(['is_vip'],               'cep_cv_vip_idx');
+            $table->index(['is_vip'], 'cep_cv_vip_idx');
         });
     }
 

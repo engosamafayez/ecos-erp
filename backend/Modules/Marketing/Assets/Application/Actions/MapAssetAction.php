@@ -20,36 +20,36 @@ final class MapAssetAction
         string $relatedType,
         string $relatedId,
         string $actorId,
-        int    $confidence      = 100,
-        bool   $isAutoSuggested = false,
+        int $confidence = 100,
+        bool $isAutoSuggested = false,
     ): MarketingAssetRelationship {
         $asset = MarketingAsset::findOrFail($assetId);
 
         $relationship = MarketingAssetRelationship::updateOrCreate(
             [
                 'marketing_asset_id' => $asset->id,
-                'related_type'       => $relatedType,
-                'related_id'         => $relatedId,
+                'related_type' => $relatedType,
+                'related_id' => $relatedId,
             ],
             [
-                'mapped_by'         => $actorId,
-                'mapped_at'         => now(),
-                'confidence'        => $confidence,
+                'mapped_by' => $actorId,
+                'mapped_at' => now(),
+                'confidence' => $confidence,
                 'is_auto_suggested' => $isAutoSuggested,
-                'accepted_at'       => $isAutoSuggested ? null : now(),
-                'accepted_by'       => $isAutoSuggested ? null : $actorId,
-                'rejected_at'       => null,
-                'rejected_by'       => null,
+                'accepted_at' => $isAutoSuggested ? null : now(),
+                'accepted_by' => $isAutoSuggested ? null : $actorId,
+                'rejected_at' => null,
+                'rejected_by' => null,
             ],
         );
 
         if (! $isAutoSuggested) {
             event(new AssetMapped(
-                assetId:      $asset->id,
-                relatedType:  $relatedType,
-                relatedId:    $relatedId,
-                actorId:      $actorId,
-                confidence:   $confidence,
+                assetId: $asset->id,
+                relatedType: $relatedType,
+                relatedId: $relatedId,
+                actorId: $actorId,
+                confidence: $confidence,
                 connectorType: $asset->connector_type ?? '',
             ));
         }
@@ -71,11 +71,11 @@ final class MapAssetAction
         $asset = MarketingAsset::find($rel->marketing_asset_id);
 
         event(new AssetMapped(
-            assetId:      $rel->marketing_asset_id,
-            relatedType:  $rel->related_type,
-            relatedId:    $rel->related_id,
-            actorId:      $actorId,
-            confidence:   $rel->confidence ?? 100,
+            assetId: $rel->marketing_asset_id,
+            relatedType: $rel->related_type,
+            relatedId: $rel->related_id,
+            actorId: $actorId,
+            confidence: $rel->confidence ?? 100,
             connectorType: $asset?->connector_type ?? '',
         ));
 
@@ -94,11 +94,11 @@ final class MapAssetAction
         ]);
 
         event(new AssetUnmapped(
-            assetId:     $rel->marketing_asset_id,
+            assetId: $rel->marketing_asset_id,
             relatedType: $rel->related_type,
-            relatedId:   $rel->related_id,
-            actorId:     $actorId,
-            reason:      'rejected',
+            relatedId: $rel->related_id,
+            actorId: $actorId,
+            reason: 'rejected',
         ));
 
         return $rel->fresh() ?? $rel;

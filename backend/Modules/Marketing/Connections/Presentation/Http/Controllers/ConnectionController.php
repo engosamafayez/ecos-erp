@@ -8,15 +8,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Marketing\Connections\Application\Actions\DisconnectConnectionAction;
+use Modules\Marketing\Connections\Application\Services\ConnectorRegistry;
 use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
 use Modules\Marketing\Connections\Presentation\Http\Resources\ConnectionResource;
-use Modules\Marketing\Connections\Application\Services\ConnectorRegistry;
 
 final class ConnectionController extends Controller
 {
     public function __construct(
         private readonly DisconnectConnectionAction $disconnect,
-        private readonly ConnectorRegistry          $registry,
+        private readonly ConnectorRegistry $registry,
     ) {}
 
     /**
@@ -35,9 +35,9 @@ final class ConnectionController extends Controller
         return response()->json([
             'data' => ConnectionResource::collection($connections->items()),
             'meta' => [
-                'page'      => $connections->currentPage(),
-                'per_page'  => $connections->perPage(),
-                'total'     => $connections->total(),
+                'page' => $connections->currentPage(),
+                'per_page' => $connections->perPage(),
+                'total' => $connections->total(),
                 'last_page' => $connections->lastPage(),
             ],
         ]);
@@ -63,7 +63,7 @@ final class ConnectionController extends Controller
         }
 
         $connector = $this->registry->get($connection->connector_type->value);
-        $result    = $connector->validatePermissions($connection);
+        $result = $connector->validatePermissions($connection);
 
         return response()->json($result);
     }
@@ -77,7 +77,7 @@ final class ConnectionController extends Controller
 
         return response()->json([
             'message' => 'Connection disconnected.',
-            'data'    => new ConnectionResource($updated),
+            'data' => new ConnectionResource($updated),
         ]);
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
@@ -20,17 +22,18 @@ class AssignmentController extends Controller
     public function history(Conversation $conversation): JsonResponse
     {
         $logs = $this->assignmentService->getHistory($conversation->id);
+
         return response()->json(['data' => AssignmentLogResource::collection($logs)]);
     }
 
     public function assign(Request $request, Conversation $conversation): JsonResponse
     {
         $data = $request->validate([
-            'assignee_id'     => 'required|uuid',
-            'assignee_type'   => 'nullable|string|in:agent,team',
+            'assignee_id' => 'required|uuid',
+            'assignee_type' => 'nullable|string|in:agent,team',
             'assignment_type' => 'nullable|string',
-            'assigned_by'     => 'nullable|uuid',
-            'notes'           => 'nullable|string|max:500',
+            'assigned_by' => 'nullable|uuid',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         $log = $this->assignAction->execute(
@@ -48,6 +51,7 @@ class AssignmentController extends Controller
     public function unassign(Conversation $conversation): JsonResponse
     {
         $this->assignmentService->unassign($conversation);
+
         return response()->json(['success' => true]);
     }
 
@@ -56,7 +60,7 @@ class AssignmentController extends Controller
         $request->validate(['agent_ids' => 'required|array|min:1', 'agent_ids.*' => 'uuid']);
 
         $log = $this->assignmentService->autoAssignRoundRobin($conversation, $request->agent_ids);
-        if (!$log) {
+        if (! $log) {
             return response()->json(['message' => 'No agents available'], 422);
         }
 

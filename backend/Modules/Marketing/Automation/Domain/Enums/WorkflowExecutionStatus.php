@@ -6,13 +6,13 @@ namespace Modules\Marketing\Automation\Domain\Enums;
 
 enum WorkflowExecutionStatus: string
 {
-    case PENDING    = 'pending';
-    case RUNNING    = 'running';
-    case COMPLETED  = 'completed';
-    case FAILED     = 'failed';
-    case CANCELLED  = 'cancelled';
-    case TIMED_OUT  = 'timed_out';
-    case WAITING    = 'waiting';
+    case PENDING = 'pending';
+    case RUNNING = 'running';
+    case COMPLETED = 'completed';
+    case FAILED = 'failed';
+    case CANCELLED = 'cancelled';
+    case TIMED_OUT = 'timed_out';
+    case WAITING = 'waiting';
 
     public function isTerminal(): bool
     {

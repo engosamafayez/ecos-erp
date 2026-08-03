@@ -6,7 +6,7 @@ namespace Modules\Operations\Loading\Domain\Enums;
 
 enum VehicleInventoryItemStatus: string
 {
-    case Active   = 'active';
+    case Active = 'active';
     case Depleted = 'depleted';
     case Returned = 'returned';
     case Variance = 'variance';

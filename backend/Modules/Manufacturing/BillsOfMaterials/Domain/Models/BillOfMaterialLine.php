@@ -25,7 +25,7 @@ final class BillOfMaterialLine extends Model
     protected function casts(): array
     {
         return [
-            'quantity'         => 'float',
+            'quantity' => 'float',
             'waste_percentage' => 'float',
         ];
     }

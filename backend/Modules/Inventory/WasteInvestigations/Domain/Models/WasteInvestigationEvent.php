@@ -30,7 +30,7 @@ class WasteInvestigationEvent extends Model
     protected function casts(): array
     {
         return [
-            'changes'     => 'array',
+            'changes' => 'array',
             'occurred_at' => 'datetime',
         ];
     }
@@ -44,22 +44,22 @@ class WasteInvestigationEvent extends Model
     /**
      * Convenience factory — records a timeline/audit event.
      *
-     * @param  array<string, array{from: mixed, to: mixed}>|null $changes
+     * @param  array<string, array{from: mixed, to: mixed}>|null  $changes
      */
     public static function log(
-        string  $investigationId,
-        string  $eventType,
-        ?string $performedBy  = null,
-        ?string $description  = null,
-        ?array  $changes      = null,
+        string $investigationId,
+        string $eventType,
+        ?string $performedBy = null,
+        ?string $description = null,
+        ?array $changes = null,
     ): static {
         return static::query()->create([  // @phpstan-ignore-line
             'investigation_id' => $investigationId,
-            'event_type'       => $eventType,
-            'performed_by'     => $performedBy,
-            'description'      => $description,
-            'changes'          => $changes,
-            'occurred_at'      => now(),
+            'event_type' => $eventType,
+            'performed_by' => $performedBy,
+            'description' => $description,
+            'changes' => $changes,
+            'occurred_at' => now(),
         ]);
     }
 }

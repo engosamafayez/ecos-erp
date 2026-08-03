@@ -38,11 +38,11 @@ class EgyptGeographySeeder extends Seeder
                 ->value('id');
 
             $updatePayload = [
-                'name_ar'                => $govData['name_ar'],
+                'name_ar' => $govData['name_ar'],
                 'default_shipping_price' => $govData['default_shipping_price'],
-                'display_order'          => $govData['display_order'],
-                'is_system'              => true,
-                'updated_at'             => now(),
+                'display_order' => $govData['display_order'],
+                'is_system' => true,
+                'updated_at' => now(),
             ];
 
             if ($hasIsoCode) {
@@ -54,13 +54,13 @@ class EgyptGeographySeeder extends Seeder
             } else {
                 $insertPayload = array_merge($govData, [
                     'country_id' => 1,
-                    'is_active'  => true,
-                    'is_system'  => true,
+                    'is_active' => true,
+                    'is_system' => true,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
-                if (!$hasIsoCode) {
+                if (! $hasIsoCode) {
                     unset($insertPayload['iso_code']);
                 }
 
@@ -73,17 +73,17 @@ class EgyptGeographySeeder extends Seeder
                     ->where('name_en', $city['name_en'])
                     ->exists();
 
-                if (!$exists) {
+                if (! $exists) {
                     DB::table('logistics_cities')->insert([
                         'governorate_id' => $govId,
-                        'name_ar'        => $city['name_ar'],
-                        'name_en'        => $city['name_en'],
+                        'name_ar' => $city['name_ar'],
+                        'name_en' => $city['name_en'],
                         'shipping_price' => null,
-                        'display_order'  => $order + 1,
-                        'is_active'      => true,
-                        'is_system'      => true,
-                        'created_at'     => now(),
-                        'updated_at'     => now(),
+                        'display_order' => $order + 1,
+                        'is_active' => true,
+                        'is_system' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
             }
@@ -335,7 +335,7 @@ class EgyptGeographySeeder extends Seeder
                 'cities' => [
                     ['name_en' => 'Damietta',      'name_ar' => 'دمياط'],
                     ['name_en' => 'Ras El Bar',    'name_ar' => 'رأس البر'],
-                    ['name_en' => 'Kafr El Batikh','name_ar' => 'كفر البطيخ'],
+                    ['name_en' => 'Kafr El Batikh', 'name_ar' => 'كفر البطيخ'],
                     ['name_en' => 'El Zarqa',      'name_ar' => 'الزرقا'],
                     ['name_en' => 'Faraskur',      'name_ar' => 'فارسكور'],
                     ['name_en' => 'Kafr Saad',     'name_ar' => 'كفر سعد'],
@@ -382,10 +382,10 @@ class EgyptGeographySeeder extends Seeder
                     ['name_en' => 'Mallawi',   'name_ar' => 'ملوي'],
                     ['name_en' => 'Samalut',   'name_ar' => 'سمالوط'],
                     ['name_en' => 'Maghagha',  'name_ar' => 'مغاغة'],
-                    ['name_en' => 'Abu Qurqas','name_ar' => 'أبو قرقاص'],
+                    ['name_en' => 'Abu Qurqas', 'name_ar' => 'أبو قرقاص'],
                     ['name_en' => 'El Adwa',   'name_ar' => 'العدوة'],
                     ['name_en' => 'Matay',     'name_ar' => 'مطاي'],
-                    ['name_en' => 'Beni Mazar','name_ar' => 'بني مزار'],
+                    ['name_en' => 'Beni Mazar', 'name_ar' => 'بني مزار'],
                 ],
             ],
 
@@ -399,7 +399,7 @@ class EgyptGeographySeeder extends Seeder
                     ['name_en' => 'Abnub',     'name_ar' => 'أبنوب'],
                     ['name_en' => 'Abu Tig',   'name_ar' => 'أبوتيج'],
                     ['name_en' => 'El Badari', 'name_ar' => 'البداري'],
-                    ['name_en' => 'El Ghanaim','name_ar' => 'الغنايم'],
+                    ['name_en' => 'El Ghanaim', 'name_ar' => 'الغنايم'],
                     ['name_en' => 'El Fateh',  'name_ar' => 'الفتح'],
                     ['name_en' => 'Deirut',    'name_ar' => 'ديروط'],
                     ['name_en' => 'Sadfa',     'name_ar' => 'صدفا'],
@@ -420,7 +420,7 @@ class EgyptGeographySeeder extends Seeder
                     ['name_en' => 'Tahta',       'name_ar' => 'طهطا'],
                     ['name_en' => 'Tema',        'name_ar' => 'طما'],
                     ['name_en' => 'El Maragha',  'name_ar' => 'المراغة'],
-                    ['name_en' => 'Dar El Salam','name_ar' => 'دار السلام'],
+                    ['name_en' => 'Dar El Salam', 'name_ar' => 'دار السلام'],
                     ['name_en' => 'Sakultah',    'name_ar' => 'ساقلتة'],
                 ],
             ],

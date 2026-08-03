@@ -19,9 +19,9 @@ class WorkflowNodeController extends Controller
     public function update(Request $request, AutomationWorkflow $workflow): JsonResponse
     {
         $validated = $request->validate([
-            'nodes_graph'        => 'required|array',
-            'nodes_graph.nodes'  => 'required|array',
-            'nodes_graph.edges'  => 'required|array',
+            'nodes_graph' => 'required|array',
+            'nodes_graph.nodes' => 'required|array',
+            'nodes_graph.edges' => 'required|array',
         ]);
 
         $workflow = $this->service->updateNodesGraph($workflow, $validated['nodes_graph'], (string) $request->user()->id);

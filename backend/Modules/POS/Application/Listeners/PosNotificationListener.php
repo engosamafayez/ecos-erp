@@ -7,6 +7,7 @@ namespace Modules\POS\Application\Listeners;
 use Illuminate\Support\Facades\Log;
 use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Events\SaleItemPayload;
+use Throwable;
 
 /**
  * Subscriber 7 — Notifications
@@ -35,10 +36,10 @@ final class PosNotificationListener
         try {
             $this->checkLargeSale($event);
             $this->checkLowStockIndicators($event);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[POS][Notifications] Failed to process notification checks', [
                 'sale_id' => $event->saleId,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -46,20 +47,20 @@ final class PosNotificationListener
     private function checkLargeSale(SaleFinalized $event): void
     {
         $threshold = (float) config('pos.notifications.large_sale_threshold', 5000.0);
-        $total     = (float) $event->grandTotal;
+        $total = (float) $event->grandTotal;
 
         if ($total < $threshold) {
             return;
         }
 
         Log::channel('daily')->notice('[POS][Notifications] Large sale detected', [
-            'sale_id'        => $event->saleId,
+            'sale_id' => $event->saleId,
             'receipt_number' => $event->receiptNumber,
-            'grand_total'    => $event->grandTotal,
-            'currency'       => $event->currency,
-            'cashier_id'     => $event->cashierId,
-            'warehouse_id'   => $event->warehouseId,
-            'threshold'      => $threshold,
+            'grand_total' => $event->grandTotal,
+            'currency' => $event->currency,
+            'cashier_id' => $event->cashierId,
+            'warehouse_id' => $event->warehouseId,
+            'threshold' => $threshold,
         ]);
 
         // Future: fire a LargeSaleDetected notification via Laravel Notification system
@@ -72,14 +73,14 @@ final class PosNotificationListener
         // We log which products were sold so a downstream job can check thresholds.
         // A future PosLowStockJob can query inventory for these product IDs.
         $productIds = array_map(
-            static fn(SaleItemPayload $item) => $item->productId,
+            static fn (SaleItemPayload $item) => $item->productId,
             $event->items,
         );
 
         Log::channel('daily')->debug('[POS][Notifications] Products sold — stock check queued', [
-            'sale_id'      => $event->saleId,
+            'sale_id' => $event->saleId,
             'warehouse_id' => $event->warehouseId,
-            'product_ids'  => $productIds,
+            'product_ids' => $productIds,
         ]);
 
         // Future: dispatch a queued job to check inventory levels

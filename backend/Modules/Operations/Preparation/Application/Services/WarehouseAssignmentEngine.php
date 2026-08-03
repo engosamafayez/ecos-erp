@@ -35,6 +35,7 @@ final class WarehouseAssignmentEngine
 
         if ($companyId === null) {
             $this->markUnassigned($order);
+
             return;
         }
 
@@ -42,24 +43,25 @@ final class WarehouseAssignmentEngine
 
         if ($policy === null) {
             $this->markUnassigned($order);
+
             return;
         }
 
         $previousWarehouseId = $order->assigned_warehouse_id;
 
         $order->update([
-            'assigned_warehouse_id'      => $policy->warehouse_id,
-            'warehouse_assigned_at'      => now(),
+            'assigned_warehouse_id' => $policy->warehouse_id,
+            'warehouse_assigned_at' => now(),
             'warehouse_assignment_source' => WarehouseAssignmentSource::AutoPolicy->value,
         ]);
 
         WarehouseAssigned::dispatch(
-            orderId:       $order->id,
-            warehouseId:   $policy->warehouse_id,
+            orderId: $order->id,
+            warehouseId: $policy->warehouse_id,
             previousWarehouseId: $previousWarehouseId,
-            source:        WarehouseAssignmentSource::AutoPolicy,
-            policyId:      $policy->id,
-            occurredAt:    now()->toIso8601String(),
+            source: WarehouseAssignmentSource::AutoPolicy,
+            policyId: $policy->id,
+            occurredAt: now()->toIso8601String(),
         );
     }
 
@@ -77,27 +79,27 @@ final class WarehouseAssignmentEngine
             $previousWarehouseId = $order->assigned_warehouse_id;
 
             WarehouseAssignmentOverride::create([
-                'order_id'              => $order->id,
+                'order_id' => $order->id,
                 'previous_warehouse_id' => $previousWarehouseId,
-                'new_warehouse_id'      => $newWarehouseId,
-                'reason'                => $reason,
-                'overridden_by'         => $supervisorId,
-                'overridden_at'         => now(),
+                'new_warehouse_id' => $newWarehouseId,
+                'reason' => $reason,
+                'overridden_by' => $supervisorId,
+                'overridden_at' => now(),
             ]);
 
             $order->update([
-                'assigned_warehouse_id'      => $newWarehouseId,
-                'warehouse_assigned_at'      => now(),
+                'assigned_warehouse_id' => $newWarehouseId,
+                'warehouse_assigned_at' => now(),
                 'warehouse_assignment_source' => WarehouseAssignmentSource::ManualOverride->value,
             ]);
 
             WarehouseAssigned::dispatch(
-                orderId:             $order->id,
-                warehouseId:         $newWarehouseId,
+                orderId: $order->id,
+                warehouseId: $newWarehouseId,
                 previousWarehouseId: $previousWarehouseId,
-                source:              WarehouseAssignmentSource::ManualOverride,
-                policyId:            null,
-                occurredAt:          now()->toIso8601String(),
+                source: WarehouseAssignmentSource::ManualOverride,
+                policyId: null,
+                occurredAt: now()->toIso8601String(),
             );
         });
     }
@@ -118,7 +120,7 @@ final class WarehouseAssignmentEngine
             ->get();
 
         // Score each policy — pick the one with the highest specificity that matches.
-        $best      = null;
+        $best = null;
         $bestScore = -1;
 
         foreach ($policies as $policy) {
@@ -129,7 +131,7 @@ final class WarehouseAssignmentEngine
             $score = $policy->specificity();
             if ($score > $bestScore) {
                 $bestScore = $score;
-                $best      = $policy;
+                $best = $policy;
             }
         }
 
@@ -168,7 +170,7 @@ final class WarehouseAssignmentEngine
     {
         $order->update([
             'warehouse_assignment_source' => WarehouseAssignmentSource::Unassigned->value,
-            'warehouse_assigned_at'      => now(),
+            'warehouse_assigned_at' => now(),
         ]);
     }
 }

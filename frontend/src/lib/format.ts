@@ -19,19 +19,28 @@
 // ─── Money ────────────────────────────────────────────────────────────────────
 
 /**
+ * The single source of truth for the app's fallback currency (ISO 4217).
+ * Used only when no company/record currency is available. Every other module
+ * MUST resolve currency from Company Settings via useFormatter()/CompanyContext —
+ * this constant exists so there is exactly one currency literal in the frontend.
+ */
+export const DEFAULT_CURRENCY = 'EGP';
+
+/**
  * Format a monetary value using the Intl currency formatter.
  * Currency position (before/after amount) follows the locale's convention.
  */
 export function formatMoney(
   amount: number,
-  currency = 'EGP',
+  currency = DEFAULT_CURRENCY,
   locale?: string,
+  fractionDigits = 2,
 ): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   }).format(amount);
 }
 
@@ -41,7 +50,7 @@ export function formatMoney(
  */
 export function formatMoneyCompact(
   amount: number,
-  currency = 'EGP',
+  currency = DEFAULT_CURRENCY,
   locale?: string,
 ): string {
   return new Intl.NumberFormat(locale, {
@@ -182,11 +191,12 @@ export function formatRelative(
 /** Returns '—' for null/undefined amounts instead of throwing. */
 export function formatMoneySafe(
   amount: number | null | undefined,
-  currency = 'EGP',
+  currency = DEFAULT_CURRENCY,
   locale?: string,
+  fractionDigits = 2,
 ): string {
   if (amount === null || amount === undefined) return '—';
-  return formatMoney(amount, currency, locale);
+  return formatMoney(amount, currency, locale, fractionDigits);
 }
 
 /** Returns '—' for null/undefined values instead of throwing. */

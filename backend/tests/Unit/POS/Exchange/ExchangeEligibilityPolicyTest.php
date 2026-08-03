@@ -20,7 +20,7 @@ final class ExchangeEligibilityPolicyTest extends TestCase
     {
         parent::setUp();
 
-        $this->policy = new ExchangeEligibilityPolicy();
+        $this->policy = new ExchangeEligibilityPolicy;
     }
 
     // ── canConfirm() ──────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ final class ExchangeEligibilityPolicyTest extends TestCase
 
     private function makeDraftExchange(): Exchange
     {
-        $returned     = [
+        $returned = [
             ExchangeLine::returned('line-01', 'prod-1', 'Blue Shirt S', 'SKU-SHIRT-S', Quantity::of('1'), Money::of('100.00', 'EGP')),
         ];
         $replacements = [

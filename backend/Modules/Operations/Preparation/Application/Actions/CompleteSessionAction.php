@@ -8,6 +8,7 @@ use App\Core\FeatureFlags\FeatureFlagService;
 use Modules\Operations\Preparation\Domain\Enums\SessionStatus;
 use Modules\Operations\Preparation\Domain\Events\SessionCompleted;
 use Modules\Operations\Preparation\Domain\Models\PreparationSession;
+use RuntimeException;
 
 final class CompleteSessionAction
 {
@@ -18,16 +19,16 @@ final class CompleteSessionAction
         $this->guardWorkflowStage($session->company_id);
 
         if (! $session->status->canTransitionTo(SessionStatus::Completed)) {
-            throw new \RuntimeException(
-                "Cannot complete session in status [{$session->status->value}]."
+            throw new RuntimeException(
+                "Cannot complete session in status [{$session->status->value}].",
             );
         }
 
         $session->update([
-            'status'       => SessionStatus::Completed->value,
+            'status' => SessionStatus::Completed->value,
             'completed_at' => now(),
             'completed_by' => $actorId,
-            'updated_by'   => $actorId,
+            'updated_by' => $actorId,
         ]);
 
         event(new SessionCompleted($session, $actorId));
@@ -38,7 +39,7 @@ final class CompleteSessionAction
     private function guardWorkflowStage(string $companyId): void
     {
         if (! $this->flags->isEnabled('workflow.stages.preparation', $companyId)) {
-            throw new \RuntimeException('Preparation OS workflow stage is not enabled.');
+            throw new RuntimeException('Preparation OS workflow stage is not enabled.');
         }
     }
 }

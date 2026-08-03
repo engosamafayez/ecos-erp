@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Pricing;
 
+use InvalidArgumentException;
 use Modules\POS\Pricing\Domain\Exceptions\InvalidPriceCurrencyException;
 use Modules\POS\Pricing\Domain\Services\PriceValidator;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -16,7 +17,7 @@ final class PriceValidatorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->validator = new PriceValidator();
+        $this->validator = new PriceValidator;
     }
 
     // ── validateCurrency() ────────────────────────────────────────────────────
@@ -109,13 +110,13 @@ final class PriceValidatorTest extends TestCase
 
     public function test_zero_price_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->validator->validatePrice(Money::zero('EGP'));
     }
 
     public function test_negative_price_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->validator->validatePrice(Money::of('-10.00', 'EGP'));
     }
 
@@ -137,7 +138,7 @@ final class PriceValidatorTest extends TestCase
 
     public function test_validate_catches_zero_price(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->validator->validate(Money::zero('EGP'));
     }
 }

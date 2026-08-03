@@ -17,7 +17,7 @@ final class ApprovePurchaseOrderAction extends BaseAction
 
     public function execute(mixed ...$arguments): OperationResult
     {
-        $id    = (string) ($arguments[0] ?? '');
+        $id = (string) ($arguments[0] ?? '');
         $order = $this->orders->findById($id);
 
         if ($order === null) {
@@ -33,7 +33,7 @@ final class ApprovePurchaseOrderAction extends BaseAction
         }
 
         $order->update([
-            'status'      => PurchaseOrderStatus::Approved->value,
+            'status' => PurchaseOrderStatus::Approved->value,
             'approved_at' => now(),
         ]);
 

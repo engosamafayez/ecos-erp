@@ -31,8 +31,8 @@ final class HandlePreparationWaveCompleted
 
         if ($orderIds->isEmpty()) {
             Log::info('[HandlePreparationWaveCompleted] Wave completed but no linked orders found', [
-                'wave_id'      => $event->waveId,
-                'wave_number'  => $event->waveNumber,
+                'wave_id' => $event->waveId,
+                'wave_number' => $event->waveNumber,
                 'completed_at' => $event->completedAt,
             ]);
 
@@ -46,13 +46,13 @@ final class HandlePreparationWaveCompleted
             ->where('status', 'preparing')
             ->update([
                 'preparation_completed_at' => now(),
-                'updated_at'               => now(),
+                'updated_at' => now(),
             ]);
 
         Log::info('[HandlePreparationWaveCompleted] preparation_completed_at stamped on orders', [
-            'wave_id'      => $event->waveId,
-            'wave_number'  => $event->waveNumber,
-            'order_count'  => $updated,
+            'wave_id' => $event->waveId,
+            'wave_number' => $event->waveNumber,
+            'order_count' => $updated,
             'completed_by' => $event->completedBy,
         ]);
     }

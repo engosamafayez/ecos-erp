@@ -6,13 +6,13 @@ namespace Modules\POS\Shared\Domain\Enums;
 
 enum CartStatus: string
 {
-    case Empty     = 'empty';
-    case Active    = 'active';
-    case Held      = 'held';
-    case Paying    = 'paying';
+    case Empty = 'empty';
+    case Active = 'active';
+    case Held = 'held';
+    case Paying = 'paying';
     case Completed = 'completed';
     case Cancelled = 'cancelled';
-    case Expired   = 'expired';
+    case Expired = 'expired';
 
     /** A terminal state — no further transitions are possible. */
     public function isTerminal(): bool

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, BadgeCheck, CircleSlash, ShieldAlert } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -5,25 +6,25 @@ import type { LicenseStatus } from '../types/driver';
 
 const CONFIG: Record<
   LicenseStatus,
-  { label: string; className: string; Icon: typeof BadgeCheck }
+  { labelKey: string; className: string; Icon: typeof BadgeCheck }
 > = {
   valid: {
-    label: 'Valid',
+    labelKey: 'drivers.license.status.valid',
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
     Icon: BadgeCheck,
   },
   expiring_soon: {
-    label: 'Expiring soon',
+    labelKey: 'drivers.license.status.expiringSoon',
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
     Icon: AlertTriangle,
   },
   expired: {
-    label: 'Expired',
+    labelKey: 'drivers.license.status.expired',
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
     Icon: ShieldAlert,
   },
   missing: {
-    label: 'No licence',
+    labelKey: 'drivers.license.status.missing',
     className: 'bg-muted text-muted-foreground hover:bg-muted',
     Icon: CircleSlash,
   },
@@ -42,15 +43,19 @@ export function LicenseStatusBadge({
   daysRemaining?: number | null;
   showCountdown?: boolean;
 }) {
-  const { label, className, Icon } = CONFIG[status];
+  const { t } = useTranslation('logistics');
+  const { labelKey, className, Icon } = CONFIG[status];
 
-  let text = label;
+  let text = t(labelKey);
   if (showCountdown && daysRemaining != null) {
     if (status === 'expiring_soon') {
-      text = daysRemaining === 0 ? 'Expires today' : `Expires in ${daysRemaining}d`;
+      text =
+        daysRemaining === 0
+          ? t($ => $.drivers.license.countdown.expiresToday)
+          : t($ => $.drivers.license.countdown.expiresInDays, { days: daysRemaining });
     } else if (status === 'expired') {
       const days = Math.abs(daysRemaining);
-      text = `Expired ${days}d ago`;
+      text = t($ => $.drivers.license.countdown.expiredAgo, { days });
     }
   }
 

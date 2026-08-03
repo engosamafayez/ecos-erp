@@ -7,6 +7,6 @@ namespace Modules\Marketing\Campaigns\Domain\Enums;
 enum CampaignLevel: string
 {
     case Campaign = 'campaign';
-    case AdSet    = 'adset';
-    case Ad       = 'ad';
+    case AdSet = 'adset';
+    case Ad = 'ad';
 }

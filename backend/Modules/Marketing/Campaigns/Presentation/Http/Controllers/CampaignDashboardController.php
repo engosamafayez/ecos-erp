@@ -25,21 +25,21 @@ final class CampaignDashboardController extends Controller
     /** GET /marketing/campaigns/dashboard */
     public function index(Request $request): JsonResponse
     {
-        $days      = min((int) $request->query('days', 30), 365);
-        $dateFrom  = now()->subDays($days)->toDateString();
-        $dateTo    = now()->toDateString();
+        $days = min((int) $request->query('days', 30), 365);
+        $dateFrom = now()->subDays($days)->toDateString();
+        $dateTo = now()->toDateString();
         $companyId = $request->query('company_id');
 
         // ── Structure ─────────────────────────────────────────────────────────
 
         $campaignBase = Campaign::when($companyId, fn ($q) => $q->where('company_id', $companyId));
-        $campaignIds  = (clone $campaignBase)->select('id');
+        $campaignIds = (clone $campaignBase)->select('id');
 
-        $totalCampaigns    = (clone $campaignBase)->count();
-        $activeCampaigns   = (clone $campaignBase)->where('status', 'ACTIVE')->count();
-        $totalAdSets       = CampaignAdSet::whereIn('marketing_campaign_id', $campaignIds)->count();
-        $totalAds          = CampaignAd::whereIn('marketing_campaign_id', $campaignIds)->count();
-        $totalCreatives    = CampaignCreative::whereIn('marketing_campaign_id', $campaignIds)->count();
+        $totalCampaigns = (clone $campaignBase)->count();
+        $activeCampaigns = (clone $campaignBase)->where('status', 'ACTIVE')->count();
+        $totalAdSets = CampaignAdSet::whereIn('marketing_campaign_id', $campaignIds)->count();
+        $totalAds = CampaignAd::whereIn('marketing_campaign_id', $campaignIds)->count();
+        $totalCreatives = CampaignCreative::whereIn('marketing_campaign_id', $campaignIds)->count();
         $lastStructureSync = (clone $campaignBase)->max('last_synced_at');
 
         $statusDistribution = (clone $campaignBase)
@@ -97,52 +97,52 @@ final class CampaignDashboardController extends Controller
             ->get();
 
         // Sync health: how stale is the last insights sync?
-        $lastSync      = $kpis?->last_insights_sync;
-        $syncAgeHours  = $lastSync ? now()->diffInHours($lastSync) : null;
-        $syncHealth    = match (true) {
-            $lastSync === null       => 'never',
-            $syncAgeHours <= 1      => 'fresh',
-            $syncAgeHours <= 24     => 'recent',
-            default                  => 'stale',
+        $lastSync = $kpis?->last_insights_sync;
+        $syncAgeHours = $lastSync ? now()->diffInHours($lastSync) : null;
+        $syncHealth = match (true) {
+            $lastSync === null => 'never',
+            $syncAgeHours <= 1 => 'fresh',
+            $syncAgeHours <= 24 => 'recent',
+            default => 'stale',
         };
 
         return response()->json([
             'structure' => [
-                'campaign_count'      => $totalCampaigns,
-                'active_campaigns'    => $activeCampaigns,
-                'ad_set_count'        => $totalAdSets,
-                'ad_count'            => $totalAds,
-                'creative_count'      => $totalCreatives,
+                'campaign_count' => $totalCampaigns,
+                'active_campaigns' => $activeCampaigns,
+                'ad_set_count' => $totalAdSets,
+                'ad_count' => $totalAds,
+                'creative_count' => $totalCreatives,
                 'last_structure_sync' => $lastStructureSync,
                 'status_distribution' => $statusDistribution,
             ],
             'performance' => [
                 'kpis' => [
-                    'total_spend'        => $kpis?->total_spend,
-                    'total_impressions'  => $kpis?->total_impressions,
-                    'total_clicks'       => $kpis?->total_clicks,
-                    'total_reach'        => $kpis?->total_reach,
-                    'total_purchases'    => $kpis?->total_purchases,
-                    'total_revenue'      => $kpis?->total_revenue,
-                    'total_leads'        => $kpis?->total_leads,
-                    'total_messages'     => $kpis?->total_messages,
-                    'avg_ctr'            => $kpis?->avg_ctr,
-                    'avg_unique_ctr'     => $kpis?->avg_unique_ctr,
-                    'avg_cpc'            => $kpis?->avg_cpc,
-                    'avg_cpm'            => $kpis?->avg_cpm,
-                    'avg_cpa'            => $kpis?->avg_cpa,
-                    'avg_roas'           => $kpis?->avg_roas,
-                    'avg_roas_website'   => $kpis?->avg_roas_website,
-                    'campaign_count'     => $kpis?->campaign_count ?? 0,
+                    'total_spend' => $kpis?->total_spend,
+                    'total_impressions' => $kpis?->total_impressions,
+                    'total_clicks' => $kpis?->total_clicks,
+                    'total_reach' => $kpis?->total_reach,
+                    'total_purchases' => $kpis?->total_purchases,
+                    'total_revenue' => $kpis?->total_revenue,
+                    'total_leads' => $kpis?->total_leads,
+                    'total_messages' => $kpis?->total_messages,
+                    'avg_ctr' => $kpis?->avg_ctr,
+                    'avg_unique_ctr' => $kpis?->avg_unique_ctr,
+                    'avg_cpc' => $kpis?->avg_cpc,
+                    'avg_cpm' => $kpis?->avg_cpm,
+                    'avg_cpa' => $kpis?->avg_cpa,
+                    'avg_roas' => $kpis?->avg_roas,
+                    'avg_roas_website' => $kpis?->avg_roas_website,
+                    'campaign_count' => $kpis?->campaign_count ?? 0,
                 ],
-                'daily_trend'       => $dailyTrend,
+                'daily_trend' => $dailyTrend,
                 'last_insights_sync' => $lastSync,
-                'sync_health'        => $syncHealth,
+                'sync_health' => $syncHealth,
             ],
             'period' => [
-                'days'      => $days,
+                'days' => $days,
                 'date_from' => $dateFrom,
-                'date_to'   => $dateTo,
+                'date_to' => $dateTo,
             ],
         ]);
     }

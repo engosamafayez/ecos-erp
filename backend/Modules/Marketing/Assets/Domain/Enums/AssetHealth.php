@@ -6,26 +6,26 @@ namespace Modules\Marketing\Assets\Domain\Enums;
 
 enum AssetHealth: string
 {
-    case Healthy         = 'healthy';
-    case Warning         = 'warning';
-    case Disconnected    = 'disconnected';
-    case ExpiredToken    = 'expired_token';
+    case Healthy = 'healthy';
+    case Warning = 'warning';
+    case Disconnected = 'disconnected';
+    case ExpiredToken = 'expired_token';
     case PermissionMissing = 'permission_missing';
-    case SyncFailed      = 'sync_failed';
-    case Inactive        = 'inactive';
-    case Unknown         = 'unknown';
+    case SyncFailed = 'sync_failed';
+    case Inactive = 'inactive';
+    case Unknown = 'unknown';
 
     public function label(): string
     {
         return match ($this) {
-            self::Healthy           => 'Healthy',
-            self::Warning           => 'Warning',
-            self::Disconnected      => 'Disconnected',
-            self::ExpiredToken      => 'Expired Token',
+            self::Healthy => 'Healthy',
+            self::Warning => 'Warning',
+            self::Disconnected => 'Disconnected',
+            self::ExpiredToken => 'Expired Token',
             self::PermissionMissing => 'Permission Missing',
-            self::SyncFailed        => 'Sync Failed',
-            self::Inactive          => 'Inactive',
-            self::Unknown           => 'Unknown',
+            self::SyncFailed => 'Sync Failed',
+            self::Inactive => 'Inactive',
+            self::Unknown => 'Unknown',
         };
     }
 

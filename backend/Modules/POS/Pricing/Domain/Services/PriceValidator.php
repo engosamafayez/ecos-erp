@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\POS\Pricing\Domain\Services;
 
+use InvalidArgumentException;
 use Modules\POS\Pricing\Domain\Exceptions\InvalidPriceCurrencyException;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 
@@ -38,10 +39,10 @@ final class PriceValidator
         if ($upper === '') {
             throw InvalidPriceCurrencyException::empty();
         }
-        if (!preg_match('/^[A-Z]{3}$/', $upper)) {
+        if (! preg_match('/^[A-Z]{3}$/', $upper)) {
             throw InvalidPriceCurrencyException::malformed($currency);
         }
-        if (!in_array($upper, self::SUPPORTED_CURRENCIES, true)) {
+        if (! in_array($upper, self::SUPPORTED_CURRENCIES, true)) {
             throw InvalidPriceCurrencyException::unsupported($currency);
         }
     }
@@ -49,13 +50,13 @@ final class PriceValidator
     /**
      * Validate that the resolved price is a positive monetary amount.
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function validatePrice(Money $price): void
     {
-        if (!$price->isPositive()) {
-            throw new \InvalidArgumentException(
-                "Resolved price must be positive; got {$price->amount} {$price->currency}."
+        if (! $price->isPositive()) {
+            throw new InvalidArgumentException(
+                "Resolved price must be positive; got {$price->amount} {$price->currency}.",
             );
         }
     }
@@ -64,7 +65,7 @@ final class PriceValidator
      * Validate both the currency and the price amount in one call.
      *
      * @throws InvalidPriceCurrencyException
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function validate(Money $price): void
     {

@@ -33,15 +33,15 @@ final class SoftReservationService
             }
 
             PreparationInventoryReservation::create([
-                'company_id'               => $wave->company_id,
-                'preparation_wave_id'      => $wave->id,
-                'reservable_type'          => ReservableType::RawMaterial->value,
-                'reservable_id'            => $req->raw_material_id,
+                'company_id' => $wave->company_id,
+                'preparation_wave_id' => $wave->id,
+                'reservable_type' => ReservableType::RawMaterial->value,
+                'reservable_id' => $req->raw_material_id,
                 'reservable_name_snapshot' => $req->material_name_snapshot,
-                'quantity_reserved'        => $qty,
-                'status'                   => ReservationStatus::Created->value,
-                'created_by'               => $actorId,
-                'updated_by'               => $actorId,
+                'quantity_reserved' => $qty,
+                'status' => ReservationStatus::Created->value,
+                'created_by' => $actorId,
+                'updated_by' => $actorId,
             ]);
         }
 
@@ -53,15 +53,15 @@ final class SoftReservationService
             }
 
             PreparationInventoryReservation::create([
-                'company_id'               => $wave->company_id,
-                'preparation_wave_id'      => $wave->id,
-                'reservable_type'          => ReservableType::FinishedGood->value,
-                'reservable_id'            => $req->product_id,
+                'company_id' => $wave->company_id,
+                'preparation_wave_id' => $wave->id,
+                'reservable_type' => ReservableType::FinishedGood->value,
+                'reservable_id' => $req->product_id,
                 'reservable_name_snapshot' => $req->name_snapshot,
-                'quantity_reserved'        => $qty,
-                'status'                   => ReservationStatus::Created->value,
-                'created_by'               => $actorId,
-                'updated_by'               => $actorId,
+                'quantity_reserved' => $qty,
+                'status' => ReservationStatus::Created->value,
+                'created_by' => $actorId,
+                'updated_by' => $actorId,
             ]);
         }
     }
@@ -75,10 +75,10 @@ final class SoftReservationService
         PreparationInventoryReservation::where('preparation_wave_id', $wave->id)
             ->whereIn('status', [ReservationStatus::Created->value, ReservationStatus::Updated->value])
             ->update([
-                'status'      => ReservationStatus::Released->value,
+                'status' => ReservationStatus::Released->value,
                 'released_at' => now(),
                 'released_by' => $actorId,
-                'updated_by'  => $actorId,
+                'updated_by' => $actorId,
             ]);
     }
 
@@ -91,10 +91,10 @@ final class SoftReservationService
         PreparationInventoryReservation::where('preparation_wave_id', $wave->id)
             ->whereIn('status', [ReservationStatus::Created->value, ReservationStatus::Updated->value])
             ->update([
-                'status'      => ReservationStatus::Consumed->value,
+                'status' => ReservationStatus::Consumed->value,
                 'consumed_at' => now(),
                 'consumed_by' => $actorId,
-                'updated_by'  => $actorId,
+                'updated_by' => $actorId,
             ]);
     }
 

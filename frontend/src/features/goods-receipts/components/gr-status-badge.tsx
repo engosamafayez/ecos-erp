@@ -10,5 +10,5 @@ const STATUS_VARIANTS: Record<GoodsReceiptStatus, 'pending' | 'active'> = {
 
 export function GrStatusBadge({ status }: { status: GoodsReceiptStatus }) {
   const { t } = useTranslation('goods-receipts');
-  return <StatusBadge status={STATUS_VARIANTS[status]} label={t(`status.${status}`)} />;
+  return <StatusBadge status={STATUS_VARIANTS[status]} label={t($ => $.status[status])} />;
 }

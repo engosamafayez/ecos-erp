@@ -10,6 +10,6 @@ final class AdDiscovered
 {
     public function __construct(
         public readonly CampaignAd $ad,
-        public readonly bool       $isNew,
+        public readonly bool $isNew,
     ) {}
 }

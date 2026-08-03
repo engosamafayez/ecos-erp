@@ -12,13 +12,13 @@ final class PriceReviewApproved
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public readonly string  $reviewId,
-        public readonly string  $productId,
-        public readonly string  $companyId,
-        public readonly string  $approverId,
-        public readonly float   $newSellingPrice,
-        public readonly ?float  $newSalePrice,
-        public readonly float   $marginPct,
-        public readonly ?float  $discountPct,
+        public readonly string $reviewId,
+        public readonly string $productId,
+        public readonly string $companyId,
+        public readonly string $approverId,
+        public readonly float $newSellingPrice,
+        public readonly ?float $newSalePrice,
+        public readonly float $marginPct,
+        public readonly ?float $discountPct,
     ) {}
 }

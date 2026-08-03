@@ -32,8 +32,8 @@ final class PlannerException extends RuntimeException
     {
         return new self(
             "AvailabilityResult has eligibility='{$eligibility}' but recipe_snapshot is null. "
-            . 'This is an invariant violation — the AvailabilityEngine must populate '
-            . 'recipe_snapshot whenever manufacturing is needed and a recipe exists.',
+            .'This is an invariant violation — the AvailabilityEngine must populate '
+            .'recipe_snapshot whenever manufacturing is needed and a recipe exists.',
             self::RECIPE_SNAPSHOT_MISSING,
         );
     }

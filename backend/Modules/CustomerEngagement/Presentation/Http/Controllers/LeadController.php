@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
@@ -29,9 +31,9 @@ class LeadController extends Controller
             'data' => LeadResource::collection($leads),
             'meta' => [
                 'current_page' => $leads->currentPage(),
-                'last_page'    => $leads->lastPage(),
-                'per_page'     => $leads->perPage(),
-                'total'        => $leads->total(),
+                'last_page' => $leads->lastPage(),
+                'per_page' => $leads->perPage(),
+                'total' => $leads->total(),
             ],
         ]);
     }
@@ -44,23 +46,25 @@ class LeadController extends Controller
     public function createFromConversation(Request $request, Conversation $conversation): JsonResponse
     {
         $data = $request->validate([
-            'customer_name'  => 'nullable|string|max:255',
+            'customer_name' => 'nullable|string|max:255',
             'customer_phone' => 'nullable|string|max:50',
             'customer_email' => 'nullable|email',
-            'priority'       => 'nullable|string',
-            'assigned_to'    => 'nullable|uuid',
-            'source'         => 'nullable|string|max:100',
-            'tags'           => 'nullable|array',
+            'priority' => 'nullable|string',
+            'assigned_to' => 'nullable|uuid',
+            'source' => 'nullable|string|max:100',
+            'tags' => 'nullable|array',
         ]);
 
         $lead = $this->createAction->execute($conversation, $data);
+
         return response()->json(['data' => new LeadResource($lead)], 201);
     }
 
     public function qualify(Request $request, Lead $lead): JsonResponse
     {
         $notes = $request->input('notes');
-        $lead  = $this->leadService->qualify($lead, $notes);
+        $lead = $this->leadService->qualify($lead, $notes);
+
         return response()->json(['data' => new LeadResource($lead)]);
     }
 
@@ -68,6 +72,7 @@ class LeadController extends Controller
     {
         $request->validate(['reason' => 'required|string|max:500']);
         $lead = $this->leadService->disqualify($lead, $request->input('reason'));
+
         return response()->json(['data' => new LeadResource($lead)]);
     }
 
@@ -75,23 +80,25 @@ class LeadController extends Controller
     {
         $request->validate([
             'entity_type' => 'required|string',
-            'entity_id'   => 'required|uuid',
+            'entity_id' => 'required|uuid',
         ]);
 
         $lead = $this->leadService->convert($lead, $request->entity_type, $request->entity_id);
+
         return response()->json(['data' => new LeadResource($lead)]);
     }
 
     public function update(Request $request, Lead $lead): JsonResponse
     {
         $data = $request->validate([
-            'priority'    => 'nullable|string',
+            'priority' => 'nullable|string',
             'assigned_to' => 'nullable|uuid',
-            'score'       => 'nullable|integer|min:0|max:100',
-            'tags'        => 'nullable|array',
+            'score' => 'nullable|integer|min:0|max:100',
+            'tags' => 'nullable|array',
         ]);
 
         $lead->update($data);
+
         return response()->json(['data' => new LeadResource($lead->fresh())]);
     }
 }

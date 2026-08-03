@@ -83,17 +83,17 @@ final readonly class ManufacturingWorkflowResult
     public function toArray(): array
     {
         return [
-            'workflow_id'        => $this->workflow_id,
-            'stage'              => $this->stage->value,
-            'is_blocked'         => $this->is_blocked,
-            'blocking_reason'    => $this->blocking_reason?->value,
-            'is_plan_ready'      => $this->isPlanReady(),
-            'decision_result'    => $this->decision_result?->toArray(),
-            'recipe_snapshot'    => $this->recipe_snapshot?->toArray(),
+            'workflow_id' => $this->workflow_id,
+            'stage' => $this->stage->value,
+            'is_blocked' => $this->is_blocked,
+            'blocking_reason' => $this->blocking_reason?->value,
+            'is_plan_ready' => $this->isPlanReady(),
+            'decision_result' => $this->decision_result?->toArray(),
+            'recipe_snapshot' => $this->recipe_snapshot?->toArray(),
             'availability_result' => $this->availability_result?->toArray(),
-            'plan'               => $this->plan?->toArray(),
-            'metadata'           => $this->metadata,
-            'completed_at'       => $this->completed_at,
+            'plan' => $this->plan?->toArray(),
+            'metadata' => $this->metadata,
+            'completed_at' => $this->completed_at,
         ];
     }
 }

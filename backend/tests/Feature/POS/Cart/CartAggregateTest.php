@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\Cart;
 
+use InvalidArgumentException;
 use Modules\POS\Cart\Domain\Exceptions\InvalidCartTransitionException;
 use Modules\POS\Cart\Domain\Models\Cart;
 use Modules\POS\Cart\Domain\ValueObjects\CartLine;
@@ -31,20 +32,24 @@ use Tests\TestCase;
  */
 final class CartAggregateTest extends TestCase
 {
-    private const SESSION_ID  = 'session-uuid-1';
-    private const SHIFT_ID    = 'shift-uuid-1';
+    private const SESSION_ID = 'session-uuid-1';
+
+    private const SHIFT_ID = 'shift-uuid-1';
+
     private const TERMINAL_ID = 'terminal-uuid-1';
-    private const CASHIER_ID  = 'cashier-uuid-1';
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
+
+    private const CURRENCY = 'EGP';
 
     private function makeCart(?string $customerId = null): Cart
     {
         return Cart::open(
-            sessionId:  self::SESSION_ID,
-            shiftId:    self::SHIFT_ID,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
             terminalId: self::TERMINAL_ID,
-            cashierId:  self::CASHIER_ID,
-            currency:   self::CURRENCY,
+            cashierId: self::CASHIER_ID,
+            currency: self::CURRENCY,
             customerId: $customerId,
         );
     }
@@ -52,11 +57,11 @@ final class CartAggregateTest extends TestCase
     private function addWidget(Cart $cart, string $qty = '2', string $price = '10.00'): string
     {
         return $cart->addLine(
-            productId:   'prod-1',
+            productId: 'prod-1',
             productName: 'Widget',
-            sku:         'WGT-001',
-            quantity:    Quantity::of($qty),
-            unitPrice:   Money::of($price, self::CURRENCY),
+            sku: 'WGT-001',
+            quantity: Quantity::of($qty),
+            unitPrice: Money::of($price, self::CURRENCY),
         );
     }
 
@@ -107,7 +112,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_session_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Session ID');
 
         Cart::open('', self::SHIFT_ID, self::TERMINAL_ID, self::CASHIER_ID, self::CURRENCY);
@@ -115,7 +120,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_shift_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Shift ID');
 
         Cart::open(self::SESSION_ID, '', self::TERMINAL_ID, self::CASHIER_ID, self::CURRENCY);
@@ -123,7 +128,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_terminal_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Terminal ID');
 
         Cart::open(self::SESSION_ID, self::SHIFT_ID, '', self::CASHIER_ID, self::CURRENCY);
@@ -131,7 +136,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_cashier_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Cashier ID');
 
         Cart::open(self::SESSION_ID, self::SHIFT_ID, self::TERMINAL_ID, '', self::CURRENCY);
@@ -139,7 +144,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_currency(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Currency');
 
         Cart::open(self::SESSION_ID, self::SHIFT_ID, self::TERMINAL_ID, self::CASHIER_ID, '');
@@ -149,7 +154,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_add_line_returns_line_id(): void
     {
-        $cart   = $this->makeCart();
+        $cart = $this->makeCart();
         $lineId = $this->addWidget($cart);
 
         $this->assertNotEmpty($lineId);
@@ -201,7 +206,7 @@ final class CartAggregateTest extends TestCase
     {
         $cart = $this->makeCart();
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Currency mismatch');
 
         $cart->addLine('p', 'P', 'SKU', Quantity::of(1), Money::of('10.00', 'USD'));
@@ -211,7 +216,7 @@ final class CartAggregateTest extends TestCase
     {
         $cart = $this->makeCart();
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('positive');
 
         $cart->addLine('p', 'P', 'SKU', Quantity::of(0), Money::of('10.00', self::CURRENCY));
@@ -221,7 +226,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_update_line_changes_quantity_and_recalculates_total(): void
     {
-        $cart   = $this->makeCart();
+        $cart = $this->makeCart();
         $lineId = $this->addWidget($cart, '2', '10.00'); // 20.00
 
         $cart->updateLine($lineId, Quantity::of('5'));
@@ -242,7 +247,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_update_line_throws_when_not_active(): void
     {
-        $cart   = $this->makeCart();
+        $cart = $this->makeCart();
         $lineId = $this->addWidget($cart);
         $cart->hold();
 
@@ -253,10 +258,10 @@ final class CartAggregateTest extends TestCase
 
     public function test_update_line_throws_for_zero_quantity(): void
     {
-        $cart   = $this->makeCart();
+        $cart = $this->makeCart();
         $lineId = $this->addWidget($cart);
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $cart->updateLine($lineId, Quantity::of(0));
     }
@@ -265,7 +270,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_remove_line_decrements_count(): void
     {
-        $cart   = $this->makeCart();
+        $cart = $this->makeCart();
         $lineId = $this->addWidget($cart);
         $this->addWidget($cart);
 
@@ -276,7 +281,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_remove_line_recalculates_totals(): void
     {
-        $cart   = $this->makeCart();
+        $cart = $this->makeCart();
         $lineId = $this->addWidget($cart, '2', '10.00'); // 20.00
         $this->addWidget($cart, '1', '5.00');            // 5.00 → total 25.00
 
@@ -296,7 +301,7 @@ final class CartAggregateTest extends TestCase
 
     public function test_remove_line_throws_when_not_active(): void
     {
-        $cart   = $this->makeCart();
+        $cart = $this->makeCart();
         $lineId = $this->addWidget($cart);
         $cart->hold();
 

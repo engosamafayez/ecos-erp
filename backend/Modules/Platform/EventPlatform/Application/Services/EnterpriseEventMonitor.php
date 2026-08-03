@@ -25,12 +25,12 @@ final class EnterpriseEventMonitor
             $eventQuery->where('company_id', $companyId);
         }
 
-        $published   = (clone $eventQuery)->where('status', 'published')->count();
-        $processing  = (clone $eventQuery)->where('status', 'processing')->count();
-        $succeeded   = (clone $eventQuery)->where('status', 'succeeded')->count();
-        $failed      = (clone $eventQuery)->where('status', 'failed')->count();
+        $published = (clone $eventQuery)->where('status', 'published')->count();
+        $processing = (clone $eventQuery)->where('status', 'processing')->count();
+        $succeeded = (clone $eventQuery)->where('status', 'succeeded')->count();
+        $failed = (clone $eventQuery)->where('status', 'failed')->count();
         $deadLettered = $this->dlq->count($companyId);
-        $replayed    = (clone $eventQuery)->where('status', 'replayed')->count();
+        $replayed = (clone $eventQuery)->where('status', 'replayed')->count();
 
         $logQuery = EventProcessingLog::query();
         if ($companyId) {
@@ -42,16 +42,16 @@ final class EnterpriseEventMonitor
         $subscriberCount = $this->countActiveSubscribers();
 
         return [
-            'published'          => $published,
-            'processing'         => $processing,
-            'succeeded'          => $succeeded,
-            'failed'             => $failed,
-            'retried'            => $retried,
-            'dead_letter'        => $deadLettered,
-            'replayed'           => $replayed,
-            'avg_processing_ms'  => $avgProcessingMs,
+            'published' => $published,
+            'processing' => $processing,
+            'succeeded' => $succeeded,
+            'failed' => $failed,
+            'retried' => $retried,
+            'dead_letter' => $deadLettered,
+            'replayed' => $replayed,
+            'avg_processing_ms' => $avgProcessingMs,
             'active_subscribers' => $subscriberCount,
-            'generated_at'       => now()->toIso8601String(),
+            'generated_at' => now()->toIso8601String(),
         ];
     }
 
@@ -64,7 +64,7 @@ final class EnterpriseEventMonitor
         if ($companyId) {
             $query->whereIn(
                 'event_id',
-                DB::table('enterprise_events')->where('company_id', $companyId)->select('event_id')
+                DB::table('enterprise_events')->where('company_id', $companyId)->select('event_id'),
             );
         }
 
@@ -75,7 +75,7 @@ final class EnterpriseEventMonitor
         }
 
         $total = $rows->sum(fn ($row) => \Carbon\Carbon::parse($row->processed_at)
-            ->diffInMilliseconds(\Carbon\Carbon::parse($row->created_at))
+            ->diffInMilliseconds(\Carbon\Carbon::parse($row->created_at)),
         );
 
         return round($total / $rows->count(), 2);

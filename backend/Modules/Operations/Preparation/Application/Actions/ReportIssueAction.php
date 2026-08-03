@@ -10,6 +10,7 @@ use Modules\Operations\Preparation\Domain\Enums\PreparationIssueType;
 use Modules\Operations\Preparation\Domain\Events\IssueReported;
 use Modules\Operations\Preparation\Domain\Models\PreparationException;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
+use RuntimeException;
 
 final class ReportIssueAction
 {
@@ -20,19 +21,19 @@ final class ReportIssueAction
         $this->guardWorkflowStage($dto->companyId);
 
         $exception = PreparationException::create([
-            'company_id'          => $dto->companyId,
+            'company_id' => $dto->companyId,
             'preparation_wave_id' => $dto->waveId,
-            'exception_type'      => $dto->issueType->value,
-            'issue_type'          => $dto->issueType->value,
-            'severity'            => $dto->issueType->defaultSeverity()->value,
-            'entity_type'         => $dto->entityType,
-            'entity_id'           => $dto->entityId,
-            'description'         => $dto->description,
-            'status'              => 'open',
-            'raised_by'           => $dto->actorId,
-            'raised_at'           => now(),
-            'created_by'          => $dto->actorId,
-            'updated_by'          => $dto->actorId,
+            'exception_type' => $dto->issueType->value,
+            'issue_type' => $dto->issueType->value,
+            'severity' => $dto->issueType->defaultSeverity()->value,
+            'entity_type' => $dto->entityType,
+            'entity_id' => $dto->entityId,
+            'description' => $dto->description,
+            'status' => 'open',
+            'raised_by' => $dto->actorId,
+            'raised_at' => now(),
+            'created_by' => $dto->actorId,
+            'updated_by' => $dto->actorId,
         ]);
 
         event(new IssueReported($exception, $dto->actorId));
@@ -50,20 +51,20 @@ final class ReportIssueAction
         ?string $entityId = null,
     ): PreparationException {
         return $this->execute(new ReportIssueDTO(
-            waveId:      $wave->id,
-            companyId:   $wave->company_id,
-            actorId:     $actorId,
-            issueType:   $issueType,
+            waveId: $wave->id,
+            companyId: $wave->company_id,
+            actorId: $actorId,
+            issueType: $issueType,
             description: $description,
-            entityType:  $entityType,
-            entityId:    $entityId,
+            entityType: $entityType,
+            entityId: $entityId,
         ));
     }
 
     private function guardWorkflowStage(string $companyId): void
     {
         if (! $this->flags->isEnabled('workflow.stages.preparation', $companyId)) {
-            throw new \RuntimeException('Preparation OS workflow stage is not enabled.');
+            throw new RuntimeException('Preparation OS workflow stage is not enabled.');
         }
     }
 }

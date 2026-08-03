@@ -7,13 +7,14 @@ namespace Modules\Platform\EventPlatform\Domain\Contracts;
 use Illuminate\Support\Collection;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
 use Modules\Platform\EventPlatform\Domain\Models\DeadLetterEntry;
+use Throwable;
 
 interface EnterpriseDeadLetterQueueInterface
 {
     public function enqueue(
         DomainEvent $event,
         string $subscriberClass,
-        \Throwable $failure,
+        Throwable $failure,
         int $retryCount,
         string $storedEventId,
     ): DeadLetterEntry;

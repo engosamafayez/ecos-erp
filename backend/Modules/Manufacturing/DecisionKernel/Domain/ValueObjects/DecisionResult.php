@@ -41,31 +41,50 @@ final readonly class DecisionResult
         public array $metadata = [],
 
         // ── Phase 6 — Snapshot Support (architecture placeholder) ─────────────
-        public ?string $snapshot_id   = null,
+        public ?string $snapshot_id = null,
         public ?string $snapshot_hash = null,
     ) {}
 
     // ── Convenience helpers ───────────────────────────────────────────────────
 
-    public function isApproved(): bool  { return $this->decision === DecisionType::Approve; }
-    public function isRejected(): bool  { return $this->decision === DecisionType::Reject; }
-    public function isDeferred(): bool  { return $this->decision === DecisionType::Defer; }
-    public function isPartial(): bool   { return $this->decision === DecisionType::Partial; }
-    public function isEscalated(): bool { return $this->decision === DecisionType::Escalate; }
+    public function isApproved(): bool
+    {
+        return $this->decision === DecisionType::Approve;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->decision === DecisionType::Reject;
+    }
+
+    public function isDeferred(): bool
+    {
+        return $this->decision === DecisionType::Defer;
+    }
+
+    public function isPartial(): bool
+    {
+        return $this->decision === DecisionType::Partial;
+    }
+
+    public function isEscalated(): bool
+    {
+        return $this->decision === DecisionType::Escalate;
+    }
 
     /** @return array<string, mixed> */
     public function toArray(): array
     {
         return [
-            'decision'     => $this->decision->value,
-            'reason'       => $this->reason->toArray(),
+            'decision' => $this->decision->value,
+            'reason' => $this->reason->toArray(),
             'matched_rule' => $this->matched_rule->toArray(),
-            'context'      => $this->context->toArray(),
-            'trigger'      => $this->trigger->toArray(),
-            'decided_at'   => $this->decided_at,
-            'metadata'     => $this->metadata,
-            'snapshot_id'  => $this->snapshot_id,
-            'snapshot_hash'=> $this->snapshot_hash,
+            'context' => $this->context->toArray(),
+            'trigger' => $this->trigger->toArray(),
+            'decided_at' => $this->decided_at,
+            'metadata' => $this->metadata,
+            'snapshot_id' => $this->snapshot_id,
+            'snapshot_hash' => $this->snapshot_hash,
         ];
     }
 }

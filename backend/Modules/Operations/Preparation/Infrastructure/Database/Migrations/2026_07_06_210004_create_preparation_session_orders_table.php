@@ -18,7 +18,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-                if (Schema::hasTable('preparation_session_orders')) {
+        if (Schema::hasTable('preparation_session_orders')) {
             return;
         }
 
@@ -51,8 +51,8 @@ return new class extends Migration
         });
 
         DB::statement(
-            "ALTER TABLE preparation_session_orders ADD CONSTRAINT chk_pso_attachment_source "
-            . "CHECK (attachment_source IN ('auto','manual_supervisor','system_recovery'))"
+            'ALTER TABLE preparation_session_orders ADD CONSTRAINT chk_pso_attachment_source '
+            ."CHECK (attachment_source IN ('auto','manual_supervisor','system_recovery'))",
         );
     }
 

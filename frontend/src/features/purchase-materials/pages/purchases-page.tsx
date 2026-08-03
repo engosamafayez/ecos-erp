@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, FileText, GitMerge, Plus, ShoppingCart, Truck } from 'lucide-react';
 
 import { PageHeader } from '@/components/crud';
@@ -26,22 +27,25 @@ import type {
   PurchaseSourceType,
 } from '../types/purchase-material';
 
-// ── Source badges ─────────���───────────────────────────────────────────────────
+// ── Source class map (non-translatable styling) ───────────────────────────────
 
-const SOURCE_META: Record<PurchaseSourceType, { label: string; className: string }> = {
-  material_request: { label: 'From Request', className: 'bg-blue-50 text-blue-700 border-blue-200' },
-  direct:           { label: 'Direct',       className: 'bg-slate-50 text-slate-700 border-slate-200' },
-  reorder:          { label: 'Reorder',      className: 'bg-violet-50 text-violet-700 border-violet-200' },
-  ai:               { label: 'AI',           className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  manual:           { label: 'Manual',       className: 'bg-gray-50 text-gray-600 border-gray-200' },
+const SOURCE_CLASS_MAP: Record<PurchaseSourceType, string> = {
+  material_request: 'bg-blue-50 text-blue-700 border-blue-200',
+  direct:           'bg-slate-50 text-slate-700 border-slate-200',
+  reorder:          'bg-violet-50 text-violet-700 border-violet-200',
+  ai:               'bg-amber-50 text-amber-700 border-amber-200',
+  manual:           'bg-gray-50 text-gray-600 border-gray-200',
 };
 
 function SourceBadge({ source }: { source: PurchaseSourceType | null }) {
+  const { t } = useTranslation('purchase-materials');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   if (!source) return <span className="text-muted-foreground text-xs">—</span>;
-  const meta = SOURCE_META[source];
+  const className = SOURCE_CLASS_MAP[source];
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${meta.className}`}>
-      {meta.label}
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${className}`}>
+      {tAny(`purchasesPage.sourceSelector.sources.${source}.label`)}
     </span>
   );
 }
@@ -55,27 +59,6 @@ type SourceOption = {
   description: string;
 };
 
-const SOURCE_OPTIONS: SourceOption[] = [
-  {
-    sourceType: 'material_request',
-    icon: <FileText className="h-5 w-5" />,
-    title: 'From Material Requests',
-    description: 'Merge one or more approved requests into a single purchase order',
-  },
-  {
-    sourceType: 'direct',
-    icon: <ShoppingCart className="h-5 w-5" />,
-    title: 'Direct Purchase',
-    description: 'Create a purchase for items not linked to a material request',
-  },
-  {
-    sourceType: 'reorder',
-    icon: <GitMerge className="h-5 w-5" />,
-    title: 'Reorder',
-    description: 'Reorder based on reorder points or minimum stock levels',
-  },
-];
-
 function SourceSelectorDialog({
   open,
   onOpenChange,
@@ -85,11 +68,34 @@ function SourceSelectorDialog({
   onOpenChange: (open: boolean) => void;
   onSelect: (sourceType: PurchaseSourceType) => void;
 }) {
+  const { t } = useTranslation('purchase-materials');
+
+  const SOURCE_OPTIONS: SourceOption[] = [
+    {
+      sourceType: 'material_request',
+      icon: <FileText className="h-5 w-5" />,
+      title: t($ => $.purchasesPage.sourceSelector.sources.material_request.title),
+      description: t($ => $.purchasesPage.sourceSelector.sources.material_request.description),
+    },
+    {
+      sourceType: 'direct',
+      icon: <ShoppingCart className="h-5 w-5" />,
+      title: t($ => $.purchasesPage.sourceSelector.sources.direct.title),
+      description: t($ => $.purchasesPage.sourceSelector.sources.direct.description),
+    },
+    {
+      sourceType: 'reorder',
+      icon: <GitMerge className="h-5 w-5" />,
+      title: t($ => $.purchasesPage.sourceSelector.sources.reorder.title),
+      description: t($ => $.purchasesPage.sourceSelector.sources.reorder.description),
+    },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>New Purchase — Select Source</DialogTitle>
+          <DialogTitle>{t($ => $.purchasesPage.sourceSelector.title)}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 pt-1">
           {SOURCE_OPTIONS.map((opt) => (
@@ -114,21 +120,7 @@ function SourceSelectorDialog({
   );
 }
 
-// ── Status chips ───────────────────────────────────────��──────────────────────
-
-const STATUS_CHIPS: { value: PurchaseMaterialStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'under_review', label: 'Under Review' },
-  { value: 'waiting_supplier_selection', label: 'Awaiting Supplier' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'purchasing', label: 'Purchasing' },
-  { value: 'receiving', label: 'Receiving' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'on_hold', label: 'On Hold' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'cancelled', label: 'Cancelled' },
-];
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDate(d: string | null | undefined): string {
   if (!d) return '—';
@@ -141,9 +133,12 @@ function fmtCurrency(n: number): string {
 
 const PER_PAGE = 15;
 
-// ── Main page ───────────────────────────────────────��─────────────────────────
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export function PurchasesPage() {
+  const { t } = useTranslation('purchase-materials');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   const [statusFilter, setStatusFilter] = useState<PurchaseMaterialStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<PurchaseMaterialPriority | 'all'>('all');
   const [search, setSearch] = useState('');
@@ -158,6 +153,20 @@ export function PurchasesPage() {
   const [sourceSelectorOpen, setSourceSelectorOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [pendingSourceType, setPendingSourceType] = useState<PurchaseSourceType>('direct');
+
+  const STATUS_CHIPS: Array<{ value: PurchaseMaterialStatus | 'all'; label: string }> = [
+    { value: 'all', label: t($ => $.purchasesPage.statusChips.all) },
+    { value: 'draft', label: t($ => $.purchasesPage.statusChips.draft) },
+    { value: 'under_review', label: t($ => $.purchasesPage.statusChips.under_review) },
+    { value: 'waiting_supplier_selection', label: t($ => $.purchasesPage.statusChips.waiting_supplier_selection) },
+    { value: 'approved', label: t($ => $.purchasesPage.statusChips.approved) },
+    { value: 'purchasing', label: t($ => $.purchasesPage.statusChips.purchasing) },
+    { value: 'receiving', label: t($ => $.purchasesPage.statusChips.receiving) },
+    { value: 'completed', label: t($ => $.purchasesPage.statusChips.completed) },
+    { value: 'on_hold', label: t($ => $.purchasesPage.statusChips.on_hold) },
+    { value: 'rejected', label: t($ => $.purchasesPage.statusChips.rejected) },
+    { value: 'cancelled', label: t($ => $.purchasesPage.statusChips.cancelled) },
+  ];
 
   const { data: warehouseOptions } = useWarehouseOptions();
 
@@ -207,12 +216,12 @@ export function PurchasesPage() {
 
   async function handleDelete(purchase: PurchaseMaterial, e: React.MouseEvent) {
     e.stopPropagation();
-    if (!confirm(`Delete purchase ${purchase.request_number}?`)) return;
+    if (!window.confirm(tAny('purchasesPage.delete.confirm', { number: purchase.request_number }))) return;
     try {
       await deleteMutation.mutateAsync(purchase.id);
-      toast.success('Purchase deleted.');
+      toast.success(t($ => $.purchasesPage.toast.deleted));
     } catch {
-      toast.error('Failed to delete purchase.');
+      toast.error(t($ => $.purchasesPage.toast.deleteFailed));
     }
   }
 
@@ -225,15 +234,31 @@ export function PurchasesPage() {
   const op = stats?.operational;
   const fin = stats?.financial;
 
+  const opKpis: Array<{ id: string; label: string; value: number; color: string; status: PurchaseMaterialStatus }> = [
+    { id: 'draft', label: t($ => $.purchasesPage.kpis.draft), value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' },
+    { id: 'underReview', label: t($ => $.purchasesPage.kpis.underReview), value: op?.under_review ?? 0, color: 'text-blue-700', status: 'under_review' },
+    { id: 'awaitingSupplier', label: t($ => $.purchasesPage.kpis.awaitingSupplier), value: op?.waiting_supplier_selection ?? 0, color: 'text-violet-700', status: 'waiting_supplier_selection' },
+    { id: 'approved', label: t($ => $.purchasesPage.kpis.approved), value: op?.approved ?? 0, color: 'text-emerald-700', status: 'approved' },
+    { id: 'purchasing', label: t($ => $.purchasesPage.kpis.purchasing), value: op?.purchasing ?? 0, color: 'text-cyan-700', status: 'purchasing' },
+    { id: 'receiving', label: t($ => $.purchasesPage.kpis.receiving), value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' },
+  ];
+
+  const finKpis: Array<{ id: string; label: string; value: number; color: string }> = [
+    { id: 'totalRequested', label: t($ => $.purchasesPage.kpis.totalRequested), value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
+    { id: 'approvedValue', label: t($ => $.purchasesPage.kpis.approvedValue), value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
+    { id: 'purchasedValue', label: t($ => $.purchasesPage.kpis.purchasedValue), value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
+    { id: 'outstanding', label: t($ => $.purchasesPage.kpis.outstanding), value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
+  ];
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Purchases"
-        subtitle="Procurement decisions workspace — supplier selection, approval, and execution."
+        title={t($ => $.purchasesPage.title)}
+        subtitle={t($ => $.purchasesPage.subtitle)}
         actions={
           <Button onClick={() => setSourceSelectorOpen(true)} className="gap-1.5">
             <Plus className="h-4 w-4" />
-            New Purchase
+            {t($ => $.purchasesPage.newPurchase)}
           </Button>
         }
       />
@@ -243,19 +268,12 @@ export function PurchasesPage() {
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              OPERATIONS
+              {t($ => $.purchasesPage.operations)}
             </p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-              {[
-                { label: 'Draft', value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' as const },
-                { label: 'Under Review', value: op?.under_review ?? 0, color: 'text-blue-700', status: 'under_review' as const },
-                { label: 'Awaiting Supplier', value: op?.waiting_supplier_selection ?? 0, color: 'text-violet-700', status: 'waiting_supplier_selection' as const },
-                { label: 'Approved', value: op?.approved ?? 0, color: 'text-emerald-700', status: 'approved' as const },
-                { label: 'Purchasing', value: op?.purchasing ?? 0, color: 'text-cyan-700', status: 'purchasing' as const },
-                { label: 'Receiving', value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' as const },
-              ].map(({ label, value, color, status }) => (
+              {opKpis.map(({ id, label, value, color, status }) => (
                 <Card
-                  key={label}
+                  key={id}
                   className="border shadow-none cursor-pointer hover:border-primary/40 transition-colors"
                   onClick={() => { setStatusFilter(status); setPage(1); }}
                 >
@@ -270,16 +288,11 @@ export function PurchasesPage() {
 
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              FINANCIAL
+              {t($ => $.purchasesPage.financial)}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {[
-                { label: 'Total Requested', value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
-                { label: 'Approved Value', value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
-                { label: 'Purchased Value', value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
-                { label: 'Outstanding', value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
-              ].map(({ label, value, color }) => (
-                <Card key={label} className="border shadow-none">
+              {finKpis.map(({ id, label, value, color }) => (
+                <Card key={id} className="border shadow-none">
                   <CardContent className="pt-3 pb-2.5 px-3">
                     <p className="text-[10px] text-muted-foreground leading-tight">{label}</p>
                     <p className={`text-xl font-bold tabular-nums ${color}`}>{fmtCurrency(value)}</p>
@@ -290,7 +303,7 @@ export function PurchasesPage() {
           </div>
         </div>
 
-        {/* ���─ Smart Toolbar ──────────────────────────────────────────── */}
+        {/* ── Smart Toolbar ──────────────────────────────────────────── */}
         <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3">
           <div className="flex flex-wrap gap-1.5">
             {STATUS_CHIPS.map((sf) => (
@@ -311,7 +324,7 @@ export function PurchasesPage() {
           <div className="flex flex-wrap gap-2 items-center">
             <Input
               className="w-48 h-8 text-sm"
-              placeholder="Search by purchase no. or notes…"
+              placeholder={t($ => $.purchasesPage.filters.search)}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
@@ -328,7 +341,7 @@ export function PurchasesPage() {
               onChange={(e) => { setWarehouseFilter(e.target.value); setPage(1); }}
               className="h-8 w-44 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">All Warehouses</option>
+              <option value="">{t($ => $.purchasesPage.filters.allWarehouses)}</option>
               {(warehouseOptions ?? []).map((w) => (
                 <option key={w.value} value={w.value}>{w.label}</option>
               ))}
@@ -339,22 +352,22 @@ export function PurchasesPage() {
               onChange={(e) => { setPriorityFilter(e.target.value as PurchaseMaterialPriority | 'all'); setPage(1); }}
               className="h-8 w-32 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="all">All Priorities</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="normal">Normal</option>
-              <option value="low">Low</option>
+              <option value="all">{t($ => $.purchasesPage.filters.allPriorities)}</option>
+              <option value="urgent">{t($ => $.purchasesPage.priority.urgent)}</option>
+              <option value="high">{t($ => $.purchasesPage.priority.high)}</option>
+              <option value="normal">{t($ => $.purchasesPage.priority.normal)}</option>
+              <option value="low">{t($ => $.purchasesPage.priority.low)}</option>
             </select>
 
             <Input
               className="h-8 w-36 text-sm"
-              placeholder="Buyer…"
+              placeholder={t($ => $.purchasesPage.filters.buyer)}
               value={buyerFilter}
               onChange={(e) => { setBuyerFilter(e.target.value); setPage(1); }}
             />
 
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span>Required by:</span>
+              <span>{t($ => $.purchasesPage.filters.requiredBy)}</span>
               <Input type="date" className="h-8 w-36 text-sm" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} />
               <span>→</span>
               <Input type="date" className="h-8 w-36 text-sm" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
@@ -362,7 +375,7 @@ export function PurchasesPage() {
 
             {(search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter || buyerFilter || dateFrom || dateTo) && (
               <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={resetFilters}>
-                Clear Filters
+                {t($ => $.purchasesPage.filters.clearFilters)}
               </Button>
             )}
           </div>
@@ -375,18 +388,18 @@ export function PurchasesPage() {
               <table className="w-full text-sm whitespace-nowrap">
                 <thead className="bg-muted/40 border-b">
                   <tr>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Purchase No.</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Source</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Company</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Warehouse</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Buyer</th>
-                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">Items</th>
-                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">Est. Value</th>
-                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">Approved Value</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Priority</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Required By</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Status</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">Last Updated</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.requestNo)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.source)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.company)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.warehouse)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.buyer)}</th>
+                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.items)}</th>
+                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.estValue)}</th>
+                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.approvedValue)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.priority)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.requiredBy)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.status)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.lastUpdated)}</th>
                     <th className="px-3 py-3 w-10" />
                   </tr>
                 </thead>
@@ -394,7 +407,7 @@ export function PurchasesPage() {
                   {isLoading ? (
                     <tr>
                       <td colSpan={13} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                        Loading purchases…
+                        {t($ => $.purchasesPage.loading)}
                       </td>
                     </tr>
                   ) : items.length === 0 ? (
@@ -403,12 +416,12 @@ export function PurchasesPage() {
                         <Truck className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
                         <p className="text-sm text-muted-foreground">
                           {search || statusFilter !== 'all'
-                            ? 'No purchases match the current filters.'
-                            : 'No purchases yet.'}
+                            ? t($ => $.purchasesPage.empty.noMatch)
+                            : t($ => $.purchasesPage.empty.none)}
                         </p>
                         {!search && statusFilter === 'all' && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Click "New Purchase" to create the first purchase order.
+                            {t($ => $.purchasesPage.empty.createHint)}
                           </p>
                         )}
                       </td>
@@ -463,7 +476,7 @@ export function PurchasesPage() {
                               onClick={(e) => void handleDelete(purchase, e)}
                               className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                             >
-                              Delete
+                              {t($ => $.purchasesPage.delete.button)}
                             </button>
                           )}
                         </td>
@@ -479,14 +492,14 @@ export function PurchasesPage() {
         {/* Pagination */}
         {meta && meta.last_page > 1 && (
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{meta.total} total purchases</span>
+            <span>{tAny('purchasesPage.pagination.total', { count: meta.total })}</span>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                Previous
+                {t($ => $.purchasesPage.pagination.previous)}
               </Button>
-              <span>Page {meta.current_page} of {meta.last_page}</span>
+              <span>{tAny('purchasesPage.pagination.page', { current: meta.current_page, last: meta.last_page })}</span>
               <Button size="sm" variant="outline" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
-                Next
+                {t($ => $.purchasesPage.pagination.next)}
               </Button>
             </div>
           </div>

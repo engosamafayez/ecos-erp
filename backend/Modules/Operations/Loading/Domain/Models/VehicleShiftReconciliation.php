@@ -11,29 +11,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Operations\Loading\Domain\Enums\ReconciliationStatus;
 
 /**
- * @property string                $id
- * @property string                $company_id
- * @property string                $vehicle_assignment_id
- * @property string                $loading_session_id
- * @property string                $vehicle_id
- * @property string                $driver_assignment_id
- * @property \Carbon\Carbon        $operational_date
- * @property ReconciliationStatus  $status
- * @property string|null           $reconciled_by
- * @property string|null           $approved_by
- * @property bool                  $has_variance
- * @property string|null           $variance_notes
- * @property float                 $total_quantity_loaded
- * @property float                 $total_quantity_delivered
- * @property float                 $total_quantity_returned
- * @property float                 $total_variance
- * @property string|null           $config_version_id
- * @property \Carbon\Carbon        $opened_at
- * @property \Carbon\Carbon|null   $completed_at
- * @property string                $created_by
- * @property string                $updated_by
- * @property \Carbon\Carbon        $created_at
- * @property \Carbon\Carbon        $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $vehicle_assignment_id
+ * @property string $loading_session_id
+ * @property string $vehicle_id
+ * @property string $driver_assignment_id
+ * @property \Carbon\Carbon $operational_date
+ * @property ReconciliationStatus $status
+ * @property string|null $reconciled_by
+ * @property string|null $approved_by
+ * @property bool $has_variance
+ * @property string|null $variance_notes
+ * @property float $total_quantity_loaded
+ * @property float $total_quantity_delivered
+ * @property float $total_quantity_returned
+ * @property float $total_variance
+ * @property string|null $config_version_id
+ * @property \Carbon\Carbon $opened_at
+ * @property \Carbon\Carbon|null $completed_at
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class VehicleShiftReconciliation extends Model
 {
@@ -73,15 +73,15 @@ class VehicleShiftReconciliation extends Model
     protected function casts(): array
     {
         return [
-            'status'                   => ReconciliationStatus::class,
-            'operational_date'         => 'date:Y-m-d',
-            'has_variance'             => 'boolean',
-            'total_quantity_loaded'    => 'float',
+            'status' => ReconciliationStatus::class,
+            'operational_date' => 'date:Y-m-d',
+            'has_variance' => 'boolean',
+            'total_quantity_loaded' => 'float',
             'total_quantity_delivered' => 'float',
-            'total_quantity_returned'  => 'float',
-            'total_variance'           => 'float',
-            'opened_at'                => 'datetime',
-            'completed_at'             => 'datetime',
+            'total_quantity_returned' => 'float',
+            'total_variance' => 'float',
+            'opened_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 

@@ -11,22 +11,22 @@ final class ReceiptTypeTest extends TestCase
 {
     public function test_cases_have_correct_string_values(): void
     {
-        $this->assertSame('sale',     ReceiptType::Sale->value);
-        $this->assertSame('return',   ReceiptType::Return->value);
+        $this->assertSame('sale', ReceiptType::Sale->value);
+        $this->assertSame('return', ReceiptType::Return->value);
         $this->assertSame('exchange', ReceiptType::Exchange->value);
     }
 
     public function test_labels_are_human_readable(): void
     {
-        $this->assertSame('Sale',     ReceiptType::Sale->label());
-        $this->assertSame('Return',   ReceiptType::Return->label());
+        $this->assertSame('Sale', ReceiptType::Sale->label());
+        $this->assertSame('Return', ReceiptType::Return->label());
         $this->assertSame('Exchange', ReceiptType::Exchange->label());
     }
 
     public function test_can_create_from_string_value(): void
     {
-        $this->assertSame(ReceiptType::Sale,     ReceiptType::from('sale'));
-        $this->assertSame(ReceiptType::Return,   ReceiptType::from('return'));
+        $this->assertSame(ReceiptType::Sale, ReceiptType::from('sale'));
+        $this->assertSame(ReceiptType::Return, ReceiptType::from('return'));
         $this->assertSame(ReceiptType::Exchange, ReceiptType::from('exchange'));
     }
 

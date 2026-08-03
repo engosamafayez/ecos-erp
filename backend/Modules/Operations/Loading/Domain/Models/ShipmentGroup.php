@@ -11,29 +11,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Operations\Loading\Domain\Enums\ShipmentGroupStatus;
 
 /**
- * @property string                $id
- * @property string                $company_id
- * @property string                $loading_session_id
- * @property string|null           $geography_group_id
- * @property string                $shipping_company_id
- * @property string                $zone_id
- * @property string                $governorate_id
- * @property string                $group_number
- * @property ShipmentGroupStatus   $status
- * @property int                   $vehicle_assignments_count
- * @property int                   $orders_count
- * @property int                   $fully_allocated_orders
- * @property int                   $partially_allocated_orders
- * @property int                   $unallocated_orders
- * @property float                 $allocation_coverage_pct
- * @property \Carbon\Carbon|null   $dispatched_at
- * @property \Carbon\Carbon|null   $completed_at
- * @property \Carbon\Carbon|null   $cancelled_at
- * @property string|null           $notes
- * @property string                $created_by
- * @property string                $updated_by
- * @property \Carbon\Carbon        $created_at
- * @property \Carbon\Carbon        $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $loading_session_id
+ * @property string|null $geography_group_id
+ * @property string $shipping_company_id
+ * @property string $zone_id
+ * @property string $governorate_id
+ * @property string $group_number
+ * @property ShipmentGroupStatus $status
+ * @property int $vehicle_assignments_count
+ * @property int $orders_count
+ * @property int $fully_allocated_orders
+ * @property int $partially_allocated_orders
+ * @property int $unallocated_orders
+ * @property float $allocation_coverage_pct
+ * @property \Carbon\Carbon|null $dispatched_at
+ * @property \Carbon\Carbon|null $completed_at
+ * @property \Carbon\Carbon|null $cancelled_at
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class ShipmentGroup extends Model
 {
@@ -73,16 +73,16 @@ class ShipmentGroup extends Model
     protected function casts(): array
     {
         return [
-            'status'                     => ShipmentGroupStatus::class,
-            'vehicle_assignments_count'  => 'integer',
-            'orders_count'               => 'integer',
-            'fully_allocated_orders'     => 'integer',
+            'status' => ShipmentGroupStatus::class,
+            'vehicle_assignments_count' => 'integer',
+            'orders_count' => 'integer',
+            'fully_allocated_orders' => 'integer',
             'partially_allocated_orders' => 'integer',
-            'unallocated_orders'         => 'integer',
-            'allocation_coverage_pct'    => 'float',
-            'dispatched_at'              => 'datetime',
-            'completed_at'               => 'datetime',
-            'cancelled_at'               => 'datetime',
+            'unallocated_orders' => 'integer',
+            'allocation_coverage_pct' => 'float',
+            'dispatched_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 

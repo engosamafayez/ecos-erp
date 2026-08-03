@@ -42,16 +42,16 @@ type CsvColDef = { key: ColumnKey; value: (m: RawMaterial, t: (k: string) => str
 const CSV_COL_DEFS: CsvColDef[] = [
   { key: 'image',           value: (m)    => m.image_url ?? '' },
   { key: 'name',            value: (m)    => m.name },
-  { key: 'material_type',   value: (m, t) => m.product_type === 'packaging_material' ? t('csv.packagingMaterial') : t('csv.rawMaterial') },
+  { key: 'material_type',   value: (m, t) => m.product_type === 'packaging_material' ? t($ => $.csv.packagingMaterial) : t($ => $.csv.rawMaterial) },
   { key: 'category',        value: (m)    => m.category?.name ?? '' },
   { key: 'unit',            value: (m)    => m.unit?.name ?? '' },
-  { key: 'stock_status',    value: (m, t) => resolveMaterialStockStatus(m.available_qty, m.allow_negative_stock) === 'in_stock' ? t('csv.inStock') : t('csv.outOfStock') },
+  { key: 'stock_status',    value: (m, t) => resolveMaterialStockStatus(m.available_qty, m.allow_negative_stock) === 'in_stock' ? t($ => $.csv.inStock) : t($ => $.csv.outOfStock) },
   { key: 'on_hand',         value: (m)    => String(m.on_hand_qty ?? '') },
   { key: 'reserved',        value: (m)    => String(m.reserved_qty ?? '') },
   { key: 'available',       value: (m)    => String(m.available_qty ?? '') },
   { key: 'current_cost',    value: (m)    => String(m.material_cost ?? '') },
   { key: 'inventory_value', value: (m)    => String(m.inventory_value ?? '') },
-  { key: 'allow_negative',  value: (m, t) => (m.allow_negative_stock ? t('csv.yes') : t('csv.no')) },
+  { key: 'allow_negative',  value: (m, t) => (m.allow_negative_stock ? t($ => $.csv.yes) : t($ => $.csv.no)) },
   { key: 'sku',             value: (m)    => m.sku },
 ];
 
@@ -123,21 +123,21 @@ function BulkActionBar({
 
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-2.5 shadow-sm">
-      <span className="text-sm font-medium shrink-0">{t('bulk.selected', { count: selectedCount })}</span>
+      <span className="text-sm font-medium shrink-0">{t($ => $.bulk.selected, { count: selectedCount })}</span>
       <div className="w-px h-5 bg-border mx-1" />
 
       <Button variant="outline" size="sm" onClick={onAllowNeg} disabled={isPending} className="gap-1.5 h-8">
-        {t('bulk.allowNegative')}
+        {t($ => $.bulk.allowNegative)}
       </Button>
       <Button variant="outline" size="sm" onClick={onBlockNeg} disabled={isPending} className="gap-1.5 h-8">
-        {t('bulk.blockNegative')}
+        {t($ => $.bulk.blockNegative)}
       </Button>
 
       <Select onValueChange={onChangeCategory}>
         <SelectTrigger className="h-8 w-40 text-sm">
           <div className="flex items-center gap-1.5">
             <Tag className="size-3.5" />
-            <SelectValue placeholder={t('bulk.changeCategory')} />
+            <SelectValue placeholder={t($ => $.bulk.changeCategory)} />
           </div>
         </SelectTrigger>
         <SelectContent>
@@ -149,16 +149,16 @@ function BulkActionBar({
 
       <Button variant="outline" size="sm" onClick={onExport} disabled={isPending} className="gap-1.5 h-8">
         <Download className="size-3.5" />
-        {t('bulk.exportSelected')}
+        {t($ => $.bulk.exportSelected)}
       </Button>
       <Button variant="destructive" size="sm" onClick={onDelete} disabled={isPending} className="gap-1.5 h-8">
         <Trash2 className="size-3.5" />
-        {t('bulk.delete')}
+        {t($ => $.bulk.delete)}
       </Button>
 
       <Button variant="ghost" size="sm" onClick={onClear} className="ms-auto h-8 gap-1.5 text-muted-foreground">
         <X className="size-3.5" />
-        {t('bulk.clear')}
+        {t($ => $.bulk.clear)}
       </Button>
     </div>
   );
@@ -233,16 +233,16 @@ export function RawMaterialsPage() {
 
   // ── Derived title & subtitle ──────────────────────────────────────────────
   const title = materialType === 'raw_material'
-    ? t('page.titleRaw')
+    ? t($ => $.page.titleRaw)
     : materialType === 'packaging_material'
-    ? t('page.titlePackaging')
-    : t('page.titleAll');
+    ? t($ => $.page.titlePackaging)
+    : t($ => $.page.titleAll);
 
   const subtitle = materialType === 'raw_material'
-    ? t('page.subtitleRaw')
+    ? t($ => $.page.subtitleRaw)
     : materialType === 'packaging_material'
-    ? t('page.subtitlePackaging')
-    : t('page.subtitleAll');
+    ? t($ => $.page.subtitlePackaging)
+    : t($ => $.page.subtitleAll);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const resetPage = useCallback(() => setPage(1), []);
@@ -285,11 +285,11 @@ export function RawMaterialsPage() {
   async function handleExport() {
     if (selectedIds.size > 0) {
       const selected = materials.filter((m) => selectedIds.has(m.id));
-      triggerCsvDownload(selected, visibleColumns, materialType, t);
+      triggerCsvDownload(selected, visibleColumns, materialType, t as unknown as (k: string) => string);
       return;
     }
     const result = await rawMaterialsService.list({ ...queryParams, per_page: 10_000, page: 1 });
-    triggerCsvDownload(result.items, visibleColumns, materialType, t);
+    triggerCsvDownload(result.items, visibleColumns, materialType, t as unknown as (k: string) => string);
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
@@ -340,8 +340,8 @@ export function RawMaterialsPage() {
         title={title}
         subtitle={subtitle}
         breadcrumbs={[
-          { label: t('page.breadcrumbs.dashboard'), to: ROUTES.dashboard },
-          { label: t('page.breadcrumbs.inventory'), to: ROUTES.inventory },
+          { label: t($ => $.page.breadcrumbs.dashboard), to: ROUTES.dashboard },
+          { label: t($ => $.page.breadcrumbs.inventory), to: ROUTES.inventory },
           { label: title },
         ]}
       />
@@ -439,9 +439,9 @@ export function RawMaterialsPage() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        title={t('page.deleteDialog.title')}
-        description={t('page.deleteDialog.description', { name: deleteTarget?.name ?? '' })}
-        confirmLabel={t('page.deleteDialog.confirmLabel')}
+        title={t($ => $.page.deleteDialog.title)}
+        description={t($ => $.page.deleteDialog.description, { name: deleteTarget?.name ?? '' })}
+        confirmLabel={t($ => $.page.deleteDialog.confirmLabel)}
         onConfirm={handleDelete}
         variant="destructive"
         loading={deleteMut.isPending}
@@ -450,9 +450,9 @@ export function RawMaterialsPage() {
       <ConfirmDialog
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
-        title={t('page.bulkDeleteDialog.title')}
-        description={t('page.bulkDeleteDialog.description', { count: selectedIds.size })}
-        confirmLabel={t('page.bulkDeleteDialog.confirmLabel', { count: selectedIds.size })}
+        title={t($ => $.page.bulkDeleteDialog.title)}
+        description={t($ => $.page.bulkDeleteDialog.description, { count: selectedIds.size })}
+        confirmLabel={t($ => $.page.bulkDeleteDialog.confirmLabel, { count: selectedIds.size })}
         onConfirm={handleBulkDelete}
         variant="destructive"
         loading={deleteMut.isPending}

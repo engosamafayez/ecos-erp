@@ -87,7 +87,7 @@ final class UserPreferenceController extends Controller
 
         $dto = PreferenceDTO::fromArray([
             'category' => $category,
-            'payload'  => $request->validated('payload'),
+            'payload' => $request->validated('payload'),
         ]);
 
         $preference = $this->service->upsert((int) $user->id, $dto->category, $dto->payload);

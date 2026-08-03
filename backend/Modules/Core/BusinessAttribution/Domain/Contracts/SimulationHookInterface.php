@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Domain\Contracts;
 
 use Modules\Core\BusinessAttribution\Domain\Models\BusinessEvent;

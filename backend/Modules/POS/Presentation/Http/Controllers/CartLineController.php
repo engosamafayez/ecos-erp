@@ -18,22 +18,22 @@ final class CartLineController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private readonly AddCartLineService    $addCartLineService,
+        private readonly AddCartLineService $addCartLineService,
         private readonly RemoveCartLineService $removeCartLineService,
     ) {}
 
     public function store(string $cart, AddCartLineRequest $request): JsonResponse
     {
-        $data    = $request->validated();
+        $data = $request->validated();
         $command = new AddCartLineCommand(
-            cartId:        $cart,
-            productId:     $data['product_id'],
-            productName:   $data['product_name'],
-            sku:           $data['sku'],
-            quantity:      (string) $data['quantity'],
-            unitPrice:     (string) $data['unit_price'],
-            currency:      $data['currency'],
-            discountType:  $data['discount_type'] ?? null,
+            cartId: $cart,
+            productId: $data['product_id'],
+            productName: $data['product_name'],
+            sku: $data['sku'],
+            quantity: (string) $data['quantity'],
+            unitPrice: (string) $data['unit_price'],
+            currency: $data['currency'],
+            discountType: $data['discount_type'] ?? null,
             discountValue: isset($data['discount_value']) ? (string) $data['discount_value'] : null,
         );
 

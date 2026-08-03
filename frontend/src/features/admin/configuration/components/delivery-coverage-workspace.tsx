@@ -1,4 +1,6 @@
+import { useFormatter } from '@/hooks/use-formatter';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircle2,
   ChevronDown,
@@ -32,6 +34,8 @@ import type { CoverageGovernorate, CoverageZone } from '../types/configuration';
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
+  const { t } = useTranslation('settings');
+  const { money } = useFormatter();
   const { toast } = useToast();
   const [search,    setSearch]    = useState('');
   const [bulkPrice, setBulkPrice] = useState('');
@@ -80,7 +84,12 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         setExpanded((prev) => new Set([...prev, gov.id]));
       }
     } catch {
-      toast({ title: `Failed to ${enable ? 'enable' : 'disable'} ${gov.name}`, type: 'error' });
+      toast({
+        title: enable
+          ? t($ => $.deliveryCoverage.toast.failEnable, { name: gov.name })
+          : t($ => $.deliveryCoverage.toast.failDisable, { name: gov.name }),
+        type: 'error',
+      });
     }
   }
 
@@ -90,13 +99,13 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
     if (!gov.geo_id) return;
     const cost = parseFloat(costStr);
     if (isNaN(cost) || cost < 0) {
-      toast({ title: 'Enter a valid cost', type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.invalidCost), type: 'error' });
       return;
     }
     try {
       await updateGeo.mutateAsync({ id: gov.geo_id, payload: { default_shipping_cost: cost } });
     } catch {
-      toast({ title: 'Failed to update default cost', type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.failUpdateCost), type: 'error' });
     }
   }
 
@@ -111,7 +120,12 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         payload: { is_active: enable },
       });
     } catch {
-      toast({ title: `Failed to ${enable ? 'enable' : 'disable'} ${zone.name}`, type: 'error' });
+      toast({
+        title: enable
+          ? t($ => $.deliveryCoverage.toast.failEnable, { name: zone.name })
+          : t($ => $.deliveryCoverage.toast.failDisable, { name: zone.name }),
+        type: 'error',
+      });
     }
   }
 
@@ -122,7 +136,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
     const trimmed = costStr.trim();
     const cost = trimmed === '' ? null : parseFloat(trimmed);
     if (cost !== null && (isNaN(cost) || cost < 0)) {
-      toast({ title: 'Enter a valid cost or leave empty to inherit', type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.invalidZoneCost), type: 'error' });
       return;
     }
     try {
@@ -132,7 +146,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         payload: { custom_shipping_cost: cost },
       });
     } catch {
-      toast({ title: 'Failed to update zone cost', type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.failZoneCost), type: 'error' });
     }
   }
 
@@ -175,7 +189,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         }
       } catch { /* skip individual failures */ }
     }
-    toast({ title: 'All 27 governorates enabled', type: 'success' });
+    toast({ title: t($ => $.deliveryCoverage.toast.allEnabled), type: 'success' });
   }
 
   async function handleDisableAll() {
@@ -184,13 +198,13 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         await updateGeo.mutateAsync({ id: gov.geo_id!, payload: { is_active: false } });
       } catch { /* skip */ }
     }
-    toast({ title: 'All governorates disabled', type: 'success' });
+    toast({ title: t($ => $.deliveryCoverage.toast.allDisabled), type: 'success' });
   }
 
   async function handleApplyCost() {
     const cost = parseFloat(bulkPrice);
     if (isNaN(cost) || cost < 0) {
-      toast({ title: 'Enter a valid cost', type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.invalidCost), type: 'error' });
       return;
     }
     for (const gov of coverage.filter((g) => g.is_enabled && g.geo_id)) {
@@ -199,7 +213,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
       } catch { /* skip */ }
     }
     setBulkPrice('');
-    toast({ title: `${cost} EGP applied to all enabled governorates`, type: 'success' });
+    toast({ title: t($ => $.deliveryCoverage.toast.costApplied, { cost: money(cost) }), type: 'success' });
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -218,7 +232,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search governorates or zones…"
+            placeholder={t($ => $.deliveryCoverage.search)}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 pl-8 text-xs"
@@ -238,7 +252,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
             type="number"
             min="0"
             step="0.01"
-            placeholder="Default cost…"
+            placeholder={t($ => $.deliveryCoverage.defaultCost)}
             value={bulkPrice}
             onChange={(e) => setBulkPrice(e.target.value)}
             className="h-8 w-28 text-xs"
@@ -250,7 +264,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
             disabled={isBulkPending}
             className="text-xs h-8"
           >
-            Apply to All
+            {t($ => $.deliveryCoverage.applyToAll)}
           </Button>
         </div>
 
@@ -262,7 +276,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
           className="text-xs gap-1.5 h-8"
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
-          Enable All
+          {t($ => $.deliveryCoverage.enableAll)}
         </Button>
         <Button
           size="sm"
@@ -272,7 +286,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
           className="text-xs gap-1.5 h-8"
         >
           <XCircle className="h-3.5 w-3.5" />
-          Disable All
+          {t($ => $.deliveryCoverage.disableAll)}
         </Button>
         <Button
           size="sm"
@@ -284,7 +298,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
             ? <ChevronUp   className="h-3.5 w-3.5" />
             : <ChevronDown className="h-3.5 w-3.5" />
           }
-          {allExpanded ? 'Collapse All' : 'Expand All'}
+          {allExpanded ? t($ => $.deliveryCoverage.collapseAll) : t($ => $.deliveryCoverage.expandAll)}
         </Button>
       </div>
 
@@ -307,7 +321,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
             />
           ))}
           {filtered.length === 0 && (
-            <EmptyBlock message="No governorates match your search." />
+            <EmptyBlock message={t($ => $.deliveryCoverage.emptyGovs)} />
           )}
         </div>
       )}
@@ -336,6 +350,8 @@ function GovernorateRow({
   onToggleZone:     (zone: CoverageZone, enable: boolean) => void;
   onUpdateZoneCost: (zone: CoverageZone, cost: string) => void;
 }) {
+  const { t } = useTranslation('settings');
+  const { money } = useFormatter();
   const [editCost,  setEditCost]  = useState(false);
   const [costInput, setCostInput] = useState('');
   const costRef = useRef<HTMLInputElement>(null);
@@ -387,7 +403,7 @@ function GovernorateRow({
           <Badge variant="outline" className="text-[10px] py-0 h-4">{gov.code}</Badge>
           {isEnabled && (
             <Badge className="text-[10px] py-0 h-4 bg-muted text-muted-foreground border-0">
-              {enabledZoneCount}/{gov.total_zones} zones
+              {t($ => $.deliveryCoverage.zonesCount, { enabled: enabledZoneCount, total: gov.total_zones })}
             </Badge>
           )}
         </div>
@@ -414,7 +430,7 @@ function GovernorateRow({
                   className="h-7 w-24 text-xs"
                   placeholder="0.00"
                 />
-                <Button type="submit" size="sm" className="h-7 px-2 text-xs">Save</Button>
+                <Button type="submit" size="sm" className="h-7 px-2 text-xs">{t($ => $.deliveryCoverage.save)}</Button>
                 <Button
                   type="button"
                   size="sm"
@@ -434,9 +450,9 @@ function GovernorateRow({
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground rounded px-2 py-0.5 hover:bg-muted/50 transition-colors"
               >
                 {gov.default_shipping_cost != null ? (
-                  <span className="font-mono font-medium">{gov.default_shipping_cost} EGP</span>
+                  <span className="font-mono font-medium">{money(Number(gov.default_shipping_cost) || 0)}</span>
                 ) : (
-                  <span className="italic">Set default cost</span>
+                  <span className="italic">{t($ => $.deliveryCoverage.setDefaultCost)}</span>
                 )}
                 <Pencil className="h-2.5 w-2.5 ml-0.5" />
               </button>
@@ -447,7 +463,7 @@ function GovernorateRow({
         {/* Enable / disable toggle */}
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-[10px] text-muted-foreground">
-            {isEnabled ? 'Enabled' : 'Disabled'}
+            {isEnabled ? t($ => $.deliveryCoverage.enabled) : t($ => $.deliveryCoverage.disabled)}
           </span>
           <Switch
             checked={isEnabled}
@@ -463,8 +479,8 @@ function GovernorateRow({
           {gov.total_zones > 0 && (
             <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-4 px-6 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/30">
               <span className="w-8" />
-              <span>Zone</span>
-              <span className="text-end w-32">Shipping Cost</span>
+              <span>{t($ => $.deliveryCoverage.zone)}</span>
+              <span className="text-end w-32">{t($ => $.deliveryCoverage.shippingCost)}</span>
               <span className="w-8" />
             </div>
           )}
@@ -481,7 +497,7 @@ function GovernorateRow({
             ))}
             {visibleZones.length === 0 && (
               <p className="px-6 py-3 text-xs text-muted-foreground">
-                No zones match your search.
+                {t($ => $.deliveryCoverage.emptyZones)}
               </p>
             )}
           </div>
@@ -504,6 +520,8 @@ function ZoneRow({
   onToggle:       (enable: boolean) => void;
   onUpdateCost:   (cost: string) => void;
 }) {
+  const { t } = useTranslation('settings');
+  const { money } = useFormatter();
   const [editCost,  setEditCost]  = useState(false);
   const [costInput, setCostInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -553,7 +571,7 @@ function ZoneRow({
               value={costInput}
               onChange={(e) => setCostInput(e.target.value)}
               className="h-6 w-20 text-xs"
-              placeholder="empty=inherit"
+              placeholder={t($ => $.deliveryCoverage.emptyInherit)}
             />
             <Button type="submit" size="sm" className="h-6 px-1.5 text-[10px]">✓</Button>
             <button
@@ -576,12 +594,12 @@ function ZoneRow({
           >
             {hasCustomCost ? (
               <Badge className="text-[10px] py-0 h-4 bg-blue-50 text-blue-700 border-blue-200 font-mono gap-0.5 cursor-pointer">
-                {zone.custom_shipping_cost} EGP
+                {money(Number(zone.custom_shipping_cost) || 0)}
                 <Pencil className="h-2 w-2" />
               </Badge>
             ) : (
               <Badge className="text-[10px] py-0 h-4 bg-muted text-muted-foreground border-0 gap-0.5 cursor-pointer">
-                {effectiveCost != null ? `${effectiveCost} EGP` : 'Inherited'}
+                {effectiveCost != null ? money(Number(effectiveCost)) : t($ => $.deliveryCoverage.inherited)}
                 {canInteract && <Pencil className="h-2 w-2" />}
               </Badge>
             )}
@@ -593,7 +611,7 @@ function ZoneRow({
       <div className="w-8 flex items-center justify-end">
         {!zone.is_enabled && (
           <Badge className="text-[10px] py-0 h-4 bg-amber-50 text-amber-700 border-0 shrink-0">
-            Off
+            {t($ => $.deliveryCoverage.off)}
           </Badge>
         )}
       </div>
@@ -610,6 +628,9 @@ function CoverageDashboard({
   stats:   ReturnType<typeof useCoverageStats>['data'];
   loading: boolean;
 }) {
+  const { t } = useTranslation('settings');
+  const { money, currency } = useFormatter();
+
   if (loading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -623,10 +644,10 @@ function CoverageDashboard({
   if (!stats) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard icon={<MapPin className="h-4 w-4" />}  label="Covered Governorates" value="—" />
-        <KpiCard icon={<Truck  className="h-4 w-4" />}  label="Active Zones"         value="—" />
-        <KpiCard icon={<span className="text-xs font-bold">%</span>}   label="Coverage"     value="—" />
-        <KpiCard icon={<span className="text-xs font-bold">EGP</span>} label="Avg Shipping" value="—" />
+        <KpiCard icon={<MapPin className="h-4 w-4" />}  label={t($ => $.deliveryCoverage.kpi.coveredGovs)} value="—" />
+        <KpiCard icon={<Truck  className="h-4 w-4" />}  label={t($ => $.deliveryCoverage.kpi.activeZones)} value="—" />
+        <KpiCard icon={<span className="text-xs font-bold">%</span>}   label={t($ => $.deliveryCoverage.kpi.coverage)}     value="—" />
+        <KpiCard icon={<span className="text-xs font-bold">{currency}</span>} label={t($ => $.deliveryCoverage.kpi.avgShipping)} value="—" />
       </div>
     );
   }
@@ -642,12 +663,12 @@ function CoverageDashboard({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiCard
           icon={<MapPin className="h-4 w-4" />}
-          label="Covered Governorates"
+          label={t($ => $.deliveryCoverage.kpi.coveredGovs)}
           value={`${stats.enabled_governorates} / ${stats.total_governorates}`}
         />
         <KpiCard
           icon={<Truck className="h-4 w-4" />}
-          label="Active Zones"
+          label={t($ => $.deliveryCoverage.kpi.activeZones)}
           value={stats.total_zones > 0
             ? `${stats.active_zones} / ${stats.total_zones}`
             : String(stats.active_zones)
@@ -655,19 +676,19 @@ function CoverageDashboard({
         />
         <KpiCard
           icon={<span className={`text-sm font-bold ${pctColor}`}>%</span>}
-          label="Coverage"
+          label={t($ => $.deliveryCoverage.kpi.coverage)}
           value={`${pct}%`}
         />
         <KpiCard
-          icon={<span className="text-xs font-bold">EGP</span>}
-          label="Avg Shipping"
-          value={stats.avg_effective_shipping != null ? `${stats.avg_effective_shipping} EGP` : '—'}
+          icon={<span className="text-xs font-bold">{currency}</span>}
+          label={t($ => $.deliveryCoverage.kpi.avgShipping)}
+          value={stats.avg_effective_shipping != null ? money(Number(stats.avg_effective_shipping)) : '—'}
         />
       </div>
 
       <div className="rounded-lg border border-border/60 bg-card px-4 py-3 space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground font-medium">Coverage Progress</span>
+          <span className="text-muted-foreground font-medium">{t($ => $.deliveryCoverage.coverageProgress)}</span>
           <span className={`font-semibold ${pctColor}`}>{pct}%</span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -688,17 +709,18 @@ function ConfigHealthBar({
 }: {
   health: NonNullable<ReturnType<typeof useHealthScore>['data']>;
 }) {
+  const { t } = useTranslation('settings');
   const color = health.score >= 80 ? 'bg-emerald-500' : health.score >= 50 ? 'bg-amber-500' : 'bg-red-500';
   const textColor = health.score >= 80
     ? 'text-emerald-700 dark:text-emerald-400'
     : health.score >= 50 ? 'text-amber-700 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
 
   const checkLabels: Record<string, string> = {
-    channels:          'Sales Channels',
-    delivery_coverage: 'Delivery Coverage',
-    delivery_zones:    'Delivery Zones',
-    delivery_windows:  'Delivery Windows',
-    shipping_prices:   'Shipping Prices',
+    channels:          t($ => $.deliveryCoverage.healthBar.channels),
+    delivery_coverage: t($ => $.deliveryCoverage.healthBar.deliveryCoverage),
+    delivery_zones:    t($ => $.deliveryCoverage.healthBar.deliveryZones),
+    delivery_windows:  t($ => $.deliveryCoverage.healthBar.deliveryWindows),
+    shipping_prices:   t($ => $.deliveryCoverage.healthBar.shippingPrices),
   };
 
   return (
@@ -706,7 +728,7 @@ function ConfigHealthBar({
       <div className="flex items-center justify-between gap-4 mb-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Brand Configuration Health
+            {t($ => $.deliveryCoverage.healthBar.title)}
           </span>
           <span className={`text-base font-bold ${textColor}`}>{health.score}%</span>
         </div>
@@ -746,10 +768,11 @@ function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string;
 }
 
 function LoadingBlock() {
+  const { t } = useTranslation('settings');
   return (
     <div className="flex items-center justify-center py-16 gap-2 text-muted-foreground">
       <Loader2 className="h-4 w-4 animate-spin" />
-      <span className="text-sm">Loading coverage data…</span>
+      <span className="text-sm">{t($ => $.deliveryCoverage.loading)}</span>
     </div>
   );
 }

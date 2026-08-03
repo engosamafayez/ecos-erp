@@ -10,7 +10,7 @@ final class SessionApproved
 {
     public function __construct(
         public readonly PreparationSession $session,
-        public readonly string             $actorId,
-        public readonly int                $poolEntriesOpened,
+        public readonly string $actorId,
+        public readonly int $poolEntriesOpened,
     ) {}
 }

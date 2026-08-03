@@ -6,21 +6,21 @@ namespace Modules\Marketing\Initiatives\Domain\Enums;
 
 enum InitiativeStatus: string
 {
-    case Draft     = 'draft';
-    case Active    = 'active';
-    case Paused    = 'paused';
+    case Draft = 'draft';
+    case Active = 'active';
+    case Paused = 'paused';
     case Completed = 'completed';
-    case Archived  = 'archived';
+    case Archived = 'archived';
     case Cancelled = 'cancelled';
 
     public function label(): string
     {
         return match ($this) {
-            self::Draft     => 'Draft',
-            self::Active    => 'Active',
-            self::Paused    => 'Paused',
+            self::Draft => 'Draft',
+            self::Active => 'Active',
+            self::Paused => 'Paused',
             self::Completed => 'Completed',
-            self::Archived  => 'Archived',
+            self::Archived => 'Archived',
             self::Cancelled => 'Cancelled',
         };
     }

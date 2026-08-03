@@ -14,7 +14,7 @@ final class OrderAlreadyInWaveException extends RuntimeException
         $list = implode(', ', $orderIds);
         parent::__construct(
             "The following order(s) are already assigned to another preparation wave: [{$list}]. "
-            . 'Each order may only belong to one preparation wave per company.'
+            .'Each order may only belong to one preparation wave per company.',
         );
     }
 }

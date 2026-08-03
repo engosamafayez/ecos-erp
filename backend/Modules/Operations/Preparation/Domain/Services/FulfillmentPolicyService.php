@@ -54,7 +54,7 @@ final class FulfillmentPolicyService
 
         if ($config !== null) {
             $decoded = json_decode($config, true);
-            $max     = $decoded['preparation']['wave']['max_size'] ?? null;
+            $max = $decoded['preparation']['wave']['max_size'] ?? null;
             if ($max !== null) {
                 return (int) $max;
             }
@@ -75,7 +75,7 @@ final class FulfillmentPolicyService
             ->value('configuration');
 
         if ($config !== null) {
-            $decoded   = json_decode($config, true);
+            $decoded = json_decode($config, true);
             $tolerance = $decoded['preparation']['wave']['overprepare_tolerance'] ?? null;
             if ($tolerance !== null) {
                 return (float) $tolerance;

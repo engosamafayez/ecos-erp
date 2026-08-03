@@ -1,15 +1,14 @@
 import { SETTLEMENT_STATUS_COLORS, SETTLEMENT_STATUS_LABELS } from '../types/driver-mobile';
+import { useFormatter } from '@/hooks/use-formatter';
 import type { TripSettlement } from '../types/driver-mobile';
 
 interface SettlementSummaryProps {
   settlement: TripSettlement;
 }
 
-function fmt(v: number | null | undefined) {
-  return `EGP ${Number(v ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}`;
-}
-
 export function SettlementSummary({ settlement }: SettlementSummaryProps) {
+  const { money } = useFormatter();
+  const fmt = (v: number | null | undefined) => money(Number(v ?? 0));
   const rows = [
     { label: 'Cash Collected',                    value: fmt(settlement.cash_collected),         highlight: false },
     { label: 'Bank Transfers (Pending Verification)', value: fmt(settlement.bank_transfers_pending), highlight: false },

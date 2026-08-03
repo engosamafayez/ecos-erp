@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -65,13 +67,13 @@ return new class extends Migration
 
             // Indexes (prefix: cep_cv_)
             $table->index(['provider', 'external_conversation_id'], 'cep_cv_provider_ext_idx');
-            $table->index(['status', 'company_id'],                 'cep_cv_status_co_idx');
-            $table->index(['assigned_employee_id', 'status'],       'cep_cv_emp_status_idx');
-            $table->index(['assigned_team_id', 'status'],           'cep_cv_team_status_idx');
-            $table->index(['business_dna_id'],                      'cep_cv_dna_idx');
-            $table->index(['campaign_id'],                          'cep_cv_camp_idx');
-            $table->index(['customer_id'],                          'cep_cv_cust_idx');
-            $table->index(['company_id', 'created_at'],             'cep_cv_co_at_idx');
+            $table->index(['status', 'company_id'], 'cep_cv_status_co_idx');
+            $table->index(['assigned_employee_id', 'status'], 'cep_cv_emp_status_idx');
+            $table->index(['assigned_team_id', 'status'], 'cep_cv_team_status_idx');
+            $table->index(['business_dna_id'], 'cep_cv_dna_idx');
+            $table->index(['campaign_id'], 'cep_cv_camp_idx');
+            $table->index(['customer_id'], 'cep_cv_cust_idx');
+            $table->index(['company_id', 'created_at'], 'cep_cv_co_at_idx');
         });
     }
 

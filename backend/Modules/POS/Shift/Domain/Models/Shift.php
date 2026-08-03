@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\POS\Shift\Domain\Models;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use Modules\POS\Shared\Domain\Contracts\DomainEvent;
 use Modules\POS\Shared\Domain\Enums\ShiftStatus;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -49,16 +53,16 @@ final class Shift extends Model
     protected function casts(): array
     {
         return [
-            'status'           => ShiftStatus::class,
-            'shift_number'     => 'integer',
-            'opening_cash'     => 'array',
-            'closing_count'    => 'array',
+            'status' => ShiftStatus::class,
+            'shift_number' => 'integer',
+            'opening_cash' => 'array',
+            'closing_count' => 'array',
             'expected_closing' => 'array',
-            'variance'         => 'array',
-            'metadata'         => 'array',
-            'opened_at'        => 'datetime',
-            'submitted_at'     => 'datetime',
-            'closed_at'        => 'datetime',
+            'variance' => 'array',
+            'metadata' => 'array',
+            'opened_at' => 'datetime',
+            'submitted_at' => 'datetime',
+            'closed_at' => 'datetime',
         ];
     }
 
@@ -71,16 +75,18 @@ final class Shift extends Model
 
     public function pullDomainEvents(): array
     {
-        $events             = $this->domainEvents;
+        $events = $this->domainEvents;
         $this->domainEvents = [];
+
         return $events;
     }
 
     private static function generateUuid(): string
     {
-        $bytes    = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        $bytes = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0F) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3F) | 0x80);
+
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
     }
 
@@ -92,40 +98,40 @@ final class Shift extends Model
      * The returned shift is NOT persisted — call $repository->save() after.
      */
     public static function open(
-        string      $sessionId,
-        string      $terminalId,
-        string      $cashierId,
-        Money       $openingCash,
+        string $sessionId,
+        string $terminalId,
+        string $cashierId,
+        Money $openingCash,
         ShiftNumber $shiftNumber,
     ): self {
         if (trim($sessionId) === '') {
-            throw new \InvalidArgumentException('Session ID cannot be empty.');
+            throw new InvalidArgumentException('Session ID cannot be empty.');
         }
         if (trim($terminalId) === '') {
-            throw new \InvalidArgumentException('Terminal ID cannot be empty.');
+            throw new InvalidArgumentException('Terminal ID cannot be empty.');
         }
         if (trim($cashierId) === '') {
-            throw new \InvalidArgumentException('Cashier ID cannot be empty.');
+            throw new InvalidArgumentException('Cashier ID cannot be empty.');
         }
 
-        $shift               = new self();
-        $shift->id           = self::generateUuid();
-        $shift->session_id   = $sessionId;
-        $shift->terminal_id  = $terminalId;
-        $shift->cashier_id   = $cashierId;
+        $shift = new self;
+        $shift->id = self::generateUuid();
+        $shift->session_id = $sessionId;
+        $shift->terminal_id = $terminalId;
+        $shift->cashier_id = $cashierId;
         $shift->shift_number = $shiftNumber->value;
-        $shift->status       = ShiftStatus::Open;
+        $shift->status = ShiftStatus::Open;
         $shift->opening_cash = $openingCash->toArray();
-        $shift->opened_at    = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+        $shift->opened_at = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
 
         $shift->addEvent(ShiftOpened::now(
-            shiftId:           $shift->id,
-            sessionId:         $sessionId,
-            terminalId:        $terminalId,
-            cashierId:         $cashierId,
-            shiftNumber:       $shiftNumber->value,
+            shiftId: $shift->id,
+            sessionId: $sessionId,
+            terminalId: $terminalId,
+            cashierId: $cashierId,
+            shiftNumber: $shiftNumber->value,
             openingCashAmount: $openingCash->amount,
-            currency:          $openingCash->currency,
+            currency: $openingCash->currency,
         ));
 
         return $shift;
@@ -138,7 +144,7 @@ final class Shift extends Model
      */
     public function submitForClosure(Money $closingCount): void
     {
-        if (!in_array($this->status, [ShiftStatus::Open, ShiftStatus::Closing], true)) {
+        if (! in_array($this->status, [ShiftStatus::Open, ShiftStatus::Closing], true)) {
             throw InvalidShiftTransitionException::cannotTransition(
                 (string) $this->id,
                 $this->status,
@@ -148,19 +154,19 @@ final class Shift extends Model
 
         $this->guardSameCurrency($closingCount);
 
-        $this->status           = ShiftStatus::Closing;
-        $this->closing_count    = $closingCount->toArray();
-        $this->submitted_at     = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+        $this->status = ShiftStatus::Closing;
+        $this->closing_count = $closingCount->toArray();
+        $this->submitted_at = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
         $this->rejection_reason = null;
 
         $this->addEvent(ShiftSubmittedForClosure::now(
-            shiftId:            (string) $this->id,
-            sessionId:          (string) $this->session_id,
-            terminalId:         (string) $this->terminal_id,
-            cashierId:          (string) $this->cashier_id,
-            shiftNumber:        (int) $this->shift_number,
+            shiftId: (string) $this->id,
+            sessionId: (string) $this->session_id,
+            terminalId: (string) $this->terminal_id,
+            cashierId: (string) $this->cashier_id,
+            shiftNumber: (int) $this->shift_number,
             closingCountAmount: $closingCount->amount,
-            currency:           $closingCount->currency,
+            currency: $closingCount->currency,
         ));
     }
 
@@ -187,30 +193,30 @@ final class Shift extends Model
         $this->guardSameCurrency($expectedClosing);
 
         $closingCount = Money::fromArray($this->closing_count);
-        $variance     = $closingCount->subtract($expectedClosing);
+        $variance = $closingCount->subtract($expectedClosing);
 
-        $now      = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $openedAt = $this->opened_at instanceof \DateTimeInterface
-            ? \DateTimeImmutable::createFromInterface($this->opened_at)
-            : new \DateTimeImmutable((string) $this->opened_at, new \DateTimeZone('UTC'));
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $openedAt = $this->opened_at instanceof DateTimeInterface
+            ? DateTimeImmutable::createFromInterface($this->opened_at)
+            : new DateTimeImmutable((string) $this->opened_at, new DateTimeZone('UTC'));
         $durationMinutes = (int) max(0, (int) ceil(($now->getTimestamp() - $openedAt->getTimestamp()) / 60));
 
-        $this->status           = ShiftStatus::Closed;
+        $this->status = ShiftStatus::Closed;
         $this->expected_closing = $expectedClosing->toArray();
-        $this->variance         = $variance->toArray();
-        $this->closed_at        = $now->format('Y-m-d H:i:s');
+        $this->variance = $variance->toArray();
+        $this->closed_at = $now->format('Y-m-d H:i:s');
 
         $this->addEvent(ShiftApproved::now(
-            shiftId:               (string) $this->id,
-            sessionId:             (string) $this->session_id,
-            terminalId:            (string) $this->terminal_id,
-            cashierId:             (string) $this->cashier_id,
-            shiftNumber:           (int) $this->shift_number,
-            closingCountAmount:    $closingCount->amount,
+            shiftId: (string) $this->id,
+            sessionId: (string) $this->session_id,
+            terminalId: (string) $this->terminal_id,
+            cashierId: (string) $this->cashier_id,
+            shiftNumber: (int) $this->shift_number,
+            closingCountAmount: $closingCount->amount,
             expectedClosingAmount: $expectedClosing->amount,
-            varianceAmount:        $variance->amount,
-            currency:              $expectedClosing->currency,
-            durationMinutes:       $durationMinutes,
+            varianceAmount: $variance->amount,
+            currency: $expectedClosing->currency,
+            durationMinutes: $durationMinutes,
         ));
     }
 
@@ -233,17 +239,17 @@ final class Shift extends Model
             throw InvalidShiftTransitionException::noClosingCount((string) $this->id);
         }
 
-        $this->closing_count    = null;
-        $this->submitted_at     = null;
+        $this->closing_count = null;
+        $this->submitted_at = null;
         $this->rejection_reason = trim($reason);
 
         $this->addEvent(ShiftCountRejected::now(
-            shiftId:     (string) $this->id,
-            sessionId:   (string) $this->session_id,
-            terminalId:  (string) $this->terminal_id,
-            cashierId:   (string) $this->cashier_id,
+            shiftId: (string) $this->id,
+            sessionId: (string) $this->session_id,
+            terminalId: (string) $this->terminal_id,
+            cashierId: (string) $this->cashier_id,
             shiftNumber: (int) $this->shift_number,
-            reason:      trim($reason),
+            reason: trim($reason),
         ));
     }
 
@@ -315,7 +321,7 @@ final class Shift extends Model
         }
 
         $absoluteVariance = Money::fromArray($this->variance)->absolute();
-        $openingCash      = Money::fromArray($this->opening_cash)->absolute();
+        $openingCash = Money::fromArray($this->opening_cash)->absolute();
 
         if ($openingCash->isZero()) {
             return $absoluteVariance->isZero();

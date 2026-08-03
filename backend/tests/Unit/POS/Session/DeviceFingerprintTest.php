@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Session;
 
+use InvalidArgumentException;
 use Modules\POS\Session\Domain\ValueObjects\DeviceFingerprint;
 use PHPUnit\Framework\TestCase;
 
@@ -17,7 +18,7 @@ final class DeviceFingerprintTest extends TestCase
 
     public function test_empty_string_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Device fingerprint cannot be empty');
 
         new DeviceFingerprint('');
@@ -25,7 +26,7 @@ final class DeviceFingerprintTest extends TestCase
 
     public function test_whitespace_only_string_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new DeviceFingerprint('   ');
     }
@@ -40,14 +41,14 @@ final class DeviceFingerprintTest extends TestCase
     public function test_max_length_255_is_accepted(): void
     {
         $value = str_repeat('a', 255);
-        $fp    = new DeviceFingerprint($value);
+        $fp = new DeviceFingerprint($value);
 
         $this->assertSame($value, $fp->value);
     }
 
     public function test_length_256_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('exceeds maximum length');
 
         new DeviceFingerprint(str_repeat('a', 256));
@@ -64,7 +65,7 @@ final class DeviceFingerprintTest extends TestCase
 
     public function test_of_throws_when_only_whitespace(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         DeviceFingerprint::of('   ');
     }
@@ -72,7 +73,7 @@ final class DeviceFingerprintTest extends TestCase
     public function test_of_accepts_typical_hash_fingerprint(): void
     {
         $hash = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4';
-        $fp   = DeviceFingerprint::of($hash);
+        $fp = DeviceFingerprint::of($hash);
 
         $this->assertSame($hash, $fp->value);
     }

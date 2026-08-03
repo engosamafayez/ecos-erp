@@ -20,7 +20,7 @@ export function StockStatusBadge({ status }: StockStatusBadgeProps) {
 
   return (
     <Badge variant={VARIANT_MAP[status]}>
-      {t(`stockStatus.${status}`)}
+      {t($ => $.stockStatus[status])}
     </Badge>
   );
 }

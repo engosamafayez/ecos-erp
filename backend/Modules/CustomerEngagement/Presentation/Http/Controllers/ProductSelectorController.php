@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
@@ -27,7 +29,10 @@ class ProductSelectorController extends Controller
     public function show(string $productId): JsonResponse
     {
         $product = $this->selectorService->getProductDetails($productId);
-        if (!$product) { return response()->json(['message' => 'Not found'], 404); }
+        if (! $product) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
         return response()->json($product);
     }
 }

@@ -68,26 +68,26 @@ final class CampaignController extends Controller
     public function updateBusinessContext(Request $request, Campaign $campaign): JsonResponse
     {
         $validated = $request->validate([
-            'company_id'         => ['nullable', 'string'],
-            'brand_id'           => ['nullable', 'string'],
-            'channel_id'         => ['nullable', 'string'],
-            'cost_center'        => ['nullable', 'string', 'max:100'],
-            'marketing_team'     => ['nullable', 'string', 'max:100'],
+            'company_id' => ['nullable', 'string'],
+            'brand_id' => ['nullable', 'string'],
+            'channel_id' => ['nullable', 'string'],
+            'cost_center' => ['nullable', 'string', 'max:100'],
+            'marketing_team' => ['nullable', 'string', 'max:100'],
             'marketing_owner_id' => ['nullable', 'string'],
-            'business_unit'      => ['nullable', 'string', 'max:100'],
-            'season'             => ['nullable', 'string'],
-            'custom_season'      => ['nullable', 'string', 'max:100'],
-            'business_goal'      => ['nullable', 'string'],
-            'internal_status'    => ['nullable', 'string', 'max:50'],
-            'internal_priority'  => ['nullable', 'in:low,medium,high,critical'],
-            'internal_notes'     => ['nullable', 'string', 'max:2000'],
-            'internal_tags'      => ['nullable', 'array'],
+            'business_unit' => ['nullable', 'string', 'max:100'],
+            'season' => ['nullable', 'string'],
+            'custom_season' => ['nullable', 'string', 'max:100'],
+            'business_goal' => ['nullable', 'string'],
+            'internal_status' => ['nullable', 'string', 'max:50'],
+            'internal_priority' => ['nullable', 'in:low,medium,high,critical'],
+            'internal_notes' => ['nullable', 'string', 'max:2000'],
+            'internal_tags' => ['nullable', 'array'],
         ]);
 
         $context = $this->updateContext->execute(
             campaign: $campaign,
-            data:     $validated,
-            actorId:  $request->user()?->id,
+            data: $validated,
+            actorId: $request->user()?->id,
         );
 
         return response()->json([

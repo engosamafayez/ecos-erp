@@ -45,7 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // if the route doesn't exist it throws InvalidArgumentException before
         // AuthenticationException is created, bypassing every exception renderer.
         $middleware->alias([
-            'auth' => \App\Http\Middleware\Authenticate::class,
+            'auth' => App\Http\Middleware\Authenticate::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -74,6 +74,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
             }
+
             return null;
         });
 
@@ -81,6 +82,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
             }
+
             return null;
         });
 
@@ -88,6 +90,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
             }
+
             return null;
         });
 
@@ -95,6 +98,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
             }
+
             return null;
         });
 
@@ -102,6 +106,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
             }
+
             return null;
         });
 
@@ -110,6 +115,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
             }
+
             return null;
         });
 
@@ -118,6 +124,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
             }
+
             return null;
         });
     })->create();

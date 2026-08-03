@@ -22,22 +22,29 @@ final class ExchangeApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User                    $user;
+    private User $user;
+
     private SaleRepositoryInterface $saleRepo;
 
-    private const SESSION_ID   = 'a0000000-0000-4000-a000-000000000032';
-    private const SHIFT_ID     = 'b0000000-0000-4000-b000-000000000032';
-    private const TERMINAL_ID  = 'c0000000-0000-4000-c000-000000000032';
-    private const CASHIER_ID   = 'd0000000-0000-4000-d000-000000000032';
+    private const SESSION_ID = 'a0000000-0000-4000-a000-000000000032';
+
+    private const SHIFT_ID = 'b0000000-0000-4000-b000-000000000032';
+
+    private const TERMINAL_ID = 'c0000000-0000-4000-c000-000000000032';
+
+    private const CASHIER_ID = 'd0000000-0000-4000-d000-000000000032';
+
     private const PRODUCT_A_ID = 'e0000000-0000-4000-e000-000000000032';
+
     private const PRODUCT_B_ID = 'f0000000-0000-4000-f000-000000000032';
-    private const CURRENCY     = 'EGP';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user     = User::factory()->create();
+        $this->user = User::factory()->create();
         $this->saleRepo = app(SaleRepositoryInterface::class);
     }
 
@@ -80,9 +87,9 @@ final class ExchangeApiTest extends TestCase
         $this->actingAs($this->user)
             ->postJson('/api/pos/exchanges', [
                 'original_sale_id' => (string) $sale->id,
-                'cashier_id'       => self::CASHIER_ID,
-                'currency'         => self::CURRENCY,
-                'reason'           => 'defective',
+                'cashier_id' => self::CASHIER_ID,
+                'currency' => self::CURRENCY,
+                'reason' => 'defective',
                 // missing returned_lines and replacement_lines
             ])
             ->assertStatus(422);
@@ -104,16 +111,16 @@ final class ExchangeApiTest extends TestCase
     private function makePersistedSale(): Sale
     {
         $sale = Sale::record(
-            cartId:           'a0000000-cart-4000-a000-000000000032',
-            paymentId:        'a0000000-pay0-4000-a000-000000000032',
-            sessionId:        self::SESSION_ID,
-            shiftId:          self::SHIFT_ID,
-            terminalId:       self::TERMINAL_ID,
-            cashierId:        self::CASHIER_ID,
-            customerId:       null,
-            currency:         self::CURRENCY,
-            receiptNumber:    'SALE-EXC-API-001',
-            lines:            [
+            cartId: 'a0000000-cart-4000-a000-000000000032',
+            paymentId: 'a0000000-pay0-4000-a000-000000000032',
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            receiptNumber: 'SALE-EXC-API-001',
+            lines: [
                 new SaleLine(
                     'ln-exc-api-1', self::PRODUCT_A_ID, 'Widget A', 'WGT-001',
                     Quantity::of('1'), Money::of('100.00', self::CURRENCY),
@@ -121,11 +128,11 @@ final class ExchangeApiTest extends TestCase
                     Money::of('100.00', self::CURRENCY), 0,
                 ),
             ],
-            subtotal:         Money::of('100.00', self::CURRENCY),
-            discountTotal:    Money::of('0.00', self::CURRENCY),
-            total:            Money::of('100.00', self::CURRENCY),
-            amountPaid:       Money::of('100.00', self::CURRENCY),
-            changeGiven:      Money::of('0.00', self::CURRENCY),
+            subtotal: Money::of('100.00', self::CURRENCY),
+            discountTotal: Money::of('0.00', self::CURRENCY),
+            total: Money::of('100.00', self::CURRENCY),
+            amountPaid: Money::of('100.00', self::CURRENCY),
+            changeGiven: Money::of('0.00', self::CURRENCY),
             paymentSummaries: [
                 new PaymentSummaryLine(
                     PaymentMethodType::Cash,
@@ -145,32 +152,32 @@ final class ExchangeApiTest extends TestCase
     private function makePayload(string $saleId): array
     {
         return [
-            'original_sale_id'  => $saleId,
-            'cashier_id'        => self::CASHIER_ID,
-            'currency'          => self::CURRENCY,
-            'reason'            => 'defective',
-            'returned_lines'    => [
+            'original_sale_id' => $saleId,
+            'cashier_id' => self::CASHIER_ID,
+            'currency' => self::CURRENCY,
+            'reason' => 'defective',
+            'returned_lines' => [
                 [
                     'original_line_id' => 'ln-exc-api-1',
-                    'product_id'       => self::PRODUCT_A_ID,
-                    'product_name'     => 'Widget A',
-                    'sku'              => 'WGT-001',
-                    'quantity'         => '1',
-                    'unit_price'       => ['amount' => '100.00', 'currency' => self::CURRENCY],
-                    'line_total'       => ['amount' => '100.00', 'currency' => self::CURRENCY],
-                    'sort_order'       => 0,
+                    'product_id' => self::PRODUCT_A_ID,
+                    'product_name' => 'Widget A',
+                    'sku' => 'WGT-001',
+                    'quantity' => '1',
+                    'unit_price' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+                    'line_total' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+                    'sort_order' => 0,
                 ],
             ],
             'replacement_lines' => [
                 [
                     'original_line_id' => null,
-                    'product_id'       => self::PRODUCT_B_ID,
-                    'product_name'     => 'Widget B',
-                    'sku'              => 'WGT-002',
-                    'quantity'         => '1',
-                    'unit_price'       => ['amount' => '100.00', 'currency' => self::CURRENCY],
-                    'line_total'       => ['amount' => '100.00', 'currency' => self::CURRENCY],
-                    'sort_order'       => 0,
+                    'product_id' => self::PRODUCT_B_ID,
+                    'product_name' => 'Widget B',
+                    'sku' => 'WGT-002',
+                    'quantity' => '1',
+                    'unit_price' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+                    'line_total' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+                    'sort_order' => 0,
                 ],
             ],
         ];

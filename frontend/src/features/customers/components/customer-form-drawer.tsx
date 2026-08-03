@@ -32,10 +32,23 @@ type Props = {
 
 type Step = 'phone' | 'form';
 
+type DuplicateInfo = { id: string; name: string; code: string } | null;
+
 function extractMessage(error: unknown): string {
   return axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
     ? error.response.data.message
     : 'Something went wrong. Please try again.';
+}
+
+function extractDuplicate(error: unknown): DuplicateInfo {
+  if (!axios.isAxiosError(error)) return null;
+  const errors = error.response?.data?.errors;
+  if (!errors) return null;
+  const code = Array.isArray(errors.phone) ? errors.phone[0] : null;
+  if (code !== 'duplicate_customer_phone') return null;
+  const ec = errors.existing_customer;
+  if (!ec || typeof ec.id !== 'string') return null;
+  return { id: ec.id, name: ec.name ?? '', code: ec.code ?? '' };
 }
 
 /**
@@ -62,6 +75,7 @@ export function CustomerFormDrawer({
   const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null);
   const [serverError, setServerError]     = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess]     = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState<DuplicateInfo>(null);
 
   const phoneRef = useRef<HTMLInputElement>(null);
   const stepRef  = useRef(step);
@@ -82,6 +96,7 @@ export function CustomerFormDrawer({
       setServerError(null);
       setFoundCustomer(null);
       setSaveSuccess(false);
+      setDuplicateInfo(null);
       if (isEdit) {
         setStep('form');
         form.reset(toFormValues(customer));
@@ -117,7 +132,7 @@ export function CustomerFormDrawer({
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open]);
 
   // ── Form ───────────────────────────────────────────────────────────────────
@@ -133,6 +148,7 @@ export function CustomerFormDrawer({
       setServerError(null);
       setFoundCustomer(null);
       setSaveSuccess(false);
+      setDuplicateInfo(null);
       setPhoneInput('');
       setStep(isEdit ? 'form' : 'phone');
     }
@@ -172,44 +188,51 @@ export function CustomerFormDrawer({
   const handleSubmit = (values: CustomerFormValues) => {
     setServerError(null);
     setSaveSuccess(false);
+    setDuplicateInfo(null);
     const payload = toPayload(values);
 
     if (isEdit && customer) {
       updateCustomer.mutate({ id: customer.id, payload }, {
         onSuccess: () => {
-          // Remain inside drawer — show success alert, user closes manually.
           setSaveSuccess(true);
         },
-        onError: (error) => setServerError(extractMessage(error)),
+        onError: (error) => {
+          const dup = extractDuplicate(error);
+          if (dup) { setDuplicateInfo(dup); return; }
+          setServerError(extractMessage(error));
+        },
       });
     } else {
       createCustomer.mutate(payload, {
         onSuccess: (newCustomer) => {
-          // Open the new customer's profile and close the form drawer.
           if (onFoundExisting) onFoundExisting(newCustomer);
           handleOpenChange(false);
         },
-        onError: (error) => setServerError(extractMessage(error)),
+        onError: (error) => {
+          const dup = extractDuplicate(error);
+          if (dup) { setDuplicateInfo(dup); return; }
+          setServerError(extractMessage(error));
+        },
       });
     }
   };
 
   // ── Title ──────────────────────────────────────────────────────────────────
-  const title       = isEdit ? t('drawer.editTitle')   : t('drawer.createTitle');
-  const description = isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle');
+  const title       = isEdit ? t($ => $.drawer.editTitle)   : t($ => $.drawer.createTitle);
+  const description = isEdit ? t($ => $.drawer.editSubtitle) : t($ => $.drawer.createSubtitle);
 
   // ── Phone step footer ──────────────────────────────────────────────────────
   const phoneFooter = (
     <>
       <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-        {tCommon('common.cancel')}
+        {tCommon($ => $.common.cancel)}
       </Button>
       <Button
         type="button"
         onClick={() => void handlePhoneContinue()}
         disabled={!phoneInput.trim() || isChecking}
       >
-        {isChecking ? t('drawer.phoneStep.checking') : t('drawer.phoneStep.continue')}
+        {isChecking ? t($ => $.drawer.phoneStep.checking) : t($ => $.drawer.phoneStep.continue)}
       </Button>
     </>
   );
@@ -224,18 +247,18 @@ export function CustomerFormDrawer({
           className="mr-auto text-xs"
           onClick={() => { setStep('phone'); setFoundCustomer(null); setSaveSuccess(false); }}
         >
-          ← {t('drawer.phoneStep.label')}
+          ← {t($ => $.drawer.phoneStep.label)}
         </Button>
       ) : null}
       <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-        {tCommon('common.cancel')}
+        {tCommon($ => $.common.cancel)}
       </Button>
       <Button type="submit" form={FORM_ID} disabled={isPending}>
         {isPending
-          ? t('drawer.saving')
+          ? t($ => $.drawer.saving)
           : isEdit
-            ? t('drawer.submitEdit')
-            : t('drawer.submitCreate')}
+            ? t($ => $.drawer.submitEdit)
+            : t($ => $.drawer.submitCreate)}
       </Button>
     </>
   );
@@ -253,7 +276,7 @@ export function CustomerFormDrawer({
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium" htmlFor="phone-step-input">
-              {t('drawer.phoneStep.label')}
+              {t($ => $.drawer.phoneStep.label)}
             </label>
             <Input
               id="phone-step-input"
@@ -263,24 +286,24 @@ export function CustomerFormDrawer({
                 setPhoneInput(e.target.value);
                 setFoundCustomer(null);
               }}
-              placeholder={t('drawer.phoneStep.placeholder')}
+              placeholder={t($ => $.drawer.phoneStep.placeholder)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void handlePhoneContinue();
               }}
               className="font-mono"
             />
             <p className="text-xs text-muted-foreground">
-              {t('drawer.phoneStep.description')}
+              {t($ => $.drawer.phoneStep.description)}
             </p>
           </div>
 
           {foundCustomer ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
               <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                {t('drawer.foundCustomer.title')}
+                {t($ => $.drawer.foundCustomer.title)}
               </p>
               <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
-                {t('drawer.foundCustomer.description')}
+                {t($ => $.drawer.foundCustomer.description)}
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <Button
@@ -290,14 +313,14 @@ export function CustomerFormDrawer({
                     handleOpenChange(false);
                   }}
                 >
-                  {t('drawer.foundCustomer.open')}
+                  {t($ => $.drawer.foundCustomer.open)}
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => setFoundCustomer(null)}
                 >
-                  {t('drawer.foundCustomer.cancel')}
+                  {t($ => $.drawer.foundCustomer.cancel)}
                 </Button>
               </div>
             </div>
@@ -311,20 +334,50 @@ export function CustomerFormDrawer({
           {saveSuccess ? (
             <Alert className="mb-4 border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30">
               <AlertTitle className="text-emerald-800 dark:text-emerald-300">
-                {t('drawer.savedMessage')}
+                {t($ => $.drawer.savedMessage)}
               </AlertTitle>
             </Alert>
           ) : null}
 
           {serverError ? (
             <Alert variant="destructive" className="mb-4">
-              <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
+              <AlertTitle>{t($ => $.drawer.errorTitle)}</AlertTitle>
               <AlertDescription>{serverError}</AlertDescription>
             </Alert>
           ) : null}
 
+          {duplicateInfo ? (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                {t($ => $.drawer.foundCustomer.title)}
+              </p>
+              <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
+                {t($ => $.drawer.foundCustomer.description)}
+              </p>
+              <p className="mt-1 text-xs font-mono text-amber-600 dark:text-amber-500">
+                {duplicateInfo.name} ({duplicateInfo.code})
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    if (onFoundExisting) {
+                      onFoundExisting({ id: duplicateInfo.id } as Customer);
+                    }
+                    handleOpenChange(false);
+                  }}
+                >
+                  {t($ => $.drawer.foundCustomer.open)}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setDuplicateInfo(null)}>
+                  {t($ => $.drawer.foundCustomer.cancel)}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit}>
-            <CustomerFormFields />
+            <CustomerFormFields isEdit={isEdit} />
           </EntityForm>
         </>
       ) : null}

@@ -51,7 +51,7 @@ final class ProcessProductWebhookJob implements ShouldQueue
                 'product.created' => $syncer->syncCreated($this->channel, $this->payload),
                 'product.updated' => $syncer->syncUpdated($this->channel, $this->payload),
                 'product.deleted' => $syncer->syncDeleted($this->channel, $this->payload),
-                default           => ['action' => 'unknown_topic', 'product_id' => null],
+                default => ['action' => 'unknown_topic', 'product_id' => null],
             };
 
             $logService->markSuccess($log, $result, $this->channel);

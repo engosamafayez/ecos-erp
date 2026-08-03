@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\CashDrawer;
 
-use DateTimeImmutable;
 use Modules\POS\CashDrawer\Domain\Events\CashInRecorded;
 use Modules\POS\CashDrawer\Domain\Events\CashOutRecorded;
 use Modules\POS\CashDrawer\Domain\Events\ClosingCountRecorded;
@@ -119,8 +118,8 @@ final class CashDrawerDomainEventsTest extends TestCase
     {
         $data = $this->drawerOpened()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'drawer_id', 'terminal_id', 'session_id', 'shift_id', 'cashier_id',
-                  'currency', 'opening_float'] as $key) {
+            'drawer_id', 'terminal_id', 'session_id', 'shift_id', 'cashier_id',
+            'currency', 'opening_float'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -129,7 +128,7 @@ final class CashDrawerDomainEventsTest extends TestCase
     {
         $data = $this->cashInRecorded()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'drawer_id', 'movement_id',
-                  'shift_id', 'amount', 'currency', 'note'] as $key) {
+            'shift_id', 'amount', 'currency', 'note'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -138,7 +137,7 @@ final class CashDrawerDomainEventsTest extends TestCase
     {
         $data = $this->cashOutRecorded()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'drawer_id', 'movement_id',
-                  'shift_id', 'amount', 'currency', 'note'] as $key) {
+            'shift_id', 'amount', 'currency', 'note'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -147,7 +146,7 @@ final class CashDrawerDomainEventsTest extends TestCase
     {
         $data = $this->closingCountRecorded()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'drawer_id',
-                  'shift_id', 'actual_count', 'currency'] as $key) {
+            'shift_id', 'actual_count', 'currency'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -156,8 +155,8 @@ final class CashDrawerDomainEventsTest extends TestCase
     {
         $data = $this->drawerClosed()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'drawer_id', 'shift_id',
-                  'terminal_id', 'opening_float', 'expected_balance', 'closing_count',
-                  'variance', 'currency'] as $key) {
+            'terminal_id', 'opening_float', 'expected_balance', 'closing_count',
+            'variance', 'currency'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }

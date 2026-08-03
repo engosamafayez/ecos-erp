@@ -43,10 +43,10 @@ final class UpdateBrandRequest extends FormRequest
             ],
             'logo' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'is_active'             => ['boolean'],
+            'is_active' => ['boolean'],
             'default_target_margin' => ['nullable', 'numeric', 'min:0', 'max:99.9999'],
-            'default_markup'        => ['nullable', 'numeric', 'min:0'],
-            'default_discount_pct'  => ['nullable', 'numeric', 'min:0', 'max:99.9999'],
+            'default_markup' => ['nullable', 'numeric', 'min:0'],
+            'default_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:99.9999'],
         ];
     }
 }

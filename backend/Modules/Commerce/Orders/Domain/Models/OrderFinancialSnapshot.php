@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use RuntimeException;
 
 /**
  * Immutable financial snapshot captured exactly once at order confirmation.
@@ -24,8 +25,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *   - Force-deletes throw ImmutableSnapshotException.
  *   - The integrity_hash detects any DB-level tampering.
  *
- * @property string      $id
- * @property string      $order_id
+ * @property string $id
+ * @property string $order_id
  * @property string|null $previous_snapshot_id
  * @property string|null $company_id
  * @property string|null $brand_id
@@ -33,40 +34,40 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $channel_name
  * @property string|null $customer_id
  * @property string|null $customer_name
- * @property string      $currency
+ * @property string $currency
  * @property string|null $payment_method
  * @property string|null $shipping_rule_id
  * @property string|null $shipping_rule_name
  * @property string|null $shipping_zone
- * @property bool        $shipping_override_applied
+ * @property bool $shipping_override_applied
  * @property string|null $shipping_override_by
- * @property float       $subtotal
- * @property float       $discount_amount
+ * @property float $subtotal
+ * @property float $discount_amount
  * @property string|null $discount_type
- * @property float       $shipping_cost
- * @property float       $deposit_amount
- * @property float       $remaining_balance
- * @property float       $grand_total
- * @property float|null  $total_cogs
- * @property float|null  $gross_profit
- * @property float|null  $total_raw_material_cost
- * @property float|null  $total_packaging_cost
- * @property float|null  $total_manufacturing_cost
- * @property float|null  $total_other_cost
- * @property float|null  $target_margin_percent
- * @property float|null  $actual_margin_percent
- * @property float|null  $margin_difference
+ * @property float $shipping_cost
+ * @property float $deposit_amount
+ * @property float $remaining_balance
+ * @property float $grand_total
+ * @property float|null $total_cogs
+ * @property float|null $gross_profit
+ * @property float|null $total_raw_material_cost
+ * @property float|null $total_packaging_cost
+ * @property float|null $total_manufacturing_cost
+ * @property float|null $total_other_cost
+ * @property float|null $target_margin_percent
+ * @property float|null $actual_margin_percent
+ * @property float|null $margin_difference
  * @property string|null $margin_status
- * @property string      $snapshot_uuid
- * @property int         $snapshot_version
+ * @property string $snapshot_uuid
+ * @property int $snapshot_version
  * @property string|null $created_by
- * @property string      $pricing_engine_version
- * @property string      $cost_engine_version
+ * @property string $pricing_engine_version
+ * @property string $cost_engine_version
  * @property string|null $recipe_version
  * @property string|null $brand_pricing_policy_version
  * @property string|null $shipping_pricing_version
  * @property string|null $integrity_hash
- * @property bool        $locked
+ * @property bool $locked
  * @property \Illuminate\Support\Carbon|null $locked_at
  */
 final class OrderFinancialSnapshot extends Model
@@ -132,25 +133,25 @@ final class OrderFinancialSnapshot extends Model
     protected function casts(): array
     {
         return [
-            'subtotal'                  => 'float',
-            'discount_amount'           => 'float',
-            'shipping_cost'             => 'float',
-            'deposit_amount'            => 'float',
-            'remaining_balance'         => 'float',
-            'grand_total'               => 'float',
-            'total_cogs'                => 'float',
-            'gross_profit'              => 'float',
-            'total_raw_material_cost'   => 'float',
-            'total_packaging_cost'      => 'float',
-            'total_manufacturing_cost'  => 'float',
-            'total_other_cost'          => 'float',
-            'target_margin_percent'     => 'float',
-            'actual_margin_percent'     => 'float',
-            'margin_difference'         => 'float',
-            'snapshot_version'          => 'integer',
+            'subtotal' => 'float',
+            'discount_amount' => 'float',
+            'shipping_cost' => 'float',
+            'deposit_amount' => 'float',
+            'remaining_balance' => 'float',
+            'grand_total' => 'float',
+            'total_cogs' => 'float',
+            'gross_profit' => 'float',
+            'total_raw_material_cost' => 'float',
+            'total_packaging_cost' => 'float',
+            'total_manufacturing_cost' => 'float',
+            'total_other_cost' => 'float',
+            'target_margin_percent' => 'float',
+            'actual_margin_percent' => 'float',
+            'margin_difference' => 'float',
+            'snapshot_version' => 'integer',
             'shipping_override_applied' => 'boolean',
-            'locked'                    => 'boolean',
-            'locked_at'                 => 'datetime',
+            'locked' => 'boolean',
+            'locked_at' => 'datetime',
         ];
     }
 
@@ -161,11 +162,11 @@ final class OrderFinancialSnapshot extends Model
      */
     protected static function booted(): void
     {
-        static::updating(static fn () => false);
+        self::updating(static fn () => false);
 
-        static::deleting(static function (self $model): never {
-            throw new \RuntimeException(
-                "Financial snapshots are immutable. Snapshot {$model->id} cannot be deleted."
+        self::deleting(static function (self $model): never {
+            throw new RuntimeException(
+                "Financial snapshots are immutable. Snapshot {$model->id} cannot be deleted.",
             );
         });
     }

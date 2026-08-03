@@ -5,7 +5,11 @@
   "actions": {
     "new": "وحدة جديدة",
     "create": "إنشاء وحدة",
-    "edit": "تعديل الوحدة"
+    "edit": "تعديل الوحدة",
+    "ariaLabel": "إجراءات لـ {{name}}"
+  },
+  "breadcrumb": {
+    "inventory": "المخزون"
   },
   "columns": {
     "code": "الرمز",
@@ -29,7 +33,8 @@
     "submitCreate": "إنشاء وحدة",
     "submitEdit": "حفظ التغييرات",
     "saving": "جارٍ الحفظ…",
-    "errorTitle": "تعذر الحفظ"
+    "errorTitle": "تعذر الحفظ",
+    "errorFallback": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
   },
   "delete": {
     "title": "حذف الوحدة",

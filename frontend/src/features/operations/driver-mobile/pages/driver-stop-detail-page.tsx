@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, MapPin, Package, DollarSign, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ const ACTION_BUTTONS: { type: DeliveryActionType; label: string; variant: 'defau
 ];
 
 export function DriverStopDetailPage() {
+  const { money } = useFormatter();
   const { tripId = '', stopId = '' } = useParams<{ tripId: string; stopId: string }>();
   const navigate = useNavigate();
 
@@ -131,7 +133,7 @@ export function DriverStopDetailPage() {
                     {line.quantity}× {line.product_name}
                   </span>
                   <span>
-                    EGP {Number(line.line_total).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
+                    {money(Number(line.line_total))}
                   </span>
                 </div>
               ))}
@@ -151,18 +153,18 @@ export function DriverStopDetailPage() {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Total</span>
-            <span>EGP {Number(order?.grand_total ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}</span>
+            <span>{money(Number(order?.grand_total ?? 0))}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Deposit Paid</span>
             <span className="text-green-600">
-              - EGP {Number(order?.deposit_paid ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
+              - {money(Number(order?.deposit_paid ?? 0))}
             </span>
           </div>
           <div className="flex justify-between text-sm font-semibold border-t pt-1.5">
             <span>Balance Due</span>
             <span>
-              EGP {Number(order?.remaining_balance ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
+              {money(Number(order?.remaining_balance ?? 0))}
             </span>
           </div>
         </div>
@@ -176,7 +178,7 @@ export function DriverStopDetailPage() {
             </Badge>
             {stop.notes && <p className="text-xs text-muted-foreground">{stop.notes}</p>}
             <p className="text-xs text-muted-foreground">
-              Collected: EGP {Number(stop.collected_amount ?? 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
+              Collected: {money(Number(stop.collected_amount ?? 0))}
             </p>
           </div>
         )}

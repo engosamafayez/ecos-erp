@@ -82,16 +82,16 @@ class PurchaseOrder extends Model
     protected function casts(): array
     {
         return [
-            'status'          => PurchaseOrderStatus::class,
-            'order_date'      => 'date',
-            'expected_date'   => 'date',
-            'approved_at'     => 'datetime',
-            'subtotal'        => 'decimal:2',
+            'status' => PurchaseOrderStatus::class,
+            'order_date' => 'date',
+            'expected_date' => 'date',
+            'approved_at' => 'datetime',
+            'subtotal' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'shipping_amount' => 'decimal:2',
-            'additional_costs'=> 'decimal:2',
-            'grand_total'     => 'decimal:2',
-            'total'           => 'decimal:2',
+            'additional_costs' => 'decimal:2',
+            'grand_total' => 'decimal:2',
+            'total' => 'decimal:2',
         ];
     }
 

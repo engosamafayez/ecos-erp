@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronRight, Repeat2, ShieldAlert } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -12,10 +13,10 @@ import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from './operations-ba
 import { ExceptionDrawer } from './exception-drawer';
 
 const SEVERITY_FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'critical', label: 'Critical' },
-  { key: 'warning', label: 'Warning' },
-  { key: 'info', label: 'Info' },
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'critical', labelKey: 'common.critical' },
+  { key: 'warning', labelKey: 'operations.exceptions.filter.warning' },
+  { key: 'info', labelKey: 'operations.exceptions.filter.info' },
 ] as const;
 
 type SeverityFilterKey = (typeof SEVERITY_FILTERS)[number]['key'];
@@ -28,6 +29,7 @@ type SeverityFilterKey = (typeof SEVERITY_FILTERS)[number]['key'];
  * stream of routine noise.
  */
 export function ExceptionsPanel() {
+  const { t } = useTranslation('logistics');
   const [severity, setSeverity] = useState<SeverityFilterKey>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -48,13 +50,17 @@ export function ExceptionsPanel() {
         <Alert>
           <ShieldAlert className="size-4" />
           <AlertDescription className="text-xs">
-            {alerts.length} alert{alerts.length === 1 ? '' : 's'} live
+            {t($ => $.operations.exceptions.alertsLive, { count: alerts.length })}
             {summary && summary.overdue_for_escalation > 0
-              ? ` · ${summary.overdue_for_escalation} past their escalation threshold`
+              ? ` · ${t($ => $.operations.exceptions.pastEscalationThreshold, {
+                  value: summary.overdue_for_escalation,
+                })}`
               : ''}
             .{' '}
             {bySource.length > 0 &&
-              `Owned elsewhere — ${bySource.map(([s, n]) => `${s}: ${n}`).join(', ')}.`}
+              t($ => $.operations.exceptions.ownedElsewhere, {
+                list: bySource.map(([s, n]) => `${s}: ${n}`).join(', '),
+              })}
           </AlertDescription>
         </Alert>
       )}
@@ -68,7 +74,7 @@ export function ExceptionsPanel() {
             className="h-8 text-xs"
             onClick={() => setSeverity(f.key)}
           >
-            {f.label}
+            {t(f.labelKey)}
           </Button>
         ))}
       </div>
@@ -77,9 +83,9 @@ export function ExceptionsPanel() {
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
         <div className="rounded-lg border bg-card py-16 text-center">
-          <p className="text-sm font-medium">Nothing needs a person</p>
+          <p className="text-sm font-medium">{t($ => $.operations.exceptions.emptyTitle)}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            The queue is empty, which is what a healthy operation looks like.
+            {t($ => $.operations.exceptions.emptyBody)}
           </p>
         </div>
       ) : (
@@ -89,7 +95,7 @@ export function ExceptionsPanel() {
               <li key={exception.id}>
                 <button
                   type="button"
-                  className="flex w-full items-start gap-2 p-3 text-left hover:bg-muted/40"
+                  className="flex w-full items-start gap-2 p-3 text-start hover:bg-muted/40"
                   onClick={() => {
                     setSelectedId(exception.id);
                     setDrawerOpen(true);
@@ -110,7 +116,7 @@ export function ExceptionsPanel() {
                       )}
                       {exception.is_overdue_for_escalation && (
                         <Badge variant="destructive" className="text-[10px]">
-                          Overdue
+                          {t($ => $.operations.exceptions.overdue)}
                         </Badge>
                       )}
                     </div>
@@ -120,10 +126,13 @@ export function ExceptionsPanel() {
                       </p>
                     )}
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {exception.category_label} · open {exception.age_minutes} min
+                      {exception.category_label} ·{' '}
+                      {t($ => $.operations.exceptions.openMinutes, { minutes: exception.age_minutes })}
                       {exception.unacknowledged_minutes !== null
-                        ? ` · unlooked-at ${exception.unacknowledged_minutes} min`
-                        : ' · acknowledged'}
+                        ? ` · ${t($ => $.operations.exceptions.unlookedAtMinutes, {
+                            minutes: exception.unacknowledged_minutes,
+                          })}`
+                        : ` · ${t($ => $.operations.exceptions.acknowledged)}`}
                     </p>
                   </div>
                   <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

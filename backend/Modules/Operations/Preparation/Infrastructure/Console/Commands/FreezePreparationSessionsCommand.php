@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Modules\Operations\Preparation\Application\Services\DailyPreparationSessionManager;
 use Modules\Operations\Preparation\Domain\Models\PreparationSession;
 use Modules\Operations\Preparation\Domain\Models\PreparationSessionPolicy;
+use Throwable;
 
 /**
  * CR-PREP-001 Part 3 — Auto-freeze preparation sessions at their configured freeze_time.
@@ -32,7 +33,7 @@ final class FreezePreparationSessionsCommand extends Command
 
     public function handle(DailyPreparationSessionManager $manager): int
     {
-        $now  = now();
+        $now = now();
         $today = today()->toDateString();
         $isDryRun = (bool) $this->option('dry-run');
         $warehouseFilter = $this->option('warehouse');
@@ -53,6 +54,7 @@ final class FreezePreparationSessionsCommand extends Command
 
         if ($eligible->isEmpty()) {
             $this->info('No sessions due for freezing at this time.');
+
             return self::SUCCESS;
         }
 
@@ -67,6 +69,7 @@ final class FreezePreparationSessionsCommand extends Command
 
         if ($sessions->isEmpty()) {
             $this->info('No active sessions to freeze.');
+
             return self::SUCCESS;
         }
 
@@ -83,6 +86,7 @@ final class FreezePreparationSessionsCommand extends Command
             if ($isDryRun) {
                 $this->line("  DRY-RUN  session {$session->session_number} (warehouse {$session->warehouse_id}) would be frozen");
                 $frozen++;
+
                 continue;
             }
 
@@ -90,12 +94,12 @@ final class FreezePreparationSessionsCommand extends Command
                 $manager->freezeSession($session, 'system');
                 $frozen++;
                 $this->line("  FROZEN  {$session->session_number}");
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $failed++;
                 $this->error("  FAIL  {$session->session_number} — {$e->getMessage()}");
                 Log::error('FreezePreparationSessions failed', [
                     'session_id' => $session->id,
-                    'error'      => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

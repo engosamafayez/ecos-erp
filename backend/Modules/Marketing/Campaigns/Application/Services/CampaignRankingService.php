@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Marketing\Campaigns\Application\Services;
 
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Marketing\Campaigns\Domain\Models\Campaign;
 
@@ -20,22 +19,20 @@ use Modules\Marketing\Campaigns\Domain\Models\Campaign;
 final class CampaignRankingService
 {
     /**
-     * @param  string   $metric  spend|ctr|cpc|cpm|purchases|leads|messages|reach
-     * @param  string   $level   campaign|adset|ad
-     * @param  int      $limit
-     * @param  string|null $companyId
-     * @param  string|null $datePreset  last_7d|last_30d|last_90d
+     * @param  string  $metric  spend|ctr|cpc|cpm|purchases|leads|messages|reach
+     * @param  string  $level  campaign|adset|ad
+     * @param  string|null  $datePreset  last_7d|last_30d|last_90d
      * @return list<array<string, mixed>>
      */
     public function top(
-        string  $metric     = 'spend',
-        string  $level      = 'campaign',
-        int     $limit      = 10,
-        ?string $companyId  = null,
+        string $metric = 'spend',
+        string $level = 'campaign',
+        int $limit = 10,
+        ?string $companyId = null,
         ?string $datePreset = 'last_30d',
     ): array {
         $allowedMetrics = ['spend', 'ctr', 'cpc', 'cpm', 'purchases', 'leads', 'messages', 'reach', 'impressions', 'clicks'];
-        $metric         = in_array($metric, $allowedMetrics, true) ? $metric : 'spend';
+        $metric = in_array($metric, $allowedMetrics, true) ? $metric : 'spend';
 
         // For ordering: spend/purchases/leads/messages/reach DESC, cpc ASC (lower is better)
         $order = in_array($metric, ['cpc', 'cpm', 'cost_per_result'], true) ? 'ASC' : 'DESC';
@@ -44,7 +41,7 @@ final class CampaignRankingService
 
         // Aggregate latest insights per entity
         $results = DB::table('marketing_campaign_insights as ins')
-            ->selectRaw("
+            ->selectRaw('
                 ins.marketing_campaign_id,
                 ins.marketing_campaign_ad_set_id,
                 ins.marketing_campaign_ad_id,
@@ -59,7 +56,7 @@ final class CampaignRankingService
                 SUM(ins.reach)       as total_reach,
                 SUM(ins.impressions) as total_impressions,
                 SUM(ins.clicks)      as total_clicks
-            ")
+            ')
             ->where('ins.level', $level)
             ->whereBetween('ins.date_start', [$dateRange['start'], $dateRange['end']])
             ->when($companyId, fn ($q) => $q->where(function ($q2) use ($companyId) {
@@ -80,24 +77,24 @@ final class CampaignRankingService
         return $results->map(function ($row) use ($level) {
             $entityId = match ($level) {
                 'adset' => $row->marketing_campaign_ad_set_id,
-                'ad'    => $row->marketing_campaign_ad_id,
+                'ad' => $row->marketing_campaign_ad_id,
                 default => $row->marketing_campaign_id,
             };
 
             return [
-                'entity_id'        => $entityId,
-                'campaign_id'      => $row->marketing_campaign_id,
-                'level'            => $level,
-                'total_spend'      => $row->total_spend,
-                'avg_ctr'          => $row->avg_ctr,
-                'avg_cpc'          => $row->avg_cpc,
-                'avg_cpm'          => $row->avg_cpm,
-                'total_purchases'  => $row->total_purchases,
-                'total_leads'      => $row->total_leads,
-                'total_messages'   => $row->total_messages,
-                'total_reach'      => $row->total_reach,
+                'entity_id' => $entityId,
+                'campaign_id' => $row->marketing_campaign_id,
+                'level' => $level,
+                'total_spend' => $row->total_spend,
+                'avg_ctr' => $row->avg_ctr,
+                'avg_cpc' => $row->avg_cpc,
+                'avg_cpm' => $row->avg_cpm,
+                'total_purchases' => $row->total_purchases,
+                'total_leads' => $row->total_leads,
+                'total_messages' => $row->total_messages,
+                'total_reach' => $row->total_reach,
                 'total_impressions' => $row->total_impressions,
-                'total_clicks'     => $row->total_clicks,
+                'total_clicks' => $row->total_clicks,
             ];
         })->toArray();
     }
@@ -105,8 +102,7 @@ final class CampaignRankingService
     /**
      * Rank by business context dimension (company, brand, channel, marketing_owner).
      *
-     * @param  string $dimension  company_id|brand_id|channel_id|marketing_owner_id
-     * @param  string $metric
+     * @param  string  $dimension  company_id|brand_id|channel_id|marketing_owner_id
      * @return list<array<string, mixed>>
      */
     public function topByDimension(string $dimension, string $metric = 'spend', int $limit = 10): array
@@ -139,11 +135,11 @@ final class CampaignRankingService
     private function dateRangeFromPreset(string $preset): array
     {
         return match ($preset) {
-            'last_7d'  => ['start' => now()->subDays(7)->toDateString(),  'end' => now()->toDateString()],
+            'last_7d' => ['start' => now()->subDays(7)->toDateString(),  'end' => now()->toDateString()],
             'last_90d' => ['start' => now()->subDays(90)->toDateString(), 'end' => now()->toDateString()],
             'last_180d' => ['start' => now()->subDays(180)->toDateString(), 'end' => now()->toDateString()],
             'this_month' => ['start' => now()->startOfMonth()->toDateString(), 'end' => now()->toDateString()],
-            default     => ['start' => now()->subDays(30)->toDateString(), 'end' => now()->toDateString()],
+            default => ['start' => now()->subDays(30)->toDateString(), 'end' => now()->toDateString()],
         };
     }
 }

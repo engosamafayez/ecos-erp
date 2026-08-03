@@ -92,10 +92,10 @@ export const ordersService = {
   },
 
   async getShippingQuote(payload: ShippingQuotePayload): Promise<ShippingQuoteResult> {
-    // eslint-disable-next-line no-console
+     
     if (import.meta.env.DEV) console.log('[Shipping][STEP 1] POST /shipping/quote →', payload);
     const { data } = await api.post<ApiResponse<ShippingQuoteResult>>('/shipping/quote', payload);
-    // eslint-disable-next-line no-console
+     
     if (import.meta.env.DEV) console.log('[Shipping][STEP 2] raw API response data.data →', JSON.stringify(data.data));
     return data.data;
   },

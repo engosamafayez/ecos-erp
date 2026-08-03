@@ -6,7 +6,7 @@ namespace Modules\POS\Exchange\Domain\Enums;
 
 enum ExchangeStatus: string
 {
-    case Draft     = 'draft';
+    case Draft = 'draft';
     case Confirmed = 'confirmed';
     case Completed = 'completed';
     case Cancelled = 'cancelled';
@@ -14,7 +14,7 @@ enum ExchangeStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Draft     => 'Draft',
+            self::Draft => 'Draft',
             self::Confirmed => 'Confirmed',
             self::Completed => 'Completed',
             self::Cancelled => 'Cancelled',
@@ -38,6 +38,6 @@ enum ExchangeStatus: string
 
     public function canBeCancelled(): bool
     {
-        return !$this->isTerminal();
+        return ! $this->isTerminal();
     }
 }

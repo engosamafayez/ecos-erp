@@ -7,6 +7,7 @@ namespace Modules\Manufacturing\ManufacturingExecution\Domain\Contracts;
 use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ComponentConsumptionRecord;
 use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ManufacturingExecutionContext;
 use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ManufacturingExecutionResult;
+use Throwable;
 
 /**
  * Lifecycle extension points for the ManufacturingExecutor.
@@ -43,7 +44,7 @@ interface ManufacturingExecutorHooksInterface
      * have been consumed from inventory and FIFO layers updated.
      *
      * @param  list<ComponentConsumptionRecord>  $consumptionRecords
-     * @param  list<string>                       $ledgerIds
+     * @param  list<string>  $ledgerIds
      */
     public function onAfterInventoryConsumption(
         ManufacturingExecutionContext $context,
@@ -70,5 +71,5 @@ interface ManufacturingExecutorHooksInterface
      * Called when any exception escapes the execution flow (pre-guard or transaction failure).
      * Do NOT re-throw — the executor re-throws the original exception after this hook.
      */
-    public function onAfterRollback(ManufacturingExecutionContext $context, \Throwable $exception): void;
+    public function onAfterRollback(ManufacturingExecutionContext $context, Throwable $exception): void;
 }

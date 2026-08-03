@@ -38,11 +38,11 @@ class ValidationEngineService
         $warnings = collect($results)->where('severity', ValidationSeverity::WARNING->value)->count();
 
         return [
-            'total_issues'    => count($results),
+            'total_issues' => count($results),
             'blocking_errors' => $blocking,
-            'warnings'        => $warnings,
-            'can_publish'     => $blocking === 0,
-            'results'         => $results,
+            'warnings' => $warnings,
+            'can_publish' => $blocking === 0,
+            'results' => $results,
         ];
     }
 
@@ -50,14 +50,14 @@ class ValidationEngineService
     {
         $issues = [];
 
-        if (!$draft->budget_type) {
+        if (! $draft->budget_type) {
             $issues[] = $this->issue(ValidationSeverity::BLOCKING, 'budget', 'Budget type is required.', 'budget_type');
         }
 
         $hasBudget = ($draft->budget_type?->value === 'daily' && $draft->daily_budget > 0)
             || ($draft->budget_type?->value === 'lifetime' && $draft->lifetime_budget > 0);
 
-        if (!$hasBudget) {
+        if (! $hasBudget) {
             $issues[] = $this->issue(ValidationSeverity::BLOCKING, 'budget', 'A budget amount is required.', 'daily_budget');
         }
 
@@ -72,16 +72,16 @@ class ValidationEngineService
     {
         $issues = [];
 
-        if (!$draft->ad_account_id) {
+        if (! $draft->ad_account_id) {
             $issues[] = $this->issue(ValidationSeverity::BLOCKING, 'assets', 'Ad Account is required.', 'ad_account_id');
         }
-        if (!$draft->page_id) {
+        if (! $draft->page_id) {
             $issues[] = $this->issue(ValidationSeverity::BLOCKING, 'assets', 'Facebook Page is required.', 'page_id');
         }
-        if (!$draft->pixel_id) {
+        if (! $draft->pixel_id) {
             $issues[] = $this->issue(ValidationSeverity::WARNING, 'pixel', 'No Pixel connected. Conversion tracking will be unavailable.', 'pixel_id');
         }
-        if (!$draft->connection_id) {
+        if (! $draft->connection_id) {
             $issues[] = $this->issue(ValidationSeverity::BLOCKING, 'assets', 'Marketing Connection is required.', 'connection_id');
         }
 
@@ -94,14 +94,15 @@ class ValidationEngineService
 
         if ($draft->creatives->isEmpty()) {
             $issues[] = $this->issue(ValidationSeverity::BLOCKING, 'creative', 'At least one creative is required.', 'creatives');
+
             return $issues;
         }
 
         foreach ($draft->creatives as $creative) {
-            if (!$creative->primary_text && !$creative->headline) {
+            if (! $creative->primary_text && ! $creative->headline) {
                 $issues[] = $this->issue(ValidationSeverity::WARNING, 'creative', 'Creative is missing primary text or headline.', "creatives.{$creative->id}");
             }
-            if (!$creative->destination_url) {
+            if (! $creative->destination_url) {
                 $issues[] = $this->issue(ValidationSeverity::BLOCKING, 'url', "Creative #{$creative->sort_order} is missing a destination URL.", "creatives.{$creative->id}.destination_url");
             }
         }
@@ -113,8 +114,9 @@ class ValidationEngineService
     {
         $issues = [];
 
-        if (!$draft->audience) {
+        if (! $draft->audience) {
             $issues[] = $this->issue(ValidationSeverity::WARNING, 'audience', 'Audience targeting is not configured.', 'audience');
+
             return $issues;
         }
 
@@ -156,7 +158,7 @@ class ValidationEngineService
                 ->where(fn ($q) => $q->where('company_id', $draft->company_id)->orWhereNull('company_id'))
                 ->first();
 
-        if (!$policy) {
+        if (! $policy) {
             return $issues;
         }
 
@@ -168,11 +170,11 @@ class ValidationEngineService
             $issues[] = $this->issue(ValidationSeverity::BLOCKING, 'policy', "Budget exceeds maximum policy limit of {$policy->max_daily_budget}.", 'daily_budget');
         }
 
-        if ($policy->pixel_required && !$draft->pixel_id) {
+        if ($policy->pixel_required && ! $draft->pixel_id) {
             $issues[] = $this->issue(ValidationSeverity::BLOCKING, 'policy', 'Governance policy requires a Pixel to be connected.', 'pixel_id');
         }
 
-        if ($policy->naming_pattern && $draft->name && !preg_match($policy->naming_pattern, $draft->name)) {
+        if ($policy->naming_pattern && $draft->name && ! preg_match($policy->naming_pattern, $draft->name)) {
             $issues[] = $this->issue(ValidationSeverity::WARNING, 'naming', "Campaign name does not match naming standard. Example: {$policy->naming_example}", 'name');
         }
 
@@ -199,10 +201,10 @@ class ValidationEngineService
     {
         return [
             'validation_type' => $type,
-            'severity'        => $severity->value,
-            'message'         => $message,
-            'field_path'      => $field,
-            'is_resolved'     => false,
+            'severity' => $severity->value,
+            'message' => $message,
+            'field_path' => $field,
+            'is_resolved' => false,
         ];
     }
 }

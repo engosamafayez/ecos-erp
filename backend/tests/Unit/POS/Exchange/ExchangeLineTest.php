@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Exchange;
 
+use InvalidArgumentException;
 use Modules\POS\Exchange\Domain\ValueObjects\ExchangeLine;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Quantity;
@@ -12,14 +13,17 @@ use PHPUnit\Framework\TestCase;
 final class ExchangeLineTest extends TestCase
 {
     private Quantity $qty1;
+
     private Quantity $qty2;
-    private Money    $price100;
-    private Money    $priceZero;
+
+    private Money $price100;
+
+    private Money $priceZero;
 
     protected function setUp(): void
     {
-        $this->qty1     = Quantity::of('1');
-        $this->qty2     = Quantity::of('2');
+        $this->qty1 = Quantity::of('1');
+        $this->qty2 = Quantity::of('2');
         $this->price100 = Money::of('100.00', 'EGP');
         $this->priceZero = Money::zero('EGP');
     }
@@ -37,7 +41,7 @@ final class ExchangeLineTest extends TestCase
 
     public function test_returned_rejects_empty_original_line_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Original line ID is required');
 
         ExchangeLine::returned('', 'prod-1', 'Blue Shirt', 'SKU-001', $this->qty1, $this->price100);
@@ -45,7 +49,7 @@ final class ExchangeLineTest extends TestCase
 
     public function test_returned_rejects_empty_product_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Product ID cannot be empty');
 
         ExchangeLine::returned('line-01', '', 'Blue Shirt', 'SKU-001', $this->qty1, $this->price100);
@@ -53,7 +57,7 @@ final class ExchangeLineTest extends TestCase
 
     public function test_returned_rejects_empty_product_name(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Product name cannot be empty');
 
         ExchangeLine::returned('line-01', 'prod-1', '', 'SKU-001', $this->qty1, $this->price100);
@@ -61,7 +65,7 @@ final class ExchangeLineTest extends TestCase
 
     public function test_returned_rejects_non_positive_quantity(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('quantity must be positive');
 
         ExchangeLine::returned('line-01', 'prod-1', 'Shirt', 'SKU-001', Quantity::zero(), $this->price100);
@@ -69,7 +73,7 @@ final class ExchangeLineTest extends TestCase
 
     public function test_returned_rejects_negative_unit_price(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('unit price cannot be negative');
 
         ExchangeLine::returned('line-01', 'prod-1', 'Shirt', 'SKU-001', $this->qty1, Money::of('-10.00', 'EGP'));
@@ -96,7 +100,7 @@ final class ExchangeLineTest extends TestCase
 
     public function test_replacement_rejects_empty_product_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         ExchangeLine::replacement('', 'Red Shirt', 'SKU-002', $this->qty1, $this->price100);
     }
@@ -108,12 +112,12 @@ final class ExchangeLineTest extends TestCase
         $line = ExchangeLine::returned('l1', 'prod-1', 'Shirt', 'SKU', $this->qty2, $this->price100);
 
         $this->assertSame('200.00', $line->lineTotal->amount);
-        $this->assertSame('EGP',    $line->lineTotal->currency);
+        $this->assertSame('EGP', $line->lineTotal->currency);
     }
 
     public function test_line_total_with_fractional_quantity(): void
     {
-        $qty  = Quantity::of('1.5');
+        $qty = Quantity::of('1.5');
         $line = ExchangeLine::replacement('prod-1', 'Fabric', 'FAB-001', $qty, Money::of('20.00', 'EGP'));
 
         $this->assertSame('30.00', $line->lineTotal->amount);
@@ -139,17 +143,17 @@ final class ExchangeLineTest extends TestCase
 
     public function test_to_array_has_expected_keys(): void
     {
-        $line  = ExchangeLine::returned('l1', 'prod-1', 'Shirt', 'SKU', $this->qty1, $this->price100);
+        $line = ExchangeLine::returned('l1', 'prod-1', 'Shirt', 'SKU', $this->qty1, $this->price100);
         $array = $line->toArray();
 
         $this->assertArrayHasKey('original_line_id', $array);
-        $this->assertArrayHasKey('product_id',       $array);
-        $this->assertArrayHasKey('product_name',     $array);
-        $this->assertArrayHasKey('sku',              $array);
-        $this->assertArrayHasKey('quantity',         $array);
-        $this->assertArrayHasKey('unit_price',       $array);
-        $this->assertArrayHasKey('line_total',       $array);
-        $this->assertArrayHasKey('sort_order',       $array);
+        $this->assertArrayHasKey('product_id', $array);
+        $this->assertArrayHasKey('product_name', $array);
+        $this->assertArrayHasKey('sku', $array);
+        $this->assertArrayHasKey('quantity', $array);
+        $this->assertArrayHasKey('unit_price', $array);
+        $this->assertArrayHasKey('line_total', $array);
+        $this->assertArrayHasKey('sort_order', $array);
     }
 
     public function test_returned_line_round_trips_via_array(): void
@@ -157,14 +161,14 @@ final class ExchangeLineTest extends TestCase
         $original = ExchangeLine::returned('line-42', 'prod-99', 'Test Product', 'TEST-SKU', $this->qty2, $this->price100, 3);
         $restored = ExchangeLine::fromArray($original->toArray());
 
-        $this->assertSame($original->originalLineId,     $restored->originalLineId);
-        $this->assertSame($original->productId,          $restored->productId);
-        $this->assertSame($original->productName,        $restored->productName);
-        $this->assertSame($original->sku,                $restored->sku);
-        $this->assertSame($original->quantity->value,    $restored->quantity->value);
-        $this->assertSame($original->unitPrice->amount,  $restored->unitPrice->amount);
-        $this->assertSame($original->lineTotal->amount,  $restored->lineTotal->amount);
-        $this->assertSame($original->sortOrder,          $restored->sortOrder);
+        $this->assertSame($original->originalLineId, $restored->originalLineId);
+        $this->assertSame($original->productId, $restored->productId);
+        $this->assertSame($original->productName, $restored->productName);
+        $this->assertSame($original->sku, $restored->sku);
+        $this->assertSame($original->quantity->value, $restored->quantity->value);
+        $this->assertSame($original->unitPrice->amount, $restored->unitPrice->amount);
+        $this->assertSame($original->lineTotal->amount, $restored->lineTotal->amount);
+        $this->assertSame($original->sortOrder, $restored->sortOrder);
     }
 
     public function test_replacement_line_round_trips_via_array(): void
@@ -173,7 +177,7 @@ final class ExchangeLineTest extends TestCase
         $restored = ExchangeLine::fromArray($original->toArray());
 
         $this->assertNull($restored->originalLineId);
-        $this->assertSame('prod-7',  $restored->productId);
-        $this->assertSame('75.50',   $restored->unitPrice->amount);
+        $this->assertSame('prod-7', $restored->productId);
+        $this->assertSame('75.50', $restored->unitPrice->amount);
     }
 }

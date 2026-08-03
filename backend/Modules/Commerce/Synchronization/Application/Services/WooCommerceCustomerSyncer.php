@@ -15,23 +15,23 @@ use Modules\Sales\Customers\Domain\Models\Customer;
 final class WooCommerceCustomerSyncer
 {
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array{action: string, customer_id: string|null}
      */
     public function sync(array $payload): array
     {
-        $billing  = is_array($payload['billing'] ?? null) ? $payload['billing'] : [];
-        $email    = trim((string) ($billing['email'] ?? ($payload['email'] ?? '')));
+        $billing = is_array($payload['billing'] ?? null) ? $payload['billing'] : [];
+        $email = trim((string) ($billing['email'] ?? ($payload['email'] ?? '')));
         $firstName = trim((string) ($billing['first_name'] ?? ''));
-        $lastName  = trim((string) ($billing['last_name'] ?? ''));
-        $name      = trim("{$firstName} {$lastName}");
+        $lastName = trim((string) ($billing['last_name'] ?? ''));
+        $name = trim("{$firstName} {$lastName}");
 
         if ($name === '') {
             $name = $email !== '' ? $email : 'WooCommerce Customer';
         }
 
-        $phone   = trim((string) ($billing['phone'] ?? ''));
-        $city    = trim((string) ($billing['city'] ?? ''));
+        $phone = trim((string) ($billing['phone'] ?? ''));
+        $city = trim((string) ($billing['city'] ?? ''));
         $country = trim((string) ($billing['country'] ?? ''));
         $address = trim((string) ($billing['address_1'] ?? ''));
 
@@ -66,13 +66,13 @@ final class WooCommerceCustomerSyncer
 
         $created = Customer::withoutEvents(function () use ($email, $name, $phone, $city, $country, $address): Customer {
             return Customer::query()->create([
-                'code'     => $this->nextCustomerCode(),
-                'name'     => $name,
-                'email'    => $email,
-                'phone'    => $phone !== '' ? $phone : null,
-                'city'     => $city !== '' ? $city : null,
-                'country'  => $country !== '' ? $country : null,
-                'address'  => $address !== '' ? $address : null,
+                'code' => $this->nextCustomerCode(),
+                'name' => $name,
+                'email' => $email,
+                'phone' => $phone !== '' ? $phone : null,
+                'city' => $city !== '' ? $city : null,
+                'country' => $country !== '' ? $country : null,
+                'address' => $address !== '' ? $address : null,
                 'is_active' => true,
             ]);
         });
@@ -94,6 +94,6 @@ final class WooCommerceCustomerSyncer
 
         $current = (int) str_replace('CUS-', '', (string) $last);
 
-        return 'CUS-' . str_pad((string) ($current + 1), 3, '0', STR_PAD_LEFT);
+        return 'CUS-'.str_pad((string) ($current + 1), 3, '0', STR_PAD_LEFT);
     }
 }

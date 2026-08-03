@@ -14,20 +14,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Seeded once; brand zones link back via master_zone_id.
  * code is permanent and immutable — set once, never changed.
  *
- * @property string      $id
- * @property string      $master_governorate_id
- * @property string      $name
+ * @property string $id
+ * @property string $master_governorate_id
+ * @property string $name
  * @property string|null $code
- * @property int         $sort_order
- * @property bool        $is_active
- * @property bool        $is_archived
- * @property int|null    $estimated_delivery_sla_hours
+ * @property int $sort_order
+ * @property bool $is_active
+ * @property bool $is_archived
+ * @property int|null $estimated_delivery_sla_hours
  * @property string|null $default_warehouse_id
  * @property string|null $default_logistics_hub
  * @property string|null $delivery_difficulty
- * @property int|null    $priority
- * @property float|null  $latitude
- * @property float|null  $longitude
+ * @property int|null $priority
+ * @property float|null $latitude
+ * @property float|null $longitude
  * @property string|null $polygon_id
  * @property string|null $notes
  */
@@ -64,13 +64,13 @@ class MasterZone extends Model
     protected function casts(): array
     {
         return [
-            'sort_order'                    => 'integer',
-            'is_active'                     => 'boolean',
-            'is_archived'                   => 'boolean',
-            'estimated_delivery_sla_hours'  => 'integer',
-            'priority'                      => 'integer',
-            'latitude'                      => 'float',
-            'longitude'                     => 'float',
+            'sort_order' => 'integer',
+            'is_active' => 'boolean',
+            'is_archived' => 'boolean',
+            'estimated_delivery_sla_hours' => 'integer',
+            'priority' => 'integer',
+            'latitude' => 'float',
+            'longitude' => 'float',
         ];
     }
 

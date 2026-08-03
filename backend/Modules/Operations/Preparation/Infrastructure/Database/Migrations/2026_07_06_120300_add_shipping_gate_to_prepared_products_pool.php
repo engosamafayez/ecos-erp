@@ -28,7 +28,7 @@ return new class extends Migration
         DB::statement('UPDATE prepared_products_pool SET shipping_gate_opened = true');
 
         DB::statement(
-            'ALTER TABLE prepared_products_pool ADD INDEX idx_pool_shipping_gate (shipping_gate_opened)'
+            'ALTER TABLE prepared_products_pool ADD INDEX idx_pool_shipping_gate (shipping_gate_opened)',
         );
     }
 

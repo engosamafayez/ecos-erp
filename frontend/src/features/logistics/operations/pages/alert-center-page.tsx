@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BellRing, Check, Repeat2 } from 'lucide-react';
 
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
@@ -20,11 +21,11 @@ import type { ExceptionSeverity, ExceptionStatus, OperationalAlert } from '../ty
 import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from '../components/operations-badges';
 import { ExceptionDrawer } from '../components/exception-drawer';
 
-const SEVERITY_FILTERS: Array<{ key: ExceptionSeverity | 'all'; label: string }> = [
-  { key: 'all', label: 'All' },
-  { key: 'critical', label: 'Critical' },
-  { key: 'warning', label: 'Warning' },
-  { key: 'info', label: 'Info' },
+const SEVERITY_FILTERS: Array<{ key: ExceptionSeverity | 'all'; labelKey: string }> = [
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'critical', labelKey: 'common.critical' },
+  { key: 'warning', labelKey: 'operations.alertCenter.severity.warning' },
+  { key: 'info', labelKey: 'operations.alertCenter.severity.info' },
 ];
 
 /**
@@ -35,6 +36,7 @@ const SEVERITY_FILTERS: Array<{ key: ExceptionSeverity | 'all'; label: string }>
  * exception, and resolving it makes the alert disappear on its own.
  */
 function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const [severity, setSeverity] = useState<ExceptionSeverity | 'all'>('all');
   const { data: alerts, isLoading } = useAlerts();
@@ -56,7 +58,7 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
             className="h-8 text-xs"
             onClick={() => setSeverity(f.key)}
           >
-            {f.label}
+            {t(f.labelKey)}
           </Button>
         ))}
       </div>
@@ -66,9 +68,9 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
       ) : rows.length === 0 ? (
         <div className="rounded-lg border bg-card py-16 text-center">
           <BellRing className="mx-auto mb-3 size-10 text-muted-foreground/20" />
-          <p className="text-sm font-medium">No live alerts</p>
+          <p className="text-sm font-medium">{t($ => $.operations.alertCenter.empty.title)}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Quiet is what a healthy operation looks like.
+            {t($ => $.operations.alertCenter.empty.hint)}
           </p>
         </div>
       ) : (
@@ -79,7 +81,7 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
                 <SeverityIcon severity={alert.severity} />
                 <button
                   type="button"
-                  className="min-w-0 flex-1 text-left"
+                  className="min-w-0 flex-1 text-start"
                   onClick={() => onOpen(alert.exception_id)}
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -98,16 +100,20 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
                     )}
                     {alert.is_overdue && (
                       <Badge variant="destructive" className="text-[10px]">
-                        Overdue
+                        {t($ => $.operations.alertCenter.overdue)}
                       </Badge>
                     )}
                   </div>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    open {alert.age_minutes} min
+                    {t($ => $.operations.alertCenter.meta.open, { minutes: alert.age_minutes })}
                     {alert.unacknowledged_minutes !== null
-                      ? ` · unlooked-at ${alert.unacknowledged_minutes} min`
-                      : ' · acknowledged'}
-                    {alert.escalation_level > 0 ? ` · level ${alert.escalation_level}` : ''}
+                      ? t($ => $.operations.alertCenter.meta.unacknowledgedFor, {
+                          minutes: alert.unacknowledged_minutes,
+                        })
+                      : t($ => $.operations.alertCenter.meta.acknowledged)}
+                    {alert.escalation_level > 0
+                      ? t($ => $.operations.alertCenter.meta.level, { level: alert.escalation_level })
+                      : ''}
                   </p>
                 </button>
                 {alert.unacknowledged_minutes !== null && (
@@ -118,14 +124,17 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
                     disabled={acknowledge.isPending}
                     onClick={() =>
                       acknowledge.mutate(alert.exception_id, {
-                        onSuccess: () => toast({ title: 'Acknowledged.' }),
+                        onSuccess: () => toast({ title: t($ => $.operations.alertCenter.toast.acknowledged) }),
                         onError: () =>
-                          toast({ title: 'That could not be acknowledged.', variant: 'destructive' }),
+                          toast({
+                            title: t($ => $.operations.alertCenter.toast.acknowledgeFailed),
+                            variant: 'destructive',
+                          }),
                       })
                     }
                   >
-                    <Check className="mr-1 size-3.5" />
-                    Ack
+                    <Check className="me-1 size-3.5" />
+                    {t($ => $.operations.alertCenter.ack)}
                   </Button>
                 )}
               </li>
@@ -137,13 +146,14 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
   );
 }
 
-const HISTORY_STATUSES: Array<{ key: ExceptionStatus; label: string }> = [
-  { key: 'resolved', label: 'Resolved' },
-  { key: 'auto_resolved', label: 'Cleared on its own' },
-  { key: 'suppressed', label: 'Suppressed' },
+const HISTORY_STATUSES: Array<{ key: ExceptionStatus; labelKey: string }> = [
+  { key: 'resolved', labelKey: 'operations.alertCenter.historyStatus.resolved' },
+  { key: 'auto_resolved', labelKey: 'operations.alertCenter.historyStatus.autoResolved' },
+  { key: 'suppressed', labelKey: 'operations.alertCenter.historyStatus.suppressed' },
 ];
 
 function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {
+  const { t } = useTranslation('logistics');
   const [status, setStatus] = useState<ExceptionStatus>('resolved');
   const { data, isLoading } = useExceptions({ status });
 
@@ -160,7 +170,7 @@ function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {
             className="h-8 text-xs"
             onClick={() => setStatus(s.key)}
           >
-            {s.label}
+            {t(s.labelKey)}
           </Button>
         ))}
       </div>
@@ -168,7 +178,9 @@ function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">Nothing in this state.</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">
+          {t($ => $.operations.alertCenter.history.empty)}
+        </p>
       ) : (
         <div className="overflow-hidden rounded-lg border bg-card">
           <ul className="divide-y">
@@ -176,7 +188,7 @@ function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {
               <li key={exception.id}>
                 <button
                   type="button"
-                  className="flex w-full items-start gap-2 p-3 text-left hover:bg-muted/40"
+                  className="flex w-full items-start gap-2 p-3 text-start hover:bg-muted/40"
                   onClick={() => onOpen(exception.id)}
                 >
                   <SeverityIcon severity={exception.severity} />
@@ -209,6 +221,7 @@ function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {
  * engine exists.
  */
 export function AlertCenterPage() {
+  const { t } = useTranslation('logistics');
   const { data: summary, refetch, isFetching } = useAlertSummary();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -219,18 +232,21 @@ export function AlertCenterPage() {
   };
 
   const metrics = [
-    { id: 'total', icon: BellRing, label: 'Live Alerts', value: summary?.total ?? 0, isLoading: !summary },
-    { id: 'critical', icon: BellRing, label: 'Critical', value: summary?.critical ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
-    { id: 'unack', icon: BellRing, label: 'Unacknowledged', value: summary?.unacknowledged ?? 0, isLoading: !summary, colorClass: 'text-amber-600' },
-    { id: 'overdue', icon: BellRing, label: 'Overdue', value: summary?.overdue ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
+    { id: 'total', icon: BellRing, label: t($ => $.operations.alertCenter.metrics.live), value: summary?.total ?? 0, isLoading: !summary },
+    { id: 'critical', icon: BellRing, label: t($ => $.common.critical), value: summary?.critical ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
+    { id: 'unack', icon: BellRing, label: t($ => $.operations.alertCenter.metrics.unacknowledged), value: summary?.unacknowledged ?? 0, isLoading: !summary, colorClass: 'text-amber-600' },
+    { id: 'overdue', icon: BellRing, label: t($ => $.operations.alertCenter.overdue), value: summary?.overdue ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Operations' }]}
-        title="Alert Center"
-        description="Live operational alerts — the Phase 4 exception registry, prioritised"
+        breadcrumbs={[
+          { label: t($ => $.operations.alertCenter.breadcrumbRoot) },
+          { label: t($ => $.operations.alertCenter.breadcrumbSection) },
+        ]}
+        title={t($ => $.operations.alertCenter.title)}
+        description={t($ => $.operations.alertCenter.description)}
         metrics={metrics}
       />
 
@@ -245,9 +261,10 @@ export function AlertCenterPage() {
           <Tabs defaultValue="live" className="w-full">
             <TabsList>
               <TabsTrigger value="live">
-                Live{summary && summary.total > 0 ? ` (${summary.total})` : ''}
+                {t($ => $.operations.alertCenter.tabs.live)}
+                {summary && summary.total > 0 ? ` (${summary.total})` : ''}
               </TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="history">{t($ => $.common.history)}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="live" className="pt-4">

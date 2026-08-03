@@ -16,7 +16,6 @@ use Modules\Operations\DemandAnalysis\Application\Services\MaterialDemandCalcula
 use Modules\Operations\DemandAnalysis\Application\Services\MissingMaterialCalculator;
 use Modules\Operations\DemandAnalysis\Application\Services\ProductDemandCalculator;
 use Modules\Operations\DemandAnalysis\Application\Services\WaveKpiCalculator;
-use Modules\Operations\DemandAnalysis\Domain\Events\MaterialDemandUpdated;
 use Modules\Operations\DemandAnalysis\Domain\Events\ProductDemandUpdated;
 use Modules\Operations\DemandAnalysis\Domain\Events\WaveDemandUpdated;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
@@ -29,24 +28,26 @@ class DemandProjectionBuilderTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company                  $company;
-    private Warehouse                $warehouse;
+    private Company $company;
+
+    private Warehouse $warehouse;
+
     private DemandCalculationService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
 
-        $productCalc = new ProductDemandCalculator();
-        $repository  = new DemandReadRepository();
-        $builder     = new DemandProjectionBuilder(
+        $productCalc = new ProductDemandCalculator;
+        $repository = new DemandReadRepository;
+        $builder = new DemandProjectionBuilder(
             $productCalc,
-            new MaterialDemandCalculator(),
-            new MissingMaterialCalculator(),
-            new WaveKpiCalculator(),
+            new MaterialDemandCalculator,
+            new MissingMaterialCalculator,
+            new WaveKpiCalculator,
             $repository,
         );
 
@@ -59,15 +60,15 @@ class DemandProjectionBuilderTest extends TestCase
     {
         Event::fake();
 
-        $wave    = $this->makeWave();
+        $wave = $this->makeWave();
         $product = $this->makeProduct('Widget');
-        $order   = $this->makeOrderWithLine($wave, $product, qty: 10.0);
+        $order = $this->makeOrderWithLine($wave, $product, qty: 10.0);
 
         $this->service->recalculate($wave, 'test');
 
         $this->assertDatabaseHas('wave_product_demand', [
             'preparation_wave_id' => $wave->id,
-            'product_id'          => $product,
+            'product_id' => $product,
         ]);
 
         $this->assertDatabaseHas('wave_kpis', [
@@ -79,7 +80,7 @@ class DemandProjectionBuilderTest extends TestCase
     {
         Event::fake();
 
-        $wave    = $this->makeWave();
+        $wave = $this->makeWave();
         $product = $this->makeProduct('Widget');
         $this->makeOrderWithLine($wave, $product, qty: 5.0);
 
@@ -95,10 +96,10 @@ class DemandProjectionBuilderTest extends TestCase
     {
         Event::fake();
 
-        $wave     = $this->makeWave();
+        $wave = $this->makeWave();
         $productA = $this->makeProduct('Product A');
         $productB = $this->makeProduct('Product B');
-        $orderA   = $this->makeOrderWithLine($wave, $productA, 5.0);
+        $orderA = $this->makeOrderWithLine($wave, $productA, 5.0);
         $this->makeOrderWithLine($wave, $productB, 20.0);
 
         // Full build first
@@ -126,7 +127,7 @@ class DemandProjectionBuilderTest extends TestCase
 
     public function test_repeated_full_recalculation_does_not_duplicate_rows(): void
     {
-        $wave    = $this->makeWave();
+        $wave = $this->makeWave();
         $product = $this->makeProduct('X');
         $this->makeOrderWithLine($wave, $product, 5.0);
 
@@ -144,7 +145,7 @@ class DemandProjectionBuilderTest extends TestCase
 
     public function test_repeated_events_produce_identical_projections(): void
     {
-        $wave    = $this->makeWave();
+        $wave = $this->makeWave();
         $product = $this->makeProduct('Y');
         $this->makeOrderWithLine($wave, $product, 10.0);
 
@@ -184,7 +185,7 @@ class DemandProjectionBuilderTest extends TestCase
             ->where('preparation_wave_id', $wave2->id)
             ->first();
 
-        $this->assertEquals(5.0,  (float) $row1->required_qty);
+        $this->assertEquals(5.0, (float) $row1->required_qty);
         $this->assertEquals(99.0, (float) $row2->required_qty);
     }
 
@@ -207,20 +208,20 @@ class DemandProjectionBuilderTest extends TestCase
     private function makeWave(?string $warehouseId = null): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $warehouseId ?? $this->warehouse->id,
-            'wave_number'          => 'PREP-PROJ-' . random_int(1, 99999),
-            'planning_date'        => today()->toDateString(),
-            'status'               => WaveStatus::Collecting->value,
-            'orders_count'         => 0,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $warehouseId ?? $this->warehouse->id,
+            'wave_number' => 'PREP-PROJ-'.random_int(1, 99999),
+            'planning_date' => today()->toDateString(),
+            'status' => WaveStatus::Collecting->value,
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'wave_type'            => 'engine',
-            'created_by'           => 'test',
-            'updated_by'           => 'test',
+            'shortage_detected' => false,
+            'wave_type' => 'engine',
+            'created_by' => 'test',
+            'updated_by' => 'test',
         ]);
     }
 
@@ -228,14 +229,15 @@ class DemandProjectionBuilderTest extends TestCase
     {
         $id = (string) Str::uuid();
         DB::table('products')->insert([
-            'id'           => $id,
-            'name'         => $name,
-            'sku'          => 'SKU-' . random_int(1000, 9999),
+            'id' => $id,
+            'name' => $name,
+            'sku' => 'SKU-'.random_int(1000, 9999),
             'product_type' => 'finished_good',
-            'is_active'    => true,
-            'created_at'   => now(),
-            'updated_at'   => now(),
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
+
         return $id;
     }
 
@@ -243,39 +245,39 @@ class DemandProjectionBuilderTest extends TestCase
     {
         $orderId = (string) Str::uuid();
         DB::table('orders')->insert([
-            'id'                    => $orderId,
-            'company_id'            => $wave->company_id,
+            'id' => $orderId,
+            'company_id' => $wave->company_id,
             'assigned_warehouse_id' => $wave->warehouse_id,
-            'customer_id'           => (string) Str::uuid(),
-            'order_number'          => 'ORD-' . random_int(10000, 99999),
-            'status'                => 'confirmed',
-            'order_date'            => today()->toDateString(),
-            'created_at'            => now(),
-            'updated_at'            => now(),
+            'customer_id' => (string) Str::uuid(),
+            'order_number' => 'ORD-'.random_int(10000, 99999),
+            'status' => 'confirmed',
+            'order_date' => today()->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         DB::table('order_lines')->insert([
-            'id'          => (string) Str::uuid(),
-            'order_id'    => $orderId,
-            'product_id'  => $productId,
-            'quantity'    => $qty,
-            'prepared_qty'=> 0,
-            'unit_price'  => 10.0,
-            'line_total'  => $qty * 10.0,
-            'created_at'  => now(),
-            'updated_at'  => now(),
+            'id' => (string) Str::uuid(),
+            'order_id' => $orderId,
+            'product_id' => $productId,
+            'quantity' => $qty,
+            'prepared_qty' => 0,
+            'unit_price' => 10.0,
+            'line_total' => $qty * 10.0,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         PreparationWaveOrder::create([
-            'company_id'           => $wave->company_id,
-            'preparation_wave_id'  => $wave->id,
-            'order_id'             => $orderId,
-            'order_number'         => 'ORD-' . random_int(10000, 99999),
-            'order_confirmed_at'   => now(),
-            'is_paid'              => false,
+            'company_id' => $wave->company_id,
+            'preparation_wave_id' => $wave->id,
+            'order_id' => $orderId,
+            'order_number' => 'ORD-'.random_int(10000, 99999),
+            'order_confirmed_at' => now(),
+            'is_paid' => false,
             'preparation_priority' => 5,
-            'added_at'             => now(),
-            'added_by'             => 'test',
+            'added_at' => now(),
+            'added_by' => 'test',
         ]);
 
         return $orderId;

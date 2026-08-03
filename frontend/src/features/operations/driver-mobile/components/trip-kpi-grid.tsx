@@ -1,4 +1,5 @@
 import type { DriverTripKpis } from '../types/driver-mobile';
+import { useFormatter } from '@/hooks/use-formatter';
 
 interface TripKpiGridProps {
   kpis: DriverTripKpis;
@@ -11,13 +12,14 @@ interface KpiTile {
 }
 
 export function TripKpiGrid({ kpis }: TripKpiGridProps) {
+  const { money } = useFormatter();
   const tiles: KpiTile[] = [
     { label: 'Total Orders', value: kpis.total_orders,     color: 'text-gray-900 dark:text-gray-100' },
     { label: 'Pending',      value: kpis.pending,           color: 'text-blue-600' },
     { label: 'Delivered',    value: kpis.delivered,         color: 'text-green-600' },
     { label: 'Partial',      value: kpis.partial,           color: 'text-amber-600' },
     { label: 'Failed',       value: kpis.failed,            color: 'text-red-600' },
-    { label: 'Collections',  value: `EGP ${Number(kpis.total_collections).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}`, color: 'text-emerald-600' },
+    { label: 'Collections',  value: money(Number(kpis.total_collections)), color: 'text-emerald-600' },
   ];
 
   return (

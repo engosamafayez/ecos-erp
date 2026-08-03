@@ -29,7 +29,7 @@ return new class extends Migration
         if (DB::getDriverName() === 'pgsql') {
             DB::statement(
                 'CREATE UNIQUE INDEX inventory_items_warehouse_product_active_unique '
-                . 'ON inventory_items (warehouse_id, product_id) WHERE deleted_at IS NULL'
+                .'ON inventory_items (warehouse_id, product_id) WHERE deleted_at IS NULL',
             );
         }
     }

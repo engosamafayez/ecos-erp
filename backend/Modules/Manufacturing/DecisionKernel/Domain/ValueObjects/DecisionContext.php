@@ -36,7 +36,6 @@ final readonly class DecisionContext
         return new self($this->context_type, [...$this->data, $key => $value]);
     }
 
-    /** @param  mixed  $default */
     public function get(string $key, mixed $default = null): mixed
     {
         return array_key_exists($key, $this->data) ? $this->data[$key] : $default;
@@ -58,7 +57,7 @@ final readonly class DecisionContext
     {
         return [
             'context_type' => $this->context_type,
-            'data'         => $this->data,
+            'data' => $this->data,
         ];
     }
 }

@@ -17,7 +17,7 @@ final class UpdateBusinessAccountAction extends BaseAction
 
     public function execute(mixed ...$arguments): OperationResult
     {
-        $id  = $arguments[0] ?? null;
+        $id = $arguments[0] ?? null;
         $dto = $arguments[1] ?? null;
 
         if (! is_string($id) || ! $dto instanceof BusinessAccountDTO) {
@@ -30,16 +30,16 @@ final class UpdateBusinessAccountAction extends BaseAction
         }
 
         $account = $this->accounts->update($account, [
-            'brand_id'          => $dto->brand_id,
-            'name'              => $dto->name,
-            'provider'          => $dto->provider,
-            'status'            => $dto->status,
-            'description'       => $dto->description,
-            'logo'              => $dto->logo,
-            'oauth_config'      => $dto->oauth_config,
-            'api_keys'          => $dto->api_keys,
-            'webhook_config'    => $dto->webhook_config,
-            'sync_settings'     => $dto->sync_settings,
+            'brand_id' => $dto->brand_id,
+            'name' => $dto->name,
+            'provider' => $dto->provider,
+            'status' => $dto->status,
+            'description' => $dto->description,
+            'logo' => $dto->logo,
+            'oauth_config' => $dto->oauth_config,
+            'api_keys' => $dto->api_keys,
+            'webhook_config' => $dto->webhook_config,
+            'sync_settings' => $dto->sync_settings,
             'external_metadata' => $dto->external_metadata,
         ]);
 

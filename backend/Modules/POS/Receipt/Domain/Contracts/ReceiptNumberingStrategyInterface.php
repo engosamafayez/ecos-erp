@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\POS\Receipt\Domain\Contracts;
 
+use DateTimeImmutable;
+
 interface ReceiptNumberingStrategyInterface
 {
     /**
@@ -12,5 +14,5 @@ interface ReceiptNumberingStrategyInterface
      * The returned string must be unique within the system.
      * Receipt numbers are independent from Sale numbers.
      */
-    public function next(string $terminalId, \DateTimeImmutable $issuedAt): string;
+    public function next(string $terminalId, DateTimeImmutable $issuedAt): string;
 }

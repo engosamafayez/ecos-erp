@@ -23,20 +23,20 @@ use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
  * The `asset_metadata` JSONB column carries connector-specific data (currency,
  * timezone, account_type, etc.) without polluting the core schema.
  *
- * @property string               $id
- * @property string|null          $company_id
- * @property string               $marketing_connection_id
- * @property ConnectorType        $connector_type
- * @property AssetType            $asset_type
- * @property string               $external_id
- * @property string               $name
- * @property string               $status
- * @property AssetHealth          $health_status
- * @property \Carbon\Carbon|null  $health_checked_at
- * @property array|null           $health_metadata
- * @property array|null           $asset_metadata
- * @property \Carbon\Carbon|null  $last_synced_at
- * @property \Carbon\Carbon|null  $next_sync_at
+ * @property string $id
+ * @property string|null $company_id
+ * @property string $marketing_connection_id
+ * @property ConnectorType $connector_type
+ * @property AssetType $asset_type
+ * @property string $external_id
+ * @property string $name
+ * @property string $status
+ * @property AssetHealth $health_status
+ * @property \Carbon\Carbon|null $health_checked_at
+ * @property array|null $health_metadata
+ * @property array|null $asset_metadata
+ * @property \Carbon\Carbon|null $last_synced_at
+ * @property \Carbon\Carbon|null $next_sync_at
  */
 class MarketingAsset extends Model
 {
@@ -70,16 +70,16 @@ class MarketingAsset extends Model
     protected function casts(): array
     {
         return [
-            'connector_type'    => ConnectorType::class,
-            'asset_type'        => AssetType::class,
-            'status'            => AssetLifecycleStatus::class,
-            'health_status'     => AssetHealth::class,
+            'connector_type' => ConnectorType::class,
+            'asset_type' => AssetType::class,
+            'status' => AssetLifecycleStatus::class,
+            'health_status' => AssetHealth::class,
             'health_checked_at' => 'datetime',
-            'last_synced_at'    => 'datetime',
-            'next_sync_at'      => 'datetime',
-            'health_metadata'   => 'array',
-            'asset_metadata'    => 'array',
-            'is_enabled'        => 'boolean',
+            'last_synced_at' => 'datetime',
+            'next_sync_at' => 'datetime',
+            'health_metadata' => 'array',
+            'asset_metadata' => 'array',
+            'is_enabled' => 'boolean',
         ];
     }
 

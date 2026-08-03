@@ -10,19 +10,19 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Immutable record of every configuration change.
  *
- * @property string      $id
- * @property string      $company_id
+ * @property string $id
+ * @property string $company_id
  * @property string|null $brand_id
- * @property string      $module
- * @property string      $category
+ * @property string $module
+ * @property string $category
  * @property string|null $config_key
- * @property array|null  $old_value
- * @property array|null  $new_value
- * @property string      $action
+ * @property array|null $old_value
+ * @property array|null $new_value
+ * @property string $action
  * @property string|null $actor_id
  * @property string|null $actor_name
  * @property string|null $reason
- * @property string      $occurred_at
+ * @property string $occurred_at
  */
 class ConfigAuditEntry extends Model
 {
@@ -35,6 +35,7 @@ class ConfigAuditEntry extends Model
     protected $keyType = 'string';
 
     public const CREATED_AT = null;
+
     public const UPDATED_AT = null;
 
     /** @var list<string> */
@@ -61,11 +62,11 @@ class ConfigAuditEntry extends Model
     protected function casts(): array
     {
         return [
-            'old_value'         => 'array',
-            'new_value'         => 'array',
+            'old_value' => 'array',
+            'new_value' => 'array',
             'requires_approval' => 'boolean',
-            'occurred_at'       => 'datetime',
-            'approved_at'       => 'datetime',
+            'occurred_at' => 'datetime',
+            'approved_at' => 'datetime',
         ];
     }
 }

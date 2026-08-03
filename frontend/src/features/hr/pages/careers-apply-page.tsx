@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, MapPin } from 'lucide-react';
 
@@ -14,6 +15,7 @@ const money = (value: number, currency: string) =>
 
 /** The job page and its application form — public, and outside the app shell. */
 export function CareersApplyPage() {
+  const { t } = useTranslation('hr');
   const { slug = '' } = useParams();
   const { data: job, isLoading, isError } = usePublicJobQuery(slug);
   const submit = useSubmitApplication();
@@ -50,21 +52,21 @@ export function CareersApplyPage() {
       setReceipt(await submit.mutateAsync({ slug, form: payload }));
     } catch (e) {
       const response = (e as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }).response;
-      setErrors(response?.data?.errors ?? { _: [response?.data?.message ?? 'Your application could not be submitted.'] });
+      setErrors(response?.data?.errors ?? { _: [response?.data?.message ?? t($ => $.careers.apply.submitFailed)] });
     }
   };
 
   if (isLoading) {
-    return <p className="text-muted-foreground py-20 text-center text-sm">Loading…</p>;
+    return <p className="text-muted-foreground py-20 text-center text-sm">{t($ => $.common.loading)}</p>;
   }
 
   if (isError || !job) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-20 text-center">
-        <h1 className="text-xl font-semibold">This role is not available</h1>
-        <p className="text-muted-foreground mt-2 text-sm">It may have closed since you followed the link.</p>
+        <h1 className="text-xl font-semibold">{t($ => $.careers.apply.unavailableTitle)}</h1>
+        <p className="text-muted-foreground mt-2 text-sm">{t($ => $.careers.apply.unavailableHint)}</p>
         <Button asChild variant="outline" className="mt-6">
-          <Link to="/careers">Back to all roles</Link>
+          <Link to="/careers">{t($ => $.careers.apply.backToRoles)}</Link>
         </Button>
       </div>
     );
@@ -79,11 +81,18 @@ export function CareersApplyPage() {
             <CheckCircle2 className="size-10 text-emerald-600" />
             <h1 className="text-xl font-semibold">{receipt.message}</h1>
             <p className="text-muted-foreground text-sm">
-              Your reference for <span className="font-medium">{receipt.job_title}</span> is{' '}
-              <span className="font-mono font-medium">{receipt.reference}</span>. Please keep it for your records.
+              <Trans
+                i18nKey="careers.apply.receiptBody"
+                ns="hr"
+                values={{ jobTitle: receipt.job_title, reference: receipt.reference }}
+                components={{
+                  title: <span className="font-medium" />,
+                  ref: <span className="font-mono font-medium" />,
+                }}
+              />
             </p>
             <Button asChild variant="outline" className="mt-4">
-              <Link to="/careers">Back to all roles</Link>
+              <Link to="/careers">{t($ => $.careers.apply.backToRoles)}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -94,10 +103,10 @@ export function CareersApplyPage() {
   return (
     <div className="bg-background min-h-screen">
       <div className="mx-auto max-w-3xl px-6 py-12">
-        <Button asChild variant="ghost" size="sm" className="mb-6 -ml-2">
+        <Button asChild variant="ghost" size="sm" className="mb-6 -ms-2">
           <Link to="/careers">
             <ArrowLeft className="size-4" />
-            All roles
+            {t($ => $.careers.apply.allRoles)}
           </Link>
         </Button>
 
@@ -123,59 +132,59 @@ export function CareersApplyPage() {
 
         {job.description ? (
           <section className="mt-8">
-            <h2 className="font-semibold">About the role</h2>
+            <h2 className="font-semibold">{t($ => $.careers.apply.aboutRole)}</h2>
             <p className="text-muted-foreground mt-2 whitespace-pre-line text-sm">{job.description}</p>
           </section>
         ) : null}
 
         {job.responsibilities ? (
           <section className="mt-6">
-            <h2 className="font-semibold">Responsibilities</h2>
+            <h2 className="font-semibold">{t($ => $.careers.apply.responsibilities)}</h2>
             <p className="text-muted-foreground mt-2 whitespace-pre-line text-sm">{job.responsibilities}</p>
           </section>
         ) : null}
 
         {job.requirements ? (
           <section className="mt-6">
-            <h2 className="font-semibold">Requirements</h2>
+            <h2 className="font-semibold">{t($ => $.careers.apply.requirements)}</h2>
             <p className="text-muted-foreground mt-2 whitespace-pre-line text-sm">{job.requirements}</p>
           </section>
         ) : null}
 
         <Card className="mt-10">
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold">Apply</h2>
+            <h2 className="text-lg font-semibold">{t($ => $.careers.apply.applyHeading)}</h2>
 
             {!job.accepting_applications ? (
-              <p className="text-muted-foreground mt-2 text-sm">This role is no longer accepting applications.</p>
+              <p className="text-muted-foreground mt-2 text-sm">{t($ => $.careers.apply.closed)}</p>
             ) : (
               <form className="mt-6 flex flex-col gap-5" onSubmit={onSubmit} noValidate>
                 {errors._ ? <p className="text-destructive text-sm">{errors._[0]}</p> : null}
 
                 <fieldset className="flex flex-col gap-4">
-                  <legend className="text-sm font-medium">Your details</legend>
+                  <legend className="text-sm font-medium">{t($ => $.careers.apply.yourDetails)}</legend>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Full name" name="full_name" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.fullName)} name="full_name" errors={errors}>
                       <Input value={form.full_name} onChange={(e) => set('full_name')(e.target.value)} required />
                     </Field>
-                    <Field label="Mobile number" name="mobile" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.mobile)} name="mobile" errors={errors}>
                       <Input value={form.mobile} onChange={(e) => set('mobile')(e.target.value)} required />
                     </Field>
-                    <Field label="Email" name="email" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.email)} name="email" errors={errors}>
                       <Input type="email" value={form.email} onChange={(e) => set('email')(e.target.value)} />
                     </Field>
-                    <Field label="Date of birth" name="birth_date" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.birthDate)} name="birth_date" errors={errors}>
                       <Input type="date" value={form.birth_date} onChange={(e) => set('birth_date')(e.target.value)} />
                     </Field>
                   </div>
                 </fieldset>
 
                 <fieldset className="flex flex-col gap-4">
-                  <legend className="text-sm font-medium">Your experience</legend>
+                  <legend className="text-sm font-medium">{t($ => $.careers.apply.yourExperience)}</legend>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Years of experience" name="years_experience" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.yearsExperience)} name="years_experience" errors={errors}>
                       <Input
                         type="number"
                         min={0}
@@ -184,13 +193,13 @@ export function CareersApplyPage() {
                         onChange={(e) => set('years_experience')(e.target.value)}
                       />
                     </Field>
-                    <Field label="Current or previous employer" name="current_employer" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.currentEmployer)} name="current_employer" errors={errors}>
                       <Input
                         value={form.current_employer}
                         onChange={(e) => set('current_employer')(e.target.value)}
                       />
                     </Field>
-                    <Field label="Expected salary" name="expected_salary" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.expectedSalary)} name="expected_salary" errors={errors}>
                       <Input
                         type="number"
                         min={0}
@@ -198,7 +207,7 @@ export function CareersApplyPage() {
                         onChange={(e) => set('expected_salary')(e.target.value)}
                       />
                     </Field>
-                    <Field label="Available from" name="available_from" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.availableFrom)} name="available_from" errors={errors}>
                       <Input
                         type="date"
                         value={form.available_from}
@@ -208,7 +217,7 @@ export function CareersApplyPage() {
                   </div>
                 </fieldset>
 
-                <Field label="CV / Resume (PDF or Word, up to 5 MB)" name="cv" errors={errors}>
+                <Field label={t($ => $.careers.apply.fields.cv)} name="cv" errors={errors}>
                   <Input
                     type="file"
                     accept=".pdf,.doc,.docx"
@@ -216,7 +225,7 @@ export function CareersApplyPage() {
                   />
                 </Field>
 
-                <Field label="Anything else you would like us to know" name="additional_notes" errors={errors}>
+                <Field label={t($ => $.careers.apply.fields.additionalNotes)} name="additional_notes" errors={errors}>
                   <textarea
                     value={form.additional_notes}
                     onChange={(e) => set('additional_notes')(e.target.value)}
@@ -226,7 +235,7 @@ export function CareersApplyPage() {
                 </Field>
 
                 <Button type="submit" disabled={submit.isPending} className="self-start">
-                  {submit.isPending ? 'Submitting…' : 'Submit application'}
+                  {submit.isPending ? t($ => $.careers.apply.submitting) : t($ => $.careers.apply.submitButton)}
                 </Button>
               </form>
             )}

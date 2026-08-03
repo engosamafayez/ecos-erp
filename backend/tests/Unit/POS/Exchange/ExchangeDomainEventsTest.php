@@ -58,21 +58,21 @@ final class ExchangeDomainEventsTest extends TestCase
     {
         $array = $this->makeInitiated()->toArray();
 
-        $this->assertArrayHasKey('event_id',               $array);
-        $this->assertArrayHasKey('event_name',             $array);
-        $this->assertArrayHasKey('occurred_at',            $array);
-        $this->assertArrayHasKey('event_version',          $array);
-        $this->assertArrayHasKey('correlation_id',         $array);
-        $this->assertArrayHasKey('exchange_id',            $array);
-        $this->assertArrayHasKey('exchange_number',        $array);
-        $this->assertArrayHasKey('original_sale_id',       $array);
-        $this->assertArrayHasKey('original_sale_number',   $array);
-        $this->assertArrayHasKey('terminal_id',            $array);
-        $this->assertArrayHasKey('cashier_id',             $array);
-        $this->assertArrayHasKey('customer_id',            $array);
-        $this->assertArrayHasKey('currency',               $array);
-        $this->assertArrayHasKey('reason',                 $array);
-        $this->assertArrayHasKey('returned_line_count',    $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('event_name', $array);
+        $this->assertArrayHasKey('occurred_at', $array);
+        $this->assertArrayHasKey('event_version', $array);
+        $this->assertArrayHasKey('correlation_id', $array);
+        $this->assertArrayHasKey('exchange_id', $array);
+        $this->assertArrayHasKey('exchange_number', $array);
+        $this->assertArrayHasKey('original_sale_id', $array);
+        $this->assertArrayHasKey('original_sale_number', $array);
+        $this->assertArrayHasKey('terminal_id', $array);
+        $this->assertArrayHasKey('cashier_id', $array);
+        $this->assertArrayHasKey('customer_id', $array);
+        $this->assertArrayHasKey('currency', $array);
+        $this->assertArrayHasKey('reason', $array);
+        $this->assertArrayHasKey('returned_line_count', $array);
         $this->assertArrayHasKey('replacement_line_count', $array);
     }
 
@@ -113,12 +113,12 @@ final class ExchangeDomainEventsTest extends TestCase
     {
         $array = $this->makeConfirmed()->toArray();
 
-        $this->assertArrayHasKey('event_id',                 $array);
-        $this->assertArrayHasKey('exchange_id',              $array);
-        $this->assertArrayHasKey('exchange_number',          $array);
-        $this->assertArrayHasKey('returned_total_amount',    $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('exchange_id', $array);
+        $this->assertArrayHasKey('exchange_number', $array);
+        $this->assertArrayHasKey('returned_total_amount', $array);
         $this->assertArrayHasKey('replacement_total_amount', $array);
-        $this->assertArrayHasKey('currency',                 $array);
+        $this->assertArrayHasKey('currency', $array);
     }
 
     // ── ExchangeCompleted ─────────────────────────────────────────────────────
@@ -150,13 +150,13 @@ final class ExchangeDomainEventsTest extends TestCase
     {
         $array = $this->makeCompleted()->toArray();
 
-        $this->assertArrayHasKey('event_id',                 $array);
-        $this->assertArrayHasKey('exchange_id',              $array);
-        $this->assertArrayHasKey('original_sale_id',         $array);
-        $this->assertArrayHasKey('returned_total_amount',    $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('exchange_id', $array);
+        $this->assertArrayHasKey('original_sale_id', $array);
+        $this->assertArrayHasKey('returned_total_amount', $array);
         $this->assertArrayHasKey('replacement_total_amount', $array);
-        $this->assertArrayHasKey('value_difference_amount',  $array);
-        $this->assertArrayHasKey('currency',                 $array);
+        $this->assertArrayHasKey('value_difference_amount', $array);
+        $this->assertArrayHasKey('currency', $array);
     }
 
     // ── ExchangeCancelled ─────────────────────────────────────────────────────
@@ -196,11 +196,11 @@ final class ExchangeDomainEventsTest extends TestCase
     {
         $array = $this->makeCancelled()->toArray();
 
-        $this->assertArrayHasKey('event_id',              $array);
-        $this->assertArrayHasKey('exchange_id',           $array);
-        $this->assertArrayHasKey('exchange_number',       $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('exchange_id', $array);
+        $this->assertArrayHasKey('exchange_number', $array);
         $this->assertArrayHasKey('cancelled_from_status', $array);
-        $this->assertArrayHasKey('cancelled_reason',      $array);
+        $this->assertArrayHasKey('cancelled_reason', $array);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -208,16 +208,16 @@ final class ExchangeDomainEventsTest extends TestCase
     private function makeInitiated(): ExchangeInitiated
     {
         return ExchangeInitiated::now(
-            exchangeId:           'exc-1',
-            exchangeNumber:       'EXC-001',
-            originalSaleId:       'sale-1',
-            originalSaleNumber:   'SALE-001',
-            terminalId:           'term-1',
-            cashierId:            'usr-1',
-            customerId:           null,
-            currency:             'EGP',
-            reason:               'defective',
-            returnedLineCount:    1,
+            exchangeId: 'exc-1',
+            exchangeNumber: 'EXC-001',
+            originalSaleId: 'sale-1',
+            originalSaleNumber: 'SALE-001',
+            terminalId: 'term-1',
+            cashierId: 'usr-1',
+            customerId: null,
+            currency: 'EGP',
+            reason: 'defective',
+            returnedLineCount: 1,
             replacementLineCount: 1,
         );
     }
@@ -225,34 +225,34 @@ final class ExchangeDomainEventsTest extends TestCase
     private function makeConfirmed(): ExchangeConfirmed
     {
         return ExchangeConfirmed::now(
-            exchangeId:             'exc-1',
-            exchangeNumber:         'EXC-001',
-            returnedTotalAmount:    '100.00',
+            exchangeId: 'exc-1',
+            exchangeNumber: 'EXC-001',
+            returnedTotalAmount: '100.00',
             replacementTotalAmount: '120.00',
-            currency:               'EGP',
+            currency: 'EGP',
         );
     }
 
     private function makeCompleted(): ExchangeCompleted
     {
         return ExchangeCompleted::now(
-            exchangeId:             'exc-1',
-            exchangeNumber:         'EXC-001',
-            originalSaleId:         'sale-1',
-            returnedTotalAmount:    '100.00',
+            exchangeId: 'exc-1',
+            exchangeNumber: 'EXC-001',
+            originalSaleId: 'sale-1',
+            returnedTotalAmount: '100.00',
             replacementTotalAmount: '120.00',
-            valueDifferenceAmount:  '20.00',
-            currency:               'EGP',
+            valueDifferenceAmount: '20.00',
+            currency: 'EGP',
         );
     }
 
     private function makeCancelled(): ExchangeCancelled
     {
         return ExchangeCancelled::now(
-            exchangeId:          'exc-1',
-            exchangeNumber:      'EXC-001',
+            exchangeId: 'exc-1',
+            exchangeNumber: 'EXC-001',
             cancelledFromStatus: 'draft',
-            cancelledReason:     'Customer changed mind',
+            cancelledReason: 'Customer changed mind',
         );
     }
 }

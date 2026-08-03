@@ -26,7 +26,8 @@ use Illuminate\Support\Facades\DB;
 final class ProviderMetricsCollector
 {
     private const PREFIX = 'provider_metrics';
-    private const TTL    = 86_400; // 24 hours
+
+    private const TTL = 86_400; // 24 hours
 
     // ── Increment ─────────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ final class ProviderMetricsCollector
     {
         $key = $this->key($companyId, $provider, $metric);
         Cache::increment($key);
-        Cache::put($key . ':updated_at', now()->toISOString(), self::TTL);
+        Cache::put($key.':updated_at', now()->toISOString(), self::TTL);
     }
 
     // ── Convenience methods ───────────────────────────────────────────────────
@@ -122,7 +123,7 @@ final class ProviderMetricsCollector
     /**
      * Returns event counts from the persistent events table (last N days).
      *
-     * @return array<string, int>  event_name => count
+     * @return array<string, int> event_name => count
      */
     public function getEventCounts(string $companyId, string $provider, int $days = 30): array
     {
@@ -141,6 +142,6 @@ final class ProviderMetricsCollector
 
     private function key(string $companyId, string $provider, string $metric): string
     {
-        return self::PREFIX . ":{$companyId}:{$provider}:{$metric}";
+        return self::PREFIX.":{$companyId}:{$provider}:{$metric}";
     }
 }

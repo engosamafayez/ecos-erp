@@ -65,7 +65,7 @@ export function EntityToolbar({
               onClick={() => setFiltersOpen((open) => !open)}
             >
               <SlidersHorizontal className="size-4" />
-              {t('toolbar.filters')}
+              {t($ => $.toolbar.filters)}
             </Button>
           ) : null}
           {onRefresh ? (
@@ -77,13 +77,13 @@ export function EntityToolbar({
               disabled={isRefreshing}
             >
               <RefreshCw className={cn('size-4', isRefreshing && 'animate-spin')} />
-              {t('toolbar.refresh')}
+              {t($ => $.toolbar.refresh)}
             </Button>
           ) : null}
           {onExport ? (
             <Button type="button" variant="outline" size="sm" onClick={onExport}>
               <Download className="size-4" />
-              {t('toolbar.export')}
+              {t($ => $.toolbar.export)}
             </Button>
           ) : null}
         </div>

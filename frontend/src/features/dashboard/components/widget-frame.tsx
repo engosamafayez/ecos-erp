@@ -1,4 +1,5 @@
 import { ChevronDown, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 // ── Props ──────────────────────────────────────────────────────────────────
@@ -46,6 +47,8 @@ export function WidgetFrame({
   hideable   = true,
   className,
 }: Props) {
+  const { t } = useTranslation('dashboard');
+
   // ── Hidden: render a compact restore chip ──────────────────────────────
   if (hidden) {
     return (
@@ -57,7 +60,7 @@ export function WidgetFrame({
         <Icon className={cn('h-3 w-3', color)} />
         <span>{title}</span>
         <Eye className="ml-1 h-3 w-3" />
-        <span className="opacity-50">restore</span>
+        <span className="opacity-50">{t($ => $.widgetFrame.restore)}</span>
       </button>
     );
   }
@@ -87,7 +90,7 @@ export function WidgetFrame({
               onDragStart();
             }}
             className="flex cursor-grab items-center text-muted-foreground/30 opacity-0 transition-opacity hover:text-muted-foreground/60 group-hover:opacity-100 active:cursor-grabbing"
-            title="Drag to reorder"
+            title={t($ => $.widgetFrame.dragToReorder)}
           >
             <GripVertical className="h-4 w-4" />
           </div>

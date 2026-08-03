@@ -17,8 +17,8 @@ final class VoidReceiptRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'reason'       => ['nullable', 'string', 'max:500'],
-            'cashier_id'   => ['required', 'string', 'uuid'],
+            'reason' => ['nullable', 'string', 'max:500'],
+            'cashier_id' => ['required', 'string', 'uuid'],
             'cashier_name' => ['nullable', 'string', 'max:255'],
         ];
     }

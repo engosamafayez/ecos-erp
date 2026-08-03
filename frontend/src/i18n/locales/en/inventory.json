@@ -64,5 +64,26 @@
     "totalValue": "Total Inventory Value",
     "lowStockItems": "Low Stock Items",
     "outOfStockItems": "Out of Stock Items"
+  },
+  "workspace": {
+    "title": "Products",
+    "subtitle": "Manage finished goods, raw materials, categories, and units of measure",
+    "countLabel": "Total"
+  },
+  "consumables": {
+    "title": "Consumables",
+    "subtitle": "Manage materials consumed in production and operations",
+    "comingSoon": "Consumables management is coming soon. This section will track supplies such as cleaning agents, oils, gloves, and other items consumed in production."
+  },
+  "packagingMaterials": {
+    "title": "Packaging Materials",
+    "subtitle": "Manage packaging materials used in production",
+    "comingSoon": "Packaging materials management is coming soon. This section will allow you to track boxes, bags, labels, and other packaging materials used in production."
+  },
+  "semiFinished": {
+    "title": "Semi-Finished Materials",
+    "subtitle": "Manage work-in-progress products and semi-finished goods",
+    "shortTitle": "Semi-Finished",
+    "comingSoon": "Semi-finished materials management is coming soon. This section will track work-in-progress items and intermediate goods used in multi-stage production."
   }
 }

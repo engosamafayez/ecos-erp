@@ -16,7 +16,8 @@ class AutomationWorkflow extends Model
 {
     use HasUuids, SoftDeletes;
 
-    protected $table    = 'automation_workflows';
+    protected $table = 'automation_workflows';
+
     protected $fillable = [
         'name', 'description', 'company_id', 'brand_id',
         'status', 'trigger_type', 'nodes_graph', 'version_number',
@@ -27,14 +28,14 @@ class AutomationWorkflow extends Model
     ];
 
     protected $casts = [
-        'status'       => WorkflowStatus::class,
+        'status' => WorkflowStatus::class,
         'trigger_type' => WorkflowTriggerType::class,
-        'nodes_graph'  => 'array',
-        'tags'         => 'array',
+        'nodes_graph' => 'array',
+        'tags' => 'array',
         'activated_at' => 'datetime',
-        'paused_at'    => 'datetime',
-        'archived_at'  => 'datetime',
-        'approved_at'  => 'datetime',
+        'paused_at' => 'datetime',
+        'archived_at' => 'datetime',
+        'approved_at' => 'datetime',
         'last_executed_at' => 'datetime',
     ];
 

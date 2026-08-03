@@ -24,9 +24,9 @@ final class WooCommerceWebhookRegistrar
         }
 
         $deliveryUrl = rtrim(config('app.url'), '/')
-            . '/api/webhooks/woocommerce/'
-            . $channel->id
-            . '/orders';
+            .'/api/webhooks/woocommerce/'
+            .$channel->id
+            .'/orders';
 
         foreach (self::TOPICS as $topic => $idColumn) {
             if ($channel->$idColumn !== null) {
@@ -49,9 +49,9 @@ final class WooCommerceWebhookRegistrar
             $response = Http::withBasicAuth($consumerKey, $consumerSecret)
                 ->timeout(15)
                 ->post(
-                    rtrim($channel->store_url, '/') . '/wp-json/wc/v3/webhooks',
+                    rtrim($channel->store_url, '/').'/wp-json/wc/v3/webhooks',
                     [
-                        'name' => 'ECOS ERP – ' . $topic,
+                        'name' => 'ECOS ERP – '.$topic,
                         'topic' => $topic,
                         'delivery_url' => $deliveryUrl,
                         'secret' => $consumerSecret,

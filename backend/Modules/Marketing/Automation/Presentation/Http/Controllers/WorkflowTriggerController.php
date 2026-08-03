@@ -20,16 +20,16 @@ class WorkflowTriggerController extends Controller
     {
         $validated = $request->validate([
             'entity_type' => 'required|string',
-            'entity_id'   => 'required|string',
-            'payload'     => 'nullable|array',
+            'entity_id' => 'required|string',
+            'payload' => 'nullable|array',
         ]);
 
         $execution = $this->triggerAction->execute(
-            workflow:    $workflow,
-            entityType:  $validated['entity_type'],
-            entityId:    $validated['entity_id'],
+            workflow: $workflow,
+            entityType: $validated['entity_type'],
+            entityId: $validated['entity_id'],
             triggerType: 'manual',
-            payload:     $validated['payload'] ?? [],
+            payload: $validated['payload'] ?? [],
             triggeredBy: (string) $request->user()->id,
         );
 
@@ -40,11 +40,11 @@ class WorkflowTriggerController extends Controller
     public function webhook(Request $request, AutomationWorkflow $workflow): JsonResponse
     {
         $execution = $this->triggerAction->execute(
-            workflow:    $workflow,
-            entityType:  $request->get('entity_type', 'webhook'),
-            entityId:    $request->get('entity_id', 'webhook'),
+            workflow: $workflow,
+            entityType: $request->get('entity_type', 'webhook'),
+            entityId: $request->get('entity_id', 'webhook'),
             triggerType: 'webhook',
-            payload:     $request->all(),
+            payload: $request->all(),
             triggeredBy: null,
         );
 

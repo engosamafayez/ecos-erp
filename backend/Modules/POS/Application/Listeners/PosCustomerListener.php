@@ -7,6 +7,7 @@ namespace Modules\POS\Application\Listeners;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\POS\Application\Events\SaleFinalized;
+use Throwable;
 
 /**
  * Subscriber 4 — Customer Statistics
@@ -34,17 +35,17 @@ final class PosCustomerListener
 {
     public function handle(SaleFinalized $event): void
     {
-        if (!$event->hasCustomer()) {
+        if (! $event->hasCustomer()) {
             return;
         }
 
         try {
             $this->upsertStats($event);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[POS][Customer] Failed to update customer statistics', [
-                'sale_id'     => $event->saleId,
+                'sale_id' => $event->saleId,
                 'customer_id' => $event->customerId,
-                'error'       => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -69,17 +70,17 @@ final class PosCustomerListener
             WHERE pos_customer_stats.last_pos_sale_id IS DISTINCT FROM EXCLUDED.last_pos_sale_id
             SQL,
             [
-                'customer_id'  => $event->customerId,
-                'amount'       => $event->grandTotal,
-                'sale_id'      => $event->saleId,
+                'customer_id' => $event->customerId,
+                'amount' => $event->grandTotal,
+                'sale_id' => $event->saleId,
                 'purchased_at' => $event->occurredAt()->format('Y-m-d H:i:s'),
             ],
         );
 
         Log::channel('daily')->info('[POS][Customer] Statistics updated', [
             'customer_id' => $event->customerId,
-            'sale_id'     => $event->saleId,
-            'spent'       => $event->grandTotal,
+            'sale_id' => $event->saleId,
+            'spent' => $event->grandTotal,
         ]);
     }
 }

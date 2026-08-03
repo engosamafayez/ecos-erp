@@ -59,7 +59,7 @@ export function GoodsReceiptLinesEditor({ readOnly = false, poLineInfos = [] }: 
   if (lines.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">
-        {t('lines.selectPoPrompt')}
+        {t($ => $.lines.selectPoPrompt)}
       </p>
     );
   }
@@ -69,13 +69,13 @@ export function GoodsReceiptLinesEditor({ readOnly = false, poLineInfos = [] }: 
       <table className="w-full text-sm">
         <thead>
           <tr className="text-muted-foreground border-b text-start">
-            <th className="pb-2 pr-3 font-medium">{t('lines.columns.product')}</th>
-            <th className="w-28 pb-2 pr-3 text-end font-medium">{t('lines.columns.orderedQty')}</th>
-            <th className="w-32 pb-2 pr-3 font-medium">{t('lines.columns.grossQty')}</th>
-            <th className="w-32 pb-2 pr-3 font-medium">{t('lines.columns.netQty')}</th>
-            <th className="w-24 pb-2 pr-3 text-end font-medium">{t('lines.columns.varianceQty')}</th>
-            <th className="w-36 pb-2 pr-3 font-medium">{t('lines.columns.weightPhoto')}</th>
-            <th className="w-40 pb-2 font-medium">{t('lines.columns.notes')}</th>
+            <th className="pb-2 pr-3 font-medium">{t($ => $.lines.columns.product)}</th>
+            <th className="w-28 pb-2 pr-3 text-end font-medium">{t($ => $.lines.columns.orderedQty)}</th>
+            <th className="w-32 pb-2 pr-3 font-medium">{t($ => $.lines.columns.grossQty)}</th>
+            <th className="w-32 pb-2 pr-3 font-medium">{t($ => $.lines.columns.netQty)}</th>
+            <th className="w-24 pb-2 pr-3 text-end font-medium">{t($ => $.lines.columns.varianceQty)}</th>
+            <th className="w-36 pb-2 pr-3 font-medium">{t($ => $.lines.columns.weightPhoto)}</th>
+            <th className="w-40 pb-2 font-medium">{t($ => $.lines.columns.notes)}</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -213,7 +213,7 @@ function LineRow({
               className="text-primary inline-flex items-center gap-1 text-xs underline"
             >
               <Camera className="size-3" />
-              {t('lines.viewPhoto')}
+              {t($ => $.lines.viewPhoto)}
             </a>
           ) : (
             <span className="text-muted-foreground text-xs">—</span>
@@ -240,7 +240,7 @@ function LineRow({
               }`}
             >
               <Camera className="size-3" />
-              {hasPhoto ? t('lines.photoAdded') : t('lines.addPhoto')}
+              {hasPhoto ? t($ => $.lines.photoAdded) : t($ => $.lines.addPhoto)}
             </button>
             {hasPhoto && (
               <button
@@ -267,7 +267,7 @@ function LineRow({
           <>
             <Input
               type="text"
-              placeholder={t('lines.notesPlaceholder')}
+              placeholder={t($ => $.lines.notesPlaceholder)}
               {...register(`lines.${index}.notes`)}
             />
             {fieldErr(errs, 'notes') && (

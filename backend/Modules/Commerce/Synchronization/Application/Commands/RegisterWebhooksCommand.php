@@ -26,11 +26,11 @@ final class RegisterWebhooksCommand extends Command
     protected $description = 'Register missing WooCommerce webhooks for active channels.';
 
     private const WEBHOOK_COLUMNS = [
-        'order.created'    => 'external_webhook_order_created_id',
-        'order.updated'    => 'external_webhook_order_updated_id',
-        'product.created'  => 'external_webhook_product_created_id',
-        'product.updated'  => 'external_webhook_product_updated_id',
-        'product.deleted'  => 'external_webhook_product_deleted_id',
+        'order.created' => 'external_webhook_order_created_id',
+        'order.updated' => 'external_webhook_order_updated_id',
+        'product.created' => 'external_webhook_product_created_id',
+        'product.updated' => 'external_webhook_product_updated_id',
+        'product.deleted' => 'external_webhook_product_deleted_id',
         'customer.created' => 'external_webhook_customer_created_id',
         'customer.updated' => 'external_webhook_customer_updated_id',
     ];
@@ -41,6 +41,7 @@ final class RegisterWebhooksCommand extends Command
 
         if ($channels->isEmpty()) {
             $this->warn('No channels found.');
+
             return self::FAILURE;
         }
 
@@ -63,6 +64,7 @@ final class RegisterWebhooksCommand extends Command
 
             if ($channel === null) {
                 $this->error("Channel [{$channelId}] not found.");
+
                 return Channel::query()->whereRaw('1=0')->get();
             }
 
@@ -83,6 +85,7 @@ final class RegisterWebhooksCommand extends Command
 
         if ($channel->credential === null) {
             $this->warn('  ⚠  No credentials — skipping.');
+
             return;
         }
 
@@ -97,7 +100,7 @@ final class RegisterWebhooksCommand extends Command
 
         foreach (self::WEBHOOK_COLUMNS as $topic => $column) {
             $wasMissing = $before[$column] === null;
-            $isNowSet   = $after[$column] !== null;
+            $isNowSet = $after[$column] !== null;
 
             if (! $wasMissing) {
                 $this->line("  ✓  <fg=gray>{$topic}</> already registered ({$after[$column]})");

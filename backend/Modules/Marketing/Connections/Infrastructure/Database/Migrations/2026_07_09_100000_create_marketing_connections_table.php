@@ -19,7 +19,7 @@ return new class extends Migration
             $table->uuid('company_id')->nullable()->index();
             $table->string('connector_type', 30)->index();           // meta | google_ads | tiktok | ...
             $table->string('label', 100);                            // user-given name
-            $table->string('status', 30)->default('active')->index();// active | expired | disconnected | error
+            $table->string('status', 30)->default('active')->index(); // active | expired | disconnected | error
             $table->string('external_account_id', 200)->nullable();  // e.g. Meta user_id
             $table->text('access_token')->nullable();                 // encrypted
             $table->text('refresh_token')->nullable();                // encrypted

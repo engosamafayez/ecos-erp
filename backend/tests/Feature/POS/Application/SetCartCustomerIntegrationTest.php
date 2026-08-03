@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Tests\Feature\POS\Application;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
 use Modules\POS\Application\Commands\SetCartCustomerCommand;
 use Modules\POS\Application\Services\SetCartCustomerService;
 use Modules\POS\Cart\Domain\Contracts\CartRepositoryInterface;
 use Modules\POS\Cart\Domain\Models\Cart;
 use Tests\TestCase;
+use Throwable;
 
 /**
  * PKG-POS-021: SetCartCustomerService integration tests.
@@ -21,22 +23,29 @@ final class SetCartCustomerIntegrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private SetCartCustomerService  $service;
+    private SetCartCustomerService $service;
+
     private CartRepositoryInterface $cartRepo;
 
-    private const SESSION_ID   = 'a3000000-0000-4000-a000-000000000001';
-    private const SHIFT_ID     = 'b3000000-0000-4000-b000-000000000001';
-    private const TERMINAL_ID  = 'c3000000-0000-4000-c000-000000000001';
-    private const CASHIER_ID   = 'd3000000-0000-4000-d000-000000000001';
-    private const CUSTOMER_A   = 'e3000000-0000-4000-e000-000000000001';
-    private const CUSTOMER_B   = 'f3000000-0000-4000-f000-000000000002';
-    private const CURRENCY     = 'EGP';
+    private const SESSION_ID = 'a3000000-0000-4000-a000-000000000001';
+
+    private const SHIFT_ID = 'b3000000-0000-4000-b000-000000000001';
+
+    private const TERMINAL_ID = 'c3000000-0000-4000-c000-000000000001';
+
+    private const CASHIER_ID = 'd3000000-0000-4000-d000-000000000001';
+
+    private const CUSTOMER_A = 'e3000000-0000-4000-e000-000000000001';
+
+    private const CUSTOMER_B = 'f3000000-0000-4000-f000-000000000002';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->service  = app(SetCartCustomerService::class);
+        $this->service = app(SetCartCustomerService::class);
         $this->cartRepo = app(CartRepositoryInterface::class);
     }
 
@@ -56,7 +65,7 @@ final class SetCartCustomerIntegrationTest extends TestCase
 
     public function test_replaces_existing_customer(): void
     {
-        $cart              = $this->makePersistedCart();
+        $cart = $this->makePersistedCart();
         $cart->customer_id = self::CUSTOMER_A;
         $this->cartRepo->save($cart);
 
@@ -72,7 +81,7 @@ final class SetCartCustomerIntegrationTest extends TestCase
 
     public function test_removes_customer_when_null_passed(): void
     {
-        $cart              = $this->makePersistedCart();
+        $cart = $this->makePersistedCart();
         $cart->customer_id = self::CUSTOMER_A;
         $this->cartRepo->save($cart);
 
@@ -105,11 +114,11 @@ final class SetCartCustomerIntegrationTest extends TestCase
 
     public function test_throws_when_cart_not_found(): void
     {
-        $this->expectException(\Throwable::class);
+        $this->expectException(Throwable::class);
 
         $this->service->execute(
             new SetCartCustomerCommand(
-                cartId:     'ffffffff-ffff-4fff-ffff-ffffffffffff',
+                cartId: 'ffffffff-ffff-4fff-ffff-ffffffffffff',
                 customerId: self::CUSTOMER_A,
             ),
         );
@@ -121,7 +130,7 @@ final class SetCartCustomerIntegrationTest extends TestCase
         $cart->cancel();
         $this->cartRepo->save($cart);
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->service->execute(
             new SetCartCustomerCommand(cartId: (string) $cart->id, customerId: self::CUSTOMER_A),
@@ -131,11 +140,11 @@ final class SetCartCustomerIntegrationTest extends TestCase
     private function makePersistedCart(): Cart
     {
         $cart = Cart::open(
-            sessionId:  self::SESSION_ID,
-            shiftId:    self::SHIFT_ID,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
             terminalId: self::TERMINAL_ID,
-            cashierId:  self::CASHIER_ID,
-            currency:   self::CURRENCY,
+            cashierId: self::CASHIER_ID,
+            currency: self::CURRENCY,
         );
 
         $this->cartRepo->save($cart);

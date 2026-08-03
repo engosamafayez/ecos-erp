@@ -57,7 +57,7 @@ final class DisassemblyExecutor
             return $this->buildIdempotentResult($existingByPlan);
         }
 
-        $startMs       = (int) (microtime(true) * 1000);
+        $startMs = (int) (microtime(true) * 1000);
         $executionUuid = Str::uuid()->toString();
 
         /** @var DisassemblyExecutionResult $result */
@@ -67,11 +67,11 @@ final class DisassemblyExecutor
 
                 // Step 1 — Consume finished goods
                 $fgLedgerId = $this->inventory->consumeFinishedGoods(
-                    productId:    $plan->product_id,
-                    qty:          $plan->qty_to_disassemble,
-                    warehouseId:  $plan->warehouse_id,
-                    planId:       $plan->plan_id,
-                    companyId:    $companyId,
+                    productId: $plan->product_id,
+                    qty: $plan->qty_to_disassemble,
+                    warehouseId: $plan->warehouse_id,
+                    planId: $plan->plan_id,
+                    companyId: $companyId,
                     executionUuid: $executionUuid,
                 );
                 $ledgerIds[] = $fgLedgerId;
@@ -81,50 +81,50 @@ final class DisassemblyExecutor
                 foreach ($plan->component_outputs as $output) {
                     /** @var ComponentProductionPlan $output */
                     $record = $this->inventory->produceComponent(
-                        component:     $output,
-                        warehouseId:   $plan->warehouse_id,
-                        planId:        $plan->plan_id,
-                        companyId:     $companyId,
+                        component: $output,
+                        warehouseId: $plan->warehouse_id,
+                        planId: $plan->plan_id,
+                        companyId: $companyId,
                         executionUuid: $executionUuid,
                     );
                     $productionRecords[] = $record;
-                    $ledgerIds[]         = $record->ledger_entry_id;
+                    $ledgerIds[] = $record->ledger_entry_id;
                 }
 
                 // Step 3 — Record the disassembly transaction (source of truth)
-                $executedAt = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+                $executedAt = (new DateTimeImmutable)->format(DateTimeInterface::ATOM);
                 $durationMs = (int) (microtime(true) * 1000) - $startMs;
 
-                $transaction = new DisassemblyTransaction();
+                $transaction = new DisassemblyTransaction;
                 $transaction->fill([
-                    'execution_id'         => $executionUuid,
-                    'plan_id'              => $plan->plan_id,
-                    'trigger_id'           => $plan->trigger_id,
-                    'product_id'           => $plan->product_id,
-                    'warehouse_id'         => $plan->warehouse_id,
-                    'bom_id'               => $plan->recipe_snapshot->recipe_id,
-                    'bom_version_number'   => $plan->recipe_snapshot->bom_version_number,
+                    'execution_id' => $executionUuid,
+                    'plan_id' => $plan->plan_id,
+                    'trigger_id' => $plan->trigger_id,
+                    'product_id' => $plan->product_id,
+                    'warehouse_id' => $plan->warehouse_id,
+                    'bom_id' => $plan->recipe_snapshot->recipe_id,
+                    'bom_version_number' => $plan->recipe_snapshot->bom_version_number,
                     'recipe_snapshot_hash' => hash('sha256', json_encode($plan->recipe_snapshot->toArray())),
-                    'qty_disassembled'     => $plan->qty_to_disassemble,
-                    'status'               => TransactionStatus::Completed->value,
-                    'executed_at'          => $executedAt,
-                    'duration_ms'          => $durationMs,
-                    'metadata'             => $plan->metadata,
+                    'qty_disassembled' => $plan->qty_to_disassemble,
+                    'status' => TransactionStatus::Completed->value,
+                    'executed_at' => $executedAt,
+                    'duration_ms' => $durationMs,
+                    'metadata' => $plan->metadata,
                 ]);
 
                 $this->transactions->save($transaction);
 
                 return new DisassemblyExecutionResult(
-                    execution_id:        $executionUuid,
-                    transaction_id:      $transaction->id,
-                    success:             true,
-                    was_idempotent:      false,
-                    qty_disassembled:    $plan->qty_to_disassemble,
+                    execution_id: $executionUuid,
+                    transaction_id: $transaction->id,
+                    success: true,
+                    was_idempotent: false,
+                    qty_disassembled: $plan->qty_to_disassemble,
                     produced_components: $productionRecords,
-                    ledger_entry_ids:    $ledgerIds,
-                    duration_ms:         $durationMs,
-                    executed_at:         $executedAt,
-                    metadata:            $plan->metadata,
+                    ledger_entry_ids: $ledgerIds,
+                    duration_ms: $durationMs,
+                    executed_at: $executedAt,
+                    metadata: $plan->metadata,
                 );
             },
         );
@@ -135,16 +135,16 @@ final class DisassemblyExecutor
     private function buildIdempotentResult(DisassemblyTransaction $transaction): DisassemblyExecutionResult
     {
         return new DisassemblyExecutionResult(
-            execution_id:        Str::uuid()->toString(),
-            transaction_id:      $transaction->id,
-            success:             $transaction->status === TransactionStatus::Completed,
-            was_idempotent:      true,
-            qty_disassembled:    (float) $transaction->qty_disassembled,
+            execution_id: Str::uuid()->toString(),
+            transaction_id: $transaction->id,
+            success: $transaction->status === TransactionStatus::Completed,
+            was_idempotent: true,
+            qty_disassembled: (float) $transaction->qty_disassembled,
             produced_components: [],
-            ledger_entry_ids:    [],
-            duration_ms:         0,
-            executed_at:         (string) $transaction->executed_at,
-            metadata:            $transaction->metadata ?? [],
+            ledger_entry_ids: [],
+            duration_ms: 0,
+            executed_at: (string) $transaction->executed_at,
+            metadata: $transaction->metadata ?? [],
         );
     }
 }

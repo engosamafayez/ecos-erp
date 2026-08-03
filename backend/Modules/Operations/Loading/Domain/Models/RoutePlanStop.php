@@ -9,27 +9,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property string              $id
- * @property string              $company_id
- * @property string              $route_plan_id
- * @property string              $vehicle_assignment_id
- * @property string              $order_id
- * @property string              $order_number_snapshot
- * @property string|null         $customer_name_snapshot
- * @property string|null         $delivery_address_snapshot
- * @property string|null         $zone_id_snapshot
- * @property int                 $stop_sequence
+ * @property string $id
+ * @property string $company_id
+ * @property string $route_plan_id
+ * @property string $vehicle_assignment_id
+ * @property string $order_id
+ * @property string $order_number_snapshot
+ * @property string|null $customer_name_snapshot
+ * @property string|null $delivery_address_snapshot
+ * @property string|null $zone_id_snapshot
+ * @property int $stop_sequence
  * @property \Carbon\Carbon|null $planned_arrival_at
  * @property \Carbon\Carbon|null $actual_arrival_at
  * @property \Carbon\Carbon|null $actual_departure_at
- * @property string              $status
- * @property string|null         $failure_reason
- * @property float|null          $distance_from_prev_km
- * @property string|null         $notes
- * @property string              $created_by
- * @property string              $updated_by
- * @property \Carbon\Carbon      $created_at
- * @property \Carbon\Carbon      $updated_at
+ * @property string $status
+ * @property string|null $failure_reason
+ * @property float|null $distance_from_prev_km
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class RoutePlanStop extends Model
 {
@@ -67,11 +67,11 @@ class RoutePlanStop extends Model
     protected function casts(): array
     {
         return [
-            'stop_sequence'        => 'integer',
+            'stop_sequence' => 'integer',
             'distance_from_prev_km' => 'float',
-            'planned_arrival_at'   => 'datetime',
-            'actual_arrival_at'    => 'datetime',
-            'actual_departure_at'  => 'datetime',
+            'planned_arrival_at' => 'datetime',
+            'actual_arrival_at' => 'datetime',
+            'actual_departure_at' => 'datetime',
         ];
     }
 

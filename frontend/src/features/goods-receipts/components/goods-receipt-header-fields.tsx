@@ -90,7 +90,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
       {/* ── Core receipt fields ─────────────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <FormField name="purchase_order_id" label={t('form.purchaseOrder.label')} required>
+          <FormField name="purchase_order_id" label={t($ => $.form.purchaseOrder.label)} required>
             <Controller
               control={control}
               name="purchase_order_id"
@@ -99,7 +99,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
                   options={poOptions}
                   value={field.value || null}
                   onChange={field.onChange}
-                  placeholder={t('form.purchaseOrder.placeholder')}
+                  placeholder={t($ => $.form.purchaseOrder.placeholder)}
                   loading={loadingPOs}
                   disabled={readOnly}
                 />
@@ -109,7 +109,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
         </div>
 
         <div className="sm:col-span-2">
-          <FormField name="warehouse_id" label={t('form.warehouse.label')} required>
+          <FormField name="warehouse_id" label={t($ => $.form.warehouse.label)} required>
             <Controller
               control={control}
               name="warehouse_id"
@@ -118,7 +118,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
                   options={warehouseOptions}
                   value={field.value || null}
                   onChange={field.onChange}
-                  placeholder={t('form.warehouse.placeholder')}
+                  placeholder={t($ => $.form.warehouse.placeholder)}
                   loading={loadingWarehouses}
                   disabled={readOnly}
                 />
@@ -127,15 +127,15 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
           </FormField>
         </div>
 
-        <FormField name="receipt_date" label={t('form.receiptDate')} required>
+        <FormField name="receipt_date" label={t($ => $.form.receiptDate)} required>
           <Input type="date" disabled={readOnly} {...register('receipt_date')} />
         </FormField>
 
         <div className="sm:col-span-2">
-          <FormField name="notes" label={t('form.notes.label')}>
+          <FormField name="notes" label={t($ => $.form.notes.label)}>
             <textarea
               rows={2}
-              placeholder={t('form.notes.placeholder')}
+              placeholder={t($ => $.form.notes.placeholder)}
               disabled={readOnly}
               className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
               {...register('notes')}
@@ -146,9 +146,9 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
 
       {/* ── Supplier invoice ────────────────────────────────────────────── */}
       <div>
-        <h3 className="text-foreground mb-3 text-sm font-semibold">{t('form.supplierInvoice.title')}</h3>
+        <h3 className="text-foreground mb-3 text-sm font-semibold">{t($ => $.form.supplierInvoice.title)}</h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField name="supplier_invoice_number" label={t('form.supplierInvoice.number')}>
+          <FormField name="supplier_invoice_number" label={t($ => $.form.supplierInvoice.number)}>
             <Input
               type="text"
               placeholder="INV-001"
@@ -157,12 +157,12 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
             />
           </FormField>
 
-          <FormField name="supplier_invoice_date" label={t('form.supplierInvoice.date')}>
+          <FormField name="supplier_invoice_date" label={t($ => $.form.supplierInvoice.date)}>
             <Input type="date" disabled={readOnly} {...register('supplier_invoice_date')} />
           </FormField>
 
           <div className="sm:col-span-2">
-            <FormField name="invoice_attachment" label={t('form.supplierInvoice.attachment')}>
+            <FormField name="invoice_attachment" label={t($ => $.form.supplierInvoice.attachment)}>
               {readOnly ? (
                 invoiceAttachmentPath ? (
                   <a
@@ -172,7 +172,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
                     className="text-primary inline-flex items-center gap-1.5 text-sm underline"
                   >
                     <Paperclip className="size-3.5" />
-                    {t('form.supplierInvoice.viewAttachment')}
+                    {t($ => $.form.supplierInvoice.viewAttachment)}
                   </a>
                 ) : (
                   <span className="text-muted-foreground text-sm">—</span>
@@ -198,8 +198,8 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
                     {invoiceAttachment instanceof File
                       ? invoiceAttachment.name
                       : invoiceAttachmentPath
-                        ? t('form.supplierInvoice.changeAttachment')
-                        : t('form.supplierInvoice.uploadAttachment')}
+                        ? t($ => $.form.supplierInvoice.changeAttachment)
+                        : t($ => $.form.supplierInvoice.uploadAttachment)}
                   </button>
                   {(invoiceAttachment instanceof File || invoiceAttachmentPath) && (
                     <button
@@ -216,7 +216,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
                   )}
                 </div>
               )}
-              <p className="text-muted-foreground mt-1 text-xs">{t('form.supplierInvoice.attachmentHint')}</p>
+              <p className="text-muted-foreground mt-1 text-xs">{t($ => $.form.supplierInvoice.attachmentHint)}</p>
             </FormField>
           </div>
         </div>
@@ -224,9 +224,9 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
 
       {/* ── Invoice financials ───────────────────────────────────────────── */}
       <div>
-        <h3 className="text-foreground mb-3 text-sm font-semibold">{t('form.invoiceFinancials.title')}</h3>
+        <h3 className="text-foreground mb-3 text-sm font-semibold">{t($ => $.form.invoiceFinancials.title)}</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <FormField name="invoice_total_amount" label={t('form.invoiceFinancials.totalAmount')}>
+          <FormField name="invoice_total_amount" label={t($ => $.form.invoiceFinancials.totalAmount)}>
             <Input
               type="number"
               min="0"
@@ -236,7 +236,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
               {...register('invoice_total_amount')}
             />
           </FormField>
-          <FormField name="paid_amount" label={t('form.invoiceFinancials.paidAmount')}>
+          <FormField name="paid_amount" label={t($ => $.form.invoiceFinancials.paidAmount)}>
             <Input
               type="number"
               min="0"
@@ -246,7 +246,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
               {...register('paid_amount')}
             />
           </FormField>
-          <FormField name="freight_amount" label={t('form.invoiceFinancials.freight')}>
+          <FormField name="freight_amount" label={t($ => $.form.invoiceFinancials.freight)}>
             <Input
               type="number"
               min="0"
@@ -256,7 +256,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
               {...register('freight_amount')}
             />
           </FormField>
-          <FormField name="tax_amount" label={t('form.invoiceFinancials.tax')}>
+          <FormField name="tax_amount" label={t($ => $.form.invoiceFinancials.tax)}>
             <Input
               type="number"
               min="0"
@@ -266,7 +266,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
               {...register('tax_amount')}
             />
           </FormField>
-          <FormField name="additional_costs" label={t('form.invoiceFinancials.additionalCosts')}>
+          <FormField name="additional_costs" label={t($ => $.form.invoiceFinancials.additionalCosts)}>
             <Input
               type="number"
               min="0"
@@ -281,32 +281,32 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
 
       {/* ── Payment information ──────────────────────────────────────────── */}
       <div>
-        <h3 className="text-foreground mb-3 text-sm font-semibold">{t('form.paymentInfo.title')}</h3>
+        <h3 className="text-foreground mb-3 text-sm font-semibold">{t($ => $.form.paymentInfo.title)}</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <FormField name="payment_status" label={t('form.paymentInfo.status')}>
+          <FormField name="payment_status" label={t($ => $.form.paymentInfo.status)}>
             <select disabled={readOnly} className={selectClass} {...register('payment_status')}>
-              <option value="unpaid">{t('paymentStatus.unpaid')}</option>
-              <option value="partially_paid">{t('paymentStatus.partiallyPaid')}</option>
-              <option value="paid">{t('paymentStatus.paid')}</option>
+              <option value="unpaid">{t($ => $.paymentStatus.unpaid)}</option>
+              <option value="partially_paid">{t($ => $.paymentStatus.partiallyPaid)}</option>
+              <option value="paid">{t($ => $.paymentStatus.paid)}</option>
             </select>
           </FormField>
 
-          <FormField name="payment_method" label={t('form.paymentInfo.method')}>
+          <FormField name="payment_method" label={t($ => $.form.paymentInfo.method)}>
             <select disabled={readOnly} className={selectClass} {...register('payment_method')}>
               <option value="">—</option>
-              <option value="cash">{t('paymentMethod.cash')}</option>
-              <option value="bank_transfer">{t('paymentMethod.bankTransfer')}</option>
-              <option value="cheque">{t('paymentMethod.cheque')}</option>
-              <option value="wallet">{t('paymentMethod.wallet')}</option>
-              <option value="credit">{t('paymentMethod.credit')}</option>
-              <option value="other">{t('paymentMethod.other')}</option>
+              <option value="cash">{t($ => $.paymentMethod.cash)}</option>
+              <option value="bank_transfer">{t($ => $.paymentMethod.bankTransfer)}</option>
+              <option value="cheque">{t($ => $.paymentMethod.cheque)}</option>
+              <option value="wallet">{t($ => $.paymentMethod.wallet)}</option>
+              <option value="credit">{t($ => $.paymentMethod.credit)}</option>
+              <option value="other">{t($ => $.paymentMethod.other)}</option>
             </select>
           </FormField>
 
-          <FormField name="payment_terms_days" label={t('form.paymentInfo.termsDays')}>
+          <FormField name="payment_terms_days" label={t($ => $.form.paymentInfo.termsDays)}>
             <select disabled={readOnly} className={selectClass} {...register('payment_terms_days')}>
               <option value="">—</option>
-              <option value="0">{t('form.paymentInfo.termsImmediate')}</option>
+              <option value="0">{t($ => $.form.paymentInfo.termsImmediate)}</option>
               <option value="7">Net 7</option>
               <option value="15">Net 15</option>
               <option value="30">Net 30</option>
@@ -315,7 +315,7 @@ export function GoodsReceiptHeaderFields({ readOnly = false, onPoLinesLoaded }: 
             </select>
           </FormField>
 
-          <FormField name="payment_due_date" label={t('form.paymentInfo.dueDate')}>
+          <FormField name="payment_due_date" label={t($ => $.form.paymentInfo.dueDate)}>
             <Input
               type="date"
               disabled={readOnly}

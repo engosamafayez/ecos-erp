@@ -17,12 +17,17 @@ use PHPUnit\Framework\TestCase;
  */
 final class ShiftDomainEventsTest extends TestCase
 {
-    private const SHIFT_ID    = 'shift-uuid-1';
-    private const SESSION_ID  = 'session-uuid-1';
+    private const SHIFT_ID = 'shift-uuid-1';
+
+    private const SESSION_ID = 'session-uuid-1';
+
     private const TERMINAL_ID = 'terminal-uuid-1';
-    private const CASHIER_ID  = 'cashier-uuid-1';
-    private const SHIFT_NUM   = 3;
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
+
+    private const SHIFT_NUM = 3;
+
+    private const CURRENCY = 'EGP';
 
     // ── ShiftOpened ──────────────────────────────────────────────────────────
 
@@ -60,8 +65,8 @@ final class ShiftDomainEventsTest extends TestCase
         $array = $this->makeShiftOpened()->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'shift_id', 'session_id', 'terminal_id', 'cashier_id',
-                  'shift_number', 'opening_cash_amount', 'currency'] as $key) {
+            'shift_id', 'session_id', 'terminal_id', 'cashier_id',
+            'shift_number', 'opening_cash_amount', 'currency'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }
@@ -100,8 +105,8 @@ final class ShiftDomainEventsTest extends TestCase
         $array = $this->makeSubmitted()->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'shift_id', 'session_id', 'terminal_id', 'cashier_id',
-                  'shift_number', 'closing_count_amount', 'currency'] as $key) {
+            'shift_id', 'session_id', 'terminal_id', 'cashier_id',
+            'shift_number', 'closing_count_amount', 'currency'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }
@@ -138,9 +143,9 @@ final class ShiftDomainEventsTest extends TestCase
         $array = $this->makeApproved()->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'shift_id', 'session_id', 'terminal_id', 'cashier_id', 'shift_number',
-                  'closing_count_amount', 'expected_closing_amount', 'variance_amount',
-                  'currency', 'duration_minutes'] as $key) {
+            'shift_id', 'session_id', 'terminal_id', 'cashier_id', 'shift_number',
+            'closing_count_amount', 'expected_closing_amount', 'variance_amount',
+            'currency', 'duration_minutes'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }
@@ -159,7 +164,7 @@ final class ShiftDomainEventsTest extends TestCase
     {
         $event = ShiftCountRejected::now(
             self::SHIFT_ID, self::SESSION_ID, self::TERMINAL_ID, self::CASHIER_ID,
-            self::SHIFT_NUM, 'Count discrepancy exceeds tolerance'
+            self::SHIFT_NUM, 'Count discrepancy exceeds tolerance',
         );
 
         $this->assertSame('Count discrepancy exceeds tolerance', $event->reason);
@@ -178,8 +183,8 @@ final class ShiftDomainEventsTest extends TestCase
         $array = $this->makeRejected()->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'shift_id', 'session_id', 'terminal_id', 'cashier_id',
-                  'shift_number', 'reason'] as $key) {
+            'shift_id', 'session_id', 'terminal_id', 'cashier_id',
+            'shift_number', 'reason'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }

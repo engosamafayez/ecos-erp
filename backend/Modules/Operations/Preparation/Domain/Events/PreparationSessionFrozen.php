@@ -21,8 +21,8 @@ final class PreparationSessionFrozen
         public readonly string $sessionId,
         public readonly string $warehouseId,
         public readonly string $companyId,
-        public readonly int    $ordersCount,
-        public readonly int    $productsCount,
+        public readonly int $ordersCount,
+        public readonly int $productsCount,
         public readonly string $frozenBy,
         public readonly string $occurredAt,
     ) {}

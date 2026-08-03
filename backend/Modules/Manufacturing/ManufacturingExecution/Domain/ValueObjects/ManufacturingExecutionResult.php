@@ -11,14 +11,14 @@ namespace Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects;
  * In that case, consumed_components and ledger_entry_ids are empty
  * (the original execution's data lives in the transaction and ledger).
  *
- * @property list<ComponentConsumptionRecord>  $consumed_components
- * @property list<string>                       $ledger_entry_ids
+ * @property list<ComponentConsumptionRecord> $consumed_components
+ * @property list<string> $ledger_entry_ids
  */
 final readonly class ManufacturingExecutionResult
 {
     /**
      * @param  list<ComponentConsumptionRecord>  $consumed_components
-     * @param  list<string>                       $ledger_entry_ids
+     * @param  list<string>  $ledger_entry_ids
      */
     public function __construct(
         /** UUID generated at execution call time (unique per call, even for idempotent replays). */
@@ -48,19 +48,19 @@ final readonly class ManufacturingExecutionResult
     public function toArray(): array
     {
         return [
-            'execution_id'        => $this->execution_id,
-            'transaction_id'      => $this->transaction_id,
-            'success'             => $this->success,
-            'was_idempotent'      => $this->was_idempotent,
-            'qty_produced'        => $this->qty_produced,
+            'execution_id' => $this->execution_id,
+            'transaction_id' => $this->transaction_id,
+            'success' => $this->success,
+            'was_idempotent' => $this->was_idempotent,
+            'qty_produced' => $this->qty_produced,
             'consumed_components' => array_map(
-                fn(ComponentConsumptionRecord $r): array => $r->toArray(),
+                fn (ComponentConsumptionRecord $r): array => $r->toArray(),
                 $this->consumed_components,
             ),
-            'ledger_entry_ids'    => $this->ledger_entry_ids,
-            'duration_ms'         => $this->duration_ms,
-            'executed_at'         => $this->executed_at,
-            'metadata'            => $this->metadata,
+            'ledger_entry_ids' => $this->ledger_entry_ids,
+            'duration_ms' => $this->duration_ms,
+            'executed_at' => $this->executed_at,
+            'metadata' => $this->metadata,
         ];
     }
 }

@@ -12,7 +12,7 @@ use Modules\POS\Shift\Domain\Contracts\ShiftRepositoryInterface;
 final class RejectShiftService
 {
     public function __construct(
-        private readonly ShiftRepositoryInterface      $shiftRepo,
+        private readonly ShiftRepositoryInterface $shiftRepo,
         private readonly DomainEventPublisherInterface $publisher,
     ) {}
 

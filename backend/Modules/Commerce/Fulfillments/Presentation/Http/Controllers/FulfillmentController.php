@@ -10,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Fulfillments\Application\Actions\CancelFulfillmentAction;
-use Modules\Commerce\StockSync\Application\Actions\SyncStockAction;
 use Modules\Commerce\Fulfillments\Application\Actions\CreateFulfillmentAction;
 use Modules\Commerce\Fulfillments\Application\Actions\DeleteFulfillmentAction;
 use Modules\Commerce\Fulfillments\Application\Actions\FulfillFulfillmentAction;
@@ -21,6 +20,8 @@ use Modules\Commerce\Fulfillments\Application\DTO\FulfillmentDTO;
 use Modules\Commerce\Fulfillments\Presentation\Http\Requests\StoreFulfillmentRequest;
 use Modules\Commerce\Fulfillments\Presentation\Http\Requests\UpdateFulfillmentRequest;
 use Modules\Commerce\Fulfillments\Presentation\Http\Resources\FulfillmentResource;
+use Modules\Commerce\StockSync\Application\Actions\SyncStockAction;
+use Throwable;
 
 final class FulfillmentController extends Controller
 {
@@ -96,7 +97,7 @@ final class FulfillmentController extends Controller
             ->each(function (Channel $channel) use ($syncAction, $productIds): void {
                 try {
                     $syncAction->execute($channel->id, $productIds);
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     // Swallow sync errors — fulfillment succeeded
                 }
             });

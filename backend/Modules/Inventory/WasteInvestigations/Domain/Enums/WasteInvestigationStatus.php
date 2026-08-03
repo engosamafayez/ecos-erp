@@ -7,13 +7,13 @@ namespace Modules\Inventory\WasteInvestigations\Domain\Enums;
 enum WasteInvestigationStatus: string
 {
     case PendingInvestigation = 'pending_investigation';
-    case Resolved             = 'resolved';
+    case Resolved = 'resolved';
 
     public function label(): string
     {
         return match ($this) {
             self::PendingInvestigation => 'Pending Investigation',
-            self::Resolved             => 'Resolved',
+            self::Resolved => 'Resolved',
         };
     }
 

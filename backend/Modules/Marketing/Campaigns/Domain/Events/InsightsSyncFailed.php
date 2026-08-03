@@ -10,8 +10,8 @@ final class InsightsSyncFailed
 {
     public function __construct(
         public readonly MarketingConnection $connection,
-        public readonly string             $errorMessage,
-        public readonly int                $apiCalls,
-        public readonly int                $durationMs,
+        public readonly string $errorMessage,
+        public readonly int $apiCalls,
+        public readonly int $durationMs,
     ) {}
 }

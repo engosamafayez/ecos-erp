@@ -45,6 +45,7 @@ final class DispatchProviderHealthChecksCommand extends Command
 
         if ($records->isEmpty()) {
             $this->info('No configured provider credentials found.');
+
             return self::SUCCESS;
         }
 
@@ -56,6 +57,7 @@ final class DispatchProviderHealthChecksCommand extends Command
         }
 
         $this->info("Dispatched {$dispatched} health check job(s).");
+
         return self::SUCCESS;
     }
 }

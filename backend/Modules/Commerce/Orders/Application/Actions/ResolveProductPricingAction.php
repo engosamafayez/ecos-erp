@@ -38,18 +38,18 @@ final class ResolveProductPricingAction
         $product = Product::findOrFail($productId);
 
         $regularPrice = $product->regular_price !== null ? (float) $product->regular_price : null;
-        $salePrice    = $product->sale_price    !== null ? (float) $product->sale_price    : null;
+        $salePrice = $product->sale_price !== null ? (float) $product->sale_price : null;
 
         // Mirror ProductPricingGateway priority: sale_price → regular_price
         if ($salePrice !== null && $salePrice > 0.0) {
             $resolvedPrice = $salePrice;
-            $source        = 'sale_price';
+            $source = 'sale_price';
         } elseif ($regularPrice !== null && $regularPrice > 0.0) {
             $resolvedPrice = $regularPrice;
-            $source        = 'regular_price';
+            $source = 'regular_price';
         } else {
             $resolvedPrice = null;
-            $source        = null;
+            $source = null;
         }
 
         $hasPendingReview = $companyId !== null && PricingReview::where('product_id', $productId)
@@ -58,12 +58,12 @@ final class ResolveProductPricingAction
             ->exists();
 
         return [
-            'product_id'         => $productId,
-            'regular_price'      => $regularPrice,
-            'sale_price'         => $salePrice,
-            'resolved_price'     => $resolvedPrice,
-            'approved_price'     => $resolvedPrice, // alias consumed by the manual-order form
-            'source'             => $source,
+            'product_id' => $productId,
+            'regular_price' => $regularPrice,
+            'sale_price' => $salePrice,
+            'resolved_price' => $resolvedPrice,
+            'approved_price' => $resolvedPrice, // alias consumed by the manual-order form
+            'source' => $source,
             'has_pending_review' => $hasPendingReview,
         ];
     }

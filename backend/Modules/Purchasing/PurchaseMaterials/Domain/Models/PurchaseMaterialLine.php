@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
- * @property string      $id
- * @property string      $purchase_material_id
- * @property string      $product_id
- * @property string      $requested_qty
+ * @property string $id
+ * @property string $purchase_material_id
+ * @property string $product_id
+ * @property string $requested_qty
  * @property string|null $unit_label
  * @property string|null $notes
  */
@@ -46,10 +46,10 @@ class PurchaseMaterialLine extends Model
     protected function casts(): array
     {
         return [
-            'requested_qty'        => 'decimal:4',
-            'agreed_price'         => 'decimal:4',
-            'agreed_qty'           => 'decimal:4',
-            'lead_time_days'       => 'integer',
+            'requested_qty' => 'decimal:4',
+            'agreed_price' => 'decimal:4',
+            'agreed_qty' => 'decimal:4',
+            'lead_time_days' => 'integer',
             'supplier_selected_at' => 'datetime',
         ];
     }

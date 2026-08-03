@@ -6,16 +6,16 @@ namespace Modules\ClaudeBridge\Domain\Enums;
 
 enum TaskPriority: string
 {
-    case Low    = 'low';
+    case Low = 'low';
     case Normal = 'normal';
-    case High   = 'high';
+    case High = 'high';
 
     public function weight(): int
     {
-        return match($this) {
-            self::High   => 3,
+        return match ($this) {
+            self::High => 3,
             self::Normal => 2,
-            self::Low    => 1,
+            self::Low => 1,
         };
     }
 }

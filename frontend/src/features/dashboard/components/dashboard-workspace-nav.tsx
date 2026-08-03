@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowRight,
   BarChart3,
@@ -17,9 +18,19 @@ import type { ExecutiveDashboardData } from '../services/executive-dashboard.ser
 
 // ── Workspace definitions ──────────────────────────────────────────────────
 
+type WorkspaceLabelKey =
+  | 'workspaces.orders'
+  | 'workspaces.inventory'
+  | 'workspaces.manufacturing'
+  | 'workspaces.procurement'
+  | 'workspaces.crm'
+  | 'workspaces.marketing'
+  | 'workspaces.shipping'
+  | 'workspaces.finance';
+
 interface WorkspaceLink {
   id:       string;
-  label:    string;
+  labelKey: WorkspaceLabelKey;
   icon:     LucideIcon;
   color:    string;       // icon color class
   bgColor:  string;       // icon container background
@@ -30,7 +41,7 @@ interface WorkspaceLink {
 const WORKSPACES: WorkspaceLink[] = [
   {
     id:       'orders',
-    label:    'Orders',
+    labelKey: 'workspaces.orders',
     icon:     ShoppingCart,
     color:    'text-indigo-500',
     bgColor:  'bg-indigo-500/10',
@@ -39,7 +50,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'inventory',
-    label:    'Inventory',
+    labelKey: 'workspaces.inventory',
     icon:     Package,
     color:    'text-emerald-500',
     bgColor:  'bg-emerald-500/10',
@@ -47,7 +58,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'manufacturing',
-    label:    'Manufacturing',
+    labelKey: 'workspaces.manufacturing',
     icon:     Factory,
     color:    'text-violet-500',
     bgColor:  'bg-violet-500/10',
@@ -56,7 +67,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'procurement',
-    label:    'Procurement',
+    labelKey: 'workspaces.procurement',
     icon:     ShoppingBag,
     color:    'text-amber-500',
     bgColor:  'bg-amber-500/10',
@@ -64,7 +75,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'crm',
-    label:    'CRM',
+    labelKey: 'workspaces.crm',
     icon:     Users,
     color:    'text-pink-500',
     bgColor:  'bg-pink-500/10',
@@ -72,7 +83,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'marketing',
-    label:    'Marketing',
+    labelKey: 'workspaces.marketing',
     icon:     BarChart3,
     color:    'text-rose-500',
     bgColor:  'bg-rose-500/10',
@@ -80,7 +91,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'shipping',
-    label:    'Shipping',
+    labelKey: 'workspaces.shipping',
     icon:     Truck,
     color:    'text-cyan-500',
     bgColor:  'bg-cyan-500/10',
@@ -89,7 +100,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'finance',
-    label:    'Finance',
+    labelKey: 'workspaces.finance',
     icon:     CreditCard,
     color:    'text-teal-500',
     bgColor:  'bg-teal-500/10',
@@ -100,6 +111,7 @@ const WORKSPACES: WorkspaceLink[] = [
 // ── Workspace shortcut item ────────────────────────────────────────────────
 
 function WorkspaceItem({ ws, data }: { ws: WorkspaceLink; data?: ExecutiveDashboardData }) {
+  const { t } = useTranslation('dashboard');
   const Icon  = ws.icon;
   const count = data && ws.getCount ? ws.getCount(data) : 0;
   const hasAlert = count > 0;
@@ -113,7 +125,7 @@ function WorkspaceItem({ ws, data }: { ws: WorkspaceLink; data?: ExecutiveDashbo
         <Icon className={cn('h-3.5 w-3.5', ws.color)} />
       </div>
       <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground">
-        {ws.label}
+        {t(ws.labelKey)}
       </span>
       {hasAlert && (
         <span className={cn(

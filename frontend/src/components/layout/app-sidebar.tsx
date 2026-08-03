@@ -50,7 +50,7 @@ export function AppSidebar({
           size="icon"
           className="size-7"
           onClick={onCollapse}
-          aria-label="Expand sidebar"
+          aria-label={t($ => $.nav.expandSidebar)}
         >
           <ExpandIcon className="size-4" />
         </Button>
@@ -63,7 +63,7 @@ export function AppSidebar({
       {/* Sidebar header */}
       <div className="flex h-11 shrink-0 items-center justify-between border-b px-3">
         <span className="truncate text-sm font-semibold text-foreground">
-          {t(`nav.groups.${activeModule.id}`, { defaultValue: activeModule.label })}
+          {t($ => $.nav.groups[activeModule.id], { defaultValue: activeModule.label })}
         </span>
         {onCollapse && (
           <Button
@@ -71,7 +71,7 @@ export function AppSidebar({
             size="icon"
             className="size-7 shrink-0"
             onClick={onCollapse}
-            aria-label="Collapse sidebar"
+            aria-label={t($ => $.nav.collapseSidebar)}
           >
             <CollapseIcon className="size-4" />
           </Button>
@@ -80,7 +80,9 @@ export function AppSidebar({
 
       {/* Nav items */}
       <nav
-        aria-label={`${t(`nav.groups.${activeModule.id}`, { defaultValue: activeModule.label })} navigation`}
+        aria-label={t($ => $.nav.moduleNav, {
+          module: t($ => $.nav.groups[activeModule.id], { defaultValue: activeModule.label }),
+        })}
         className="flex flex-col gap-0.5 overflow-y-auto p-2"
       >
         {activeModule.items.map((item) => {
@@ -88,7 +90,7 @@ export function AppSidebar({
             return (
               <div key={item.key} className="mb-1 mt-4 px-3 first:mt-0">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t(`nav.items.${item.key}`, { defaultValue: item.label })}
+                  {t($ => $.nav.items[item.key], { defaultValue: item.label })}
                 </p>
               </div>
             );
@@ -109,7 +111,7 @@ export function AppSidebar({
               }
             >
               <Icon className="size-4 shrink-0" aria-hidden />
-              <span className="truncate">{t(`nav.items.${item.key}`, { defaultValue: item.label })}</span>
+              <span className="truncate">{t($ => $.nav.items[item.key], { defaultValue: item.label })}</span>
               {item.key === 'price-review' && <PriceReviewBadge />}
             </NavLink>
           );

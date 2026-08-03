@@ -15,10 +15,10 @@ final class DemandRefreshDispatcher
         string $requestedBy = 'system',
     ): void {
         event(new DemandRefreshRequested(
-            waveId:      $wave->id,
-            companyId:   $wave->company_id,
+            waveId: $wave->id,
+            companyId: $wave->company_id,
             warehouseId: $wave->warehouse_id,
-            trigger:     $trigger,
+            trigger: $trigger,
             requestedBy: $requestedBy,
             requestedAt: now()->toIso8601String(),
         ));

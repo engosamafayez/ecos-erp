@@ -3,7 +3,8 @@
   "subtitle": "Define the materials required to produce each finished good.",
   "search": "Search by BOM number or product name…",
   "actions": {
-    "new": "New BOM"
+    "new": "New BOM",
+    "actionsFor": "Actions for {{number}}"
   },
   "filters": {
     "status": "Status",
@@ -58,6 +59,8 @@
     "noLines": "No materials added yet.",
     "summary": "BOM Summary",
     "totalMaterials": "Total Materials",
+    "material": "Material",
+    "unknownError": "Something went wrong. Please try again.",
     "loading": "Loading…",
     "notFound": "Not Found",
     "notFoundMessage": "This BOM does not exist."

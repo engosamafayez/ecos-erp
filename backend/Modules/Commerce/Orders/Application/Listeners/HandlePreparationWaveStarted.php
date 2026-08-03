@@ -10,6 +10,7 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\MoveToPreparationWorkflow;
 use Modules\Operations\Preparation\Domain\Events\WaveStarted;
+use Throwable;
 
 /**
  * Transitions all orders in a started wave into Preparing status.
@@ -24,7 +25,7 @@ use Modules\Operations\Preparation\Domain\Events\WaveStarted;
 final class HandlePreparationWaveStarted
 {
     public function __construct(
-        private readonly FulfillmentEngine         $fulfillmentEngine,
+        private readonly FulfillmentEngine $fulfillmentEngine,
         private readonly MoveToPreparationWorkflow $moveToPreparation,
     ) {}
 
@@ -36,15 +37,15 @@ final class HandlePreparationWaveStarted
 
         // Guard: orders already at or past Preparing must not be regressed.
         $terminalStatuses = [
-            OrderStatus::Preparing->value,
+            OrderStatus::ReadyForDispatch->value,
             OrderStatus::OutForDelivery->value,
             OrderStatus::Delivered->value,
-            OrderStatus::Completed->value,
             OrderStatus::Cancelled->value,
+            OrderStatus::Returned->value,
         ];
 
-        $actorId    = $event->startedBy;
-        $waveId     = $event->waveId;
+        $actorId = $event->startedBy;
+        $waveId = $event->waveId;
         $waveNumber = $event->waveNumber;
 
         // Load eligible orders via Eloquent (respects global company scope + soft deletes).
@@ -62,12 +63,12 @@ final class HandlePreparationWaveStarted
                     ['wave_id' => $waveId, 'wave_number' => $waveNumber],
                     $actorId,
                 );
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::channel('daily')->error('[WaveActivation] Failed to transition order to Preparing via FulfillmentEngine', [
-                    'order_id'     => $order->id,
+                    'order_id' => $order->id,
                     'order_number' => $order->order_number,
-                    'wave_id'      => $waveId,
-                    'error'        => $e->getMessage(),
+                    'wave_id' => $waveId,
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

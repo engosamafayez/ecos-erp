@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Modules\Marketing\ProviderPlatform\Application\Listeners;
 
 use Modules\Marketing\ProviderPlatform\Application\Services\ProviderMetricsCollector;
-use Modules\Marketing\ProviderPlatform\Domain\Events\ProviderConfigured;
 use Modules\Marketing\ProviderPlatform\Domain\Events\ProviderConfigurationDeleted;
 use Modules\Marketing\ProviderPlatform\Domain\Events\ProviderConfigurationUpdated;
+use Modules\Marketing\ProviderPlatform\Domain\Events\ProviderConfigured;
 use Modules\Marketing\ProviderPlatform\Domain\Events\ProviderConnected;
 use Modules\Marketing\ProviderPlatform\Domain\Events\ProviderCredentialRotated;
 use Modules\Marketing\ProviderPlatform\Domain\Events\ProviderDisconnected;

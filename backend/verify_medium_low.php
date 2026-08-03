@@ -12,10 +12,10 @@
 declare(strict_types=1);
 
 define('LARAVEL_START', microtime(true));
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__.'/vendor/autoload.php';
 
-$app    = require_once __DIR__ . '/bootstrap/app.php';
-$kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
+$app = require_once __DIR__.'/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 use Illuminate\Support\Facades\DB;
@@ -24,23 +24,19 @@ use Modules\Inventory\CountSessions\Application\Actions\ApproveCountSessionActio
 use Modules\Inventory\CountSessions\Application\Actions\CompleteCountSessionAction;
 use Modules\Inventory\CountSessions\Application\Actions\CreateCountSessionAction;
 use Modules\Inventory\CountSessions\Application\Actions\StartCountSessionAction;
-use Modules\Inventory\CountSessions\Domain\Enums\CountSessionStatus;
 use Modules\Inventory\CountSessions\Domain\Models\InventoryCountSession;
 use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentInAction;
 use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentOutAction;
-use Modules\Inventory\InventoryItems\Application\Actions\DirectIssueStockAction;
 use Modules\Inventory\InventoryItems\Application\Actions\ReleaseStockAction;
 use Modules\Inventory\InventoryItems\Application\Actions\ReserveStockAction;
 use Modules\Inventory\InventoryItems\Application\Actions\ShipStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
-use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
-use Modules\Inventory\StockLedger\Application\Actions\AddManualStockAction;
 use Modules\Inventory\ReceiptLayers\Application\Services\InventoryLayerConsumptionService;
-use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
+use Modules\Inventory\StockLedger\Application\Actions\AddManualStockAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\PostGoodsReceiptAction;
 
 $app = app();
-$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -66,10 +62,10 @@ function runTest(string $id, string $label, Closure $fn, int &$passed, int &$fai
 function makeIds(): array
 {
     return [
-        'company'   => DB::table('companies')->value('id'),
+        'company' => DB::table('companies')->value('id'),
         'warehouse' => DB::table('warehouses')->value('id'),
-        'product'   => DB::table('products')->value('id'),
-        'supplier'  => DB::table('suppliers')->first()?->id ?? null,
+        'product' => DB::table('products')->value('id'),
+        'supplier' => DB::table('suppliers')->first()?->id ?? null,
     ];
 }
 
@@ -84,19 +80,20 @@ function seedInventoryItem(string $warehouseId, string $productId, string $compa
 
     $id = (string) Str::uuid();
     DB::table('inventory_items')->insert([
-        'id'           => $id,
+        'id' => $id,
         'warehouse_id' => $warehouseId,
-        'product_id'   => $productId,
-        'company_id'   => $companyId,
-        'on_hand_qty'  => $onHand,
+        'product_id' => $productId,
+        'company_id' => $companyId,
+        'on_hand_qty' => $onHand,
         'reserved_qty' => $reserved,
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
+
     return DB::table('inventory_items')->where('id', $id)->first();
 }
 
-function seedReceiptLayer(string $warehouseId, string $productId, string $companyId, float $qty, float $cost, ?string $supplierId = null, ?\DateTimeInterface $createdAt = null): object
+function seedReceiptLayer(string $warehouseId, string $productId, string $companyId, float $qty, float $cost, ?string $supplierId = null, ?DateTimeInterface $createdAt = null): object
 {
     $id = (string) Str::uuid();
 
@@ -109,19 +106,19 @@ function seedReceiptLayer(string $warehouseId, string $productId, string $compan
     $ts = $createdAt ?? now();
 
     DB::table('inventory_receipt_layers')->insert([
-        'id'                    => $id,
-        'supplier_id'           => $supplierId ?? DB::table('suppliers')->value('id'),
-        'product_id'            => $productId,
-        'goods_receipt_id'      => (string) Str::uuid(),
+        'id' => $id,
+        'supplier_id' => $supplierId ?? DB::table('suppliers')->value('id'),
+        'product_id' => $productId,
+        'goods_receipt_id' => (string) Str::uuid(),
         'goods_receipt_line_id' => (string) Str::uuid(),
-        'warehouse_id'          => $warehouseId,
-        'company_id'            => $companyId,
-        'received_qty'          => $qty,
-        'remaining_qty'         => $qty,
-        'landed_unit_cost'      => $cost,
-        'receipt_date'          => now()->toDateString(),
-        'created_at'            => $ts,
-        'updated_at'            => $ts,
+        'warehouse_id' => $warehouseId,
+        'company_id' => $companyId,
+        'received_qty' => $qty,
+        'remaining_qty' => $qty,
+        'landed_unit_cost' => $cost,
+        'receipt_date' => now()->toDateString(),
+        'created_at' => $ts,
+        'updated_at' => $ts,
     ]);
 
     if ($isMySQL) {
@@ -135,10 +132,10 @@ function seedReceiptLayer(string $warehouseId, string $productId, string $compan
 // Main
 // ──────────────────────────────────────────────────────────────────────────────
 
-$passed  = 0;
-$failed  = 0;
+$passed = 0;
+$failed = 0;
 $results = [];
-$ids     = makeIds();
+$ids = makeIds();
 
 if (! $ids['company'] || ! $ids['warehouse'] || ! $ids['product']) {
     echo "FATAL: Need at least one company, warehouse, and product in DB.\n";
@@ -158,9 +155,9 @@ runTest('M1-01', 'nextCountNumber produces CNT-00001 on empty table', function (
     // Delete all sessions to simulate empty table
     DB::table('inventory_count_sessions')->delete();
 
-    $action  = app(CreateCountSessionAction::class);
+    $action = app(CreateCountSessionAction::class);
     $session = $action->execute([
-        'company_id'   => $ids['company'],
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
     ]);
 
@@ -172,18 +169,18 @@ runTest('M1-02', 'nextCountNumber increments correctly from existing max', funct
 
     // Insert a session with a high number to test ordering
     DB::table('inventory_count_sessions')->insert([
-        'id'           => (string) Str::uuid(),
-        'company_id'   => $ids['company'],
+        'id' => (string) Str::uuid(),
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
         'count_number' => 'CNT-00099',
-        'status'       => 'draft',
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        'status' => 'draft',
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
-    $action  = app(CreateCountSessionAction::class);
+    $action = app(CreateCountSessionAction::class);
     $session = $action->execute([
-        'company_id'   => $ids['company'],
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
     ]);
 
@@ -195,19 +192,19 @@ runTest('M1-03', 'nextCountNumber handles non-sequential gaps (picks global max)
 
     foreach (['CNT-00005', 'CNT-00012', 'CNT-00003'] as $n) {
         DB::table('inventory_count_sessions')->insert([
-            'id'           => (string) Str::uuid(),
-            'company_id'   => $ids['company'],
+            'id' => (string) Str::uuid(),
+            'company_id' => $ids['company'],
             'warehouse_id' => $ids['warehouse'],
             'count_number' => $n,
-            'status'       => 'draft',
-            'created_at'   => now(),
-            'updated_at'   => now(),
+            'status' => 'draft',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
-    $action  = app(CreateCountSessionAction::class);
+    $action = app(CreateCountSessionAction::class);
     $session = $action->execute([
-        'company_id'   => $ids['company'],
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
     ]);
 
@@ -227,9 +224,9 @@ runTest('M2-01', 'StartCountSession refreshes system_qty from current on_hand_qt
 
     $createAction = app(CreateCountSessionAction::class);
     $session = $createAction->execute([
-        'company_id'   => $ids['company'],
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
-        'product_ids'  => [$ids['product']],
+        'product_ids' => [$ids['product']],
     ]);
 
     // Verify line was created with system_qty=5
@@ -254,7 +251,7 @@ runTest('M2-02', 'StartCountSession status transitions to InProgress and sets st
 
     $createAction = app(CreateCountSessionAction::class);
     $session = $createAction->execute([
-        'company_id'   => $ids['company'],
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
     ]);
 
@@ -270,7 +267,7 @@ runTest('M2-03', 'StartCountSession rejects double-start (already InProgress)', 
 
     $createAction = app(CreateCountSessionAction::class);
     $session = $createAction->execute([
-        'company_id'   => $ids['company'],
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
     ]);
 
@@ -281,7 +278,7 @@ runTest('M2-03', 'StartCountSession rejects double-start (already InProgress)', 
     $threw = false;
     try {
         $startAction->execute($session);
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
 
@@ -318,27 +315,27 @@ runTest('M3-01', 'Partial unique index: soft-deleted slot can be reused', functi
 
     $id1 = (string) Str::uuid();
     DB::table('inventory_items')->insert([
-        'id'           => $id1,
+        'id' => $id1,
         'warehouse_id' => $ids['warehouse'],
-        'product_id'   => $ids['product'],
-        'company_id'   => $ids['company'],
-        'on_hand_qty'  => 10.0,
+        'product_id' => $ids['product'],
+        'company_id' => $ids['company'],
+        'on_hand_qty' => 10.0,
         'reserved_qty' => 0.0,
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
     DB::table('inventory_items')->where('id', $id1)->update(['deleted_at' => now()]);
 
     $id2 = (string) Str::uuid();
     DB::table('inventory_items')->insert([
-        'id'           => $id2,
+        'id' => $id2,
         'warehouse_id' => $ids['warehouse'],
-        'product_id'   => $ids['product'],
-        'company_id'   => $ids['company'],
-        'on_hand_qty'  => 5.0,
+        'product_id' => $ids['product'],
+        'company_id' => $ids['company'],
+        'on_hand_qty' => 5.0,
         'reserved_qty' => 0.0,
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
     $count = DB::table('inventory_items')
@@ -367,29 +364,29 @@ runTest('M3-02', 'Duplicate active warehouse+product still rejected', function (
         ->delete();
 
     DB::table('inventory_items')->insert([
-        'id'           => (string) Str::uuid(),
+        'id' => (string) Str::uuid(),
         'warehouse_id' => $ids['warehouse'],
-        'product_id'   => $ids['product'],
-        'company_id'   => $ids['company'],
-        'on_hand_qty'  => 5.0,
+        'product_id' => $ids['product'],
+        'company_id' => $ids['company'],
+        'on_hand_qty' => 5.0,
         'reserved_qty' => 0.0,
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
     $threw = false;
     try {
         DB::table('inventory_items')->insert([
-            'id'           => (string) Str::uuid(),
+            'id' => (string) Str::uuid(),
             'warehouse_id' => $ids['warehouse'],
-            'product_id'   => $ids['product'],
-            'company_id'   => $ids['company'],
-            'on_hand_qty'  => 3.0,
+            'product_id' => $ids['product'],
+            'company_id' => $ids['company'],
+            'on_hand_qty' => 3.0,
             'reserved_qty' => 0.0,
-            'created_at'   => now(),
-            'updated_at'   => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
 
@@ -406,43 +403,43 @@ runTest('M4-01', 'waste_investigations FK enforced: bogus company_id rejected', 
     DB::table('inventory_count_sessions')->delete();
     $sessionId = (string) Str::uuid();
     DB::table('inventory_count_sessions')->insert([
-        'id'           => $sessionId,
-        'company_id'   => $ids['company'],
+        'id' => $sessionId,
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
         'count_number' => 'CNT-99991',
-        'status'       => 'in_progress',
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        'status' => 'in_progress',
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
     $lineId = (string) Str::uuid();
     DB::table('inventory_count_lines')->insert([
-        'id'                => $lineId,
-        'session_id'        => $sessionId,
-        'product_id'        => $ids['product'],
+        'id' => $lineId,
+        'session_id' => $sessionId,
+        'product_id' => $ids['product'],
         'inventory_item_id' => (string) Str::uuid(),
-        'system_qty'        => 10,
-        'created_at'        => now(),
-        'updated_at'        => now(),
+        'system_qty' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
     $threw = false;
     try {
         DB::table('waste_investigations')->insert([
-            'id'               => (string) Str::uuid(),
-            'company_id'       => (string) Str::uuid(), // bogus — no FK match
-            'warehouse_id'     => $ids['warehouse'],
+            'id' => (string) Str::uuid(),
+            'company_id' => (string) Str::uuid(), // bogus — no FK match
+            'warehouse_id' => $ids['warehouse'],
             'count_session_id' => $sessionId,
-            'count_line_id'    => $lineId,
-            'product_id'       => $ids['product'],
-            'quantity'         => 1,
-            'unit_cost'        => 10,
-            'total_cost'       => 10,
-            'status'           => 'pending_investigation',
-            'month'            => now()->format('Y-m'),
-            'created_at'       => now(),
-            'updated_at'       => now(),
+            'count_line_id' => $lineId,
+            'product_id' => $ids['product'],
+            'quantity' => 1,
+            'unit_cost' => 10,
+            'total_cost' => 10,
+            'status' => 'pending_investigation',
+            'month' => now()->format('Y-m'),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     assert($threw, 'waste_investigations with invalid company_id must be rejected by FK');
@@ -452,44 +449,44 @@ runTest('M4-02', 'warehouse_liabilities FK enforced: bogus warehouse_id rejected
     DB::table('inventory_count_sessions')->delete();
     $sessionId = (string) Str::uuid();
     DB::table('inventory_count_sessions')->insert([
-        'id'           => $sessionId,
-        'company_id'   => $ids['company'],
+        'id' => $sessionId,
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
         'count_number' => 'CNT-99992',
-        'status'       => 'in_progress',
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        'status' => 'in_progress',
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
     $lineId = (string) Str::uuid();
     DB::table('inventory_count_lines')->insert([
-        'id'                => $lineId,
-        'session_id'        => $sessionId,
-        'product_id'        => $ids['product'],
+        'id' => $lineId,
+        'session_id' => $sessionId,
+        'product_id' => $ids['product'],
         'inventory_item_id' => (string) Str::uuid(),
-        'system_qty'        => 10,
-        'created_at'        => now(),
-        'updated_at'        => now(),
+        'system_qty' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
     $threw = false;
     try {
         DB::table('warehouse_liabilities')->insert([
-            'id'               => (string) Str::uuid(),
-            'company_id'       => $ids['company'],
-            'warehouse_id'     => (string) Str::uuid(), // bogus
-            'product_id'       => $ids['product'],
+            'id' => (string) Str::uuid(),
+            'company_id' => $ids['company'],
+            'warehouse_id' => (string) Str::uuid(), // bogus
+            'product_id' => $ids['product'],
             'count_session_id' => $sessionId,
-            'count_line_id'    => $lineId,
-            'liability_type'   => 'inventory_shortage',
-            'quantity'         => 1,
-            'unit_cost'        => 10,
-            'total_cost'       => 10,
-            'status'           => 'pending',
-            'month'            => now()->format('Y-m'),
-            'created_at'       => now(),
-            'updated_at'       => now(),
+            'count_line_id' => $lineId,
+            'liability_type' => 'inventory_shortage',
+            'quantity' => 1,
+            'unit_cost' => 10,
+            'total_cost' => 10,
+            'status' => 'pending',
+            'month' => now()->format('Y-m'),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     assert($threw, 'warehouse_liabilities with invalid warehouse_id must be rejected by FK');
@@ -504,13 +501,13 @@ runTest('M5-01', 'AdjustmentIn: DB state reflects change after action', function
     $before = seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 10.0);
 
     $action = app(AdjustmentInAction::class);
-    $dto    = new StockOperationDTO(
-        warehouse_id:   $ids['warehouse'],
-        product_id:     $ids['product'],
-        company_id:     $ids['company'],
-        quantity:       3.0,
+    $dto = new StockOperationDTO(
+        warehouse_id: $ids['warehouse'],
+        product_id: $ids['product'],
+        company_id: $ids['company'],
+        quantity: 3.0,
         reference_type: 'test',
-        reference_id:   (string) Str::uuid(),
+        reference_id: (string) Str::uuid(),
     );
     $result = $action->execute($dto);
 
@@ -523,13 +520,13 @@ runTest('M5-02', 'AdjustmentOut: DB state correct, rollback on insufficient stoc
     seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 10.0);
 
     $action = app(AdjustmentOutAction::class);
-    $dto    = new StockOperationDTO(
-        warehouse_id:   $ids['warehouse'],
-        product_id:     $ids['product'],
-        company_id:     $ids['company'],
-        quantity:       4.0,
+    $dto = new StockOperationDTO(
+        warehouse_id: $ids['warehouse'],
+        product_id: $ids['product'],
+        company_id: $ids['company'],
+        quantity: 4.0,
         reference_type: 'test',
-        reference_id:   (string) Str::uuid(),
+        reference_id: (string) Str::uuid(),
     );
     $result = $action->execute($dto);
     assert($result->isSuccess(), 'AdjustmentOut should succeed');
@@ -538,14 +535,14 @@ runTest('M5-02', 'AdjustmentOut: DB state correct, rollback on insufficient stoc
     $threw = false;
     try {
         $action->execute(new StockOperationDTO(
-            warehouse_id:   $ids['warehouse'],
-            product_id:     $ids['product'],
-            company_id:     $ids['company'],
-            quantity:       999.0,
+            warehouse_id: $ids['warehouse'],
+            product_id: $ids['product'],
+            company_id: $ids['company'],
+            quantity: 999.0,
             reference_type: 'test',
-            reference_id:   (string) Str::uuid(),
+            reference_id: (string) Str::uuid(),
         ));
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     assert($threw, 'Over-adjustment should throw');
@@ -556,12 +553,12 @@ runTest('M5-03', 'Reserve: DB state correct; event registered inside transaction
 
     $action = app(ReserveStockAction::class);
     $result = $action->execute(new StockOperationDTO(
-        warehouse_id:   $ids['warehouse'],
-        product_id:     $ids['product'],
-        company_id:     $ids['company'],
-        quantity:       5.0,
+        warehouse_id: $ids['warehouse'],
+        product_id: $ids['product'],
+        company_id: $ids['company'],
+        quantity: 5.0,
         reference_type: 'order',
-        reference_id:   (string) Str::uuid(),
+        reference_id: (string) Str::uuid(),
     ));
     assert($result->isSuccess(), 'Reserve must succeed');
 
@@ -570,7 +567,7 @@ runTest('M5-03', 'Reserve: DB state correct; event registered inside transaction
         ->where('product_id', $ids['product'])
         ->whereNull('deleted_at')
         ->first();
-    assert((float) $item->reserved_qty === 5.0, "reserved_qty should be 5.0");
+    assert((float) $item->reserved_qty === 5.0, 'reserved_qty should be 5.0');
 }, $passed, $failed, $results);
 
 runTest('M5-04', 'Release: reserved_qty decrements correctly', function () use ($ids) {
@@ -578,12 +575,12 @@ runTest('M5-04', 'Release: reserved_qty decrements correctly', function () use (
 
     $action = app(ReleaseStockAction::class);
     $result = $action->execute(new StockOperationDTO(
-        warehouse_id:   $ids['warehouse'],
-        product_id:     $ids['product'],
-        company_id:     $ids['company'],
-        quantity:       3.0,
+        warehouse_id: $ids['warehouse'],
+        product_id: $ids['product'],
+        company_id: $ids['company'],
+        quantity: 3.0,
         reference_type: 'order',
-        reference_id:   (string) Str::uuid(),
+        reference_id: (string) Str::uuid(),
     ));
     assert($result->isSuccess(), 'Release must succeed');
 
@@ -592,7 +589,7 @@ runTest('M5-04', 'Release: reserved_qty decrements correctly', function () use (
         ->where('product_id', $ids['product'])
         ->whereNull('deleted_at')
         ->first();
-    assert((float) $item->reserved_qty === 5.0, "reserved_qty should be 5.0 after releasing 3");
+    assert((float) $item->reserved_qty === 5.0, 'reserved_qty should be 5.0 after releasing 3');
 }, $passed, $failed, $results);
 
 runTest('M5-05', 'Ship: on_hand and reserved both decrement', function () use ($ids) {
@@ -600,12 +597,12 @@ runTest('M5-05', 'Ship: on_hand and reserved both decrement', function () use ($
 
     $action = app(ShipStockAction::class);
     $result = $action->execute(new StockOperationDTO(
-        warehouse_id:   $ids['warehouse'],
-        product_id:     $ids['product'],
-        company_id:     $ids['company'],
-        quantity:       5.0,
+        warehouse_id: $ids['warehouse'],
+        product_id: $ids['product'],
+        company_id: $ids['company'],
+        quantity: 5.0,
         reference_type: 'order',
-        reference_id:   (string) Str::uuid(),
+        reference_id: (string) Str::uuid(),
     ));
     assert($result->isSuccess(), 'Ship must succeed');
 
@@ -614,8 +611,8 @@ runTest('M5-05', 'Ship: on_hand and reserved both decrement', function () use ($
         ->where('product_id', $ids['product'])
         ->whereNull('deleted_at')
         ->first();
-    assert((float) $item->on_hand_qty === 15.0, "on_hand should be 15.0");
-    assert((float) $item->reserved_qty === 5.0, "reserved should be 5.0");
+    assert((float) $item->on_hand_qty === 15.0, 'on_hand should be 15.0');
+    assert((float) $item->reserved_qty === 5.0, 'reserved should be 5.0');
 }, $passed, $failed, $results);
 
 runTest('M5-06', 'ApproveCountSession: full lifecycle in_progress→completed→approved', function () use ($ids) {
@@ -629,9 +626,9 @@ runTest('M5-06', 'ApproveCountSession: full lifecycle in_progress→completed→
     DB::table('products')->where('id', $ids['product'])->update(['average_cost' => 10.00]);
 
     $session = app(CreateCountSessionAction::class)->execute([
-        'company_id'   => $ids['company'],
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
-        'product_ids'  => [$ids['product']],
+        'product_ids' => [$ids['product']],
     ]);
 
     app(StartCountSessionAction::class)->execute($session);
@@ -654,15 +651,15 @@ runTest('M5-06', 'ApproveCountSession: full lifecycle in_progress→completed→
 // ────────────────────────────────────────────────────────────────────────────
 echo "\n── M6: PostGoodsReceiptAction loadMissing ───────────────────────────\n";
 
-runTest('M6-01', 'PostGoodsReceiptAction guard 1 (already posted) fires before loadMissing', function () use ($ids) {
+runTest('M6-01', 'PostGoodsReceiptAction guard 1 (already posted) fires before loadMissing', function () {
     // Build a minimal posted receipt in memory using a fake that would fail on lazy load
     $threw = false;
     try {
         $action = app(PostGoodsReceiptAction::class);
         $action->execute('00000000-0000-0000-0000-000000000000'); // non-existent => GoodsReceiptNotFoundException
-    } catch (\Modules\Purchasing\GoodsReceipts\Domain\Exceptions\GoodsReceiptNotFoundException) {
+    } catch (Modules\Purchasing\GoodsReceipts\Domain\Exceptions\GoodsReceiptNotFoundException) {
         $threw = true;
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         $threw = str_contains($e->getMessage(), 'not found') || str_contains($e->getMessage(), 'No query results');
     }
     assert($threw, 'Non-existent receipt ID must throw not-found exception');
@@ -676,7 +673,7 @@ echo "\n── L1: BCMath precision ──────────────�
 runTest('L1-01', 'FIFO consumption: no floating-point drift for 0.1+0.2 quantities', function () use ($ids) {
     $supplierId = DB::table('suppliers')->value('id');
     if (! $supplierId) {
-        throw new \RuntimeException('No supplier in DB; skipping L1-01');
+        throw new RuntimeException('No supplier in DB; skipping L1-01');
     }
 
     // Seed two layers that would produce float drift
@@ -688,12 +685,12 @@ runTest('L1-01', 'FIFO consumption: no floating-point drift for 0.1+0.2 quantiti
     $item = seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 0.3);
 
     $service = app(InventoryLayerConsumptionService::class);
-    $result  = $service->consume(
+    $result = $service->consume(
         inventoryItemId: $item->id,
-        productId:       $ids['product'],
-        warehouseId:     $ids['warehouse'],
-        companyId:       $ids['company'],
-        quantity:        0.3,
+        productId: $ids['product'],
+        warehouseId: $ids['warehouse'],
+        companyId: $ids['company'],
+        quantity: 0.3,
     );
 
     // Total cost should be bcmul('0.1','0.3',4) + bcmul('0.2','0.3',4) = 0.0300 + 0.0600 = 0.0900
@@ -704,19 +701,19 @@ runTest('L1-01', 'FIFO consumption: no floating-point drift for 0.1+0.2 quantiti
 runTest('L1-02', 'FIFO consumption: weightedCost computed via BCMath', function () use ($ids) {
     $supplierId = DB::table('suppliers')->value('id');
     if (! $supplierId) {
-        throw new \RuntimeException('No supplier in DB; skipping L1-02');
+        throw new RuntimeException('No supplier in DB; skipping L1-02');
     }
 
     seedReceiptLayer($ids['warehouse'], $ids['product'], $ids['company'], 10.0, 3.33, $supplierId);
     $item = seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 10.0);
 
     $service = app(InventoryLayerConsumptionService::class);
-    $result  = $service->consume(
+    $result = $service->consume(
         inventoryItemId: $item->id,
-        productId:       $ids['product'],
-        warehouseId:     $ids['warehouse'],
-        companyId:       $ids['company'],
-        quantity:        10.0,
+        productId: $ids['product'],
+        warehouseId: $ids['warehouse'],
+        companyId: $ids['company'],
+        quantity: 10.0,
     );
 
     // weightedCost = totalCost / quantity = 33.3000 / 10 = 3.3300
@@ -733,9 +730,9 @@ runTest('L1-03', 'ApproveCountSession shortage total uses BCMath (not float mult
     seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 10.0);
 
     $session = app(CreateCountSessionAction::class)->execute([
-        'company_id'   => $ids['company'],
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
-        'product_ids'  => [$ids['product']],
+        'product_ids' => [$ids['product']],
     ]);
 
     app(StartCountSessionAction::class)->execute($session);
@@ -768,7 +765,7 @@ echo "\n── L2: FIFO ordering stability ────────────�
 runTest('L2-01', 'FIFO consumes oldest layer first (created_at ordering)', function () use ($ids) {
     $supplierId = DB::table('suppliers')->value('id');
     if (! $supplierId) {
-        throw new \RuntimeException('No supplier in DB');
+        throw new RuntimeException('No supplier in DB');
     }
 
     // Layer A older (cheaper) — explicit timestamps guarantee FIFO order over UUID tiebreaker
@@ -777,25 +774,25 @@ runTest('L2-01', 'FIFO consumes oldest layer first (created_at ordering)', funct
     $item = seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 10.0);
 
     $service = app(InventoryLayerConsumptionService::class);
-    $result  = $service->consume(
+    $result = $service->consume(
         inventoryItemId: $item->id,
-        productId:       $ids['product'],
-        warehouseId:     $ids['warehouse'],
-        companyId:       $ids['company'],
-        quantity:        3.0,
+        productId: $ids['product'],
+        warehouseId: $ids['warehouse'],
+        companyId: $ids['company'],
+        quantity: 3.0,
     );
 
     $firstLayer = $result->consumedLayers[0];
     assert(
         abs($firstLayer->unitCost - 1.00) < 0.0001,
-        "FIFO must consume cheapest (oldest) layer first; got unitCost={$firstLayer->unitCost}"
+        "FIFO must consume cheapest (oldest) layer first; got unitCost={$firstLayer->unitCost}",
     );
 }, $passed, $failed, $results);
 
 runTest('L2-02', 'FIFO spans multiple layers when first is exhausted', function () use ($ids) {
     $supplierId = DB::table('suppliers')->value('id');
     if (! $supplierId) {
-        throw new \RuntimeException('No supplier in DB');
+        throw new RuntimeException('No supplier in DB');
     }
 
     seedReceiptLayer($ids['warehouse'], $ids['product'], $ids['company'], 2.0, 10.00, $supplierId, now()->subSeconds(2));
@@ -803,12 +800,12 @@ runTest('L2-02', 'FIFO spans multiple layers when first is exhausted', function 
     $item = seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 7.0);
 
     $service = app(InventoryLayerConsumptionService::class);
-    $result  = $service->consume(
+    $result = $service->consume(
         inventoryItemId: $item->id,
-        productId:       $ids['product'],
-        warehouseId:     $ids['warehouse'],
-        companyId:       $ids['company'],
-        quantity:        5.0,
+        productId: $ids['product'],
+        warehouseId: $ids['warehouse'],
+        companyId: $ids['company'],
+        quantity: 5.0,
     );
 
     assert(count($result->consumedLayers) === 2, 'Must span two layers');
@@ -824,30 +821,30 @@ runTest('L2-02', 'FIFO spans multiple layers when first is exhausted', function 
 echo "\n── L3: Count number race condition (lockForUpdate) ──────────────────\n";
 
 runTest('L3-01', 'nextCountNumber uses lockForUpdate and portable ordering (verified structurally)', function () {
-    $src = file_get_contents(__DIR__ . '/Modules/Inventory/CountSessions/Application/Actions/CreateCountSessionAction.php');
+    $src = file_get_contents(__DIR__.'/Modules/Inventory/CountSessions/Application/Actions/CreateCountSessionAction.php');
     assert(str_contains($src, 'lockForUpdate()'), 'CreateCountSessionAction must use lockForUpdate()');
     assert(
         str_contains($src, "orderByDesc('count_number')"),
-        'Must use portable orderByDesc instead of DB-specific CAST'
+        'Must use portable orderByDesc instead of DB-specific CAST',
     );
     assert(
         ! str_contains($src, 'AS UNSIGNED'),
-        'Must NOT contain MySQL-only AS UNSIGNED'
+        'Must NOT contain MySQL-only AS UNSIGNED',
     );
 }, $passed, $failed, $results);
 
 runTest('L3-02', 'Sequential count creation produces unique sequential numbers', function () use ($ids) {
     DB::table('inventory_count_sessions')->delete();
 
-    $action  = app(CreateCountSessionAction::class);
+    $action = app(CreateCountSessionAction::class);
     $session1 = $action->execute(['company_id' => $ids['company'], 'warehouse_id' => $ids['warehouse']]);
     $session2 = $action->execute(['company_id' => $ids['company'], 'warehouse_id' => $ids['warehouse']]);
     $session3 = $action->execute(['company_id' => $ids['company'], 'warehouse_id' => $ids['warehouse']]);
 
     $numbers = [$session1->count_number, $session2->count_number, $session3->count_number];
-    $unique  = array_unique($numbers);
+    $unique = array_unique($numbers);
 
-    assert(count($unique) === 3, 'All three count numbers must be unique: ' . implode(', ', $numbers));
+    assert(count($unique) === 3, 'All three count numbers must be unique: '.implode(', ', $numbers));
     assert($session1->count_number === 'CNT-00001', "First should be CNT-00001, got {$session1->count_number}");
     assert($session2->count_number === 'CNT-00002', "Second should be CNT-00002, got {$session2->count_number}");
     assert($session3->count_number === 'CNT-00003', "Third should be CNT-00003, got {$session3->count_number}");
@@ -861,7 +858,7 @@ echo "\n── L4: 3PL ADR (architectural decision documented) ─────�
 runTest('L4-01', 'Company isolation enforced: cross-company FIFO consumption rejected', function () use ($ids) {
     $supplierId = DB::table('suppliers')->value('id');
     if (! $supplierId) {
-        throw new \RuntimeException('No supplier in DB');
+        throw new RuntimeException('No supplier in DB');
     }
 
     // Layer belongs to company A
@@ -874,12 +871,12 @@ runTest('L4-01', 'Company isolation enforced: cross-company FIFO consumption rej
         $service = app(InventoryLayerConsumptionService::class);
         $service->consume(
             inventoryItemId: (string) Str::uuid(),
-            productId:       $ids['product'],
-            warehouseId:     $ids['warehouse'],
-            companyId:       $bogusCompanyId, // different company — must find zero layers
-            quantity:        1.0,
+            productId: $ids['product'],
+            warehouseId: $ids['warehouse'],
+            companyId: $bogusCompanyId, // different company — must find zero layers
+            quantity: 1.0,
         );
-    } catch (\Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException) {
+    } catch (Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException) {
         $threw = true;
     }
     assert($threw, 'Cross-company FIFO consumption must throw InsufficientStockException');
@@ -891,10 +888,10 @@ runTest('L4-02', 'ADR-007 documented: shared warehouse uniqueness constraint exc
     // - Shared warehouses / 3PL are NOT supported in the current architecture
     // - The partial unique index (M3) handles SoftDeletes without breaking re-creation
     // This test validates that the code reflects this constraint.
-    $src = file_get_contents(__DIR__ . '/Modules/Inventory/ReceiptLayers/Application/Services/InventoryLayerConsumptionService.php');
+    $src = file_get_contents(__DIR__.'/Modules/Inventory/ReceiptLayers/Application/Services/InventoryLayerConsumptionService.php');
     assert(
         str_contains($src, "->where('company_id', \$companyId)"),
-        'FIFO consumption must filter by company_id (tenant isolation)'
+        'FIFO consumption must filter by company_id (tenant isolation)',
     );
 }, $passed, $failed, $results);
 
@@ -905,10 +902,10 @@ echo "\n── REGRESSION: Core inventory action paths ────────�
 
 runTest('REG-01', 'Goods Receipt: non-existent ID throws not-found', function () {
     $action = app(PostGoodsReceiptAction::class);
-    $threw  = false;
+    $threw = false;
     try {
         $action->execute('00000000-0000-0000-0000-000000000000');
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     assert($threw, 'Non-existent receipt must throw');
@@ -916,17 +913,17 @@ runTest('REG-01', 'Goods Receipt: non-existent ID throws not-found', function ()
 
 runTest('REG-02', 'AdjustmentIn: quantity=0 rejected', function () use ($ids) {
     $action = app(AdjustmentInAction::class);
-    $threw  = false;
+    $threw = false;
     try {
         $action->execute(new StockOperationDTO(
-            warehouse_id:   $ids['warehouse'],
-            product_id:     $ids['product'],
-            company_id:     $ids['company'],
-            quantity:       0.0,
+            warehouse_id: $ids['warehouse'],
+            product_id: $ids['product'],
+            company_id: $ids['company'],
+            quantity: 0.0,
             reference_type: 'test',
-            reference_id:   (string) Str::uuid(),
+            reference_id: (string) Str::uuid(),
         ));
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     assert($threw, 'Zero quantity must throw');
@@ -936,17 +933,17 @@ runTest('REG-03', 'AdjustmentOut: cannot go below reserved', function () use ($i
     seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 10.0, 8.0);
 
     $action = app(AdjustmentOutAction::class);
-    $threw  = false;
+    $threw = false;
     try {
         $action->execute(new StockOperationDTO(
-            warehouse_id:   $ids['warehouse'],
-            product_id:     $ids['product'],
-            company_id:     $ids['company'],
-            quantity:       5.0, // would leave on_hand=5, below reserved=8
+            warehouse_id: $ids['warehouse'],
+            product_id: $ids['product'],
+            company_id: $ids['company'],
+            quantity: 5.0, // would leave on_hand=5, below reserved=8
             reference_type: 'test',
-            reference_id:   (string) Str::uuid(),
+            reference_id: (string) Str::uuid(),
         ));
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     assert($threw, 'AdjustmentOut below reserved must throw');
@@ -956,17 +953,17 @@ runTest('REG-04', 'Reserve: insufficient available qty throws', function () use 
     seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 3.0, 2.0); // available = 1
 
     $action = app(ReserveStockAction::class);
-    $threw  = false;
+    $threw = false;
     try {
         $action->execute(new StockOperationDTO(
-            warehouse_id:   $ids['warehouse'],
-            product_id:     $ids['product'],
-            company_id:     $ids['company'],
-            quantity:       2.0, // more than available
+            warehouse_id: $ids['warehouse'],
+            product_id: $ids['product'],
+            company_id: $ids['company'],
+            quantity: 2.0, // more than available
             reference_type: 'order',
-            reference_id:   (string) Str::uuid(),
+            reference_id: (string) Str::uuid(),
         ));
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     assert($threw, 'Over-reserve must throw InsufficientStockException');
@@ -976,17 +973,17 @@ runTest('REG-05', 'Ship: cannot ship unreserved stock', function () use ($ids) {
     seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 10.0, 0.0);
 
     $action = app(ShipStockAction::class);
-    $threw  = false;
+    $threw = false;
     try {
         $action->execute(new StockOperationDTO(
-            warehouse_id:   $ids['warehouse'],
-            product_id:     $ids['product'],
-            company_id:     $ids['company'],
-            quantity:       5.0,
+            warehouse_id: $ids['warehouse'],
+            product_id: $ids['product'],
+            company_id: $ids['company'],
+            quantity: 5.0,
             reference_type: 'order',
-            reference_id:   (string) Str::uuid(),
+            reference_id: (string) Str::uuid(),
         ));
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     assert($threw, 'Ship without reservation must throw');
@@ -999,8 +996,8 @@ runTest('REG-06', 'Manual stock add: on_hand increases', function () use ($ids) 
         ->whereNull('deleted_at')
         ->delete();
 
-    $product   = \Modules\Inventory\Products\Domain\Models\Product::findOrFail($ids['product']);
-    $warehouse = \Modules\MasterData\Warehouses\Domain\Models\Warehouse::findOrFail($ids['warehouse']);
+    $product = Modules\Inventory\Products\Domain\Models\Product::findOrFail($ids['product']);
+    $warehouse = Modules\MasterData\Warehouses\Domain\Models\Warehouse::findOrFail($ids['warehouse']);
 
     $action = app(AddManualStockAction::class);
     $action->execute($product, $warehouse, 10.0, ['unit_cost' => 5.0]);
@@ -1017,22 +1014,22 @@ runTest('REG-06', 'Manual stock add: on_hand increases', function () use ($ids) 
 runTest('REG-07', 'FIFO: insufficient layers throw InsufficientStockException', function () use ($ids) {
     $supplierId = DB::table('suppliers')->value('id');
     if (! $supplierId) {
-        throw new \RuntimeException('No supplier in DB');
+        throw new RuntimeException('No supplier in DB');
     }
 
     seedReceiptLayer($ids['warehouse'], $ids['product'], $ids['company'], 2.0, 5.0, $supplierId);
 
     $service = app(InventoryLayerConsumptionService::class);
-    $threw   = false;
+    $threw = false;
     try {
         $service->consume(
             inventoryItemId: (string) Str::uuid(),
-            productId:       $ids['product'],
-            warehouseId:     $ids['warehouse'],
-            companyId:       $ids['company'],
-            quantity:        10.0,
+            productId: $ids['product'],
+            warehouseId: $ids['warehouse'],
+            companyId: $ids['company'],
+            quantity: 10.0,
         );
-    } catch (\Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException) {
+    } catch (Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException) {
         $threw = true;
     }
     assert($threw, 'Consuming more than available layers must throw');
@@ -1042,17 +1039,17 @@ runTest('REG-08', 'Release: cannot release more than reserved', function () use 
     seedInventoryItem($ids['warehouse'], $ids['product'], $ids['company'], 10.0, 2.0);
 
     $action = app(ReleaseStockAction::class);
-    $threw  = false;
+    $threw = false;
     try {
         $action->execute(new StockOperationDTO(
-            warehouse_id:   $ids['warehouse'],
-            product_id:     $ids['product'],
-            company_id:     $ids['company'],
-            quantity:       5.0, // more than reserved=2
+            warehouse_id: $ids['warehouse'],
+            product_id: $ids['product'],
+            company_id: $ids['company'],
+            quantity: 5.0, // more than reserved=2
             reference_type: 'order',
-            reference_id:   (string) Str::uuid(),
+            reference_id: (string) Str::uuid(),
         ));
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $threw = true;
     }
     assert($threw, 'Releasing more than reserved must throw NegativeInventoryException');
@@ -1068,15 +1065,15 @@ runTest('REG-09', 'Count session: full lifecycle Draft→InProgress→Completed�
 
     DB::table('products')->where('id', $ids['product'])->update(['average_cost' => 5.00]);
 
-    $createAction   = app(CreateCountSessionAction::class);
-    $startAction    = app(StartCountSessionAction::class);
+    $createAction = app(CreateCountSessionAction::class);
+    $startAction = app(StartCountSessionAction::class);
     $completeAction = app(CompleteCountSessionAction::class);
-    $approveAction  = app(ApproveCountSessionAction::class);
+    $approveAction = app(ApproveCountSessionAction::class);
 
     $session = $createAction->execute([
-        'company_id'   => $ids['company'],
+        'company_id' => $ids['company'],
         'warehouse_id' => $ids['warehouse'],
-        'product_ids'  => [$ids['product']],
+        'product_ids' => [$ids['product']],
     ]);
     assert($session->status->value === 'draft', 'Must start as draft');
 
@@ -1119,9 +1116,9 @@ echo "════════════════════════�
 
 // Write JSON results for artifact
 file_put_contents('/tmp/medium_low_results.json', json_encode([
-    'passed'  => $passed,
-    'failed'  => $failed,
-    'total'   => $total,
+    'passed' => $passed,
+    'failed' => $failed,
+    'total' => $total,
     'results' => $results,
 ], JSON_PRETTY_PRINT));
 

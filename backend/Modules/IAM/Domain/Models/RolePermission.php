@@ -14,11 +14,11 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * (effect, conditions, expires_at) are architectural scaffolding for the future
  * rule engine — no business logic reads them yet.
  *
- * @property string      $id
- * @property string      $role_id
- * @property string      $permission_id
- * @property string      $effect         'allow' | 'deny'  (default: 'allow')
- * @property array|null  $conditions     JSON rule bag
+ * @property string $id
+ * @property string $role_id
+ * @property string $permission_id
+ * @property string $effect 'allow' | 'deny'  (default: 'allow')
+ * @property array|null $conditions JSON rule bag
  * @property string|null $expires_at
  */
 class RolePermission extends Pivot

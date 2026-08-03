@@ -15,6 +15,7 @@ use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInt
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementException;
+use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
  * Issues stock directly from a warehouse without requiring a prior reservation.
@@ -66,10 +67,14 @@ final class DirectIssueStockAction extends BaseAction
                 throw new InvalidInventoryMovementException('InventoryItem disappeared during transaction');
             }
 
-            $onHandBefore   = (float) $locked->on_hand_qty;
+            $onHandBefore = (float) $locked->on_hand_qty;
             $reservedBefore = (float) $locked->reserved_qty;
 
-            if ($onHandBefore < $dto->quantity) {
+            // P07 (ADR-027 v1.1): when a product allows negative stock the usual
+            // quantity guards are bypassed so on_hand_qty may legitimately go negative.
+            $allowNegative = (bool) Product::where('id', $dto->product_id)->value('allow_negative_stock');
+
+            if (! $allowNegative && $onHandBefore < $dto->quantity) {
                 throw new InsufficientStockException(
                     $dto->product_id,
                     $dto->warehouse_id,
@@ -82,10 +87,11 @@ final class DirectIssueStockAction extends BaseAction
 
             // F-INV-H1: prevent reducing on_hand_qty below reserved_qty.
             // Mirrors the same invariant enforced by AdjustmentOutAction.
-            if ($onHandAfter < $reservedBefore) {
+            // Bypassed when allow_negative_stock = true (ADR-027 v1.1 P07).
+            if (! $allowNegative && $onHandAfter < $reservedBefore) {
                 throw new InvalidInventoryMovementException(
-                    "Cannot directly issue {$dto->quantity} units: on_hand_qty would fall below reserved_qty ({$reservedBefore}). " .
-                    'Release or fulfil reserved orders first.'
+                    "Cannot directly issue {$dto->quantity} units: on_hand_qty would fall below reserved_qty ({$reservedBefore}). ".
+                    'Release or fulfil reserved orders first.',
                 );
             }
 
@@ -94,33 +100,33 @@ final class DirectIssueStockAction extends BaseAction
 
             $this->inventory->recordEntry([
                 'inventory_item_id' => $locked->id,
-                'warehouse_id'      => $dto->warehouse_id,
-                'product_id'        => $dto->product_id,
-                'company_id'        => $dto->company_id,
-                'movement_type'     => LedgerMovementType::DirectIssue->value,
-                'quantity'          => $dto->quantity,
-                'on_hand_before'    => $onHandBefore,
-                'on_hand_after'     => $onHandAfter,
-                'reserved_before'   => $reservedBefore,
-                'reserved_after'    => $reservedBefore,
-                'reference_type'    => $dto->reference_type,
-                'reference_id'      => $dto->reference_id,
-                'notes'             => $dto->notes,
+                'warehouse_id' => $dto->warehouse_id,
+                'product_id' => $dto->product_id,
+                'company_id' => $dto->company_id,
+                'movement_type' => LedgerMovementType::DirectIssue->value,
+                'quantity' => $dto->quantity,
+                'on_hand_before' => $onHandBefore,
+                'on_hand_after' => $onHandAfter,
+                'reserved_before' => $reservedBefore,
+                'reserved_after' => $reservedBefore,
+                'reference_type' => $dto->reference_type,
+                'reference_id' => $dto->reference_id,
+                'notes' => $dto->notes,
             ]);
 
             $locked->refresh();
 
             $event = new InventoryStockAdjusted(
                 inventoryItemId: $locked->id,
-                warehouseId:     $dto->warehouse_id,
-                productId:       $dto->product_id,
-                companyId:       $dto->company_id,
-                adjustmentType:  InventoryStockAdjusted::TYPE_OUT,
-                quantity:        $dto->quantity,
-                onHandBefore:    $onHandBefore,
-                onHandAfter:     $onHandAfter,
-                referenceType:   $dto->reference_type,
-                referenceId:     $dto->reference_id,
+                warehouseId: $dto->warehouse_id,
+                productId: $dto->product_id,
+                companyId: $dto->company_id,
+                adjustmentType: InventoryStockAdjusted::TYPE_OUT,
+                quantity: $dto->quantity,
+                onHandBefore: $onHandBefore,
+                onHandAfter: $onHandAfter,
+                referenceType: $dto->reference_type,
+                referenceId: $dto->reference_id,
             );
 
             return $locked;

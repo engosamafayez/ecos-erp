@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Application\Services;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Modules\CustomerEngagement\Domain\Enums\MacroCategory;
 use Modules\CustomerEngagement\Domain\Models\ConversationMacro;
 
 class MacroService
@@ -11,11 +12,11 @@ class MacroService
     public function paginate(array $filters, int $perPage = 25): LengthAwarePaginator
     {
         return ConversationMacro::query()
-            ->when(!empty($filters['company_id']),  fn ($q) => $q->where('company_id', $filters['company_id']))
-            ->when(!empty($filters['category']),    fn ($q) => $q->where('category', $filters['category']))
-            ->when(!empty($filters['search']),      fn ($q) => $q->where(function ($sq) use ($filters) {
+            ->when(! empty($filters['company_id']), fn ($q) => $q->where('company_id', $filters['company_id']))
+            ->when(! empty($filters['category']), fn ($q) => $q->where('category', $filters['category']))
+            ->when(! empty($filters['search']), fn ($q) => $q->where(function ($sq) use ($filters) {
                 $sq->where('name', 'ilike', "%{$filters['search']}%")
-                   ->orWhere('shortcut', 'ilike', "%{$filters['search']}%");
+                    ->orWhere('shortcut', 'ilike', "%{$filters['search']}%");
             }))
             ->orderBy('usage_count', 'desc')
             ->paginate($perPage);
@@ -29,6 +30,7 @@ class MacroService
     public function update(ConversationMacro $macro, array $data): ConversationMacro
     {
         $macro->update($data);
+
         return $macro->fresh();
     }
 
@@ -45,6 +47,7 @@ class MacroService
     public function apply(ConversationMacro $macro, array $context = []): string
     {
         $macro->incrementUsage();
+
         return $macro->resolveContent($context);
     }
 }

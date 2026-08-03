@@ -10,6 +10,6 @@ final class CreativeDiscovered
 {
     public function __construct(
         public readonly CampaignCreative $creative,
-        public readonly bool             $isNew,
+        public readonly bool $isNew,
     ) {}
 }

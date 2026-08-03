@@ -44,39 +44,39 @@ final class LoadProductAction
             $shortReason,
             $notes,
         ): LoadingTask {
-            $isShort       = $quantityLoaded < $quantityPlanned;
+            $isShort = $quantityLoaded < $quantityPlanned;
             $quantityShort = max(0.0, $quantityPlanned - $quantityLoaded);
 
             $task = LoadingTask::create([
-                'company_id'             => $assignment->company_id,
-                'loading_session_id'     => $assignment->loading_session_id,
-                'vehicle_assignment_id'  => $assignment->id,
-                'pool_entry_id'          => $poolEntryId,
-                'product_id'             => $productId,
-                'sku_snapshot'           => $skuSnapshot,
-                'name_snapshot'          => $nameSnapshot,
-                'preparation_wave_id'    => $preparationWaveId,
-                'quantity_planned'       => $quantityPlanned,
-                'quantity_loaded'        => $quantityLoaded,
-                'quantity_short'         => $quantityShort,
-                'status'                 => $isShort
+                'company_id' => $assignment->company_id,
+                'loading_session_id' => $assignment->loading_session_id,
+                'vehicle_assignment_id' => $assignment->id,
+                'pool_entry_id' => $poolEntryId,
+                'product_id' => $productId,
+                'sku_snapshot' => $skuSnapshot,
+                'name_snapshot' => $nameSnapshot,
+                'preparation_wave_id' => $preparationWaveId,
+                'quantity_planned' => $quantityPlanned,
+                'quantity_loaded' => $quantityLoaded,
+                'quantity_short' => $quantityShort,
+                'status' => $isShort
                     ? LoadingTaskStatus::ShortLoaded->value
                     : LoadingTaskStatus::Loaded->value,
                 'requires_refrigeration' => $requiresRefrigeration,
-                'loaded_by'              => $loadedBy,
-                'loaded_at'              => now(),
-                'short_reason'           => $shortReason,
-                'notes'                  => $notes,
-                'created_by'             => $loadedBy,
-                'updated_by'             => $loadedBy,
+                'loaded_by' => $loadedBy,
+                'loaded_at' => now(),
+                'short_reason' => $shortReason,
+                'notes' => $notes,
+                'created_by' => $loadedBy,
+                'updated_by' => $loadedBy,
             ]);
 
             if ($quantityLoaded > 0) {
                 $this->inventoryService->recordLoad(
                     assignment: $assignment,
-                    task:       $task,
-                    quantity:   $quantityLoaded,
-                    actorId:    $loadedBy,
+                    task: $task,
+                    quantity: $quantityLoaded,
+                    actorId: $loadedBy,
                 );
 
                 $assignment->increment('loading_weight_kg', $quantityLoaded);

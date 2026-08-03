@@ -15,20 +15,20 @@ use Modules\Organization\Companies\Domain\Models\Company;
 /**
  * Immutable audit record created once per successful warehouse transfer.
  *
- * @property string              $id
- * @property string              $transfer_number
- * @property string              $company_id
- * @property string              $source_warehouse_id
- * @property string              $destination_warehouse_id
- * @property string              $product_id
- * @property float               $quantity
- * @property float               $total_cost
- * @property float               $weighted_unit_cost
- * @property TransferStatus      $status
- * @property string|null         $transferred_by
- * @property \Carbon\Carbon      $transferred_at
- * @property string|null         $reference
- * @property string|null         $notes
+ * @property string $id
+ * @property string $transfer_number
+ * @property string $company_id
+ * @property string $source_warehouse_id
+ * @property string $destination_warehouse_id
+ * @property string $product_id
+ * @property float $quantity
+ * @property float $total_cost
+ * @property float $weighted_unit_cost
+ * @property TransferStatus $status
+ * @property string|null $transferred_by
+ * @property \Carbon\Carbon $transferred_at
+ * @property string|null $reference
+ * @property string|null $notes
  * @property array<string,mixed>|null $meta
  */
 class WarehouseTransfer extends Model
@@ -36,6 +36,7 @@ class WarehouseTransfer extends Model
     use HasUuids;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     /** @var list<string> */
@@ -58,12 +59,12 @@ class WarehouseTransfer extends Model
 
     /** @var array<string, string> */
     protected $casts = [
-        'quantity'           => 'float',
-        'total_cost'         => 'float',
+        'quantity' => 'float',
+        'total_cost' => 'float',
         'weighted_unit_cost' => 'float',
-        'status'             => TransferStatus::class,
-        'transferred_at'     => 'datetime',
-        'meta'               => 'array',
+        'status' => TransferStatus::class,
+        'transferred_at' => 'datetime',
+        'meta' => 'array',
     ];
 
     /** @return BelongsTo<Company, $this> */

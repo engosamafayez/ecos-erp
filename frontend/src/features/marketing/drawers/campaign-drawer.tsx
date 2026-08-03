@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ds/use-toast';
+import { useFormatter } from '@/hooks/use-formatter';
 import {
   useCampaign,
   useCampaignAdSets,
@@ -43,11 +44,6 @@ const STATUS_COLORS: Record<CampaignStatus, string> = {
   WITH_ISSUES: 'bg-orange-100 text-orange-800',
 };
 
-function fmt(n: number | null | undefined, prefix = '', dec = 2): string {
-  if (n == null) return '—';
-  return `${prefix}${n.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
-}
-
 function fmtInt(n: number | null | undefined): string {
   if (n == null) return '—';
   return n.toLocaleString();
@@ -68,6 +64,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function CampaignDrawer({ campaignId, open, onClose }: CampaignDrawerProps) {
+  const { money } = useFormatter();
   const { data: campaign, isLoading } = useCampaign(campaignId ?? undefined);
   const { data: adSetsData }          = useCampaignAdSets(campaignId ?? undefined);
   const { data: creativesData }       = useCampaignCreatives(campaignId ?? undefined);
@@ -156,7 +153,7 @@ export function CampaignDrawer({ campaignId, open, onClose }: CampaignDrawerProp
                     <Row label="Buying Type"   value={campaign.buying_type} />
                     <Row label="Bid Strategy"  value={campaign.bid_strategy} />
                     <Row label="Budget"        value={campaign.budget_display} />
-                    <Row label="Budget Remaining" value={campaign.budget_remaining != null ? `$${fmt(campaign.budget_remaining)}` : undefined} />
+                    <Row label="Budget Remaining" value={campaign.budget_remaining != null ? money(campaign.budget_remaining) : undefined} />
                     <Row label="Start"         value={campaign.start_time?.split('T')[0]} />
                     <Row label="Stop"          value={campaign.stop_time?.split('T')[0]} />
                     <Row label="Last Synced"   value={campaign.last_synced_at?.split('T')[0]} />
@@ -188,13 +185,13 @@ export function CampaignDrawer({ campaignId, open, onClose }: CampaignDrawerProp
                       </h3>
                       <div className="grid grid-cols-2 gap-3">
                         {[
-                          ['Spend',        fmt(latest.spend, '$')],
+                          ['Spend',        money(latest.spend)],
                           ['Impressions',  fmtInt(latest.impressions)],
                           ['Reach',        fmtInt(latest.reach)],
                           ['Clicks',       fmtInt(latest.clicks)],
                           ['CTR',          fmtPct(latest.ctr)],
-                          ['CPC',          fmt(latest.cpc, '$')],
-                          ['CPM',          fmt(latest.cpm, '$')],
+                          ['CPC',          money(latest.cpc)],
+                          ['CPM',          money(latest.cpm)],
                           ['Purchases',    fmtInt(latest.purchases)],
                           ['Leads',        fmtInt(latest.leads)],
                           ['Messages',     fmtInt(latest.messages)],
@@ -226,9 +223,9 @@ export function CampaignDrawer({ campaignId, open, onClose }: CampaignDrawerProp
                               {trend.slice(0, 14).map((row) => (
                                 <tr key={row.id} className="hover:bg-muted/20">
                                   <td className="px-2 py-1 font-mono">{row.date_start}</td>
-                                  <td className="px-2 py-1 text-end">{fmt(row.spend, '$')}</td>
+                                  <td className="px-2 py-1 text-end">{money(row.spend)}</td>
                                   <td className="px-2 py-1 text-end">{fmtPct(row.ctr)}</td>
-                                  <td className="px-2 py-1 text-end">{fmt(row.cpc, '$')}</td>
+                                  <td className="px-2 py-1 text-end">{money(row.cpc)}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -259,7 +256,7 @@ export function CampaignDrawer({ campaignId, open, onClose }: CampaignDrawerProp
                           <Badge variant="outline" className="text-xs">{adSet.status}</Badge>
                         </div>
                         <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
-                          {adSet.daily_budget != null && <span>Daily: ${fmt(adSet.daily_budget)}</span>}
+                          {adSet.daily_budget != null && <span>Daily: {money(adSet.daily_budget)}</span>}
                           {adSet.optimization_goal && <span>{adSet.optimization_goal}</span>}
                           {adSet.ads_count != null && <span>{adSet.ads_count} ads</span>}
                         </div>
@@ -391,11 +388,11 @@ export function CampaignDrawer({ campaignId, open, onClose }: CampaignDrawerProp
                         {insights.map((row) => (
                           <tr key={row.id} className="hover:bg-muted/20">
                             <td className="px-2 py-1 font-mono">{row.date_start}</td>
-                            <td className="px-2 py-1 text-end">{fmt(row.spend, '$')}</td>
+                            <td className="px-2 py-1 text-end">{money(row.spend)}</td>
                             <td className="px-2 py-1 text-end">{fmtInt(row.impressions)}</td>
                             <td className="px-2 py-1 text-end">{fmtInt(row.clicks)}</td>
                             <td className="px-2 py-1 text-end">{fmtPct(row.ctr)}</td>
-                            <td className="px-2 py-1 text-end">{fmt(row.cpc, '$')}</td>
+                            <td className="px-2 py-1 text-end">{money(row.cpc)}</td>
                           </tr>
                         ))}
                       </tbody>

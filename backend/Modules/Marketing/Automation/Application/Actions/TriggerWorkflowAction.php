@@ -16,19 +16,19 @@ class TriggerWorkflowAction
 
     public function execute(
         AutomationWorkflow $workflow,
-        string             $entityType,
-        string             $entityId,
-        string             $triggerType = 'manual',
-        array              $payload     = [],
-        ?string            $triggeredBy = null,
+        string $entityType,
+        string $entityId,
+        string $triggerType = 'manual',
+        array $payload = [],
+        ?string $triggeredBy = null,
     ): WorkflowExecution {
         return $this->engine->dispatch(
-            workflow:       $workflow,
-            entityType:     $entityType,
-            entityId:       $entityId,
-            triggerType:    $triggerType,
+            workflow: $workflow,
+            entityType: $entityType,
+            entityId: $entityId,
+            triggerType: $triggerType,
             triggerPayload: $payload,
-            triggeredBy:    $triggeredBy,
+            triggeredBy: $triggeredBy,
         );
     }
 }

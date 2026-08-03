@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -19,9 +21,9 @@ class SlaViolation extends Model
     {
         return [
             'violation_type' => SlaViolationType::class,
-            'due_at'         => 'datetime',
-            'breached_at'    => 'datetime',
-            'resolved_at'    => 'datetime',
+            'due_at' => 'datetime',
+            'breached_at' => 'datetime',
+            'resolved_at' => 'datetime',
         ];
     }
 

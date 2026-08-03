@@ -22,6 +22,7 @@ final class EloquentExecutionRepository implements ExecutionRepositoryInterface
     public function update(Execution $execution, array $attributes): Execution
     {
         $execution->update($attributes);
+
         return $execution->fresh();
     }
 

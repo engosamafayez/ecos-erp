@@ -43,7 +43,7 @@ final class EloquentTeamRepository implements TeamRepositoryInterface
         }
 
         $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
-        $perPage  = max(1, min((int) ($filters['per_page'] ?? 10), 100));
+        $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
 
         return $query->orderBy($sortBy, $sortDir)->paginate($perPage);
     }

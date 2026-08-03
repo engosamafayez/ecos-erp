@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, ListOrdered, PlayCircle } from 'lucide-react';
 
 import { useToast } from '@/components/ds/use-toast';
@@ -34,6 +35,7 @@ export function DispatchQueuePanel({
   sessionId: string | null;
   onSelectItem: (item: QueueItem) => void;
 }) {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const { data: items, isLoading } = useQueue(boardId);
   const build = useBuildQueue();
@@ -43,10 +45,8 @@ export function DispatchQueuePanel({
     return (
       <div className="rounded-lg border bg-card py-16 text-center">
         <ListOrdered className="mx-auto mb-3 size-10 text-muted-foreground/20" />
-        <p className="text-sm font-medium">Pick a board to work</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Boards are planned on the Dispatch board surface. The queue is built from one.
-        </p>
+        <p className="text-sm font-medium">{t($ => $.dispatch.queue.pickBoardTitle)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t($ => $.dispatch.queue.pickBoardHint)}</p>
       </div>
     );
   }
@@ -69,14 +69,15 @@ export function DispatchQueuePanel({
                 toast({
                   title:
                     r.added === 0
-                      ? 'Nothing new to queue.'
-                      : `${r.added} trip${r.added === 1 ? '' : 's'} queued.`,
+                      ? t($ => $.dispatch.toast.queueNothingNew)
+                      : t($ => $.dispatch.toast.queueBuilt, { count: r.added }),
                 }),
-              onError: () => toast({ title: 'The queue could not be built.', variant: 'destructive' }),
+              onError: () =>
+                toast({ title: t($ => $.dispatch.toast.queueBuildFailed), variant: 'destructive' }),
             })
           }
         >
-          Build queue
+          {t($ => $.dispatch.queue.build)}
         </Button>
 
         <Button
@@ -88,42 +89,41 @@ export function DispatchQueuePanel({
             sessionId &&
             claimNext.mutate(sessionId, {
               onSuccess: (item) =>
-                item === null
-                  ? toast({ title: 'The queue is empty.' })
-                  : onSelectItem(item),
-              onError: () => toast({ title: 'Nothing could be claimed.', variant: 'destructive' }),
+                item === null ? toast({ title: t($ => $.dispatch.toast.queueEmpty) }) : onSelectItem(item),
+              onError: () =>
+                toast({ title: t($ => $.dispatch.toast.claimFailed), variant: 'destructive' }),
             })
           }
         >
-          <PlayCircle className="mr-1 size-3.5" />
-          Claim next
+          <PlayCircle className="me-1 size-3.5" />
+          {t($ => $.dispatch.queue.claimNext)}
         </Button>
 
         {sessionId === null && (
-          <span className="text-xs text-muted-foreground">Open a session to claim work.</span>
+          <span className="text-xs text-muted-foreground">
+            {t($ => $.dispatch.queue.openSessionHint)}
+          </span>
         )}
       </div>
 
       {rows.length === 0 ? (
         <div className="rounded-lg border bg-card py-16 text-center">
           <ListOrdered className="mx-auto mb-3 size-10 text-muted-foreground/20" />
-          <p className="text-sm font-medium">The queue is empty</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Build it from the board&apos;s released trips.
-          </p>
+          <p className="text-sm font-medium">{t($ => $.dispatch.queue.emptyTitle)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t($ => $.dispatch.queue.emptyHint)}</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="h-10 w-12 px-3 text-right font-medium">#</th>
-                <th className="h-10 px-3 font-medium">Trip</th>
-                <th className="h-10 px-3 font-medium">Status</th>
-                <th className="h-10 px-3 font-medium">Priority</th>
-                <th className="h-10 px-3 text-right font-medium">Waiting</th>
-                <th className="h-10 px-3 text-right font-medium">Attempts</th>
-                <th className="h-10 px-3 font-medium">Claimed by</th>
+              <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="h-10 w-12 px-3 text-end font-medium">#</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.dispatch.queue.colTrip)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.common.status)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.common.priority)}</th>
+                <th className="h-10 px-3 text-end font-medium">{t($ => $.dispatch.queue.colWaiting)}</th>
+                <th className="h-10 px-3 text-end font-medium">{t($ => $.dispatch.queue.colAttempts)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.dispatch.queue.colClaimedBy)}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -133,7 +133,7 @@ export function DispatchQueuePanel({
                   className="cursor-pointer hover:bg-muted/40"
                   onClick={() => onSelectItem(item)}
                 >
-                  <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
+                  <td className="px-3 py-2.5 text-end tabular-nums text-muted-foreground">
                     {index + 1}
                   </td>
                   <td className="px-3 py-2.5">
@@ -143,7 +143,7 @@ export function DispatchQueuePanel({
                       {item.is_stuck && (
                         <AlertTriangle
                           className="size-3.5 text-amber-600"
-                          aria-label="Repeatedly failed"
+                          aria-label={t($ => $.dispatch.queue.repeatedlyFailed)}
                         />
                       )}
                     </div>
@@ -164,10 +164,10 @@ export function DispatchQueuePanel({
                       </div>
                     )}
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">
-                    {item.waiting_minutes} min
+                  <td className="px-3 py-2.5 text-end tabular-nums">
+                    {t($ => $.dispatch.units.minutes, { value: item.waiting_minutes })}
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{item.attempt_count}</td>
+                  <td className="px-3 py-2.5 text-end tabular-nums">{item.attempt_count}</td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {item.claimed_by ?? '—'}
                   </td>

@@ -9,6 +9,7 @@ use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\CostManagement\Domain\Enums\CostUpdateSource;
+use Modules\CostManagement\Domain\Services\EnterpriseCostEngine;
 use Modules\CostManagement\Domain\Services\MaterialCostService;
 use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentInAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
@@ -37,7 +38,7 @@ final class AddManualStockAction extends BaseAction
     ) {}
 
     /**
-     * @param  mixed ...$arguments  [Product, Warehouse, float $quantity, array $meta]
+     * @param  mixed  ...$arguments  [Product, Warehouse, float $quantity, array $meta]
      * @param  array{
      *   unit_cost?: float|null,
      *   notes?: string|null,
@@ -50,32 +51,35 @@ final class AddManualStockAction extends BaseAction
         $product = $arguments[0];
         /** @var Warehouse $warehouse */
         $warehouse = $arguments[1];
-        $quantity  = (float) ($arguments[2] ?? 0);
-        $meta      = (array) ($arguments[3] ?? []);
+        $quantity = (float) ($arguments[2] ?? 0);
+        $meta = (array) ($arguments[3] ?? []);
 
         if ($quantity <= 0) {
             throw new InvalidArgumentException('Quantity must be greater than zero.');
         }
 
         $companyId = (string) $warehouse->company_id;
-        $unitCost  = isset($meta['unit_cost']) && is_numeric($meta['unit_cost'])
+        $unitCost = isset($meta['unit_cost']) && is_numeric($meta['unit_cost'])
             ? (float) $meta['unit_cost'] : null;
 
-        // Fall back to the best available cost signal on the product
-        $layerCost = $unitCost
-            ?? (float) ($product->average_cost
+        // Fall back to the best available cost signal on the product.
+        // Canonical (flag ON): FIFO-first via EnterpriseCostEngine. Legacy (default): average-first.
+        $fallbackCost = config('inventory_ledger.canonical_cost_resolution')
+            ? EnterpriseCostEngine::resolveUnitCost($product)
+            : (float) ($product->average_cost
                 ?? $product->last_purchase_cost
                 ?? $product->current_fifo_cost
                 ?? 0);
+        $layerCost = $unitCost ?? $fallbackCost;
 
         $dto = new StockOperationDTO(
-            warehouse_id:   $warehouse->id,
-            product_id:     $product->id,
-            company_id:     $companyId,
-            quantity:       $quantity,
+            warehouse_id: $warehouse->id,
+            product_id: $product->id,
+            company_id: $companyId,
+            quantity: $quantity,
             reference_type: 'manual_adjustment',
-            reference_id:   null,
-            notes:          $meta['notes'] ?? null,
+            reference_id: null,
+            notes: $meta['notes'] ?? null,
         );
 
         DB::transaction(function () use ($product, $warehouse, $dto, $quantity, $layerCost, $companyId, $unitCost, $meta): void {
@@ -85,17 +89,17 @@ final class AddManualStockAction extends BaseAction
 
             // Step 2: add the quantity to the FIFO queue
             InventoryReceiptLayer::query()->create([
-                'company_id'            => $companyId,
-                'supplier_id'           => $product->last_supplier_id,
-                'product_id'            => $product->id,
-                'goods_receipt_id'      => null,
+                'company_id' => $companyId,
+                'supplier_id' => $product->last_supplier_id,
+                'product_id' => $product->id,
+                'goods_receipt_id' => null,
                 'goods_receipt_line_id' => null,
-                'warehouse_id'          => $warehouse->id,
-                'received_qty'          => $quantity,
-                'remaining_qty'         => $quantity,
-                'landed_unit_cost'      => $layerCost,
-                'sale_price_snapshot'   => $product->sale_price,
-                'receipt_date'          => now()->toDateString(),
+                'warehouse_id' => $warehouse->id,
+                'received_qty' => $quantity,
+                'remaining_qty' => $quantity,
+                'landed_unit_cost' => $layerCost,
+                'sale_price_snapshot' => $product->sale_price,
+                'receipt_date' => now()->toDateString(),
             ]);
 
             // Step 3: cost cascade — only when cost is explicitly supplied by the operator

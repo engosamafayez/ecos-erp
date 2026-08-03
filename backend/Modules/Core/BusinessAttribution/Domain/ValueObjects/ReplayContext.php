@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Domain\ValueObjects;
 
 use Carbon\Carbon;
@@ -7,27 +9,27 @@ use Carbon\Carbon;
 final readonly class ReplayContext
 {
     public function __construct(
-        public string  $entityType,
-        public string  $entityId,
-        public ?Carbon $from       = null,
-        public ?Carbon $to         = null,
-        public ?Carbon $asOf       = null,
-        public string  $purpose    = '',
-        public string  $replayType = 'entity',
-        public bool    $lazy       = false,
-        public bool    $streaming  = false,
-        public ?string $userId     = null,
-        public array   $filters    = [],
-        public int     $maxEvents  = 10_000,
+        public string $entityType,
+        public string $entityId,
+        public ?Carbon $from = null,
+        public ?Carbon $to = null,
+        public ?Carbon $asOf = null,
+        public string $purpose = '',
+        public string $replayType = 'entity',
+        public bool $lazy = false,
+        public bool $streaming = false,
+        public ?string $userId = null,
+        public array $filters = [],
+        public int $maxEvents = 10_000,
     ) {}
 
     public static function entity(string $entityType, string $entityId, ?string $userId = null): self
     {
         return new self(
             entityType: $entityType,
-            entityId:   $entityId,
+            entityId: $entityId,
             replayType: 'entity',
-            userId:     $userId,
+            userId: $userId,
         );
     }
 
@@ -35,9 +37,9 @@ final readonly class ReplayContext
     {
         return new self(
             entityType: $entityType,
-            entityId:   $entityId,
-            from:       $from,
-            to:         $to,
+            entityId: $entityId,
+            from: $from,
+            to: $to,
             replayType: 'journey',
         );
     }
@@ -46,9 +48,9 @@ final readonly class ReplayContext
     {
         return new self(
             entityType: $entityType,
-            entityId:   $entityId,
-            asOf:       $asOf,
-            to:         $asOf,
+            entityId: $entityId,
+            asOf: $asOf,
+            to: $asOf,
             replayType: 'time_machine',
         );
     }
@@ -57,9 +59,9 @@ final readonly class ReplayContext
     {
         return new self(
             entityType: $entityType,
-            entityId:   $entityId,
-            from:       $from,
-            to:         $to,
+            entityId: $entityId,
+            from: $from,
+            to: $to,
             replayType: 'timeline',
         );
     }
@@ -68,9 +70,9 @@ final readonly class ReplayContext
     {
         return new self(
             entityType: $entityType,
-            entityId:   $entityId,
-            from:       $from,
-            to:         $to,
+            entityId: $entityId,
+            from: $from,
+            to: $to,
             replayType: 'event_range',
         );
     }
@@ -79,17 +81,17 @@ final readonly class ReplayContext
     {
         return new self(
             entityType: $this->entityType,
-            entityId:   $this->entityId,
-            from:       $this->from,
-            to:         $this->to,
-            asOf:       $this->asOf,
-            purpose:    $purpose,
+            entityId: $this->entityId,
+            from: $this->from,
+            to: $this->to,
+            asOf: $this->asOf,
+            purpose: $purpose,
             replayType: $this->replayType,
-            lazy:       $this->lazy,
-            streaming:  $this->streaming,
-            userId:     $this->userId,
-            filters:    $this->filters,
-            maxEvents:  $this->maxEvents,
+            lazy: $this->lazy,
+            streaming: $this->streaming,
+            userId: $this->userId,
+            filters: $this->filters,
+            maxEvents: $this->maxEvents,
         );
     }
 
@@ -97,17 +99,17 @@ final readonly class ReplayContext
     {
         return new self(
             entityType: $this->entityType,
-            entityId:   $this->entityId,
-            from:       $this->from,
-            to:         $this->to,
-            asOf:       $this->asOf,
-            purpose:    $this->purpose,
+            entityId: $this->entityId,
+            from: $this->from,
+            to: $this->to,
+            asOf: $this->asOf,
+            purpose: $this->purpose,
             replayType: $this->replayType,
-            lazy:       $this->lazy,
-            streaming:  $this->streaming,
-            userId:     $userId,
-            filters:    $this->filters,
-            maxEvents:  $this->maxEvents,
+            lazy: $this->lazy,
+            streaming: $this->streaming,
+            userId: $userId,
+            filters: $this->filters,
+            maxEvents: $this->maxEvents,
         );
     }
 }

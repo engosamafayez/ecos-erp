@@ -44,7 +44,6 @@ import { CreateGoodsReceiptPage } from '@/features/goods-receipts/pages/create-g
 import { EditGoodsReceiptPage } from '@/features/goods-receipts/pages/edit-goods-receipt-page';
 import { ViewGoodsReceiptPage } from '@/features/goods-receipts/pages/view-goods-receipt-page';
 import { SuppliersPage } from '@/features/suppliers/pages/suppliers-page';
-import { ViewSupplierPage } from '@/features/suppliers/pages/view-supplier-page';
 import { MaterialRequestsPage } from '@/features/purchase-materials/pages/material-requests-page';
 import { PurchasesPage } from '@/features/purchase-materials/pages/purchases-page';
 import { ProcurementHubPage } from '@/features/procurement/pages/procurement-hub-page';
@@ -297,7 +296,6 @@ export const router = createBrowserRouter(
             { path: `${ROUTES.goodsReceipts}/:id`, Component: ViewGoodsReceiptPage },
             { path: `${ROUTES.goodsReceipts}/:id/edit`, Component: EditGoodsReceiptPage },
             { path: ROUTES.suppliers, Component: SuppliersPage },
-            { path: `${ROUTES.suppliers}/:id`, Component: ViewSupplierPage },
             // Sales
             { path: ROUTES.orders, Component: OrdersPage },
             { path: ROUTES.ordersNew, Component: OrderWorkspacePage },

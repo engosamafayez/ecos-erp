@@ -128,7 +128,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
         {/* ── Current Status group ─────────────────────────────────────────── */}
         <SelectGroup>
           <SelectLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('statusSelector.currentStatus')}
+            {t($ => $.statusSelector.currentStatus)}
           </SelectLabel>
           <SelectItem
             value={currentStatus}
@@ -145,7 +145,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
         {hasTransitions ? (
           <SelectGroup>
             <SelectLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {t('statusSelector.moveTo')}
+              {t($ => $.statusSelector.moveTo)}
             </SelectLabel>
             {transitions.map((tr) => (
               <SelectItem key={tr.target_status} value={tr.target_status}>
@@ -157,7 +157,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
           </SelectGroup>
         ) : (
           <SelectItem value="__no_transitions__" disabled className="text-muted-foreground italic text-xs">
-            {t('statusSelector.noTransitions')}
+            {t($ => $.statusSelector.noTransitions)}
           </SelectItem>
         )}
       </SelectContent>
@@ -175,7 +175,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
               <span className="block">{selectEl}</span>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-48 text-center text-xs">
-              {t('statusSelector.finalState')}
+              {t($ => $.statusSelector.finalState)}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -187,9 +187,9 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
       <Dialog open={!!pending} onOpenChange={(open) => { if (!open) handleCancel(); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{t('statusSelector.dialogTitle')}</DialogTitle>
+            <DialogTitle>{t($ => $.statusSelector.dialogTitle)}</DialogTitle>
             <DialogDescription>
-              {t('statusSelector.dialogDesc')}
+              {t($ => $.statusSelector.dialogDesc)}
             </DialogDescription>
           </DialogHeader>
 
@@ -197,14 +197,14 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
             {/* From → To */}
             <div className="flex items-center justify-center gap-3 rounded-lg border bg-muted/40 px-4 py-3">
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t('statusSelector.from')}</span>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t($ => $.statusSelector.from)}</span>
                 <span className={cn('text-sm font-semibold', currentColor)}>
                   {currentStatusLabel}
                 </span>
               </div>
               <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t('statusSelector.to')}</span>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t($ => $.statusSelector.to)}</span>
                 <span className={cn('text-sm font-semibold', STATUS_COLOR[pending?.target_status ?? ''] ?? 'text-foreground')}>
                   {statusLabel[pending?.target_status as keyof typeof statusLabel] ?? pending?.label}
                 </span>
@@ -215,11 +215,11 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
             {pending?.requires_reason && (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground/80">
-                  {t('statusSelector.reason')} <span className="text-muted-foreground">{t('statusSelector.reasonOptional')}</span>
+                  {t($ => $.statusSelector.reason)} <span className="text-muted-foreground">{t($ => $.statusSelector.reasonOptional)}</span>
                 </label>
                 <Input
                   autoFocus
-                  placeholder={t('statusSelector.reasonPlaceholder')}
+                  placeholder={t($ => $.statusSelector.reasonPlaceholder)}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   onKeyDown={(e) => {
@@ -233,7 +233,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
 
           {transition.isError && (
             <p className="text-center text-xs text-destructive">
-              {t('statusSelector.transitionFailed')}
+              {t($ => $.statusSelector.transitionFailed)}
             </p>
           )}
 
@@ -244,7 +244,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
               onClick={(e) => { e.stopPropagation(); handleCancel(); }}
               disabled={transition.isPending}
             >
-              {t('statusSelector.cancel')}
+              {t($ => $.statusSelector.cancel)}
             </Button>
             <Button
               type="button"
@@ -252,7 +252,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
               disabled={transition.isPending}
             >
               {transition.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-              {t('statusSelector.confirm')}
+              {t($ => $.statusSelector.confirm)}
             </Button>
           </DialogFooter>
         </DialogContent>

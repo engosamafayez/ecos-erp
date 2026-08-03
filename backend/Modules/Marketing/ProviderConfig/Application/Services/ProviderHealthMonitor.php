@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Modules\Admin\Configuration\Domain\Services\ConfigAuditService;
 use Modules\Marketing\ProviderPlatform\Application\Services\ProviderEventPublisher;
+use Throwable;
 
 /**
  * Actively checks health of a provider's credentials and connection.
@@ -33,8 +34,8 @@ final class ProviderHealthMonitor
 
     public function __construct(
         private readonly ProviderCredentialService $credentials,
-        private readonly ConfigAuditService        $audit,
-        private readonly ProviderEventPublisher    $events,
+        private readonly ConfigAuditService $audit,
+        private readonly ProviderEventPublisher $events,
     ) {}
 
     /**
@@ -67,7 +68,7 @@ final class ProviderHealthMonitor
     private function runChecks(string $companyId, string $provider): array
     {
         $checks = [
-            'config_exists'     => false,
+            'config_exists' => false,
             'credentials_valid' => null,
             'service_reachable' => null,
         ];
@@ -92,24 +93,25 @@ final class ProviderHealthMonitor
             if (! $result['valid']) {
                 return $this->finalize('invalid_configuration', $checks, $companyId, $provider, $cred->status);
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $checks['service_reachable'] = false;
+
             return $this->finalize('service_unavailable', $checks, $companyId, $provider, $cred->status);
         }
 
         // Credentials are valid. Preserve existing OAuth-layer status (connected,
         // token_expired, etc.) instead of downgrading to "ready".
         $preserve = ['ready', 'connected', 'token_expired', 'permission_error', 'webhook_missing', 'sync_disabled'];
-        $status   = in_array($cred->status, $preserve, true) ? $cred->status : 'ready';
+        $status = in_array($cred->status, $preserve, true) ? $cred->status : 'ready';
 
         return $this->finalize($status, $checks, $companyId, $provider, $cred->status);
     }
 
     private function finalize(
-        string  $newStatus,
-        array   $checks,
-        string  $companyId,
-        string  $provider,
+        string $newStatus,
+        array $checks,
+        string $companyId,
+        string $provider,
         ?string $oldStatus,
     ): array {
         if ($oldStatus !== null && $newStatus !== $oldStatus) {
@@ -122,21 +124,21 @@ final class ProviderHealthMonitor
 
             $this->audit->record(
                 companyId: $companyId,
-                module:    'marketing',
-                category:  'provider_health',
-                action:    'health_status_changed',
-                oldValue:  ['status' => $oldStatus],
-                newValue:  ['provider' => $provider, 'status' => $newStatus],
+                module: 'marketing',
+                category: 'provider_health',
+                action: 'health_status_changed',
+                oldValue: ['status' => $oldStatus],
+                newValue: ['provider' => $provider, 'status' => $newStatus],
                 configKey: "provider.{$provider}.health_status",
-                reason:    'Automated health check',
+                reason: 'Automated health check',
             );
 
             $this->events->providerHealthChanged($companyId, $provider, $newStatus, $oldStatus, $checks);
         }
 
         return [
-            'status'     => $newStatus,
-            'checks'     => $checks,
+            'status' => $newStatus,
+            'checks' => $checks,
             'checked_at' => now()->toISOString(),
         ];
     }

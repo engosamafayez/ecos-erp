@@ -89,7 +89,7 @@ export function PosWorkspace() {
         setShowRecovery(true);
       }
     }
-  }, [cart]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cart]);  
 
   // Auto-dismiss barcode error after 3 seconds
   useEffect(() => {

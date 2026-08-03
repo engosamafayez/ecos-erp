@@ -9,27 +9,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property string          $id
- * @property string          $company_id
- * @property string          $preparation_wave_id
- * @property string          $raw_material_id
- * @property string          $material_name_snapshot
- * @property string          $unit_snapshot
- * @property float           $quantity_required
- * @property float           $quantity_available
- * @property float           $quantity_to_purchase
- * @property bool            $shortage
- * @property float           $shortage_amount
- * @property \Carbon\Carbon  $analyzed_at
- * @property string          $analyzed_by
- * @property string|null     $purchase_request_id
- * @property bool            $resolved
+ * @property string $id
+ * @property string $company_id
+ * @property string $preparation_wave_id
+ * @property string $raw_material_id
+ * @property string $material_name_snapshot
+ * @property string $unit_snapshot
+ * @property float $quantity_required
+ * @property float $quantity_available
+ * @property float $quantity_to_purchase
+ * @property bool $shortage
+ * @property float $shortage_amount
+ * @property \Carbon\Carbon $analyzed_at
+ * @property string $analyzed_by
+ * @property string|null $purchase_request_id
+ * @property bool $resolved
  * @property \Carbon\Carbon|null $resolved_at
- * @property string|null     $resolved_by
- * @property string          $created_by
- * @property string          $updated_by
- * @property \Carbon\Carbon  $created_at
- * @property \Carbon\Carbon  $updated_at
+ * @property string|null $resolved_by
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class PreparationMaterialRequirement extends Model
 {
@@ -67,14 +67,14 @@ class PreparationMaterialRequirement extends Model
     protected function casts(): array
     {
         return [
-            'quantity_required'   => 'float',
-            'quantity_available'  => 'float',
-            'quantity_to_purchase'=> 'float',
-            'shortage'            => 'boolean',
-            'shortage_amount'     => 'float',
-            'resolved'            => 'boolean',
-            'analyzed_at'         => 'datetime',
-            'resolved_at'         => 'datetime',
+            'quantity_required' => 'float',
+            'quantity_available' => 'float',
+            'quantity_to_purchase' => 'float',
+            'shortage' => 'boolean',
+            'shortage_amount' => 'float',
+            'resolved' => 'boolean',
+            'analyzed_at' => 'datetime',
+            'resolved_at' => 'datetime',
         ];
     }
 

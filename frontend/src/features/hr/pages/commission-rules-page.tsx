@@ -15,7 +15,7 @@ import type { CommissionMethod } from '@/features/hr/types/compensation';
 
 const METHODS: Array<{ value: CommissionMethod; label: string; hint: string }> = [
   { value: 'percentage_of_value', label: 'Percentage of Value', hint: 'e.g. 2% of sales amount' },
-  { value: 'amount_per_unit', label: 'Amount per Unit', hint: 'e.g. EGP 15 per delivered shipment' },
+  { value: 'amount_per_unit', label: 'Amount per Unit', hint: 'e.g. a fixed amount per delivered shipment' },
   { value: 'tiered', label: 'Tiered', hint: 'banded rates by achieved value' },
 ];
 

@@ -56,9 +56,9 @@ final class InventoryLayerConsumptionService
             throw new InsufficientStockException($productId, $warehouseId, $quantity, $available);
         }
 
-        $remaining      = (string) $quantity;
+        $remaining = (string) $quantity;
         $consumedLayers = [];
-        $totalCost      = '0';
+        $totalCost = '0';
 
         foreach ($layers as $layer) {
             if (bccomp($remaining, '0', 4) <= 0) {
@@ -66,11 +66,11 @@ final class InventoryLayerConsumptionService
             }
 
             $layerRemaining = (string) $layer->remaining_qty;
-            $consume        = bccomp($remaining, $layerRemaining, 4) <= 0
+            $consume = bccomp($remaining, $layerRemaining, 4) <= 0
                 ? $remaining
                 : $layerRemaining;
-            $unitCost       = (string) $layer->landed_unit_cost;
-            $sliceCost      = bcmul($consume, $unitCost, 4);
+            $unitCost = (string) $layer->landed_unit_cost;
+            $sliceCost = bcmul($consume, $unitCost, 4);
 
             // Decrement the layer
             $layer->remaining_qty = bcsub($layerRemaining, $consume, 4);
@@ -78,22 +78,22 @@ final class InventoryLayerConsumptionService
 
             // Audit record
             $this->repo->create([
-                'order_id'                   => $orderId,
-                'order_line_id'              => $orderLineId,
-                'inventory_item_id'          => $inventoryItemId,
+                'order_id' => $orderId,
+                'order_line_id' => $orderLineId,
+                'inventory_item_id' => $inventoryItemId,
                 'inventory_receipt_layer_id' => $layer->id,
-                'product_id'                 => $productId,
-                'warehouse_id'               => $warehouseId,
-                'company_id'                 => $companyId,
-                'quantity'                   => $consume,
-                'unit_cost'                  => $unitCost,
-                'total_cost'                 => $sliceCost,
+                'product_id' => $productId,
+                'warehouse_id' => $warehouseId,
+                'company_id' => $companyId,
+                'quantity' => $consume,
+                'unit_cost' => $unitCost,
+                'total_cost' => $sliceCost,
             ]);
 
             $consumedLayers[] = new ConsumedLayerDTO(
-                layerId:   $layer->id,
-                quantity:  (float) $consume,
-                unitCost:  (float) $unitCost,
+                layerId: $layer->id,
+                quantity: (float) $consume,
+                unitCost: (float) $unitCost,
                 totalCost: (float) $sliceCost,
             );
 
@@ -106,9 +106,9 @@ final class InventoryLayerConsumptionService
             : '0.0000';
 
         return new ConsumptionResult(
-            totalQuantity:  $quantity,
-            totalCost:      (float) $totalCost,
-            weightedCost:   (float) $weightedCost,
+            totalQuantity: $quantity,
+            totalCost: (float) $totalCost,
+            weightedCost: (float) $weightedCost,
             consumedLayers: $consumedLayers,
         );
     }

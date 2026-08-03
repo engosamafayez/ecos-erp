@@ -64,7 +64,7 @@ function PaymentProofCell({ rawPath }: { rawPath: string }) {
             hover:ring-emerald-500/40 transition-colors"
         >
           <FileCheck className="size-3" />
-          {t('columns.proofReceived')}
+          {t($ => $.columns.proofReceived)}
         </button>
       }
     />
@@ -119,7 +119,7 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           className="inline-flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors outline-none"
-          aria-label={t('actions.orderActions')}
+          aria-label={t($ => $.actions.orderActions)}
         >
           <MoreVertical className="size-3.5" />
         </button>
@@ -127,33 +127,33 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
       <DropdownMenuContent align="end" className="w-48" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem onClick={() => callbacks.onView(order)}>
           <ExternalLink className="size-3.5" />
-          {t('actions.viewOrder')}
+          {t($ => $.actions.viewOrder)}
         </DropdownMenuItem>
         {callbacks.onEdit ? (
           <DropdownMenuItem onClick={() => callbacks.onEdit!(order)}>
             <User className="size-3.5" />
-            {t('actions.editOrder')}
+            {t($ => $.actions.editOrder)}
           </DropdownMenuItem>
         ) : null}
         {order.customer?.id ? (
           <DropdownMenuItem asChild>
             <a href={`/app/customers/${order.customer.id}`} onClick={(e) => e.stopPropagation()}>
               <User className="size-3.5" />
-              {t('actions.customerProfile')}
+              {t($ => $.actions.customerProfile)}
             </a>
           </DropdownMenuItem>
         ) : null}
         {callbacks.onTimeline ? (
           <DropdownMenuItem onClick={() => callbacks.onTimeline!(order)}>
             <Clock className="size-3.5" />
-            {t('actions.timeline')}
+            {t($ => $.actions.timeline)}
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
         {callbacks.onPrint ? (
           <DropdownMenuItem onClick={() => callbacks.onPrint!(order)}>
             <Printer className="size-3.5" />
-            {t('actions.invoicePrint')}
+            {t($ => $.actions.invoicePrint)}
           </DropdownMenuItem>
         ) : null}
         {phone ? (
@@ -171,7 +171,7 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
         ) : null}
         <DropdownMenuItem onClick={copyOrder}>
           <ExternalLink className="size-3.5" />
-          {copied ? t('actions.linkCopied') : t('actions.copyLink')}
+          {copied ? t($ => $.actions.linkCopied) : t($ => $.actions.copyLink)}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {callbacks.onDelete ? (
@@ -180,7 +180,7 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
             onClick={() => callbacks.onDelete!(order)}
           >
             <MoreVertical className="size-3.5" />
-            {t('actions.cancelOrder')}
+            {t($ => $.actions.cancelOrder)}
           </DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>
@@ -205,7 +205,7 @@ export function createOrderColumns(
     // ── Order # ───────────────────────────────────────────────────────────────
     {
       key: 'order_number',
-      label: t('columns.number'),
+      label: t($ => $.columns.number),
       alwaysVisible: true,
       pin: 'left',
       width: 148,
@@ -227,7 +227,7 @@ export function createOrderColumns(
             </span>
           ) : order.channel?.type?.toLowerCase() === 'manual' ? (
             <span className="text-[10px] text-muted-foreground/70 leading-none italic">
-              {t('columns.manualOrder')}
+              {t($ => $.columns.manualOrder)}
             </span>
           ) : null}
         </div>
@@ -237,7 +237,7 @@ export function createOrderColumns(
     // ── Customer ──────────────────────────────────────────────────────────────
     {
       key: 'customer',
-      label: t('columns.customer'),
+      label: t($ => $.columns.customer),
       defaultVisible: true,
       width: 280,
       skeletonClassName: 'h-4 w-28',
@@ -285,7 +285,7 @@ export function createOrderColumns(
     // ── Status ────────────────────────────────────────────────────────────────
     {
       key: 'status',
-      label: t('columns.status'),
+      label: t($ => $.columns.status),
       defaultVisible: true,
       sortable: true,
       skeletonClassName: 'h-8 w-32 rounded-md',
@@ -299,7 +299,7 @@ export function createOrderColumns(
     // ── Delivery Address — full multi-line, no truncation ─────────────────────
     {
       key: 'address',
-      label: t('columns.address'),
+      label: t($ => $.columns.address),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-40',
       cellClassName: 'min-w-48',
@@ -313,7 +313,7 @@ export function createOrderColumns(
     // ── Zone — inline editable governorate/city ───────────────────────────────
     {
       key: 'zone',
-      label: t('columns.zone'),
+      label: t($ => $.columns.zone),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-20',
       cell: (order) => (
@@ -326,7 +326,7 @@ export function createOrderColumns(
     // ── Location — GPS pin + map / Waze / copy actions ────────────────────────
     {
       key: 'location',
-      label: t('columns.location'),
+      label: t($ => $.columns.location),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-28',
       cell: (order) => (
@@ -343,7 +343,7 @@ export function createOrderColumns(
     // ── Inventory Execution ───────────────────────────────────────────────────
     {
       key: 'inventory_execution',
-      label: t('columns.inventoryExecution'),
+      label: t($ => $.columns.inventoryExecution),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-20 rounded-full',
       cell: (order) => (
@@ -372,7 +372,7 @@ export function createOrderColumns(
     // ── Items — product count with popover preview ────────────────────────────
     {
       key: 'products_count',
-      label: t('columns.productsCount'),
+      label: t($ => $.columns.productsCount),
       defaultVisible: true,
       align: 'center',
       skeletonClassName: 'h-4 w-6',
@@ -386,7 +386,7 @@ export function createOrderColumns(
     // ── Payment ───────────────────────────────────────────────────────────────
     {
       key: 'payment_method',
-      label: t('columns.paymentMethod'),
+      label: t($ => $.columns.paymentMethod),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-16 rounded',
       cell: (order) => (
@@ -399,18 +399,18 @@ export function createOrderColumns(
     // ── Payment Proof ─────────────────────────────────────────────────────────
     {
       key: 'payment_proof',
-      label: t('columns.paymentProof'),
+      label: t($ => $.columns.paymentProof),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-24',
       cell: (order) => order.payment_proof_path
         ? <PaymentProofCell rawPath={order.payment_proof_path} />
-        : <span className="text-xs text-muted-foreground">{t('columns.noProof')}</span>,
+        : <span className="text-xs text-muted-foreground">{t($ => $.columns.noProof)}</span>,
     },
 
     // ── Total (Remaining Balance = Grand Total − Deposit) ─────────────────────
     {
       key: 'total',
-      label: t('columns.total'),
+      label: t($ => $.columns.total),
       defaultVisible: true,
       sortable: true,
       align: 'end',
@@ -429,7 +429,7 @@ export function createOrderColumns(
     // ── Customer Notes ────────────────────────────────────────────────────────
     {
       key: 'customer_note',
-      label: t('columns.customerNote'),
+      label: t($ => $.columns.customerNote),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-32',
       cell: (order) => {
@@ -457,7 +457,7 @@ export function createOrderColumns(
     // ── Created ───────────────────────────────────────────────────────────────
     {
       key: 'created_at',
-      label: t('columns.createdAt'),
+      label: t($ => $.columns.createdAt),
       defaultVisible: true,
       sortable: true,
       skeletonClassName: 'h-4 w-20',
@@ -470,7 +470,7 @@ export function createOrderColumns(
     // Manual → creator name | POS → cashier name + chip | WC/API → —
     {
       key: 'sales_rep',
-      label: t('columns.salesRep'),
+      label: t($ => $.columns.salesRep),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-24',
       cell: (order) => {
@@ -501,7 +501,7 @@ export function createOrderColumns(
     // ── Delivery Driver ───────────────────────────────────────────────────────
     {
       key: 'delivery_driver',
-      label: t('columns.driver'),
+      label: t($ => $.columns.driver),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-20',
       cell: () => (
@@ -512,7 +512,7 @@ export function createOrderColumns(
     // ── Store ─────────────────────────────────────────────────────────────────
     {
       key: 'store',
-      label: t('columns.store'),
+      label: t($ => $.columns.store),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-20',
       cell: (order) => {
@@ -536,7 +536,7 @@ export function createOrderColumns(
     // ── Delivery Attempts ─────────────────────────────────────────────────────
     {
       key: 'shipping_attempts',
-      label: t('columns.shippingAttempts'),
+      label: t($ => $.columns.shippingAttempts),
       defaultVisible: true, // restored
       align: 'center',
       skeletonClassName: 'h-4 w-6',
@@ -554,7 +554,7 @@ export function createOrderColumns(
     // ── Updated ───────────────────────────────────────────────────────────────
     {
       key: 'updated_at',
-      label: t('columns.updatedAt'),
+      label: t($ => $.columns.updatedAt),
       defaultVisible: true, // restored
       skeletonClassName: 'h-4 w-20',
       cell: (order) => (
@@ -565,7 +565,7 @@ export function createOrderColumns(
     // ── Delivery Window (hidden) ──────────────────────────────────────────────
     {
       key: 'delivery_window',
-      label: t('columns.deliveryWindow'),
+      label: t($ => $.columns.deliveryWindow),
       defaultVisible: false,
       skeletonClassName: 'h-4 w-28',
       cell: (order) => {

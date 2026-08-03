@@ -46,10 +46,10 @@ class SyncEventArgsTest extends TestCase
     {
         $params = $this->paramNames(SynchronizationStarted::class);
 
-        $this->assertContains('syncLog',      $params);
+        $this->assertContains('syncLog', $params);
         $this->assertContains('connectionId', $params);
-        $this->assertContains('syncType',     $params);
-        $this->assertContains('triggeredBy',  $params);
+        $this->assertContains('syncType', $params);
+        $this->assertContains('triggeredBy', $params);
         $this->assertNotContains('connectorType', $params);
     }
 
@@ -57,12 +57,12 @@ class SyncEventArgsTest extends TestCase
     {
         $params = $this->paramNames(SynchronizationCompleted::class);
 
-        $this->assertContains('syncLog',          $params);
+        $this->assertContains('syncLog', $params);
         $this->assertContains('assetsDiscovered', $params);
-        $this->assertContains('assetsCreated',    $params);
-        $this->assertContains('assetsUpdated',    $params);
-        $this->assertContains('assetsFailed',     $params);
-        $this->assertNotContains('connectionId',  $params);
+        $this->assertContains('assetsCreated', $params);
+        $this->assertContains('assetsUpdated', $params);
+        $this->assertContains('assetsFailed', $params);
+        $this->assertNotContains('connectionId', $params);
         $this->assertNotContains('connectorType', $params);
     }
 
@@ -70,9 +70,9 @@ class SyncEventArgsTest extends TestCase
     {
         $params = $this->paramNames(SynchronizationFailed::class);
 
-        $this->assertContains('syncLog',          $params);
-        $this->assertContains('errorMessage',     $params);
-        $this->assertNotContains('connectionId',  $params);
+        $this->assertContains('syncLog', $params);
+        $this->assertContains('errorMessage', $params);
+        $this->assertNotContains('connectionId', $params);
         $this->assertNotContains('connectorType', $params);
     }
 
@@ -81,37 +81,37 @@ class SyncEventArgsTest extends TestCase
     public function test_run_sync_action_passes_sync_log_object_not_id(): void
     {
         $source = (string) file_get_contents(
-            base_path('Modules/Marketing/Synchronization/Application/Actions/RunSyncAction.php')
+            base_path('Modules/Marketing/Synchronization/Application/Actions/RunSyncAction.php'),
         );
 
         $this->assertStringContainsString(
             'syncLog:',
             $source,
-            'RunSyncAction must use named arg syncLog: (object) when dispatching Sync events.'
+            'RunSyncAction must use named arg syncLog: (object) when dispatching Sync events.',
         );
         $this->assertStringNotContainsString(
             'syncLogId:',
             $source,
-            'RunSyncAction must NOT use syncLogId: — this caused PHP fatal errors; pass the model.'
+            'RunSyncAction must NOT use syncLogId: — this caused PHP fatal errors; pass the model.',
         );
         $this->assertStringNotContainsString(
             'connectorType:',
             $source,
-            'RunSyncAction must NOT pass connectorType: to Sync events — that field does not exist.'
+            'RunSyncAction must NOT pass connectorType: to Sync events — that field does not exist.',
         );
     }
 
     public function test_run_sync_action_passes_all_required_args_for_completed_event(): void
     {
         $source = (string) file_get_contents(
-            base_path('Modules/Marketing/Synchronization/Application/Actions/RunSyncAction.php')
+            base_path('Modules/Marketing/Synchronization/Application/Actions/RunSyncAction.php'),
         );
 
         foreach (['assetsDiscovered:', 'assetsCreated:', 'assetsUpdated:', 'assetsFailed:'] as $arg) {
             $this->assertStringContainsString(
                 $arg,
                 $source,
-                "RunSyncAction must pass $arg to SynchronizationCompleted."
+                "RunSyncAction must pass $arg to SynchronizationCompleted.",
             );
         }
     }
@@ -119,13 +119,13 @@ class SyncEventArgsTest extends TestCase
     public function test_run_sync_action_passes_error_message_to_failed_event(): void
     {
         $source = (string) file_get_contents(
-            base_path('Modules/Marketing/Synchronization/Application/Actions/RunSyncAction.php')
+            base_path('Modules/Marketing/Synchronization/Application/Actions/RunSyncAction.php'),
         );
 
         $this->assertStringContainsString(
             'errorMessage:',
             $source,
-            'RunSyncAction must pass errorMessage: to SynchronizationFailed.'
+            'RunSyncAction must pass errorMessage: to SynchronizationFailed.',
         );
     }
 

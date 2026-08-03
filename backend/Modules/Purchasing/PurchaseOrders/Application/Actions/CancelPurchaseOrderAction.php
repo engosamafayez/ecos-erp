@@ -17,7 +17,7 @@ final class CancelPurchaseOrderAction extends BaseAction
 
     public function execute(mixed ...$arguments): OperationResult
     {
-        $id    = (string) ($arguments[0] ?? '');
+        $id = (string) ($arguments[0] ?? '');
         $order = $this->orders->findById($id);
 
         if ($order === null) {

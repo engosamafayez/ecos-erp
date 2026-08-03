@@ -44,20 +44,20 @@ export function CreateGoodsReceiptPage() {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col gap-6">
           <PageHeader
-            title={t('create.title')}
-            subtitle={t('create.subtitle')}
+            title={t($ => $.create.title)}
+            subtitle={t($ => $.create.subtitle)}
             breadcrumbs={[
-              { label: tCommon('home'), to: ROUTES.dashboard },
-              { label: t('title'), to: ROUTES.goodsReceipts },
-              { label: t('create.new') },
+              { label: tCommon($ => $.home), to: ROUTES.dashboard },
+              { label: t($ => $.title), to: ROUTES.goodsReceipts },
+              { label: t($ => $.create.new) },
             ]}
             actions={
               <div className="flex items-center gap-2">
                 <Button type="button" variant="outline" onClick={() => navigate(ROUTES.goodsReceipts)}>
-                  {tCommon('common.cancel')}
+                  {tCommon($ => $.common.cancel)}
                 </Button>
                 <Button type="submit" disabled={createGR.isPending}>
-                  {createGR.isPending ? t('create.creating') : t('create.submitCreate')}
+                  {createGR.isPending ? t($ => $.create.creating) : t($ => $.create.submitCreate)}
                 </Button>
               </div>
             }
@@ -65,7 +65,7 @@ export function CreateGoodsReceiptPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t('create.receiptDetails')}</CardTitle>
+              <CardTitle>{t($ => $.create.receiptDetails)}</CardTitle>
             </CardHeader>
             <CardContent>
               <GoodsReceiptHeaderFields onPoLinesLoaded={setPoLineInfos} />
@@ -74,7 +74,7 @@ export function CreateGoodsReceiptPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t('lines.title')}</CardTitle>
+              <CardTitle>{t($ => $.lines.title)}</CardTitle>
             </CardHeader>
             <CardContent>
               <GoodsReceiptLinesEditor poLineInfos={poLineInfos} />

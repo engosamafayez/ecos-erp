@@ -10,23 +10,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Operations\Preparation\Domain\Enums\WaveItemStatus;
 
 /**
- * @property string          $id
- * @property string          $company_id
- * @property string          $preparation_wave_id
- * @property string          $product_id
- * @property string          $sku_snapshot
- * @property string          $name_snapshot
- * @property float           $quantity_required
- * @property float           $quantity_prepared
- * @property float           $quantity_short
- * @property WaveItemStatus  $status
+ * @property string $id
+ * @property string $company_id
+ * @property string $preparation_wave_id
+ * @property string $product_id
+ * @property string $sku_snapshot
+ * @property string $name_snapshot
+ * @property float $quantity_required
+ * @property float $quantity_prepared
+ * @property float $quantity_short
+ * @property WaveItemStatus $status
  * @property \Carbon\Carbon|null $prepared_at
- * @property string|null     $prepared_by
- * @property string|null     $notes
- * @property string          $created_by
- * @property string          $updated_by
- * @property \Carbon\Carbon  $created_at
- * @property \Carbon\Carbon  $updated_at
+ * @property string|null $prepared_by
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class PreparationWaveItem extends Model
 {
@@ -60,11 +60,11 @@ class PreparationWaveItem extends Model
     protected function casts(): array
     {
         return [
-            'status'            => WaveItemStatus::class,
+            'status' => WaveItemStatus::class,
             'quantity_required' => 'float',
             'quantity_prepared' => 'float',
-            'quantity_short'    => 'float',
-            'prepared_at'       => 'datetime',
+            'quantity_short' => 'float',
+            'prepared_at' => 'datetime',
         ];
     }
 

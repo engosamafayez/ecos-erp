@@ -31,7 +31,7 @@ final class SnapshotValidator
         if ($provider->getGrandTotal() <= 0.0) {
             throw new SnapshotConsistencyException(
                 'Snapshot grand_total must be positive. '
-                . "Aggregate: {$provider->getSnapshotAggregateType()} {$provider->getSnapshotAggregateId()}"
+                ."Aggregate: {$provider->getSnapshotAggregateType()} {$provider->getSnapshotAggregateId()}",
             );
         }
     }
@@ -41,7 +41,7 @@ final class SnapshotValidator
         if (trim((string) $provider->getCurrency()) === '') {
             throw new SnapshotConsistencyException(
                 'Snapshot currency must not be empty. '
-                . "Aggregate: {$provider->getSnapshotAggregateType()} {$provider->getSnapshotAggregateId()}"
+                ."Aggregate: {$provider->getSnapshotAggregateType()} {$provider->getSnapshotAggregateId()}",
             );
         }
     }
@@ -51,7 +51,7 @@ final class SnapshotValidator
         if (count($provider->getLineItems()) === 0) {
             throw new SnapshotConsistencyException(
                 'Snapshot must contain at least one line item. '
-                . "Aggregate: {$provider->getSnapshotAggregateType()} {$provider->getSnapshotAggregateId()}"
+                ."Aggregate: {$provider->getSnapshotAggregateType()} {$provider->getSnapshotAggregateId()}",
             );
         }
     }

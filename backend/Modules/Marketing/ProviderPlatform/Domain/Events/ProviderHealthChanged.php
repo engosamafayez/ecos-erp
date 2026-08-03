@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderHealthChanged extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.health_changed'; }
+    public function eventName(): string
+    {
+        return 'provider.health_changed';
+    }
 }

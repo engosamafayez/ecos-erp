@@ -23,13 +23,13 @@ final class PatchOrderRequest extends FormRequest
         $statuses = array_column(OrderStatus::cases(), 'value');
 
         return [
-            'status'           => ['sometimes', 'string', Rule::in($statuses)],
-            'area'             => ['sometimes', 'nullable', 'string', 'max:255'],
-            'governorate'      => ['sometimes', 'nullable', 'string', 'max:255'],
-            'google_maps_lat'  => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
-            'google_maps_lng'  => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
-            'google_maps_url'  => ['sometimes', 'nullable', 'string', 'max:1000'],
-            'reason'           => ['sometimes', 'nullable', 'string', 'max:500'],
+            'status' => ['sometimes', 'string', Rule::in($statuses)],
+            'area' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'governorate' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'google_maps_lat' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+            'google_maps_lng' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
+            'google_maps_url' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'reason' => ['sometimes', 'nullable', 'string', 'max:500'],
         ];
     }
 }

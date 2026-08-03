@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useFormatter } from '@/hooks/use-formatter';
 import { CheckCircle2, Plus, RotateCcw, Send, Trash2, XCircle } from 'lucide-react';
 
 import {
@@ -30,7 +32,18 @@ import type {
 
 const PER_PAGE = 15;
 
+const CHIP_COLOR_MAP: Record<string, string> = {
+  gray:   'bg-gray-100 text-gray-700',
+  yellow: 'bg-yellow-50 text-yellow-700',
+  orange: 'bg-orange-50 text-orange-700',
+  green:  'bg-green-50 text-green-700',
+};
+
+type ChipDef = { id: string; label: string; filterKey: SupplierReturnStatus; count: number; color: string };
+
 export function SupplierReturnsPage() {
+  const { t } = useTranslation('supplier-returns');
+  const fmt = useFormatter();
   const { returnStatusLabel, returnColumnHeaders } = useSupplierReturnLabels();
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatus]     = useState<SupplierReturnStatus | 'all'>('all');
@@ -59,6 +72,13 @@ export function SupplierReturnsPage() {
 
   const items = data?.items ?? [];
   const meta  = data?.meta;
+
+  const statusChips: ChipDef[] = stats ? [
+    { id: 'draft',          label: t($ => $.page.statusChips.draft),          filterKey: 'draft',            count: Number(stats.draft),          color: 'gray'   },
+    { id: 'waiting',        label: t($ => $.page.statusChips.waiting),        filterKey: 'waiting_approval', count: Number(stats.waiting),        color: 'yellow' },
+    { id: 'credit_pending', label: t($ => $.page.statusChips.credit_pending), filterKey: 'credit_pending',   count: Number(stats.credit_pending), color: 'orange' },
+    { id: 'completed',      label: t($ => $.page.statusChips.completed),      filterKey: 'completed',        count: Number(stats.completed),      color: 'green'  },
+  ] : [];
 
   const handleSort = (field: string) => {
     setSort(curr =>
@@ -101,7 +121,7 @@ export function SupplierReturnsPage() {
       key: 'total_return_value',
       header: returnColumnHeaders.amount,
       cell: (r) => (
-        <span className="text-sm font-medium">SAR {r.total_return_value.toLocaleString()}</span>
+        <span className="text-sm font-medium">{fmt.money(r.total_return_value)}</span>
       ),
     },
     {
@@ -120,44 +140,31 @@ export function SupplierReturnsPage() {
       <div className="px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-4">
           <PageHeader
-            title="Supplier Returns"
-            subtitle="Manage returns of defective, incorrect, or surplus goods to suppliers."
+            title={t($ => $.page.title)}
+            subtitle={t($ => $.page.subtitle)}
           />
           <Button onClick={() => setCreatingNew(true)} size="sm" className="gap-1.5">
             <Plus className="w-3.5 h-3.5" />
-            New Return
+            {t($ => $.page.newReturn)}
           </Button>
         </div>
 
         {stats && (
           <div className="flex gap-2 flex-wrap">
-            {([
-              { label: 'Draft',          key: 'draft',          color: 'gray'   },
-              { label: 'Waiting',        key: 'waiting',        color: 'yellow' },
-              { label: 'Credit Pending', key: 'credit_pending', color: 'orange' },
-              { label: 'Completed',      key: 'completed',      color: 'green'  },
-            ] as const).map(({ label, key, color }) => {
-              const colorMap: Record<string, string> = {
-                gray:   'bg-gray-100 text-gray-700',
-                yellow: 'bg-yellow-50 text-yellow-700',
-                orange: 'bg-orange-50 text-orange-700',
-                green:  'bg-green-50 text-green-700',
-              };
-              return (
-                <button
-                  key={key}
-                  onClick={() => { setStatus(key === 'waiting' ? 'waiting_approval' : key as SupplierReturnStatus); setPage(1); }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${colorMap[color]} hover:opacity-80`}
-                >
-                  {label}: {stats[key as keyof typeof stats] as number}
-                </button>
-              );
-            })}
+            {statusChips.map(({ id, label, filterKey, count, color }) => (
+              <button
+                key={id}
+                onClick={() => { setStatus(filterKey); setPage(1); }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${CHIP_COLOR_MAP[color]} hover:opacity-80`}
+              >
+                {label}: {count}
+              </button>
+            ))}
             <button
               onClick={() => { setStatus('all'); setPage(1); }}
               className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200"
             >
-              All: {stats.total}
+              {t($ => $.page.statusChips.all)}: {stats.total}
             </button>
           </div>
         )}
@@ -167,7 +174,7 @@ export function SupplierReturnsPage() {
         <Card className="shadow-none border-gray-200">
           <CardContent className="flex flex-col gap-4 pt-6">
             <EntityToolbar
-              searchPlaceholder="Search returns…"
+              searchPlaceholder={t($ => $.page.search)}
               onSearchChange={(v) => { setSearch(v); setPage(1); }}
               onRefresh={() => void refetch()}
               isRefreshing={isFetching}
@@ -175,20 +182,20 @@ export function SupplierReturnsPage() {
               filterPanel={
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-medium">Status</span>
+                    <span className="text-sm font-medium">{t($ => $.page.columns.status)}</span>
                     <select
                       value={statusFilter}
                       onChange={(e) => { setStatus(e.target.value as SupplierReturnStatus | 'all'); setPage(1); }}
                       className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                     >
-                      <option value="all">All Statuses</option>
-                      <option value="draft">Draft</option>
-                      <option value="waiting_approval">Waiting Approval</option>
-                      <option value="approved">Approved</option>
-                      <option value="sent">Sent</option>
-                      <option value="credit_pending">Credit Pending</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="all">{t($ => $.page.statusChips.all)}</option>
+                      <option value="draft">{t($ => $.status.draft)}</option>
+                      <option value="waiting_approval">{t($ => $.status.waiting_approval)}</option>
+                      <option value="approved">{t($ => $.status.approved)}</option>
+                      <option value="sent">{t($ => $.status.sent)}</option>
+                      <option value="credit_pending">{t($ => $.status.credit_pending)}</option>
+                      <option value="completed">{t($ => $.status.completed)}</option>
+                      <option value="cancelled">{t($ => $.status.cancelled)}</option>
                     </select>
                   </div>
                 </div>
@@ -209,14 +216,14 @@ export function SupplierReturnsPage() {
                   items={[
                     {
                       key: 'view',
-                      label: 'View Details',
+                      label: t($ => $.page.actions.viewDetails),
                       icon: RotateCcw,
                       onSelect: () => setSelectedId(r.id),
                     },
                     ...(r.status === 'draft' ? [
                       {
                         key: 'submit',
-                        label: 'Submit for Approval',
+                        label: t($ => $.page.actions.submit),
                         icon: Send,
                         onSelect: () => submitMutation.mutate(r.id),
                       },
@@ -224,7 +231,7 @@ export function SupplierReturnsPage() {
                     ...(r.status === 'waiting_approval' ? [
                       {
                         key: 'approve',
-                        label: 'Approve',
+                        label: t($ => $.page.actions.approve),
                         icon: CheckCircle2,
                         onSelect: () => approveMutation.mutate(r.id),
                       },
@@ -232,7 +239,7 @@ export function SupplierReturnsPage() {
                     ...(['draft', 'waiting_approval'].includes(r.status) ? [
                       {
                         key: 'cancel',
-                        label: 'Cancel',
+                        label: t($ => $.page.actions.cancel),
                         icon: XCircle,
                         variant: 'destructive' as const,
                         onSelect: () => setCancelling(r),
@@ -241,7 +248,7 @@ export function SupplierReturnsPage() {
                     ...(r.status === 'draft' ? [
                       {
                         key: 'delete',
-                        label: 'Delete',
+                        label: t($ => $.page.actions.delete),
                         icon: Trash2,
                         variant: 'destructive' as const,
                         onSelect: () => setDeleting(r),
@@ -278,9 +285,9 @@ export function SupplierReturnsPage() {
       <ConfirmDialog
         open={cancelling !== null}
         onOpenChange={(open) => { if (!open) setCancelling(null); }}
-        title="Cancel Return"
-        description={`Are you sure you want to cancel return ${cancelling?.return_number}?`}
-        confirmLabel="Cancel Return"
+        title={t($ => $.page.confirmCancel.title)}
+        description={t($ => $.page.confirmCancel.description)}
+        confirmLabel={t($ => $.page.confirmCancel.confirm)}
         variant="destructive"
         loading={cancelMutation.isPending}
         onConfirm={() => {
@@ -291,9 +298,9 @@ export function SupplierReturnsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete Return"
-        description={`Are you sure you want to delete return ${deleting?.return_number}? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title={t($ => $.page.confirmDelete.title)}
+        description={t($ => $.page.confirmDelete.description)}
+        confirmLabel={t($ => $.page.confirmDelete.confirm)}
         variant="destructive"
         loading={deleteMutation.isPending}
         onConfirm={() => {

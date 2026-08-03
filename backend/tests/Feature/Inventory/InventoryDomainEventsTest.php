@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Inventory;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
-use Modules\Commerce\Synchronization\Application\Services\ChannelSynchronizationService;
+use Mockery;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
 use Modules\Commerce\Synchronization\Application\Jobs\InventorySyncJob;
 use Modules\Commerce\Synchronization\Application\Listeners\InventoryChannelSynchronizationListener;
+use Modules\Commerce\Synchronization\Application\Services\ChannelSynchronizationService;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
 use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
 use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
@@ -29,7 +32,6 @@ use Modules\Inventory\InventoryItems\Application\Actions\ReleaseStockAction;
 use Modules\Inventory\InventoryItems\Application\Actions\ReserveStockAction;
 use Modules\Inventory\InventoryItems\Application\Actions\ShipStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
-use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementException;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Inventory\StockLedger\Domain\Enums\MovementType;
 use Modules\Inventory\StockLedger\Domain\Models\StockMovement;
@@ -37,6 +39,7 @@ use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
+use Throwable;
 
 /**
  * TASK-IMPLEMENT-001 Phase A — Inventory Domain Events (Shadow Mode)
@@ -54,16 +57,18 @@ class InventoryDomainEventsTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Warehouse $warehouse;
+
     private Product $product;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->product   = Product::factory()->create();
+        $this->product = Product::factory()->create();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -71,12 +76,12 @@ class InventoryDomainEventsTest extends TestCase
     private function dto(float $quantity, array $overrides = []): StockOperationDTO
     {
         return StockOperationDTO::fromArray(array_merge([
-            'warehouse_id'   => $this->warehouse->id,
-            'product_id'     => $this->product->id,
-            'company_id'     => $this->company->id,
-            'quantity'       => $quantity,
+            'warehouse_id' => $this->warehouse->id,
+            'product_id' => $this->product->id,
+            'company_id' => $this->company->id,
+            'quantity' => $quantity,
             'reference_type' => 'test',
-            'reference_id'   => 'test-ref-001',
+            'reference_id' => 'test-ref-001',
         ], $overrides));
     }
 
@@ -107,14 +112,14 @@ class InventoryDomainEventsTest extends TestCase
         app(ReceiveStockAction::class)->execute($this->dto(100.0));
 
         Event::assertDispatched(InventoryStockReceived::class, function (InventoryStockReceived $event): bool {
-            return $event->productId      === $this->product->id
-                && $event->warehouseId   === $this->warehouse->id
-                && $event->companyId     === $this->company->id
+            return $event->productId === $this->product->id
+                && $event->warehouseId === $this->warehouse->id
+                && $event->companyId === $this->company->id
                 && $event->quantityReceived === 100.0
-                && $event->onHandBefore  === 0.0
-                && $event->onHandAfter   === 100.0
+                && $event->onHandBefore === 0.0
+                && $event->onHandAfter === 100.0
                 && $event->referenceType === 'test'
-                && $event->eventName()   === 'inventory.stock.received'
+                && $event->eventName() === 'inventory.stock.received'
                 && strlen($event->eventId()) === 36;
         });
     }
@@ -128,10 +133,10 @@ class InventoryDomainEventsTest extends TestCase
         app(ReserveStockAction::class)->execute($this->dto(20.0));
 
         Event::assertDispatched(InventoryStockReserved::class, function (InventoryStockReserved $event): bool {
-            return $event->productId       === $this->product->id
-                && $event->warehouseId    === $this->warehouse->id
+            return $event->productId === $this->product->id
+                && $event->warehouseId === $this->warehouse->id
                 && $event->quantityReserved === 20.0
-                && $event->eventName()    === 'inventory.stock.reserved';
+                && $event->eventName() === 'inventory.stock.reserved';
         });
     }
 
@@ -145,9 +150,9 @@ class InventoryDomainEventsTest extends TestCase
         app(ReleaseStockAction::class)->execute($this->dto(20.0));
 
         Event::assertDispatched(InventoryStockReleased::class, function (InventoryStockReleased $event): bool {
-            return $event->productId        === $this->product->id
+            return $event->productId === $this->product->id
                 && $event->quantityReleased === 20.0
-                && $event->eventName()      === 'inventory.stock.released';
+                && $event->eventName() === 'inventory.stock.released';
         });
     }
 
@@ -161,13 +166,13 @@ class InventoryDomainEventsTest extends TestCase
         app(ShipStockAction::class)->execute($this->dto(30.0));
 
         Event::assertDispatched(InventoryStockShipped::class, function (InventoryStockShipped $event): bool {
-            return $event->productId       === $this->product->id
+            return $event->productId === $this->product->id
                 && $event->quantityShipped === 30.0
-                && $event->onHandBefore    === 100.0
-                && $event->onHandAfter     === 70.0
-                && $event->reservedBefore  === 30.0
-                && $event->reservedAfter   === 0.0
-                && $event->eventName()     === 'inventory.stock.shipped';
+                && $event->onHandBefore === 100.0
+                && $event->onHandAfter === 70.0
+                && $event->reservedBefore === 30.0
+                && $event->reservedAfter === 0.0
+                && $event->eventName() === 'inventory.stock.shipped';
         });
     }
 
@@ -178,12 +183,12 @@ class InventoryDomainEventsTest extends TestCase
         app(AdjustmentInAction::class)->execute($this->dto(15.0));
 
         Event::assertDispatched(InventoryStockAdjusted::class, function (InventoryStockAdjusted $event): bool {
-            return $event->productId      === $this->product->id
+            return $event->productId === $this->product->id
                 && $event->adjustmentType === InventoryStockAdjusted::TYPE_IN
-                && $event->quantity       === 15.0
-                && $event->onHandBefore   === 0.0
-                && $event->onHandAfter    === 15.0
-                && $event->eventName()    === 'inventory.stock.adjusted';
+                && $event->quantity === 15.0
+                && $event->onHandBefore === 0.0
+                && $event->onHandAfter === 15.0
+                && $event->eventName() === 'inventory.stock.adjusted';
         });
     }
 
@@ -196,12 +201,12 @@ class InventoryDomainEventsTest extends TestCase
         app(AdjustmentOutAction::class)->execute($this->dto(10.0));
 
         Event::assertDispatched(InventoryStockAdjusted::class, function (InventoryStockAdjusted $event): bool {
-            return $event->productId      === $this->product->id
+            return $event->productId === $this->product->id
                 && $event->adjustmentType === InventoryStockAdjusted::TYPE_OUT
-                && $event->quantity       === 10.0
-                && $event->onHandBefore   === 50.0
-                && $event->onHandAfter    === 40.0
-                && $event->eventName()    === 'inventory.stock.adjusted';
+                && $event->quantity === 10.0
+                && $event->onHandBefore === 50.0
+                && $event->onHandAfter === 40.0
+                && $event->eventName() === 'inventory.stock.adjusted';
         });
     }
 
@@ -220,7 +225,7 @@ class InventoryDomainEventsTest extends TestCase
         try {
             // Request more than available — guaranteed to roll back.
             app(AdjustmentOutAction::class)->execute($this->dto(999.0));
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Expected — InsufficientStockException rolls back the transaction.
         }
 
@@ -239,13 +244,13 @@ class InventoryDomainEventsTest extends TestCase
             ->withArgs(fn ($event) => $event instanceof DomainEvent);
 
         $event = new InventoryStockReceived(
-            inventoryItemId:  'item-uuid',
-            warehouseId:      $this->warehouse->id,
-            productId:        $this->product->id,
-            companyId:        $this->company->id,
+            inventoryItemId: 'item-uuid',
+            warehouseId: $this->warehouse->id,
+            productId: $this->product->id,
+            companyId: $this->company->id,
             quantityReceived: 100.0,
-            onHandBefore:     0.0,
-            onHandAfter:      100.0,
+            onHandBefore: 0.0,
+            onHandAfter: 100.0,
         );
 
         app(InventoryChannelSynchronizationListener::class)->handle($event);
@@ -256,19 +261,19 @@ class InventoryDomainEventsTest extends TestCase
         Queue::fake();
 
         // Prevent Log::channel('daily')->info() from failing when Queue::fake replaces the dispatcher.
-        Log::shouldReceive('channel')->with('daily')->andReturn(\Mockery::mock(\Psr\Log\LoggerInterface::class, [
-            'info'    => null,
+        Log::shouldReceive('channel')->with('daily')->andReturn(Mockery::mock(\Psr\Log\LoggerInterface::class, [
+            'info' => null,
             'warning' => null,
         ]));
 
         $event = new InventoryStockReceived(
-            inventoryItemId:  'item-uuid',
-            warehouseId:      $this->warehouse->id,
-            productId:        $this->product->id,
-            companyId:        $this->company->id,
+            inventoryItemId: 'item-uuid',
+            warehouseId: $this->warehouse->id,
+            productId: $this->product->id,
+            companyId: $this->company->id,
             quantityReceived: 50.0,
-            onHandBefore:     0.0,
-            onHandAfter:      50.0,
+            onHandBefore: 0.0,
+            onHandAfter: 50.0,
         );
 
         app(InventoryChannelSynchronizationListener::class)->handle($event);
@@ -278,7 +283,7 @@ class InventoryDomainEventsTest extends TestCase
 
     public function test_listener_logs_warning_for_event_missing_base_required_fields(): void
     {
-        $channel = \Mockery::mock(\Psr\Log\LoggerInterface::class);
+        $channel = Mockery::mock(\Psr\Log\LoggerInterface::class);
         $channel->shouldReceive('warning')
             ->once()
             ->withArgs(function (string $message, array $context): bool {
@@ -292,13 +297,35 @@ class InventoryDomainEventsTest extends TestCase
         Log::shouldReceive('channel')->with('daily')->once()->andReturn($channel);
 
         // A stub that omits all three base required fields (event_id, event_name, occurred_at).
-        $malformed = new class implements DomainEvent {
-            public function eventId(): string { return ''; }
-            public function eventName(): string { return ''; }
-            public function eventVersion(): int { return 1; }
-            public function correlationId(): string { return ''; }
-            public function occurredAt(): \DateTimeImmutable { return new \DateTimeImmutable(); }
-            public function toArray(): array {
+        $malformed = new class implements DomainEvent
+        {
+            public function eventId(): string
+            {
+                return '';
+            }
+
+            public function eventName(): string
+            {
+                return '';
+            }
+
+            public function eventVersion(): int
+            {
+                return 1;
+            }
+
+            public function correlationId(): string
+            {
+                return '';
+            }
+
+            public function occurredAt(): DateTimeImmutable
+            {
+                return new DateTimeImmutable;
+            }
+
+            public function toArray(): array
+            {
                 return [
                     // event_id, event_name, occurred_at intentionally omitted
                     'version' => 1,
@@ -350,8 +377,8 @@ class InventoryDomainEventsTest extends TestCase
         // Wire up a product with an active channel mapping that has sync_stock enabled.
         $brand = Brand::factory()->create(['company_id' => $this->company->id]);
         $channel = Channel::factory()->create([
-            'brand_id'   => $brand->id,
-            'is_active'  => true,
+            'brand_id' => $brand->id,
+            'is_active' => true,
             'sync_stock' => true,
         ]);
 
@@ -362,11 +389,11 @@ class InventoryDomainEventsTest extends TestCase
 
         // Creating a StockMovement directly triggers the observer's `created` hook.
         StockMovement::create([
-            'warehouse_id'  => $this->warehouse->id,
-            'product_id'    => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'product_id' => $this->product->id,
             'movement_type' => MovementType::PurchaseReceipt->value,
-            'quantity'      => 10.0,
-            'balance_before'=> 0.0,
+            'quantity' => 10.0,
+            'balance_before' => 0.0,
             'balance_after' => 10.0,
             'movement_date' => now()->toDateString(),
         ]);
@@ -380,11 +407,11 @@ class InventoryDomainEventsTest extends TestCase
 
         // No ProductMapping for this product → observer returns early.
         StockMovement::create([
-            'warehouse_id'  => $this->warehouse->id,
-            'product_id'    => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'product_id' => $this->product->id,
             'movement_type' => MovementType::PurchaseReceipt->value,
-            'quantity'      => 5.0,
-            'balance_before'=> 0.0,
+            'quantity' => 5.0,
+            'balance_before' => 0.0,
             'balance_after' => 5.0,
             'movement_date' => now()->toDateString(),
         ]);
@@ -412,7 +439,7 @@ class InventoryDomainEventsTest extends TestCase
             }
 
             // occurred_at must be a valid ISO-8601 string
-            return (bool) \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $payload['occurred_at']);
+            return (bool) DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $payload['occurred_at']);
         });
     }
 
@@ -426,10 +453,12 @@ class InventoryDomainEventsTest extends TestCase
         $ids = [];
         Event::assertDispatched(InventoryStockReceived::class, function (InventoryStockReceived $e) use (&$ids): bool {
             $ids[] = $e->eventId();
+
             return true;
         });
         Event::assertDispatched(InventoryStockAdjusted::class, function (InventoryStockAdjusted $e) use (&$ids): bool {
             $ids[] = $e->eventId();
+
             return true;
         });
 

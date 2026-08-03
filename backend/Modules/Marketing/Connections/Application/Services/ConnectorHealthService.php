@@ -24,22 +24,22 @@ final class ConnectorHealthService
     {
         if (! $this->registry->has($connection->connector_type->value)) {
             return ConnectorHealthData::unavailable(
-                "No connector registered for type [{$connection->connector_type->value}]."
+                "No connector registered for type [{$connection->connector_type->value}].",
             );
         }
 
-        $connector  = $this->registry->get($connection->connector_type->value);
+        $connector = $this->registry->get($connection->connector_type->value);
         $healthData = $connector->checkConnectorHealth($connection);
 
         // Persist the health snapshot to the connection record
         $connection->update([
-            'api_status'               => $healthData->apiAvailable ? 'available' : 'unavailable',
-            'rate_limit_remaining'     => $healthData->rateLimitRemaining,
-            'rate_limit_reset_at'      => $healthData->rateLimitResetAt,
+            'api_status' => $healthData->apiAvailable ? 'available' : 'unavailable',
+            'rate_limit_remaining' => $healthData->rateLimitRemaining,
+            'rate_limit_reset_at' => $healthData->rateLimitResetAt,
             'avg_sync_duration_seconds' => $healthData->avgSyncDurationSeconds,
-            'last_successful_sync_at'  => $healthData->lastSuccessfulSyncAt,
-            'last_failed_sync_at'      => $healthData->lastFailedSyncAt,
-            'error_count'              => $healthData->errorCount,
+            'last_successful_sync_at' => $healthData->lastSuccessfulSyncAt,
+            'last_failed_sync_at' => $healthData->lastFailedSyncAt,
+            'error_count' => $healthData->errorCount,
         ]);
 
         return $healthData;

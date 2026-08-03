@@ -26,13 +26,13 @@ final readonly class ComponentProductionRecord
     public function toArray(): array
     {
         return [
-            'component_id'    => $this->component_id,
-            'sku'             => $this->sku,
-            'name'            => $this->name,
-            'unit_symbol'     => $this->unit_symbol,
-            'qty_produced'    => $this->qty_produced,
-            'on_hand_before'  => $this->on_hand_before,
-            'on_hand_after'   => $this->on_hand_after,
+            'component_id' => $this->component_id,
+            'sku' => $this->sku,
+            'name' => $this->name,
+            'unit_symbol' => $this->unit_symbol,
+            'qty_produced' => $this->qty_produced,
+            'on_hand_before' => $this->on_hand_before,
+            'on_hand_after' => $this->on_hand_after,
             'ledger_entry_id' => $this->ledger_entry_id,
         ];
     }

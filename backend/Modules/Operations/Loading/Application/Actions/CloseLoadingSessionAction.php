@@ -9,6 +9,7 @@ use Modules\Operations\Loading\Domain\Enums\LoadingSessionStatus;
 use Modules\Operations\Loading\Domain\Events\LoadingSessionClosed;
 use Modules\Operations\Loading\Domain\Exceptions\InvalidLoadingSessionStatusTransitionException;
 use Modules\Operations\Loading\Domain\Models\LoadingSession;
+use RuntimeException;
 
 final class CloseLoadingSessionAction
 {
@@ -36,25 +37,25 @@ final class CloseLoadingSessionAction
                 ->count();
 
             if ($nonFinalCount > 0) {
-                throw new \RuntimeException(
-                    "Cannot close session '{$session->session_number}': {$nonFinalCount} vehicle assignment(s) are not yet reconciled or cancelled."
+                throw new RuntimeException(
+                    "Cannot close session '{$session->session_number}': {$nonFinalCount} vehicle assignment(s) are not yet reconciled or cancelled.",
                 );
             }
 
             $totalVehicles = $session->vehicleAssignments()->count();
 
             $session->update([
-                'status'     => LoadingSessionStatus::Closed->value,
+                'status' => LoadingSessionStatus::Closed->value,
                 'updated_by' => $actorId,
             ]);
 
             event(new LoadingSessionClosed(
-                companyId:     $session->company_id,
-                sessionId:     $session->id,
+                companyId: $session->company_id,
+                sessionId: $session->id,
                 sessionNumber: $session->session_number,
                 totalVehicles: $totalVehicles,
-                actorId:       $actorId,
-                occurredAt:    now()->toIso8601String(),
+                actorId: $actorId,
+                occurredAt: now()->toIso8601String(),
             ));
 
             return $session->fresh() ?? $session;

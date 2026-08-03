@@ -34,10 +34,10 @@ final class ApprovePurchaseMaterialAction
         }
 
         $material->update([
-            'status'      => PurchaseMaterialStatus::Approved->value,
+            'status' => PurchaseMaterialStatus::Approved->value,
             'approved_at' => now(),
             'approved_by' => (string) $request->user()?->id,
-            'updated_by'  => (string) $request->user()?->id,
+            'updated_by' => (string) $request->user()?->id,
         ]);
 
         return OperationResult::success($material->refresh(), 'Purchase material approved.');

@@ -63,8 +63,8 @@ class MaterialPriorityEnumTest extends TestCase
     public function test_enum_values(): void
     {
         $this->assertSame('critical', MaterialPriority::Critical->value);
-        $this->assertSame('high',     MaterialPriority::High->value);
-        $this->assertSame('medium',   MaterialPriority::Medium->value);
-        $this->assertSame('low',      MaterialPriority::Low->value);
+        $this->assertSame('high', MaterialPriority::High->value);
+        $this->assertSame('medium', MaterialPriority::Medium->value);
+        $this->assertSame('low', MaterialPriority::Low->value);
     }
 }

@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderTokenExpired extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.token_expired'; }
+    public function eventName(): string
+    {
+        return 'provider.token_expired';
+    }
 }

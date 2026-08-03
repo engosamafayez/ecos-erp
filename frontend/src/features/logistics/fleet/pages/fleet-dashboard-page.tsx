@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   CheckCircle,
@@ -53,16 +54,16 @@ function TableSkeleton() {
 }
 
 function EmptyUnits({ hasFilter }: { hasFilter: boolean }) {
+  const { t } = useTranslation('logistics');
+
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <Truck className="mb-3 size-12 text-muted-foreground/20" />
       <p className="text-sm font-medium">
-        {hasFilter ? 'No vehicles match your filters' : 'No fleet units yet'}
+        {hasFilter ? t($ => $.fleet.empty.filteredTitle) : t($ => $.fleet.empty.title)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {hasFilter
-          ? 'Try a different lifecycle state or clear the filters.'
-          : 'Register a vehicle to start tracking its condition, maintenance and cost.'}
+        {hasFilter ? t($ => $.fleet.empty.filteredHint) : t($ => $.fleet.empty.hint)}
       </p>
     </div>
   );
@@ -81,6 +82,8 @@ function UnitsTable({
   hasFilter: boolean;
   onRowClick: (unit: FleetUnit) => void;
 }) {
+  const { t } = useTranslation('logistics');
+
   if (isLoading) return <TableSkeleton />;
   if (rows.length === 0) return <EmptyUnits hasFilter={hasFilter} />;
 
@@ -88,12 +91,12 @@ function UnitsTable({
     <div className="overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="h-10 px-3 font-medium">Vehicle</th>
-            <th className="h-10 px-3 font-medium">Fitness</th>
-            <th className="h-10 px-3 font-medium">Lifecycle</th>
-            <th className="h-10 px-3 font-medium">Why</th>
-            <th className="h-10 px-3 text-right font-medium">Odometer</th>
+          <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
+            <th className="h-10 px-3 font-medium">{t($ => $.common.vehicle)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.fleet.table.fitness)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.fleet.table.lifecycle)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.fleet.table.why)}</th>
+            <th className="h-10 px-3 text-end font-medium">{t($ => $.fleet.table.odometer)}</th>
             <th className="h-10 w-10 px-3" />
           </tr>
         </thead>
@@ -120,12 +123,12 @@ function UnitsTable({
                 {/* Every refusal explains itself in place — no second call. */}
                 <BlockerList verdict={unit.fitness} compact />
               </td>
-              <td className="px-3 py-2.5 text-right tabular-nums">
+              <td className="px-3 py-2.5 text-end tabular-nums">
                 {unit.current_odometer_km !== null
-                  ? `${unit.current_odometer_km.toLocaleString()} km`
+                  ? t($ => $.fleet.kmValue, { value: unit.current_odometer_km.toLocaleString() })
                   : '—'}
               </td>
-              <td className="px-3 py-2.5 text-right">
+              <td className="px-3 py-2.5 text-end">
                 <ChevronRight className="size-4 text-muted-foreground" />
               </td>
             </tr>
@@ -139,12 +142,12 @@ function UnitsTable({
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 const STATE_FILTERS = [
-  { key: 'open', label: 'In service' },
-  { key: 'all', label: 'All' },
-  { key: 'active', label: 'Active' },
-  { key: 'commissioning', label: 'Commissioning' },
-  { key: 'suspended', label: 'Suspended' },
-  { key: 'retired', label: 'Retired' },
+  { key: 'open', labelKey: 'fleet.filters.inService' },
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'active', labelKey: 'common.active' },
+  { key: 'commissioning', labelKey: 'fleet.lifecycle.commissioning' },
+  { key: 'suspended', labelKey: 'fleet.lifecycle.suspended' },
+  { key: 'retired', labelKey: 'fleet.lifecycle.retired' },
 ] as const;
 
 type StateFilterKey = (typeof STATE_FILTERS)[number]['key'];
@@ -156,6 +159,7 @@ type StateFilterKey = (typeof STATE_FILTERS)[number]['key'];
  * hides retired units and leads with what is blocking a vehicle from going out.
  */
 export function FleetDashboardPage() {
+  const { t } = useTranslation('logistics');
   const [stateFilter, setStateFilter] = useState<StateFilterKey>('open');
   const [criticalOnly, setCriticalOnly] = useState(false);
   const [page, setPage] = useState(1);
@@ -184,21 +188,21 @@ export function FleetDashboardPage() {
   const hasFilter = stateFilter !== 'open' || criticalOnly;
 
   const metrics = [
-    { id: 'active', icon: CheckCircle, label: 'Active', value: stats?.active ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'critical', icon: XCircle, label: 'Critical Defects', value: stats?.open_critical_defects ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
-    { id: 'overdue', icon: AlertTriangle, label: 'Overdue Maintenance', value: stats?.overdue_maintenance ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
-    { id: 'work', icon: Wrench, label: 'Open Work Orders', value: stats?.open_work_orders ?? 0, isLoading: !stats },
-    { id: 'suspended', icon: Truck, label: 'Suspended', value: stats?.suspended ?? 0, isLoading: !stats },
+    { id: 'active', icon: CheckCircle, label: t($ => $.common.active), value: stats?.active ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'critical', icon: XCircle, label: t($ => $.fleet.metrics.criticalDefects), value: stats?.open_critical_defects ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
+    { id: 'overdue', icon: AlertTriangle, label: t($ => $.fleet.metrics.overdueMaintenance), value: stats?.overdue_maintenance ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'work', icon: Wrench, label: t($ => $.fleet.metrics.openWorkOrders), value: stats?.open_work_orders ?? 0, isLoading: !stats },
+    { id: 'suspended', icon: Truck, label: t($ => $.fleet.lifecycle.suspended), value: stats?.suspended ?? 0, isLoading: !stats },
     // Distance is the denominator of most cost metrics — silence is a signal.
-    { id: 'stale', icon: Gauge, label: 'Stale Odometer', value: stats?.stale_odometer ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'stale', icon: Gauge, label: t($ => $.fleet.metrics.staleOdometer), value: stats?.stale_odometer ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Fleet' }]}
-        title="Fleet Dashboard"
-        description="Vehicle condition, maintenance, fuel and operational cost"
+        breadcrumbs={[{ label: t($ => $.fleet.breadcrumbRoot) }, { label: t($ => $.fleet.breadcrumbFleet) }]}
+        title={t($ => $.fleet.title)}
+        description={t($ => $.fleet.description)}
         metrics={metrics}
       />
 
@@ -221,7 +225,7 @@ export function FleetDashboardPage() {
                   setPage(1);
                 }}
               >
-                {s.label}
+                {t(s.labelKey)}
               </Button>
             ))}
 
@@ -237,7 +241,7 @@ export function FleetDashboardPage() {
               }}
             >
               <XCircle className="size-3" />
-              Critical defects
+              {t($ => $.fleet.filters.criticalDefects)}
             </Button>
           </div>
         }

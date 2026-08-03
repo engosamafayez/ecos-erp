@@ -11,6 +11,6 @@ final class AssetUpdated
     /** @param array<string, mixed> $changes */
     public function __construct(
         public readonly MarketingAsset $asset,
-        public readonly array          $changes,
+        public readonly array $changes,
     ) {}
 }

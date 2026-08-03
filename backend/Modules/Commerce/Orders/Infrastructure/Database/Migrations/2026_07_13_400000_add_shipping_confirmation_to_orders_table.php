@@ -45,7 +45,7 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table): void {
             $cols = ['shipping_company_name', 'shipping_attempts', 'tracking_number',
-                     'location_set_by', 'customer_confirmed_at', 'customer_confirmed_by'];
+                'location_set_by', 'customer_confirmed_at', 'customer_confirmed_by'];
             foreach ($cols as $col) {
                 if (Schema::hasColumn('orders', $col)) {
                     $table->dropColumn($col);

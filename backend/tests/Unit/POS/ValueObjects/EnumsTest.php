@@ -159,7 +159,7 @@ final class EnumsTest extends TestCase
 
     public function test_discount_type_percentage_compute_amount(): void
     {
-        $base   = Money::of('100.00', 'EGP');
+        $base = Money::of('100.00', 'EGP');
         $amount = DiscountType::Percentage->computeAmount($base, '10');
 
         $this->assertSame('10.00', $amount->amount);
@@ -167,7 +167,7 @@ final class EnumsTest extends TestCase
 
     public function test_discount_type_fixed_compute_amount(): void
     {
-        $base   = Money::of('100.00', 'EGP');
+        $base = Money::of('100.00', 'EGP');
         $amount = DiscountType::FixedAmount->computeAmount($base, '25.00');
 
         $this->assertSame('25.00', $amount->amount);

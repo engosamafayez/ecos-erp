@@ -16,13 +16,16 @@ use Modules\Platform\EventPlatform\Domain\Enums\ProcessingStatus;
 use Modules\Platform\EventPlatform\Domain\Models\EventProcessingLog;
 use Modules\Platform\EventPlatform\Domain\Models\StoredEvent;
 use Modules\Platform\EventPlatform\Domain\ValueObjects\RetryPolicy;
+use Throwable;
 
 class HandleEnterpriseEventJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries;
+
     public array $backoff;
+
     public int $timeout = 30;
 
     private string $storedEventId;
@@ -35,7 +38,7 @@ class HandleEnterpriseEventJob implements ShouldQueue
         string $queue = 'default',
     ) {
         $this->storedEventId = $storedEventId;
-        $this->tries  = $retryPolicy->getMaxAttempts();
+        $this->tries = $retryPolicy->getMaxAttempts();
         $this->backoff = $retryPolicy->getDelays();
         $this->onQueue($queue);
     }
@@ -43,7 +46,7 @@ class HandleEnterpriseEventJob implements ShouldQueue
     public function handle(EnterpriseDeadLetterQueueInterface $dlq): void
     {
         // SHA-256 produces a 64-char hex string — fits the idempotency_key column without truncation.
-        $idempotencyKey = hash('sha256', $this->event->eventId() . ':' . $this->subscriberClass);
+        $idempotencyKey = hash('sha256', $this->event->eventId().':'.$this->subscriberClass);
 
         // ── Idempotency check ──────────────────────────────────────────────────
         $existing = EventProcessingLog::where('idempotency_key', $idempotencyKey)
@@ -60,19 +63,19 @@ class HandleEnterpriseEventJob implements ShouldQueue
 
         if ($log !== null) {
             $log->update([
-                'status'         => ProcessingStatus::Processing->value,
+                'status' => ProcessingStatus::Processing->value,
                 'attempt_number' => $this->attempts(),
-                'error_message'  => null,
-                'processed_at'   => null,
+                'error_message' => null,
+                'processed_at' => null,
             ]);
         } else {
             $log = EventProcessingLog::create([
-                'id'               => Str::uuid()->toString(),
-                'event_id'         => $this->event->eventId(),
+                'id' => Str::uuid()->toString(),
+                'event_id' => $this->event->eventId(),
                 'subscriber_class' => $this->subscriberClass,
-                'idempotency_key'  => $idempotencyKey,
-                'status'           => ProcessingStatus::Processing->value,
-                'attempt_number'   => $this->attempts(),
+                'idempotency_key' => $idempotencyKey,
+                'status' => ProcessingStatus::Processing->value,
+                'attempt_number' => $this->attempts(),
             ]);
         }
 
@@ -81,7 +84,7 @@ class HandleEnterpriseEventJob implements ShouldQueue
             $subscriber->handle($this->event);
 
             $log->update([
-                'status'       => ProcessingStatus::Succeeded->value,
+                'status' => ProcessingStatus::Succeeded->value,
                 'processed_at' => now()->toIso8601String(),
             ]);
 
@@ -89,11 +92,11 @@ class HandleEnterpriseEventJob implements ShouldQueue
             StoredEvent::where('event_id', $this->event->eventId())
                 ->update(['status' => 'succeeded']);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $log->update([
-                'status'        => ProcessingStatus::Failed->value,
+                'status' => ProcessingStatus::Failed->value,
                 'error_message' => $e->getMessage(),
-                'processed_at'  => now()->toIso8601String(),
+                'processed_at' => now()->toIso8601String(),
             ]);
 
             // Let Laravel's retry mechanism handle it — failed() is called after all retries
@@ -102,7 +105,7 @@ class HandleEnterpriseEventJob implements ShouldQueue
     }
 
     /** Called by Laravel after all retry attempts are exhausted. */
-    public function failed(\Throwable $e): void
+    public function failed(Throwable $e): void
     {
         /** @var EnterpriseDeadLetterQueueInterface $dlq */
         $dlq = app(EnterpriseDeadLetterQueueInterface::class);

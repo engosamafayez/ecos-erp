@@ -38,9 +38,9 @@ final class MarketingReportController extends Controller
 
     public function exportCampaigns(Request $request): StreamedResponse|\Illuminate\Http\Response
     {
-        $filter  = IntelligenceFilterDto::fromRequest($request);
-        $format  = $this->validFormat($request->query('format', 'csv'));
-        $sortBy  = $request->query('sort_by', 'total_spend');
+        $filter = IntelligenceFilterDto::fromRequest($request);
+        $format = $this->validFormat($request->query('format', 'csv'));
+        $sortBy = $request->query('sort_by', 'total_spend');
         $actorId = $request->user()?->id;
 
         return $this->generateReport->campaignReport($filter, $format, $sortBy, $actorId);
@@ -48,8 +48,8 @@ final class MarketingReportController extends Controller
 
     public function exportAds(Request $request): StreamedResponse|\Illuminate\Http\Response
     {
-        $filter  = IntelligenceFilterDto::fromRequest($request);
-        $format  = $this->validFormat($request->query('format', 'csv'));
+        $filter = IntelligenceFilterDto::fromRequest($request);
+        $format = $this->validFormat($request->query('format', 'csv'));
         $actorId = $request->user()?->id;
 
         return $this->generateReport->adReport($filter, $format, $actorId);
@@ -57,8 +57,8 @@ final class MarketingReportController extends Controller
 
     public function exportCreatives(Request $request): StreamedResponse|\Illuminate\Http\Response
     {
-        $filter  = IntelligenceFilterDto::fromRequest($request);
-        $format  = $this->validFormat($request->query('format', 'csv'));
+        $filter = IntelligenceFilterDto::fromRequest($request);
+        $format = $this->validFormat($request->query('format', 'csv'));
         $actorId = $request->user()?->id;
 
         return $this->generateReport->creativeReport($filter, $format, $actorId);
@@ -80,15 +80,15 @@ final class MarketingReportController extends Controller
     public function show(MarketingReport $report): JsonResponse
     {
         return response()->json([
-            'id'           => $report->id,
-            'type'         => $report->type,
-            'status'       => $report->status,
-            'report_name'  => $report->report_name,
-            'filters'      => $report->filters,
-            'row_count'    => $report->row_count,
+            'id' => $report->id,
+            'type' => $report->type,
+            'status' => $report->status,
+            'report_name' => $report->report_name,
+            'filters' => $report->filters,
+            'row_count' => $report->row_count,
             'generated_at' => $report->generated_at?->toIso8601String(),
-            'expires_at'   => $report->expires_at?->toIso8601String(),
-            'is_expired'   => $report->isExpired(),
+            'expires_at' => $report->expires_at?->toIso8601String(),
+            'is_expired' => $report->isExpired(),
         ]);
     }
 

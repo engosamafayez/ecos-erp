@@ -12,7 +12,6 @@ use Modules\Purchasing\PurchaseOrders\Domain\Enums\PurchaseOrderStatus;
 use Modules\Purchasing\PurchaseOrders\Domain\Exceptions\InvalidPurchaseOrderStatusException;
 use Modules\Purchasing\PurchaseOrders\Domain\Models\PurchaseOrder;
 use Modules\Purchasing\PurchaseOrders\Domain\Models\PurchaseOrderLine;
-use Modules\Purchasing\Suppliers\Domain\Models\Supplier;
 use Tests\TestCase;
 
 class PurchaseOrderTest extends TestCase
@@ -29,8 +28,8 @@ class PurchaseOrderTest extends TestCase
 
         PurchaseOrderLine::factory()->create([
             'purchase_order_id' => $po->id,
-            'quantity'          => 100,
-            'received_qty'      => 0,
+            'quantity' => 100,
+            'received_qty' => 0,
         ]);
 
         return $po->refresh();
@@ -54,7 +53,7 @@ class PurchaseOrderTest extends TestCase
 
     public function test_submit_advances_draft_to_submitted(): void
     {
-        $po     = $this->makeDraftPo();
+        $po = $this->makeDraftPo();
         $result = app(SubmitPurchaseOrderAction::class)->execute($po->id);
 
         $this->assertTrue($result->isSuccess());
@@ -99,7 +98,7 @@ class PurchaseOrderTest extends TestCase
 
     public function test_cancel_draft_po(): void
     {
-        $po     = $this->makeDraftPo();
+        $po = $this->makeDraftPo();
         $result = app(CancelPurchaseOrderAction::class)->execute($po->id);
 
         $this->assertTrue($result->isSuccess());

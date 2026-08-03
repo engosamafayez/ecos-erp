@@ -10,33 +10,34 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;
 
 /**
- * @property string      $id
- * @property string      $order_id
- * @property string      $event_type
- * @property string      $description
+ * @property string $id
+ * @property string $order_id
+ * @property string $event_type
+ * @property string $description
  * @property string|null $actor_id
  * @property string|null $actor_name
  * @property string|null $actor_role
  * @property string|null $actor_email
- * @property string|null $actor_type   user|system|api|automation|woocommerce|webhook
- * @property string|null $source       dashboard|mobile_app|api|woocommerce|automation|cron|webhook
- * @property string|null $action_type  created|updated|deleted|workflow|payment|inventory|customer|shipping|system|automation
- * @property array|null  $previous_value
- * @property array|null  $new_value
- * @property array|null  $changed_fields
+ * @property string|null $actor_type user|system|api|automation|woocommerce|webhook
+ * @property string|null $source dashboard|mobile_app|api|woocommerce|automation|cron|webhook
+ * @property string|null $action_type created|updated|deleted|workflow|payment|inventory|customer|shipping|system|automation
+ * @property array|null $previous_value
+ * @property array|null $new_value
+ * @property array|null $changed_fields
  * @property string|null $reason
  * @property string|null $ip_address
  * @property string|null $user_agent
  * @property string|null $module
- * @property array|null  $payload
- * @property array|null  $metadata
+ * @property array|null $payload
+ * @property array|null $metadata
  */
 final class OrderEvent extends Model
 {
     use HasUuids;
 
     public $incrementing = false;
-    public $timestamps   = false;
+
+    public $timestamps = false;
 
     protected $keyType = 'string';
 
@@ -65,12 +66,12 @@ final class OrderEvent extends Model
     protected function casts(): array
     {
         return [
-            'payload'        => 'array',
+            'payload' => 'array',
             'previous_value' => 'array',
-            'new_value'      => 'array',
+            'new_value' => 'array',
             'changed_fields' => 'array',
-            'metadata'       => 'array',
-            'created_at'     => 'datetime',
+            'metadata' => 'array',
+            'created_at' => 'datetime',
         ];
     }
 
@@ -105,26 +106,26 @@ final class OrderEvent extends Model
         ?string $actorRole = null,
         ?string $actorEmail = null,
     ): static {
-        return static::create([
-            'order_id'       => $orderId,
-            'event_type'     => $type,
-            'description'    => $description,
-            'actor_id'       => $actorId,
-            'actor_name'     => $actorName,
-            'actor_role'     => $actorRole,
-            'actor_email'    => $actorEmail,
-            'actor_type'     => $actorType,
-            'source'         => $source,
-            'action_type'    => $actionType,
+        return self::create([
+            'order_id' => $orderId,
+            'event_type' => $type,
+            'description' => $description,
+            'actor_id' => $actorId,
+            'actor_name' => $actorName,
+            'actor_role' => $actorRole,
+            'actor_email' => $actorEmail,
+            'actor_type' => $actorType,
+            'source' => $source,
+            'action_type' => $actionType,
             'previous_value' => $previousValue,
-            'new_value'      => $newValue,
+            'new_value' => $newValue,
             'changed_fields' => $changedFields,
-            'reason'         => $reason,
-            'ip_address'     => $ipAddress,
-            'user_agent'     => $userAgent,
-            'module'         => $module ?? 'orders',
-            'payload'        => $payload ?: null,
-            'metadata'       => $metadata,
+            'reason' => $reason,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'module' => $module ?? 'orders',
+            'payload' => $payload ?: null,
+            'metadata' => $metadata,
         ]);
     }
 
@@ -151,38 +152,45 @@ final class OrderEvent extends Model
     ): static {
         $ua = $request->userAgent();
 
-        $resolvedRole  = $actorRole ?? $request->user()?->roles()->value('name');
+        $resolvedRole = $actorRole ?? $request->user()?->roles()->value('name');
         $resolvedEmail = $request->user()?->email;
 
         return static::log(
-            orderId:       $orderId,
-            type:          $type,
-            description:   $description,
-            payload:       $payload,
-            actorId:       $actorId,
-            actorName:     $actorName,
+            orderId: $orderId,
+            type: $type,
+            description: $description,
+            payload: $payload,
+            actorId: $actorId,
+            actorName: $actorName,
             previousValue: $previousValue,
-            newValue:      $newValue,
-            module:        $module,
-            actorType:     $actorId ? 'user' : 'system',
-            source:        self::resolveSource($ua ?? ''),
-            actionType:    $actionType,
+            newValue: $newValue,
+            module: $module,
+            actorType: $actorId ? 'user' : 'system',
+            source: self::resolveSource($ua ?? ''),
+            actionType: $actionType,
             changedFields: $changedFields,
-            reason:        $reason,
-            ipAddress:     $request->ip(),
-            userAgent:     $ua ? substr($ua, 0, 500) : null,
-            metadata:      $metadata,
-            actorRole:     $resolvedRole,
-            actorEmail:    $resolvedEmail,
+            reason: $reason,
+            ipAddress: $request->ip(),
+            userAgent: $ua ? substr($ua, 0, 500) : null,
+            metadata: $metadata,
+            actorRole: $resolvedRole,
+            actorEmail: $resolvedEmail,
         );
     }
 
     private static function resolveSource(string $userAgent): string
     {
         $ua = strtolower($userAgent);
-        if (str_contains($ua, 'woocommerce') || str_contains($ua, 'wordpress')) return 'woocommerce';
-        if (str_contains($ua, 'okhttp') || str_contains($ua, 'dart') || str_contains($ua, 'flutter')) return 'mobile_app';
-        if (empty($ua)) return 'cron';
+        if (str_contains($ua, 'woocommerce') || str_contains($ua, 'wordpress')) {
+            return 'woocommerce';
+        }
+        if (str_contains($ua, 'okhttp') || str_contains($ua, 'dart') || str_contains($ua, 'flutter')) {
+            return 'mobile_app';
+        }
+        if (empty($ua)) {
+            return 'cron';
+        }
+
         return 'dashboard';
     }
 }

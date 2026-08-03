@@ -10,6 +10,6 @@ final class ConnectionCreated
 {
     public function __construct(
         public readonly MarketingConnection $connection,
-        public readonly string              $actorId,
+        public readonly string $actorId,
     ) {}
 }

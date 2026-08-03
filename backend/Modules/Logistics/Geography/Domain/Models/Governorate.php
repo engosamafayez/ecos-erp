@@ -25,10 +25,10 @@ class Governorate extends Model
     {
         return [
             'default_shipping_price' => 'decimal:2',
-            'display_order'          => 'integer',
-            'is_active'              => 'boolean',
-            'is_system'              => 'boolean',
-            'country_id'             => 'integer',
+            'display_order' => 'integer',
+            'is_active' => 'boolean',
+            'is_system' => 'boolean',
+            'country_id' => 'integer',
         ];
     }
 

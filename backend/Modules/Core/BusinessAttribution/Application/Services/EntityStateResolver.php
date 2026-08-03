@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Application\Services;
 
 use Carbon\Carbon;
@@ -43,30 +45,30 @@ class EntityStateResolver
      */
     public function resolveFromEvents(
         Collection $events,
-        string     $entityType,
-        string     $entityId,
-        Carbon     $asOf,
+        string $entityType,
+        string $entityId,
+        Carbon $asOf,
     ): EntityState {
-        $applier    = $this->findApplier($entityType);
-        $state      = $applier->initialState($entityId);
-        $applied    = 0;
-        $lastAt     = null;
+        $applier = $this->findApplier($entityType);
+        $state = $applier->initialState($entityId);
+        $applied = 0;
+        $lastAt = null;
         $appliedIds = [];
 
         foreach ($events as $event) {
-            $state       = $applier->apply($state, $event);
+            $state = $applier->apply($state, $event);
             $applied++;
-            $lastAt      = $event->occurred_at;
+            $lastAt = $event->occurred_at;
             $appliedIds[] = $event->id;
         }
 
         return new EntityState(
-            entityType:    $entityType,
-            entityId:      $entityId,
-            asOf:          $asOf,
-            state:         $state,
+            entityType: $entityType,
+            entityId: $entityId,
+            asOf: $asOf,
+            state: $state,
             eventsApplied: $applied,
-            lastEventAt:   $lastAt,
+            lastEventAt: $lastAt,
             appliedEvents: $appliedIds,
         );
     }
@@ -74,7 +76,7 @@ class EntityStateResolver
     /** Returns the class names of all registered appliers. */
     public function getSupportedTypes(): array
     {
-        return array_map(static fn($a) => get_class($a), $this->appliers);
+        return array_map(static fn ($a) => get_class($a), $this->appliers);
     }
 
     private function findApplier(string $entityType): EntityStateApplierInterface
@@ -86,7 +88,8 @@ class EntityStateResolver
         }
 
         // Generic pass-through for unregistered entity types
-        return new class implements EntityStateApplierInterface {
+        return new class implements EntityStateApplierInterface
+        {
             public function supports(string $entityType): bool
             {
                 return true;
@@ -99,8 +102,8 @@ class EntityStateResolver
 
             public function apply(array $currentState, BusinessEvent $event): array
             {
-                $currentState['events'][]      = $event->event_name;
-                $currentState['last_event']    = $event->event_name;
+                $currentState['events'][] = $event->event_name;
+                $currentState['last_event'] = $event->event_name;
                 $currentState['last_event_at'] = $event->occurred_at->toIso8601String();
 
                 return $currentState;

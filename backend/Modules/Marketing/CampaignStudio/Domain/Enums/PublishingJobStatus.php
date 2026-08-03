@@ -6,22 +6,22 @@ namespace Modules\Marketing\CampaignStudio\Domain\Enums;
 
 enum PublishingJobStatus: string
 {
-    case QUEUED     = 'queued';
+    case QUEUED = 'queued';
     case PROCESSING = 'processing';
-    case COMPLETED  = 'completed';
-    case FAILED     = 'failed';
-    case RETRYING   = 'retrying';
-    case CANCELLED  = 'cancelled';
+    case COMPLETED = 'completed';
+    case FAILED = 'failed';
+    case RETRYING = 'retrying';
+    case CANCELLED = 'cancelled';
 
     public function label(): string
     {
         return match ($this) {
-            self::QUEUED     => 'Queued',
+            self::QUEUED => 'Queued',
             self::PROCESSING => 'Processing',
-            self::COMPLETED  => 'Completed',
-            self::FAILED     => 'Failed',
-            self::RETRYING   => 'Retrying',
-            self::CANCELLED  => 'Cancelled',
+            self::COMPLETED => 'Completed',
+            self::FAILED => 'Failed',
+            self::RETRYING => 'Retrying',
+            self::CANCELLED => 'Cancelled',
         };
     }
 

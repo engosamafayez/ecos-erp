@@ -35,9 +35,9 @@ final class MarketingAssetController extends Controller
         return response()->json([
             'data' => MarketingAssetResource::collection($assets->items()),
             'meta' => [
-                'page'      => $assets->currentPage(),
-                'per_page'  => $assets->perPage(),
-                'total'     => $assets->total(),
+                'page' => $assets->currentPage(),
+                'per_page' => $assets->perPage(),
+                'total' => $assets->total(),
                 'last_page' => $assets->lastPage(),
             ],
         ]);
@@ -64,7 +64,7 @@ final class MarketingAssetController extends Controller
         $health = $this->healthService->check($marketingAsset);
 
         return response()->json([
-            'health_status'    => $health,
+            'health_status' => $health,
             'health_checked_at' => now()->toIso8601String(),
         ]);
     }

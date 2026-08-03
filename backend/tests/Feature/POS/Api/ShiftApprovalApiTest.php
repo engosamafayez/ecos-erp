@@ -11,10 +11,10 @@ use Modules\POS\Session\Domain\Contracts\SessionRepositoryInterface;
 use Modules\POS\Session\Domain\Enums\DeviceType;
 use Modules\POS\Session\Domain\Models\Session;
 use Modules\POS\Session\Domain\ValueObjects\DeviceFingerprint;
+use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shift\Domain\Contracts\ShiftRepositoryInterface;
 use Modules\POS\Shift\Domain\Models\Shift;
 use Modules\POS\Shift\Domain\ValueObjects\ShiftNumber;
-use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Tests\TestCase;
 
 /**
@@ -24,17 +24,19 @@ final class ShiftApprovalApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User                     $user;
+    private User $user;
+
     private ShiftRepositoryInterface $shiftRepo;
 
     private const CASHIER_ID = 'b0000000-0000-4000-b000-000000000033';
-    private const CURRENCY   = 'EGP';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user      = User::factory()->create();
+        $this->user = User::factory()->create();
         $this->shiftRepo = app(ShiftRepositoryInterface::class);
     }
 
@@ -43,7 +45,7 @@ final class ShiftApprovalApiTest extends TestCase
         $shiftId = $this->makeShiftInClosingState();
 
         $response = $this->actingAs($this->user)
-            ->putJson('/api/pos/shifts/' . $shiftId . '/approve', [
+            ->putJson('/api/pos/shifts/'.$shiftId.'/approve', [
                 'expected_closing' => ['amount' => '500.00', 'currency' => self::CURRENCY],
             ]);
 
@@ -58,7 +60,7 @@ final class ShiftApprovalApiTest extends TestCase
         $shiftId = $this->makeShiftInClosingState();
 
         $this->actingAs($this->user)
-            ->putJson('/api/pos/shifts/' . $shiftId . '/approve', [])
+            ->putJson('/api/pos/shifts/'.$shiftId.'/approve', [])
             ->assertStatus(422);
     }
 
@@ -82,7 +84,7 @@ final class ShiftApprovalApiTest extends TestCase
         $shiftId = $this->makeShiftInClosingState();
 
         $response = $this->actingAs($this->user)
-            ->putJson('/api/pos/shifts/' . $shiftId . '/reject', [
+            ->putJson('/api/pos/shifts/'.$shiftId.'/reject', [
                 'reason' => 'Count does not match expected amount.',
             ]);
 
@@ -97,7 +99,7 @@ final class ShiftApprovalApiTest extends TestCase
         $shiftId = $this->makeShiftInClosingState();
 
         $this->actingAs($this->user)
-            ->putJson('/api/pos/shifts/' . $shiftId . '/reject', [])
+            ->putJson('/api/pos/shifts/'.$shiftId.'/reject', [])
             ->assertStatus(422);
     }
 
@@ -120,21 +122,21 @@ final class ShiftApprovalApiTest extends TestCase
     {
         // Open shift — cannot be approved directly (must submit first)
         $sessionRepo = app(SessionRepositoryInterface::class);
-        $session     = Session::open(
-            cashierId:   self::CASHIER_ID,
-            companyId:   'c0000000-0000-4000-c000-000000000033',
-            channelId:   null,
+        $session = Session::open(
+            cashierId: self::CASHIER_ID,
+            companyId: 'c0000000-0000-4000-c000-000000000033',
+            channelId: null,
             warehouseId: 'w0000000-0000-4000-w000-000000000033',
             fingerprint: DeviceFingerprint::of('fp-approval-open'),
-            ipAddress:   '127.0.0.1',
-            deviceType:  DeviceType::Browser,
+            ipAddress: '127.0.0.1',
+            deviceType: DeviceType::Browser,
         );
         $sessionRepo->save($session);
 
         $shift = Shift::open(
-            sessionId:   (string) $session->id,
-            terminalId:  self::CASHIER_ID, // terminal_id = cashier_id after refactor
-            cashierId:   self::CASHIER_ID,
+            sessionId: (string) $session->id,
+            terminalId: self::CASHIER_ID, // terminal_id = cashier_id after refactor
+            cashierId: self::CASHIER_ID,
             openingCash: Money::of('500.00', self::CURRENCY),
             shiftNumber: ShiftNumber::of(1),
         );
@@ -142,7 +144,7 @@ final class ShiftApprovalApiTest extends TestCase
         $shiftId = (string) $shift->id;
 
         $this->actingAs($this->user)
-            ->putJson('/api/pos/shifts/' . $shiftId . '/approve', [
+            ->putJson('/api/pos/shifts/'.$shiftId.'/approve', [
                 'expected_closing' => ['amount' => '500.00', 'currency' => self::CURRENCY],
             ])
             ->assertStatus(422);
@@ -151,21 +153,21 @@ final class ShiftApprovalApiTest extends TestCase
     private function makeShiftInClosingState(): string
     {
         $sessionRepo = app(SessionRepositoryInterface::class);
-        $session     = Session::open(
-            cashierId:   Str::uuid()->toString(), // unique UUID per test invocation
-            companyId:   'c0000000-0000-4000-c000-000000000033',
-            channelId:   null,
+        $session = Session::open(
+            cashierId: Str::uuid()->toString(), // unique UUID per test invocation
+            companyId: 'c0000000-0000-4000-c000-000000000033',
+            channelId: null,
             warehouseId: 'w0000000-0000-4000-w000-000000000033',
-            fingerprint: DeviceFingerprint::of('fp-approval-test-' . uniqid()),
-            ipAddress:   '127.0.0.1',
-            deviceType:  DeviceType::Browser,
+            fingerprint: DeviceFingerprint::of('fp-approval-test-'.uniqid()),
+            ipAddress: '127.0.0.1',
+            deviceType: DeviceType::Browser,
         );
         $sessionRepo->save($session);
 
         $shift = Shift::open(
-            sessionId:   (string) $session->id,
-            terminalId:  self::CASHIER_ID, // terminal_id = cashier_id after refactor
-            cashierId:   self::CASHIER_ID,
+            sessionId: (string) $session->id,
+            terminalId: self::CASHIER_ID, // terminal_id = cashier_id after refactor
+            cashierId: self::CASHIER_ID,
             openingCash: Money::of('500.00', self::CURRENCY),
             shiftNumber: ShiftNumber::of(1),
         );

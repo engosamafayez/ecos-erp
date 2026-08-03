@@ -6,11 +6,11 @@ namespace Modules\POS\Shared\Domain\Enums;
 
 enum PaymentMethodType: string
 {
-    case Cash         = 'cash';
-    case Card         = 'card';
-    case StoreCredit  = 'store_credit';
+    case Cash = 'cash';
+    case Card = 'card';
+    case StoreCredit = 'store_credit';
     case LoyaltyPoints = 'loyalty_points';
-    case GiftCard     = 'gift_card';
+    case GiftCard = 'gift_card';
     case BankTransfer = 'bank_transfer';
 
     /** Electronic methods do not require physical change calculation. */
@@ -44,12 +44,12 @@ enum PaymentMethodType: string
     public function label(): string
     {
         return match ($this) {
-            self::Cash          => 'Cash',
-            self::Card          => 'Card',
-            self::StoreCredit   => 'Store Credit',
+            self::Cash => 'Cash',
+            self::Card => 'Card',
+            self::StoreCredit => 'Store Credit',
             self::LoyaltyPoints => 'Loyalty Points',
-            self::GiftCard      => 'Gift Card',
-            self::BankTransfer  => 'Bank Transfer',
+            self::GiftCard => 'Gift Card',
+            self::BankTransfer => 'Bank Transfer',
         };
     }
 }

@@ -55,14 +55,14 @@ class UserPreferenceTest extends TestCase
     public function test_index_returns_all_categories_as_flat_map(): void
     {
         UserPreference::factory()->create([
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'products',
-            'payload'  => ['density' => 'compact', 'page_size' => 50],
+            'payload' => ['density' => 'compact', 'page_size' => 50],
         ]);
         UserPreference::factory()->create([
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'theme',
-            'payload'  => ['theme' => 'dark', 'language' => 'ar'],
+            'payload' => ['theme' => 'dark', 'language' => 'ar'],
         ]);
 
         $response = $this->actingAs($this->user)
@@ -88,9 +88,9 @@ class UserPreferenceTest extends TestCase
     public function test_show_returns_category_payload(): void
     {
         UserPreference::factory()->create([
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'products',
-            'payload'  => ['density' => 'comfortable', 'page_size' => 25],
+            'payload' => ['density' => 'comfortable', 'page_size' => 25],
         ]);
 
         $response = $this->actingAs($this->user)
@@ -113,9 +113,9 @@ class UserPreferenceTest extends TestCase
     {
         $otherUser = User::factory()->create();
         UserPreference::factory()->create([
-            'user_id'  => $otherUser->id,
+            'user_id' => $otherUser->id,
             'category' => 'products',
-            'payload'  => ['density' => 'compact'],
+            'payload' => ['density' => 'compact'],
         ]);
 
         // Authenticated user has no products preference → should get 404.
@@ -141,7 +141,7 @@ class UserPreferenceTest extends TestCase
             ->assertJsonPath('data.payload.page_size', 100);
 
         $this->assertDatabaseHas('user_preferences', [
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'products',
         ]);
     }
@@ -150,9 +150,9 @@ class UserPreferenceTest extends TestCase
     {
         // Seed an existing record with more fields.
         UserPreference::factory()->create([
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'products',
-            'payload'  => ['density' => 'compact', 'page_size' => 50, 'sort' => ['field' => 'name', 'direction' => 'asc']],
+            'payload' => ['density' => 'compact', 'page_size' => 50, 'sort' => ['field' => 'name', 'direction' => 'asc']],
         ]);
 
         // Replace with a payload that omits 'sort'.
@@ -171,7 +171,7 @@ class UserPreferenceTest extends TestCase
     public function test_upsert_creates_isolated_records_per_category(): void
     {
         $this->actingAs($this->user)->putJson('/api/me/preferences/products', ['payload' => ['density' => 'compact']]);
-        $this->actingAs($this->user)->putJson('/api/me/preferences/orders',   ['payload' => ['page_size' => 50]]);
+        $this->actingAs($this->user)->putJson('/api/me/preferences/orders', ['payload' => ['page_size' => 50]]);
 
         $this->assertDatabaseCount('user_preferences', 2);
     }
@@ -205,14 +205,14 @@ class UserPreferenceTest extends TestCase
     public function test_reset_category_removes_specific_category(): void
     {
         UserPreference::factory()->create([
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'products',
-            'payload'  => ['density' => 'compact'],
+            'payload' => ['density' => 'compact'],
         ]);
         UserPreference::factory()->create([
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'theme',
-            'payload'  => ['theme' => 'dark'],
+            'payload' => ['theme' => 'dark'],
         ]);
 
         $this->actingAs($this->user)
@@ -220,13 +220,13 @@ class UserPreferenceTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseMissing('user_preferences', [
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'products',
         ]);
 
         // Other categories must remain untouched.
         $this->assertDatabaseHas('user_preferences', [
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'theme',
         ]);
     }
@@ -258,14 +258,14 @@ class UserPreferenceTest extends TestCase
     {
         $otherUser = User::factory()->create();
         UserPreference::factory()->create([
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'category' => 'products',
-            'payload'  => [],
+            'payload' => [],
         ]);
         UserPreference::factory()->create([
-            'user_id'  => $otherUser->id,
+            'user_id' => $otherUser->id,
             'category' => 'theme',
-            'payload'  => [],
+            'payload' => [],
         ]);
 
         $this->actingAs($this->user)
@@ -274,7 +274,7 @@ class UserPreferenceTest extends TestCase
 
         // Other user's preferences must remain.
         $this->assertDatabaseHas('user_preferences', [
-            'user_id'  => $otherUser->id,
+            'user_id' => $otherUser->id,
             'category' => 'theme',
         ]);
     }
@@ -323,12 +323,12 @@ class UserPreferenceTest extends TestCase
         $defaults = PreferenceCategory::Products->defaultPayload();
 
         $this->assertIsArray($defaults);
-        $this->assertArrayHasKey('columns',        $defaults);
-        $this->assertArrayHasKey('column_order',   $defaults);
-        $this->assertArrayHasKey('column_widths',  $defaults);
-        $this->assertArrayHasKey('density',        $defaults);
-        $this->assertArrayHasKey('sort',           $defaults);
-        $this->assertArrayHasKey('page_size',      $defaults);
+        $this->assertArrayHasKey('columns', $defaults);
+        $this->assertArrayHasKey('column_order', $defaults);
+        $this->assertArrayHasKey('column_widths', $defaults);
+        $this->assertArrayHasKey('density', $defaults);
+        $this->assertArrayHasKey('sort', $defaults);
+        $this->assertArrayHasKey('page_size', $defaults);
         $this->assertArrayHasKey('filter_presets', $defaults);
     }
 
@@ -337,7 +337,7 @@ class UserPreferenceTest extends TestCase
         $defaults = PreferenceCategory::Theme->defaultPayload();
 
         $this->assertIsArray($defaults);
-        $this->assertArrayHasKey('theme',    $defaults);
+        $this->assertArrayHasKey('theme', $defaults);
         $this->assertArrayHasKey('language', $defaults);
         $this->assertArrayHasKey('timezone', $defaults);
     }
@@ -347,8 +347,8 @@ class UserPreferenceTest extends TestCase
         $defaults = PreferenceCategory::Workspace->defaultPayload();
 
         $this->assertIsArray($defaults);
-        $this->assertArrayHasKey('default_company',   $defaults);
-        $this->assertArrayHasKey('default_branch',    $defaults);
+        $this->assertArrayHasKey('default_company', $defaults);
+        $this->assertArrayHasKey('default_branch', $defaults);
         $this->assertArrayHasKey('default_warehouse', $defaults);
     }
 

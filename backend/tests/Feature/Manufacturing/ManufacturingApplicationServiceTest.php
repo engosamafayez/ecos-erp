@@ -14,7 +14,6 @@ use Modules\Manufacturing\DecisionKernel\Domain\ValueObjects\DecisionReason;
 use Modules\Manufacturing\DecisionKernel\Domain\ValueObjects\DecisionRule;
 use Modules\Manufacturing\DecisionOrchestrator\Domain\Contracts\RuleProviderRegistryInterface;
 use Modules\Manufacturing\DecisionOrchestrator\Domain\Services\DecisionOrchestrator;
-use Modules\Manufacturing\ManufacturingExecution\Domain\Models\ManufacturingTransaction;
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Requests\DisassembleProductRequest;
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Requests\ManufactureProductRequest;
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Requests\SimulateManufacturingRequest;
@@ -46,7 +45,9 @@ class ManufacturingApplicationServiceTest extends TestCase
     use RefreshDatabase;
 
     private ManufacturingApplicationService $service;
+
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
@@ -56,7 +57,7 @@ class ManufacturingApplicationServiceTest extends TestCase
         $this->resetSingletons();
         $this->registerRule(DecisionType::Approve);
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
 
         $this->service = app(ManufacturingApplicationService::class);
@@ -78,12 +79,12 @@ class ManufacturingApplicationServiceTest extends TestCase
             'manufacturing',
             new InMemoryRuleProvider(
                 new DecisionRule(
-                    rule_id:       $id,
-                    name:          "Test rule: {$type->label()}",
-                    priority:      1,
+                    rule_id: $id,
+                    name: "Test rule: {$type->label()}",
+                    priority: 1,
                     decision_type: $type,
-                    reason:        new DecisionReason(code: "test_{$type->value}", message: $type->label()),
-                    condition:     fn ($ctx) => true,
+                    reason: new DecisionReason(code: "test_{$type->value}", message: $type->label()),
+                    condition: fn ($ctx) => true,
                 ),
             ),
         );
@@ -109,11 +110,11 @@ class ManufacturingApplicationServiceTest extends TestCase
     private function makeRecipe(Product $output, int $version = 1): Recipe
     {
         return Recipe::create([
-            'bom_number'         => 'BOM-SVC-' . uniqid(),
-            'product_id'         => $output->id,
-            'version'            => "{$version}.0",
+            'bom_number' => 'BOM-SVC-'.uniqid(),
+            'product_id' => $output->id,
+            'version' => "{$version}.0",
             'bom_version_number' => $version,
-            'is_active'          => true,
+            'is_active' => true,
         ]);
     }
 
@@ -121,7 +122,7 @@ class ManufacturingApplicationServiceTest extends TestCase
     {
         $recipe->components()->create([
             'raw_material_id' => $component->id,
-            'quantity'        => $qty,
+            'quantity' => $qty,
         ]);
     }
 
@@ -129,9 +130,9 @@ class ManufacturingApplicationServiceTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => 0.0,
         ]);
     }
@@ -139,33 +140,33 @@ class ManufacturingApplicationServiceTest extends TestCase
     private function manufactureRequest(Product $output, float $qty = 1.0): ManufactureProductRequest
     {
         return new ManufactureProductRequest(
-            product_id:   $output->id,
+            product_id: $output->id,
             warehouse_id: $this->warehouse->id,
-            company_id:   $this->company->id,
+            company_id: $this->company->id,
             required_qty: $qty,
-            actor_id:     'test-actor',
+            actor_id: 'test-actor',
         );
     }
 
     private function simulateRequest(Product $output, float $qty = 1.0): SimulateManufacturingRequest
     {
         return new SimulateManufacturingRequest(
-            product_id:   $output->id,
+            product_id: $output->id,
             warehouse_id: $this->warehouse->id,
-            company_id:   $this->company->id,
+            company_id: $this->company->id,
             required_qty: $qty,
-            actor_id:     'test-actor',
+            actor_id: 'test-actor',
         );
     }
 
     private function validateRequest(Product $output, float $qty = 1.0): ValidateManufacturingRequest
     {
         return new ValidateManufacturingRequest(
-            product_id:   $output->id,
+            product_id: $output->id,
             warehouse_id: $this->warehouse->id,
-            company_id:   $this->company->id,
+            company_id: $this->company->id,
             required_qty: $qty,
-            actor_id:     'test-actor',
+            actor_id: 'test-actor',
         );
     }
 
@@ -173,9 +174,9 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_manufacture_product_executes_and_returns_typed_response(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 2.0);
         $this->seedInventory($component, 10.0);
 
@@ -195,9 +196,9 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_manufacture_product_creates_transaction_in_database(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -210,18 +211,18 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_manufacture_product_decrements_component_inventory(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 3.0); // consumes 3 per output
         $this->seedInventory($component, 10.0);
 
         $this->service->manufactureProduct($this->manufactureRequest($output, 1.0));
 
         $this->assertDatabaseHas('inventory_items', [
-            'product_id'   => $component->id,
+            'product_id' => $component->id,
             'warehouse_id' => $this->warehouse->id,
-            'on_hand_qty'  => 7.0, // 10 - 3
+            'on_hand_qty' => 7.0, // 10 - 3
         ]);
     }
 
@@ -229,9 +230,9 @@ class ManufacturingApplicationServiceTest extends TestCase
     {
         $this->rebuildServiceWith(DecisionType::Reject);
 
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 10.0);
 
@@ -250,9 +251,9 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_manufacture_product_returns_blocked_when_manufacturing_not_needed(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($output, 10.0); // 10 FG already in stock
 
@@ -277,14 +278,14 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_manufacture_product_response_serializes_to_array(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
         $response = $this->service->manufactureProduct($this->manufactureRequest($output));
-        $array    = $response->toArray();
+        $array = $response->toArray();
 
         $this->assertArrayHasKey('workflow_id', $array);
         $this->assertArrayHasKey('workflow_stage', $array);
@@ -306,9 +307,9 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_simulate_manufacturing_returns_plan_without_executing(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 2.0);
         $this->seedInventory($component, 10.0);
 
@@ -331,9 +332,9 @@ class ManufacturingApplicationServiceTest extends TestCase
     {
         $this->rebuildServiceWith(DecisionType::Reject);
 
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
 
         $response = $this->service->simulateManufacturing($this->simulateRequest($output));
@@ -347,9 +348,9 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_simulate_manufacturing_response_includes_component_details(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 2.0);
         $this->seedInventory($component, 10.0);
 
@@ -362,9 +363,9 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_simulate_manufacturing_response_serializes_to_array(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -383,9 +384,9 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_validate_manufacturing_returns_valid_report_when_plan_is_ready(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -405,9 +406,9 @@ class ManufacturingApplicationServiceTest extends TestCase
     {
         $this->rebuildServiceWith(DecisionType::Reject);
 
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
 
         $response = $this->service->validateManufacturing($this->validateRequest($output));
@@ -423,9 +424,9 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_validate_manufacturing_does_not_create_transaction(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -436,9 +437,9 @@ class ManufacturingApplicationServiceTest extends TestCase
 
     public function test_validate_manufacturing_response_serializes_to_array(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -464,11 +465,11 @@ class ManufacturingApplicationServiceTest extends TestCase
         ]);
 
         $request = new DisassembleProductRequest(
-            product_id:   $product->id,
+            product_id: $product->id,
             warehouse_id: $this->warehouse->id,
-            company_id:   $this->company->id,
-            quantity:     1.0,
-            actor_id:     'test-actor',
+            company_id: $this->company->id,
+            quantity: 1.0,
+            actor_id: 'test-actor',
         );
 
         $response = $this->service->disassembleProduct($request);
@@ -485,11 +486,11 @@ class ManufacturingApplicationServiceTest extends TestCase
         $product = Product::factory()->create(['can_disassemble' => true]);
 
         $request = new DisassembleProductRequest(
-            product_id:   $product->id,
+            product_id: $product->id,
             warehouse_id: $this->warehouse->id,
-            company_id:   $this->company->id,
-            quantity:     1.0,
-            actor_id:     'test-actor',
+            company_id: $this->company->id,
+            quantity: 1.0,
+            actor_id: 'test-actor',
         );
 
         $this->service->disassembleProduct($request);
@@ -503,15 +504,15 @@ class ManufacturingApplicationServiceTest extends TestCase
         $product = Product::factory()->create(['can_disassemble' => true]);
 
         $request = new DisassembleProductRequest(
-            product_id:   $product->id,
+            product_id: $product->id,
             warehouse_id: $this->warehouse->id,
-            company_id:   $this->company->id,
-            quantity:     1.0,
-            actor_id:     'test-actor',
+            company_id: $this->company->id,
+            quantity: 1.0,
+            actor_id: 'test-actor',
         );
 
         $response = $this->service->disassembleProduct($request);
-        $array    = $response->toArray();
+        $array = $response->toArray();
 
         $this->assertArrayHasKey('success', $array);
         $this->assertArrayHasKey('is_blocked', $array);

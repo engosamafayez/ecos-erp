@@ -27,11 +27,11 @@ final class WebhookManagerService
      * @var array<string, array{column: string, route: string}>
      */
     private const TOPICS = [
-        'order.created'    => ['column' => 'external_webhook_order_created_id',    'route' => 'orders'],
-        'order.updated'    => ['column' => 'external_webhook_order_updated_id',    'route' => 'orders'],
-        'product.created'  => ['column' => 'external_webhook_product_created_id',  'route' => 'products'],
-        'product.updated'  => ['column' => 'external_webhook_product_updated_id',  'route' => 'products'],
-        'product.deleted'  => ['column' => 'external_webhook_product_deleted_id',  'route' => 'products'],
+        'order.created' => ['column' => 'external_webhook_order_created_id',    'route' => 'orders'],
+        'order.updated' => ['column' => 'external_webhook_order_updated_id',    'route' => 'orders'],
+        'product.created' => ['column' => 'external_webhook_product_created_id',  'route' => 'products'],
+        'product.updated' => ['column' => 'external_webhook_product_updated_id',  'route' => 'products'],
+        'product.deleted' => ['column' => 'external_webhook_product_deleted_id',  'route' => 'products'],
         'customer.created' => ['column' => 'external_webhook_customer_created_id', 'route' => 'customers'],
         'customer.updated' => ['column' => 'external_webhook_customer_updated_id', 'route' => 'customers'],
     ];
@@ -44,14 +44,14 @@ final class WebhookManagerService
             return;
         }
 
-        $baseUrl = rtrim(config('app.url'), '/') . '/api/webhooks/woocommerce/' . $channel->id . '/';
+        $baseUrl = rtrim(config('app.url'), '/').'/api/webhooks/woocommerce/'.$channel->id.'/';
 
         foreach (self::TOPICS as $topic => $config) {
             if ($channel->{$config['column']} !== null) {
                 continue;
             }
 
-            $deliveryUrl = $baseUrl . $config['route'];
+            $deliveryUrl = $baseUrl.$config['route'];
 
             $this->register(
                 $channel,
@@ -101,13 +101,13 @@ final class WebhookManagerService
             $response = Http::withBasicAuth($consumerKey, $consumerSecret)
                 ->timeout(15)
                 ->post(
-                    rtrim($channel->store_url, '/') . '/wp-json/wc/v3/webhooks',
+                    rtrim($channel->store_url, '/').'/wp-json/wc/v3/webhooks',
                     [
-                        'name'         => 'ECOS ERP – ' . $topic,
-                        'topic'        => $topic,
+                        'name' => 'ECOS ERP – '.$topic,
+                        'topic' => $topic,
                         'delivery_url' => $deliveryUrl,
-                        'secret'       => $consumerSecret,
-                        'status'       => 'active',
+                        'secret' => $consumerSecret,
+                        'status' => 'active',
                     ],
                 );
 
@@ -132,7 +132,7 @@ final class WebhookManagerService
         try {
             Http::withBasicAuth($consumerKey, $consumerSecret)
                 ->timeout(15)
-                ->delete(rtrim($channel->store_url, '/') . '/wp-json/wc/v3/webhooks/' . $webhookId);
+                ->delete(rtrim($channel->store_url, '/').'/wp-json/wc/v3/webhooks/'.$webhookId);
 
             $channel->update([$idColumn => null]);
         } catch (Throwable) {

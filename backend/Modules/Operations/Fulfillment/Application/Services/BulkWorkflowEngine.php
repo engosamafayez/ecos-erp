@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Operations\Fulfillment\Application\Services;
 
 use Modules\Commerce\Orders\Domain\Models\Order;
-use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
@@ -25,24 +24,24 @@ final class BulkWorkflowEngine
     public function __construct(private readonly FulfillmentEngine $engine) {}
 
     /**
-     * @param  list<string>           $orderIds
-     * @param  array<string, mixed>   $data       Shared context passed to every workflow
-     * @return BulkWorkflowResult
+     * @param  list<string>  $orderIds
+     * @param  array<string, mixed>  $data  Shared context passed to every workflow
      */
     public function run(
         FulfillmentWorkflowInterface $workflow,
-        array                        $orderIds,
-        array                        $data = [],
-        ?string                      $actorId = null,
+        array $orderIds,
+        array $data = [],
+        ?string $actorId = null,
     ): BulkWorkflowResult {
         $succeeded = [];
-        $failed    = [];
+        $failed = [];
 
         foreach ($orderIds as $orderId) {
             $order = Order::find($orderId);
 
             if ($order === null) {
-                $failed[$orderId] = "Order not found.";
+                $failed[$orderId] = 'Order not found.';
+
                 continue;
             }
 
@@ -52,7 +51,7 @@ final class BulkWorkflowEngine
             } catch (WorkflowPreconditionException $e) {
                 $failed[$orderId] = $e->getMessage();
             } catch (Throwable $e) {
-                $failed[$orderId] = "Execution error: " . $e->getMessage();
+                $failed[$orderId] = 'Execution error: '.$e->getMessage();
             }
         }
 

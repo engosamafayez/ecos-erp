@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\POS\Customer;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
 use Modules\POS\Customer\Domain\ValueObjects\CustomerSnapshot;
 use PHPUnit\Framework\TestCase;
 
@@ -21,7 +22,7 @@ final class CustomerSnapshotTest extends TestCase
 
     public function test_rejects_empty_customer_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Customer ID cannot be empty');
 
         CustomerSnapshot::capture('', 'C001', 'John Doe', null, null, $this->now);
@@ -29,14 +30,14 @@ final class CustomerSnapshotTest extends TestCase
 
     public function test_rejects_whitespace_only_customer_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         CustomerSnapshot::capture('   ', 'C001', 'John Doe', null, null, $this->now);
     }
 
     public function test_rejects_empty_name(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Customer name cannot be empty');
 
         CustomerSnapshot::capture('uuid-123', 'C001', '', null, null, $this->now);
@@ -47,7 +48,7 @@ final class CustomerSnapshotTest extends TestCase
     public function test_creates_with_all_fields(): void
     {
         $snapshot = CustomerSnapshot::capture(
-            'uuid-123', 'C001', 'John Doe', 'john@example.com', '+201001234567', $this->now
+            'uuid-123', 'C001', 'John Doe', 'john@example.com', '+201001234567', $this->now,
         );
 
         $this->assertSame('uuid-123', $snapshot->customerId);
@@ -128,14 +129,14 @@ final class CustomerSnapshotTest extends TestCase
     public function test_to_array_has_expected_keys(): void
     {
         $snapshot = CustomerSnapshot::capture('id', 'C1', 'Jane', 'j@e.com', '050', $this->now);
-        $array    = $snapshot->toArray();
+        $array = $snapshot->toArray();
 
-        $this->assertArrayHasKey('customer_id',   $array);
+        $this->assertArrayHasKey('customer_id', $array);
         $this->assertArrayHasKey('customer_code', $array);
-        $this->assertArrayHasKey('name',          $array);
-        $this->assertArrayHasKey('email',         $array);
-        $this->assertArrayHasKey('phone',         $array);
-        $this->assertArrayHasKey('captured_at',   $array);
+        $this->assertArrayHasKey('name', $array);
+        $this->assertArrayHasKey('email', $array);
+        $this->assertArrayHasKey('phone', $array);
+        $this->assertArrayHasKey('captured_at', $array);
     }
 
     public function test_from_array_round_trips(): void
@@ -143,10 +144,10 @@ final class CustomerSnapshotTest extends TestCase
         $original = CustomerSnapshot::capture('uuid-abc', 'C-99', 'Test User', 'test@x.com', '0501111', $this->now);
         $restored = CustomerSnapshot::fromArray($original->toArray());
 
-        $this->assertSame($original->customerId,   $restored->customerId);
+        $this->assertSame($original->customerId, $restored->customerId);
         $this->assertSame($original->customerCode, $restored->customerCode);
-        $this->assertSame($original->name,         $restored->name);
-        $this->assertSame($original->email,        $restored->email);
-        $this->assertSame($original->phone,        $restored->phone);
+        $this->assertSame($original->name, $restored->name);
+        $this->assertSame($original->email, $restored->email);
+        $this->assertSame($original->phone, $restored->phone);
     }
 }

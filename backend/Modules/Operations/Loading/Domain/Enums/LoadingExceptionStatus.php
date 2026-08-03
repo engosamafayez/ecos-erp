@@ -6,18 +6,18 @@ namespace Modules\Operations\Loading\Domain\Enums;
 
 enum LoadingExceptionStatus: string
 {
-    case Open          = 'open';
+    case Open = 'open';
     case Investigating = 'investigating';
-    case Resolved      = 'resolved';
-    case Escalated     = 'escalated';
+    case Resolved = 'resolved';
+    case Escalated = 'escalated';
 
     public function canTransitionTo(self $next): bool
     {
         return match ($this) {
-            self::Open          => in_array($next, [self::Investigating, self::Resolved, self::Escalated], true),
+            self::Open => in_array($next, [self::Investigating, self::Resolved, self::Escalated], true),
             self::Investigating => in_array($next, [self::Resolved, self::Escalated], true),
-            self::Escalated     => in_array($next, [self::Investigating, self::Resolved], true),
-            self::Resolved      => false,
+            self::Escalated => in_array($next, [self::Investigating, self::Resolved], true),
+            self::Resolved => false,
         };
     }
 
@@ -28,6 +28,6 @@ enum LoadingExceptionStatus: string
 
     public function isActive(): bool
     {
-        return !$this->isTerminal();
+        return ! $this->isTerminal();
     }
 }

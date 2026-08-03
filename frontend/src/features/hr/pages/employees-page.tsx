@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Plus, UserMinus } from 'lucide-react';
 
@@ -31,6 +32,7 @@ const STATUS_TONE: Record<EmployeeStatus, StatusVariant> = {
 };
 
 export function EmployeesPage() {
+  const { t } = useTranslation('hr');
   const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
@@ -64,37 +66,37 @@ export function EmployeesPage() {
   const columns: ColumnDef<Employee>[] = [
     {
       key: 'employee_number',
-      header: 'Number',
+      header: t($ => $.employees.table.number),
       cell: (e) => <span className="font-mono text-xs font-medium">{e.employee_number}</span>,
     },
     {
       key: 'name',
-      header: 'Name',
+      header: t($ => $.employees.table.name),
       cell: (e) => <span className="font-medium">{e.name}</span>,
     },
     {
       key: 'department',
-      header: 'Department',
+      header: t($ => $.employees.table.department),
       cell: (e) => <span className="text-muted-foreground">{e.department?.name ?? '—'}</span>,
     },
     {
       key: 'position',
-      header: 'Position',
+      header: t($ => $.employees.table.position),
       cell: (e) => <span className="text-muted-foreground">{e.position?.title ?? '—'}</span>,
     },
     {
       key: 'work_email',
-      header: 'Work Email',
+      header: t($ => $.employees.table.workEmail),
       cell: (e) => <span className="text-muted-foreground">{e.work_email ?? '—'}</span>,
     },
     {
       key: 'hire_date',
-      header: 'Hired',
+      header: t($ => $.employees.table.hired),
       cell: (e) => <span className="tabular-nums">{e.hire_date ?? '—'}</span>,
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t($ => $.employees.table.status),
       cell: (e) => <StatusBadge status={STATUS_TONE[e.status]} label={e.status_label} />,
     },
   ];
@@ -108,12 +110,12 @@ export function EmployeesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Employees"
-        subtitle="The single source of truth for workforce identity — referenced by every other module."
+        title={t($ => $.employees.title)}
+        subtitle={t($ => $.employees.subtitle)}
         actions={
           <Button size="sm" onClick={() => setFormOpen(true)}>
             <Plus className="size-4" />
-            New Employee
+            {t($ => $.employees.newEmployee)}
           </Button>
         }
       />
@@ -121,19 +123,19 @@ export function EmployeesPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Total Employees</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employees.stats.total)}</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : (meta?.total ?? 0)}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Active (this page)</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employees.stats.activeOnPage)}</div>
             <div className="text-2xl font-bold text-emerald-600">{isLoading ? '—' : activeCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">On Leave (this page)</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employees.stats.onLeaveOnPage)}</div>
             <div className="text-2xl font-bold text-amber-600">{isLoading ? '—' : onLeaveCount}</div>
           </CardContent>
         </Card>
@@ -142,7 +144,7 @@ export function EmployeesPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search by name, number or email…"
+            searchPlaceholder={t($ => $.employees.searchPlaceholder)}
             onSearchChange={(value) => {
               setSearch(value);
               setPage(1);
@@ -157,7 +159,7 @@ export function EmployeesPage() {
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Department</span>
+                  <span className="text-sm font-medium">{t($ => $.employees.filters.department)}</span>
                   <select
                     value={departmentFilter}
                     onChange={(e) => {
@@ -166,7 +168,7 @@ export function EmployeesPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">All Departments</option>
+                    <option value="">{t($ => $.employees.filters.allDepartments)}</option>
                     {(departments ?? []).map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name}
@@ -175,7 +177,7 @@ export function EmployeesPage() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">Status</span>
+                  <span className="text-sm font-medium">{t($ => $.employees.filters.status)}</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => {
@@ -184,13 +186,13 @@ export function EmployeesPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">All</option>
-                    <option value="active">Active</option>
-                    <option value="probation">Probation</option>
-                    <option value="on_leave">On Leave</option>
-                    <option value="suspended">Suspended</option>
-                    <option value="resigned">Resigned</option>
-                    <option value="terminated">Terminated</option>
+                    <option value="">{t($ => $.employees.filters.allStatuses)}</option>
+                    <option value="active">{t($ => $.employees.status.active)}</option>
+                    <option value="probation">{t($ => $.employees.status.probation)}</option>
+                    <option value="on_leave">{t($ => $.employees.status.onLeave)}</option>
+                    <option value="suspended">{t($ => $.employees.status.suspended)}</option>
+                    <option value="resigned">{t($ => $.employees.status.resigned)}</option>
+                    <option value="terminated">{t($ => $.employees.status.terminated)}</option>
                   </select>
                 </div>
               </>
@@ -205,17 +207,17 @@ export function EmployeesPage() {
             isError={isError}
             rowActions={(employee) => (
               <ActionMenu
-                label={`Actions for ${employee.name}`}
+                label={t($ => $.employees.actions.menuLabel, { name: employee.name })}
                 items={[
                   {
                     key: 'view',
-                    label: 'Employee 360',
+                    label: t($ => $.employees.actions.view360),
                     icon: Eye,
                     onSelect: () => navigate(`/hr/employees/${employee.id}`),
                   },
                   {
                     key: 'terminate',
-                    label: 'End Employment',
+                    label: t($ => $.employees.actions.endEmployment),
                     icon: UserMinus,
                     variant: 'destructive',
                     onSelect: () => setTerminating(employee),
@@ -246,9 +248,9 @@ export function EmployeesPage() {
         onOpenChange={(open) => {
           if (!open) setTerminating(null);
         }}
-        title="End Employment"
-        description={`End ${terminating?.name ?? ''}'s employment? This is final — a returning employee is rehired, not restored.`}
-        confirmLabel="End Employment"
+        title={t($ => $.employees.terminate.title)}
+        description={t($ => $.employees.terminate.description, { name: terminating?.name ?? '' })}
+        confirmLabel={t($ => $.employees.terminate.confirm)}
         variant="destructive"
         loading={terminate.isPending}
         onConfirm={confirmTerminate}

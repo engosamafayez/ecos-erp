@@ -7,6 +7,7 @@ namespace Modules\Platform\EventPlatform\Presentation\Console;
 use Illuminate\Console\Command;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventReplayService;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseDeadLetterQueueInterface;
+use Throwable;
 
 class DrainDlqCommand extends Command
 {
@@ -22,13 +23,14 @@ class DrainDlqCommand extends Command
         EnterpriseEventReplayService $replayService,
     ): int {
         $companyId = $this->option('company-id');
-        $discard   = $this->option('discard');
-        $limit     = (int) $this->option('limit');
+        $discard = $this->option('discard');
+        $limit = (int) $this->option('limit');
 
         $entries = $dlq->pendingEntries($companyId ?: null)->take($limit);
 
         if ($entries->isEmpty()) {
             $this->info('DLQ is empty — nothing to drain.');
+
             return 0;
         }
 
@@ -36,9 +38,9 @@ class DrainDlqCommand extends Command
         $bar = $this->output->createProgressBar($entries->count());
         $bar->start();
 
-        $replayed  = 0;
+        $replayed = 0;
         $discarded = 0;
-        $failed    = 0;
+        $failed = 0;
 
         foreach ($entries as $entry) {
             if ($discard) {
@@ -48,7 +50,7 @@ class DrainDlqCommand extends Command
                 try {
                     $replayService->replayDlqEntry($entry->id);
                     $replayed++;
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $this->newLine();
                     $this->warn("Failed to replay entry {$entry->id}: {$e->getMessage()}");
                     $failed++;

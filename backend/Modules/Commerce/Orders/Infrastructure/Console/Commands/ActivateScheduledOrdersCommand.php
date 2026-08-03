@@ -11,6 +11,7 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
+use Throwable;
 
 /**
  * ARCH-003 — Activate Scheduled orders whose delivery date has arrived.
@@ -52,20 +53,20 @@ final class ActivateScheduledOrdersCommand extends Command
     protected $description = 'Activate Scheduled orders whose delivery date has arrived';
 
     public function handle(
-        FulfillmentEngine    $engine,
+        FulfillmentEngine $engine,
         ProcessOrderWorkflow $workflow,
     ): int {
-        $today      = now()->toDateString();
-        $dryRun     = (bool) $this->option('dry-run');
-        $force      = (bool) $this->option('force');
-        $companyId  = $this->option('company');
+        $today = now()->toDateString();
+        $dryRun = (bool) $this->option('dry-run');
+        $force = (bool) $this->option('force');
+        $companyId = $this->option('company');
 
         $this->info(sprintf(
             '[%s] Activating Scheduled orders due on or before %s%s%s',
             now()->toDateTimeString(),
             $today,
-            $dryRun  ? ' (dry-run)' : '',
-            $force   ? ' (FORCE)'   : '',
+            $dryRun ? ' (dry-run)' : '',
+            $force ? ' (FORCE)' : '',
         ));
 
         $query = Order::query()
@@ -75,7 +76,7 @@ final class ActivateScheduledOrdersCommand extends Command
         if (! $force) {
             $query->where(function ($q) use ($today): void {
                 $q->whereDate('requested_delivery_date', '<=', $today)
-                  ->orWhereNull('requested_delivery_date');
+                    ->orWhereNull('requested_delivery_date');
             });
         }
 
@@ -84,8 +85,8 @@ final class ActivateScheduledOrdersCommand extends Command
         }
 
         $activated = 0;
-        $skipped   = 0;
-        $failed    = 0;
+        $skipped = 0;
+        $failed = 0;
 
         // force_activate=true bypasses the delivery-date guard inside ProcessOrderWorkflow.
         $ctx = $force ? ['force_activate' => true] : [];
@@ -100,6 +101,7 @@ final class ActivateScheduledOrdersCommand extends Command
                         $order->requested_delivery_date ?? 'none',
                     ));
                     $skipped++;
+
                     continue;
                 }
 
@@ -116,13 +118,13 @@ final class ActivateScheduledOrdersCommand extends Command
                     // Guard blocked activation (e.g. date mismatch when running without --force).
                     $this->warn("  SKIP   #{$order->order_number} — {$e->getMessage()}");
                     $skipped++;
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $this->error("  FAIL   #{$order->order_number} — {$e->getMessage()}");
                     Log::channel('daily')->error('[ActivateScheduledOrders] Failed', [
-                        'order_id'     => $order->id,
+                        'order_id' => $order->id,
                         'order_number' => $order->order_number,
-                        'error'        => $e->getMessage(),
-                        'trace'        => $e->getTraceAsString(),
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
                     ]);
                     $failed++;
                 }

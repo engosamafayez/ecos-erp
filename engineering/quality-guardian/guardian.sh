@@ -5,9 +5,13 @@
 #   ./guardian.sh [mode]
 #
 # Modes:
-#   pre-commit   PHP syntax, Composer, ESLint, TypeScript          (fast, ~30s)
-#   pre-push     + Laravel bootstrap, Pint, PHPStan, Vite build    (~2min)
-#   ci | full    + Docker production build                         (~10min)
+#   pre-commit   PHP syntax, Composer, ESLint, TypeScript
+#   pre-push     + Laravel bootstrap, Pint, PHPStan, Vite build
+#   ci | full    + Docker production build
+#
+# Durations are deliberately not quoted here. They are measured per commit and
+# recorded by frontend/scripts/measure-typecheck.mjs; the TypeScript validator
+# currently dominates every mode (TASK-PLATFORM-FOUNDATION-002).
 #
 # Exit codes:
 #   0   all checks passed
@@ -66,7 +70,30 @@ for validator in "${VALIDATORS[@]}"; do
   printf '  %-30s' "$name"
 
   START_TIME=$SECONDS
-  output=$(bash "$script" "$PROJECT_ROOT" 2>&1) && exit_code=0 || exit_code=$?
+  # Pass MODE as $2 so mode-aware validators (e.g. ESLint) can scope their work
+  # to the staged set at pre-commit while still running full-project in
+  # pre-push/ci/full. Validators that don't need it simply ignore the argument.
+  #
+  # Output is captured rather than streamed so _report_add can attach it to the
+  # failure report and so the PASS/FAIL table stays aligned. Capturing alone
+  # makes a multi-minute validator indistinguishable from a hang, so emit a
+  # heartbeat dot every 5s while it works.
+  # Poll at 0.5s so a fast validator is not padded to the heartbeat interval,
+  # but only emit a dot every 5s so the table stays readable.
+  validator_log=$(mktemp)
+  bash "$script" "$PROJECT_ROOT" "$MODE" >"$validator_log" 2>&1 &
+  validator_pid=$!
+  ticks=0
+  while kill -0 "$validator_pid" 2>/dev/null; do
+    sleep 0.5
+    ticks=$((ticks + 1))
+    if (( ticks % 10 == 0 )) && kill -0 "$validator_pid" 2>/dev/null; then
+      printf '.'
+    fi
+  done
+  wait "$validator_pid" && exit_code=0 || exit_code=$?
+  output=$(cat "$validator_log")
+  rm -f "$validator_log"
   DURATION=$((SECONDS - START_TIME))
 
   case "$exit_code" in

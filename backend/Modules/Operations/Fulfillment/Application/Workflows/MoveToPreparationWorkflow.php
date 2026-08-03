@@ -15,12 +15,15 @@ use Modules\Operations\Fulfillment\Domain\Events\OrderPreparationStartedEvent;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 
 /**
- * Moves an order into the preparation queue.
+ * Marks an order as Ready for Dispatch — all engines have completed.
+ *
+ * V3 (TASK-ORDERS-LIFECYCLE-ARCH-002): Previously moved order to Preparing status.
+ * In V3, Preparing is an invisible engine state — orders stay In Progress while being
+ * prepared. This workflow is called by the Preparation OS when all work is done,
+ * transitioning the order to Ready for Dispatch so it can be dispatched.
  *
  * Automatic Reservation Guard (ADR-015 / Phase 8):
- * If a reservation is missing (e.g. auto_reserve_inventory was OFF at order creation),
- * one is created on-the-fly inside execute() before the status transition.
- * Physical stock is NOT consumed here — it remains reserved until vehicle dispatch.
+ * If a reservation is missing, one is created on-the-fly before the status transition.
  */
 final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
 {
@@ -33,17 +36,14 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        $allowed = [OrderStatus::Confirmed, OrderStatus::Processing];
-
-        if (! in_array($order->status, $allowed, true)) {
+        if ($order->status !== OrderStatus::InProgress) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot move to preparation from status [{$order->status->value}]."
+                "Order [{$order->id}] must be In Progress to become Ready for Dispatch. Current: [{$order->status->value}].",
             );
         }
 
         // Block terminal reservation states: Released/Consumed/Transferred mean the inventory
-        // commitment has ended. Letting these through causes ReserveOrderInventoryAction to
-        // return early (idempotency guard) and the order enters Preparing with zero stock (H-2 fix).
+        // commitment has ended. H-2 fix: prevents entering dispatch with zero stock.
         $terminalReservationStates = [
             ReservationStatus::Released,
             ReservationStatus::Consumed,
@@ -51,31 +51,18 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
         ];
         if (in_array($order->reservation_status, $terminalReservationStates, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] has reservation_status [{$order->reservation_status?->value}] and cannot enter " .
-                'preparation. Release and re-reserve inventory before moving to preparation.'
+                "Order [{$order->id}] has reservation_status [{$order->reservation_status?->value}] and cannot become Ready for Dispatch. ".
+                'Release and re-reserve inventory before moving to dispatch.',
             );
         }
 
-        // Must have Reserved OR PartialReserved (or Allow Negative Stock path with warehouse)
-        $activeReservation = in_array($order->reservation_status, [
-            ReservationStatus::Reserved,
-            ReservationStatus::PartialReserved,
-        ], true);
-
-        if (! $activeReservation && $order->assigned_warehouse_id === null) {
-            throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot move to preparation: no warehouse is assigned and inventory has not been reserved."
-            );
-        }
-
-        // P1-002 — PartialReserved orders require explicit manager approval before preparation.
-        // This prevents silently packing partial orders without business awareness of the shortage.
+        // PartialReserved orders require explicit manager approval before dispatch.
         if ($order->reservation_status === ReservationStatus::PartialReserved
             && $order->partial_reservation_approved_at === null
         ) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] has a partial reservation and requires manager approval before preparation. " .
-                'Use the approve-partial-reservation endpoint to grant approval.'
+                "Order [{$order->id}] has a partial reservation and requires manager approval before dispatch. ".
+                'Use the approve-partial-reservation endpoint to grant approval.',
             );
         }
     }
@@ -86,7 +73,6 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
         $reservationCreated = false;
 
         // Automatic Reservation Guard — create reservation on-the-fly when not yet reserved.
-        // DRIFT-005 fix: capture the result and abort to AwaitingStock if reservation failed.
         $activeStates = [ReservationStatus::Reserved, ReservationStatus::PartialReserved];
         if (! in_array($order->reservation_status, $activeStates, true)) {
             $reservationResult = $this->reserveInventory->execute($order);
@@ -99,7 +85,7 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
 
                 return FulfillmentResult::success(
                     $order,
-                    "Order #{$order->order_number} cannot enter preparation — insufficient stock. Moved to AwaitingStock.",
+                    "Order #{$order->order_number} cannot become Ready for Dispatch — insufficient stock. Moved to Awaiting Stock.",
                     [
                         'actor_id'            => $ctx->actorId,
                         'reservation_created' => true,
@@ -110,12 +96,12 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
             }
         }
 
-        $order->update(['status' => OrderStatus::Preparing]);
+        $order->update(['status' => OrderStatus::ReadyForDispatch]);
         $order->refresh();
 
-        $message = "Order #{$order->order_number} moved to preparation.";
+        $message = "Order #{$order->order_number} is Ready for Dispatch.";
         if ($reservationCreated) {
-            $message .= ' Inventory reserved automatically before preparation.';
+            $message .= ' Inventory reserved automatically.';
         }
 
         return FulfillmentResult::success(
@@ -136,21 +122,24 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $result->order;
 
+        if ($order->status !== OrderStatus::ReadyForDispatch) {
+            return [];
+        }
+
         return [
             new OrderPreparationStartedEvent(
-                orderId:           $order->id,
-                orderNumber:       $order->order_number,
-                companyId:         $order->company_id ?? '',
-                warehouseId:       $result->meta['warehouse_id'] ?? null,
-                reservationStatus: $result->meta['reservation_status'] ?? '',
-                startedAt:         $result->meta['started_at'] ?? now()->toIso8601String(),
-                actorId:           $result->meta['actor_id'] ?? null,
+                orderId: $order->id,
+                orderNumber: $order->order_number,
+                companyId: $order->company_id ?? '',
+                warehouseId: $order->assigned_warehouse_id ?? '',
+                actorId: $result->meta['actor_id'] ?? null,
+                startedAt: $result->meta['started_at'] ?? now()->toIso8601String(),
             ),
         ];
     }
 
     public function name(): string
     {
-        return 'move_to_preparation';
+        return 'ready_for_dispatch';
     }
 }

@@ -4,45 +4,46 @@ declare(strict_types=1);
 
 namespace Modules\Marketing\Automation\Application\Services;
 
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Marketing\Automation\Domain\Enums\WorkflowExecutionStatus;
 use Modules\Marketing\Automation\Domain\Models\AutomationWorkflow;
 use Modules\Marketing\Automation\Domain\Models\WorkflowExecution;
 use Modules\Marketing\Automation\Domain\Models\WorkflowExecutionStep;
+use RuntimeException;
+use Throwable;
 
 class WorkflowExecutionEngine
 {
     public function __construct(
         private readonly ConditionEvaluatorService $conditionEvaluator,
-        private readonly ActionDispatcherService   $actionDispatcher,
+        private readonly ActionDispatcherService $actionDispatcher,
         private readonly AutomationGovernanceService $governanceService,
     ) {}
 
     /** Dispatch a new execution for an entity (triggered by an event or manually) */
     public function dispatch(
         AutomationWorkflow $workflow,
-        string             $entityType,
-        string             $entityId,
-        string             $triggerType,
-        array              $triggerPayload = [],
-        ?string            $triggeredBy    = null,
+        string $entityType,
+        string $entityId,
+        string $triggerType,
+        array $triggerPayload = [],
+        ?string $triggeredBy = null,
     ): WorkflowExecution {
-        if (!$workflow->status->isLive()) {
-            throw new \RuntimeException("Workflow '{$workflow->name}' is not active.");
+        if (! $workflow->status->isLive()) {
+            throw new RuntimeException("Workflow '{$workflow->name}' is not active.");
         }
 
         $this->governanceService->assertCanExecute($workflow, $entityType, $entityId);
 
         $execution = WorkflowExecution::create([
-            'workflow_id'         => $workflow->id,
+            'workflow_id' => $workflow->id,
             'workflow_version_id' => $workflow->current_version_id,
-            'entity_type'         => $entityType,
-            'entity_id'           => $entityId,
-            'status'              => WorkflowExecutionStatus::PENDING,
-            'trigger_type'        => $triggerType,
-            'trigger_payload'     => $triggerPayload,
-            'triggered_by'        => $triggeredBy,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'status' => WorkflowExecutionStatus::PENDING,
+            'trigger_type' => $triggerType,
+            'trigger_payload' => $triggerPayload,
+            'triggered_by' => $triggeredBy,
         ]);
 
         $workflow->increment('execution_count');
@@ -54,14 +55,14 @@ class WorkflowExecutionEngine
     /** Process a pending execution (called by queue worker) */
     public function process(WorkflowExecution $execution): void
     {
-        if (!$execution->status->isActive()) {
+        if (! $execution->status->isActive()) {
             return;
         }
 
-        $workflow  = $execution->workflow;
-        $graph     = $workflow->nodes_graph;
-        $nodes     = collect($graph['nodes'] ?? []);
-        $edges     = collect($graph['edges'] ?? []);
+        $workflow = $execution->workflow;
+        $graph = $workflow->nodes_graph;
+        $nodes = collect($graph['nodes'] ?? []);
+        $edges = collect($graph['edges'] ?? []);
 
         $execution->update(['status' => WorkflowExecutionStatus::RUNNING, 'started_at' => now()]);
 
@@ -69,10 +70,10 @@ class WorkflowExecutionEngine
             $this->traverseGraph($execution, $nodes, $edges);
 
             $execution->update(['status' => WorkflowExecutionStatus::COMPLETED, 'completed_at' => now()]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $execution->update([
-                'status'        => WorkflowExecutionStatus::FAILED,
-                'failed_at'     => now(),
+                'status' => WorkflowExecutionStatus::FAILED,
+                'failed_at' => now(),
                 'error_message' => $e->getMessage(),
             ]);
         }
@@ -82,13 +83,13 @@ class WorkflowExecutionEngine
     {
         // Find trigger node
         $current = $nodes->firstWhere('type', 'trigger');
-        if (!$current) {
-            throw new \RuntimeException('No trigger node found in workflow graph.');
+        if (! $current) {
+            throw new RuntimeException('No trigger node found in workflow graph.');
         }
 
         $visited = [];
 
-        while ($current && !in_array($current['id'], $visited, true)) {
+        while ($current && ! in_array($current['id'], $visited, true)) {
             $visited[] = $current['id'];
 
             $stepStatus = $this->processNode($execution, $current);
@@ -96,7 +97,7 @@ class WorkflowExecutionEngine
             // Advance to next node based on edges
             $nextNodeId = $this->resolveNextNode($edges, $current['id'], $stepStatus);
 
-            if (!$nextNodeId) {
+            if (! $nextNodeId) {
                 break;
             }
 
@@ -107,37 +108,37 @@ class WorkflowExecutionEngine
 
     private function processNode(WorkflowExecution $execution, array $node): string
     {
-        $start  = microtime(true);
+        $start = microtime(true);
         $status = 'completed';
         $output = [];
-        $error  = null;
+        $error = null;
 
         try {
             $output = match ($node['type']) {
-                'trigger'   => [], // already handled by dispatch
+                'trigger' => [], // already handled by dispatch
                 'condition' => $this->conditionEvaluator->evaluate($execution, $node),
-                'action'    => $this->actionDispatcher->dispatch($execution, $node),
+                'action' => $this->actionDispatcher->dispatch($execution, $node),
                 'wait', 'delay' => ['waited' => true],
-                'branch'    => $this->conditionEvaluator->evaluate($execution, $node),
-                'loop'      => ['iterated' => true],
-                default     => [],
+                'branch' => $this->conditionEvaluator->evaluate($execution, $node),
+                'loop' => ['iterated' => true],
+                default => [],
             };
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $status = 'failed';
-            $error  = $e->getMessage();
+            $error = $e->getMessage();
         }
 
         WorkflowExecutionStep::create([
             'execution_id' => $execution->id,
-            'node_id'      => $node['id'],
-            'node_type'    => $node['type'],
-            'action_type'  => $node['action_type'] ?? null,
-            'status'       => $status,
-            'input'        => $node['config'] ?? [],
-            'output'       => $output,
-            'error'        => $error,
-            'duration_ms'  => (int) ((microtime(true) - $start) * 1000),
-            'executed_at'  => now(),
+            'node_id' => $node['id'],
+            'node_type' => $node['type'],
+            'action_type' => $node['action_type'] ?? null,
+            'status' => $status,
+            'input' => $node['config'] ?? [],
+            'output' => $output,
+            'error' => $error,
+            'duration_ms' => (int) ((microtime(true) - $start) * 1000),
+            'executed_at' => now(),
         ]);
 
         return $status;
@@ -161,15 +162,15 @@ class WorkflowExecutionEngine
 
     public function retry(WorkflowExecution $execution, string $triggeredBy): WorkflowExecution
     {
-        if (!$execution->canRetry()) {
-            throw new \RuntimeException('Execution cannot be retried.');
+        if (! $execution->canRetry()) {
+            throw new RuntimeException('Execution cannot be retried.');
         }
 
         $execution->update([
-            'status'        => WorkflowExecutionStatus::PENDING,
+            'status' => WorkflowExecutionStatus::PENDING,
             'error_message' => null,
-            'failed_at'     => null,
-            'triggered_by'  => $triggeredBy,
+            'failed_at' => null,
+            'triggered_by' => $triggeredBy,
         ]);
 
         return $execution->fresh();

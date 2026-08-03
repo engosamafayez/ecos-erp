@@ -19,6 +19,6 @@ final class BrandPolicyUpdated
         public readonly string $brandId,
         public readonly string $companyId,
         public readonly string $policyGroup,
-        public readonly array  $settings,
+        public readonly array $settings,
     ) {}
 }

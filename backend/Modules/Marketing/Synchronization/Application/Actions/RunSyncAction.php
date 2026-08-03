@@ -33,28 +33,28 @@ use Throwable;
 final class RunSyncAction
 {
     public function __construct(
-        private readonly ConnectorRegistry       $registry,
+        private readonly ConnectorRegistry $registry,
         private readonly MappingSuggestionService $suggestionService,
-        private readonly AssetLifecycleService   $lifecycleService,
+        private readonly AssetLifecycleService $lifecycleService,
     ) {}
 
     public function execute(
         MarketingConnection $connection,
-        SyncType            $syncType = SyncType::Full,
-        ?string             $triggeredBy = null,
+        SyncType $syncType = SyncType::Full,
+        ?string $triggeredBy = null,
     ): MarketingSyncLog {
         $syncLog = MarketingSyncLog::create([
             'marketing_connection_id' => $connection->id,
-            'sync_type'               => $syncType->value,
-            'status'                  => SyncStatus::Pending->value,
-            'started_at'              => now(),
-            'triggered_by'            => $triggeredBy,
+            'sync_type' => $syncType->value,
+            'status' => SyncStatus::Pending->value,
+            'started_at' => now(),
+            'triggered_by' => $triggeredBy,
         ]);
 
         if (! $this->registry->has($connection->connector_type->value)) {
             $syncLog->update([
-                'status'        => SyncStatus::Failed->value,
-                'completed_at'  => now(),
+                'status' => SyncStatus::Failed->value,
+                'completed_at' => now(),
                 'error_message' => "No connector registered for type [{$connection->connector_type->value}].",
             ]);
 
@@ -67,17 +67,17 @@ final class RunSyncAction
             $syncLog->update(['status' => SyncStatus::Running->value]);
 
             event(new SynchronizationStarted(
-                syncLog:      $syncLog,
+                syncLog: $syncLog,
                 connectionId: $connection->id,
-                syncType:     $syncType->value,
-                triggeredBy:  $triggeredBy,
+                syncType: $syncType->value,
+                triggeredBy: $triggeredBy,
             ));
 
             $discovered = $connector->discoverAssets($connection);
 
             $created = 0;
             $updated = 0;
-            $failed  = 0;
+            $failed = 0;
 
             foreach ($discovered as $rawAsset) {
                 try {
@@ -103,33 +103,33 @@ final class RunSyncAction
             }
 
             $syncLog->update([
-                'status'            => SyncStatus::Completed->value,
-                'completed_at'      => now(),
+                'status' => SyncStatus::Completed->value,
+                'completed_at' => now(),
                 'assets_discovered' => count($discovered),
-                'assets_created'    => $created,
-                'assets_updated'    => $updated,
-                'assets_failed'     => $failed,
+                'assets_created' => $created,
+                'assets_updated' => $updated,
+                'assets_failed' => $failed,
             ]);
 
             $connection->update(['last_synced_at' => now()]);
 
             event(new SynchronizationCompleted(
-                syncLog:          $syncLog,
+                syncLog: $syncLog,
                 assetsDiscovered: count($discovered),
-                assetsCreated:    $created,
-                assetsUpdated:    $updated,
-                assetsFailed:     $failed,
+                assetsCreated: $created,
+                assetsUpdated: $updated,
+                assetsFailed: $failed,
             ));
 
         } catch (Throwable $e) {
             $syncLog->update([
-                'status'        => SyncStatus::Failed->value,
-                'completed_at'  => now(),
+                'status' => SyncStatus::Failed->value,
+                'completed_at' => now(),
                 'error_message' => $e->getMessage(),
             ]);
 
             event(new SynchronizationFailed(
-                syncLog:      $syncLog,
+                syncLog: $syncLog,
                 errorMessage: $e->getMessage(),
             ));
         }
@@ -146,8 +146,8 @@ final class RunSyncAction
      *    seen again, emit ProviderAssetReconnected via AssetLifecycleService.
      *  - Fire AssetDiscovered AFTER the DB write so the event carries the real model.
      *
-     * @param  array<string, mixed> $rawAsset
-     * @return array{0: MarketingAsset, 1: bool}  [asset, isNew]
+     * @param  array<string, mixed>  $rawAsset
+     * @return array{0: MarketingAsset, 1: bool} [asset, isNew]
      */
     private function upsertAsset(MarketingConnection $connection, array $rawAsset): array
     {
@@ -156,24 +156,24 @@ final class RunSyncAction
             ->first();
 
         $previousStatus = $existing?->status?->value;
-        $isNew          = $existing === null;
+        $isNew = $existing === null;
 
         $asset = MarketingAsset::updateOrCreate(
             [
                 'connector_type' => $connection->connector_type->value,
-                'external_id'    => $rawAsset['external_id'],
+                'external_id' => $rawAsset['external_id'],
             ],
             [
-                'company_id'              => $connection->company_id,
+                'company_id' => $connection->company_id,
                 'marketing_connection_id' => $connection->id,
-                'asset_type'             => $rawAsset['asset_type'],
-                'name'                   => $rawAsset['name'],
-                'status'                 => AssetLifecycleStatus::Active->value,
-                'health_status'          => AssetHealth::Healthy->value,
-                'health_checked_at'      => now(),
-                'asset_metadata'         => $rawAsset['metadata'] ?? null,
-                'last_synced_at'         => now(),
-                'next_sync_at'           => now()->addHours(6),
+                'asset_type' => $rawAsset['asset_type'],
+                'name' => $rawAsset['name'],
+                'status' => AssetLifecycleStatus::Active->value,
+                'health_status' => AssetHealth::Healthy->value,
+                'health_checked_at' => now(),
+                'asset_metadata' => $rawAsset['metadata'] ?? null,
+                'last_synced_at' => now(),
+                'next_sync_at' => now()->addHours(6),
             ],
         );
 

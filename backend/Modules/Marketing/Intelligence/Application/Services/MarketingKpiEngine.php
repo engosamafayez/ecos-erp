@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Marketing\Intelligence\Application\Services;
 
+use BadMethodCallException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Modules\Marketing\Intelligence\Application\Dto\IntelligenceFilterDto;
@@ -60,15 +61,15 @@ final class MarketingKpiEngine
         $key = $filter->cacheKey("growth:{$level}");
 
         return Cache::remember($key, self::CACHE_TTL_SECONDS, function () use ($filter, $level) {
-            $current  = $this->computeKpis($filter, $level);
+            $current = $this->computeKpis($filter, $level);
             $previous = $this->computeKpis($filter->previousPeriodFilter(), $level);
 
             return [
-                'spend_growth'       => $this->growthPct($current['spend'], $previous['spend']),
-                'revenue_growth'     => $this->growthPct($current['revenue'], $previous['revenue']),
-                'purchases_growth'   => $this->growthPct($current['purchases'], $previous['purchases']),
-                'leads_growth'       => $this->growthPct($current['leads'], $previous['leads']),
-                'roas_growth'        => $this->growthPct($current['roas'] ?? 0, $previous['roas'] ?? 0),
+                'spend_growth' => $this->growthPct($current['spend'], $previous['spend']),
+                'revenue_growth' => $this->growthPct($current['revenue'], $previous['revenue']),
+                'purchases_growth' => $this->growthPct($current['purchases'], $previous['purchases']),
+                'leads_growth' => $this->growthPct($current['leads'], $previous['leads']),
+                'roas_growth' => $this->growthPct($current['roas'] ?? 0, $previous['roas'] ?? 0),
                 'impressions_growth' => $this->growthPct($current['impressions'], $previous['impressions']),
             ];
         });
@@ -81,9 +82,9 @@ final class MarketingKpiEngine
      */
     public function topEntities(
         IntelligenceFilterDto $filter,
-        string                $level      = 'campaign',
-        int                   $limit      = 5,
-        string                $sortMetric = 'roas',
+        string $level = 'campaign',
+        int $limit = 5,
+        string $sortMetric = 'roas',
     ): array {
         $key = $filter->cacheKey("top:{$level}:{$limit}:{$sortMetric}");
 
@@ -99,8 +100,8 @@ final class MarketingKpiEngine
      */
     public function worstEntities(
         IntelligenceFilterDto $filter,
-        string                $level      = 'campaign',
-        int                   $limit      = 5,
+        string $level = 'campaign',
+        int $limit = 5,
     ): array {
         $key = $filter->cacheKey("worst:{$level}:{$limit}");
 
@@ -117,11 +118,11 @@ final class MarketingKpiEngine
      */
     public function campaignBreakdown(
         IntelligenceFilterDto $filter,
-        string                $sortBy        = 'total_spend',
-        string                $sortDirection = 'desc',
-        ?string               $groupBy       = null,
-        int                   $perPage       = 20,
-        int                   $page          = 1,
+        string $sortBy = 'total_spend',
+        string $sortDirection = 'desc',
+        ?string $groupBy = null,
+        int $perPage = 20,
+        int $page = 1,
     ): array {
         [$start, $end] = $filter->resolvedDates();
 
@@ -150,10 +151,10 @@ final class MarketingKpiEngine
             ->where('ins.level', 'campaign')
             ->whereBetween('ins.date_start', [$start, $end])
             ->when($filter->connectionId, fn ($q) => $q->where('ins.marketing_connection_id', $filter->connectionId))
-            ->when($filter->campaignId,   fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
-            ->when($filter->companyId,    fn ($q) => $q->where('c.company_id', $filter->companyId))
-            ->when($filter->status,       fn ($q) => $q->where(DB::raw('c.status::text'), $filter->status))
-            ->when($filter->adAccountId,  fn ($q) => $q->where('c.external_account_id', $filter->adAccountId))
+            ->when($filter->campaignId, fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
+            ->when($filter->companyId, fn ($q) => $q->where('c.company_id', $filter->companyId))
+            ->when($filter->status, fn ($q) => $q->where(DB::raw('c.status::text'), $filter->status))
+            ->when($filter->adAccountId, fn ($q) => $q->where('c.external_account_id', $filter->adAccountId))
             ->groupBy('c.id', 'c.name', 'c.status', 'c.objective', 'c.daily_budget', 'c.lifetime_budget', 'c.budget_remaining');
 
         if ($groupBy && in_array($groupBy, ['status', 'objective'], true)) {
@@ -164,7 +165,7 @@ final class MarketingKpiEngine
         $col = in_array($sortBy, $allowed, true) ? $sortBy : 'total_spend';
         $dir = $sortDirection === 'asc' ? 'asc' : 'desc';
 
-        $total  = (clone $query)->getCountForPagination();
+        $total = (clone $query)->getCountForPagination();
         $offset = ($page - 1) * $perPage;
 
         $rows = (clone $query)
@@ -174,38 +175,38 @@ final class MarketingKpiEngine
             ->get();
 
         $data = $rows->map(function ($row, $rank) use ($page, $perPage) {
-            $spend    = (float) ($row->total_spend ?? 0);
-            $revenue  = (float) ($row->total_revenue ?? 0);
-            $imp      = (int)   ($row->total_impressions ?? 0);
-            $clicks   = (int)   ($row->total_clicks ?? 0);
-            $purchases = (int)  ($row->total_purchases ?? 0);
+            $spend = (float) ($row->total_spend ?? 0);
+            $revenue = (float) ($row->total_revenue ?? 0);
+            $imp = (int) ($row->total_impressions ?? 0);
+            $clicks = (int) ($row->total_clicks ?? 0);
+            $purchases = (int) ($row->total_purchases ?? 0);
 
             return [
-                'rank'             => ($page - 1) * $perPage + $rank + 1,
-                'id'               => $row->id,
-                'name'             => $row->name,
-                'status'           => $row->status,
-                'objective'        => $row->objective,
-                'daily_budget'     => $row->daily_budget,
-                'lifetime_budget'  => $row->lifetime_budget,
+                'rank' => ($page - 1) * $perPage + $rank + 1,
+                'id' => $row->id,
+                'name' => $row->name,
+                'status' => $row->status,
+                'objective' => $row->objective,
+                'daily_budget' => $row->daily_budget,
+                'lifetime_budget' => $row->lifetime_budget,
                 'budget_remaining' => $row->budget_remaining,
-                'spend'            => $spend,
-                'revenue'          => $revenue,
-                'roas'             => $spend > 0 ? round($revenue / $spend, 4) : null,
-                'roi'              => $spend > 0 ? round(($revenue - $spend) / $spend * 100, 2) : null,
-                'cpa'              => $purchases > 0 ? round($spend / $purchases, 4) : null,
-                'ctr'              => $imp > 0 ? round($clicks / $imp, 6) : null,
-                'cpc'              => $clicks > 0 ? round($spend / $clicks, 4) : null,
-                'cpm'              => $imp > 0 ? round($spend / $imp * 1000, 4) : null,
-                'purchases'        => $purchases,
-                'leads'            => (int) ($row->total_leads ?? 0),
-                'impressions'      => $imp,
-                'clicks'           => $clicks,
-                'reach'            => (int) ($row->total_reach ?? 0),
-                'messages'         => (int) ($row->total_messages ?? 0),
-                'unique_clicks'    => (int) ($row->total_unique_clicks ?? 0),
-                'engagement'       => (int) ($row->total_engagement ?? 0),
-                'last_synced_at'   => $row->last_synced_at,
+                'spend' => $spend,
+                'revenue' => $revenue,
+                'roas' => $spend > 0 ? round($revenue / $spend, 4) : null,
+                'roi' => $spend > 0 ? round(($revenue - $spend) / $spend * 100, 2) : null,
+                'cpa' => $purchases > 0 ? round($spend / $purchases, 4) : null,
+                'ctr' => $imp > 0 ? round($clicks / $imp, 6) : null,
+                'cpc' => $clicks > 0 ? round($spend / $clicks, 4) : null,
+                'cpm' => $imp > 0 ? round($spend / $imp * 1000, 4) : null,
+                'purchases' => $purchases,
+                'leads' => (int) ($row->total_leads ?? 0),
+                'impressions' => $imp,
+                'clicks' => $clicks,
+                'reach' => (int) ($row->total_reach ?? 0),
+                'messages' => (int) ($row->total_messages ?? 0),
+                'unique_clicks' => (int) ($row->total_unique_clicks ?? 0),
+                'engagement' => (int) ($row->total_engagement ?? 0),
+                'last_synced_at' => $row->last_synced_at,
             ];
         })->all();
 
@@ -219,10 +220,10 @@ final class MarketingKpiEngine
      */
     public function adBreakdown(
         IntelligenceFilterDto $filter,
-        string                $sortBy        = 'total_spend',
-        string                $sortDirection = 'desc',
-        int                   $perPage       = 20,
-        int                   $page          = 1,
+        string $sortBy = 'total_spend',
+        string $sortDirection = 'desc',
+        int $perPage = 20,
+        int $page = 1,
     ): array {
         [$start, $end] = $filter->resolvedDates();
 
@@ -249,17 +250,17 @@ final class MarketingKpiEngine
             ->where('ins.level', 'ad')
             ->whereBetween('ins.date_start', [$start, $end])
             ->when($filter->connectionId, fn ($q) => $q->where('ins.marketing_connection_id', $filter->connectionId))
-            ->when($filter->campaignId,   fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
-            ->when($filter->adSetId,      fn ($q) => $q->where('ins.marketing_campaign_ad_set_id', $filter->adSetId))
-            ->when($filter->companyId,    fn ($q) => $q->where('c.company_id', $filter->companyId))
-            ->when($filter->status,       fn ($q) => $q->where(DB::raw('ad.status::text'), $filter->status))
+            ->when($filter->campaignId, fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
+            ->when($filter->adSetId, fn ($q) => $q->where('ins.marketing_campaign_ad_set_id', $filter->adSetId))
+            ->when($filter->companyId, fn ($q) => $q->where('c.company_id', $filter->companyId))
+            ->when($filter->status, fn ($q) => $q->where(DB::raw('ad.status::text'), $filter->status))
             ->groupBy('ad.id', 'ad.name', 'ad.status', 'ad.marketing_campaign_id', 'c.name');
 
         $allowed = ['total_spend', 'total_revenue', 'total_purchases', 'total_leads', 'total_clicks', 'total_impressions'];
         $col = in_array($sortBy, $allowed, true) ? $sortBy : 'total_spend';
         $dir = $sortDirection === 'asc' ? 'asc' : 'desc';
 
-        $total  = (clone $query)->getCountForPagination();
+        $total = (clone $query)->getCountForPagination();
         $offset = ($page - 1) * $perPage;
 
         $rows = (clone $query)
@@ -269,34 +270,34 @@ final class MarketingKpiEngine
             ->get();
 
         $data = $rows->map(function ($row, $rank) use ($page, $perPage) {
-            $spend    = (float) ($row->total_spend ?? 0);
-            $revenue  = (float) ($row->total_revenue ?? 0);
-            $imp      = (int)   ($row->total_impressions ?? 0);
-            $clicks   = (int)   ($row->total_clicks ?? 0);
-            $purchases = (int)  ($row->total_purchases ?? 0);
+            $spend = (float) ($row->total_spend ?? 0);
+            $revenue = (float) ($row->total_revenue ?? 0);
+            $imp = (int) ($row->total_impressions ?? 0);
+            $clicks = (int) ($row->total_clicks ?? 0);
+            $purchases = (int) ($row->total_purchases ?? 0);
 
             return [
-                'rank'          => ($page - 1) * $perPage + $rank + 1,
-                'id'            => $row->id,
-                'name'          => $row->name,
-                'status'        => $row->status,
-                'campaign_id'   => $row->marketing_campaign_id,
+                'rank' => ($page - 1) * $perPage + $rank + 1,
+                'id' => $row->id,
+                'name' => $row->name,
+                'status' => $row->status,
+                'campaign_id' => $row->marketing_campaign_id,
                 'campaign_name' => $row->campaign_name,
-                'spend'         => $spend,
-                'revenue'       => $revenue,
-                'roas'          => $spend > 0 ? round($revenue / $spend, 4) : null,
-                'roi'           => $spend > 0 ? round(($revenue - $spend) / $spend * 100, 2) : null,
-                'cpa'           => $purchases > 0 ? round($spend / $purchases, 4) : null,
-                'ctr'           => $imp > 0 ? round($clicks / $imp, 6) : null,
-                'cpc'           => $clicks > 0 ? round($spend / $clicks, 4) : null,
-                'cpm'           => $imp > 0 ? round($spend / $imp * 1000, 4) : null,
-                'purchases'     => $purchases,
-                'leads'         => (int) ($row->total_leads ?? 0),
-                'impressions'   => $imp,
-                'clicks'        => $clicks,
-                'reach'         => (int) ($row->total_reach ?? 0),
+                'spend' => $spend,
+                'revenue' => $revenue,
+                'roas' => $spend > 0 ? round($revenue / $spend, 4) : null,
+                'roi' => $spend > 0 ? round(($revenue - $spend) / $spend * 100, 2) : null,
+                'cpa' => $purchases > 0 ? round($spend / $purchases, 4) : null,
+                'ctr' => $imp > 0 ? round($clicks / $imp, 6) : null,
+                'cpc' => $clicks > 0 ? round($spend / $clicks, 4) : null,
+                'cpm' => $imp > 0 ? round($spend / $imp * 1000, 4) : null,
+                'purchases' => $purchases,
+                'leads' => (int) ($row->total_leads ?? 0),
+                'impressions' => $imp,
+                'clicks' => $clicks,
+                'reach' => (int) ($row->total_reach ?? 0),
                 'unique_clicks' => (int) ($row->total_unique_clicks ?? 0),
-                'engagement'    => (int) ($row->total_engagement ?? 0),
+                'engagement' => (int) ($row->total_engagement ?? 0),
                 'last_synced_at' => $row->last_synced_at,
             ];
         })->all();
@@ -311,10 +312,10 @@ final class MarketingKpiEngine
      */
     public function creativeBreakdown(
         IntelligenceFilterDto $filter,
-        string                $sortBy        = 'total_revenue',
-        string                $sortDirection = 'desc',
-        int                   $perPage       = 20,
-        int                   $page          = 1,
+        string $sortBy = 'total_revenue',
+        string $sortDirection = 'desc',
+        int $perPage = 20,
+        int $page = 1,
     ): array {
         [$start, $end] = $filter->resolvedDates();
 
@@ -348,8 +349,8 @@ final class MarketingKpiEngine
             ->whereNotNull('ins.marketing_campaign_ad_id')
             ->whereBetween('ins.date_start', [$start, $end])
             ->when($filter->connectionId, fn ($q) => $q->where('ins.marketing_connection_id', $filter->connectionId))
-            ->when($filter->campaignId,   fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
-            ->when($filter->companyId,    fn ($q) => $q->where('c.company_id', $filter->companyId))
+            ->when($filter->campaignId, fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
+            ->when($filter->companyId, fn ($q) => $q->where('c.company_id', $filter->companyId))
             ->groupBy(
                 'cr.id', 'cr.external_creative_id', 'cr.creative_type',
                 'cr.headline', 'cr.primary_text', 'cr.call_to_action',
@@ -361,7 +362,7 @@ final class MarketingKpiEngine
         $col = in_array($sortBy, $allowed, true) ? $sortBy : 'total_revenue';
         $dir = $sortDirection === 'asc' ? 'asc' : 'desc';
 
-        $total  = (clone $query)->getCountForPagination();
+        $total = (clone $query)->getCountForPagination();
         $offset = ($page - 1) * $perPage;
 
         $rows = (clone $query)
@@ -371,39 +372,39 @@ final class MarketingKpiEngine
             ->get();
 
         $data = $rows->map(function ($row, $rank) use ($page, $perPage) {
-            $spend    = (float) ($row->total_spend ?? 0);
-            $revenue  = (float) ($row->total_revenue ?? 0);
-            $imp      = (int)   ($row->total_impressions ?? 0);
-            $clicks   = (int)   ($row->total_clicks ?? 0);
-            $purchases = (int)  ($row->total_purchases ?? 0);
+            $spend = (float) ($row->total_spend ?? 0);
+            $revenue = (float) ($row->total_revenue ?? 0);
+            $imp = (int) ($row->total_impressions ?? 0);
+            $clicks = (int) ($row->total_clicks ?? 0);
+            $purchases = (int) ($row->total_purchases ?? 0);
 
             return [
-                'rank'                => ($page - 1) * $perPage + $rank + 1,
-                'id'                  => $row->id,
+                'rank' => ($page - 1) * $perPage + $rank + 1,
+                'id' => $row->id,
                 'external_creative_id' => $row->external_creative_id,
-                'creative_type'       => $row->creative_type,
-                'headline'            => $row->headline,
-                'primary_text'        => $row->primary_text,
-                'call_to_action'      => $row->call_to_action,
-                'image_url'           => $row->image_url,
-                'video_url'           => $row->video_url,
-                'thumbnail_url'       => $row->thumbnail_url,
-                'image_hash'          => $row->image_hash,
-                'campaign_id'         => $row->marketing_campaign_id,
-                'campaign_name'       => $row->campaign_name,
-                'spend'               => $spend,
-                'revenue'             => $revenue,
-                'roas'                => $spend > 0 ? round($revenue / $spend, 4) : null,
-                'cpa'                 => $purchases > 0 ? round($spend / $purchases, 4) : null,
-                'ctr'                 => $imp > 0 ? round($clicks / $imp, 6) : null,
-                'cpc'                 => $clicks > 0 ? round($spend / $clicks, 4) : null,
-                'purchases'           => $purchases,
-                'leads'               => (int) ($row->total_leads ?? 0),
-                'impressions'         => $imp,
-                'clicks'              => $clicks,
-                'reach'               => (int) ($row->total_reach ?? 0),
-                'unique_clicks'       => (int) ($row->total_unique_clicks ?? 0),
-                'last_synced_at'      => $row->last_synced_at,
+                'creative_type' => $row->creative_type,
+                'headline' => $row->headline,
+                'primary_text' => $row->primary_text,
+                'call_to_action' => $row->call_to_action,
+                'image_url' => $row->image_url,
+                'video_url' => $row->video_url,
+                'thumbnail_url' => $row->thumbnail_url,
+                'image_hash' => $row->image_hash,
+                'campaign_id' => $row->marketing_campaign_id,
+                'campaign_name' => $row->campaign_name,
+                'spend' => $spend,
+                'revenue' => $revenue,
+                'roas' => $spend > 0 ? round($revenue / $spend, 4) : null,
+                'cpa' => $purchases > 0 ? round($spend / $purchases, 4) : null,
+                'ctr' => $imp > 0 ? round($clicks / $imp, 6) : null,
+                'cpc' => $clicks > 0 ? round($spend / $clicks, 4) : null,
+                'purchases' => $purchases,
+                'leads' => (int) ($row->total_leads ?? 0),
+                'impressions' => $imp,
+                'clicks' => $clicks,
+                'reach' => (int) ($row->total_reach ?? 0),
+                'unique_clicks' => (int) ($row->total_unique_clicks ?? 0),
+                'last_synced_at' => $row->last_synced_at,
             ];
         })->all();
 
@@ -417,13 +418,13 @@ final class MarketingKpiEngine
      */
     public function trends(
         IntelligenceFilterDto $filter,
-        string                $granularity = 'day',   // day | week | month
-        string                $level       = 'campaign',
+        string $granularity = 'day',   // day | week | month
+        string $level = 'campaign',
     ): array {
         [$start, $end] = $filter->resolvedDates();
 
         $dateTrunc = match ($granularity) {
-            'week'  => "DATE_TRUNC('week', ins.date_start)",
+            'week' => "DATE_TRUNC('week', ins.date_start)",
             'month' => "DATE_TRUNC('month', ins.date_start)",
             default => 'ins.date_start',
         };
@@ -447,35 +448,35 @@ final class MarketingKpiEngine
             ->where('ins.level', $level)
             ->whereBetween('ins.date_start', [$start, $end])
             ->when($filter->connectionId, fn ($q) => $q->where('ins.marketing_connection_id', $filter->connectionId))
-            ->when($filter->campaignId,   fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
-            ->when($filter->companyId,    fn ($q) => $q->where('c.company_id', $filter->companyId))
-            ->when($filter->status,       fn ($q) => $q->where(DB::raw('c.status::text'), $filter->status))
+            ->when($filter->campaignId, fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
+            ->when($filter->companyId, fn ($q) => $q->where('c.company_id', $filter->companyId))
+            ->when($filter->status, fn ($q) => $q->where(DB::raw('c.status::text'), $filter->status))
             ->groupByRaw($dateTrunc)
             ->orderByRaw($dateTrunc)
             ->get();
 
         return $rows->map(function ($row) {
-            $spend    = (float) ($row->spend ?? 0);
-            $revenue  = (float) ($row->revenue ?? 0);
-            $imp      = (int)   ($row->impressions ?? 0);
-            $clicks   = (int)   ($row->clicks ?? 0);
-            $purchases = (int)  ($row->purchases ?? 0);
+            $spend = (float) ($row->spend ?? 0);
+            $revenue = (float) ($row->revenue ?? 0);
+            $imp = (int) ($row->impressions ?? 0);
+            $clicks = (int) ($row->clicks ?? 0);
+            $purchases = (int) ($row->purchases ?? 0);
 
             return [
-                'period'      => is_string($row->period) ? substr($row->period, 0, 10) : $row->period,
-                'spend'       => $spend,
-                'revenue'     => $revenue,
-                'roas'        => $spend > 0 ? round($revenue / $spend, 4) : null,
-                'cpa'         => $purchases > 0 ? round($spend / $purchases, 4) : null,
-                'ctr'         => $imp > 0 ? round($clicks / $imp, 6) : null,
-                'cpc'         => $clicks > 0 ? round($spend / $clicks, 4) : null,
-                'cpm'         => $imp > 0 ? round($spend / $imp * 1000, 4) : null,
-                'purchases'   => $purchases,
-                'leads'       => (int) ($row->leads ?? 0),
+                'period' => is_string($row->period) ? substr($row->period, 0, 10) : $row->period,
+                'spend' => $spend,
+                'revenue' => $revenue,
+                'roas' => $spend > 0 ? round($revenue / $spend, 4) : null,
+                'cpa' => $purchases > 0 ? round($spend / $purchases, 4) : null,
+                'ctr' => $imp > 0 ? round($clicks / $imp, 6) : null,
+                'cpc' => $clicks > 0 ? round($spend / $clicks, 4) : null,
+                'cpm' => $imp > 0 ? round($spend / $imp * 1000, 4) : null,
+                'purchases' => $purchases,
+                'leads' => (int) ($row->leads ?? 0),
                 'impressions' => $imp,
-                'clicks'      => $clicks,
-                'reach'       => (int) ($row->reach ?? 0),
-                'messages'    => (int) ($row->messages ?? 0),
+                'clicks' => $clicks,
+                'reach' => (int) ($row->reach ?? 0),
+                'messages' => (int) ($row->messages ?? 0),
             ];
         })->all();
     }
@@ -495,7 +496,7 @@ final class MarketingKpiEngine
 
         $rows = DB::table('marketing_campaign_insights as ins')
             ->join('marketing_campaigns as c', 'c.id', '=', 'ins.marketing_campaign_id')
-            ->selectRaw("
+            ->selectRaw('
                 c.id,
                 c.name,
                 c.status::text as status,
@@ -505,52 +506,52 @@ final class MarketingKpiEngine
                 SUM(ins.spend)          as total_spend,
                 SUM(ins.purchase_value) as total_revenue,
                 SUM(ins.purchases)      as total_purchases
-            ")
+            ')
             ->where('ins.level', 'campaign')
             ->whereBetween('ins.date_start', [$start, $end])
             ->when($filter->connectionId, fn ($q) => $q->where('ins.marketing_connection_id', $filter->connectionId))
-            ->when($filter->companyId,    fn ($q) => $q->where('c.company_id', $filter->companyId))
-            ->when($filter->status,       fn ($q) => $q->where(DB::raw('c.status::text'), $filter->status))
+            ->when($filter->companyId, fn ($q) => $q->where('c.company_id', $filter->companyId))
+            ->when($filter->status, fn ($q) => $q->where(DB::raw('c.status::text'), $filter->status))
             ->groupBy('c.id', 'c.name', 'c.status', 'c.daily_budget', 'c.lifetime_budget', 'c.budget_remaining')
             ->orderByDesc('total_spend')
             ->get();
 
-        $totalBudget    = 0.0;
-        $totalSpend     = 0.0;
-        $campaigns      = [];
-        $alerts         = [];
+        $totalBudget = 0.0;
+        $totalSpend = 0.0;
+        $campaigns = [];
+        $alerts = [];
 
         foreach ($rows as $row) {
-            $spend       = (float) ($row->total_spend ?? 0);
-            $budget      = (float) ($row->lifetime_budget ?? ($row->daily_budget ?? 0));
-            $remaining   = (float) ($row->budget_remaining ?? max(0, $budget - $spend));
+            $spend = (float) ($row->total_spend ?? 0);
+            $budget = (float) ($row->lifetime_budget ?? ($row->daily_budget ?? 0));
+            $remaining = (float) ($row->budget_remaining ?? max(0, $budget - $spend));
             $utilization = $budget > 0 ? round($spend / $budget * 100, 2) : null;
 
             $totalBudget += $budget;
-            $totalSpend  += $spend;
+            $totalSpend += $spend;
 
             $isOverspending = $budget > 0 && $spend > $budget * 1.05;
 
             $campaigns[] = [
-                'id'               => $row->id,
-                'name'             => $row->name,
-                'status'           => $row->status,
-                'budget_type'      => $row->lifetime_budget ? 'LIFETIME' : ($row->daily_budget ? 'DAILY' : 'NONE'),
-                'budget'           => $budget,
-                'spend'            => $spend,
-                'remaining'        => $remaining,
-                'utilization_pct'  => $utilization,
-                'is_overspending'  => $isOverspending,
-                'revenue'          => (float) ($row->total_revenue ?? 0),
-                'purchases'        => (int)   ($row->total_purchases ?? 0),
+                'id' => $row->id,
+                'name' => $row->name,
+                'status' => $row->status,
+                'budget_type' => $row->lifetime_budget ? 'LIFETIME' : ($row->daily_budget ? 'DAILY' : 'NONE'),
+                'budget' => $budget,
+                'spend' => $spend,
+                'remaining' => $remaining,
+                'utilization_pct' => $utilization,
+                'is_overspending' => $isOverspending,
+                'revenue' => (float) ($row->total_revenue ?? 0),
+                'purchases' => (int) ($row->total_purchases ?? 0),
             ];
 
             if ($isOverspending) {
                 $alerts[] = [
-                    'campaign_id'   => $row->id,
+                    'campaign_id' => $row->id,
                     'campaign_name' => $row->name,
-                    'budget'        => $budget,
-                    'spend'         => $spend,
+                    'budget' => $budget,
+                    'spend' => $spend,
                     'overspend_pct' => round(($spend - $budget) / $budget * 100, 2),
                 ];
             }
@@ -558,20 +559,20 @@ final class MarketingKpiEngine
 
         // Attach spend share
         foreach ($campaigns as &$c) {
-            $c['spend_share_pct']  = $totalSpend > 0 ? round($c['spend'] / $totalSpend * 100, 2) : null;
+            $c['spend_share_pct'] = $totalSpend > 0 ? round($c['spend'] / $totalSpend * 100, 2) : null;
             $c['budget_share_pct'] = $totalBudget > 0 ? round($c['budget'] / $totalBudget * 100, 2) : null;
         }
         unset($c);
 
         return [
             'summary' => [
-                'total_budget'           => $totalBudget,
-                'total_spend'            => $totalSpend,
-                'remaining_budget'       => max(0, $totalBudget - $totalSpend),
+                'total_budget' => $totalBudget,
+                'total_spend' => $totalSpend,
+                'remaining_budget' => max(0, $totalBudget - $totalSpend),
                 'budget_utilization_pct' => $totalBudget > 0 ? round($totalSpend / $totalBudget * 100, 2) : null,
-                'overspending_count'     => count($alerts),
+                'overspending_count' => count($alerts),
             ],
-            'campaigns'           => $campaigns,
+            'campaigns' => $campaigns,
             'overspending_alerts' => $alerts,
         ];
     }
@@ -589,7 +590,7 @@ final class MarketingKpiEngine
             } else {
                 Cache::tags(['mkt_intel'])->flush();
             }
-        } catch (\BadMethodCallException) {
+        } catch (BadMethodCallException) {
             // Tag-based cache not available — individual keys expire naturally via TTL
         }
     }
@@ -607,7 +608,7 @@ final class MarketingKpiEngine
 
         $query = DB::table('marketing_campaign_insights as ins')
             ->when($needsCampaignJoin, fn ($q) => $q->join('marketing_campaigns as c', 'c.id', '=', 'ins.marketing_campaign_id'))
-            ->selectRaw("
+            ->selectRaw('
                 COALESCE(SUM(ins.spend), 0)          as total_spend,
                 COALESCE(SUM(ins.purchase_value), 0) as total_revenue,
                 COALESCE(SUM(ins.impressions), 0)    as total_impressions,
@@ -618,40 +619,40 @@ final class MarketingKpiEngine
                 COALESCE(SUM(ins.leads), 0)          as total_leads,
                 COALESCE(SUM(ins.messages), 0)       as total_messages,
                 COALESCE(SUM(ins.engagement), 0)     as total_engagement
-            ")
+            ')
             ->where('ins.level', $level)
             ->whereBetween('ins.date_start', [$start, $end])
             ->when($filter->connectionId, fn ($q) => $q->where('ins.marketing_connection_id', $filter->connectionId))
-            ->when($filter->campaignId,   fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
-            ->when($filter->adSetId,      fn ($q) => $q->where('ins.marketing_campaign_ad_set_id', $filter->adSetId))
-            ->when($filter->companyId,    fn ($q) => $q->where('c.company_id', $filter->companyId))
-            ->when($filter->status,       fn ($q) => $q->where(DB::raw('c.status::text'), $filter->status))
-            ->when($filter->adAccountId,  fn ($q) => $q->where('c.external_account_id', $filter->adAccountId));
+            ->when($filter->campaignId, fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
+            ->when($filter->adSetId, fn ($q) => $q->where('ins.marketing_campaign_ad_set_id', $filter->adSetId))
+            ->when($filter->companyId, fn ($q) => $q->where('c.company_id', $filter->companyId))
+            ->when($filter->status, fn ($q) => $q->where(DB::raw('c.status::text'), $filter->status))
+            ->when($filter->adAccountId, fn ($q) => $q->where('c.external_account_id', $filter->adAccountId));
 
         $row = $query->first();
 
-        $spend    = (float) ($row->total_spend ?? 0);
-        $revenue  = (float) ($row->total_revenue ?? 0);
-        $imp      = (int)   ($row->total_impressions ?? 0);
-        $clicks   = (int)   ($row->total_clicks ?? 0);
-        $purchases = (int)  ($row->total_purchases ?? 0);
+        $spend = (float) ($row->total_spend ?? 0);
+        $revenue = (float) ($row->total_revenue ?? 0);
+        $imp = (int) ($row->total_impressions ?? 0);
+        $clicks = (int) ($row->total_clicks ?? 0);
+        $purchases = (int) ($row->total_purchases ?? 0);
 
         return [
-            'spend'         => $spend,
-            'revenue'       => $revenue,
-            'roas'          => $spend > 0 ? round($revenue / $spend, 4) : null,
-            'cpa'           => $purchases > 0 ? round($spend / $purchases, 4) : null,
-            'ctr'           => $imp > 0 ? round($clicks / $imp, 6) : null,
-            'cpc'           => $clicks > 0 ? round($spend / $clicks, 4) : null,
-            'cpm'           => $imp > 0 ? round($spend / $imp * 1000, 4) : null,
-            'purchases'     => $purchases,
-            'leads'         => (int) ($row->total_leads ?? 0),
-            'impressions'   => $imp,
-            'clicks'        => $clicks,
-            'reach'         => (int) ($row->total_reach ?? 0),
-            'messages'      => (int) ($row->total_messages ?? 0),
+            'spend' => $spend,
+            'revenue' => $revenue,
+            'roas' => $spend > 0 ? round($revenue / $spend, 4) : null,
+            'cpa' => $purchases > 0 ? round($spend / $purchases, 4) : null,
+            'ctr' => $imp > 0 ? round($clicks / $imp, 6) : null,
+            'cpc' => $clicks > 0 ? round($spend / $clicks, 4) : null,
+            'cpm' => $imp > 0 ? round($spend / $imp * 1000, 4) : null,
+            'purchases' => $purchases,
+            'leads' => (int) ($row->total_leads ?? 0),
+            'impressions' => $imp,
+            'clicks' => $clicks,
+            'reach' => (int) ($row->total_reach ?? 0),
+            'messages' => (int) ($row->total_messages ?? 0),
             'unique_clicks' => (int) ($row->total_unique_clicks ?? 0),
-            'engagement'    => (int) ($row->total_engagement ?? 0),
+            'engagement' => (int) ($row->total_engagement ?? 0),
         ];
     }
 
@@ -660,24 +661,24 @@ final class MarketingKpiEngine
      */
     private function queryRankedEntities(
         IntelligenceFilterDto $filter,
-        string                $level,
-        int                   $limit,
-        string                $sortMetric,
-        string                $direction,
+        string $level,
+        int $limit,
+        string $sortMetric,
+        string $direction,
     ): array {
         [$start, $end] = $filter->resolvedDates();
 
         $entityIdCol = match ($level) {
             'adset' => 'ins.marketing_campaign_ad_set_id',
-            'ad'    => 'ins.marketing_campaign_ad_id',
+            'ad' => 'ins.marketing_campaign_ad_id',
             default => 'ins.marketing_campaign_id',
         };
 
         // Campaign level reuses the existing `c` join — no extra join needed.
         // Adset/ad levels need their own join to fetch the entity name.
         $nameJoin = match ($level) {
-            'adset' => "LEFT JOIN marketing_campaign_ad_sets as ent ON ent.id = ins.marketing_campaign_ad_set_id",
-            'ad'    => "LEFT JOIN marketing_campaign_ads as ent ON ent.id = ins.marketing_campaign_ad_id",
+            'adset' => 'LEFT JOIN marketing_campaign_ad_sets as ent ON ent.id = ins.marketing_campaign_ad_set_id',
+            'ad' => 'LEFT JOIN marketing_campaign_ads as ent ON ent.id = ins.marketing_campaign_ad_id',
             default => null,
         };
         $nameExpr = $nameJoin !== null ? 'ent.name' : 'c.name';
@@ -704,56 +705,58 @@ final class MarketingKpiEngine
             ->where('ins.level', $level)
             ->whereBetween('ins.date_start', [$start, $end])
             ->when($filter->connectionId, fn ($q) => $q->where('ins.marketing_connection_id', $filter->connectionId))
-            ->when($filter->campaignId,   fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
-            ->when($filter->companyId,    fn ($q) => $q->where('c.company_id', $filter->companyId))
+            ->when($filter->campaignId, fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
+            ->when($filter->companyId, fn ($q) => $q->where('c.company_id', $filter->companyId))
             ->groupByRaw("{$entityIdCol}, ins.marketing_campaign_id, {$nameExpr}")
             ->having('total_spend', '>', 0)
             ->get();
 
         return $rows->map(function ($row) use ($sortMetric) {
-            $spend    = (float) ($row->total_spend ?? 0);
-            $revenue  = (float) ($row->total_revenue ?? 0);
-            $imp      = (int)   ($row->total_impressions ?? 0);
-            $clicks   = (int)   ($row->total_clicks ?? 0);
-            $purchases = (int)  ($row->total_purchases ?? 0);
+            $spend = (float) ($row->total_spend ?? 0);
+            $revenue = (float) ($row->total_revenue ?? 0);
+            $imp = (int) ($row->total_impressions ?? 0);
+            $clicks = (int) ($row->total_clicks ?? 0);
+            $purchases = (int) ($row->total_purchases ?? 0);
 
             return [
-                'entity_id'   => $row->entity_id,
-                'name'        => $row->entity_name,
+                'entity_id' => $row->entity_id,
+                'name' => $row->entity_name,
                 'campaign_id' => $row->marketing_campaign_id,
-                'spend'       => $spend,
-                'revenue'     => $revenue,
-                'roas'        => $spend > 0 ? round($revenue / $spend, 4) : null,
-                'cpa'         => $purchases > 0 ? round($spend / $purchases, 4) : null,
-                'ctr'         => $imp > 0 ? round($clicks / $imp, 6) : null,
-                'purchases'   => $purchases,
-                'leads'       => (int) ($row->total_leads ?? 0),
+                'spend' => $spend,
+                'revenue' => $revenue,
+                'roas' => $spend > 0 ? round($revenue / $spend, 4) : null,
+                'cpa' => $purchases > 0 ? round($spend / $purchases, 4) : null,
+                'ctr' => $imp > 0 ? round($clicks / $imp, 6) : null,
+                'purchases' => $purchases,
+                'leads' => (int) ($row->total_leads ?? 0),
                 'impressions' => $imp,
-                'clicks'      => $clicks,
-                '_sort_key'   => match ($sortMetric) {
-                    'roas'      => $spend > 0 ? $revenue / $spend : null,
-                    'ctr'       => $imp > 0 ? $clicks / $imp : null,
+                'clicks' => $clicks,
+                '_sort_key' => match ($sortMetric) {
+                    'roas' => $spend > 0 ? $revenue / $spend : null,
+                    'ctr' => $imp > 0 ? $clicks / $imp : null,
                     'purchases' => $purchases,
-                    'leads'     => (int) ($row->total_leads ?? 0),
-                    default     => $spend,
+                    'leads' => (int) ($row->total_leads ?? 0),
+                    default => $spend,
                 },
             ];
         })
-        ->sortBy('_sort_key', descending: $direction === 'desc')
-        ->values()
-        ->take($limit)
-        ->map(function ($item) {
-            unset($item['_sort_key']);
-            return $item;
-        })
-        ->all();
+            ->sortBy('_sort_key', descending: $direction === 'desc')
+            ->values()
+            ->take($limit)
+            ->map(function ($item) {
+                unset($item['_sort_key']);
+
+                return $item;
+            })
+            ->all();
     }
 
     private function growthPct(float $current, float $previous): ?float
     {
-        if ($previous == 0) {
+        if ($previous === 0) {
             return $current > 0 ? 100.0 : null;
         }
+
         return round(($current - $previous) / $previous * 100, 2);
     }
 }

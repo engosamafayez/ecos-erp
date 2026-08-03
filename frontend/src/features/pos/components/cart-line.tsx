@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ type CartLineProps = {
 
 export const CartLineRow = forwardRef<CartLineHandle, CartLineProps>(
   function CartLineRow({ line, onRemove, onQtyChange, disabled, isSelected, onSelect }, ref) {
+    const { money } = useFormatter();
     const qty = parseFloat(line.quantity);
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState('');
@@ -129,7 +131,7 @@ export const CartLineRow = forwardRef<CartLineHandle, CartLineProps>(
         {/* Line total + delete */}
         <div className="flex items-center gap-1 shrink-0">
           <span className="text-sm font-semibold tabular-nums">
-            {line.line_total.amount}
+            {money(Number(line.line_total.amount), line.line_total.currency)}
           </span>
           <Button
             variant="ghost"

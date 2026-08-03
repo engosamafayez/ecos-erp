@@ -14,7 +14,7 @@ return new class extends Migration
         // Verify no violations before adding — safe on fresh/seeded dev databases.
         DB::statement(
             'ALTER TABLE preparation_wave_orders '
-            . 'ADD CONSTRAINT uq_prep_wave_orders_company_order UNIQUE (company_id, order_id)'
+            .'ADD CONSTRAINT uq_prep_wave_orders_company_order UNIQUE (company_id, order_id)',
         );
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     {
         DB::statement(
             'ALTER TABLE preparation_wave_orders '
-            . 'DROP INDEX uq_prep_wave_orders_company_order'
+            .'DROP INDEX uq_prep_wave_orders_company_order',
         );
     }
 };

@@ -30,8 +30,8 @@ return new class extends Migration
             ->count();
 
         if ($nullCount > 0) {
-            throw new \RuntimeException(
-                "Brand ownership enforcement aborted: {$nullCount} active product(s) still have " .
+            throw new RuntimeException(
+                "Brand ownership enforcement aborted: {$nullCount} active product(s) still have ".
                 'brand_id = NULL. Assign them via the Product form, then re-run this migration.',
             );
         }

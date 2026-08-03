@@ -22,17 +22,17 @@ final class CartLineResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'             => $this->line->id,
-            'product_id'     => $this->line->productId,
-            'product_name'   => $this->line->productName,
-            'sku'            => $this->line->sku,
-            'quantity'       => $this->line->quantity->value(),
-            'unit_price'     => $this->line->unitPrice->amount(),
-            'currency'       => $this->line->unitPrice->currency(),
-            'discount_type'  => $this->line->discountType?->value,
+            'id' => $this->line->id,
+            'product_id' => $this->line->productId,
+            'product_name' => $this->line->productName,
+            'sku' => $this->line->sku,
+            'quantity' => $this->line->quantity->value(),
+            'unit_price' => $this->line->unitPrice->amount(),
+            'currency' => $this->line->unitPrice->currency(),
+            'discount_type' => $this->line->discountType?->value,
             'discount_value' => $this->line->discountValue,
-            'line_total'     => $this->line->lineTotal->amount(),
-            'sort_order'     => $this->line->sortOrder,
+            'line_total' => $this->line->lineTotal->amount(),
+            'sort_order' => $this->line->sortOrder,
         ];
     }
 }

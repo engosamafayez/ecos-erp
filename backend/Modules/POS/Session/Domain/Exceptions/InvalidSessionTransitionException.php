@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\POS\Session\Domain\Exceptions;
 
+use DomainException;
 use Modules\POS\Shared\Domain\Enums\SessionStatus;
 
-final class InvalidSessionTransitionException extends \DomainException
+final class InvalidSessionTransitionException extends DomainException
 {
     public static function cannotTransition(
-        string        $sessionId,
+        string $sessionId,
         SessionStatus $from,
         SessionStatus $to,
     ): self {

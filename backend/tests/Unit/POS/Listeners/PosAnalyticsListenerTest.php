@@ -11,6 +11,7 @@ use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Events\SaleItemPayload;
 use Modules\POS\Application\Events\SalePaymentPayload;
 use Modules\POS\Application\Listeners\PosAnalyticsListener;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -27,7 +28,7 @@ final class PosAnalyticsListenerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->listener = new PosAnalyticsListener();
+        $this->listener = new PosAnalyticsListener;
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────
@@ -104,7 +105,7 @@ final class PosAnalyticsListenerTest extends TestCase
 
     public function test_logs_error_on_db_failure_and_does_not_rethrow(): void
     {
-        DB::shouldReceive('transaction')->andThrow(new \RuntimeException('DB timeout'));
+        DB::shouldReceive('transaction')->andThrow(new RuntimeException('DB timeout'));
 
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Failed to record analytics events'));
@@ -122,26 +123,26 @@ final class PosAnalyticsListenerTest extends TestCase
         }
 
         return new SaleFinalized(
-            eventId:       'event-uuid-001',
-            occurredAt:    new DateTimeImmutable('now'),
-            saleId:        self::SALE_ID,
+            eventId: 'event-uuid-001',
+            occurredAt: new DateTimeImmutable('now'),
+            saleId: self::SALE_ID,
             receiptNumber: 'RCP-2026-000001',
-            companyId:     'company-uuid-001',
-            channelId:     null,
-            warehouseId:   'warehouse-uuid-001',
-            sessionId:     'session-uuid-001',
-            shiftId:       'shift-uuid-001',
-            terminalId:    'terminal-uuid-001',
-            cashierId:     'cashier-uuid-001',
-            customerId:    'customer-uuid-001',
-            items:         $items,
-            payments:      [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
-            subtotal:      '100.00',
+            companyId: 'company-uuid-001',
+            channelId: null,
+            warehouseId: 'warehouse-uuid-001',
+            sessionId: 'session-uuid-001',
+            shiftId: 'shift-uuid-001',
+            terminalId: 'terminal-uuid-001',
+            cashierId: 'cashier-uuid-001',
+            customerId: 'customer-uuid-001',
+            items: $items,
+            payments: [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
+            subtotal: '100.00',
             discountTotal: '0.00',
-            grandTotal:    '100.00',
-            amountPaid:    '100.00',
-            changeGiven:   '0.00',
-            currency:      'EGP',
+            grandTotal: '100.00',
+            amountPaid: '100.00',
+            changeGiven: '0.00',
+            currency: 'EGP',
         );
     }
 }

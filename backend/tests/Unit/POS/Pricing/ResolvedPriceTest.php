@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Pricing;
 
+use InvalidArgumentException;
 use Modules\POS\Pricing\Domain\Enums\PriceSource;
 use Modules\POS\Pricing\Domain\ValueObjects\ResolvedPrice;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -15,7 +16,7 @@ final class ResolvedPriceTest extends TestCase
 
     public function test_of_creates_with_correct_fields(): void
     {
-        $price    = Money::of('99.99', 'EGP');
+        $price = Money::of('99.99', 'EGP');
         $resolved = ResolvedPrice::of('prod-001', $price, PriceSource::RegularPrice);
 
         $this->assertSame('prod-001', $resolved->productId);
@@ -25,13 +26,13 @@ final class ResolvedPriceTest extends TestCase
 
     public function test_of_throws_on_empty_product_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         ResolvedPrice::of('', Money::of('10.00', 'EGP'), PriceSource::RegularPrice);
     }
 
     public function test_of_throws_on_whitespace_only_product_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         ResolvedPrice::of('   ', Money::of('10.00', 'EGP'), PriceSource::RegularPrice);
     }
 
@@ -46,7 +47,7 @@ final class ResolvedPriceTest extends TestCase
     public function test_to_array_contains_required_keys(): void
     {
         $resolved = ResolvedPrice::of('prod-001', Money::of('25.00', 'EGP'), PriceSource::RegularPrice);
-        $data     = $resolved->toArray();
+        $data = $resolved->toArray();
 
         foreach (['product_id', 'unit_price', 'source', 'resolved_at'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
@@ -56,7 +57,7 @@ final class ResolvedPriceTest extends TestCase
     public function test_to_array_unit_price_has_amount_and_currency(): void
     {
         $resolved = ResolvedPrice::of('prod-001', Money::of('25.00', 'EGP'), PriceSource::RegularPrice);
-        $data     = $resolved->toArray();
+        $data = $resolved->toArray();
 
         $this->assertArrayHasKey('amount', $data['unit_price']);
         $this->assertArrayHasKey('currency', $data['unit_price']);

@@ -38,6 +38,7 @@ final class AllocationPolicyService
     public function maxPartialTolerancePct(?string $companyId = null): float
     {
         $cfg = $this->getActiveConfig($companyId);
+
         return (float) ($cfg['loading']['allocation']['max_partial_pct'] ?? 1.0);
     }
 
@@ -67,8 +68,9 @@ final class AllocationPolicyService
      */
     public function defaultMode(?string $companyId = null): AllocationMode
     {
-        $cfg  = $this->getActiveConfig($companyId);
-        $raw  = $cfg['loading']['allocation']['default_mode'] ?? null;
+        $cfg = $this->getActiveConfig($companyId);
+        $raw = $cfg['loading']['allocation']['default_mode'] ?? null;
+
         return $raw !== null
             ? (AllocationMode::tryFrom((string) $raw) ?? AllocationMode::FullAuto)
             : AllocationMode::FullAuto;
@@ -84,6 +86,7 @@ final class AllocationPolicyService
             ->where('company_id', $companyId)
             ->where('is_active', true)
             ->value('configuration');
+
         return $raw !== null ? (array) json_decode((string) $raw, true) : [];
     }
 }

@@ -6,7 +6,6 @@ namespace Tests\Feature\POS\Api;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Modules\POS\Cart\Domain\Contracts\CartRepositoryInterface;
 use Modules\POS\Cart\Domain\Models\Cart;
 use Tests\TestCase;
 
@@ -19,10 +18,13 @@ final class CartApiTest extends TestCase
 
     private User $user;
 
-    private const SESSION_ID  = 'a0000000-0000-4000-a000-000000000010';
-    private const SHIFT_ID    = 'b0000000-0000-4000-b000-000000000010';
+    private const SESSION_ID = 'a0000000-0000-4000-a000-000000000010';
+
+    private const SHIFT_ID = 'b0000000-0000-4000-b000-000000000010';
+
     private const TERMINAL_ID = 'c0000000-0000-4000-c000-000000000010';
-    private const CASHIER_ID  = 'd0000000-0000-4000-d000-000000000010';
+
+    private const CASHIER_ID = 'd0000000-0000-4000-d000-000000000010';
 
     protected function setUp(): void
     {
@@ -34,11 +36,11 @@ final class CartApiTest extends TestCase
     {
         $response = $this->actingAs($this->user)
             ->postJson('/api/pos/carts', [
-                'session_id'  => self::SESSION_ID,
-                'shift_id'    => self::SHIFT_ID,
+                'session_id' => self::SESSION_ID,
+                'shift_id' => self::SHIFT_ID,
                 'terminal_id' => self::TERMINAL_ID,
-                'cashier_id'  => self::CASHIER_ID,
-                'currency'    => 'EGP',
+                'cashier_id' => self::CASHIER_ID,
+                'currency' => 'EGP',
             ]);
 
         $response->assertStatus(201);
@@ -50,11 +52,11 @@ final class CartApiTest extends TestCase
     {
         $response = $this->actingAs($this->user)
             ->postJson('/api/pos/carts', [
-                'session_id'  => self::SESSION_ID,
-                'shift_id'    => self::SHIFT_ID,
+                'session_id' => self::SESSION_ID,
+                'shift_id' => self::SHIFT_ID,
                 'terminal_id' => self::TERMINAL_ID,
-                'cashier_id'  => self::CASHIER_ID,
-                'currency'    => 'EGP',
+                'cashier_id' => self::CASHIER_ID,
+                'currency' => 'EGP',
             ]);
 
         $response->assertStatus(201)
@@ -72,9 +74,9 @@ final class CartApiTest extends TestCase
 
     public function test_get_cart_returns_cart_with_lines(): void
     {
-        $cartId   = $this->openCart();
+        $cartId = $this->openCart();
         $response = $this->actingAs($this->user)
-            ->getJson('/api/pos/carts/' . $cartId);
+            ->getJson('/api/pos/carts/'.$cartId);
 
         $response->assertStatus(200)
             ->assertJsonPath('data.id', $cartId)
@@ -83,15 +85,15 @@ final class CartApiTest extends TestCase
 
     public function test_add_line_to_cart_returns_201(): void
     {
-        $cartId   = $this->openCart();
+        $cartId = $this->openCart();
         $response = $this->actingAs($this->user)
-            ->postJson('/api/pos/carts/' . $cartId . '/lines', [
-                'product_id'   => 'e0000000-0000-4000-e000-000000000010',
+            ->postJson('/api/pos/carts/'.$cartId.'/lines', [
+                'product_id' => 'e0000000-0000-4000-e000-000000000010',
                 'product_name' => 'Test Product',
-                'sku'          => 'TST-001',
-                'quantity'     => '2',
-                'unit_price'   => '50.00',
-                'currency'     => 'EGP',
+                'sku' => 'TST-001',
+                'quantity' => '2',
+                'unit_price' => '50.00',
+                'currency' => 'EGP',
             ]);
 
         $response->assertStatus(201)
@@ -101,21 +103,21 @@ final class CartApiTest extends TestCase
 
     public function test_remove_line_from_cart_returns_200(): void
     {
-        $cartId     = $this->openCart();
+        $cartId = $this->openCart();
         $lineResult = $this->actingAs($this->user)
-            ->postJson('/api/pos/carts/' . $cartId . '/lines', [
-                'product_id'   => 'e0000000-0000-4000-e000-000000000011',
+            ->postJson('/api/pos/carts/'.$cartId.'/lines', [
+                'product_id' => 'e0000000-0000-4000-e000-000000000011',
                 'product_name' => 'Remove Me',
-                'sku'          => 'TST-002',
-                'quantity'     => '1',
-                'unit_price'   => '25.00',
-                'currency'     => 'EGP',
+                'sku' => 'TST-002',
+                'quantity' => '1',
+                'unit_price' => '25.00',
+                'currency' => 'EGP',
             ]);
 
         $lineId = $lineResult->json('data.line_id');
 
         $response = $this->actingAs($this->user)
-            ->deleteJson('/api/pos/carts/' . $cartId . '/lines/' . $lineId);
+            ->deleteJson('/api/pos/carts/'.$cartId.'/lines/'.$lineId);
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true);
@@ -126,7 +128,7 @@ final class CartApiTest extends TestCase
         $cartId = $this->openCart();
 
         $this->actingAs($this->user)
-            ->postJson('/api/pos/carts/' . $cartId . '/hold')
+            ->postJson('/api/pos/carts/'.$cartId.'/hold')
             ->assertStatus(200)
             ->assertJsonPath('success', true);
     }
@@ -134,10 +136,10 @@ final class CartApiTest extends TestCase
     public function test_resume_cart_returns_200(): void
     {
         $cartId = $this->openCart();
-        $this->actingAs($this->user)->postJson('/api/pos/carts/' . $cartId . '/hold');
+        $this->actingAs($this->user)->postJson('/api/pos/carts/'.$cartId.'/hold');
 
         $this->actingAs($this->user)
-            ->deleteJson('/api/pos/carts/' . $cartId . '/hold')
+            ->deleteJson('/api/pos/carts/'.$cartId.'/hold')
             ->assertStatus(200)
             ->assertJsonPath('success', true);
     }
@@ -147,7 +149,7 @@ final class CartApiTest extends TestCase
         $cartId = $this->openCart();
 
         $this->actingAs($this->user)
-            ->deleteJson('/api/pos/carts/' . $cartId)
+            ->deleteJson('/api/pos/carts/'.$cartId)
             ->assertStatus(200)
             ->assertJsonPath('success', true);
     }

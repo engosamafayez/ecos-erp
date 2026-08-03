@@ -51,16 +51,16 @@ final readonly class ComponentConsumptionPlan
     public function toArray(): array
     {
         return [
-            'component_id'         => $this->component_id,
-            'sku'                  => $this->sku,
-            'name'                 => $this->name,
-            'unit_symbol'          => $this->unit_symbol,
-            'qty_to_consume'       => $this->qty_to_consume,
-            'available_qty'        => $this->available_qty,
-            'missing_qty'          => $this->missing_qty,
+            'component_id' => $this->component_id,
+            'sku' => $this->sku,
+            'name' => $this->name,
+            'unit_symbol' => $this->unit_symbol,
+            'qty_to_consume' => $this->qty_to_consume,
+            'available_qty' => $this->available_qty,
+            'missing_qty' => $this->missing_qty,
             'allow_negative_stock' => $this->allow_negative_stock,
-            'will_go_negative'     => $this->will_go_negative,
-            'is_blocked'           => $this->is_blocked,
+            'will_go_negative' => $this->will_go_negative,
+            'is_blocked' => $this->is_blocked,
         ];
     }
 }

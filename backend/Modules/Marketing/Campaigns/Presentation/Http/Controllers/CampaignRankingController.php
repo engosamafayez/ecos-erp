@@ -39,8 +39,8 @@ final class CampaignRankingController extends Controller
         return response()->json([
             'data' => $this->rankingService->topByDimension(
                 dimension: 'company_id',
-                metric:    $request->query('metric', 'spend'),
-                limit:     (int) $request->query('limit', 10),
+                metric: $request->query('metric', 'spend'),
+                limit: (int) $request->query('limit', 10),
             ),
         ]);
     }
@@ -51,8 +51,8 @@ final class CampaignRankingController extends Controller
         return response()->json([
             'data' => $this->rankingService->topByDimension(
                 dimension: 'brand_id',
-                metric:    $request->query('metric', 'spend'),
-                limit:     (int) $request->query('limit', 10),
+                metric: $request->query('metric', 'spend'),
+                limit: (int) $request->query('limit', 10),
             ),
         ]);
     }
@@ -63,8 +63,8 @@ final class CampaignRankingController extends Controller
         return response()->json([
             'data' => $this->rankingService->topByDimension(
                 dimension: 'channel_id',
-                metric:    $request->query('metric', 'spend'),
-                limit:     (int) $request->query('limit', 10),
+                metric: $request->query('metric', 'spend'),
+                limit: (int) $request->query('limit', 10),
             ),
         ]);
     }
@@ -75,8 +75,8 @@ final class CampaignRankingController extends Controller
         return response()->json([
             'data' => $this->rankingService->topByDimension(
                 dimension: 'marketing_owner_id',
-                metric:    $request->query('metric', 'spend'),
-                limit:     (int) $request->query('limit', 10),
+                metric: $request->query('metric', 'spend'),
+                limit: (int) $request->query('limit', 10),
             ),
         ]);
     }
@@ -84,9 +84,9 @@ final class CampaignRankingController extends Controller
     private function rankResponse(string $level, Request $request): JsonResponse
     {
         $data = $this->rankingService->top(
-            metric:    $request->query('metric', 'spend'),
-            level:     $level,
-            limit:     min((int) $request->query('limit', 10), 50),
+            metric: $request->query('metric', 'spend'),
+            level: $level,
+            limit: min((int) $request->query('limit', 10), 50),
             companyId: $request->query('company_id'),
             datePreset: $request->query('date_preset', 'last_30d'),
         );

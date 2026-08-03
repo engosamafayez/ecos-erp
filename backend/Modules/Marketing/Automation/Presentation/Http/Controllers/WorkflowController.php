@@ -17,10 +17,10 @@ use Modules\Marketing\Automation\Presentation\Http\Resources\WorkflowResource;
 class WorkflowController extends Controller
 {
     public function __construct(
-        private readonly WorkflowService        $service,
+        private readonly WorkflowService $service,
         private readonly ActivateWorkflowAction $activateAction,
-        private readonly PauseWorkflowAction    $pauseAction,
-        private readonly ArchiveWorkflowAction  $archiveAction,
+        private readonly PauseWorkflowAction $pauseAction,
+        private readonly ArchiveWorkflowAction $archiveAction,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -38,15 +38,15 @@ class WorkflowController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'                 => 'required|string|max:255',
-            'description'          => 'nullable|string',
-            'brand_id'             => 'nullable|uuid',
-            'trigger_type'         => 'required|string',
-            'nodes_graph'          => 'nullable|array',
-            'tags'                 => 'nullable|array',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'brand_id' => 'nullable|uuid',
+            'trigger_type' => 'required|string',
+            'nodes_graph' => 'nullable|array',
+            'tags' => 'nullable|array',
             'governance_policy_id' => 'nullable|uuid',
-            'event_type'           => 'nullable|string',
-            'entity_type'          => 'nullable|string',
+            'event_type' => 'nullable|string',
+            'entity_type' => 'nullable|string',
         ]);
 
         $validated['company_id'] = $request->user()?->company_id;
@@ -66,9 +66,9 @@ class WorkflowController extends Controller
     public function update(Request $request, AutomationWorkflow $workflow): JsonResponse
     {
         $validated = $request->validate([
-            'name'                 => 'sometimes|string|max:255',
-            'description'          => 'nullable|string',
-            'tags'                 => 'nullable|array',
+            'name' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'tags' => 'nullable|array',
             'governance_policy_id' => 'nullable|uuid',
         ]);
 

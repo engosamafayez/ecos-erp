@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
 import { Combobox } from '@/components/crud';
@@ -18,10 +19,12 @@ type UnitSelectProps = {
 export function UnitSelect({
   value,
   onChange,
-  placeholder = 'Select unit…',
+  placeholder,
   disabled,
   className,
 }: UnitSelectProps) {
+  const { t } = useTranslation('products');
+
   const { data, isLoading } = useQuery({
     queryKey: ['unit-options'],
     queryFn: () => unitsService.list({ per_page: 100, sort_by: 'name', sort_dir: 'asc' }),
@@ -39,9 +42,9 @@ export function UnitSelect({
       value={value ?? ''}
       onChange={onChange}
       loading={isLoading}
-      placeholder={placeholder}
-      searchPlaceholder="Search units…"
-      emptyText="No units found"
+      placeholder={placeholder ?? t($ => $.selects.unitPlaceholder)}
+      searchPlaceholder={t($ => $.selects.unitSearch)}
+      emptyText={t($ => $.selects.unitEmpty)}
       disabled={disabled}
       className={className}
     />

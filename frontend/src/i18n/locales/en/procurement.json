@@ -64,5 +64,83 @@
     "receipts": "Goods Receipts",
     "invoices": "Invoices",
     "returns": "Returns"
+  },
+  "hub": {
+    "title": "Procurement Hub",
+    "subtitle": "Overview, alerts, and quick access to all procurement workflows",
+    "newPurchase": "New Purchase",
+    "workQueue": {
+      "title": "Work Queue",
+      "materialRequests": "Material Requests",
+      "awaitingAction": "Awaiting action",
+      "purchases": "Purchases",
+      "pendingApproval": "Pending approval",
+      "receiving": "Receiving",
+      "goodsToReceive": "Goods to receive",
+      "returns": "Returns",
+      "waitingApproval": "Waiting approval"
+    },
+    "financialOverview": "Financial Overview",
+    "kpis": {
+      "approvedPurchases": "Approved Purchases",
+      "readyToExecute": "Ready to execute",
+      "invoiceValuePosted": "Invoice Value (posted)",
+      "thisPeriod": "This period",
+      "pendingInvoiceValue": "Pending Invoice Value",
+      "draftValidated": "Draft + validated",
+      "returnsValue": "Returns Value",
+      "activeReturns": "Active returns"
+    },
+    "alertsTitle": "Alerts & Attention Required",
+    "noAlerts": "No alerts — everything looks good",
+    "alertMessages": {
+      "awaitingApproval": "{{count}} purchase(s) awaiting approval",
+      "awaitingApprovalDesc": "These purchases are ready for your review",
+      "underReview": "{{count}} material request(s) under review",
+      "underReviewDesc": "Procurement team is reviewing these requests",
+      "returnsNeedApproval": "{{count}} supplier return(s) need approval",
+      "returnsNeedApprovalDesc": "Review and approve pending return requests",
+      "invoicesFailed": "{{count}} supplier invoice(s) failed to post",
+      "invoicesFailedDesc": "Posting errors need manual review",
+      "creditPending": "{{count}} return(s) pending credit",
+      "creditPendingDesc": "Follow up with suppliers for credit notes"
+    },
+    "moduleStatus": "Module Status",
+    "supplierInvoicesModule": "Supplier Invoices",
+    "supplierReturnsModule": "Supplier Returns",
+    "invoiceStatus": {
+      "draft": "Draft",
+      "validatedReady": "Validated (ready)",
+      "posted": "Posted",
+      "viewAll": "View all invoices"
+    },
+    "returnStatus": {
+      "draft": "Draft",
+      "waitingApproval": "Waiting Approval",
+      "creditPending": "Credit Pending",
+      "viewAll": "View all returns"
+    },
+    "quickActions": "Quick Actions",
+    "actions2": {
+      "newSupplierInvoice": "New Supplier Invoice",
+      "newSupplierInvoiceDesc": "Direct supplier invoice → auto-posting to inventory",
+      "newMaterialRequest": "New Material Request",
+      "newMaterialRequestDesc": "Warehouse team submits procurement needs",
+      "newPurchase": "New Purchase",
+      "newPurchaseDesc": "Procurement creates purchase record",
+      "receiveGoods": "Receive Goods",
+      "receiveGoodsDesc": "Record incoming shipment against a purchase",
+      "newSupplierReturn": "New Supplier Return",
+      "newSupplierReturnDesc": "Initiate return to supplier for defects or overdelivery",
+      "supplierDirectory": "Supplier Directory",
+      "supplierDirectoryDesc": "View and manage supplier profiles"
+    },
+    "performance": {
+      "title": "Performance Snapshot",
+      "totalPurchases": "Total Purchases",
+      "approved": "Approved",
+      "invoicesPosted": "Invoices Posted",
+      "returnsCompleted": "Returns Completed"
+    }
   }
 }

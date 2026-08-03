@@ -6,6 +6,7 @@ namespace Modules\Inventory\CountSessions\Application\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Modules\CostManagement\Domain\Enums\PricingTriggerReason;
+use Modules\CostManagement\Domain\Services\EnterpriseCostEngine;
 use Modules\CostManagement\Domain\Events\FinishedProductCostChanged;
 use Modules\Inventory\CountSessions\Domain\Enums\CountSessionStatus;
 use Modules\Inventory\CountSessions\Domain\Models\InventoryCountLine;
@@ -33,7 +34,8 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
  */
 final class ApproveCountSessionAction
 {
-    private const SCALE_QTY   = 4;
+    private const SCALE_QTY = 4;
+
     private const SCALE_VALUE = 2;
 
     public function __construct(
@@ -46,15 +48,15 @@ final class ApproveCountSessionAction
     {
         if (! $session->status->canTransitionTo(CountSessionStatus::Approved)) {
             throw new UnprocessableEntityHttpException(
-                "Count session [{$session->count_number}] cannot be approved from status [{$session->status->value}]."
+                "Count session [{$session->count_number}] cannot be approved from status [{$session->status->value}].",
             );
         }
 
         $session->loadMissing(['lines.product', 'warehouse']);
 
-        $companyId   = $session->warehouse->company_id;
+        $companyId = $session->warehouse->company_id;
         $warehouseId = $session->warehouse_id;
-        $month       = now()->format('Y-m');
+        $month = now()->format('Y-m');
 
         // ── Zero-cost guard for positive overstock adjustments ────────────────
         foreach ($session->lines as $line) {
@@ -63,7 +65,7 @@ final class ApproveCountSessionAction
                 continue;
             }
             $countedStr = (string) $line->counted_qty;
-            $systemStr  = (string) $line->system_qty;
+            $systemStr = (string) $line->system_qty;
             if (bccomp($countedStr, $systemStr, self::SCALE_QTY) <= 0) {
                 continue; // only check cost for adjustment-in lines
             }
@@ -74,15 +76,15 @@ final class ApproveCountSessionAction
 
             if (! $hasCost) {
                 throw new UnprocessableEntityHttpException(
-                    "Cannot approve: {$product?->name} ({$product?->sku}) has no valid inventory cost."
+                    "Cannot approve: {$product?->name} ({$product?->sku}) has no valid inventory cost.",
                 );
             }
         }
 
-        $linesAdjusted         = 0;
-        $liabilitiesCreated    = 0;
+        $linesAdjusted = 0;
+        $liabilitiesCreated = 0;
         $investigationsCreated = 0;
-        $fifoCostChanges       = [];
+        $fifoCostChanges = [];
 
         $result = DB::transaction(function () use (
             $session, $approvedBy, $companyId, $warehouseId, $month,
@@ -95,18 +97,21 @@ final class ApproveCountSessionAction
                     continue;
                 }
 
-                $countedStr  = (string) $line->counted_qty;
-                $systemStr   = (string) $line->system_qty;
-                $damagedStr  = (string) ($line->damaged_qty ?? '0');
+                $countedStr = (string) $line->counted_qty;
+                $systemStr = (string) $line->system_qty;
+                $damagedStr = (string) ($line->damaged_qty ?? '0');
                 $shortageStr = (string) ($line->shortage_qty ?? '0');
 
-                $product   = $line->product;
-                $unitCost  = (float) (
-                    $product?->average_cost
-                    ?? $product?->last_purchase_cost
-                    ?? $product?->current_fifo_cost
-                    ?? 0
-                );
+                $product = $line->product;
+                // Canonical (flag ON): FIFO-first via EnterpriseCostEngine. Legacy (default): average-first.
+                $unitCost = ($product !== null && config('inventory_ledger.canonical_cost_resolution'))
+                    ? EnterpriseCostEngine::resolveUnitCost($product)
+                    : (float) (
+                        $product?->average_cost
+                        ?? $product?->last_purchase_cost
+                        ?? $product?->current_fifo_cost
+                        ?? 0
+                    );
 
                 // Freeze unit cost on the line for historical report accuracy
                 $line->update(['unit_cost_snapshot' => $unitCost]);
@@ -116,27 +121,27 @@ final class ApproveCountSessionAction
                     $overQtyStr = bcsub($countedStr, $systemStr, self::SCALE_QTY);
 
                     $dto = new StockOperationDTO(
-                        warehouse_id:   $warehouseId,
-                        product_id:     $line->product_id,
-                        company_id:     $companyId,
-                        quantity:       (float) $overQtyStr,
+                        warehouse_id: $warehouseId,
+                        product_id: $line->product_id,
+                        company_id: $companyId,
+                        quantity: (float) $overQtyStr,
                         reference_type: 'inventory_count',
-                        reference_id:   $session->id,
-                        notes:          "Overstock adjustment from count {$session->count_number}",
+                        reference_id: $session->id,
+                        notes: "Overstock adjustment from count {$session->count_number}",
                     );
                     $this->adjustmentIn->execute($dto);
 
                     InventoryReceiptLayer::query()->create([
-                        'supplier_id'           => $product?->last_supplier_id,
-                        'product_id'            => $line->product_id,
-                        'goods_receipt_id'      => null,
+                        'supplier_id' => $product?->last_supplier_id,
+                        'product_id' => $line->product_id,
+                        'goods_receipt_id' => null,
                         'goods_receipt_line_id' => null,
-                        'warehouse_id'          => $warehouseId,
-                        'received_qty'          => $overQtyStr,
-                        'remaining_qty'         => $overQtyStr,
-                        'landed_unit_cost'      => (string) $unitCost,
-                        'sale_price_snapshot'   => $product?->sale_price,
-                        'receipt_date'          => now()->toDateString(),
+                        'warehouse_id' => $warehouseId,
+                        'received_qty' => $overQtyStr,
+                        'remaining_qty' => $overQtyStr,
+                        'landed_unit_cost' => (string) $unitCost,
+                        'sale_price_snapshot' => $product?->sale_price,
+                        'receipt_date' => now()->toDateString(),
                     ]);
 
                     [$oldFifo, $newFifo] = $this->refreshFifoCost($line->product_id, $warehouseId, $companyId);
@@ -144,8 +149,8 @@ final class ApproveCountSessionAction
                         $fifoCostChanges[] = [
                             'product_id' => $line->product_id,
                             'company_id' => $companyId,
-                            'old_cost'   => $oldFifo,
-                            'new_cost'   => $newFifo,
+                            'old_cost' => $oldFifo,
+                            'new_cost' => $newFifo,
                         ];
                     }
                     $linesAdjusted++;
@@ -156,17 +161,17 @@ final class ApproveCountSessionAction
                     $shortageTotal = bcmul($shortageStr, (string) $unitCost, self::SCALE_VALUE);
 
                     WarehouseLiability::query()->create([
-                        'company_id'        => $companyId,
-                        'warehouse_id'      => $warehouseId,
-                        'product_id'        => $line->product_id,
-                        'count_session_id'  => $session->id,
-                        'count_line_id'     => $line->id,
-                        'liability_type'    => 'inventory_shortage',
-                        'quantity'          => $shortageStr,
-                        'unit_cost'         => $unitCost,
-                        'total_cost'        => $shortageTotal,
-                        'status'            => 'pending',
-                        'month'             => $month,
+                        'company_id' => $companyId,
+                        'warehouse_id' => $warehouseId,
+                        'product_id' => $line->product_id,
+                        'count_session_id' => $session->id,
+                        'count_line_id' => $line->id,
+                        'liability_type' => 'inventory_shortage',
+                        'quantity' => $shortageStr,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => $shortageTotal,
+                        'status' => 'pending',
+                        'month' => $month,
                     ]);
 
                     $liabilitiesCreated++;
@@ -177,17 +182,17 @@ final class ApproveCountSessionAction
                     $damagedTotal = bcmul($damagedStr, (string) $unitCost, self::SCALE_VALUE);
 
                     WasteInvestigation::query()->create([
-                        'company_id'       => $companyId,
-                        'warehouse_id'     => $warehouseId,
+                        'company_id' => $companyId,
+                        'warehouse_id' => $warehouseId,
                         'count_session_id' => $session->id,
-                        'count_line_id'    => $line->id,
-                        'product_id'       => $line->product_id,
-                        'quantity'         => $damagedStr,
-                        'unit_cost'        => $unitCost,
-                        'total_cost'       => $damagedTotal,
-                        'damage_reason'    => $line->damage_reason,
-                        'status'           => 'pending_investigation',
-                        'month'            => $month,
+                        'count_line_id' => $line->id,
+                        'product_id' => $line->product_id,
+                        'quantity' => $damagedStr,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => $damagedTotal,
+                        'damage_reason' => $line->damage_reason,
+                        'status' => 'pending_investigation',
+                        'month' => $month,
                     ]);
 
                     $investigationsCreated++;
@@ -195,7 +200,7 @@ final class ApproveCountSessionAction
             }
 
             $session->update([
-                'status'      => CountSessionStatus::Approved,
+                'status' => CountSessionStatus::Approved,
                 'approved_by' => $approvedBy,
             ]);
 
@@ -206,31 +211,31 @@ final class ApproveCountSessionAction
         DB::connection()->afterCommit(function () use ($result, $companyId, $linesAdjusted, $approvedBy, $fifoCostChanges): void {
             $this->eventBus->publish(new InventoryCountApproved(
                 countSessionId: $result->id,
-                countNumber:    $result->count_number,
-                warehouseId:    $result->warehouse_id,
-                companyId:      $companyId,
-                linesAdjusted:  $linesAdjusted,
-                approvedBy:     $approvedBy,
+                countNumber: $result->count_number,
+                warehouseId: $result->warehouse_id,
+                companyId: $companyId,
+                linesAdjusted: $linesAdjusted,
+                approvedBy: $approvedBy,
             ));
 
             foreach ($fifoCostChanges as $change) {
-                $old  = (string) $change['old_cost'];
-                $new  = (string) $change['new_cost'];
+                $old = (string) $change['old_cost'];
+                $new = (string) $change['new_cost'];
                 $diff = bcsub($new, $old, 4);
-                $pct  = bccomp($old, '0', 4) > 0
+                $pct = bccomp($old, '0', 4) > 0
                     ? bcmul(bcdiv($diff, $old, 8), '100', 4)
                     : '0.0000';
 
                 FinishedProductCostChanged::dispatch(
-                    productId:         $change['product_id'],
-                    companyId:         $change['company_id'],
-                    oldCost:           (float) $old,
-                    newCost:           (float) $new,
-                    difference:        (float) $diff,
+                    productId: $change['product_id'],
+                    companyId: $change['company_id'],
+                    oldCost: (float) $old,
+                    newCost: (float) $new,
+                    difference: (float) $diff,
                     differencePercent: (float) $pct,
-                    triggerReason:     PricingTriggerReason::Other,
-                    triggerSource:     'inventory_count',
-                    occurredAt:        now()->toIso8601String(),
+                    triggerReason: PricingTriggerReason::Other,
+                    triggerSource: 'inventory_count',
+                    occurredAt: now()->toIso8601String(),
                 );
             }
         });

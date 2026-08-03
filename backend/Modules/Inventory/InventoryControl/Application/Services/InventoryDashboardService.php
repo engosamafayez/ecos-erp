@@ -16,7 +16,7 @@ final class InventoryDashboardService
     public function kpis(): array
     {
         $twelveMonthsAgo = Carbon::now()->subYear();
-        $monthStart      = Carbon::now()->startOfMonth();
+        $monthStart = Carbon::now()->startOfMonth();
 
         // ── Inventory Accuracy (last 12 months of approved counts) ────────────
         $accuracy = DB::table('inventory_count_lines as icl')
@@ -30,9 +30,9 @@ final class InventoryDashboardService
             ')
             ->first();
 
-        $totalCounted       = (int) ($accuracy?->total_counted ?? 0);
-        $matched            = (int) ($accuracy?->matched ?? 0);
-        $accuracyPct        = $totalCounted > 0 ? round($matched / $totalCounted * 100, 2) : null;
+        $totalCounted = (int) ($accuracy?->total_counted ?? 0);
+        $matched = (int) ($accuracy?->matched ?? 0);
+        $accuracyPct = $totalCounted > 0 ? round($matched / $totalCounted * 100, 2) : null;
 
         // ── Open Sessions ──────────────────────────────────────────────────────
         $openSessions = DB::table('inventory_count_sessions')
@@ -61,7 +61,7 @@ final class InventoryDashboardService
             ->first();
 
         $adjustmentValueMonth = round((float) ($monthAdj?->adj_in_value ?? 0), 2);
-        $shrinkageValueMonth  = round((float) ($monthAdj?->shrinkage_value ?? 0), 2);
+        $shrinkageValueMonth = round((float) ($monthAdj?->shrinkage_value ?? 0), 2);
 
         // ── Last Count Date ────────────────────────────────────────────────────
         $lastCountDate = DB::table('inventory_count_sessions')
@@ -69,15 +69,15 @@ final class InventoryDashboardService
             ->max('completed_at');
 
         return [
-            'accuracy_pct'             => $accuracyPct,
-            'matched_products'         => $matched,
-            'total_counted_products'   => $totalCounted,
-            'open_sessions'            => $openSessions,
-            'products_with_variance'   => $productsWithVariance,
-            'adjustment_value_month'   => $adjustmentValueMonth,
-            'shrinkage_value_month'    => $shrinkageValueMonth,
-            'last_count_date'          => $lastCountDate,
-            'health'                   => $this->healthLabel($accuracyPct),
+            'accuracy_pct' => $accuracyPct,
+            'matched_products' => $matched,
+            'total_counted_products' => $totalCounted,
+            'open_sessions' => $openSessions,
+            'products_with_variance' => $productsWithVariance,
+            'adjustment_value_month' => $adjustmentValueMonth,
+            'shrinkage_value_month' => $shrinkageValueMonth,
+            'last_count_date' => $lastCountDate,
+            'health' => $this->healthLabel($accuracyPct),
         ];
     }
 
@@ -102,11 +102,11 @@ final class InventoryDashboardService
             ->limit($limit)
             ->get()
             ->map(fn ($r) => [
-                'product_id'      => $r->product_id,
-                'product_name'    => $r->product_name,
-                'product_sku'     => $r->product_sku,
-                'variance_qty'    => round((float) $r->total_variance_qty, 4),
-                'variance_value'  => round((float) $r->total_variance_value, 2),
+                'product_id' => $r->product_id,
+                'product_name' => $r->product_name,
+                'product_sku' => $r->product_sku,
+                'variance_qty' => round((float) $r->total_variance_qty, 4),
+                'variance_value' => round((float) $r->total_variance_value, 2),
             ])
             ->all();
     }
@@ -132,11 +132,11 @@ final class InventoryDashboardService
             ->limit($limit)
             ->get()
             ->map(fn ($r) => [
-                'product_id'      => $r->product_id,
-                'product_name'    => $r->product_name,
-                'product_sku'     => $r->product_sku,
-                'variance_qty'    => round((float) $r->total_variance_qty, 4),
-                'variance_value'  => round((float) $r->total_variance_value, 2),
+                'product_id' => $r->product_id,
+                'product_name' => $r->product_name,
+                'product_sku' => $r->product_sku,
+                'variance_qty' => round((float) $r->total_variance_qty, 4),
+                'variance_value' => round((float) $r->total_variance_value, 2),
             ])
             ->all();
     }
@@ -163,17 +163,17 @@ final class InventoryDashboardService
             ->limit($limit)
             ->get()
             ->map(function ($r): array {
-                $counted  = (int) $r->counted_lines;
-                $matched  = (int) $r->matched_lines;
+                $counted = (int) $r->counted_lines;
+                $matched = (int) $r->matched_lines;
                 $accuracy = $counted > 0 ? round($matched / $counted * 100, 2) : null;
 
                 return [
-                    'id'             => $r->id,
-                    'count_number'   => $r->count_number,
-                    'status'         => $r->status,
-                    'completed_at'   => $r->completed_at,
+                    'id' => $r->id,
+                    'count_number' => $r->count_number,
+                    'status' => $r->status,
+                    'completed_at' => $r->completed_at,
                     'warehouse_name' => $r->warehouse_name,
-                    'accuracy_pct'   => $accuracy,
+                    'accuracy_pct' => $accuracy,
                 ];
             })
             ->all();
@@ -181,12 +181,15 @@ final class InventoryDashboardService
 
     private function healthLabel(?float $pct): string
     {
-        if ($pct === null) return 'unknown';
-        return match(true) {
+        if ($pct === null) {
+            return 'unknown';
+        }
+
+        return match (true) {
             $pct >= 98 => 'excellent',
             $pct >= 95 => 'good',
             $pct >= 90 => 'warning',
-            default    => 'critical',
+            default => 'critical',
         };
     }
 }

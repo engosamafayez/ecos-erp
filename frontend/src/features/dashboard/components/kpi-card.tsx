@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ export function KpiCard({
   delta,
   size = 'sm',
 }: KpiCardProps) {
+  const { t } = useTranslation('dashboard');
   const c = COLOR[color];
   const xs = size === 'xs';
 
@@ -71,7 +73,7 @@ export function KpiCard({
         {!xs && (
           <div className={cn('flex items-center gap-1 text-[11px]', trendCls)}>
             <TrendIcon className="h-3 w-3" />
-            <span>{delta ?? 'No data yet'}</span>
+            <span>{delta ?? t($ => $.kpiCard.noData)}</span>
           </div>
         )}
       </CardContent>

@@ -40,22 +40,28 @@ final class PreparationPolicyController extends Controller
     public function store(Request $request, string $brandId): JsonResponse
     {
         $companyId = Auth::user()?->company_id ?? '';
-        $actorId   = Auth::id() ?? '';
+        $actorId = Auth::id() ?? '';
 
         $validated = $request->validate([
-            'warehouse_id'            => 'nullable|uuid|exists:warehouses,id',
-            'auto_create_time'        => 'required|date_format:H:i',
-            'freeze_time'             => 'nullable|date_format:H:i',
-            'auto_close_time'         => 'nullable|date_format:H:i',
+            'warehouse_id' => 'nullable|uuid|exists:warehouses,id',
+            'auto_create_time' => 'required|date_format:H:i',
+            'freeze_time' => 'nullable|date_format:H:i',
+            'auto_close_time' => 'nullable|date_format:H:i',
             'eligible_order_statuses' => 'required|array|min:1',
-            'auto_attach_orders'      => 'boolean',
+            'auto_attach_orders' => 'boolean',
             'auto_recalculate_demand' => 'boolean',
-            'is_active'               => 'boolean',
+            'is_active' => 'boolean',
         ]);
 
-        if (isset($validated['auto_create_time'])) $validated['auto_create_time'] .= ':00';
-        if (isset($validated['freeze_time']))       $validated['freeze_time']       .= ':00';
-        if (isset($validated['auto_close_time']))   $validated['auto_close_time']   .= ':00';
+        if (isset($validated['auto_create_time'])) {
+            $validated['auto_create_time'] .= ':00';
+        }
+        if (isset($validated['freeze_time'])) {
+            $validated['freeze_time'] .= ':00';
+        }
+        if (isset($validated['auto_close_time'])) {
+            $validated['auto_close_time'] .= ':00';
+        }
 
         $policy = PreparationSessionPolicy::create([
             ...$validated,
@@ -66,12 +72,12 @@ final class PreparationPolicyController extends Controller
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'preparation_policy',
-            category:  'session_policy',
-            action:    'create',
-            oldValue:  null,
-            newValue:  $policy->toArray(),
-            brandId:   $brandId,
+            module: 'preparation_policy',
+            category: 'session_policy',
+            action: 'create',
+            oldValue: null,
+            newValue: $policy->toArray(),
+            brandId: $brandId,
         );
 
         return $this->created($policy, 'Preparation policy created.');
@@ -84,30 +90,36 @@ final class PreparationPolicyController extends Controller
         $policy = PreparationSessionPolicy::where('company_id', $companyId)->findOrFail($id);
 
         $validated = $request->validate([
-            'auto_create_time'        => 'sometimes|required|date_format:H:i',
-            'freeze_time'             => 'nullable|date_format:H:i',
-            'auto_close_time'         => 'nullable|date_format:H:i',
+            'auto_create_time' => 'sometimes|required|date_format:H:i',
+            'freeze_time' => 'nullable|date_format:H:i',
+            'auto_close_time' => 'nullable|date_format:H:i',
             'eligible_order_statuses' => 'sometimes|required|array|min:1',
-            'auto_attach_orders'      => 'sometimes|boolean',
+            'auto_attach_orders' => 'sometimes|boolean',
             'auto_recalculate_demand' => 'sometimes|boolean',
-            'is_active'               => 'sometimes|boolean',
+            'is_active' => 'sometimes|boolean',
         ]);
 
-        if (isset($validated['auto_create_time'])) $validated['auto_create_time'] .= ':00';
-        if (isset($validated['freeze_time']))       $validated['freeze_time']       .= ':00';
-        if (isset($validated['auto_close_time']))   $validated['auto_close_time']   .= ':00';
+        if (isset($validated['auto_create_time'])) {
+            $validated['auto_create_time'] .= ':00';
+        }
+        if (isset($validated['freeze_time'])) {
+            $validated['freeze_time'] .= ':00';
+        }
+        if (isset($validated['auto_close_time'])) {
+            $validated['auto_close_time'] .= ':00';
+        }
 
         $old = $policy->toArray();
         $policy->update([...$validated, 'updated_by' => Auth::id()]);
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'preparation_policy',
-            category:  'session_policy',
-            action:    'update',
-            oldValue:  $old,
-            newValue:  $policy->fresh()?->toArray() ?? [],
-            brandId:   $brandId,
+            module: 'preparation_policy',
+            category: 'session_policy',
+            action: 'update',
+            oldValue: $old,
+            newValue: $policy->fresh()?->toArray() ?? [],
+            brandId: $brandId,
         );
 
         return $this->updated($policy, 'Preparation policy updated.');

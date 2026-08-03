@@ -32,16 +32,16 @@ final class RepairImageUrlsCommand extends Command
             $this->warn('[dry-run] No database changes will be written.');
         }
 
-        $scanned  = 0;
+        $scanned = 0;
         $repaired = 0;
-        $skipped  = 0;
-        $missing  = [];
+        $skipped = 0;
+        $missing = [];
 
         Product::query()
             ->whereNotNull('image_url')
             ->where(function ($q): void {
                 $q->where('image_url', 'like', 'http://%')
-                  ->orWhere('image_url', 'like', 'https://%');
+                    ->orWhere('image_url', 'like', 'https://%');
             })
             ->orderBy('name')
             ->each(function (Product $product) use (

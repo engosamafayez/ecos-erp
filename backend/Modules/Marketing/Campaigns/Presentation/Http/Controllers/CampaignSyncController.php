@@ -17,7 +17,7 @@ use Modules\Marketing\Synchronization\Domain\Enums\SyncType;
 final class CampaignSyncController extends Controller
 {
     public function __construct(
-        private readonly SyncCampaignsAction           $syncAction,
+        private readonly SyncCampaignsAction $syncAction,
         private readonly BackfillCampaignInsightsAction $backfillAction,
     ) {}
 
@@ -30,44 +30,44 @@ final class CampaignSyncController extends Controller
     public function triggerSync(Request $request, MarketingConnection $connection): JsonResponse
     {
         $validated = $request->validate([
-            'sync_type'           => ['nullable', 'string', 'in:full,incremental'],
-            'sync_insights'       => ['boolean'],
-            'sync_creatives'      => ['boolean'],
+            'sync_type' => ['nullable', 'string', 'in:full,incremental'],
+            'sync_insights' => ['boolean'],
+            'sync_creatives' => ['boolean'],
             'insight_date_preset' => ['nullable', 'string', 'in:last_7d,last_30d,last_90d,last_180d,this_month'],
-            'queue'               => ['boolean'],
+            'queue' => ['boolean'],
         ]);
 
         $syncType = SyncType::tryFrom($validated['sync_type'] ?? 'full') ?? SyncType::Full;
-        $queued   = (bool) ($validated['queue'] ?? false);
-        $actorId  = $request->user()?->id;
+        $queued = (bool) ($validated['queue'] ?? false);
+        $actorId = $request->user()?->id;
 
         if ($queued) {
             SyncCampaignsJob::dispatch(
-                connectionId:     $connection->id,
-                syncType:         $syncType->value,
+                connectionId: $connection->id,
+                syncType: $syncType->value,
                 includeCreatives: (bool) ($validated['sync_creatives'] ?? true),
-                actorId:          $actorId,
+                actorId: $actorId,
             );
 
             return response()->json([
-                'message'   => 'Campaign sync queued.',
-                'queued'    => true,
+                'message' => 'Campaign sync queued.',
+                'queued' => true,
                 'sync_type' => $syncType->value,
             ], 202);
         }
 
         $result = $this->syncAction->execute(
-            connection:        $connection,
-            syncInsights:      (bool) ($validated['sync_insights'] ?? false),
-            syncCreatives:     (bool) ($validated['sync_creatives'] ?? true),
+            connection: $connection,
+            syncInsights: (bool) ($validated['sync_insights'] ?? false),
+            syncCreatives: (bool) ($validated['sync_creatives'] ?? true),
             insightDatePreset: $validated['insight_date_preset'] ?? 'last_30d',
-            actorId:           $actorId,
-            syncType:          $syncType,
+            actorId: $actorId,
+            syncType: $syncType,
         );
 
         return response()->json([
             'message' => 'Campaign sync completed.',
-            'result'  => $result,
+            'result' => $result,
         ]);
     }
 
@@ -79,7 +79,7 @@ final class CampaignSyncController extends Controller
     {
         $validated = $request->validate([
             'date_start' => ['required', 'date_format:Y-m-d'],
-            'date_stop'  => ['required', 'date_format:Y-m-d', 'after_or_equal:date_start'],
+            'date_stop' => ['required', 'date_format:Y-m-d', 'after_or_equal:date_start'],
         ]);
 
         $connection = $campaign->connection;
@@ -88,15 +88,15 @@ final class CampaignSyncController extends Controller
         }
 
         $result = $this->backfillAction->execute(
-            campaign:   $campaign,
+            campaign: $campaign,
             connection: $connection,
-            dateStart:  $validated['date_start'],
-            dateStop:   $validated['date_stop'],
+            dateStart: $validated['date_start'],
+            dateStop: $validated['date_stop'],
         );
 
         return response()->json([
             'message' => 'Backfill completed.',
-            'result'  => $result,
+            'result' => $result,
         ]);
     }
 }

@@ -12,9 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
-use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
-use Modules\Operations\Fulfillment\Application\Workflows\ConfirmOrderWorkflow;
 use Modules\Commerce\Orders\Application\Actions\CreateManualOrderAction;
 use Modules\Commerce\Orders\Application\Actions\CreateOrderAction;
 use Modules\Commerce\Orders\Application\Actions\DeleteOrderAction;
@@ -25,20 +22,24 @@ use Modules\Commerce\Orders\Application\Actions\PrepareOrderAction;
 use Modules\Commerce\Orders\Application\Actions\ResolveProductPricingAction;
 use Modules\Commerce\Orders\Application\Actions\UpdateOrderAction;
 use Modules\Commerce\Orders\Application\Actions\VerifyPaymentAction;
-use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
-use Modules\Commerce\Orders\Domain\Models\Order;
-use Modules\Commerce\Orders\Domain\Models\OrderEvent;
-use Modules\Commerce\Orders\Domain\Models\OrderNote;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Application\Services\CreateOrderSnapshotService;
+use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
+use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderBusinessContextSnapshot;
+use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Commerce\Orders\Domain\Models\OrderFinancialSnapshot;
+use Modules\Commerce\Orders\Domain\Models\OrderNote;
 use Modules\Commerce\Orders\Presentation\Http\Requests\PatchOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreManualOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\UpdateOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Resources\OrderFinancialSnapshotResource;
 use Modules\Commerce\Orders\Presentation\Http\Resources\OrderResource;
+use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
+use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
+use Modules\Operations\Fulfillment\Application\Workflows\ConfirmOrderWorkflow;
+use Throwable;
 
 final class OrderController extends Controller
 {
@@ -49,35 +50,35 @@ final class OrderController extends Controller
     public function index(Request $request, ListOrdersAction $action): JsonResponse
     {
         $filters = [
-            'search'             => $request->query('search'),
-            'status'             => $request->query('status', 'all'),
-            'channel_id'         => $request->query('channel_id'),
-            'customer_id'        => $request->query('customer_id'),
-            'customer_code'      => $request->query('customer_code'),
-            'phone'              => $request->query('phone'),
-            'external_number'    => $request->query('external_number'),
-            'brand_id'           => $request->query('brand_id'),
-            'product_id'         => $request->query('product_id'),
-            'sku'                => $request->query('sku'),
-            'payment_method'     => $request->query('payment_method'),
-            'payment_status'     => $request->query('payment_status'),   // paid|unpaid|partial
-            'shipping_company'   => $request->query('shipping_company'),
-            'date_from'          => $request->query('date_from'),
-            'date_to'            => $request->query('date_to'),
-            'has_location'       => $request->query('has_location'),
-            'has_payment_proof'  => $request->query('has_payment_proof'),
+            'search' => $request->query('search'),
+            'status' => $request->query('status', 'all'),
+            'channel_id' => $request->query('channel_id'),
+            'customer_id' => $request->query('customer_id'),
+            'customer_code' => $request->query('customer_code'),
+            'phone' => $request->query('phone'),
+            'external_number' => $request->query('external_number'),
+            'brand_id' => $request->query('brand_id'),
+            'product_id' => $request->query('product_id'),
+            'sku' => $request->query('sku'),
+            'payment_method' => $request->query('payment_method'),
+            'payment_status' => $request->query('payment_status'),   // paid|unpaid|partial
+            'shipping_company' => $request->query('shipping_company'),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+            'has_location' => $request->query('has_location'),
+            'has_payment_proof' => $request->query('has_payment_proof'),
             'reservation_status' => $request->query('reservation_status'), // reserved|not_reserved
-            'governorate'        => $request->query('governorate'),
-            'city'               => $request->query('city'),
-            'zone'               => $request->query('zone'),
-            'min_amount'         => $request->query('min_amount'),
-            'max_amount'         => $request->query('max_amount'),
-            'customer_filter'    => $request->query('customer_filter'),
-            'created_by'         => $request->query('created_by'),
-            'sort_by'            => $request->query('sort_by', 'created_at'),
-            'sort_dir'           => $request->query('sort_dir', 'desc'),
-            'per_page'           => $request->query('per_page', 10),
-            'company_id'         => $this->currentCompany->id(),
+            'governorate' => $request->query('governorate'),
+            'city' => $request->query('city'),
+            'zone' => $request->query('zone'),
+            'min_amount' => $request->query('min_amount'),
+            'max_amount' => $request->query('max_amount'),
+            'customer_filter' => $request->query('customer_filter'),
+            'created_by' => $request->query('created_by'),
+            'sort_by' => $request->query('sort_by', 'created_at'),
+            'sort_dir' => $request->query('sort_dir', 'desc'),
+            'per_page' => $request->query('per_page', 10),
+            'company_id' => $this->currentCompany->id(),
         ];
 
         $paginator = $action->execute($filters)->data();
@@ -87,18 +88,18 @@ final class OrderController extends Controller
             ->where('company_id', $filters['company_id'])
             ->when(
                 ($filters['status'] ?? 'all') !== 'all',
-                fn ($q) => $q->where('status', $filters['status'])
+                fn ($q) => $q->where('status', $filters['status']),
             )
             ->sum('total');
 
         return $this->success([
             'items' => OrderResource::collection($paginator->items()),
             'meta' => [
-                'current_page'  => $paginator->currentPage(),
-                'per_page'      => $paginator->perPage(),
-                'total'         => $paginator->total(),
-                'last_page'     => $paginator->lastPage(),
-                'total_amount'  => (float) $totalAmount,
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+                'total_amount' => (float) $totalAmount,
             ],
         ]);
     }
@@ -212,24 +213,24 @@ final class OrderController extends Controller
     public function orderStatuses(): JsonResponse
     {
         $all = array_map(
-            static fn(OrderStatus $s): array => ['value' => $s->value, 'label' => $s->label()],
+            static fn (OrderStatus $s): array => ['value' => $s->value, 'label' => $s->label()],
             OrderStatus::cases(),
         );
 
         $manualValues = [
-            OrderStatus::Pending->value,
+            OrderStatus::NewOrder->value,
             OrderStatus::AwaitingPayment->value,
-            OrderStatus::Processing->value,
+            OrderStatus::InProgress->value,
         ];
 
         $posValues = [
-            OrderStatus::Processing->value,
-            OrderStatus::Confirmed->value,
+            OrderStatus::InProgress->value,
+            OrderStatus::Delivered->value,
         ];
 
         $entryOptions = [
-            'manual' => array_values(array_filter($all, static fn(array $s) => in_array($s['value'], $manualValues, true))),
-            'pos'    => array_values(array_filter($all, static fn(array $s) => in_array($s['value'], $posValues, true))),
+            'manual' => array_values(array_filter($all, static fn (array $s) => in_array($s['value'], $manualValues, true))),
+            'pos' => array_values(array_filter($all, static fn (array $s) => in_array($s['value'], $posValues, true))),
         ];
 
         return $this->success(['all' => $all, 'entry_options' => $entryOptions]);
@@ -294,13 +295,13 @@ final class OrderController extends Controller
         try {
             Http::withOptions([
                 'allow_redirects' => ['max' => 10],
-                'on_stats'        => function (TransferStats $stats) use (&$finalUrl): void {
+                'on_stats' => function (TransferStats $stats) use (&$finalUrl): void {
                     $finalUrl = (string) $stats->getEffectiveUri();
                 },
             ])->withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; ECOS/1.0)'])
-              ->timeout(8)
-              ->head($url);
-        } catch (\Throwable) {
+                ->timeout(8)
+                ->head($url);
+        } catch (Throwable) {
             // Network or resolution failure — return the original URL unchanged.
         }
 
@@ -325,23 +326,23 @@ final class OrderController extends Controller
     ): JsonResponse {
         $validated = $request->validate([
             'communication_method' => ['required', 'string', 'in:phone,whatsapp,sms,email'],
-            'result'               => ['required', 'string', 'in:confirmed,not_answered,rejected,postponed'],
-            'notes'                => ['nullable', 'string', 'max:1000'],
+            'result' => ['required', 'string', 'in:confirmed,not_answered,rejected,postponed'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $model = Order::where('id', $order)
             ->where('company_id', $this->currentCompany->id())
             ->firstOrFail();
 
-        $actorId   = $request->user()?->id !== null ? (string) $request->user()->id : null;
+        $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
         $actorName = $request->user()?->name ?? 'system';
 
         // Pre-execution states where customer confirmation triggers automatic order status transition
         $preExecutionStatuses = [
-            OrderStatus::Pending,
+            OrderStatus::NewOrder,
             OrderStatus::AwaitingPayment,
-            OrderStatus::Review,
-            OrderStatus::Rescheduled,
+            OrderStatus::OnHold,
+            OrderStatus::Scheduled,
         ];
 
         $shouldAutoConfirm = $validated['result'] === 'confirmed'
@@ -355,7 +356,7 @@ final class OrderController extends Controller
         // Atomic: confirmation fields + order status transition (if applicable)
         DB::transaction(function () use ($model, $validated, $actorName, $actorId, $shouldAutoConfirm, $engine, $confirmWorkflow): void {
             $model->update([
-                'confirmation_result'   => $validated['result'],
+                'confirmation_result' => $validated['result'],
                 'customer_confirmed_at' => $validated['result'] === 'confirmed' ? now() : null,
                 'customer_confirmed_by' => $actorName,
             ]);
@@ -374,17 +375,17 @@ final class OrderController extends Controller
         // Post-commit: log the customer confirmation timeline event
         OrderEvent::logFromRequest(
             $request,
-            orderId:    $model->id,
-            type:       'customer_confirmed',
+            orderId: $model->id,
+            type: 'customer_confirmed',
             description: "Customer confirmation recorded via {$validated['communication_method']}. Result: {$validated['result']}."
-                . ($shouldAutoConfirm ? ' Order automatically transitioned to Confirmed.' : ''),
-            actorId:    $actorId,
-            actorName:  $actorName,
+                .($shouldAutoConfirm ? ' Order automatically transitioned to Confirmed.' : ''),
+            actorId: $actorId,
+            actorName: $actorName,
             actionType: 'customer',
-            metadata:   [
-                'method'         => $validated['communication_method'],
-                'result'         => $validated['result'],
-                'notes'          => $validated['notes'] ?? null,
+            metadata: [
+                'method' => $validated['communication_method'],
+                'result' => $validated['result'],
+                'notes' => $validated['notes'] ?? null,
                 'auto_confirmed' => $shouldAutoConfirm,
             ],
         );
@@ -409,7 +410,7 @@ final class OrderController extends Controller
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->firstOrFail();
 
-        $query = \Modules\Commerce\Orders\Domain\Models\OrderEvent::where('order_id', $model->id);
+        $query = OrderEvent::where('order_id', $model->id);
 
         if ($actionType = $request->query('action_type')) {
             $query->where('action_type', $actionType);
@@ -422,34 +423,34 @@ final class OrderController extends Controller
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('description', 'ilike', "%{$search}%")
-                  ->orWhere('event_type', 'ilike', "%{$search}%")
-                  ->orWhere('actor_name', 'ilike', "%{$search}%");
+                    ->orWhere('event_type', 'ilike', "%{$search}%")
+                    ->orWhere('actor_name', 'ilike', "%{$search}%");
             });
         }
 
         $events = $query->orderBy('created_at', 'asc')
             ->get()
             ->map(fn ($e) => [
-                'id'             => $e->id,
-                'event_type'     => $e->event_type,
-                'description'    => $e->description,
-                'actor_id'       => $e->actor_id,
-                'actor_name'     => $e->actor_name,
-                'actor_role'     => $e->actor_role,
-                'actor_email'    => $e->actor_email,
-                'actor_type'     => $e->actor_type,
-                'source'         => $e->source,
-                'action_type'    => $e->action_type,
+                'id' => $e->id,
+                'event_type' => $e->event_type,
+                'description' => $e->description,
+                'actor_id' => $e->actor_id,
+                'actor_name' => $e->actor_name,
+                'actor_role' => $e->actor_role,
+                'actor_email' => $e->actor_email,
+                'actor_type' => $e->actor_type,
+                'source' => $e->source,
+                'action_type' => $e->action_type,
                 'previous_value' => $e->previous_value,
-                'new_value'      => $e->new_value,
+                'new_value' => $e->new_value,
                 'changed_fields' => $e->changed_fields,
-                'reason'         => $e->reason,
-                'ip_address'     => $e->ip_address,
-                'user_agent'     => $e->user_agent,
-                'module'         => $e->module ?? 'orders',
-                'payload'        => $e->payload,
-                'metadata'       => $e->metadata,
-                'created_at'     => $e->created_at?->toIso8601String(),
+                'reason' => $e->reason,
+                'ip_address' => $e->ip_address,
+                'user_agent' => $e->user_agent,
+                'module' => $e->module ?? 'orders',
+                'payload' => $e->payload,
+                'metadata' => $e->metadata,
+                'created_at' => $e->created_at?->toIso8601String(),
             ]);
 
         return $this->success($events);
@@ -463,7 +464,7 @@ final class OrderController extends Controller
     {
         $validated = $request->validate([
             'content' => ['required', 'string', 'max:2000'],
-            'type'    => ['nullable', 'string', 'in:internal,customer,ai'],
+            'type' => ['nullable', 'string', 'in:internal,customer,ai'],
         ]);
 
         $companyId = $this->currentCompany->id();
@@ -471,33 +472,34 @@ final class OrderController extends Controller
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->firstOrFail();
 
-        $type      = $validated['type'] ?? 'internal';
-        $actorId   = $request->user()?->id !== null ? (string) $request->user()->id : null;
+        $type = $validated['type'] ?? 'internal';
+        $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
         $actorName = $request->user()?->name ?? 'system';
         $actorRole = $request->user()?->role ?? null;
 
         OrderNote::create([
-            'order_id'  => $model->id,
-            'type'      => $type === 'ai' ? 'system' : $type,
-            'content'   => $validated['content'],
-            'user_id'   => $actorId,
+            'order_id' => $model->id,
+            'type' => $type === 'ai' ? 'system' : $type,
+            'content' => $validated['content'],
+            'user_id' => $actorId,
             'user_name' => $actorName,
             'user_role' => $actorRole,
         ]);
 
         OrderEvent::logFromRequest(
             $request,
-            orderId:    $model->id,
-            type:       'note_added',
+            orderId: $model->id,
+            type: 'note_added',
             description: "Note added ({$type}) by {$actorName}.",
-            actorId:    $actorId,
-            actorName:  $actorName,
+            actorId: $actorId,
+            actorName: $actorName,
             actionType: 'note',
-            metadata:   ['type' => $type, 'content' => $validated['content']],
+            metadata: ['type' => $type, 'content' => $validated['content']],
         );
 
         $model->refresh();
         $model->load('orderNotes');
+
         return $this->updated(new OrderResource($model), 'Note added.');
     }
 
@@ -516,36 +518,36 @@ final class OrderController extends Controller
 
         $noteModel = OrderNote::where('id', $note)->where('order_id', $model->id)->firstOrFail();
 
-        $actorId    = $request->user()?->id !== null ? (string) $request->user()->id : null;
-        $actorName  = $request->user()?->name ?? 'system';
+        $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
+        $actorName = $request->user()?->name ?? 'system';
         $oldContent = $noteModel->content;
 
         $noteModel->update([
-            'content'        => $validated['content'],
-            'is_edited'      => true,
-            'edited_by_id'   => $actorId,
+            'content' => $validated['content'],
+            'is_edited' => true,
+            'edited_by_id' => $actorId,
             'edited_by_name' => $actorName,
-            'edited_at'      => now(),
+            'edited_at' => now(),
         ]);
 
         OrderEvent::logFromRequest(
             $request,
-            orderId:       $model->id,
-            type:          'note_updated',
-            description:   "Note edited by {$actorName}.",
-            actorId:       $actorId,
-            actorName:     $actorName,
-            actionType:    'note',
+            orderId: $model->id,
+            type: 'note_updated',
+            description: "Note edited by {$actorName}.",
+            actorId: $actorId,
+            actorName: $actorName,
+            actionType: 'note',
             previousValue: ['content' => $oldContent],
-            newValue:      ['content' => $validated['content']],
+            newValue: ['content' => $validated['content']],
         );
 
         return $this->success([
-            'id'             => $noteModel->id,
-            'content'        => $noteModel->content,
-            'is_edited'      => $noteModel->is_edited,
+            'id' => $noteModel->id,
+            'content' => $noteModel->content,
+            'is_edited' => $noteModel->is_edited,
             'edited_by_name' => $noteModel->edited_by_name,
-            'edited_at'      => $noteModel->edited_at?->toIso8601String(),
+            'edited_at' => $noteModel->edited_at?->toIso8601String(),
         ], 'Note updated.');
     }
 
@@ -562,21 +564,21 @@ final class OrderController extends Controller
 
         $noteModel = OrderNote::where('id', $note)->where('order_id', $model->id)->firstOrFail();
 
-        $actorId   = $request->user()?->id !== null ? (string) $request->user()->id : null;
+        $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
         $actorName = $request->user()?->name ?? 'system';
-        $content   = $noteModel->content;
+        $content = $noteModel->content;
 
         $noteModel->delete();
 
         OrderEvent::logFromRequest(
             $request,
-            orderId:    $model->id,
-            type:       'note_deleted',
+            orderId: $model->id,
+            type: 'note_deleted',
             description: "Note deleted by {$actorName}.",
-            actorId:    $actorId,
-            actorName:  $actorName,
+            actorId: $actorId,
+            actorName: $actorName,
             actionType: 'note',
-            metadata:   ['content_preview' => mb_substr($content, 0, 200)],
+            metadata: ['content_preview' => mb_substr($content, 0, 200)],
         );
 
         return $this->deleted('Note deleted.');
@@ -592,7 +594,7 @@ final class OrderController extends Controller
     {
         $validated = $request->validate([
             'delivery_zone_id' => ['nullable', 'string', 'max:100'],
-            'delivery_zone'    => ['required', 'string', 'max:255'],
+            'delivery_zone' => ['required', 'string', 'max:255'],
         ]);
 
         $model = Order::where('id', $order)
@@ -603,20 +605,20 @@ final class OrderController extends Controller
 
         $model->update([
             'delivery_zone_id' => $validated['delivery_zone_id'] ?? null,
-            'delivery_zone'    => $validated['delivery_zone'],
+            'delivery_zone' => $validated['delivery_zone'],
         ]);
 
         $model->refresh();
 
-        \Modules\Commerce\Orders\Domain\Models\OrderEvent::log(
+        OrderEvent::log(
             $model->id,
             'order_zone_updated',
             "Delivery zone updated from [{$previousZone}] to [{$model->delivery_zone}].",
             [
-                'previous_zone'    => $previousZone,
-                'new_zone'         => $model->delivery_zone,
-                'new_zone_id'      => $model->delivery_zone_id,
-                'actor_id'         => $request->user()?->id,
+                'previous_zone' => $previousZone,
+                'new_zone' => $model->delivery_zone,
+                'new_zone_id' => $model->delivery_zone_id,
+                'actor_id' => $request->user()?->id,
             ],
             $request->user()?->id !== null ? (string) $request->user()->id : null,
         );

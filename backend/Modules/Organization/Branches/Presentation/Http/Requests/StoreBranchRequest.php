@@ -43,6 +43,9 @@ final class StoreBranchRequest extends FormRequest
             'country' => ['nullable', 'string', 'max:100'],
             'is_head_office' => ['boolean'],
             'is_active' => ['boolean'],
+            'default_warehouse_id' => ['nullable', 'uuid', 'exists:warehouses,id'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ];
     }
 }

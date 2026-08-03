@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Operations;
 
+use BackedEnum;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -50,28 +51,34 @@ class OperationsIntegrationFinalCertTest extends TestCase
     use DatabaseTransactions;
 
     private ManufacturingExecutor $executor;
+
     private ExecutionPipeline $pipeline;
+
     private ShipOrderInventoryAction $shipAction;
+
     private ReserveStockAction $reserveAction;
+
     private InventoryItemRepositoryInterface $inventoryRepo;
 
     private Company $company;
+
     private Warehouse $warehouse;
+
     private Customer $customer;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->executor      = app(ManufacturingExecutor::class);
-        $this->pipeline      = app(ExecutionPipeline::class);
-        $this->shipAction    = app(ShipOrderInventoryAction::class);
+        $this->executor = app(ManufacturingExecutor::class);
+        $this->pipeline = app(ExecutionPipeline::class);
+        $this->shipAction = app(ShipOrderInventoryAction::class);
         $this->reserveAction = app(ReserveStockAction::class);
         $this->inventoryRepo = app(InventoryItemRepositoryInterface::class);
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->customer  = Customer::factory()->create();
+        $this->customer = Customer::factory()->create();
     }
 
     // ── Scenario A: Manufacture → FG FIFO layer → Shipment → FIFO consume ────
@@ -116,12 +123,12 @@ class OperationsIntegrationFinalCertTest extends TestCase
 
         // Reserve the manufactured FG so ShipStockAction guard (reserved_qty >= qty) is satisfied
         $this->reserveAction->execute(new StockOperationDTO(
-            warehouse_id:   $this->warehouse->id,
-            product_id:     $output->id,
-            company_id:     $this->company->id,
-            quantity:       5.0,
+            warehouse_id: $this->warehouse->id,
+            product_id: $output->id,
+            company_id: $this->company->id,
+            quantity: 5.0,
             reference_type: 'sales_order',
-            reference_id:   'test-order-1',
+            reference_id: 'test-order-1',
         ));
 
         $order = $this->makeShippableOrder($output, qty: 5.0, reservedQty: 5.0);
@@ -155,7 +162,7 @@ class OperationsIntegrationFinalCertTest extends TestCase
     /** @test */
     public function scenario_a_fg_fifo_layer_cost_reflects_weighted_average_component_cost(): void
     {
-        $output    = Product::factory()->finishedGood()->manufacturable()->create();
+        $output = Product::factory()->finishedGood()->manufacturable()->create();
         $component = Product::factory()->rawMaterial()->create(['allow_negative_stock' => false]);
 
         // Two RM layers at different costs: 5@10 + 5@30 = 200 total, 10 units
@@ -189,12 +196,12 @@ class OperationsIntegrationFinalCertTest extends TestCase
         $this->runManufacturing($output, $component, qtyToManufacture: 3.0, componentQtyEach: 2.0);
 
         $this->reserveAction->execute(new StockOperationDTO(
-            warehouse_id:   $this->warehouse->id,
-            product_id:     $output->id,
-            company_id:     $this->company->id,
-            quantity:       3.0,
+            warehouse_id: $this->warehouse->id,
+            product_id: $output->id,
+            company_id: $this->company->id,
+            quantity: 3.0,
             reference_type: 'sales_order',
-            reference_id:   'test-order-b',
+            reference_id: 'test-order-b',
         ));
 
         $fgItem = InventoryItem::query()
@@ -218,7 +225,7 @@ class OperationsIntegrationFinalCertTest extends TestCase
             ->where('product_id', $output->id)
             ->where('warehouse_id', $this->warehouse->id)
             ->pluck('movement_type')
-            ->map(fn ($t) => $t instanceof \BackedEnum ? $t->value : (string) $t)
+            ->map(fn ($t) => $t instanceof BackedEnum ? $t->value : (string) $t)
             ->toArray();
 
         $this->assertContains('production_output', $ledgerTypes, 'ProductionOutput ledger entry must exist');
@@ -247,9 +254,9 @@ class OperationsIntegrationFinalCertTest extends TestCase
         // Company A's InventoryItem
         $itemA = InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => 10.0,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => 10.0,
             'reserved_qty' => 5.0,
         ]);
 
@@ -271,7 +278,7 @@ class OperationsIntegrationFinalCertTest extends TestCase
     /** @test */
     public function scenario_c_company_scoped_lookup_returns_null_when_no_item_exists(): void
     {
-        $product  = Product::factory()->create();
+        $product = Product::factory()->create();
         $companyB = Company::factory()->create();
 
         $item = $this->inventoryRepo->findByWarehouseProductAndCompany(
@@ -291,7 +298,7 @@ class OperationsIntegrationFinalCertTest extends TestCase
     {
         $listeners = Event::getListeners(InventoryTransferred::class);
         $this->assertCount(0, $listeners,
-            'C-003 / ADR-026: InventoryTransferred must have no listener in Phase A. ' .
+            'C-003 / ADR-026: InventoryTransferred must have no listener in Phase A. '.
             'Register in Phase B — see docs/adr/ADR-026-transfer-events-phase-b.md');
     }
 
@@ -309,14 +316,14 @@ class OperationsIntegrationFinalCertTest extends TestCase
         // Check both: inside base_path() and one directory up (project root if backend/ is a subdir)
         $candidates = [
             base_path('docs/adr/ADR-026-transfer-events-phase-b.md'),
-            dirname(base_path()) . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'adr' . DIRECTORY_SEPARATOR . 'ADR-026-transfer-events-phase-b.md',
+            dirname(base_path()).DIRECTORY_SEPARATOR.'docs'.DIRECTORY_SEPARATOR.'adr'.DIRECTORY_SEPARATOR.'ADR-026-transfer-events-phase-b.md',
         ];
 
         $found = array_filter($candidates, 'file_exists');
 
         $this->assertNotEmpty($found,
-            'ADR-026 must exist at docs/adr/ADR-026-transfer-events-phase-b.md ' .
-            '(checked: ' . implode(', ', $candidates) . ')');
+            'ADR-026 must exist at docs/adr/ADR-026-transfer-events-phase-b.md '.
+            '(checked: '.implode(', ', $candidates).')');
     }
 
     // ── Additional C-001 invariant tests ─────────────────────────────────────
@@ -324,7 +331,7 @@ class OperationsIntegrationFinalCertTest extends TestCase
     /** @test */
     public function fifo_invariant_holds_when_rm_has_no_receipt_layers(): void
     {
-        $output    = Product::factory()->finishedGood()->manufacturable()->create();
+        $output = Product::factory()->finishedGood()->manufacturable()->create();
         $component = Product::factory()->rawMaterial()->create(['allow_negative_stock' => true]);
 
         $this->seedInventoryItem($component, onHand: 5.0);
@@ -352,7 +359,7 @@ class OperationsIntegrationFinalCertTest extends TestCase
     /** @test */
     public function fifo_invariant_holds_with_negative_stock_component(): void
     {
-        $output    = Product::factory()->finishedGood()->manufacturable()->create();
+        $output = Product::factory()->finishedGood()->manufacturable()->create();
         $component = Product::factory()->rawMaterial()->create(['allow_negative_stock' => true]);
 
         $this->seedInventoryItem($component, onHand: 3.0);
@@ -382,7 +389,7 @@ class OperationsIntegrationFinalCertTest extends TestCase
     {
         [$output, $component] = $this->makeOutputWithComponent(unitCost: 10.0);
 
-        $plan    = $this->buildPlan($output, $component, qtyToConsume: 5.0, qtyToManufacture: 5.0);
+        $plan = $this->buildPlan($output, $component, qtyToConsume: 5.0, qtyToManufacture: 5.0);
         $context = $this->pipeline->prepare($plan);
 
         $this->executor->execute($context, $this->company->id); // first execution
@@ -403,7 +410,7 @@ class OperationsIntegrationFinalCertTest extends TestCase
     /** @return array{Product, Product} */
     private function makeOutputWithComponent(float $unitCost = 10.0): array
     {
-        $output    = Product::factory()->finishedGood()->manufacturable()->create();
+        $output = Product::factory()->finishedGood()->manufacturable()->create();
         $component = Product::factory()->rawMaterial()->create(['allow_negative_stock' => false]);
 
         $this->seedInventoryItem($component, onHand: 100.0);
@@ -419,12 +426,12 @@ class OperationsIntegrationFinalCertTest extends TestCase
         float $componentQtyEach,
         bool $allowNegative = false,
     ): ManufacturingExecutionResult {
-        $plan    = $this->buildPlan(
+        $plan = $this->buildPlan(
             $output,
             $component,
-            qtyToConsume:     $componentQtyEach * $qtyToManufacture,
+            qtyToConsume: $componentQtyEach * $qtyToManufacture,
             qtyToManufacture: $qtyToManufacture,
-            allowNegative:    $allowNegative,
+            allowNegative: $allowNegative,
         );
         $context = $this->pipeline->prepare($plan);
 
@@ -439,31 +446,31 @@ class OperationsIntegrationFinalCertTest extends TestCase
         bool $allowNegative = false,
     ): ManufacturingPlan {
         $recipeId = Str::uuid()->toString();
-        $planId   = Str::uuid()->toString();
+        $planId = Str::uuid()->toString();
 
         $snapshot = new RecipeSnapshot(
-            recipe_id:          $recipeId,
-            bom_number:         'BOM-' . Str::random(8),
-            version:            '1.0',
+            recipe_id: $recipeId,
+            bom_number: 'BOM-'.Str::random(8),
+            version: '1.0',
             bom_version_number: 1,
-            product_id:         $output->id,
-            product_sku:        $output->sku,
-            product_name:       $output->name,
-            components:         [
+            product_id: $output->id,
+            product_sku: $output->sku,
+            product_name: $output->name,
+            components: [
                 new RecipeComponent(
-                    component_id:         $component->id,
-                    sku:                  $component->sku,
-                    name:                 $component->name,
-                    unit_id:              'unit-cert',
-                    unit_name:            'Unit',
-                    unit_symbol:          'u',
-                    quantity:             $qtyToManufacture > 0
+                    component_id: $component->id,
+                    sku: $component->sku,
+                    name: $component->name,
+                    unit_id: 'unit-cert',
+                    unit_name: 'Unit',
+                    unit_symbol: 'u',
+                    quantity: $qtyToManufacture > 0
                         ? $qtyToConsume / $qtyToManufacture
                         : $qtyToConsume,
                     allow_negative_stock: $allowNegative,
                 ),
             ],
-            resolved_at: (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+            resolved_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
         );
 
         $hash = hash('sha256', json_encode($snapshot->toArray(), JSON_THROW_ON_ERROR));
@@ -476,62 +483,62 @@ class OperationsIntegrationFinalCertTest extends TestCase
         $missingQty = max(0.0, $qtyToConsume - $availableQty);
 
         return new ManufacturingPlan(
-            plan_id:                   $planId,
-            product_id:                $output->id,
-            warehouse_id:              $this->warehouse->id,
-            product_sku:               $output->sku,
-            product_name:              $output->name,
-            qty_to_manufacture:        $qtyToManufacture,
+            plan_id: $planId,
+            product_id: $output->id,
+            warehouse_id: $this->warehouse->id,
+            product_sku: $output->sku,
+            product_name: $output->name,
+            qty_to_manufacture: $qtyToManufacture,
             finished_goods_to_produce: $qtyToManufacture,
-            available_finished_goods:  0.0,
-            recipe_id:                 $recipeId,
-            bom_version_number:        1,
-            recipe_snapshot:           $snapshot,
-            recipe_snapshot_hash:      $hash,
-            components:                [
+            available_finished_goods: 0.0,
+            recipe_id: $recipeId,
+            bom_version_number: 1,
+            recipe_snapshot: $snapshot,
+            recipe_snapshot_hash: $hash,
+            components: [
                 new ComponentConsumptionPlan(
-                    component_id:         $component->id,
-                    sku:                  $component->sku,
-                    name:                 $component->name,
-                    unit_symbol:          'u',
-                    qty_to_consume:       $qtyToConsume,
-                    available_qty:        $availableQty,
-                    missing_qty:          $missingQty,
+                    component_id: $component->id,
+                    sku: $component->sku,
+                    name: $component->name,
+                    unit_symbol: 'u',
+                    qty_to_consume: $qtyToConsume,
+                    available_qty: $availableQty,
+                    missing_qty: $missingQty,
                     allow_negative_stock: $allowNegative,
-                    will_go_negative:     $allowNegative && $missingQty > 0.0,
-                    is_blocked:           false,
+                    will_go_negative: $allowNegative && $missingQty > 0.0,
+                    is_blocked: false,
                 ),
             ],
-            negative_stock_decisions:  [],
-            eligibility:               ManufacturingEligibility::CanManufacture,
-            can_proceed:               true,
-            should_manufacture:        true,
-            decision_type:             DecisionType::Approve,
-            decision_reason:           new DecisionReason(code: 'approved', message: 'Approved'),
-            planned_at:                (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-            metadata:                  [],
+            negative_stock_decisions: [],
+            eligibility: ManufacturingEligibility::CanManufacture,
+            can_proceed: true,
+            should_manufacture: true,
+            decision_type: DecisionType::Approve,
+            decision_reason: new DecisionReason(code: 'approved', message: 'Approved'),
+            planned_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
+            metadata: [],
         );
     }
 
     private function makeShippableOrder(Product $product, float $qty, float $reservedQty): Order
     {
         $order = Order::create([
-            'customer_id'           => $this->customer->id,
+            'customer_id' => $this->customer->id,
             'assigned_warehouse_id' => $this->warehouse->id,
-            'order_number'          => 'CERT-' . Str::random(8),
-            'order_date'            => now()->toDateString(),
-            'status'                => OrderStatus::Preparing->value,
+            'order_number' => 'CERT-'.Str::random(8),
+            'order_date' => now()->toDateString(),
+            'status' => OrderStatus::Preparing->value,
             'inventory_reserved_at' => now(),
-            'subtotal'              => $qty * 100,
-            'total'                 => $qty * 100,
+            'subtotal' => $qty * 100,
+            'total' => $qty * 100,
         ]);
 
         $order->lines()->create([
-            'product_id'  => $product->id,
-            'quantity'    => $qty,
+            'product_id' => $product->id,
+            'quantity' => $qty,
             'reserved_qty' => $reservedQty,
-            'unit_price'  => 100.0,
-            'line_total'  => $qty * 100,
+            'unit_price' => 100.0,
+            'line_total' => $qty * 100,
         ]);
 
         return $order->load('lines', 'assignedWarehouse');
@@ -541,9 +548,9 @@ class OperationsIntegrationFinalCertTest extends TestCase
     {
         InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => 0.0,
         ]);
     }
@@ -551,13 +558,13 @@ class OperationsIntegrationFinalCertTest extends TestCase
     private function seedReceiptLayer(Product $product, float $qty, float $cost, int $offsetSeconds = 0): void
     {
         InventoryReceiptLayer::query()->create([
-            'company_id'       => $this->company->id,
-            'product_id'       => $product->id,
-            'warehouse_id'     => $this->warehouse->id,
-            'received_qty'     => $qty,
-            'remaining_qty'    => $qty,
+            'company_id' => $this->company->id,
+            'product_id' => $product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'received_qty' => $qty,
+            'remaining_qty' => $qty,
             'landed_unit_cost' => $cost,
-            'receipt_date'     => now()->addSeconds($offsetSeconds),
+            'receipt_date' => now()->addSeconds($offsetSeconds),
         ]);
     }
 

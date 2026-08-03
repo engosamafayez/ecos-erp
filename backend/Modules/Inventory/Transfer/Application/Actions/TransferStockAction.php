@@ -6,6 +6,7 @@ namespace Modules\Inventory\Transfer\Application\Actions;
 
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -24,6 +25,7 @@ use Modules\Inventory\Transfer\Domain\Exceptions\InactiveWarehouseException;
 use Modules\Inventory\Transfer\Domain\Exceptions\SameWarehouseTransferException;
 use Modules\Inventory\Transfer\Domain\Models\WarehouseTransfer;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
+use RuntimeException;
 
 /**
  * Canonical warehouse-to-warehouse stock transfer.
@@ -57,7 +59,7 @@ final class TransferStockAction extends BaseAction
     ) {}
 
     /**
-     * @param  mixed ...$arguments  [TransferStockDTO]
+     * @param  mixed  ...$arguments  [TransferStockDTO]
      */
     public function execute(mixed ...$arguments): OperationResult
     {
@@ -70,14 +72,14 @@ final class TransferStockAction extends BaseAction
         $this->validateInputs($dto);
 
         // Load and validate warehouses BEFORE the transaction to fail fast.
-        $srcWarehouse  = Warehouse::query()->find($dto->sourceWarehouseId);
+        $srcWarehouse = Warehouse::query()->find($dto->sourceWarehouseId);
         $destWarehouse = Warehouse::query()->find($dto->destinationWarehouseId);
 
         if ($srcWarehouse === null) {
-            throw new \DomainException("Source warehouse [{$dto->sourceWarehouseId}] not found.");
+            throw new DomainException("Source warehouse [{$dto->sourceWarehouseId}] not found.");
         }
         if ($destWarehouse === null) {
-            throw new \DomainException("Destination warehouse [{$dto->destinationWarehouseId}] not found.");
+            throw new DomainException("Destination warehouse [{$dto->destinationWarehouseId}] not found.");
         }
         if (! $srcWarehouse->is_active) {
             throw new InactiveWarehouseException($srcWarehouse->id, 'source warehouse');
@@ -94,29 +96,29 @@ final class TransferStockAction extends BaseAction
 
         $product = Product::query()->find($dto->productId);
         if ($product === null) {
-            throw new \DomainException("Product [{$dto->productId}] not found.");
+            throw new DomainException("Product [{$dto->productId}] not found.");
         }
         if (! $product->is_active) {
-            throw new \DomainException("Product [{$dto->productId}] is inactive. Transfer rejected.");
+            throw new DomainException("Product [{$dto->productId}] is inactive. Transfer rejected.");
         }
 
         // State captured outside the transaction for post-commit event payloads.
         $transferRecord = null;
-        $events         = [];
+        $events = [];
 
-        DB::transaction(function () use ($dto, $srcWarehouse, $destWarehouse, $product, &$transferRecord, &$events): void {
+        DB::transaction(function () use ($dto, $srcWarehouse, $destWarehouse, &$transferRecord, &$events): void {
 
             // ── Step 1: Lock source inventory row ─────────────────────────────
-            $srcItem   = $this->inventory->findOrCreate($dto->sourceWarehouseId, $dto->productId, $dto->companyId);
+            $srcItem = $this->inventory->findOrCreate($dto->sourceWarehouseId, $dto->productId, $dto->companyId);
             $lockedSrc = $this->inventory->lockForUpdate($srcItem->id);
 
             if ($lockedSrc === null) {
-                throw new \RuntimeException('Source InventoryItem disappeared during transaction.');
+                throw new RuntimeException('Source InventoryItem disappeared during transaction.');
             }
 
-            $srcOnHandBefore   = (float) $lockedSrc->on_hand_qty;
+            $srcOnHandBefore = (float) $lockedSrc->on_hand_qty;
             $srcReservedBefore = (float) $lockedSrc->reserved_qty;
-            $availableQty      = $srcOnHandBefore - $srcReservedBefore;
+            $availableQty = $srcOnHandBefore - $srcReservedBefore;
 
             // ── Step 2: Available-stock validation ────────────────────────────
             if ($availableQty < $dto->quantity) {
@@ -129,14 +131,14 @@ final class TransferStockAction extends BaseAction
             }
 
             // ── Step 3: Lock destination inventory row ────────────────────────
-            $destItem   = $this->inventory->findOrCreate($dto->destinationWarehouseId, $dto->productId, $dto->companyId);
+            $destItem = $this->inventory->findOrCreate($dto->destinationWarehouseId, $dto->productId, $dto->companyId);
             $lockedDest = $this->inventory->lockForUpdate($destItem->id);
 
             if ($lockedDest === null) {
-                throw new \RuntimeException('Destination InventoryItem disappeared during transaction.');
+                throw new RuntimeException('Destination InventoryItem disappeared during transaction.');
             }
 
-            $destOnHandBefore   = (float) $lockedDest->on_hand_qty;
+            $destOnHandBefore = (float) $lockedDest->on_hand_qty;
             $destReservedBefore = (float) $lockedDest->reserved_qty;
 
             // ── Step 4: Process source FIFO layers ────────────────────────────
@@ -164,8 +166,8 @@ final class TransferStockAction extends BaseAction
             }
 
             // L-02: BCMath for all FIFO cost calculations — eliminates float drift.
-            $remaining       = (string) $dto->quantity;
-            $totalCost       = '0';
+            $remaining = (string) $dto->quantity;
+            $totalCost = '0';
             $destLayerSlices = [];
 
             foreach ($sourceLayers as $layer) {
@@ -174,20 +176,20 @@ final class TransferStockAction extends BaseAction
                 }
 
                 $layerRemaining = (string) $layer->remaining_qty;
-                $consume        = bccomp($remaining, $layerRemaining, 4) <= 0
+                $consume = bccomp($remaining, $layerRemaining, 4) <= 0
                     ? $remaining
                     : $layerRemaining;
-                $unitCost       = (string) $layer->landed_unit_cost;
-                $sliceCost      = bcmul($consume, $unitCost, 4);
+                $unitCost = (string) $layer->landed_unit_cost;
+                $sliceCost = bcmul($consume, $unitCost, 4);
 
                 $layer->remaining_qty = bcsub($layerRemaining, $consume, 4);
                 $layer->save();
 
                 $destLayerSlices[] = [
-                    'quantity'            => $consume,
-                    'landed_unit_cost'    => $unitCost,
-                    'supplier_id'         => $layer->supplier_id,
-                    'receipt_date'        => $layer->receipt_date,
+                    'quantity' => $consume,
+                    'landed_unit_cost' => $unitCost,
+                    'supplier_id' => $layer->supplier_id,
+                    'receipt_date' => $layer->receipt_date,
                     'sale_price_snapshot' => $layer->sale_price_snapshot,
                 ];
 
@@ -204,17 +206,17 @@ final class TransferStockAction extends BaseAction
             // so the destination warehouse's FIFO history reflects the true cost basis.
             foreach ($destLayerSlices as $slice) {
                 InventoryReceiptLayer::query()->create([
-                    'company_id'            => $dto->companyId,
-                    'supplier_id'           => $slice['supplier_id'],
-                    'product_id'            => $dto->productId,
-                    'goods_receipt_id'      => null,
+                    'company_id' => $dto->companyId,
+                    'supplier_id' => $slice['supplier_id'],
+                    'product_id' => $dto->productId,
+                    'goods_receipt_id' => null,
                     'goods_receipt_line_id' => null,
-                    'warehouse_id'          => $dto->destinationWarehouseId,
-                    'received_qty'          => $slice['quantity'],
-                    'remaining_qty'         => $slice['quantity'],
-                    'landed_unit_cost'      => $slice['landed_unit_cost'],
-                    'sale_price_snapshot'   => $slice['sale_price_snapshot'],
-                    'receipt_date'          => $slice['receipt_date'],
+                    'warehouse_id' => $dto->destinationWarehouseId,
+                    'received_qty' => $slice['quantity'],
+                    'remaining_qty' => $slice['quantity'],
+                    'landed_unit_cost' => $slice['landed_unit_cost'],
+                    'sale_price_snapshot' => $slice['sale_price_snapshot'],
+                    'receipt_date' => $slice['receipt_date'],
                 ]);
             }
 
@@ -230,92 +232,92 @@ final class TransferStockAction extends BaseAction
 
             // ── Step 8: Generate transfer number — UUID-based, collision-free ──
             // L-06: replaces uniqid() which collides under concurrent microsecond load.
-            $transferNumber = 'TRF-' . now()->format('Ymd') . '-' . strtoupper(substr((string) Str::uuid(), 0, 8));
+            $transferNumber = 'TRF-'.now()->format('Ymd').'-'.strtoupper(substr((string) Str::uuid(), 0, 8));
 
             // ── Step 9: Write TransferOut ledger entry (source) ───────────────
             $this->inventory->recordEntry([
                 'inventory_item_id' => $lockedSrc->id,
-                'warehouse_id'      => $dto->sourceWarehouseId,
-                'product_id'        => $dto->productId,
-                'company_id'        => $dto->companyId,
-                'movement_type'     => LedgerMovementType::TransferOut->value,
-                'quantity'          => $dto->quantity,
-                'on_hand_before'    => $srcOnHandBefore,
-                'on_hand_after'     => $srcOnHandAfter,
-                'reserved_before'   => $srcReservedBefore,
-                'reserved_after'    => $srcReservedBefore,
-                'reference_type'    => 'warehouse_transfer',
-                'reference_id'      => $transferNumber,
-                'notes'             => "TransferOut → {$destWarehouse->name}. {$dto->notes}",
+                'warehouse_id' => $dto->sourceWarehouseId,
+                'product_id' => $dto->productId,
+                'company_id' => $dto->companyId,
+                'movement_type' => LedgerMovementType::TransferOut->value,
+                'quantity' => $dto->quantity,
+                'on_hand_before' => $srcOnHandBefore,
+                'on_hand_after' => $srcOnHandAfter,
+                'reserved_before' => $srcReservedBefore,
+                'reserved_after' => $srcReservedBefore,
+                'reference_type' => 'warehouse_transfer',
+                'reference_id' => $transferNumber,
+                'notes' => "TransferOut → {$destWarehouse->name}. {$dto->notes}",
             ]);
 
             // ── Step 10: Write TransferIn ledger entry (destination) ──────────
             $this->inventory->recordEntry([
                 'inventory_item_id' => $lockedDest->id,
-                'warehouse_id'      => $dto->destinationWarehouseId,
-                'product_id'        => $dto->productId,
-                'company_id'        => $dto->companyId,
-                'movement_type'     => LedgerMovementType::TransferIn->value,
-                'quantity'          => $dto->quantity,
-                'on_hand_before'    => $destOnHandBefore,
-                'on_hand_after'     => $destOnHandAfter,
-                'reserved_before'   => $destReservedBefore,
-                'reserved_after'    => $destReservedBefore,
-                'reference_type'    => 'warehouse_transfer',
-                'reference_id'      => $transferNumber,
-                'notes'             => "TransferIn ← {$srcWarehouse->name}. {$dto->notes}",
+                'warehouse_id' => $dto->destinationWarehouseId,
+                'product_id' => $dto->productId,
+                'company_id' => $dto->companyId,
+                'movement_type' => LedgerMovementType::TransferIn->value,
+                'quantity' => $dto->quantity,
+                'on_hand_before' => $destOnHandBefore,
+                'on_hand_after' => $destOnHandAfter,
+                'reserved_before' => $destReservedBefore,
+                'reserved_after' => $destReservedBefore,
+                'reference_type' => 'warehouse_transfer',
+                'reference_id' => $transferNumber,
+                'notes' => "TransferIn ← {$srcWarehouse->name}. {$dto->notes}",
             ]);
 
             // ── Step 11: Create WarehouseTransfer audit record ────────────────
-            $totalCostFloat       = (float) $totalCost;
+            $totalCostFloat = (float) $totalCost;
             $weightedUnitCostFloat = (float) $weightedUnitCost;
 
             $transferRecord = WarehouseTransfer::query()->create([
-                'transfer_number'          => $transferNumber,
-                'company_id'               => $dto->companyId,
-                'source_warehouse_id'      => $dto->sourceWarehouseId,
+                'transfer_number' => $transferNumber,
+                'company_id' => $dto->companyId,
+                'source_warehouse_id' => $dto->sourceWarehouseId,
                 'destination_warehouse_id' => $dto->destinationWarehouseId,
-                'product_id'               => $dto->productId,
-                'quantity'                 => $dto->quantity,
-                'total_cost'               => $totalCostFloat,
-                'weighted_unit_cost'       => $weightedUnitCostFloat,
-                'status'                   => TransferStatus::Completed->value,
-                'transferred_by'           => $dto->actorId,
-                'transferred_at'           => now(),
-                'reference'                => $dto->reference,
-                'notes'                    => $dto->notes,
-                'meta'                     => [
-                    'source_on_hand_before'      => $srcOnHandBefore,
-                    'source_on_hand_after'        => $srcOnHandAfter,
-                    'destination_on_hand_before'  => $destOnHandBefore,
-                    'destination_on_hand_after'   => $destOnHandAfter,
-                    'layer_slices_count'          => count($destLayerSlices),
+                'product_id' => $dto->productId,
+                'quantity' => $dto->quantity,
+                'total_cost' => $totalCostFloat,
+                'weighted_unit_cost' => $weightedUnitCostFloat,
+                'status' => TransferStatus::Completed->value,
+                'transferred_by' => $dto->actorId,
+                'transferred_at' => now(),
+                'reference' => $dto->reference,
+                'notes' => $dto->notes,
+                'meta' => [
+                    'source_on_hand_before' => $srcOnHandBefore,
+                    'source_on_hand_after' => $srcOnHandAfter,
+                    'destination_on_hand_before' => $destOnHandBefore,
+                    'destination_on_hand_after' => $destOnHandAfter,
+                    'layer_slices_count' => count($destLayerSlices),
                 ],
             ]);
 
             $events[] = new InventoryTransferred(
-                transferId:              $transferRecord->id,
-                productId:               $dto->productId,
-                companyId:               $dto->companyId,
-                sourceWarehouseId:       $dto->sourceWarehouseId,
-                destinationWarehouseId:  $dto->destinationWarehouseId,
-                quantity:                $dto->quantity,
-                totalCost:               $totalCostFloat,
-                weightedUnitCost:        $weightedUnitCostFloat,
-                transferNumber:          $transferNumber,
+                transferId: $transferRecord->id,
+                productId: $dto->productId,
+                companyId: $dto->companyId,
+                sourceWarehouseId: $dto->sourceWarehouseId,
+                destinationWarehouseId: $dto->destinationWarehouseId,
+                quantity: $dto->quantity,
+                totalCost: $totalCostFloat,
+                weightedUnitCost: $weightedUnitCostFloat,
+                transferNumber: $transferNumber,
             );
 
             $events[] = new WarehouseTransferCompleted(
-                transferId:              $transferRecord->id,
-                transferNumber:          $transferNumber,
-                companyId:               $dto->companyId,
-                sourceWarehouseId:       $dto->sourceWarehouseId,
-                destinationWarehouseId:  $dto->destinationWarehouseId,
-                productId:               $dto->productId,
-                quantity:                $dto->quantity,
-                totalCost:               $totalCostFloat,
-                actorId:                 $dto->actorId,
-                reference:               $dto->reference,
+                transferId: $transferRecord->id,
+                transferNumber: $transferNumber,
+                companyId: $dto->companyId,
+                sourceWarehouseId: $dto->sourceWarehouseId,
+                destinationWarehouseId: $dto->destinationWarehouseId,
+                productId: $dto->productId,
+                quantity: $dto->quantity,
+                totalCost: $totalCostFloat,
+                actorId: $dto->actorId,
+                reference: $dto->reference,
             );
         });
 

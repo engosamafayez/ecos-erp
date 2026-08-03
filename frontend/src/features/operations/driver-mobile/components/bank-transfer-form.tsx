@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ interface BankTransferFormProps {
 }
 
 export function BankTransferForm({ onSubmit, onCancel, isLoading }: BankTransferFormProps) {
+  const { currency } = useFormatter();
   const [amount, setAmount]       = useState('');
   const [reference, setReference] = useState('');
   const [imageUrl, setImageUrl]   = useState('');
@@ -31,7 +33,7 @@ export function BankTransferForm({ onSubmit, onCancel, isLoading }: BankTransfer
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Amount (EGP) *</Label>
+        <Label>Amount ({currency}) *</Label>
         <Input
           type="number"
           min="0"

@@ -21,9 +21,9 @@ final class ReceiptController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private readonly FindReceiptService    $findReceiptService,
+        private readonly FindReceiptService $findReceiptService,
         private readonly ReprintReceiptService $reprintReceiptService,
-        private readonly VoidReceiptService    $voidReceiptService,
+        private readonly VoidReceiptService $voidReceiptService,
     ) {}
 
     public function show(string $receipt): JsonResponse
@@ -35,30 +35,30 @@ final class ReceiptController extends Controller
 
     public function reprint(string $receipt, ReprintReceiptRequest $request): JsonResponse
     {
-        $data    = $request->validated();
+        $data = $request->validated();
         $command = new ReprintReceiptCommand(
-            receiptId:  $receipt,
-            cashierId:  $data['cashier_id'],
+            receiptId: $receipt,
+            cashierId: $data['cashier_id'],
             terminalId: $data['terminal_id'],
-            reason:     $data['reason'],
+            reason: $data['reason'],
         );
 
         $result = $this->reprintReceiptService->execute($command);
 
         return $this->success([
-            'receipt_id'     => $result->receiptId,
+            'receipt_id' => $result->receiptId,
             'receipt_number' => $result->receiptNumber,
-            'reprint_count'  => $result->reprintCount,
+            'reprint_count' => $result->reprintCount,
         ], 'Receipt reprinted.');
     }
 
     public function destroy(string $receipt, VoidReceiptRequest $request): JsonResponse
     {
-        $data    = $request->validated();
+        $data = $request->validated();
         $command = new VoidReceiptCommand(
             receiptId: $receipt,
             cashierId: $data['cashier_id'],
-            reason:    $data['reason'] ?? '',
+            reason: $data['reason'] ?? '',
         );
 
         $result = $this->voidReceiptService->execute($command);

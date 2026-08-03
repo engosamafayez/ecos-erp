@@ -9,8 +9,8 @@ use Modules\Commerce\Orders\Domain\Events\OrderBusinessContextCaptured;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderBusinessContextSnapshot;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
-use Modules\CostManagement\Domain\Models\PricingReview;
 use Modules\CostManagement\Domain\Enums\PricingReviewStatus;
+use Modules\CostManagement\Domain\Models\PricingReview;
 
 /**
  * TASK-ORDER-006C — Creates an immutable business context snapshot for a confirmed order.
@@ -34,33 +34,33 @@ final class CreateBusinessContextSnapshotService
         $order->loadMissing(['channel.brand', 'customer', 'lines.product.activeRecipe']);
 
         $actorId = Auth::id() !== null ? (string) Auth::id() : null;
-        $now     = now();
+        $now = now();
 
         // ── PART 1: Policy versions (static until policy versioning module ships) ─
-        $pricingPolicyVersion  = '1.0.0';
+        $pricingPolicyVersion = '1.0.0';
         $shippingPolicyVersion = '1.0.0';
 
         // ── PART 2: Decision Provenance ───────────────────────────────────────
 
         // Price provenance: check if any line has an approved price review
-        $priceSource  = $this->resolvePriceSource($order);
+        $priceSource = $this->resolvePriceSource($order);
         $priceReviewId = $this->resolveFirstPriceReviewId($order);
 
         // Discount provenance
-        $discountSource         = null;
+        $discountSource = null;
         $discountManualOverride = false;
         if (($order->discount_amount ?? 0) > 0) {
-            $discountSource         = 'manual';
+            $discountSource = 'manual';
             $discountManualOverride = true;
         }
 
         // Shipping provenance
-        $shippingZone   = implode(' › ', array_filter([$order->governorate, $order->area])) ?: null;
+        $shippingZone = implode(' › ', array_filter([$order->governorate, $order->area])) ?: null;
         $shippingRuleId = $this->resolveShippingRuleId($order);
 
         // Cost provenance
-        $costSource     = $this->resolveCostSource($order);
-        $recipeVersion  = $this->resolveRecipeVersion($order);
+        $costSource = $this->resolveCostSource($order);
+        $recipeVersion = $this->resolveRecipeVersion($order);
 
         // ── PART 3: Approval Snapshot ─────────────────────────────────────────
         $confirmationUser = $actorId;
@@ -69,7 +69,7 @@ final class CreateBusinessContextSnapshotService
         $deliverySuccessRate = $this->resolveDeliverySuccessRate($order);
 
         // ── PART 5: Brand Context ─────────────────────────────────────────────
-        $brand     = $order->channel?->brand;
+        $brand = $order->channel?->brand;
         $brandName = $brand?->name;
 
         // ── PART 6: Channel Context ───────────────────────────────────────────
@@ -80,49 +80,49 @@ final class CreateBusinessContextSnapshotService
             'order_id' => $order->id,
 
             // PART 1
-            'pricing_policy_version'  => $pricingPolicyVersion,
+            'pricing_policy_version' => $pricingPolicyVersion,
             'shipping_policy_version' => $shippingPolicyVersion,
 
             // PART 2 — Price
-            'price_source'        => $priceSource,
-            'price_review_id'     => $priceReviewId,
-            'cost_source'         => $costSource,
-            'recipe_version'      => $recipeVersion,
+            'price_source' => $priceSource,
+            'price_review_id' => $priceReviewId,
+            'cost_source' => $costSource,
+            'recipe_version' => $recipeVersion,
             'cost_engine_version' => '1.0.0',
 
             // PART 2 — Discount
-            'discount_source'          => $discountSource,
+            'discount_source' => $discountSource,
             'discount_manual_override' => $discountManualOverride,
 
             // PART 2 — Shipping
             'shipping_rule_id' => $shippingRuleId,
-            'shipping_zone'    => $shippingZone,
+            'shipping_zone' => $shippingZone,
 
             // PART 3
-            'approved_by'              => $confirmationUser,
-            'confirmation_user'        => $confirmationUser,
-            'confirmation_time'        => $now,
+            'approved_by' => $confirmationUser,
+            'confirmation_user' => $confirmationUser,
+            'confirmation_time' => $now,
             'approval_workflow_version' => '1.0.0',
 
             // PART 4
             'delivery_success_rate' => $deliverySuccessRate,
 
             // PART 5
-            'brand_name'                          => $brandName,
-            'brand_version'                       => '1.0.0',
-            'brand_commercial_strategy_version'   => '1.0.0',
+            'brand_name' => $brandName,
+            'brand_version' => '1.0.0',
+            'brand_commercial_strategy_version' => '1.0.0',
 
             // PART 6
-            'channel_name'        => $channelName,
-            'channel_type'        => $channelType,
+            'channel_name' => $channelName,
+            'channel_type' => $channelType,
             'marketplace_version' => '1.0.0',
 
             // PART 8
             'sla_policy_version' => '1.0.0',
 
             // Lock
-            'locked'     => true,
-            'locked_at'  => $now,
+            'locked' => true,
+            'locked_at' => $now,
             'created_by' => $actorId,
         ]);
 
@@ -133,8 +133,8 @@ final class CreateBusinessContextSnapshotService
             'business_context_captured',
             'Business context snapshot locked at order confirmation.',
             [
-                'snapshot_id'  => $snapshot->id,
-                'brand_name'   => $brandName,
+                'snapshot_id' => $snapshot->id,
+                'brand_name' => $brandName,
                 'channel_name' => $channelName,
                 'price_source' => $priceSource,
             ],

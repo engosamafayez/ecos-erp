@@ -70,10 +70,10 @@ class RbacTest extends TestCase
         [$domain, $resource, $action] = explode('.', $name);
 
         return Permission::create([
-            'name'     => $name,
-            'module'   => $domain,
+            'name' => $name,
+            'module' => $domain,
             'resource' => $resource,
-            'action'   => $action,
+            'action' => $action,
         ]);
     }
 
@@ -103,10 +103,10 @@ class RbacTest extends TestCase
         $perm = $this->perm('inventory.products.view');
 
         $this->assertDatabaseHas('permissions', [
-            'name'     => 'inventory.products.view',
-            'module'   => 'inventory',
+            'name' => 'inventory.products.view',
+            'module' => 'inventory',
             'resource' => 'products',
-            'action'   => 'view',
+            'action' => 'view',
         ]);
         $this->assertNotEmpty($perm->id);
     }
@@ -121,7 +121,7 @@ class RbacTest extends TestCase
         $role->permissions()->attach($perm->id);
 
         $this->assertDatabaseHas('role_permissions', [
-            'role_id'       => $role->id,
+            'role_id' => $role->id,
             'permission_id' => $perm->id,
         ]);
     }
@@ -273,8 +273,8 @@ class RbacTest extends TestCase
 
     public function test_invalidate_role_cache_clears_cache_for_all_role_members(): void
     {
-        $role  = $this->role('shared-role');
-        $perm  = $this->perm('purchasing.suppliers.view');
+        $role = $this->role('shared-role');
+        $perm = $this->perm('purchasing.suppliers.view');
         $role->permissions()->attach($perm->id);
 
         $user2 = User::factory()->create();

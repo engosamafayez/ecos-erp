@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Archive,
   Building2,
@@ -73,13 +74,15 @@ function EmptyCompanies({
   hasFilter: boolean;
   onCreateFirst: () => void;
 }) {
+  const { t } = useTranslation('logistics');
+
   if (hasFilter) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
         <Truck className="mb-3 size-10 text-muted-foreground/30" />
-        <p className="text-sm font-medium">No shipping companies match your filters</p>
+        <p className="text-sm font-medium">{t($ => $.shippingCompanies.empty.filteredTitle)}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Try a different keyword or clear your filters.
+          {t($ => $.shippingCompanies.empty.filteredHint)}
         </p>
       </div>
     );
@@ -88,13 +91,11 @@ function EmptyCompanies({
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <Truck className="mb-3 size-12 text-muted-foreground/20" />
-      <p className="text-sm font-medium">No shipping companies yet</p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Register your internal fleet and external carriers to power deliveries.
-      </p>
+      <p className="text-sm font-medium">{t($ => $.shippingCompanies.empty.title)}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{t($ => $.shippingCompanies.empty.hint)}</p>
       <Button size="sm" className="mt-4 gap-1.5" onClick={onCreateFirst}>
         <Plus className="size-3.5" />
-        Add First Shipping Company
+        {t($ => $.shippingCompanies.empty.addFirst)}
       </Button>
     </div>
   );
@@ -103,30 +104,34 @@ function EmptyCompanies({
 // ── Badges ─────────────────────────────────────────────────────────────────────
 
 function TypeBadge({ type }: { type: ShippingCompanyType }) {
+  const { t } = useTranslation('logistics');
+
   return type === 'internal' ? (
     <Badge variant="secondary" className="gap-1 text-xs">
       <Warehouse className="size-3" />
-      Internal
+      {t($ => $.shippingCompanies.type.internal)}
     </Badge>
   ) : (
     <Badge variant="outline" className="gap-1 text-xs">
       <Truck className="size-3" />
-      External
+      {t($ => $.shippingCompanies.type.external)}
     </Badge>
   );
 }
 
 function StatusBadge({ status }: { status: ShippingCompanyStatus }) {
+  const { t } = useTranslation('logistics');
+
   if (status === 'active') {
-    return <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">Active</Badge>;
+    return <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">{t($ => $.common.active)}</Badge>;
   }
   if (status === 'inactive') {
-    return <Badge variant="secondary" className="text-xs">Inactive</Badge>;
+    return <Badge variant="secondary" className="text-xs">{t($ => $.common.inactive)}</Badge>;
   }
   return (
     <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
       <Archive className="size-3" />
-      Archived
+      {t($ => $.shippingCompanies.status.archived)}
     </Badge>
   );
 }
@@ -146,6 +151,8 @@ function CompaniesTable({
   onRowClick: (company: ShippingCompany) => void;
   onCreateFirst: () => void;
 }) {
+  const { t } = useTranslation('logistics');
+
   if (isLoading) return <TableSkeleton />;
 
   if (rows.length === 0) {
@@ -158,14 +165,14 @@ function CompaniesTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/60">
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Code</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Company</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Type</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Contact</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Active Contract</th>
-              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">Contracts</th>
-              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">Companies</th>
-              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">Status</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.code)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.company)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.type)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.contact)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.activeContract)}</th>
+              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.contracts)}</th>
+              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.companies)}</th>
+              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t($ => $.common.status)}</th>
               <th className="h-10 w-10 px-3" />
             </tr>
           </thead>
@@ -215,7 +222,9 @@ function CompaniesTable({
                       <span className="truncate text-xs">{company.active_contract.name}</span>
                     </div>
                   ) : (
-                    <span className="text-xs text-muted-foreground">No active contract</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t($ => $.shippingCompanies.table.noActiveContract)}
+                    </span>
                   )}
                 </td>
 
@@ -248,23 +257,24 @@ function CompaniesTable({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const STATUS_FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'active', label: 'Active' },
-  { key: 'inactive', label: 'Inactive' },
-  { key: 'archived', label: 'Archived' },
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'active', labelKey: 'common.active' },
+  { key: 'inactive', labelKey: 'common.inactive' },
+  { key: 'archived', labelKey: 'shippingCompanies.status.archived' },
 ] as const;
 
 type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];
 
 const TYPE_FILTERS = [
-  { key: 'all', label: 'All Types' },
-  { key: 'internal', label: 'Internal' },
-  { key: 'external', label: 'External' },
+  { key: 'all', labelKey: 'shippingCompanies.filters.allTypes' },
+  { key: 'internal', labelKey: 'shippingCompanies.type.internal' },
+  { key: 'external', labelKey: 'shippingCompanies.type.external' },
 ] as const;
 
 type TypeFilterKey = (typeof TYPE_FILTERS)[number]['key'];
 
 export function ShippingCompaniesPage() {
+  const { t } = useTranslation('logistics');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilterKey>('all');
   const [typeFilter, setTypeFilter] = useState<TypeFilterKey>('all');
@@ -300,18 +310,21 @@ export function ShippingCompaniesPage() {
   }
 
   const metrics = [
-    { id: 'total',    icon: Truck,       label: 'Total Shipping Companies', value: stats?.total_companies    ?? 0, isLoading: !stats },
-    { id: 'active',   icon: CheckCircle, label: 'Active Companies',         value: stats?.active_companies   ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'internal', icon: Warehouse,   label: 'Internal Companies',       value: stats?.internal_companies ?? 0, isLoading: !stats },
-    { id: 'external', icon: Building2,   label: 'External Companies',       value: stats?.external_companies ?? 0, isLoading: !stats },
+    { id: 'total',    icon: Truck,       label: t($ => $.shippingCompanies.metrics.total),    value: stats?.total_companies    ?? 0, isLoading: !stats },
+    { id: 'active',   icon: CheckCircle, label: t($ => $.shippingCompanies.metrics.active),   value: stats?.active_companies   ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'internal', icon: Warehouse,   label: t($ => $.shippingCompanies.metrics.internal), value: stats?.internal_companies ?? 0, isLoading: !stats },
+    { id: 'external', icon: Building2,   label: t($ => $.shippingCompanies.metrics.external), value: stats?.external_companies ?? 0, isLoading: !stats },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Shipping Companies' }]}
-        title="Shipping Companies"
-        description="Manage internal fleet and external carriers, contracts and company assignments"
+        breadcrumbs={[
+          { label: t($ => $.shippingCompanies.breadcrumbRoot) },
+          { label: t($ => $.shippingCompanies.title) },
+        ]}
+        title={t($ => $.shippingCompanies.title)}
+        description={t($ => $.shippingCompanies.description)}
         metrics={metrics}
       />
 
@@ -319,7 +332,7 @@ export function ShippingCompaniesPage() {
         toolbar={
           <div className="px-4 sm:px-6">
             <SmartToolbar
-              primaryAction={{ label: 'New Shipping Company', icon: Plus, onClick: openCreate }}
+              primaryAction={{ label: t($ => $.shippingCompanies.newCompany), icon: Plus, onClick: openCreate }}
               onRefresh={() => refetch()}
               isFetching={isFetching}
             />
@@ -328,7 +341,7 @@ export function ShippingCompaniesPage() {
         quickFilters={
           <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
             <Input
-              placeholder="Search by name, code, contact or phone…"
+              placeholder={t($ => $.shippingCompanies.searchPlaceholder)}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="h-8 max-w-xs text-sm"
@@ -341,24 +354,24 @@ export function ShippingCompaniesPage() {
                 className="h-8 text-xs"
                 onClick={() => { setStatusFilter(s.key); setPage(1); }}
               >
-                {s.key === 'active' && <CheckCircle className="mr-1 h-3 w-3" />}
-                {s.key === 'inactive' && <XCircle className="mr-1 h-3 w-3" />}
-                {s.key === 'archived' && <Archive className="mr-1 h-3 w-3" />}
-                {s.label}
+                {s.key === 'active' && <CheckCircle className="me-1 h-3 w-3" />}
+                {s.key === 'inactive' && <XCircle className="me-1 h-3 w-3" />}
+                {s.key === 'archived' && <Archive className="me-1 h-3 w-3" />}
+                {t(s.labelKey)}
               </Button>
             ))}
             <span className="mx-1 h-4 w-px bg-border" />
-            {TYPE_FILTERS.map((t) => (
+            {TYPE_FILTERS.map((f) => (
               <Button
-                key={t.key}
+                key={f.key}
                 size="sm"
-                variant={typeFilter === t.key ? 'secondary' : 'ghost'}
+                variant={typeFilter === f.key ? 'secondary' : 'ghost'}
                 className="h-8 text-xs"
-                onClick={() => { setTypeFilter(t.key); setPage(1); }}
+                onClick={() => { setTypeFilter(f.key); setPage(1); }}
               >
-                {t.key === 'internal' && <Warehouse className="mr-1 h-3 w-3" />}
-                {t.key === 'external' && <Truck className="mr-1 h-3 w-3" />}
-                {t.label}
+                {f.key === 'internal' && <Warehouse className="me-1 h-3 w-3" />}
+                {f.key === 'external' && <Truck className="me-1 h-3 w-3" />}
+                {t(f.labelKey)}
               </Button>
             ))}
           </div>

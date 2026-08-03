@@ -56,6 +56,7 @@ final class RetryPolicy
     public function getDelayForAttempt(int $attempt): int
     {
         $retryIndex = $attempt - 2;
+
         return $this->delaysInSeconds[$retryIndex] ?? 0;
     }
 

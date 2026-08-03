@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Info, XCircle } from 'lucide-react';
 
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
@@ -25,31 +26,37 @@ function SeverityDot({ severity }: { severity: ActivityItem['severity'] }) {
   return <Info className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />;
 }
 
-const SOURCE_LABEL: Record<ActivitySource, string> = {
-  dispatch_timeline: 'Dispatch',
-  dispatch_audit: 'Dispatch audit',
-  capacity_audit: 'Capacity',
-  escalation: 'Escalation',
-  note: 'Note',
+const SOURCE_LABEL_KEY: Record<ActivitySource, string> = {
+  dispatch_timeline: 'operations.activityCenter.source.dispatchTimeline',
+  dispatch_audit: 'operations.activityCenter.source.dispatchAudit',
+  capacity_audit: 'operations.activityCenter.source.capacityAudit',
+  escalation: 'operations.activityCenter.source.escalation',
+  note: 'operations.activityCenter.source.note',
 };
 
 /** A vertical time-ordered list — the Timeline component pattern. */
 function ActivityList({ items }: { items: ActivityItem[] }) {
+  const { t } = useTranslation('logistics');
+
   if (items.length === 0) {
-    return <p className="py-12 text-center text-sm text-muted-foreground">Nothing in this window.</p>;
+    return (
+      <p className="py-12 text-center text-sm text-muted-foreground">
+        {t($ => $.operations.activityCenter.emptyWindow)}
+      </p>
+    );
   }
 
   return (
-    <ol className="relative space-y-4 border-l pl-5">
+    <ol className="relative space-y-4 border-s ps-5">
       {items.map((item) => (
         <li key={item.id} className="relative">
-          <span className="absolute -left-[26px] top-0.5 rounded-full bg-background p-0.5">
+          <span className="absolute -start-[26px] top-0.5 rounded-full bg-background p-0.5">
             <SeverityDot severity={item.severity} />
           </span>
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-sm font-medium">{item.title}</span>
             <Badge variant="outline" className="text-[10px]">
-              {SOURCE_LABEL[item.source]}
+              {t(SOURCE_LABEL_KEY[item.source])}
             </Badge>
           </div>
           {item.description && (
@@ -65,15 +72,16 @@ function ActivityList({ items }: { items: ActivityItem[] }) {
   );
 }
 
-const SOURCE_FILTERS: Array<{ key: ActivitySource | 'all'; label: string }> = [
-  { key: 'all', label: 'All' },
-  { key: 'dispatch_timeline', label: 'Dispatch' },
-  { key: 'capacity_audit', label: 'Capacity' },
-  { key: 'escalation', label: 'Escalations' },
-  { key: 'note', label: 'Notes' },
+const SOURCE_FILTERS: Array<{ key: ActivitySource | 'all'; labelKey: string }> = [
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'dispatch_timeline', labelKey: 'operations.activityCenter.source.dispatchTimeline' },
+  { key: 'capacity_audit', labelKey: 'operations.activityCenter.source.capacityAudit' },
+  { key: 'escalation', labelKey: 'operations.activityCenter.filter.escalations' },
+  { key: 'note', labelKey: 'operations.activityCenter.filter.notes' },
 ];
 
 function TimelineTab() {
+  const { t } = useTranslation('logistics');
   const [source, setSource] = useState<ActivitySource | 'all'>('all');
   const { data, isLoading } = useActivityTimeline(
     source === 'all' ? undefined : { source },
@@ -90,7 +98,7 @@ function TimelineTab() {
             className="h-8 text-xs"
             onClick={() => setSource(f.key)}
           >
-            {f.label}
+            {t(f.labelKey)}
           </Button>
         ))}
       </div>
@@ -99,11 +107,16 @@ function TimelineTab() {
       {data && data.window_truncated && (
         <Alert>
           <AlertDescription className="text-xs">
-            Showing the {data.returned} most recent of {data.available} in this window
+            {t($ => $.operations.activityCenter.truncated.showing, {
+              returned: data.returned,
+              available: data.available,
+            })}
             {data.truncated_sources.length > 0
-              ? ` · capped sources: ${data.truncated_sources.join(', ')}`
+              ? t($ => $.operations.activityCenter.truncated.cappedSources, {
+                  sources: data.truncated_sources.join(', '),
+                })
               : ''}
-            . Narrow the window to see more.
+            {t($ => $.operations.activityCenter.truncated.narrow)}
           </AlertDescription>
         </Alert>
       )}
@@ -114,19 +127,19 @@ function TimelineTab() {
 }
 
 function AuditTab() {
+  const { t } = useTranslation('logistics');
   const { data, isLoading } = useAuditExplorer();
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        Who did what and why — the append-only audit record, without the operational chatter.
-      </p>
+      <p className="text-xs text-muted-foreground">{t($ => $.operations.activityCenter.auditIntro)}</p>
       {isLoading || !data ? <Skeleton className="h-64 w-full" /> : <ActivityList items={data.items} />}
     </div>
   );
 }
 
 function AssignmentsTab() {
+  const { t } = useTranslation('logistics');
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAssignmentHistory({ page });
 
@@ -137,18 +150,20 @@ function AssignmentsTab() {
       {isLoading && !data ? (
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">No allocations yet.</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">
+          {t($ => $.operations.activityCenter.assignments.empty)}
+        </p>
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="h-10 px-3 font-medium">Status</th>
-                <th className="h-10 px-3 font-medium">Mode</th>
-                <th className="h-10 px-3 font-medium">Vehicle</th>
-                <th className="h-10 px-3 font-medium">Driver</th>
-                <th className="h-10 px-3 font-medium">Fleet verdict</th>
-                <th className="h-10 px-3 font-medium">Allocated</th>
+              <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="h-10 px-3 font-medium">{t($ => $.common.status)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.operations.activityCenter.assignments.colMode)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.common.vehicle)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.common.driver)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.operations.activityCenter.assignments.colFleetVerdict)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.operations.activityCenter.assignments.colAllocated)}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -191,6 +206,7 @@ function AssignmentsTab() {
 }
 
 function SessionsTab() {
+  const { t } = useTranslation('logistics');
   const [page, setPage] = useState(1);
   const { data, isLoading } = useSessionHistory({ page });
 
@@ -201,19 +217,21 @@ function SessionsTab() {
       {isLoading && !data ? (
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">No sessions yet.</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">
+          {t($ => $.operations.activityCenter.sessions.empty)}
+        </p>
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="h-10 px-3 font-medium">Operator</th>
-                <th className="h-10 px-3 font-medium">Status</th>
-                <th className="h-10 px-3 text-right font-medium">Assigned</th>
-                <th className="h-10 px-3 text-right font-medium">Released</th>
-                <th className="h-10 px-3 text-right font-medium">Conflicts</th>
-                <th className="h-10 px-3 text-right font-medium">Duration</th>
-                <th className="h-10 px-3 font-medium">Started</th>
+              <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="h-10 px-3 font-medium">{t($ => $.operations.activityCenter.sessions.colOperator)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.common.status)}</th>
+                <th className="h-10 px-3 text-end font-medium">{t($ => $.common.assigned)}</th>
+                <th className="h-10 px-3 text-end font-medium">{t($ => $.operations.activityCenter.sessions.colReleased)}</th>
+                <th className="h-10 px-3 text-end font-medium">{t($ => $.operations.activityCenter.sessions.colConflicts)}</th>
+                <th className="h-10 px-3 text-end font-medium">{t($ => $.operations.activityCenter.sessions.colDuration)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.operations.activityCenter.sessions.colStarted)}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -225,11 +243,15 @@ function SessionsTab() {
                       {row.status_label}
                     </Badge>
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{row.assigned_count}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{row.released_count}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{row.conflict_count}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-muted-foreground">
-                    {row.duration_minutes !== null ? `${row.duration_minutes}m` : '—'}
+                  <td className="px-3 py-2.5 text-end tabular-nums">{row.assigned_count}</td>
+                  <td className="px-3 py-2.5 text-end tabular-nums">{row.released_count}</td>
+                  <td className="px-3 py-2.5 text-end tabular-nums">{row.conflict_count}</td>
+                  <td className="px-3 py-2.5 text-end tabular-nums text-muted-foreground">
+                    {row.duration_minutes !== null
+                      ? t($ => $.operations.activityCenter.sessions.minutesShort, {
+                          minutes: row.duration_minutes,
+                        })
+                      : '—'}
                   </td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {row.started_at ? new Date(row.started_at).toLocaleString() : '—'}
@@ -256,6 +278,7 @@ function SessionsTab() {
 }
 
 function CapacityHistoryTab() {
+  const { t } = useTranslation('logistics');
   const [page, setPage] = useState(1);
   const { data, isLoading } = useCapacityHistory({ page });
 
@@ -266,17 +289,19 @@ function CapacityHistoryTab() {
       {isLoading && !data ? (
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">No reservations yet.</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">
+          {t($ => $.operations.activityCenter.capacity.empty)}
+        </p>
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="h-10 px-3 font-medium">Purpose</th>
-                <th className="h-10 px-3 font-medium">Status</th>
-                <th className="h-10 px-3 text-right font-medium">Orders</th>
-                <th className="h-10 px-3 font-medium">Reason</th>
-                <th className="h-10 px-3 font-medium">Requested</th>
+              <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="h-10 px-3 font-medium">{t($ => $.operations.activityCenter.capacity.colPurpose)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.common.status)}</th>
+                <th className="h-10 px-3 text-end font-medium">{t($ => $.operations.activityCenter.capacity.colOrders)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.common.reason)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.operations.activityCenter.capacity.colRequested)}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -288,7 +313,7 @@ function CapacityHistoryTab() {
                       {row.status_label}
                     </Badge>
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{row.requested_orders}</td>
+                  <td className="px-3 py-2.5 text-end tabular-nums">{row.requested_orders}</td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {/* Network's own words when it refused. */}
                     {row.failure_reason ?? row.release_reason ?? '—'}
@@ -324,12 +349,17 @@ function CapacityHistoryTab() {
  * the owning modules keep. Nothing here writes; the past is shown, never edited.
  */
 export function ActivityCenterPage() {
+  const { t } = useTranslation('logistics');
+
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Operations' }]}
-        title="Activity & Audit"
-        description="The merged activity feed, the audit explorer and the history views"
+        breadcrumbs={[
+          { label: t($ => $.operations.activityCenter.breadcrumbRoot) },
+          { label: t($ => $.operations.activityCenter.breadcrumbSection) },
+        ]}
+        title={t($ => $.operations.activityCenter.title)}
+        description={t($ => $.operations.activityCenter.description)}
         metrics={[]}
       />
 
@@ -337,11 +367,15 @@ export function ActivityCenterPage() {
         <div className="px-4 pb-6 pt-2 sm:px-6">
           <Tabs defaultValue="timeline" className="w-full">
             <TabsList>
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
-              <TabsTrigger value="audit">Audit</TabsTrigger>
-              <TabsTrigger value="assignments">Assignments</TabsTrigger>
-              <TabsTrigger value="sessions">Sessions</TabsTrigger>
-              <TabsTrigger value="capacity">Capacity</TabsTrigger>
+              <TabsTrigger value="timeline">{t($ => $.common.timeline)}</TabsTrigger>
+              <TabsTrigger value="audit">{t($ => $.operations.activityCenter.tabs.audit)}</TabsTrigger>
+              <TabsTrigger value="assignments">
+                {t($ => $.operations.activityCenter.tabs.assignments)}
+              </TabsTrigger>
+              <TabsTrigger value="sessions">
+                {t($ => $.operations.activityCenter.tabs.sessions)}
+              </TabsTrigger>
+              <TabsTrigger value="capacity">{t($ => $.common.capacity)}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="timeline" className="pt-4">

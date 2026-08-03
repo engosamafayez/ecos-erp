@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\POS\Receipt\Domain\ValueObjects;
 
+use InvalidArgumentException;
+
 final readonly class ReceiptTotals
 {
     public function __construct(
@@ -26,17 +28,17 @@ final readonly class ReceiptTotals
         string $currency,
     ): self {
         if (trim($currency) === '') {
-            throw new \InvalidArgumentException('Currency cannot be empty.');
+            throw new InvalidArgumentException('Currency cannot be empty.');
         }
 
         return new self(
             subtotalAmount: $subtotalAmount,
             discountAmount: $discountAmount,
-            taxAmount:      $taxAmount,
-            totalAmount:    $totalAmount,
+            taxAmount: $taxAmount,
+            totalAmount: $totalAmount,
             tenderedAmount: $tenderedAmount,
-            changeAmount:   $changeAmount,
-            currency:       strtoupper(trim($currency)),
+            changeAmount: $changeAmount,
+            currency: strtoupper(trim($currency)),
         );
     }
 
@@ -45,11 +47,11 @@ final readonly class ReceiptTotals
         return [
             'subtotal_amount' => $this->subtotalAmount,
             'discount_amount' => $this->discountAmount,
-            'tax_amount'      => $this->taxAmount,
-            'total_amount'    => $this->totalAmount,
+            'tax_amount' => $this->taxAmount,
+            'total_amount' => $this->totalAmount,
             'tendered_amount' => $this->tenderedAmount,
-            'change_amount'   => $this->changeAmount,
-            'currency'        => $this->currency,
+            'change_amount' => $this->changeAmount,
+            'currency' => $this->currency,
         ];
     }
 
@@ -58,11 +60,11 @@ final readonly class ReceiptTotals
         return new self(
             subtotalAmount: $data['subtotal_amount'],
             discountAmount: $data['discount_amount'],
-            taxAmount:      $data['tax_amount'],
-            totalAmount:    $data['total_amount'],
+            taxAmount: $data['tax_amount'],
+            totalAmount: $data['total_amount'],
             tenderedAmount: $data['tendered_amount'],
-            changeAmount:   $data['change_amount'],
-            currency:       $data['currency'],
+            changeAmount: $data['change_amount'],
+            currency: $data['currency'],
         );
     }
 }

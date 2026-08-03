@@ -96,7 +96,7 @@ export function OrderMobileCard({
             />
           </div>
           <span className="text-xs text-muted-foreground">
-            {order.lines.length} {order.lines.length === 1 ? t('mobileCard.item') : t('mobileCard.items')}
+            {order.lines.length} {order.lines.length === 1 ? t($ => $.mobileCard.item) : t($ => $.mobileCard.items)}
           </span>
         </div>
 
@@ -106,7 +106,7 @@ export function OrderMobileCard({
             <Button variant="ghost" size="icon" className="size-7" asChild>
               <a
                 href={`tel:${phone}`}
-                aria-label={t('phone.call')}
+                aria-label={t($ => $.phone.call)}
                 onClick={(e) => e.stopPropagation()}
               >
                 <Phone className="size-3.5" />
@@ -118,7 +118,7 @@ export function OrderMobileCard({
             size="icon"
             className="size-7"
             onClick={(e) => { e.stopPropagation(); onView(order); }}
-            aria-label={t('actions.view')}
+            aria-label={t($ => $.actions.view)}
           >
             <Eye className="size-3.5" />
           </Button>

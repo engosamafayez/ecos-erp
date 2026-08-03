@@ -40,7 +40,7 @@ final class WarehousePerformanceService
             ')
             ->first();
 
-        $total   = (int) ($acc?->total ?? 0);
+        $total = (int) ($acc?->total ?? 0);
         $matched = (int) ($acc?->matched ?? 0);
         $accuracy = $total > 0 ? round($matched / $total * 100, 2) : null;
 
@@ -83,9 +83,9 @@ final class WarehousePerformanceService
             ])
             ->first();
 
-        $totalSessions    = (int) ($sessionCounts?->total_sessions ?? 0);
+        $totalSessions = (int) ($sessionCounts?->total_sessions ?? 0);
         $approvedSessions = (int) ($sessionCounts?->approved_sessions ?? 0);
-        $openSessions     = (int) ($sessionCounts?->open_sessions ?? 0);
+        $openSessions = (int) ($sessionCounts?->open_sessions ?? 0);
 
         // Completion rate excludes cancelled sessions
         $completionRate = $totalSessions > 0
@@ -93,15 +93,15 @@ final class WarehousePerformanceService
             : null;
 
         return [
-            'warehouse_id'         => $warehouseId,
-            'warehouse_name'       => $warehouseName,
-            'accuracy_pct'         => $accuracy,
-            'avg_variance_pct'     => $avgVariancePct !== null ? round((float) $avgVariancePct, 2) : null,
-            'adj_in_value'         => round((float) ($adj?->adj_in ?? 0), 2),
-            'adj_out_value'        => round((float) ($adj?->adj_out ?? 0), 2),
+            'warehouse_id' => $warehouseId,
+            'warehouse_name' => $warehouseName,
+            'accuracy_pct' => $accuracy,
+            'avg_variance_pct' => $avgVariancePct !== null ? round((float) $avgVariancePct, 2) : null,
+            'adj_in_value' => round((float) ($adj?->adj_in ?? 0), 2),
+            'adj_out_value' => round((float) ($adj?->adj_out ?? 0), 2),
             'count_completion_rate' => $completionRate,
-            'open_counts'          => $openSessions,
-            'total_sessions'       => $totalSessions,
+            'open_counts' => $openSessions,
+            'total_sessions' => $totalSessions,
         ];
     }
 }

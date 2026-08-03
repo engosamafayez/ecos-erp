@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\POS\Shared\Domain\ValueObjects;
 
+use InvalidArgumentException;
+
 /**
  * Immutable percentage value in the range [0, 100].
  *
@@ -16,19 +18,19 @@ final readonly class Percentage
 
     public function __construct(public string $value)
     {
-        if (!is_numeric($this->value)) {
-            throw new \InvalidArgumentException(
-                "Percentage value must be numeric, got: \"{$this->value}\"."
+        if (! is_numeric($this->value)) {
+            throw new InvalidArgumentException(
+                "Percentage value must be numeric, got: \"{$this->value}\".",
             );
         }
         if (bccomp($this->value, '0', self::SCALE) < 0) {
-            throw new \InvalidArgumentException(
-                "Percentage cannot be negative, got: \"{$this->value}\"."
+            throw new InvalidArgumentException(
+                "Percentage cannot be negative, got: \"{$this->value}\".",
             );
         }
         if (bccomp($this->value, '100', self::SCALE) > 0) {
-            throw new \InvalidArgumentException(
-                "Percentage cannot exceed 100, got: \"{$this->value}\"."
+            throw new InvalidArgumentException(
+                "Percentage cannot exceed 100, got: \"{$this->value}\".",
             );
         }
     }
@@ -36,11 +38,12 @@ final readonly class Percentage
     /** Create from a percentage value, e.g. Percentage::of('14') for 14%. */
     public static function of(string|int|float $value): self
     {
-        if (is_string($value) && !is_numeric($value)) {
-            throw new \InvalidArgumentException(
-                "Percentage value must be numeric, got: \"{$value}\"."
+        if (is_string($value) && ! is_numeric($value)) {
+            throw new InvalidArgumentException(
+                "Percentage value must be numeric, got: \"{$value}\".",
             );
         }
+
         return new self(bcadd((string) $value, '0', self::SCALE));
     }
 
@@ -64,6 +67,7 @@ final readonly class Percentage
     public function applyTo(Money $money, int $scale = 2): Money
     {
         $factor = bcdiv($this->value, '100', self::SCALE + 2);
+
         return $money->multiply($factor, $scale);
     }
 
@@ -100,6 +104,6 @@ final readonly class Percentage
 
     public function __toString(): string
     {
-        return $this->value . '%';
+        return $this->value.'%';
     }
 }

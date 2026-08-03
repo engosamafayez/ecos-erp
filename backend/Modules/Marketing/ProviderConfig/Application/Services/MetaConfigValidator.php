@@ -33,16 +33,16 @@ final class MetaConfigValidator implements ProviderValidatorInterface
 
         try {
             $response = Http::timeout(10)->get(self::TOKEN_URL, [
-                'client_id'     => $appId,
+                'client_id' => $appId,
                 'client_secret' => $appSecret,
-                'grant_type'    => 'client_credentials',
+                'grant_type' => 'client_credentials',
             ]);
 
             if ($response->successful() && ! empty($response->json('access_token'))) {
                 return ['valid' => true, 'errors' => []];
             }
 
-            $errorMsg  = $response->json('error.message', 'Unknown error');
+            $errorMsg = $response->json('error.message', 'Unknown error');
             $errorCode = $response->json('error.code', 0);
             $errorType = $response->json('error.type', '');
 
@@ -55,9 +55,9 @@ final class MetaConfigValidator implements ProviderValidatorInterface
     private function humanizeError(int $code, string $type, string $message): string
     {
         return match ($code) {
-            101    => 'Invalid App ID. Please verify your Meta App ID in the Meta Developer Console.',
-            190    => 'Invalid App Secret. Please verify your App Secret in the Meta Developer Console.',
-            100    => 'Invalid parameter — check that your App ID and Secret are correct.',
+            101 => 'Invalid App ID. Please verify your Meta App ID in the Meta Developer Console.',
+            190 => 'Invalid App Secret. Please verify your App Secret in the Meta Developer Console.',
+            100 => 'Invalid parameter — check that your App ID and Secret are correct.',
             default => "Meta API error ({$type} #{$code}): {$message}",
         };
     }

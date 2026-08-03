@@ -16,17 +16,27 @@ use PHPUnit\Framework\TestCase;
  */
 final class ReturnDomainEventsTest extends TestCase
 {
-    private const RETURN_ID       = 'return-uuid-1';
-    private const SALE_ID         = 'sale-uuid-1';
-    private const RECEIPT_NUMBER  = 'RCP-2026-000001';
-    private const RETURN_NUMBER   = 'RTN-2026-000001';
-    private const SESSION_ID      = 'session-uuid-1';
-    private const SHIFT_ID        = 'shift-uuid-1';
-    private const TERMINAL_ID     = 'terminal-uuid-1';
-    private const CASHIER_ID      = 'cashier-uuid-1';
-    private const CURRENCY        = 'EGP';
-    private const REFUND_TOTAL    = '100.00';
-    private const REFUND_METHOD   = 'cash';
+    private const RETURN_ID = 'return-uuid-1';
+
+    private const SALE_ID = 'sale-uuid-1';
+
+    private const RECEIPT_NUMBER = 'RCP-2026-000001';
+
+    private const RETURN_NUMBER = 'RTN-2026-000001';
+
+    private const SESSION_ID = 'session-uuid-1';
+
+    private const SHIFT_ID = 'shift-uuid-1';
+
+    private const TERMINAL_ID = 'terminal-uuid-1';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
+
+    private const CURRENCY = 'EGP';
+
+    private const REFUND_TOTAL = '100.00';
+
+    private const REFUND_METHOD = 'cash';
 
     // ── ReturnInitiated ───────────────────────────────────────────────────────
 

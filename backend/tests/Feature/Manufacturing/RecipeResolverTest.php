@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Manufacturing;
 
+use Error;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Exceptions\RecipeResolverException;
@@ -42,7 +43,7 @@ class RecipeResolverTest extends TestCase
     private function makeComponent(bool $active = true, bool $allowNegative = false): Product
     {
         return Product::factory()->rawMaterial()->create([
-            'is_active'            => $active,
+            'is_active' => $active,
             'allow_negative_stock' => $allowNegative,
         ]);
     }
@@ -50,11 +51,11 @@ class RecipeResolverTest extends TestCase
     private function makeRecipe(Product $product, bool $isActive = true, int $version = 1): Recipe
     {
         return Recipe::create([
-            'bom_number'         => 'BOM-R' . uniqid(),
-            'product_id'         => $product->id,
-            'version'            => "{$version}.0",
+            'bom_number' => 'BOM-R'.uniqid(),
+            'product_id' => $product->id,
+            'version' => "{$version}.0",
             'bom_version_number' => $version,
-            'is_active'          => $isActive,
+            'is_active' => $isActive,
         ]);
     }
 
@@ -62,7 +63,7 @@ class RecipeResolverTest extends TestCase
     {
         $recipe->components()->create([
             'raw_material_id' => $component->id,
-            'quantity'        => $qty,
+            'quantity' => $qty,
         ]);
     }
 
@@ -70,9 +71,9 @@ class RecipeResolverTest extends TestCase
 
     public function test_resolver_returns_recipe_snapshot_for_valid_recipe(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 3.5);
 
         $snapshot = $this->resolver->resolve($output->id);
@@ -86,9 +87,9 @@ class RecipeResolverTest extends TestCase
 
     public function test_snapshot_captures_bom_version_number(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output, isActive: true, version: 4);
+        $recipe = $this->makeRecipe($output, isActive: true, version: 4);
         $this->addLine($recipe, $component);
 
         $snapshot = $this->resolver->resolve($output->id);
@@ -98,9 +99,9 @@ class RecipeResolverTest extends TestCase
 
     public function test_snapshot_captures_version_label(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output, version: 2);
+        $recipe = $this->makeRecipe($output, version: 2);
         $this->addLine($recipe, $component);
 
         $snapshot = $this->resolver->resolve($output->id);
@@ -111,7 +112,7 @@ class RecipeResolverTest extends TestCase
 
     public function test_snapshot_resolved_at_is_iso8601(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
         $this->addLine($this->makeRecipe($output), $component);
 
@@ -141,7 +142,7 @@ class RecipeResolverTest extends TestCase
 
     public function test_snapshot_component_is_recipe_component_instance(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
         $this->addLine($this->makeRecipe($output), $component, 4.0);
 
@@ -152,7 +153,7 @@ class RecipeResolverTest extends TestCase
 
     public function test_snapshot_component_carries_correct_product_data(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
         $this->addLine($this->makeRecipe($output), $component, 2.5);
 
@@ -166,7 +167,7 @@ class RecipeResolverTest extends TestCase
 
     public function test_snapshot_unit_comes_from_component_product(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
         $this->addLine($this->makeRecipe($output), $component);
 
@@ -180,17 +181,17 @@ class RecipeResolverTest extends TestCase
 
     public function test_allow_negative_stock_forwarded_from_component_product(): void
     {
-        $output             = $this->makeOutput();
-        $allowsNegative     = $this->makeComponent(allowNegative: true);
-        $doesNotAllow       = $this->makeComponent(allowNegative: false);
-        $recipe             = $this->makeRecipe($output);
+        $output = $this->makeOutput();
+        $allowsNegative = $this->makeComponent(allowNegative: true);
+        $doesNotAllow = $this->makeComponent(allowNegative: false);
+        $recipe = $this->makeRecipe($output);
 
         $this->addLine($recipe, $allowsNegative, 1.0);
         $this->addLine($recipe, $doesNotAllow, 2.0);
 
         $snapshot = $this->resolver->resolve($output->id);
 
-        $withFlag    = collect($snapshot->components)->firstWhere('component_id', $allowsNegative->id);
+        $withFlag = collect($snapshot->components)->firstWhere('component_id', $allowsNegative->id);
         $withoutFlag = collect($snapshot->components)->firstWhere('component_id', $doesNotAllow->id);
 
         $this->assertTrue($withFlag->allow_negative_stock);
@@ -201,11 +202,11 @@ class RecipeResolverTest extends TestCase
 
     public function test_resolver_returns_active_version_not_an_older_one(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
 
         $v1 = $this->makeRecipe($output, isActive: false, version: 1);
-        $v2 = $this->makeRecipe($output, isActive: true,  version: 2);
+        $v2 = $this->makeRecipe($output, isActive: true, version: 2);
 
         $this->addLine($v1, $component, 1.0);
         $this->addLine($v2, $component, 9.9);
@@ -235,9 +236,9 @@ class RecipeResolverTest extends TestCase
 
     public function test_throws_when_only_inactive_recipes_exist(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $inactive  = $this->makeRecipe($output, isActive: false);
+        $inactive = $this->makeRecipe($output, isActive: false);
         $this->addLine($inactive, $component);
 
         $this->expectException(RecipeResolverException::class);
@@ -272,9 +273,9 @@ class RecipeResolverTest extends TestCase
 
     public function test_throws_when_component_product_is_soft_deleted(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component);
 
         // Soft-delete the component product
@@ -295,9 +296,9 @@ class RecipeResolverTest extends TestCase
 
     public function test_throws_when_component_product_is_inactive(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent(active: false);
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component);
 
         $this->expectException(RecipeResolverException::class);
@@ -315,9 +316,9 @@ class RecipeResolverTest extends TestCase
 
     public function test_throws_when_output_product_is_soft_deleted(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component);
 
         // Soft-delete the output product (FK is RESTRICT but soft-delete bypasses it)
@@ -337,14 +338,14 @@ class RecipeResolverTest extends TestCase
 
     public function test_snapshot_properties_are_readonly(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
         $this->addLine($this->makeRecipe($output), $component);
 
         $snapshot = $this->resolver->resolve($output->id);
 
         // Attempting to write to a readonly property must throw Error
-        $this->expectException(\Error::class);
+        $this->expectException(Error::class);
 
         // @phpstan-ignore-next-line
         $snapshot->product_id = 'modified';
@@ -352,13 +353,13 @@ class RecipeResolverTest extends TestCase
 
     public function test_recipe_component_properties_are_readonly(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
         $this->addLine($this->makeRecipe($output), $component);
 
         $resolved = $this->resolver->resolve($output->id)->components[0];
 
-        $this->expectException(\Error::class);
+        $this->expectException(Error::class);
 
         // @phpstan-ignore-next-line
         $resolved->quantity = 999.0;
@@ -368,7 +369,7 @@ class RecipeResolverTest extends TestCase
 
     public function test_snapshot_to_array_contains_all_keys(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
         $this->addLine($this->makeRecipe($output), $component, 1.5);
 
@@ -387,7 +388,7 @@ class RecipeResolverTest extends TestCase
 
     public function test_snapshot_to_array_components_contain_all_keys(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
         $this->addLine($this->makeRecipe($output), $component, 2.0);
 
@@ -409,14 +410,14 @@ class RecipeResolverTest extends TestCase
     {
         $output = $this->makeOutput();
         $recipe = $this->makeRecipe($output);
-        $c1     = $this->makeComponent();
-        $c2     = $this->makeComponent();
+        $c1 = $this->makeComponent();
+        $c2 = $this->makeComponent();
 
         $this->addLine($recipe, $c1, 2.5);
         $this->addLine($recipe, $c2, 7.0);
 
         $snapshot = $this->resolver->resolve($output->id);
-        $byId     = collect($snapshot->components)->keyBy('component_id');
+        $byId = collect($snapshot->components)->keyBy('component_id');
 
         $this->assertSame(2.5, $byId[$c1->id]->quantity);
         $this->assertSame(7.0, $byId[$c2->id]->quantity);
@@ -426,9 +427,9 @@ class RecipeResolverTest extends TestCase
 
     public function test_resolver_does_not_modify_the_database(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 3.0);
 
         $countBefore = \Illuminate\Support\Facades\DB::table('bills_of_materials')->count();

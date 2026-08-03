@@ -42,18 +42,18 @@ final class InitiativeTemplateController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'        => ['required', 'string', 'max:255'],
-            'slug'        => ['required', 'string', 'max:100', 'unique:marketing_initiative_templates,slug'],
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:100', 'unique:marketing_initiative_templates,slug'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'category'    => ['nullable', 'string', 'max:100'],
-            'defaults'    => ['nullable', 'array'],
+            'category' => ['nullable', 'string', 'max:100'],
+            'defaults' => ['nullable', 'array'],
         ]);
 
         $template = MarketingInitiativeTemplate::create([
             ...$validated,
-            'is_system'   => false,
+            'is_system' => false,
             'usage_count' => 0,
-            'created_by'  => $request->user()?->id,
+            'created_by' => $request->user()?->id,
         ]);
 
         return response()->json(new InitiativeTemplateResource($template), 201);
@@ -67,10 +67,10 @@ final class InitiativeTemplateController extends Controller
         }
 
         $validated = $request->validate([
-            'name'        => ['sometimes', 'string', 'max:255'],
+            'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'category'    => ['nullable', 'string', 'max:100'],
-            'defaults'    => ['nullable', 'array'],
+            'category' => ['nullable', 'string', 'max:100'],
+            'defaults' => ['nullable', 'array'],
         ]);
 
         $initiativeTemplate->update($validated);
@@ -86,6 +86,7 @@ final class InitiativeTemplateController extends Controller
         }
 
         $initiativeTemplate->delete();
+
         return response()->json(['message' => 'Template deleted.']);
     }
 
@@ -93,21 +94,21 @@ final class InitiativeTemplateController extends Controller
     public function createInitiative(Request $request, MarketingInitiativeTemplate $initiativeTemplate): JsonResponse
     {
         $validated = $request->validate([
-            'name'           => ['nullable', 'string', 'max:255'],
-            'company_id'     => ['nullable', 'string'],
-            'brand_id'       => ['nullable', 'string'],
-            'channel_id'     => ['nullable', 'string'],
-            'start_date'     => ['nullable', 'date_format:Y-m-d'],
-            'end_date'       => ['nullable', 'date_format:Y-m-d'],
-            'budget'         => ['nullable', 'numeric', 'min:0'],
-            'business_goal'  => ['nullable', 'string'],
-            'season'         => ['nullable', 'string'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'company_id' => ['nullable', 'string'],
+            'brand_id' => ['nullable', 'string'],
+            'channel_id' => ['nullable', 'string'],
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d'],
+            'budget' => ['nullable', 'numeric', 'min:0'],
+            'business_goal' => ['nullable', 'string'],
+            'season' => ['nullable', 'string'],
         ]);
 
         $initiative = $this->createFromTemplate->execute(
-            template:  $initiativeTemplate,
+            template: $initiativeTemplate,
             overrides: $validated,
-            actorId:   $request->user()?->id,
+            actorId: $request->user()?->id,
         );
 
         return response()->json(new InitiativeResource($initiative), 201);

@@ -18,7 +18,7 @@ class CampaignApprovalService
     {
         // Cancel any existing pending approval
         $draft->approvals()->where('status', ApprovalStatus::PENDING)->update([
-            'status'       => ApprovalStatus::CANCELLED,
+            'status' => ApprovalStatus::CANCELLED,
             'completed_at' => now(),
         ]);
 
@@ -26,17 +26,17 @@ class CampaignApprovalService
         $workflowId ??= $this->resolveDefaultWorkflow($draft)?->id;
 
         $approval = CampaignApproval::create([
-            'campaign_draft_id'   => $draft->id,
+            'campaign_draft_id' => $draft->id,
             'workflow_template_id' => $workflowId,
-            'current_step_order'  => 1,
-            'status'              => ApprovalStatus::PENDING,
-            'submitted_by'        => $submittedBy,
-            'submitted_at'        => now(),
+            'current_step_order' => 1,
+            'status' => ApprovalStatus::PENDING,
+            'submitted_by' => $submittedBy,
+            'submitted_at' => now(),
         ]);
 
         $draft->update([
-            'internal_status'              => CampaignInternalStatus::PENDING_REVIEW,
-            'submitted_for_approval_at'    => now(),
+            'internal_status' => CampaignInternalStatus::PENDING_REVIEW,
+            'submitted_for_approval_at' => now(),
         ]);
 
         return $approval->fresh(['workflowTemplate.steps']);
@@ -44,29 +44,29 @@ class CampaignApprovalService
 
     public function decide(
         CampaignApproval $approval,
-        string           $decision,
-        string           $decidedBy,
-        ?string          $notes = null,
+        string $decision,
+        string $decidedBy,
+        ?string $notes = null,
     ): CampaignApprovalDecision {
         // Resolve step info
         $stepOrder = $approval->current_step_order;
-        $step      = $approval->workflowTemplate?->steps->firstWhere('step_order', $stepOrder);
+        $step = $approval->workflowTemplate?->steps->firstWhere('step_order', $stepOrder);
 
         $decisionRecord = CampaignApprovalDecision::create([
             'campaign_approval_id' => $approval->id,
-            'workflow_step_id'     => $step?->id,
-            'step_order'           => $stepOrder,
-            'step_name'            => $step?->step_name ?? "Step {$stepOrder}",
-            'decision'             => $decision,
-            'decided_by'           => $decidedBy,
-            'notes'                => $notes,
-            'decided_at'           => now(),
+            'workflow_step_id' => $step?->id,
+            'step_order' => $stepOrder,
+            'step_name' => $step?->step_name ?? "Step {$stepOrder}",
+            'decision' => $decision,
+            'decided_by' => $decidedBy,
+            'notes' => $notes,
+            'decided_at' => now(),
         ]);
 
         if ($decision === ApprovalStatus::REJECTED->value) {
             $approval->update([
-                'status'          => ApprovalStatus::REJECTED,
-                'completed_at'    => now(),
+                'status' => ApprovalStatus::REJECTED,
+                'completed_at' => now(),
                 'rejection_reason' => $notes,
             ]);
             $approval->draft->update(['internal_status' => CampaignInternalStatus::REJECTED]);
@@ -77,7 +77,7 @@ class CampaignApprovalService
             if ($stepOrder >= $totalSteps) {
                 // All steps approved
                 $approval->update([
-                    'status'       => ApprovalStatus::APPROVED,
+                    'status' => ApprovalStatus::APPROVED,
                     'completed_at' => now(),
                 ]);
                 $approval->draft->update(['internal_status' => CampaignInternalStatus::APPROVED]);
@@ -93,7 +93,7 @@ class CampaignApprovalService
     public function cancel(CampaignApproval $approval, string $cancelledBy): void
     {
         $approval->update([
-            'status'       => ApprovalStatus::CANCELLED,
+            'status' => ApprovalStatus::CANCELLED,
             'completed_at' => now(),
         ]);
         $approval->draft->update(['internal_status' => CampaignInternalStatus::DRAFT]);
@@ -106,9 +106,10 @@ class CampaignApprovalService
             ->get()
             ->filter(function (CampaignApproval $approval) use ($userId, $role) {
                 $step = $approval->workflowTemplate?->steps->firstWhere('step_order', $approval->current_step_order);
-                if (!$step) {
+                if (! $step) {
                     return true;
                 }
+
                 return $step->user_id_required === $userId
                     || $step->role_required === $role
                     || ($step->user_id_required === null && $step->role_required === null);

@@ -1,4 +1,5 @@
 import { api } from '@/lib/axios';
+import { DEFAULT_CURRENCY } from '@/lib/format';
 import type {
   CodCollectPayload,
   CodRecord,
@@ -249,7 +250,7 @@ export const deliveryService = {
     return data.data;
   },
 
-  async openCod(deliveryId: string, amountDue: number, currency = 'EGP'): Promise<CodRecord> {
+  async openCod(deliveryId: string, amountDue: number, currency = DEFAULT_CURRENCY): Promise<CodRecord> {
     const { data } = await api.post<{ data: CodRecord }>(`${BASE}/${deliveryId}/cod`, {
       amount_due: amountDue,
       currency,

@@ -84,8 +84,8 @@ final class ProcessOrderWebhookJob implements ShouldQueue
                 : null;
 
             if ($existingOrder !== null) {
-                $wooStatus   = (string) ($this->payload['status'] ?? '');
-                $ecosStatus  = $translator->translate($wooStatus);
+                $wooStatus = (string) ($this->payload['status'] ?? '');
+                $ecosStatus = $translator->translate($wooStatus);
 
                 if ($ecosStatus !== null && $ecosStatus !== $existingOrder->status) {
                     // Route through the appropriate canonical workflow.
@@ -95,11 +95,11 @@ final class ProcessOrderWebhookJob implements ShouldQueue
                         // 'refunded' maps to 'returned' per the translator — must NOT use cancelWorkflow.
                         // ReturnOrderWorkflow::guard() will fail non-fatally for orders not yet OutForDelivery;
                         // the catch below handles that gracefully.
-                        $wooStatus === 'refunded'                                        => $returnWorkflow,
-                        in_array($wooStatus, ['cancelled', 'failed'], true)              => $cancelWorkflow,
-                        $wooStatus === 'processing'                                      => $processWorkflow,
-                        $wooStatus === 'completed'                                       => $deliverWorkflow,
-                        default                                                          => $earlyStatusWorkflow,
+                        $wooStatus === 'refunded' => $returnWorkflow,
+                        in_array($wooStatus, ['cancelled', 'failed'], true) => $cancelWorkflow,
+                        $wooStatus === 'processing' => $processWorkflow,
+                        $wooStatus === 'completed' => $deliverWorkflow,
+                        default => $earlyStatusWorkflow,
                     };
 
                     try {
@@ -112,11 +112,11 @@ final class ProcessOrderWebhookJob implements ShouldQueue
                     } catch (Throwable $workflowError) {
                         // Non-fatal: guard failure or state mismatch — log and continue.
                         \Illuminate\Support\Facades\Log::warning('[WcWebhook] Workflow guard rejected status transition', [
-                            'order_id'   => $existingOrder->id,
-                            'wc_status'  => $wooStatus,
-                            'ecos_from'  => $existingOrder->status->value,
-                            'ecos_to'    => $ecosStatus->value,
-                            'error'      => $workflowError->getMessage(),
+                            'order_id' => $existingOrder->id,
+                            'wc_status' => $wooStatus,
+                            'ecos_from' => $existingOrder->status->value,
+                            'ecos_to' => $ecosStatus->value,
+                            'error' => $workflowError->getMessage(),
                         ]);
                     }
                 }

@@ -10,18 +10,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * @property string           $id
- * @property string           $task_id
- * @property string           $worker_id
- * @property int              $attempt_number
- * @property \Carbon\Carbon   $started_at
+ * @property string $id
+ * @property string $task_id
+ * @property string $worker_id
+ * @property int $attempt_number
+ * @property \Carbon\Carbon $started_at
  * @property \Carbon\Carbon|null $finished_at
- * @property int|null         $exit_code
- * @property int|null         $tokens_used
- * @property string|null      $claude_version
- * @property string|null      $failure_code
- * @property string|null      $failure_message
- * @property int|null         $duration_seconds
+ * @property int|null $exit_code
+ * @property int|null $tokens_used
+ * @property string|null $claude_version
+ * @property string|null $failure_code
+ * @property string|null $failure_message
+ * @property int|null $duration_seconds
  */
 final class Execution extends Model
 {
@@ -46,7 +46,7 @@ final class Execution extends Model
     ];
 
     protected $casts = [
-        'started_at'  => 'datetime',
+        'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];
 

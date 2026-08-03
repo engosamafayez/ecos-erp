@@ -34,7 +34,7 @@ final class PermissionService implements PermissionServiceInterface
 
     private const CACHE_PREFIX = 'rbac.user.';
 
-public function userHasPermission(User $user, string $permission): bool
+    public function userHasPermission(User $user, string $permission): bool
     {
         return in_array($permission, $this->getUserPermissions($user), true);
     }

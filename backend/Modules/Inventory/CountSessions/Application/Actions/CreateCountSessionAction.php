@@ -25,12 +25,12 @@ final class CreateCountSessionAction
     {
         return DB::transaction(function () use ($data): InventoryCountSession {
             $session = InventoryCountSession::query()->create([
-                'company_id'   => $data['company_id'],
+                'company_id' => $data['company_id'],
                 'warehouse_id' => $data['warehouse_id'],
                 'count_number' => $this->nextCountNumber(),
-                'status'       => CountSessionStatus::Draft,
-                'notes'        => $data['notes'] ?? null,
-                'created_by'   => $data['created_by'] ?? null,
+                'status' => CountSessionStatus::Draft,
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $data['created_by'] ?? null,
             ]);
 
             // If specific product_ids given, use those; otherwise load all items in warehouse
@@ -43,13 +43,13 @@ final class CreateCountSessionAction
 
             foreach ($items as $item) {
                 InventoryCountLine::query()->create([
-                    'session_id'        => $session->id,
-                    'product_id'        => $item->product_id,
+                    'session_id' => $session->id,
+                    'product_id' => $item->product_id,
                     'inventory_item_id' => $item->id,
-                    'system_qty'        => (float) $item->on_hand_qty,
-                    'counted_qty'       => null,
-                    'variance_qty'      => null,
-                    'variance_value'    => null,
+                    'system_qty' => (float) $item->on_hand_qty,
+                    'counted_qty' => null,
+                    'variance_qty' => null,
+                    'variance_value' => null,
                 ]);
             }
 

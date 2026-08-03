@@ -11,15 +11,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Organization\Brands\Domain\Models\Brand;
 
 /**
- * @property string      $id
- * @property string      $brand_id
- * @property string      $company_id
- * @property string      $name
+ * @property string $id
+ * @property string $brand_id
+ * @property string $company_id
+ * @property string $name
  * @property string|null $name_ar
  * @property string|null $code
- * @property int         $sort_order
- * @property bool        $is_active
- * @property float|null  $default_shipping_cost  Governorate-level default; zones inherit unless overridden
+ * @property int $sort_order
+ * @property bool $is_active
+ * @property float|null $default_shipping_cost Governorate-level default; zones inherit unless overridden
  */
 class DeliveryGeography extends Model
 {
@@ -50,8 +50,8 @@ class DeliveryGeography extends Model
     protected function casts(): array
     {
         return [
-            'is_active'             => 'boolean',
-            'sort_order'            => 'integer',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer',
             'default_shipping_cost' => 'float',
         ];
     }

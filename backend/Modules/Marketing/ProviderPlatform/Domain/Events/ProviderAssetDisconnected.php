@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderAssetDisconnected extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.asset_disconnected'; }
+    public function eventName(): string
+    {
+        return 'provider.asset_disconnected';
+    }
 }

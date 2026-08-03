@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -19,7 +21,7 @@ class AssignmentLog extends Model
     {
         return [
             'assignment_type' => AssignmentType::class,
-            'unassigned_at'   => 'datetime',
+            'unassigned_at' => 'datetime',
         ];
     }
 

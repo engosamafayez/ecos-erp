@@ -6,15 +6,15 @@ namespace Modules\Marketing\CampaignStudio\Domain\Enums;
 
 enum ValidationSeverity: string
 {
-    case BLOCKING       = 'blocking';
-    case WARNING        = 'warning';
+    case BLOCKING = 'blocking';
+    case WARNING = 'warning';
     case RECOMMENDATION = 'recommendation';
 
     public function label(): string
     {
         return match ($this) {
-            self::BLOCKING       => 'Blocking Error',
-            self::WARNING        => 'Warning',
+            self::BLOCKING => 'Blocking Error',
+            self::WARNING => 'Warning',
             self::RECOMMENDATION => 'Recommendation',
         };
     }
@@ -27,8 +27,8 @@ enum ValidationSeverity: string
     public function color(): string
     {
         return match ($this) {
-            self::BLOCKING       => 'red',
-            self::WARNING        => 'yellow',
+            self::BLOCKING => 'red',
+            self::WARNING => 'yellow',
             self::RECOMMENDATION => 'blue',
         };
     }

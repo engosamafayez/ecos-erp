@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\Preparation\Domain\Enums\SessionStatus;
-use Modules\Operations\Preparation\Domain\Events\OrderDetachedFromPreparationSession;
 use Modules\Operations\Preparation\Domain\Events\OrderAttachedToPreparationSession;
+use Modules\Operations\Preparation\Domain\Events\OrderDetachedFromPreparationSession;
 use Modules\Operations\Preparation\Domain\Events\PreparationDemandRecalculated;
 use Modules\Operations\Preparation\Domain\Events\PreparationSessionAutoCreated;
 use Modules\Operations\Preparation\Domain\Events\PreparationSessionClosed;
@@ -36,6 +36,7 @@ final class DailyPreparationSessionManager
     public function __construct(
         private readonly PreparationReleaseEngine $releaseEngine,
     ) {}
+
     /**
      * Ensure that today's Preparation Session exists for a warehouse.
      * Idempotent — if a session already exists for today, returns it without creating another.
@@ -56,25 +57,25 @@ final class DailyPreparationSessionManager
             $policy = $this->resolvePolicy($warehouse->company_id, $warehouse->id);
 
             $session = PreparationSession::create([
-                'company_id'    => $warehouse->company_id,
-                'warehouse_id'  => $warehouse->id,
+                'company_id' => $warehouse->company_id,
+                'warehouse_id' => $warehouse->id,
                 'session_number' => $this->generateSessionNumber($warehouse->company_id),
                 'planning_date' => $businessDate,
-                'status'        => 'draft',
-                'auto_created'  => true,
-                'policy_id'     => $policy?->id,
-                'operator_id'   => $warehouse->company_id, // placeholder — supervisor assigns later
-                'created_by'    => 'system',
-                'updated_by'    => 'system',
+                'status' => 'draft',
+                'auto_created' => true,
+                'policy_id' => $policy?->id,
+                'operator_id' => $warehouse->company_id, // placeholder — supervisor assigns later
+                'created_by' => 'system',
+                'updated_by' => 'system',
             ]);
 
             PreparationSessionAutoCreated::dispatch(
-                sessionId:   $session->id,
+                sessionId: $session->id,
                 warehouseId: $warehouse->id,
-                companyId:   $warehouse->company_id,
+                companyId: $warehouse->company_id,
                 businessDate: $businessDate->toDateString(),
-                policyId:    $policy?->id,
-                occurredAt:  now()->toIso8601String(),
+                policyId: $policy?->id,
+                occurredAt: now()->toIso8601String(),
             );
 
             if ($policy?->auto_attach_orders ?? true) {
@@ -132,19 +133,19 @@ final class DailyPreparationSessionManager
         }
 
         $session->update([
-            'status'    => SessionStatus::Frozen->value,
+            'status' => SessionStatus::Frozen->value,
             'frozen_at' => now(),
             'frozen_by' => $frozenBy,
         ]);
 
         PreparationSessionFrozen::dispatch(
-            sessionId:     $session->id,
-            warehouseId:   $session->warehouse_id,
-            companyId:     $session->company_id,
-            ordersCount:   $session->orders_count,
+            sessionId: $session->id,
+            warehouseId: $session->warehouse_id,
+            companyId: $session->company_id,
+            ordersCount: $session->orders_count,
             productsCount: $session->products_count,
-            frozenBy:      $frozenBy,
-            occurredAt:    now()->toIso8601String(),
+            frozenBy: $frozenBy,
+            occurredAt: now()->toIso8601String(),
         );
     }
 
@@ -154,16 +155,16 @@ final class DailyPreparationSessionManager
     public function closeSession(PreparationSession $session, string $closedBy): void
     {
         $session->update([
-            'status'   => SessionStatus::Closed->value,
+            'status' => SessionStatus::Closed->value,
             'closed_at' => now(),
             'closed_by' => $closedBy,
         ]);
 
         PreparationSessionClosed::dispatch(
-            sessionId:  $session->id,
+            sessionId: $session->id,
             warehouseId: $session->warehouse_id,
-            companyId:  $session->company_id,
-            closedBy:   $closedBy,
+            companyId: $session->company_id,
+            closedBy: $closedBy,
             occurredAt: now()->toIso8601String(),
         );
     }
@@ -196,23 +197,23 @@ final class DailyPreparationSessionManager
         }
 
         $record = PreparationSessionOrder::create([
-            'preparation_session_id'  => $session->id,
-            'order_id'                => $order->id,
-            'order_number_snapshot'   => $order->order_number,
-            'customer_name_snapshot'  => $order->billing_first_name . ' ' . $order->billing_last_name,
-            'governorate_snapshot'    => $order->governorate,
-            'area_snapshot'           => $order->area,
-            'attachment_source'       => $source,
-            'attached_at'             => now(),
-            'attached_by'             => $attachedBy,
+            'preparation_session_id' => $session->id,
+            'order_id' => $order->id,
+            'order_number_snapshot' => $order->order_number,
+            'customer_name_snapshot' => $order->billing_first_name.' '.$order->billing_last_name,
+            'governorate_snapshot' => $order->governorate,
+            'area_snapshot' => $order->area,
+            'attachment_source' => $source,
+            'attached_at' => now(),
+            'attached_by' => $attachedBy,
         ]);
 
         OrderAttachedToPreparationSession::dispatch(
-            sessionId:   $session->id,
-            orderId:     $order->id,
+            sessionId: $session->id,
+            orderId: $order->id,
             warehouseId: $session->warehouse_id,
-            source:      $source,
-            occurredAt:  now()->toIso8601String(),
+            source: $source,
+            occurredAt: now()->toIso8601String(),
         );
 
         return $record;
@@ -231,16 +232,16 @@ final class DailyPreparationSessionManager
         $session = $sessionOrder->session;
 
         $sessionOrder->update([
-            'detached_at'       => now(),
-            'detached_by'       => $detachedBy ?? 'system',
+            'detached_at' => now(),
+            'detached_by' => $detachedBy ?? 'system',
             'detachment_reason' => $reason,
         ]);
 
         OrderDetachedFromPreparationSession::dispatch(
-            sessionId:  $sessionOrder->preparation_session_id,
-            orderId:    $sessionOrder->order_id,
+            sessionId: $sessionOrder->preparation_session_id,
+            orderId: $sessionOrder->order_id,
             warehouseId: $session?->warehouse_id ?? '',
-            reason:     $reason,
+            reason: $reason,
             detachedBy: $detachedBy ?? 'system',
             occurredAt: now()->toIso8601String(),
         );
@@ -271,16 +272,16 @@ final class DailyPreparationSessionManager
             ->count('order_lines.product_id');
 
         $session->update([
-            'orders_count'   => $ordersCount,
+            'orders_count' => $ordersCount,
             'products_count' => $productsCount,
         ]);
 
         PreparationDemandRecalculated::dispatch(
-            sessionId:     $session->id,
-            warehouseId:   $session->warehouse_id,
-            ordersCount:   $ordersCount,
+            sessionId: $session->id,
+            warehouseId: $session->warehouse_id,
+            ordersCount: $ordersCount,
             productsCount: $productsCount,
-            occurredAt:    now()->toIso8601String(),
+            occurredAt: now()->toIso8601String(),
         );
     }
 
@@ -298,6 +299,7 @@ final class DailyPreparationSessionManager
 
     /**
      * Get all eligible warehouses under a company that need a session today.
+     *
      * @return \Illuminate\Database\Eloquent\Collection<int, Warehouse>
      */
     public function warehousesNeedingSession(string $companyId): \Illuminate\Database\Eloquent\Collection
@@ -322,16 +324,16 @@ final class DailyPreparationSessionManager
 
     private function generateSessionNumber(string $companyId): string
     {
-        $prefix = 'PS-' . now()->format('Ymd') . '-';
-        $last   = PreparationSession::query()
+        $prefix = 'PS-'.now()->format('Ymd').'-';
+        $last = PreparationSession::query()
             ->where('company_id', $companyId)
-            ->where('session_number', 'like', $prefix . '%')
+            ->where('session_number', 'like', $prefix.'%')
             ->max('session_number');
 
         $seq = $last !== null
             ? (int) substr((string) $last, strlen($prefix)) + 1
             : 1;
 
-        return $prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 }

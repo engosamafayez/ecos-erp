@@ -22,8 +22,8 @@ final class StoreBusinessAccountRequest extends FormRequest
         $companyId = (string) $this->input('company_id');
 
         return [
-            'company_id'  => ['required', 'uuid', 'exists:companies,id'],
-            'brand_id'    => [
+            'company_id' => ['required', 'uuid', 'exists:companies,id'],
+            'brand_id' => [
                 'nullable',
                 'uuid',
                 'exists:brands,id',
@@ -37,9 +37,9 @@ final class StoreBusinessAccountRequest extends FormRequest
                     }
                 },
             ],
-            'name'        => ['required', 'string', 'max:255'],
-            'provider'    => ['required', 'string', 'in:Meta,WooCommerce,Shopify,Amazon,TikTok,Google,Noon,Snapchat,Custom'],
-            'code'        => [
+            'name' => ['required', 'string', 'max:255'],
+            'provider' => ['required', 'string', 'in:Meta,WooCommerce,Shopify,Amazon,TikTok,Google,Noon,Snapchat,Custom'],
+            'code' => [
                 'nullable',
                 'string',
                 'max:20',
@@ -47,9 +47,9 @@ final class StoreBusinessAccountRequest extends FormRequest
                     fn ($q) => $q->where('company_id', $companyId)->whereNull('deleted_at'),
                 ),
             ],
-            'status'      => ['nullable', 'string', 'in:active,inactive,suspended'],
+            'status' => ['nullable', 'string', 'in:active,inactive,suspended'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'logo'        => ['nullable', 'string', 'max:500'],
+            'logo' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

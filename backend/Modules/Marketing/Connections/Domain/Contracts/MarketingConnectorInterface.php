@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Modules\Marketing\Connections\Domain\Contracts;
 
 use Modules\Marketing\Assets\Domain\Models\MarketingAsset;
-use Modules\Marketing\Connections\Domain\ValueObjects\ConnectorHealthData;
 use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
+use Modules\Marketing\Connections\Domain\ValueObjects\ConnectorHealthData;
 
 /**
  * Enterprise Marketing Connector Contract.
@@ -43,14 +43,14 @@ interface MarketingConnectorInterface
     /**
      * Asset types this connector can discover.
      *
-     * @return list<string>  AssetType enum values
+     * @return list<string> AssetType enum values
      */
     public function getSupportedAssetTypes(): array;
 
     /**
      * Capabilities this connector exposes.
      *
-     * @return list<string>  e.g. ['oauth', 'asset_discovery', 'health_check', 'sync']
+     * @return list<string> e.g. ['oauth', 'asset_discovery', 'health_check', 'sync']
      */
     public function getCapabilities(): array;
 
@@ -59,7 +59,7 @@ interface MarketingConnectorInterface
     /**
      * Generate the OAuth authorization URL.
      *
-     * @param array<string, string> $params  Extra context (state, company_id, etc.)
+     * @param  array<string, string>  $params  Extra context (state, company_id, etc.)
      */
     public function generateAuthUrl(array $params = []): string;
 

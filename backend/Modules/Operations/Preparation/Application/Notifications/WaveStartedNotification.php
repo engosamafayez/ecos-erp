@@ -24,11 +24,11 @@ final class WaveStartedNotification extends Notification
     public function toDatabase(mixed $notifiable): array
     {
         return [
-            'type'        => 'wave_started',
-            'wave_id'     => $this->waveId,
+            'type' => 'wave_started',
+            'wave_id' => $this->waveId,
             'wave_number' => $this->waveNumber,
-            'message'     => "You've been assigned to wave {$this->waveNumber} as {$this->role}",
-            'severity'    => 'info',
+            'message' => "You've been assigned to wave {$this->waveNumber} as {$this->role}",
+            'severity' => 'info',
         ];
     }
 }

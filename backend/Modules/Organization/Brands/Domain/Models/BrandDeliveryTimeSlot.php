@@ -9,14 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property string      $id
- * @property string      $brand_id
- * @property string      $name         Customer-visible label, e.g. "09:00 AM – 12:00 PM"
- * @property string      $start_time   "HH:MM:SS"
- * @property string      $end_time     "HH:MM:SS"
- * @property int         $display_order
- * @property bool        $is_active
- * @property array|null  $available_days
+ * @property string $id
+ * @property string $brand_id
+ * @property string $name Customer-visible label, e.g. "09:00 AM – 12:00 PM"
+ * @property string $start_time "HH:MM:SS"
+ * @property string $end_time "HH:MM:SS"
+ * @property int $display_order
+ * @property bool $is_active
+ * @property array|null $available_days
  * @property string|null $cutoff_time
  */
 class BrandDeliveryTimeSlot extends Model
@@ -45,7 +45,7 @@ class BrandDeliveryTimeSlot extends Model
     protected function casts(): array
     {
         return [
-            'is_active'     => 'boolean',
+            'is_active' => 'boolean',
             'display_order' => 'integer',
             'available_days' => 'array',
         ];

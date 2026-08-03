@@ -1,4 +1,5 @@
 import { RotateCcw, ShoppingCart, Trash2, User } from 'lucide-react';
+import { useFormatter } from '@/hooks/use-formatter';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +32,7 @@ export function CartRecoveryDialog({
   onDiscard,
   isDiscarding,
 }: CartRecoveryDialogProps) {
+  const { money } = useFormatter();
   const lineCount = cart.lines.length;
   const total = parseFloat(cart.total.amount);
 
@@ -64,7 +66,7 @@ export function CartRecoveryDialog({
               </span>
             </div>
             <span className="text-base font-semibold tabular-nums">
-              {cart.currency} {total.toFixed(2)}
+              {money(total, cart.currency)}
             </span>
           </div>
 

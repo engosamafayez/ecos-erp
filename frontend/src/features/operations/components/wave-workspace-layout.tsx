@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircle2,
   Clock,
@@ -22,7 +23,7 @@ import { usePreparationWave, useAdvanceWave } from '../hooks/use-preparation';
 import { WavePicker, useSelectedWaveId } from '../components/wave-picker';
 import type { PreparationWave, WaveStatus } from '../types/preparation';
 
-// ── Status metadata ────────────────────────────────────────────────────────────
+// ── Status colors (CSS only, no translated labels) ─────────────────────────────
 
 const STATUS_COLORS: Record<WaveStatus, string> = {
   draft:            'bg-gray-100 text-gray-700',
@@ -35,45 +36,41 @@ const STATUS_COLORS: Record<WaveStatus, string> = {
   cancelled:        'bg-red-100 text-red-700',
 };
 
-const STAGE_LABELS: Record<WaveStatus, string> = {
-  draft:            'Draft',
-  collecting:       'Collecting',
-  planning:         'Planning',
-  shortage_blocked: 'Shortage Review',
-  preparing:        'Preparing',
-  completed:        'Completed',
-  closed:           'Closed',
-  cancelled:        'Cancelled',
-};
-
-// ── Workspace tab definitions ─────────────────────────────────────────────────
+// ── Tab definitions (keys only, labels come from i18n) ────────────────────────
 
 const WORKSPACE_TABS = [
-  { key: 'dashboard', label: 'Dashboard',        path: ROUTES.waveWorkspace,        Icon: Layers2      },
-  { key: 'products',  label: 'Product Demand',   path: ROUTES.waveProductDemand,    Icon: Package      },
-  { key: 'materials', label: 'Raw Materials',    path: ROUTES.waveRawMaterials,     Icon: FlaskConical },
-  { key: 'missing',   label: 'Missing Materials',path: ROUTES.waveMissingMaterials, Icon: PackageX     },
-  { key: 'orders',    label: 'Wave Orders',       path: ROUTES.waveOrders,           Icon: ShoppingCart },
-  { key: 'settings',  label: 'Settings',          path: ROUTES.waveSettings,         Icon: Settings2    },
+  { key: 'dashboard', path: ROUTES.waveWorkspace,        Icon: Layers2      },
+  { key: 'products',  path: ROUTES.waveProductDemand,    Icon: Package      },
+  { key: 'materials', path: ROUTES.waveRawMaterials,     Icon: FlaskConical },
+  { key: 'missing',   path: ROUTES.waveMissingMaterials, Icon: PackageX     },
+  { key: 'orders',    path: ROUTES.waveOrders,           Icon: ShoppingCart },
+  { key: 'settings',  path: ROUTES.waveSettings,         Icon: Settings2    },
 ] as const;
 
 // ── Countdown (isolated to prevent Outlet re-renders every second) ─────────────
 
 const CountdownTimer = memo(function CountdownTimer({ wave }: { wave: PreparationWave | undefined }) {
+  const { t } = useTranslation('operations');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const [remaining, setRemaining] = useState(0);
 
+  // Pulled out so the countdown depends on the two fields it actually reads,
+  // rather than on the whole wave object changing identity every refetch.
+  const planningDate = wave?.planning_date;
+  const status = wave?.status;
+
   useEffect(() => {
-    if (!wave || !['draft', 'planning'].includes(wave.status)) {
+    if (!planningDate || !status || !['draft', 'planning'].includes(status)) {
       setRemaining(0);
       return;
     }
-    const target = new Date(`${wave.planning_date}T08:00:00`);
+    const target = new Date(`${planningDate}T08:00:00`);
     if (target <= new Date()) { setRemaining(0); return; }
     const update = () => setRemaining(Math.max(0, target.getTime() - Date.now()));
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
-  }, [wave?.planning_date, wave?.status]);
+  }, [planningDate, status]);
 
   if (!wave) return null;
 
@@ -87,7 +84,7 @@ const CountdownTimer = memo(function CountdownTimer({ wave }: { wave: Preparatio
       : `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
     return (
       <div className="flex flex-col items-end shrink-0">
-        <span className="text-[10px] text-muted-foreground leading-none">Prep Starts In</span>
+        <span className="text-[10px] text-muted-foreground leading-none">{t($ => $.wave.workspace.prepStartsIn)}</span>
         <span className="text-sm font-mono font-bold tabular-nums leading-tight">{formatted}</span>
       </div>
     );
@@ -97,7 +94,7 @@ const CountdownTimer = memo(function CountdownTimer({ wave }: { wave: Preparatio
   return (
     <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
       <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-      {STAGE_LABELS[wave.status]}
+      {tAny(`wave.stageLabels.${wave.status}`)}
     </div>
   );
 });
@@ -177,6 +174,8 @@ function fmtLocalDate(val: string | null | undefined): string {
 // ── Layout ────────────────────────────────────────────────────────────────────
 
 export function WaveWorkspaceLayout() {
+  const { t } = useTranslation('operations');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const { pathname }   = useLocation();
   const waveId         = useSelectedWaveId();
   const { data: wave, isFetching } = usePreparationWave(waveId);
@@ -208,17 +207,17 @@ export function WaveWorkspaceLayout() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold font-mono leading-none">{wave.wave_number}</span>
                     <Badge className={`text-[10px] h-4 px-1.5 ${STATUS_COLORS[wave.status]}`}>
-                      {STAGE_LABELS[wave.status]}
+                      {tAny(`wave.stageLabels.${wave.status}`)}
                     </Badge>
                     {wave.shortage_detected && (
                       <Badge className="text-[10px] h-4 px-1.5 bg-amber-100 text-amber-700">
-                        Shortage
+                        {t($ => $.wave.workspace.shortage)}
                       </Badge>
                     )}
                     {isFetching && (
                       <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <RefreshCw className="h-2.5 w-2.5 animate-spin" />
-                        Syncing
+                        {t($ => $.wave.workspace.syncing)}
                       </span>
                     )}
                   </div>
@@ -227,7 +226,7 @@ export function WaveWorkspaceLayout() {
                   </div>
                 </>
               ) : (
-                <span className="text-sm font-medium text-muted-foreground">Wave Workspace</span>
+                <span className="text-sm font-medium text-muted-foreground">{t($ => $.wave.workspace.title)}</span>
               )}
             </div>
           </div>
@@ -245,7 +244,7 @@ export function WaveWorkspaceLayout() {
                 {advance.isPending
                   ? <Loader2 className="h-3 w-3 animate-spin" />
                   : <Play className="h-3 w-3" />}
-                Start Preparation
+                {t($ => $.wave.workspace.startPreparation)}
               </Button>
             )}
             <WavePicker />
@@ -257,28 +256,28 @@ export function WaveWorkspaceLayout() {
           <div className="flex items-center gap-2 px-4 pb-2 overflow-x-auto">
             <KpiChip
               icon={<ShoppingCart className="h-3 w-3" />}
-              label="Orders"
+              label={t($ => $.wave.workspace.kpis.orders)}
               value={wave.orders_count}
             />
             <KpiChip
               icon={<Package className="h-3 w-3" />}
-              label="Products"
+              label={t($ => $.wave.workspace.kpis.products)}
               value={wave.products_count}
             />
             <KpiChip
               icon={<CheckCircle2 className="h-3 w-3" />}
-              label="Required"
+              label={t($ => $.wave.workspace.kpis.required)}
               value={fmtN(totalRequired)}
             />
             <KpiChip
               icon={<PackageX className="h-3 w-3" />}
-              label="Missing"
+              label={t($ => $.wave.workspace.kpis.missing)}
               value={missing.length}
               accent={missing.length > 0 ? 'danger' : undefined}
             />
             <KpiChip
               icon={<TrendingUp className="h-3 w-3" />}
-              label="Complete"
+              label={t($ => $.wave.workspace.kpis.complete)}
               value={`${wave.completion_pct.toFixed(0)}%`}
               accent={wave.completion_pct >= 100 ? 'success' : undefined}
             />
@@ -291,7 +290,7 @@ export function WaveWorkspaceLayout() {
         className="flex items-center border-b border-border/60 bg-background shrink-0 overflow-x-auto"
         aria-label="Wave workspace views"
       >
-        {WORKSPACE_TABS.map(({ key, label, path, Icon }) => {
+        {WORKSPACE_TABS.map(({ key, path, Icon }) => {
           const active = pathname === path;
           return (
             <Link
@@ -305,7 +304,7 @@ export function WaveWorkspaceLayout() {
               aria-current={active ? 'page' : undefined}
             >
               <Icon className="h-3.5 w-3.5" />
-              {label}
+              {tAny(`wave.workspace.tabs.${key}`)}
             </Link>
           );
         })}
@@ -314,19 +313,19 @@ export function WaveWorkspaceLayout() {
       {/* ── Sticky Summary Bar ───────────────────────────────────────────────── */}
       {wave && (
         <div className="sticky top-0 z-10 flex items-center gap-2.5 px-4 py-1.5 border-b border-border/40 bg-muted/30 text-[11px] overflow-x-auto shrink-0">
-          <SummaryItem label="Orders"    value={wave.orders_count} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.orders)}    value={wave.orders_count} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label="Products"  value={wave.products_count} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.products)}  value={wave.products_count} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label="Required"  value={fmtN(totalRequired)} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.required)}  value={fmtN(totalRequired)} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label="Prepared"  value={fmtN(totalPrepared)} accent="success" />
+          <SummaryItem label={t($ => $.wave.workspace.summary.prepared)}  value={fmtN(totalPrepared)} accent="success" />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label="Remaining" value={fmtN(remaining)} accent={remaining > 0 ? 'warn' : undefined} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.remaining)} value={fmtN(remaining)} accent={remaining > 0 ? 'warn' : undefined} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label="Missing"   value={missing.length} accent={missing.length > 0 ? 'danger' : undefined} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.missing)}   value={missing.length} accent={missing.length > 0 ? 'danger' : undefined} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label="Stage"     value={STAGE_LABELS[wave.status]} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.stage)}     value={tAny(`wave.stageLabels.${wave.status}`)} />
           <span className="ms-auto flex items-center gap-1 text-muted-foreground shrink-0">
             <Clock className="h-2.5 w-2.5" />
             {fmtTime(wave.updated_at)}

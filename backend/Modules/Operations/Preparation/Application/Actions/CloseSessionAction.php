@@ -10,12 +10,13 @@ use App\Core\Timeline\TimelineService;
 use Modules\Operations\Preparation\Domain\Enums\SessionStatus;
 use Modules\Operations\Preparation\Domain\Events\SessionClosed;
 use Modules\Operations\Preparation\Domain\Models\PreparationSession;
+use RuntimeException;
 
 final class CloseSessionAction
 {
     public function __construct(
-        private readonly AuditService       $audit,
-        private readonly TimelineService    $timeline,
+        private readonly AuditService $audit,
+        private readonly TimelineService $timeline,
         private readonly FeatureFlagService $flags,
     ) {}
 
@@ -24,40 +25,40 @@ final class CloseSessionAction
         $this->guardWorkflowStage($session->company_id);
 
         if (! $session->status->canTransitionTo(SessionStatus::Closed)) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 "Cannot close session [{$session->id}] from status [{$session->status->value}]. "
-                . 'Session must be in Approved status before closing.'
+                .'Session must be in Approved status before closing.',
             );
         }
 
         $session->update([
-            'status'     => SessionStatus::Closed->value,
-            'closed_at'  => now(),
-            'closed_by'  => $actorId,
+            'status' => SessionStatus::Closed->value,
+            'closed_at' => now(),
+            'closed_by' => $actorId,
             'updated_by' => $actorId,
         ]);
 
         event(new SessionClosed($session, $actorId));
 
         $this->timeline->record(
-            companyId:   $session->company_id,
+            companyId: $session->company_id,
             subjectType: 'PreparationSession',
-            subjectId:   $session->id,
-            eventType:   'session.closed',
-            title:       "Session {$session->session_number} closed",
+            subjectId: $session->id,
+            eventType: 'session.closed',
+            title: "Session {$session->session_number} closed",
             description: 'Loading confirmed. Session archived.',
-            actorId:     (int) $actorId,
-            sourceModule:'Operations.Preparation',
+            actorId: (int) $actorId,
+            sourceModule: 'Operations.Preparation',
         );
 
         $this->audit->record(
-            action:     'preparation.session.closed',
+            action: 'preparation.session.closed',
             entityType: 'PreparationSession',
-            entityId:   $session->id,
-            companyId:  $session->company_id,
-            userId:     (int) $actorId,
-            oldValues:  ['status' => SessionStatus::Approved->value],
-            newValues:  ['status' => SessionStatus::Closed->value],
+            entityId: $session->id,
+            companyId: $session->company_id,
+            userId: (int) $actorId,
+            oldValues: ['status' => SessionStatus::Approved->value],
+            newValues: ['status' => SessionStatus::Closed->value],
         );
 
         return $session->refresh();
@@ -66,7 +67,7 @@ final class CloseSessionAction
     private function guardWorkflowStage(string $companyId): void
     {
         if (! $this->flags->isEnabled('workflow.stages.preparation', $companyId)) {
-            throw new \RuntimeException('Preparation OS workflow stage is not enabled.');
+            throw new RuntimeException('Preparation OS workflow stage is not enabled.');
         }
     }
 }

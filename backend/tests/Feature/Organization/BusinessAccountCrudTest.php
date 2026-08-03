@@ -7,7 +7,6 @@ namespace Tests\Feature\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
-use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
@@ -42,7 +41,7 @@ class BusinessAccountCrudTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user    = User::factory()->create();
+        $this->user = User::factory()->create();
         $this->company = Company::factory()->create();
     }
 
@@ -57,8 +56,8 @@ class BusinessAccountCrudTest extends TestCase
     {
         return array_merge([
             'company_id' => $this->company->id,
-            'name'       => 'Meta Business Suite',
-            'provider'   => 'Meta',
+            'name' => 'Meta Business Suite',
+            'provider' => 'Meta',
         ], $overrides);
     }
 
@@ -79,7 +78,7 @@ class BusinessAccountCrudTest extends TestCase
         BusinessAccount::factory()->create(['company_id' => $this->company->id, 'code' => 'BA-000001']);
         BusinessAccount::factory()->create(['company_id' => $other->id, 'code' => 'BA-000001']);
 
-        $this->auth()->getJson('/api/business-accounts?company_id=' . $this->company->id)
+        $this->auth()->getJson('/api/business-accounts?company_id='.$this->company->id)
             ->assertOk()
             ->assertJsonPath('data.meta.total', 1);
     }
@@ -174,13 +173,13 @@ class BusinessAccountCrudTest extends TestCase
     {
         $account = BusinessAccount::factory()->create([
             'company_id' => $this->company->id,
-            'provider'   => 'Meta',
+            'provider' => 'Meta',
         ]);
 
         $this->auth()->putJson("/api/business-accounts/{$account->id}", [
-            'name'     => 'Updated Name',
+            'name' => 'Updated Name',
             'provider' => 'Shopify',
-            'status'   => 'inactive',
+            'status' => 'inactive',
         ])->assertOk()
             ->assertJsonPath('data.name', 'Updated Name')
             ->assertJsonPath('data.provider', 'Shopify')
@@ -191,13 +190,13 @@ class BusinessAccountCrudTest extends TestCase
     {
         $account = BusinessAccount::factory()->create([
             'company_id' => $this->company->id,
-            'code'       => 'BA-000001',
+            'code' => 'BA-000001',
         ]);
-        $originalCode      = $account->code;
+        $originalCode = $account->code;
         $originalCompanyId = $account->company_id;
 
         $this->auth()->putJson("/api/business-accounts/{$account->id}", [
-            'name'     => 'Some Name',
+            'name' => 'Some Name',
             'provider' => 'Meta',
         ])->assertOk();
 

@@ -20,10 +20,10 @@ final class InventoryDashboardController extends Controller
     public function index(): JsonResponse
     {
         return $this->success([
-            'kpis'               => $this->dashboard->kpis(),
-            'top_negative'       => $this->dashboard->topNegativeVariances(10),
-            'top_positive'       => $this->dashboard->topPositiveVariances(10),
-            'recent_sessions'    => $this->dashboard->recentSessions(5),
+            'kpis' => $this->dashboard->kpis(),
+            'top_negative' => $this->dashboard->topNegativeVariances(10),
+            'top_positive' => $this->dashboard->topPositiveVariances(10),
+            'recent_sessions' => $this->dashboard->recentSessions(5),
         ]);
     }
 }

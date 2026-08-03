@@ -32,7 +32,7 @@ interface UserPreferenceRepositoryInterface
     /**
      * Create or fully replace the preference payload for a (user, category) pair.
      *
-     * @param  array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public function upsert(int $userId, string $category, array $payload): UserPreference;
 

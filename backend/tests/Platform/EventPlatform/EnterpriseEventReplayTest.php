@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Platform\EventPlatform;
 
+use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventReplayService;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseDeadLetterQueueInterface;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseEventStoreInterface;
+use RuntimeException;
 use Tests\Platform\EventPlatform\Fixtures\TestOrderCreatedEvent;
 use Tests\TestCase;
 
@@ -16,20 +19,22 @@ class EnterpriseEventReplayTest extends TestCase
     use RefreshDatabase;
 
     private EnterpriseEventReplayService $replayService;
+
     private EnterpriseEventStoreInterface $store;
+
     private EnterpriseDeadLetterQueueInterface $dlq;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->replayService = $this->app->make(EnterpriseEventReplayService::class);
-        $this->store         = $this->app->make(EnterpriseEventStoreInterface::class);
-        $this->dlq           = $this->app->make(EnterpriseDeadLetterQueueInterface::class);
+        $this->store = $this->app->make(EnterpriseEventStoreInterface::class);
+        $this->dlq = $this->app->make(EnterpriseDeadLetterQueueInterface::class);
     }
 
     public function test_replay_single_marks_event_as_replayed(): void
     {
-        $event  = TestOrderCreatedEvent::make();
+        $event = TestOrderCreatedEvent::make();
         $stored = $this->store->persist($event);
 
         $this->replayService->replaySingle($stored->id);
@@ -40,7 +45,7 @@ class EnterpriseEventReplayTest extends TestCase
 
     public function test_replay_single_throws_for_unknown_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->replayService->replaySingle('non-existent-id');
     }
 
@@ -59,10 +64,10 @@ class EnterpriseEventReplayTest extends TestCase
 
     public function test_replay_dlq_entry_marks_entry_as_replayed(): void
     {
-        $event   = TestOrderCreatedEvent::make();
-        $stored  = $this->store->persist($event);
-        $failure = new \RuntimeException('test failure');
-        $entry   = $this->dlq->enqueue($event, 'TestSub', $failure, 3, $stored->id);
+        $event = TestOrderCreatedEvent::make();
+        $stored = $this->store->persist($event);
+        $failure = new RuntimeException('test failure');
+        $entry = $this->dlq->enqueue($event, 'TestSub', $failure, 3, $stored->id);
 
         $this->replayService->replayDlqEntry($entry->id);
 
@@ -73,12 +78,12 @@ class EnterpriseEventReplayTest extends TestCase
 
     public function test_replay_by_time_range_returns_count(): void
     {
-        $event  = TestOrderCreatedEvent::make();
+        $event = TestOrderCreatedEvent::make();
         $this->store->persist($event);
 
         $count = $this->replayService->replayByTimeRange(
-            new \DateTimeImmutable('2 hours ago'),
-            new \DateTimeImmutable('2 hours from now'),
+            new DateTimeImmutable('2 hours ago'),
+            new DateTimeImmutable('2 hours from now'),
         );
 
         $this->assertGreaterThanOrEqual(1, $count);

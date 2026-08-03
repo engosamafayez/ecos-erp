@@ -32,7 +32,7 @@ final class DecisionOrchestratorServiceProvider extends ServiceProvider
         $this->app->singleton(DecisionOrchestrator::class, function ($app): DecisionOrchestrator {
             return new DecisionOrchestrator(
                 resolver: $app->make(RecipeResolverInterface::class),
-                kernel:   $app->make(DecisionKernel::class),
+                kernel: $app->make(DecisionKernel::class),
                 registry: $app->make(RuleProviderRegistryInterface::class),
             );
         });

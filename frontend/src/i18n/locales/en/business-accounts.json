@@ -1,21 +1,33 @@
 {
   "title": "Business Accounts",
-  "subtitle": "Manage marketing platform accounts and ad spend.",
-  "search": "Search accounts…",
+  "subtitle": "Manage platform and marketplace accounts connected to your organization.",
+  "search": "Search business accounts…",
   "actions": {
-    "new": "Connect Account",
-    "edit": "Edit Account",
+    "new": "New Business Account",
+    "edit": "Edit",
     "disconnect": "Disconnect",
     "sync": "Sync Now",
-    "viewInsights": "View Insights"
+    "viewInsights": "View Insights",
+    "view": "View",
+    "delete": "Delete",
+    "columns": "Columns",
+    "showHideColumns": "Show/Hide Columns",
+    "actionsFor": "Actions for {{name}}"
   },
   "columns": {
-    "name": "Account Name",
+    "name": "Name",
     "platform": "Platform",
     "accountId": "Account ID",
     "currency": "Currency",
     "status": "Status",
-    "lastSync": "Last Sync"
+    "lastSync": "Last Sync",
+    "code": "Code",
+    "company": "Company",
+    "brand": "Brand",
+    "provider": "Provider",
+    "updatedAt": "Updated At",
+    "created": "Created",
+    "description": "Description"
   },
   "platforms": {
     "meta": "Meta (Facebook & Instagram)",
@@ -27,23 +39,51 @@
     "connected": "Connected",
     "disconnected": "Disconnected",
     "error": "Error",
-    "syncing": "Syncing"
+    "syncing": "Syncing",
+    "active": "Active",
+    "inactive": "Inactive",
+    "suspended": "Suspended"
   },
   "form": {
-    "name": { "label": "Display Name", "placeholder": "My Meta Business Account" },
-    "platform": { "label": "Platform", "placeholder": "Select platform…" },
-    "accountId": { "label": "Account ID", "placeholder": "act_123456789" },
-    "active": "Active"
+    "name": "Name",
+    "platform": {
+      "label": "Platform",
+      "placeholder": "Select platform…"
+    },
+    "accountId": {
+      "label": "Account ID",
+      "placeholder": "act_123456789"
+    },
+    "active": "Active",
+    "company": "Company",
+    "brand": "Brand",
+    "brandNone": "None",
+    "brandNoCompany": "Select a company first",
+    "brandPlaceholder": "Select brand…",
+    "brandSearch": "Search brands…",
+    "brandEmpty": "No brands found",
+    "namePlaceholder": "e.g. My Facebook Store",
+    "provider": "Provider",
+    "status": "Status",
+    "code": "Code",
+    "codeHint": "Auto-generated if blank",
+    "codePlaceholder": "BA-000001",
+    "logo": "Logo",
+    "description": "Description",
+    "descriptionPlaceholder": "Brief description of this business account…"
   },
   "drawer": {
-    "createTitle": "Connect Business Account",
+    "createTitle": "New Business Account",
     "editTitle": "Edit Business Account",
-    "createSubtitle": "Link an advertising account to track spend and performance.",
-    "editSubtitle": "Update account details below.",
-    "submitCreate": "Connect Account",
+    "createSubtitle": "Create a new business account for your organization.",
+    "editSubtitle": "Update business account details.",
+    "submitCreate": "Create Business Account",
     "submitEdit": "Save Changes",
     "saving": "Saving…",
-    "errorTitle": "Unable to save"
+    "errorTitle": "Error",
+    "cancel": "Cancel",
+    "genericError": "Something went wrong. Please try again.",
+    "uploadFailed": "Failed to upload image. Please try again."
   },
   "insights": {
     "title": "Account Insights",
@@ -58,5 +98,75 @@
     "title": "Disconnect Account",
     "description": "Disconnect {{name}}? Historical data will be retained.",
     "confirm": "Disconnect"
+  },
+  "breadcrumbs": {
+    "organization": "Organization"
+  },
+  "kpi": {
+    "totalAccounts": "Total Accounts",
+    "active": "Active",
+    "inactive": "Inactive",
+    "suspended": "Suspended",
+    "connected": "Connected",
+    "integrationSoon": "Integration metrics coming soon"
+  },
+  "filters": {
+    "company": "Company",
+    "allCompanies": "All Companies",
+    "provider": "Provider",
+    "allProviders": "All Providers",
+    "status": "Status",
+    "allStatuses": "All Statuses"
+  },
+  "detail": {
+    "srTitle": "{{name}} — Integration Account Details",
+    "salesChannels": "Sales Channels",
+    "noChannels": "No channels linked to this account.",
+    "activitySoon": "Activity timeline will be available in a future update.",
+    "tabs": {
+      "overview": "Overview",
+      "channels": "Channels",
+      "credentials": "Credentials",
+      "sync": "Sync",
+      "webhooks": "Webhooks",
+      "activity": "Activity"
+    },
+    "credentials": {
+      "title": "API Credentials",
+      "subtitle": "Authentication keys for this account",
+      "notConfigured": "Not configured",
+      "notSet": "Not set",
+      "apiKey": "API Key",
+      "apiSecret": "API Secret",
+      "accessToken": "Access Token",
+      "soon": "Credential management will be available in a future update."
+    },
+    "sync": {
+      "title": "Sync Configuration",
+      "subtitle": "Control what data syncs with this account",
+      "idle": "Idle",
+      "disabled": "Disabled",
+      "products": "Products",
+      "productsDesc": "Sync product catalog",
+      "orders": "Orders",
+      "ordersDesc": "Import incoming orders",
+      "inventory": "Inventory",
+      "inventoryDesc": "Update stock levels",
+      "customers": "Customers",
+      "customersDesc": "Sync customer profiles",
+      "soon": "Synchronization settings will be configurable in a future update."
+    },
+    "webhooks": {
+      "title": "Webhooks",
+      "subtitle": "Incoming webhook endpoints for this account",
+      "registered": "{{count}} registered",
+      "none": "No webhooks registered",
+      "soon": "Webhook registration will be available once integration credentials are configured."
+    }
+  },
+  "delete": {
+    "title": "Delete Business Account",
+    "description": "Are you sure you want to delete \"{{name}}\"? This action can be undone.",
+    "confirm": "Delete Business Account"
   }
 }

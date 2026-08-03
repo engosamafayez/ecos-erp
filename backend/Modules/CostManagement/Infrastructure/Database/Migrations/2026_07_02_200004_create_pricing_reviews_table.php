@@ -32,15 +32,15 @@ return new class extends Migration
             $table->string('channel_id', 36)->nullable(); // null = applies to all channels
 
             // Cost snapshot at review creation time
-            $table->decimal('product_cost',          15, 4); // new Product Cost
+            $table->decimal('product_cost', 15, 4); // new Product Cost
             $table->decimal('previous_product_cost', 15, 4)->nullable();
-            $table->decimal('cost_difference',       15, 4)->default(0);
+            $table->decimal('cost_difference', 15, 4)->default(0);
 
             // Selling price context
-            $table->decimal('selling_price',           15, 4); // current selling price
+            $table->decimal('selling_price', 15, 4); // current selling price
             $table->decimal('suggested_selling_price', 15, 4); // cost / (1 - target_margin)
-            $table->decimal('target_margin',           8,  4)->default(30.00);
-            $table->decimal('current_margin',          8,  4)->default(0);
+            $table->decimal('target_margin', 8, 4)->default(30.00);
+            $table->decimal('current_margin', 8, 4)->default(0);
 
             // Impact flags (array: 'cost_increased','cost_decreased','recipe_changed', etc.)
             $table->json('impacts')->nullable();

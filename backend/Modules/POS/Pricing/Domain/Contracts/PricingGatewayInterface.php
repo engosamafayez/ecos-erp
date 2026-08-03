@@ -18,16 +18,17 @@ interface PricingGatewayInterface
     /**
      * Resolve the current unit price for a single product.
      *
-     * @throws PriceResolutionException  if the product cannot be found or has no price
+     * @throws PriceResolutionException if the product cannot be found or has no price
      */
     public function resolvePrice(string $productId, string $currency): ResolvedPrice;
 
     /**
      * Resolve prices for multiple products in a single call.
      *
-     * @param  string[] $productIds
-     * @return array<string, ResolvedPrice>  keyed by productId, same order as input
-     * @throws PriceResolutionException  if any product cannot be priced
+     * @param  string[]  $productIds
+     * @return array<string, ResolvedPrice> keyed by productId, same order as input
+     *
+     * @throws PriceResolutionException if any product cannot be priced
      */
     public function resolvePrices(array $productIds, string $currency): array;
 }

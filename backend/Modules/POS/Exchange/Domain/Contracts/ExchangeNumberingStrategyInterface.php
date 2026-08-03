@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\POS\Exchange\Domain\Contracts;
 
+use DateTimeImmutable;
+
 interface ExchangeNumberingStrategyInterface
 {
     /**
@@ -11,5 +13,5 @@ interface ExchangeNumberingStrategyInterface
      *
      * The returned string must be unique within the system.
      */
-    public function next(string $terminalId, \DateTimeImmutable $issuedAt): string;
+    public function next(string $terminalId, DateTimeImmutable $issuedAt): string;
 }

@@ -29,15 +29,17 @@ class SupplierAnalyticsTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Warehouse $warehouse;
+
     private Supplier $supplier;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->supplier  = Supplier::factory()->create();
+        $this->supplier = Supplier::factory()->create();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -45,16 +47,16 @@ class SupplierAnalyticsTest extends TestCase
     private function makeApprovedPo(Supplier $supplier, Product $product, float $qty, float $unitPrice): array
     {
         $po = PurchaseOrder::factory()->approved()->create([
-            'company_id'  => $this->company->id,
+            'company_id' => $this->company->id,
             'supplier_id' => $supplier->id,
         ]);
 
         $poLine = PurchaseOrderLine::factory()->create([
             'purchase_order_id' => $po->id,
-            'product_id'        => $product->id,
-            'quantity'          => $qty,
-            'received_qty'      => 0,
-            'unit_price'        => $unitPrice,
+            'product_id' => $product->id,
+            'quantity' => $qty,
+            'received_qty' => 0,
+            'unit_price' => $unitPrice,
         ]);
 
         return [$po, $poLine];
@@ -68,19 +70,19 @@ class SupplierAnalyticsTest extends TestCase
     ): GoodsReceipt {
         $receipt = GoodsReceipt::factory()->create(array_merge([
             'purchase_order_id' => $po->id,
-            'warehouse_id'      => $this->warehouse->id,
+            'warehouse_id' => $this->warehouse->id,
         ], $headerExtras));
 
         GoodsReceiptLine::factory()->create([
-            'goods_receipt_id'        => $receipt->id,
-            'purchase_order_line_id'  => $poLine->id,
-            'product_id'              => $poLine->product_id,
-            'ordered_quantity'        => (float) $poLine->quantity,
-            'received_quantity'       => $netQty,
+            'goods_receipt_id' => $receipt->id,
+            'purchase_order_line_id' => $poLine->id,
+            'product_id' => $poLine->product_id,
+            'ordered_quantity' => (float) $poLine->quantity,
+            'received_quantity' => $netQty,
             'gross_received_quantity' => $netQty,
-            'net_received_quantity'   => $netQty,
-            'variance_quantity'       => $netQty - (float) $poLine->quantity,
-            'unit_price'              => (float) $poLine->unit_price,
+            'net_received_quantity' => $netQty,
+            'variance_quantity' => $netQty - (float) $poLine->quantity,
+            'unit_price' => (float) $poLine->unit_price,
         ]);
 
         app(PostGoodsReceiptAction::class)->execute($receipt->id);
@@ -203,7 +205,7 @@ class SupplierAnalyticsTest extends TestCase
 
         $this->makeAndPostReceipt($po, $poLine, 50.0, [
             'invoice_total_amount' => 500.0,
-            'paid_amount'          => 200.0,
+            'paid_amount' => 200.0,
         ]);
 
         $analytics = app(GetSupplierAnalyticsQuery::class)->execute($this->supplier->id);
@@ -294,11 +296,11 @@ class SupplierAnalyticsTest extends TestCase
         [$po, $poLine] = $this->makeApprovedPo($this->supplier, $product, 100.0, 10.0);
 
         $receipt = GoodsReceipt::factory()->create([
-            'purchase_order_id'    => $po->id,
-            'warehouse_id'         => $this->warehouse->id,
+            'purchase_order_id' => $po->id,
+            'warehouse_id' => $this->warehouse->id,
             'invoice_total_amount' => 500.0,
-            'paid_amount'          => 250.0,
-            'payment_status'       => PaymentStatus::PartiallyPaid->value,
+            'paid_amount' => 250.0,
+            'payment_status' => PaymentStatus::PartiallyPaid->value,
         ]);
 
         $receipt->refresh();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -24,7 +26,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['conversation_id', 'created_at'], 'cep_al_conv_at_idx');
-            $table->index(['assignee_id', 'created_at'],     'cep_al_asgn_at_idx');
+            $table->index(['assignee_id', 'created_at'], 'cep_al_asgn_at_idx');
         });
     }
 

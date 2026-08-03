@@ -6,6 +6,7 @@ namespace Modules\Operations\Loading\Presentation\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
+use BackedEnum;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Operations\Loading\Application\Actions\CompleteAllocationAction;
@@ -53,9 +54,9 @@ final class AllocationController extends Controller
         $result = $action->execute($session, (string) $request->user()->id);
 
         return $this->success([
-            'id'                     => $result->id,
-            'status'                 => $result->status instanceof \BackedEnum ? $result->status->value : $result->status,
-            'allocation_started_at'  => $result->allocation_started_at?->toIso8601String(),
+            'id' => $result->id,
+            'status' => $result->status instanceof BackedEnum ? $result->status->value : $result->status,
+            'allocation_started_at' => $result->allocation_started_at?->toIso8601String(),
         ]);
     }
 
@@ -70,9 +71,9 @@ final class AllocationController extends Controller
         $result = $action->execute($session, (string) $request->user()->id);
 
         return $this->success([
-            'id'                       => $result->id,
-            'status'                   => $result->status instanceof \BackedEnum ? $result->status->value : $result->status,
-            'allocation_completed_at'  => $result->allocation_completed_at?->toIso8601String(),
+            'id' => $result->id,
+            'status' => $result->status instanceof BackedEnum ? $result->status->value : $result->status,
+            'allocation_completed_at' => $result->allocation_completed_at?->toIso8601String(),
         ]);
     }
 
@@ -96,7 +97,7 @@ final class AllocationController extends Controller
         }
 
         $actorType = $validated['actor_type'];
-        $decision  = match ($actorType) {
+        $decision = match ($actorType) {
             'dispatcher' => $chainService->recordDispatcherOverride(
                 $record,
                 (float) $validated['new_quantity'],
@@ -113,13 +114,13 @@ final class AllocationController extends Controller
         };
 
         return $this->success([
-            'decision_id'         => $decision->id,
-            'revision_number'     => $decision->revision_number,
-            'quantity_before'     => $decision->quantity_before,
-            'quantity_after'      => $decision->quantity_after,
-            'actor_type'          => $decision->actor_type,
-            'reason'              => $decision->reason,
-            'recorded_at'         => $decision->recorded_at?->toIso8601String(),
+            'decision_id' => $decision->id,
+            'revision_number' => $decision->revision_number,
+            'quantity_before' => $decision->quantity_before,
+            'quantity_after' => $decision->quantity_after,
+            'actor_type' => $decision->actor_type,
+            'reason' => $decision->reason,
+            'recorded_at' => $decision->recorded_at?->toIso8601String(),
         ]);
     }
 

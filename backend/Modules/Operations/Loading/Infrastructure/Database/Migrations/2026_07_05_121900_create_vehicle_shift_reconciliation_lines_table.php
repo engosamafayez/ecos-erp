@@ -42,20 +42,20 @@ return new class extends Migration
                     $table->foreign('vehicle_inventory_item_id', 'fk_vsrl_vehicle_inv_item')
                         ->references('id')->on('vehicle_inventory_items')->restrictOnDelete();
                 });
-            } catch (\Exception) {
+            } catch (Exception) {
                 // FK already exists — nothing to do
             }
         }
 
         try {
             DB::statement("ALTER TABLE vehicle_shift_reconciliation_lines ADD CONSTRAINT chk_vehicle_shift_recon_lines_variance_resolution CHECK (variance_resolution IS NULL OR variance_resolution IN ('balanced','late_confirmed','written_off','under_investigation'))");
-        } catch (\Exception) {
+        } catch (Exception) {
             // Constraint already exists
         }
 
         try {
             DB::statement('ALTER TABLE vehicle_shift_reconciliation_lines ADD CONSTRAINT chk_vehicle_shift_recon_lines_quantities CHECK (quantity_loaded >= 0 AND quantity_delivered >= 0 AND quantity_returned_expected >= 0 AND quantity_returned_actual >= 0)');
-        } catch (\Exception) {
+        } catch (Exception) {
             // Constraint already exists
         }
     }

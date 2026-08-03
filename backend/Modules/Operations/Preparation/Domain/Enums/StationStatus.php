@@ -6,7 +6,7 @@ namespace Modules\Operations\Preparation\Domain\Enums;
 
 enum StationStatus: string
 {
-    case Active      = 'active';
-    case Inactive    = 'inactive';
+    case Active = 'active';
+    case Inactive = 'inactive';
     case Maintenance = 'maintenance';
 }

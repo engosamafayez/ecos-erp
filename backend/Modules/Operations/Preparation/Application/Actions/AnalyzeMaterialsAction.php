@@ -19,8 +19,8 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 final class AnalyzeMaterialsAction
 {
     public function __construct(
-        private readonly AuditService       $audit,
-        private readonly TimelineService    $timeline,
+        private readonly AuditService $audit,
+        private readonly TimelineService $timeline,
         private readonly FeatureFlagService $flags,
     ) {}
 
@@ -53,7 +53,7 @@ final class AnalyzeMaterialsAction
                         'rm.name as material_name',
                         'rm.sku as material_unit',
                         'bl.quantity_per_unit',
-                        'bl.waste_factor'
+                        'bl.waste_factor',
                     )
                     ->get();
 
@@ -67,18 +67,18 @@ final class AnalyzeMaterialsAction
                         ->where('company_id', $wave->company_id)
                         ->sum('on_hand_qty');
 
-                    $shortage       = $available < $required;
+                    $shortage = $available < $required;
                     $shortageAmount = $shortage ? max(0, $required - $available) : 0;
 
                     if ($shortage) {
                         $shortageDetected = true;
                         $shortages[] = [
-                            'raw_material_id'    => $line->raw_material_id,
-                            'material_name'      => $line->material_name,
-                            'unit'               => $line->material_unit,
-                            'quantity_required'  => $required,
+                            'raw_material_id' => $line->raw_material_id,
+                            'material_name' => $line->material_name,
+                            'unit' => $line->material_unit,
+                            'quantity_required' => $required,
                             'quantity_available' => $available,
-                            'shortage_amount'    => $shortageAmount,
+                            'shortage_amount' => $shortageAmount,
                             'quantity_to_purchase' => $shortageAmount,
                         ];
                     }
@@ -89,28 +89,28 @@ final class AnalyzeMaterialsAction
 
                     if ($existing) {
                         $existing->update([
-                            'quantity_required'    => $existing->quantity_required + $required,
-                            'shortage'             => ($existing->quantity_available < ($existing->quantity_required + $required)),
-                            'shortage_amount'      => max(0, ($existing->quantity_required + $required) - $existing->quantity_available),
+                            'quantity_required' => $existing->quantity_required + $required,
+                            'shortage' => ($existing->quantity_available < ($existing->quantity_required + $required)),
+                            'shortage_amount' => max(0, ($existing->quantity_required + $required) - $existing->quantity_available),
                             'quantity_to_purchase' => max(0, ($existing->quantity_required + $required) - $existing->quantity_available),
-                            'updated_by'           => $actorId,
+                            'updated_by' => $actorId,
                         ]);
                     } else {
                         PreparationMaterialRequirement::create([
-                            'company_id'             => $wave->company_id,
-                            'preparation_wave_id'    => $wave->id,
-                            'raw_material_id'        => $line->raw_material_id,
+                            'company_id' => $wave->company_id,
+                            'preparation_wave_id' => $wave->id,
+                            'raw_material_id' => $line->raw_material_id,
                             'material_name_snapshot' => $line->material_name,
-                            'unit_snapshot'          => $line->material_unit,
-                            'quantity_required'      => $required,
-                            'quantity_available'     => $available,
-                            'quantity_to_purchase'   => $shortageAmount,
-                            'shortage'               => $shortage,
-                            'shortage_amount'        => $shortageAmount,
-                            'analyzed_at'            => $now,
-                            'analyzed_by'            => $actorId,
-                            'created_by'             => $actorId,
-                            'updated_by'             => $actorId,
+                            'unit_snapshot' => $line->material_unit,
+                            'quantity_required' => $required,
+                            'quantity_available' => $available,
+                            'quantity_to_purchase' => $shortageAmount,
+                            'shortage' => $shortage,
+                            'shortage_amount' => $shortageAmount,
+                            'analyzed_at' => $now,
+                            'analyzed_by' => $actorId,
+                            'created_by' => $actorId,
+                            'updated_by' => $actorId,
                         ]);
                     }
                 }
@@ -121,19 +121,19 @@ final class AnalyzeMaterialsAction
                 : WaveStatus::Planning->value;
 
             $wave->update([
-                'status'             => $newStatus,
-                'shortage_detected'  => $shortageDetected,
-                'updated_by'         => $actorId,
+                'status' => $newStatus,
+                'shortage_detected' => $shortageDetected,
+                'updated_by' => $actorId,
             ]);
 
             if ($shortageDetected) {
                 event(new ShortageDetected(
-                    waveId:      $wave->id,
-                    waveNumber:  $wave->wave_number,
-                    companyId:   $wave->company_id,
+                    waveId: $wave->id,
+                    waveNumber: $wave->wave_number,
+                    companyId: $wave->company_id,
                     warehouseId: $wave->warehouse_id,
-                    planningDate:$wave->planning_date->toDateString(),
-                    shortages:   $shortages,
+                    planningDate: $wave->planning_date->toDateString(),
+                    shortages: $shortages,
                 ));
 
                 $actor = User::find($actorId);
@@ -147,24 +147,24 @@ final class AnalyzeMaterialsAction
             }
 
             $this->timeline->record(
-                companyId:   $wave->company_id,
+                companyId: $wave->company_id,
                 subjectType: 'PreparationWave',
-                subjectId:   $wave->id,
-                eventType:   $shortageDetected ? 'wave.shortage_detected' : 'wave.materials_analyzed',
-                title:       $shortageDetected
-                    ? "Shortage detected on wave {$wave->wave_number} — " . count($shortages) . ' material(s)'
+                subjectId: $wave->id,
+                eventType: $shortageDetected ? 'wave.shortage_detected' : 'wave.materials_analyzed',
+                title: $shortageDetected
+                    ? "Shortage detected on wave {$wave->wave_number} — ".count($shortages).' material(s)'
                     : "Materials analysis complete for wave {$wave->wave_number}",
-                actorId:     (int) $actorId,
-                sourceModule:'Operations.Preparation',
+                actorId: (int) $actorId,
+                sourceModule: 'Operations.Preparation',
             );
 
             $this->audit->record(
-                action:     'preparation.wave.materials_analyzed',
+                action: 'preparation.wave.materials_analyzed',
                 entityType: 'PreparationWave',
-                entityId:   $wave->id,
-                companyId:  $wave->company_id,
-                userId:     (int) $actorId,
-                newValues:  ['status' => $newStatus, 'shortage_detected' => $shortageDetected, 'shortages_count' => count($shortages)],
+                entityId: $wave->id,
+                companyId: $wave->company_id,
+                userId: (int) $actorId,
+                newValues: ['status' => $newStatus, 'shortage_detected' => $shortageDetected, 'shortages_count' => count($shortages)],
             );
 
             return $wave->fresh(['materialRequirements']) ?? $wave;

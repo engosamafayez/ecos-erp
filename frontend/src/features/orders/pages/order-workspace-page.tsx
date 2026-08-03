@@ -31,10 +31,10 @@ export function OrderWorkspacePage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          title={t('detail.loading')}
+          title={t($ => $.detail.loading)}
           breadcrumbs={[
-            { label: tCommon('home'), to: ROUTES.dashboard },
-            { label: t('title'), to: ROUTES.orders },
+            { label: tCommon($ => $.home), to: ROUTES.dashboard },
+            { label: t($ => $.title), to: ROUTES.orders },
             { label: '…' },
           ]}
         />
@@ -47,13 +47,13 @@ export function OrderWorkspacePage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          title={t('detail.notFound')}
+          title={t($ => $.detail.notFound)}
           breadcrumbs={[
-            { label: tCommon('home'), to: ROUTES.dashboard },
-            { label: t('title'), to: ROUTES.orders },
+            { label: tCommon($ => $.home), to: ROUTES.dashboard },
+            { label: t($ => $.title), to: ROUTES.orders },
           ]}
         />
-        <p className="text-muted-foreground text-sm">{t('detail.notFoundMessage')}</p>
+        <p className="text-muted-foreground text-sm">{t($ => $.detail.notFoundMessage)}</p>
       </div>
     );
   }

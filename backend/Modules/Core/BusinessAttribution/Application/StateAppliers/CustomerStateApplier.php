@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Application\StateAppliers;
 
 use Modules\Core\BusinessAttribution\Domain\Contracts\EntityStateApplierInterface;
@@ -15,17 +17,17 @@ class CustomerStateApplier implements EntityStateApplierInterface
     public function initialState(string $entityId): array
     {
         return [
-            'id'               => $entityId,
-            'entity_type'      => 'customer',
-            'status'           => 'unknown',
-            'lifetime_stage'   => null,
+            'id' => $entityId,
+            'entity_type' => 'customer',
+            'status' => 'unknown',
+            'lifetime_stage' => null,
             'first_contact_at' => null,
-            'first_order_at'   => null,
-            'last_order_at'    => null,
-            'total_orders'     => 0,
-            'total_spend'      => 0.0,
-            'journey_stages'   => [],
-            'last_event_at'    => null,
+            'first_order_at' => null,
+            'last_order_at' => null,
+            'total_orders' => 0,
+            'total_spend' => 0.0,
+            'journey_stages' => [],
+            'last_event_at' => null,
         ];
     }
 
@@ -37,7 +39,7 @@ class CustomerStateApplier implements EntityStateApplierInterface
             case 'CustomerFirstContact':
             case 'ConversationStarted':
                 $currentState['first_contact_at'] ??= $event->occurred_at->toIso8601String();
-                $currentState['status']             = 'contacted';
+                $currentState['status'] = 'contacted';
                 break;
 
             case 'LeadCreated':
@@ -47,10 +49,10 @@ class CustomerStateApplier implements EntityStateApplierInterface
 
             case 'OrderCreated':
             case 'OrderPlaced':
-                $currentState['total_orders']  += 1;
+                $currentState['total_orders'] += 1;
                 $currentState['first_order_at'] ??= $event->occurred_at->toIso8601String();
-                $currentState['last_order_at']   = $event->occurred_at->toIso8601String();
-                $currentState['status']          = 'customer';
+                $currentState['last_order_at'] = $event->occurred_at->toIso8601String();
+                $currentState['status'] = 'customer';
                 if (isset($payload['total_amount'])) {
                     $currentState['total_spend'] += (float) $payload['total_amount'];
                 }
@@ -58,7 +60,7 @@ class CustomerStateApplier implements EntityStateApplierInterface
 
             case 'RepeatPurchase':
                 $currentState['lifetime_stage'] = 'repeat';
-                $currentState['total_orders']  += 1;
+                $currentState['total_orders'] += 1;
                 break;
 
             case 'VipUpgrade':

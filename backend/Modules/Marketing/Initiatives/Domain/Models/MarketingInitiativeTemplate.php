@@ -15,28 +15,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Users may create custom templates.
  * Future: AI recommendation engine will suggest templates based on context.
  *
- * @property string      $id
- * @property string      $name
- * @property string      $slug
+ * @property string $id
+ * @property string $name
+ * @property string $slug
  * @property string|null $description
  * @property string|null $category
- * @property array|null  $defaults
- * @property bool        $is_system
- * @property int         $usage_count
+ * @property array|null $defaults
+ * @property bool $is_system
+ * @property int $usage_count
  * @property string|null $created_by
  */
 class MarketingInitiativeTemplate extends Model
 {
     use HasUuids;
 
-    protected $table   = 'marketing_initiative_templates';
+    protected $table = 'marketing_initiative_templates';
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'defaults'   => 'array',
-            'is_system'  => 'boolean',
+            'defaults' => 'array',
+            'is_system' => 'boolean',
             'usage_count' => 'integer',
         ];
     }

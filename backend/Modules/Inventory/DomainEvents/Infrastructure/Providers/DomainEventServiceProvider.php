@@ -46,10 +46,10 @@ final class DomainEventServiceProvider extends ServiceProvider
         // All 6 canonical inventory events → single responsibility listener.
         // One listener per module (ADR-006 §Listener Strategy), not one per event.
         $events->listen(InventoryStockReceived::class, InventoryChannelSynchronizationListener::class);
-        $events->listen(InventoryStockReserved::class,  InventoryChannelSynchronizationListener::class);
-        $events->listen(InventoryStockReleased::class,  InventoryChannelSynchronizationListener::class);
-        $events->listen(InventoryStockShipped::class,   InventoryChannelSynchronizationListener::class);
-        $events->listen(InventoryStockAdjusted::class,  InventoryChannelSynchronizationListener::class);
-        $events->listen(InventoryCountApproved::class,  InventoryChannelSynchronizationListener::class);
+        $events->listen(InventoryStockReserved::class, InventoryChannelSynchronizationListener::class);
+        $events->listen(InventoryStockReleased::class, InventoryChannelSynchronizationListener::class);
+        $events->listen(InventoryStockShipped::class, InventoryChannelSynchronizationListener::class);
+        $events->listen(InventoryStockAdjusted::class, InventoryChannelSynchronizationListener::class);
+        $events->listen(InventoryCountApproved::class, InventoryChannelSynchronizationListener::class);
     }
 }

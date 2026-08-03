@@ -24,14 +24,14 @@ export function OrderCustomerIntelligence({ value, onChange }: Props) {
   const selected = new Set(value);
 
   const ciLabel: Record<CustomerIntelligenceFilter, string> = {
-    first_order:   t('customerIntelligence.first_order'),
-    repeated:      t('customerIntelligence.repeated'),
-    more_than_5:   t('customerIntelligence.more_than_5'),
-    more_than_10:  t('customerIntelligence.more_than_10'),
-    has_cancelled: t('customerIntelligence.has_cancelled'),
-    has_returned:  t('customerIntelligence.has_returned'),
-    has_rejected:  t('customerIntelligence.has_rejected'),
-    incomplete:    t('customerIntelligence.incomplete'),
+    first_order:   t($ => $.customerIntelligence.first_order),
+    repeated:      t($ => $.customerIntelligence.repeated),
+    more_than_5:   t($ => $.customerIntelligence.more_than_5),
+    more_than_10:  t($ => $.customerIntelligence.more_than_10),
+    has_cancelled: t($ => $.customerIntelligence.has_cancelled),
+    has_returned:  t($ => $.customerIntelligence.has_returned),
+    has_rejected:  t($ => $.customerIntelligence.has_rejected),
+    incomplete:    t($ => $.customerIntelligence.incomplete),
   };
 
   function toggle(key: CustomerIntelligenceFilter) {
@@ -47,9 +47,9 @@ export function OrderCustomerIntelligence({ value, onChange }: Props) {
   return (
     <div className="border-b bg-muted/30 px-4 py-3">
       <p className="mb-2 text-xs font-medium text-muted-foreground">
-        {t('customerIntelligence.title')}
+        {t($ => $.customerIntelligence.title)}
       </p>
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('customerIntelligence.title')}>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={t($ => $.customerIntelligence.title)}>
         {FILTERS.map(({ key, emoji }) => {
           const active = selected.has(key);
           return (
@@ -77,7 +77,7 @@ export function OrderCustomerIntelligence({ value, onChange }: Props) {
             onClick={() => onChange([])}
             className="inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground px-2.5 py-1 text-xs text-muted-foreground hover:border-destructive hover:text-destructive transition-colors"
           >
-            {t('filters.clearAll')}
+            {t($ => $.filters.clearAll)}
           </button>
         )}
       </div>

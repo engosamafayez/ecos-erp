@@ -44,14 +44,14 @@ final readonly class RecipeComponent
     public function toArray(): array
     {
         return [
-            'component_id'          => $this->component_id,
-            'sku'                   => $this->sku,
-            'name'                  => $this->name,
-            'unit_id'               => $this->unit_id,
-            'unit_name'             => $this->unit_name,
-            'unit_symbol'           => $this->unit_symbol,
-            'quantity'              => $this->quantity,
-            'allow_negative_stock'  => $this->allow_negative_stock,
+            'component_id' => $this->component_id,
+            'sku' => $this->sku,
+            'name' => $this->name,
+            'unit_id' => $this->unit_id,
+            'unit_name' => $this->unit_name,
+            'unit_symbol' => $this->unit_symbol,
+            'quantity' => $this->quantity,
+            'allow_negative_stock' => $this->allow_negative_stock,
         ];
     }
 }

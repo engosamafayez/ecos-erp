@@ -46,25 +46,25 @@ final class SupplierDocumentController extends Controller
         $supplier = Supplier::query()->findOrFail($supplierId);
 
         $request->validate([
-            'file'          => ['required', 'file', 'max:' . (self::MAX_FILE_MB * 1024), 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx'],
-            'document_type' => ['required', 'string', 'in:' . implode(',', self::ALLOWED_TYPES)],
-            'name'          => ['nullable', 'string', 'max:255'],
-            'notes'         => ['nullable', 'string', 'max:1000'],
+            'file' => ['required', 'file', 'max:'.(self::MAX_FILE_MB * 1024), 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx'],
+            'document_type' => ['required', 'string', 'in:'.implode(',', self::ALLOWED_TYPES)],
+            'name' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $file     = $request->file('file');
-        $path     = $file->store("supplier-documents/{$supplier->id}", 'local');
-        $name     = $request->input('name') ?: $file->getClientOriginalName();
+        $file = $request->file('file');
+        $path = $file->store("supplier-documents/{$supplier->id}", 'local');
+        $name = $request->input('name') ?: $file->getClientOriginalName();
 
         $doc = SupplierDocument::query()->create([
-            'supplier_id'   => $supplier->id,
+            'supplier_id' => $supplier->id,
             'document_type' => $request->input('document_type'),
-            'name'          => $name,
-            'file_path'     => $path,
-            'mime_type'     => $file->getMimeType() ?? 'application/octet-stream',
-            'file_size'     => $file->getSize(),
-            'notes'         => $request->input('notes'),
-            'uploaded_by'   => Auth::id(),
+            'name' => $name,
+            'file_path' => $path,
+            'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
+            'file_size' => $file->getSize(),
+            'notes' => $request->input('notes'),
+            'uploaded_by' => Auth::id(),
         ]);
 
         return $this->success($this->format($doc), 'Document uploaded.', 201);
@@ -99,15 +99,15 @@ final class SupplierDocumentController extends Controller
     private function format(SupplierDocument $doc): array
     {
         return [
-            'id'            => $doc->id,
-            'supplier_id'   => $doc->supplier_id,
+            'id' => $doc->id,
+            'supplier_id' => $doc->supplier_id,
             'document_type' => $doc->document_type,
-            'name'          => $doc->name,
-            'mime_type'     => $doc->mime_type,
-            'file_size'     => $doc->file_size,
-            'notes'         => $doc->notes,
-            'uploaded_by'   => $doc->uploaded_by,
-            'created_at'    => $doc->created_at?->toIso8601String(),
+            'name' => $doc->name,
+            'mime_type' => $doc->mime_type,
+            'file_size' => $doc->file_size,
+            'notes' => $doc->notes,
+            'uploaded_by' => $doc->uploaded_by,
+            'created_at' => $doc->created_at?->toIso8601String(),
         ];
     }
 }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Terminal\Domain\Exceptions;
 
-final class TerminalNotFoundException extends \DomainException
+use DomainException;
+
+final class TerminalNotFoundException extends DomainException
 {
     public static function withId(string $id): self
     {

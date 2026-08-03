@@ -26,7 +26,7 @@ final class OpenLoadingSessionAction
 
         return DB::transaction(function () use ($session, $actorId): LoadingSession {
             $session->update([
-                'status'     => LoadingSessionStatus::Ready->value,
+                'status' => LoadingSessionStatus::Ready->value,
                 'updated_by' => $actorId,
             ]);
 

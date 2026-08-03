@@ -91,9 +91,9 @@ function InternalNoteCard({
       {
         onSuccess: () => {
           setEditing(false);
-          toast({ title: t('notesTab.noteUpdated') });
+          toast({ title: t($ => $.notesTab.noteUpdated) });
         },
-        onError: () => toast({ title: t('notesTab.noteUpdateFailed'), variant: 'destructive' }),
+        onError: () => toast({ title: t($ => $.notesTab.noteUpdateFailed), variant: 'destructive' }),
       },
     );
   }
@@ -102,8 +102,8 @@ function InternalNoteCard({
     deleteNote.mutate(
       { orderId, noteId: note.id },
       {
-        onSuccess: () => toast({ title: t('notesTab.noteDeleted') }),
-        onError:   () => toast({ title: t('notesTab.noteDeleteFailed'), variant: 'destructive' }),
+        onSuccess: () => toast({ title: t($ => $.notesTab.noteDeleted) }),
+        onError:   () => toast({ title: t($ => $.notesTab.noteDeleteFailed), variant: 'destructive' }),
       },
     );
   }
@@ -113,7 +113,7 @@ function InternalNoteCard({
       <UserAvatar name={note.user_name} />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 mb-0.5 flex-wrap">
-          <span className="text-xs font-semibold">{note.user_name ?? t('notesTab.unknown')}</span>
+          <span className="text-xs font-semibold">{note.user_name ?? t($ => $.notesTab.unknown)}</span>
           {note.user_role && (
             <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 leading-none text-muted-foreground">
               {note.user_role}
@@ -137,10 +137,10 @@ function InternalNoteCard({
             />
             <div className="flex items-center gap-2">
               <Button size="sm" className="h-7 text-xs" onClick={handleSaveEdit} disabled={updateNote.isPending}>
-                {updateNote.isPending ? <Loader2 className="size-3 animate-spin" /> : t('notesTab.save')}
+                {updateNote.isPending ? <Loader2 className="size-3 animate-spin" /> : t($ => $.notesTab.save)}
               </Button>
               <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setEditing(false); setEditText(note.content); }}>
-                {t('notesTab.cancel')}
+                {t($ => $.notesTab.cancel)}
               </Button>
             </div>
           </div>
@@ -151,7 +151,7 @@ function InternalNoteCard({
         {note.is_edited && !editing && (
           <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
             <Pencil className="size-3" />
-            {t('notesTab.updatedBy', { name: note.edited_by_name ?? '' })}
+            {t($ => $.notesTab.updatedBy, { name: note.edited_by_name ?? '' })}
             {note.edited_at ? ` · ${fmtDateTime(note.edited_at)}` : ''}
           </p>
         )}
@@ -164,7 +164,7 @@ function InternalNoteCard({
             variant="ghost"
             className="size-6"
             onClick={() => setEditing(true)}
-            aria-label={t('notesTab.editNote')}
+            aria-label={t($ => $.notesTab.editNote)}
           >
             <Pencil className="size-3" />
           </Button>
@@ -174,7 +174,7 @@ function InternalNoteCard({
             className="size-6 text-destructive hover:text-destructive"
             onClick={handleDelete}
             disabled={deleteNote.isPending}
-            aria-label={t('notesTab.deleteNote')}
+            aria-label={t($ => $.notesTab.deleteNote)}
           >
             {deleteNote.isPending ? <Loader2 className="size-3 animate-spin" /> : <Trash2 className="size-3" />}
           </Button>
@@ -200,9 +200,9 @@ function ComposeBox({ orderId }: { orderId: string }) {
       {
         onSuccess: () => {
           setText('');
-          toast({ title: t('notesTab.noteAdded') });
+          toast({ title: t($ => $.notesTab.noteAdded) });
         },
-        onError: () => toast({ title: t('notesTab.noteAddFailed'), variant: 'destructive' }),
+        onError: () => toast({ title: t($ => $.notesTab.noteAddFailed), variant: 'destructive' }),
       },
     );
   }
@@ -222,21 +222,21 @@ function ComposeBox({ orderId }: { orderId: string }) {
         rows={2}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={t('notesTab.writePlaceholder')}
+        placeholder={t($ => $.notesTab.writePlaceholder)}
         className="w-full px-3 pt-3 pb-1 text-sm resize-none bg-transparent focus:outline-none min-h-[64px]"
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSubmit();
         }}
       />
       <div className="flex items-center justify-between px-3 pb-2">
-        <span className="text-[10px] text-muted-foreground">{t('notesTab.ctrlEnterHint')}</span>
+        <span className="text-[10px] text-muted-foreground">{t($ => $.notesTab.ctrlEnterHint)}</span>
         <Button
           size="sm"
           className="h-7 text-xs gap-1"
           disabled={!text.trim() || addNote.isPending}
           onClick={handleSubmit}
         >
-          {addNote.isPending ? <Loader2 className="size-3 animate-spin" /> : t('notesTab.addNote')}
+          {addNote.isPending ? <Loader2 className="size-3 animate-spin" /> : t($ => $.notesTab.addNote)}
         </Button>
       </div>
     </div>
@@ -254,7 +254,7 @@ function CustomerNotesSection({ order }: { order: Order }) {
     return (
       <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
         <Clock className="size-4 mr-2 opacity-40" />
-        {t('notesTab.noCustomerNotes')}
+        {t($ => $.notesTab.noCustomerNotes)}
       </div>
     );
   }
@@ -266,12 +266,12 @@ function CustomerNotesSection({ order }: { order: Order }) {
         <div className="rounded-lg border bg-muted/30 p-3.5 flex flex-col gap-1.5">
           <p className="text-sm whitespace-pre-wrap break-words">{order.notes}</p>
           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-            <span>{t('notesTab.added')}</span>
+            <span>{t($ => $.notesTab.added)}</span>
             {order.created_at && <span>{fmtDate(order.created_at)}</span>}
             {order.created_by_name && (
               <>
                 <span>·</span>
-                <span>{t('notesTab.by')} {order.created_by_name}</span>
+                <span>{t($ => $.notesTab.by)} {order.created_by_name}</span>
               </>
             )}
           </div>
@@ -283,13 +283,13 @@ function CustomerNotesSection({ order }: { order: Order }) {
         <div key={n.id} className="rounded-lg border bg-muted/30 p-3.5 flex flex-col gap-1.5">
           <p className="text-sm whitespace-pre-wrap break-words">{n.content}</p>
           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-            <span>{t('notesTab.added')} {fmtDateTime(n.created_at)}</span>
-            {n.user_name && <><span>·</span><span>{t('notesTab.by')} {n.user_name}</span></>}
+            <span>{t($ => $.notesTab.added)} {fmtDateTime(n.created_at)}</span>
+            {n.user_name && <><span>·</span><span>{t($ => $.notesTab.by)} {n.user_name}</span></>}
           </div>
           {n.is_edited && (
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
               <Pencil className="size-2.5" />
-              {t('notesTab.updatedBy', { name: n.edited_by_name ?? '' })}
+              {t($ => $.notesTab.updatedBy, { name: n.edited_by_name ?? '' })}
               {n.edited_at ? ` · ${fmtDateTime(n.edited_at)}` : ''}
             </p>
           )}
@@ -310,7 +310,7 @@ function InternalNotesSection({ order }: { order: Order }) {
       {notes.length === 0 ? (
         <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
           <MessageSquare className="size-4 mr-2 opacity-40" />
-          {t('notesTab.noInternalNotes')}
+          {t($ => $.notesTab.noInternalNotes)}
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -334,7 +334,7 @@ function WooCommerceNotesSection({ order }: { order: Order }) {
     return (
       <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
         <Clock className="size-4 mr-2 opacity-40" />
-        {t('notesTab.noWooNote')}
+        {t($ => $.notesTab.noWooNote)}
       </div>
     );
   }
@@ -343,7 +343,7 @@ function WooCommerceNotesSection({ order }: { order: Order }) {
     <div className="rounded-lg border border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-900/10 p-3.5 flex flex-col gap-1.5">
       <div className="flex items-center gap-1.5 text-[10px] font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wide">
         <TriangleAlert className="size-3" />
-        {t('notesTab.customerLeftNote')}
+        {t($ => $.notesTab.customerLeftNote)}
       </div>
       <p className="text-sm whitespace-pre-wrap break-words">{order.customer_note}</p>
     </div>
@@ -362,10 +362,10 @@ export function OrderNotesTab({ order }: OrderNotesTabProps) {
   const [filter, setFilter]   = useState<NoteFilter>('all');
 
   const filterLabels: Record<NoteFilter, string> = {
-    all:         t('notesTab.filterAll'),
-    internal:    t('notesTab.filterInternal'),
-    customer:    t('notesTab.filterCustomer'),
-    woocommerce: t('notesTab.filterWooCommerce'),
+    all:         t($ => $.notesTab.filterAll),
+    internal:    t($ => $.notesTab.filterInternal),
+    customer:    t($ => $.notesTab.filterCustomer),
+    woocommerce: t($ => $.notesTab.filterWooCommerce),
   };
 
   const hasWooNote   = Boolean(order.customer_note);
@@ -407,7 +407,7 @@ export function OrderNotesTab({ order }: OrderNotesTabProps) {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('notesTab.searchPlaceholder')}
+            placeholder={t($ => $.notesTab.searchPlaceholder)}
             className="pl-8 h-8 text-sm"
           />
         </div>
@@ -431,7 +431,7 @@ export function OrderNotesTab({ order }: OrderNotesTabProps) {
           ))}
           {search && (
             <span className="ms-auto text-[10px] text-muted-foreground">
-              {t('notesTab.results', { count: totalCount })}
+              {t($ => $.notesTab.results, { count: totalCount })}
             </span>
           )}
         </div>
@@ -442,7 +442,7 @@ export function OrderNotesTab({ order }: OrderNotesTabProps) {
 
         {showCustomer && (
           <section>
-            <p className={SECTION_HEADING}>{t('notesTab.customerNotes')}</p>
+            <p className={SECTION_HEADING}>{t($ => $.notesTab.customerNotes)}</p>
             <CustomerNotesSection order={filteredOrder} />
           </section>
         )}
@@ -451,7 +451,7 @@ export function OrderNotesTab({ order }: OrderNotesTabProps) {
 
         {showInternal && (
           <section>
-            <p className={SECTION_HEADING}>{t('notesTab.internalNotes')}</p>
+            <p className={SECTION_HEADING}>{t($ => $.notesTab.internalNotes)}</p>
             <InternalNotesSection order={filteredOrder} />
           </section>
         )}
@@ -460,7 +460,7 @@ export function OrderNotesTab({ order }: OrderNotesTabProps) {
           <>
             {showInternal && <Separator />}
             <section>
-              <p className={SECTION_HEADING}>{t('notesTab.wooCommerceNotes')}</p>
+              <p className={SECTION_HEADING}>{t($ => $.notesTab.wooCommerceNotes)}</p>
               <WooCommerceNotesSection order={filteredOrder} />
             </section>
           </>

@@ -13,6 +13,7 @@ import React, {
   useState,
 } from 'react';
 import { api } from '@/lib/axios';
+import { DEFAULT_CURRENCY } from '@/lib/format';
 import { useOrganizationContext } from './organization-context';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -45,7 +46,7 @@ export type CompanyContextValue = {
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
 const DEFAULT_CONTEXT: CompanyContextValue = {
-  currency: 'EGP',
+  currency: DEFAULT_CURRENCY,
   currencySymbol: 'E£',
   timezone: 'Africa/Cairo',
   language: 'en',
@@ -76,7 +77,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       const d = data.data;
       if (!d) return;
       setCtx({
-        currency:        (d.currency        as string) ?? 'EGP',
+        currency:        (d.currency        as string) ?? DEFAULT_CURRENCY,
         currencySymbol:  (d.currency_symbol as string) ?? 'E£',
         timezone:        (d.timezone        as string) ?? 'Africa/Cairo',
         language:        (d.language        as string) ?? 'en',

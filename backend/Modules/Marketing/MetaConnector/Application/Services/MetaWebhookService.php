@@ -10,6 +10,7 @@ use Modules\Marketing\MetaConnector\Domain\Models\MetaWebhook;
 use Modules\Marketing\MetaConnector\Domain\Services\MetaApiClient;
 use Modules\Marketing\ProviderConfig\Domain\Models\MarketingProviderCredential;
 use Modules\Marketing\ProviderPlatform\Application\Services\ProviderEventPublisher;
+use Throwable;
 
 /**
  * Manages Meta webhook subscriptions across all supported object types.
@@ -33,33 +34,33 @@ final class MetaWebhookService
 {
     private const OBJECT_CONFIGS = [
         'page' => [
-            'fields'  => ['feed', 'messages', 'messaging_postbacks', 'leadgen'],
-            'label'   => 'Facebook Page',
+            'fields' => ['feed', 'messages', 'messaging_postbacks', 'leadgen'],
+            'label' => 'Facebook Page',
         ],
         'instagram' => [
-            'fields'  => ['story_insights', 'mentions', 'comments', 'messages'],
-            'label'   => 'Instagram Business Account',
+            'fields' => ['story_insights', 'mentions', 'comments', 'messages'],
+            'label' => 'Instagram Business Account',
         ],
         'leadgen' => [
-            'fields'  => ['leadgen'],
-            'label'   => 'Lead Forms',
+            'fields' => ['leadgen'],
+            'label' => 'Lead Forms',
         ],
         'commerce' => [
-            'fields'  => ['orders'],
-            'label'   => 'Commerce',
+            'fields' => ['orders'],
+            'label' => 'Commerce',
         ],
         'whatsapp_business_account' => [
-            'fields'  => ['messages'],
-            'label'   => 'WhatsApp Business',
+            'fields' => ['messages'],
+            'label' => 'WhatsApp Business',
         ],
         'catalog' => [
-            'fields'  => ['product_feed'],
-            'label'   => 'Product Catalog',
+            'fields' => ['product_feed'],
+            'label' => 'Product Catalog',
         ],
     ];
 
     public function __construct(
-        private readonly MetaApiClient          $apiClient,
+        private readonly MetaApiClient $apiClient,
         private readonly ProviderEventPublisher $events,
     ) {}
 
@@ -75,10 +76,10 @@ final class MetaWebhookService
 
         foreach (self::OBJECT_CONFIGS as $objectType => $config) {
             $webhook = $this->register(
-                connection:   $connection,
-                objectType:   $objectType,
-                objectId:     null,
-                fields:       $config['fields'],
+                connection: $connection,
+                objectType: $objectType,
+                objectId: null,
+                fields: $config['fields'],
             );
 
             if ($webhook !== null) {
@@ -95,9 +96,9 @@ final class MetaWebhookService
      */
     public function register(
         MarketingConnection $connection,
-        string              $objectType,
-        ?string             $objectId,
-        array               $fields,
+        string $objectType,
+        ?string $objectId,
+        array $fields,
     ): ?MetaWebhook {
         $existing = MetaWebhook::where('marketing_connection_id', $connection->id)
             ->where('object_type', $objectType)
@@ -113,51 +114,52 @@ final class MetaWebhookService
 
         try {
             $this->apiClient->subscribeApp(
-                object:      $objectType,
-                fields:      $fields,
+                object: $objectType,
+                fields: $fields,
                 callbackUrl: $callbackUrl,
                 verifyToken: $verifyToken,
             );
 
-            $webhook = $existing ?? new MetaWebhook();
+            $webhook = $existing ?? new MetaWebhook;
             $webhook->fill([
-                'company_id'              => $connection->company_id,
+                'company_id' => $connection->company_id,
                 'marketing_connection_id' => $connection->id,
-                'object_type'             => $objectType,
-                'object_id'               => $objectId,
-                'callback_url'            => $callbackUrl,
-                'verify_token'            => $verifyToken,
-                'subscribed_fields'       => $fields,
-                'status'                  => 'pending_verification',
-                'retry_count'             => 0,
+                'object_type' => $objectType,
+                'object_id' => $objectId,
+                'callback_url' => $callbackUrl,
+                'verify_token' => $verifyToken,
+                'subscribed_fields' => $fields,
+                'status' => 'pending_verification',
+                'retry_count' => 0,
             ]);
             $webhook->save();
 
             $this->events->publish(
                 new \Modules\Marketing\ProviderPlatform\Domain\Events\ProviderWebhookRegistered(
-                    companyId:      (string) $connection->company_id,
-                    provider:       'meta',
-                    providerType:   'social_platform',
-                    triggeredBy:    null,
-                    currentStatus:  $connection->status->value,
+                    companyId: (string) $connection->company_id,
+                    provider: 'meta',
+                    providerType: 'social_platform',
+                    triggeredBy: null,
+                    currentStatus: $connection->status->value,
                     previousStatus: null,
-                    correlationId:  null,
-                    requestId:      null,
-                    environment:    (string) config('app.env'),
-                    metadata:       [
-                        'object_type'  => $objectType,
-                        'object_id'    => $objectId,
-                        'webhook_id'   => $webhook->id,
+                    correlationId: null,
+                    requestId: null,
+                    environment: (string) config('app.env'),
+                    metadata: [
+                        'object_type' => $objectType,
+                        'object_id' => $objectId,
+                        'webhook_id' => $webhook->id,
                         'fields_count' => count($fields),
                     ],
-                )
+                ),
             );
 
             return $webhook;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             if ($existing !== null) {
                 $existing->markFailed($e->getMessage());
             }
+
             return null;
         }
     }
@@ -169,26 +171,26 @@ final class MetaWebhookService
     {
         try {
             $this->apiClient->deleteAppSubscription($webhook->object_type);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Best-effort: even if Meta API fails, remove from DB
         }
 
         $this->events->publish(
             new \Modules\Marketing\ProviderPlatform\Domain\Events\ProviderWebhookRemoved(
-                companyId:      (string) $connection->company_id,
-                provider:       'meta',
-                providerType:   'social_platform',
-                triggeredBy:    null,
-                currentStatus:  $connection->status->value,
+                companyId: (string) $connection->company_id,
+                provider: 'meta',
+                providerType: 'social_platform',
+                triggeredBy: null,
+                currentStatus: $connection->status->value,
                 previousStatus: null,
-                correlationId:  null,
-                requestId:      null,
-                environment:    (string) config('app.env'),
-                metadata:       [
+                correlationId: null,
+                requestId: null,
+                environment: (string) config('app.env'),
+                metadata: [
                     'object_type' => $webhook->object_type,
-                    'webhook_id'  => $webhook->id,
+                    'webhook_id' => $webhook->id,
                 ],
-            )
+            ),
         );
 
         $webhook->delete();
@@ -243,8 +245,8 @@ final class MetaWebhookService
         return $this->register(
             connection: $connection,
             objectType: $webhook->object_type,
-            objectId:   $webhook->object_id,
-            fields:     $webhook->subscribed_fields ?? [],
+            objectId: $webhook->object_id,
+            fields: $webhook->subscribed_fields ?? [],
         );
     }
 
@@ -271,7 +273,7 @@ final class MetaWebhookService
             if ($appSecret === '') {
                 continue;
             }
-            $expected = 'sha256=' . hash_hmac('sha256', $rawBody, $appSecret);
+            $expected = 'sha256='.hash_hmac('sha256', $rawBody, $appSecret);
             if (hash_equals($expected, $signature)) {
                 return true;
             }
@@ -298,6 +300,7 @@ final class MetaWebhookService
     private function callbackUrl(string $objectType): string
     {
         $base = rtrim((string) config('app.url'), '/');
+
         return "{$base}/api/marketing/meta/webhooks/incoming/{$objectType}";
     }
 }

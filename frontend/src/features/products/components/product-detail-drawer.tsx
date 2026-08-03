@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   AlertCircle, AlertTriangle, ArrowUpRight, Calendar,
   CheckCircle2, ChefHat, Circle, Edit, Globe, Package,
@@ -138,15 +139,17 @@ function MarginBadge({ pct }: { pct: number }) {
 }
 
 function PriceHealthBadge({ margin }: { margin: number | null }) {
+  const { t } = useTranslation('products');
+  const tAny = t as (key: string) => string;
   if (margin == null) return <span className="text-muted-foreground text-sm">—</span>;
   const config =
-    margin >= 35 ? { label: 'Excellent', cls: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400' } :
-    margin >= 20 ? { label: 'Good',      cls: 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400' } :
-    margin >= 10 ? { label: 'Low',       cls: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400' } :
-                   { label: 'Critical',  cls: 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400' };
+    margin >= 35 ? { labelKey: 'detailDrawer.priceHealthExcellent', cls: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400' } :
+    margin >= 20 ? { labelKey: 'detailDrawer.priceHealthGood',      cls: 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400' } :
+    margin >= 10 ? { labelKey: 'detailDrawer.priceHealthLow',       cls: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400' } :
+                   { labelKey: 'detailDrawer.priceHealthCritical',  cls: 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400' };
   return (
     <span className={cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold', config.cls)}>
-      {config.label}
+      {tAny(config.labelKey)}
     </span>
   );
 }
@@ -154,21 +157,23 @@ function PriceHealthBadge({ margin }: { margin: number | null }) {
 // ── Product Completion Indicator ──────────────────────────────────────────────
 
 type CompletionStep = { label: string; done: boolean };
+type TFn = (key: string, opts?: Record<string, unknown>) => string;
 
-function computeCompletion(product: Product): CompletionStep[] {
+function computeCompletion(product: Product, t: TFn): CompletionStep[] {
   const hasChannel = (product.channels?.length ?? 0) > 0;
   return [
-    { label: 'Basic Information', done: Boolean(product.name && product.sku && product.category_id) },
-    { label: 'Image',             done: Boolean(product.image_url) },
-    { label: 'Brand',             done: Boolean(product.brand_id) },
-    { label: 'Channel(s)',        done: hasChannel },
-    { label: 'Recipe',            done: Boolean(product.has_recipe) },
-    { label: 'Pricing',           done: Boolean(product.regular_price) },
+    { label: t($ => $.detailDrawer.completionBasicInfo), done: Boolean(product.name && product.sku && product.category_id) },
+    { label: t($ => $.detailDrawer.completionImage),     done: Boolean(product.image_url) },
+    { label: t($ => $.detailDrawer.completionBrand),     done: Boolean(product.brand_id) },
+    { label: t($ => $.detailDrawer.completionChannels),  done: hasChannel },
+    { label: t($ => $.detailDrawer.completionRecipe),    done: Boolean(product.has_recipe) },
+    { label: t($ => $.detailDrawer.completionPricing),   done: Boolean(product.regular_price) },
   ];
 }
 
 function CompletionCard({ product }: { product: Product }) {
-  const steps = computeCompletion(product);
+  const { t } = useTranslation('products');
+  const steps = computeCompletion(product, t as unknown as TFn);
   const done  = steps.filter((s) => s.done).length;
   const total = steps.length;
   const pct   = Math.round((done / total) * 100);
@@ -179,7 +184,7 @@ function CompletionCard({ product }: { product: Product }) {
   return (
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium">Manufacturing Readiness</p>
+        <p className="text-sm font-medium">{t($ => $.detailDrawer.completionTitle)}</p>
         <span className={cn('text-xs font-semibold tabular-nums', isReady ? 'text-emerald-600' : 'text-muted-foreground')}>
           {pct}%
         </span>
@@ -204,8 +209,8 @@ function CompletionCard({ product }: { product: Product }) {
           : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400',
       )}>
         {isReady
-          ? <><CheckCircle2 className="size-3.5 shrink-0" aria-hidden /> 🟢 Manufacturing Ready</>
-          : <><Circle className="size-3.5 shrink-0" aria-hidden /> 🟠 Manufacturing Setup Required</>
+          ? <><CheckCircle2 className="size-3.5 shrink-0" aria-hidden /> {t($ => $.detailDrawer.completionReady)}</>
+          : <><Circle className="size-3.5 shrink-0" aria-hidden /> {t($ => $.detailDrawer.completionSetupRequired)}</>
         }
       </div>
     </div>
@@ -215,6 +220,7 @@ function CompletionCard({ product }: { product: Product }) {
 // ── Tab: General ──────────────────────────────────────────────────────────────
 
 function GeneralTab({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
   return (
     <div className="flex flex-col gap-6 p-4">
       {getMediaUrl(product.image_url) ? (
@@ -230,12 +236,12 @@ function GeneralTab({ product }: { product: Product }) {
       )}
 
       <DetailGrid>
-        <DetailRow label="SKU"><span className="font-mono">{product.sku}</span></DetailRow>
-        <DetailRow label="Category">{product.category?.name}</DetailRow>
-        <DetailRow label="Type">
-          {product.product_type === 'finished_good' ? 'Finished Good' : 'Raw Material'}
+        <DetailRow label={t($ => $.detailDrawer.fieldSku)}><span className="font-mono">{product.sku}</span></DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.fieldCategory)}>{product.category?.name}</DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.fieldType)}>
+          {product.product_type === 'finished_good' ? t($ => $.detailDrawer.typeFinishedGood) : t($ => $.detailDrawer.typeRawMaterial)}
         </DetailRow>
-        <DetailRow label="Status">
+        <DetailRow label={t($ => $.detailDrawer.fieldStatus)}>
           <StatusBadge status={product.is_active ? 'active' : 'inactive'} />
         </DetailRow>
       </DetailGrid>
@@ -243,7 +249,7 @@ function GeneralTab({ product }: { product: Product }) {
       {product.description ? (
         <>
           <Separator />
-          <DetailRow label="Description">
+          <DetailRow label={t($ => $.detailDrawer.fieldDescription)}>
             <p className="text-sm leading-relaxed text-muted-foreground">{product.description}</p>
           </DetailRow>
         </>
@@ -258,6 +264,8 @@ function GeneralTab({ product }: { product: Product }) {
 // ── Tab: Pricing Engine ───────────────────────────────────────────────────────
 
 function PricingTab({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
 
@@ -306,8 +314,8 @@ function PricingTab({ product }: { product: Product }) {
 
   // Pricing source
   const pricingSource = product.has_recipe
-    ? { label: 'Recipe', date: product.active_recipe?.updated_at ?? product.updated_at }
-    : { label: 'Manual Override', date: product.updated_at };
+    ? { label: t($ => $.detailDrawer.pricingSource), date: product.active_recipe?.updated_at ?? product.updated_at }
+    : { label: t($ => $.detailDrawer.pricingSource), date: product.updated_at };
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -315,16 +323,16 @@ function PricingTab({ product }: { product: Product }) {
       <div className="rounded-lg border bg-primary/5 border-primary/20 p-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Current Product Cost
+            {t($ => $.detailDrawer.pricingCurrentCost)}
           </p>
           {product.has_recipe ? (
             <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 border-emerald-200 bg-emerald-50 text-[10px] font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
               <span className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" aria-hidden />
-              🟢 Live from Recipe
+              {t($ => $.detailDrawer.pricingLiveFromRecipe)}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 border-slate-200 bg-slate-50 text-[10px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/30 dark:text-slate-400">
-              ✏ Manual
+              {t($ => $.detailDrawer.pricingManual)}
             </span>
           )}
         </div>
@@ -340,7 +348,7 @@ function PricingTab({ product }: { product: Product }) {
               onChange={(e) => setLocalCost(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSaveCost()}
               className="h-9 w-36 text-base font-semibold tabular-nums"
-              aria-label="Manual product cost"
+              aria-label={t($ => $.detailDrawer.pricingManualCostLabel)}
             />
             <Button
               size="sm"
@@ -349,7 +357,7 @@ function PricingTab({ product }: { product: Product }) {
               disabled={saveCost.isPending}
               className="shrink-0"
             >
-              {saveCost.isPending ? 'Saving…' : costSaved ? '✓ Saved' : 'Save'}
+              {saveCost.isPending ? t($ => $.detailDrawer.pricingSaving) : costSaved ? t($ => $.detailDrawer.pricingSaved) : t($ => $.detailDrawer.pricingSave)}
             </Button>
           </div>
         )}
@@ -359,16 +367,16 @@ function PricingTab({ product }: { product: Product }) {
       {effectiveCost != null && (
         <div className="rounded-lg border bg-card p-4">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-            Pricing Calculator
+            {t($ => $.detailDrawer.pricingCalculator)}
           </p>
           <div className="grid grid-cols-3 gap-4 items-end">
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Product Cost</p>
+              <p className="text-xs text-muted-foreground mb-1">{t($ => $.detailDrawer.pricingProductCost)}</p>
               <p className="text-sm font-semibold tabular-nums">{fmtCurrency(effectiveCost)}</p>
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block" htmlFor="pricing-markup-pct">
-                Markup %
+                {t($ => $.detailDrawer.pricingMarkupPct)}
               </label>
               <Input
                 id="pricing-markup-pct"
@@ -381,7 +389,7 @@ function PricingTab({ product }: { product: Product }) {
               />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Suggested Selling Price</p>
+              <p className="text-xs text-muted-foreground mb-1">{t($ => $.detailDrawer.pricingSuggestedSellingPrice)}</p>
               <p className="text-base font-semibold tabular-nums text-primary">
                 {fmtCurrency(suggestedPrice)}
               </p>
@@ -392,20 +400,20 @@ function PricingTab({ product }: { product: Product }) {
 
       {/* 4 & 5. Regular Price + Sale Price */}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Regular Price" value={fmtCurrency(product.regular_price)} />
-        <StatCard label="Sale Price" value={fmtCurrency(product.sale_price)} />
+        <StatCard label={t($ => $.detailDrawer.pricingRegularPrice)} value={fmtCurrency(product.regular_price)} />
+        <StatCard label={t($ => $.detailDrawer.pricingSalePrice)} value={fmtCurrency(product.sale_price)} />
       </div>
 
       {/* 6. Price Health */}
       <div className="rounded-lg border bg-card px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-xs text-muted-foreground">Price Health</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.detailDrawer.pricingHealth)}</p>
           <p className="text-sm font-medium mt-0.5">
             {grossProfitPct != null
-              ? `${grossProfitPct.toFixed(1)}% gross margin`
+              ? tAny('detailDrawer.pricingGrossMargin', { value: grossProfitPct.toFixed(1) })
               : effectiveCost == null
-                ? 'Set a product cost to see health'
-                : 'Set a selling price to see health'}
+                ? t($ => $.detailDrawer.pricingSetCostForHealth)
+                : t($ => $.detailDrawer.pricingSetPriceForHealth)}
           </p>
         </div>
         <PriceHealthBadge margin={grossProfitPct} />
@@ -414,17 +422,17 @@ function PricingTab({ product }: { product: Product }) {
       {/* 7 & 8. Gross Profit % + Final Margin % */}
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-lg border bg-card p-3">
-          <p className="text-xs text-muted-foreground mb-1">Gross Profit %</p>
+          <p className="text-xs text-muted-foreground mb-1">{t($ => $.detailDrawer.pricingGrossProfitPct)}</p>
           <p className={cn(
             'text-xl font-semibold tabular-nums',
             grossProfitPct != null && grossProfitPct < 0 ? 'text-red-600 dark:text-red-400' : '',
           )}>
             {grossProfitPct != null ? `${grossProfitPct.toFixed(1)}%` : '—'}
           </p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">(Regular − Cost) / Regular</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{t($ => $.detailDrawer.pricingRegularFormula)}</p>
         </div>
         <div className="rounded-lg border bg-card p-3">
-          <p className="text-xs text-muted-foreground mb-1">Final Margin %</p>
+          <p className="text-xs text-muted-foreground mb-1">{t($ => $.detailDrawer.pricingFinalMarginPct)}</p>
           <p className={cn(
             'text-xl font-semibold tabular-nums',
             finalMarginPct != null && finalMarginPct < 0 ? 'text-red-600 dark:text-red-400' : '',
@@ -432,7 +440,7 @@ function PricingTab({ product }: { product: Product }) {
             {finalMarginPct != null ? `${finalMarginPct.toFixed(1)}%` : '—'}
           </p>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            {product.sale_price ? '(Sale − Cost) / Sale' : '(Regular − Cost) / Regular'}
+            {product.sale_price ? t($ => $.detailDrawer.pricingSaleFormula) : t($ => $.detailDrawer.pricingRegularFormula)}
           </p>
         </div>
       </div>
@@ -441,11 +449,13 @@ function PricingTab({ product }: { product: Product }) {
       <div className="rounded-lg border bg-card px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">Pricing Source</p>
-            <p className="text-sm font-semibold mt-0.5">{pricingSource.label}</p>
+            <p className="text-xs text-muted-foreground">{t($ => $.detailDrawer.pricingSource)}</p>
+            <p className="text-sm font-semibold mt-0.5">
+              {product.has_recipe ? t($ => $.detailDrawer.costRecipeCost) : t($ => $.pricingSection.manual)}
+            </p>
           </div>
           <div className="text-end">
-            <p className="text-xs text-muted-foreground">Last Updated</p>
+            <p className="text-xs text-muted-foreground">{t($ => $.detailDrawer.pricingLastUpdated)}</p>
             <p className="text-xs text-foreground mt-0.5">{fmtDate(pricingSource.date)}</p>
           </div>
         </div>
@@ -457,7 +467,7 @@ function PricingTab({ product }: { product: Product }) {
           <div className="flex items-center gap-2">
             <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
             <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-              ⚠ Pending Pricing Review
+              {t($ => $.detailDrawer.pricingPendingReview)}
             </span>
           </div>
           <Button
@@ -467,7 +477,7 @@ function PricingTab({ product }: { product: Product }) {
             onClick={() => navigate(ROUTES.costManagementPriceReview)}
           >
             <ArrowUpRight className="size-3.5" />
-            Open Price Review
+            {t($ => $.detailDrawer.pricingOpenReview)}
           </Button>
         </div>
       ) : null}
@@ -478,6 +488,8 @@ function PricingTab({ product }: { product: Product }) {
 // ── Tab: Cost ─────────────────────────────────────────────────────────────────
 
 function CostTab({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const navigate = useNavigate();
   const { data: reviewsData } = usePricingReviews({
     product_id: product.id,
@@ -503,15 +515,15 @@ function CostTab({ product }: { product: Product }) {
       {/* PART 3: Product Cost Card with Live from Recipe / Manual badge */}
       <div className="rounded-lg border p-4 bg-primary/5 border-primary/20">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-muted-foreground">Product Cost</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.detailDrawer.costProductCost)}</p>
           {product.has_recipe ? (
             <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 border-emerald-200 bg-emerald-50 text-[10px] font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
               <span className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" aria-hidden />
-              Live from Recipe
+              {t($ => $.detailDrawer.costLiveFromRecipe)}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 border-slate-200 bg-slate-50 text-[10px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/30 dark:text-slate-400">
-              ✏ Manual
+              {t($ => $.detailDrawer.costManual)}
             </span>
           )}
         </div>
@@ -520,9 +532,9 @@ function CostTab({ product }: { product: Product }) {
 
       {/* Secondary cost stats */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Selling Price" value={fmtCurrency(product.regular_price)} />
+        <StatCard label={t($ => $.detailDrawer.costSellingPrice)} value={fmtCurrency(product.regular_price)} />
         <StatCard
-          label="Recipe Cost"
+          label={t($ => $.detailDrawer.costRecipeCost)}
           value={fmtCurrency(
             product.active_recipe
               ? calcTotalFromStored(
@@ -533,12 +545,12 @@ function CostTab({ product }: { product: Product }) {
               : null,
           )}
         />
-        <StatCard label="Material Cost" value={fmtCurrency(product.material_cost)} />
+        <StatCard label={t($ => $.detailDrawer.costMaterialCost)} value={fmtCurrency(product.material_cost)} />
       </div>
 
       {margin !== null ? (
         <div className="flex items-center justify-between rounded-lg border bg-card px-4 py-3">
-          <span className="text-sm font-medium">Margin</span>
+          <span className="text-sm font-medium">{t($ => $.detailDrawer.costMargin)}</span>
           <MarginBadge pct={margin} />
         </div>
       ) : null}
@@ -548,15 +560,15 @@ function CostTab({ product }: { product: Product }) {
         <>
           <Separator />
           <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Pricing Calculator</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">{t($ => $.detailDrawer.costCalculator)}</p>
             <div className="grid grid-cols-3 gap-4 items-end">
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Product Cost</p>
+                <p className="text-xs text-muted-foreground mb-1">{t($ => $.detailDrawer.costProductCost)}</p>
                 <p className="text-sm font-semibold tabular-nums">{fmtCurrency(product.product_cost)}</p>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block" htmlFor="cost-markup-pct">
-                  Markup %
+                  {t($ => $.detailDrawer.costMarkupPct)}
                 </label>
                 <Input
                   id="cost-markup-pct"
@@ -569,7 +581,7 @@ function CostTab({ product }: { product: Product }) {
                 />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Suggested Price</p>
+                <p className="text-xs text-muted-foreground mb-1">{t($ => $.detailDrawer.costSuggestedPrice)}</p>
                 <p className="text-base font-semibold tabular-nums text-primary">{fmtCurrency(suggestedPrice)}</p>
               </div>
             </div>
@@ -580,9 +592,9 @@ function CostTab({ product }: { product: Product }) {
       <Separator />
 
       <DetailGrid>
-        <DetailRow label="Average Cost">{fmtCurrency(product.average_cost)}</DetailRow>
-        <DetailRow label="FIFO Cost">{fmtCurrency(product.current_fifo_cost)}</DetailRow>
-        <DetailRow label="Last Purchase">{fmtCurrency(product.last_purchase_cost)}</DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.costAverageCost)}>{fmtCurrency(product.average_cost)}</DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.costFifoCost)}>{fmtCurrency(product.current_fifo_cost)}</DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.costLastPurchase)}>{fmtCurrency(product.last_purchase_cost)}</DetailRow>
       </DetailGrid>
 
       {pendingCount > 0 ? (
@@ -592,7 +604,7 @@ function CostTab({ product }: { product: Product }) {
             <div className="flex items-center gap-2">
               <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                {pendingCount} pending pricing review{pendingCount > 1 ? 's' : ''}
+                {tAny('detailDrawer.costPendingReview', { count: pendingCount })}
               </span>
             </div>
             <Button
@@ -602,7 +614,7 @@ function CostTab({ product }: { product: Product }) {
               onClick={() => navigate(ROUTES.costManagementPriceReview)}
             >
               <ArrowUpRight className="size-3.5" />
-              Open Review
+              {t($ => $.detailDrawer.costOpenReview)}
             </Button>
           </div>
         </>
@@ -614,13 +626,15 @@ function CostTab({ product }: { product: Product }) {
 // ── Tab: Recipe (PART 9) ──────────────────────────────────────────────────────
 
 function RecipeTab({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const navigate = useNavigate();
 
   if (product.product_type !== 'finished_good') {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
         <Tag className="size-10 mb-3" />
-        <p className="text-sm">Raw materials do not have a bill of materials (recipe).</p>
+        <p className="text-sm">{t($ => $.detailDrawer.recipeNotApplicable)}</p>
       </div>
     );
   }
@@ -632,12 +646,12 @@ function RecipeTab({ product }: { product: Product }) {
         <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
           <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Recipe Status</p>
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">⚠ No Recipe Assigned</p>
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{t($ => $.detailDrawer.recipeStatus)}</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">{t($ => $.detailDrawer.recipeNoRecipe)}</p>
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          This product cannot be manufactured until a recipe is assigned.
+          {t($ => $.detailDrawer.recipeCannotManufacture)}
         </p>
         <Button
           size="sm"
@@ -645,7 +659,7 @@ function RecipeTab({ product }: { product: Product }) {
           onClick={() => navigate(ROUTES.recipesNew, { state: { product_id: product.id } })}
         >
           <ChefHat className="size-4" aria-hidden />
-          Create Recipe
+          {t($ => $.detailDrawer.recipeCreate)}
         </Button>
       </div>
     );
@@ -660,8 +674,8 @@ function RecipeTab({ product }: { product: Product }) {
         <div className="flex items-center gap-3">
           <CheckCircle2 className="size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Recipe Status</p>
-            <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">✅ Recipe Available</p>
+            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">{t($ => $.detailDrawer.recipeStatus)}</p>
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">{t($ => $.detailDrawer.recipeAvailable)}</p>
           </div>
           <Button
             size="sm"
@@ -670,38 +684,38 @@ function RecipeTab({ product }: { product: Product }) {
             onClick={() => navigate(`${ROUTES.recipes}/${r.id}`)}
           >
             <ArrowUpRight className="size-3.5" />
-            View Recipe
+            {t($ => $.detailDrawer.recipeView)}
           </Button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 border-t border-emerald-200 pt-3 dark:border-emerald-800">
           <div>
-            <p className="text-[10px] text-emerald-600 dark:text-emerald-500 mb-0.5">Recipe Cost</p>
+            <p className="text-[10px] text-emerald-600 dark:text-emerald-500 mb-0.5">{t($ => $.detailDrawer.recipeCost)}</p>
             <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 tabular-nums">
               {fmtCurrency(calcTotalFromStored(r.recipe_cost ?? 0, r.manufacturing_cost ?? 0, r.other_costs ?? 0))}
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-emerald-600 dark:text-emerald-500 mb-0.5">Last Updated</p>
+            <p className="text-[10px] text-emerald-600 dark:text-emerald-500 mb-0.5">{t($ => $.detailDrawer.recipeLastUpdated)}</p>
             <p className="text-sm text-emerald-700 dark:text-emerald-400">{fmtDate(r.updated_at)}</p>
           </div>
         </div>
       </div>
 
       <DetailGrid>
-        <DetailRow label="BOM Number"><span className="font-mono text-xs">{r.bom_number}</span></DetailRow>
-        <DetailRow label="Version">{r.version}</DetailRow>
-        <DetailRow label="Recipe Cost">
+        <DetailRow label={t($ => $.detailDrawer.recipeBomNumber)}><span className="font-mono text-xs">{r.bom_number}</span></DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.recipeVersion)}>{r.version}</DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.recipeCost)}>
           {fmtCurrency(calcTotalFromStored(r.recipe_cost ?? 0, r.manufacturing_cost ?? 0, r.other_costs ?? 0))}
         </DetailRow>
-        <DetailRow label="Yield Quantity">{r.yield_quantity != null ? fmtQty(r.yield_quantity) : null}</DetailRow>
-        <DetailRow label="Total Materials">{String(r.component_count)}</DetailRow>
-        <DetailRow label="Last Updated">{fmtDate(r.updated_at)}</DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.recipeYieldQty)}>{r.yield_quantity != null ? fmtQty(r.yield_quantity) : null}</DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.recipeTotalMaterials)}>{String(r.component_count)}</DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.recipeLastUpdated)}>{fmtDate(r.updated_at)}</DetailRow>
       </DetailGrid>
 
       {r.notes ? (
         <>
           <Separator />
-          <DetailRow label="Notes">
+          <DetailRow label={t($ => $.detailDrawer.recipeNotes)}>
             <p className="text-sm leading-relaxed">{r.notes}</p>
           </DetailRow>
         </>
@@ -713,15 +727,15 @@ function RecipeTab({ product }: { product: Product }) {
           <Separator />
           <div>
             <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-              Material Availability ({product.recipe_components.length})
+              {tAny('detailDrawer.recipeMaterialAvailability', { count: product.recipe_components.length })}
             </p>
             <div className="rounded-lg border overflow-hidden">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b bg-muted/40">
-                    <th className="px-3 py-2 text-start font-medium text-muted-foreground">Material</th>
-                    <th className="px-3 py-2 text-end font-medium text-muted-foreground">Qty Needed</th>
-                    <th className="px-3 py-2 text-end font-medium text-muted-foreground">Available</th>
+                    <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.detailDrawer.recipeMaterial)}</th>
+                    <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.detailDrawer.recipeQtyNeeded)}</th>
+                    <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.detailDrawer.recipeAvailableQty)}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -762,31 +776,32 @@ function RecipeTab({ product }: { product: Product }) {
 // ── Tab: Inventory ────────────────────────────────────────────────────────────
 
 function InventoryTab({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
   const hasLiveQty = product.on_hand_qty != null;
 
   let stockBadge: React.ReactNode;
   if (product.stock_status === 'instock')
-    stockBadge = <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400">In Stock</Badge>;
+    stockBadge = <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400">{t($ => $.detailDrawer.invInStock)}</Badge>;
   else if (product.stock_status === 'onbackorder')
-    stockBadge = <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400">Backorder Allowed</Badge>;
+    stockBadge = <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400">{t($ => $.detailDrawer.invBackorderAllowed)}</Badge>;
   else if (product.stock_status === 'outofstock')
-    stockBadge = <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400">Out of Stock</Badge>;
+    stockBadge = <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400">{t($ => $.detailDrawer.invOutOfStock)}</Badge>;
   else
     stockBadge = <span className="text-muted-foreground">—</span>;
 
   return (
     <div className="flex flex-col gap-4 p-4">
       <DetailGrid>
-        <DetailRow label="Stock Status">{stockBadge}</DetailRow>
-        <DetailRow label="Allow Backorder">
-          {product.allow_negative_stock ? 'Yes' : 'No'}
+        <DetailRow label={t($ => $.detailDrawer.invStockStatus)}>{stockBadge}</DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.invAllowBackorder)}>
+          {product.allow_negative_stock ? t($ => $.detailDrawer.invYes) : t($ => $.detailDrawer.invNo)}
         </DetailRow>
         {hasLiveQty ? (
           <>
-            <DetailRow label="On Hand">{fmtQty(product.on_hand_qty)}</DetailRow>
-            <DetailRow label="Reserved">{fmtQty(product.reserved_qty)}</DetailRow>
-            <DetailRow label="Available">{fmtQty(product.available_qty)}</DetailRow>
-            <DetailRow label="Inventory Value" className="col-span-2">
+            <DetailRow label={t($ => $.detailDrawer.invOnHand)}>{fmtQty(product.on_hand_qty)}</DetailRow>
+            <DetailRow label={t($ => $.detailDrawer.invReserved)}>{fmtQty(product.reserved_qty)}</DetailRow>
+            <DetailRow label={t($ => $.detailDrawer.invAvailable)}>{fmtQty(product.available_qty)}</DetailRow>
+            <DetailRow label={t($ => $.detailDrawer.invInventoryValue)} className="col-span-2">
               {fmtCurrency(product.inventory_value)}
             </DetailRow>
           </>
@@ -799,8 +814,7 @@ function InventoryTab({ product }: { product: Product }) {
           <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
             <p className="flex items-center gap-2">
               <Package className="size-4 shrink-0" />
-              Live inventory quantities are tracked in the{' '}
-              <strong className="text-foreground">Inventory</strong> module.
+              {t($ => $.detailDrawer.invLiveNote)}
             </p>
           </div>
         </>
@@ -812,28 +826,29 @@ function InventoryTab({ product }: { product: Product }) {
 // ── Tab: WooCommerce ──────────────────────────────────────────────────────────
 
 function WooCommerceTab({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
   const channels = product.channels ?? [];
   if (channels.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
         <Globe className="size-10 mb-3" />
-        <p className="text-sm">This product is not mapped to any sales channels.</p>
+        <p className="text-sm">{t($ => $.detailDrawer.channelsNotMapped)}</p>
       </div>
     );
   }
   return (
     <div className="flex flex-col gap-4 p-4">
       <DetailGrid>
-        <DetailRow label="Sync Status"><SyncBadge status={product.sync_status} /></DetailRow>
+        <DetailRow label={t($ => $.detailDrawer.channelsSyncStatus)}><SyncBadge status={product.sync_status} /></DetailRow>
         {product.woo_sku ? (
-          <DetailRow label="WooCommerce SKU">
+          <DetailRow label={t($ => $.detailDrawer.channelsWooSku)}>
             <span className="font-mono text-xs">{product.woo_sku}</span>
           </DetailRow>
         ) : null}
       </DetailGrid>
       <Separator />
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-muted-foreground">Channels</span>
+        <span className="text-xs font-medium text-muted-foreground">{t($ => $.detailDrawer.channelsLabel)}</span>
         <ul className="flex flex-col gap-2">
           {channels.map((ch) => (
             <li
@@ -850,11 +865,11 @@ function WooCommerceTab({ product }: { product: Product }) {
               <div className="flex flex-col items-end gap-0.5">
                 {ch.is_synced ? (
                   <span className="flex items-center gap-1 text-xs text-emerald-600">
-                    <Wifi className="size-3" />Synced
+                    <Wifi className="size-3" />{t($ => $.detailDrawer.channelsSynced)}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <WifiOff className="size-3" />Not synced
+                    <WifiOff className="size-3" />{t($ => $.detailDrawer.channelsNotSynced)}
                   </span>
                 )}
                 {ch.last_synced_at ? (
@@ -874,22 +889,23 @@ function WooCommerceTab({ product }: { product: Product }) {
 // ── Tab: History ──────────────────────────────────────────────────────────────
 
 function HistoryTab({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
   return (
     <div className="p-4">
       <DetailGrid>
-        <DetailRow label="Created">
+        <DetailRow label={t($ => $.detailDrawer.historyCreated)}>
           <span className="flex items-center gap-1.5">
             <Calendar className="size-3.5 text-muted-foreground" />
             {fmtDateTime(product.created_at)}
           </span>
         </DetailRow>
-        <DetailRow label="Last Updated">
+        <DetailRow label={t($ => $.detailDrawer.historyLastUpdated)}>
           <span className="flex items-center gap-1.5">
             <Calendar className="size-3.5 text-muted-foreground" />
             {fmtDateTime(product.updated_at)}
           </span>
         </DetailRow>
-        <DetailRow label="Product ID" className="col-span-2">
+        <DetailRow label={t($ => $.detailDrawer.historyProductId)} className="col-span-2">
           <span className="font-mono text-xs text-muted-foreground">{product.id}</span>
         </DetailRow>
       </DetailGrid>
@@ -900,6 +916,8 @@ function HistoryTab({ product }: { product: Product }) {
 // ── Tab: Final Margin (PARTS 6/7) ────────────────────────────────────────────
 
 function MarginTab({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const cost        = product.product_cost ?? null;
   const sellPrice   = product.regular_price ?? null;
   const salePrice   = product.sale_price ?? null;
@@ -914,9 +932,9 @@ function MarginTab({ product }: { product: Product }) {
       {/* PART 7: Price Health indicator */}
       <div className="rounded-lg border bg-card px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-xs text-muted-foreground">Price Health</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.detailDrawer.marginPriceHealth)}</p>
           <p className="text-sm font-medium mt-0.5">
-            {margin != null ? `${margin.toFixed(1)}% margin` : 'No cost data yet'}
+            {margin != null ? tAny('detailDrawer.marginValue', { value: margin.toFixed(1) }) : t($ => $.detailDrawer.marginNoData)}
           </p>
         </div>
         <PriceHealthBadge margin={margin} />
@@ -927,21 +945,21 @@ function MarginTab({ product }: { product: Product }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/40">
-              <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Metric</th>
-              <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Regular</th>
+              <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.detailDrawer.marginMetric)}</th>
+              <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t($ => $.detailDrawer.marginRegular)}</th>
               {hasSale && (
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-emerald-700 dark:text-emerald-400">Sale</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-emerald-700 dark:text-emerald-400">{t($ => $.detailDrawer.marginSale)}</th>
               )}
             </tr>
           </thead>
           <tbody className="divide-y">
             <tr>
-              <td className="px-4 py-3 text-xs text-muted-foreground">Product Cost</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{t($ => $.detailDrawer.marginProductCost)}</td>
               <td className="px-4 py-3 text-end tabular-nums">{fmtCurrency(cost)}</td>
               {hasSale && <td className="px-4 py-3 text-end tabular-nums">{fmtCurrency(cost)}</td>}
             </tr>
             <tr>
-              <td className="px-4 py-3 text-xs text-muted-foreground">Selling Price</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{t($ => $.detailDrawer.marginSellingPrice)}</td>
               <td className="px-4 py-3 text-end tabular-nums font-medium">{fmtCurrency(sellPrice)}</td>
               {hasSale && (
                 <td className="px-4 py-3 text-end tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
@@ -950,7 +968,7 @@ function MarginTab({ product }: { product: Product }) {
               )}
             </tr>
             <tr className="bg-muted/20">
-              <td className="px-4 py-3 text-xs font-medium">Gross Profit / Unit</td>
+              <td className="px-4 py-3 text-xs font-medium">{t($ => $.detailDrawer.marginGrossProfit)}</td>
               <td className={cn(
                 'px-4 py-3 text-end tabular-nums font-semibold',
                 grossProfit != null && grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400',
@@ -967,7 +985,7 @@ function MarginTab({ product }: { product: Product }) {
               )}
             </tr>
             <tr className="bg-muted/20">
-              <td className="px-4 py-3 text-xs font-medium">Final Margin</td>
+              <td className="px-4 py-3 text-xs font-medium">{t($ => $.detailDrawer.marginFinalMargin)}</td>
               <td className="px-4 py-3 text-end">
                 {margin != null ? <MarginBadge pct={margin} /> : <span className="text-muted-foreground">—</span>}
               </td>
@@ -984,7 +1002,7 @@ function MarginTab({ product }: { product: Product }) {
       {cost == null && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 flex items-center gap-2 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
           <AlertTriangle className="size-4 shrink-0" aria-hidden />
-          No product cost set. Create a recipe or set a selling price to see margin analysis.
+          {t($ => $.detailDrawer.marginNoCostSet)}
         </div>
       )}
     </div>
@@ -994,6 +1012,8 @@ function MarginTab({ product }: { product: Product }) {
 // ── Tab: Operations (PART 8 — Cross-Module Navigation) ───────────────────────
 
 function OperationsTab({ product }: { product: Product }) {
+  const { t } = useTranslation('products');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const navigate = useNavigate();
 
   return (
@@ -1001,16 +1021,16 @@ function OperationsTab({ product }: { product: Product }) {
       {/* Recipe */}
       <div className="rounded-lg border bg-card p-4">
         <div className="flex items-center justify-between mb-1">
-          <p className="text-sm font-semibold">Recipe</p>
+          <p className="text-sm font-semibold">{t($ => $.detailDrawer.opsRecipe)}</p>
           {product.has_recipe
-            ? <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">✅ Available</Badge>
-            : <Badge className="text-[11px] px-2 py-0.5 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">⚠ Missing</Badge>
+            ? <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">{t($ => $.detailDrawer.opsRecipeAvailableBadge)}</Badge>
+            : <Badge className="text-[11px] px-2 py-0.5 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">{t($ => $.detailDrawer.opsRecipeMissingBadge)}</Badge>
           }
         </div>
         <p className="text-xs text-muted-foreground mb-3">
           {product.has_recipe
-            ? 'An active recipe is assigned. View or update the bill of materials.'
-            : 'This product cannot be manufactured until a recipe is created.'}
+            ? t($ => $.detailDrawer.opsRecipeActive)
+            : t($ => $.detailDrawer.opsRecipeNone)}
         </p>
         <Button
           size="sm"
@@ -1023,23 +1043,23 @@ function OperationsTab({ product }: { product: Product }) {
           }
         >
           <ArrowUpRight className="size-3.5" />
-          {product.has_recipe ? 'View Recipe' : 'Create Recipe'}
+          {product.has_recipe ? t($ => $.detailDrawer.opsViewRecipe) : t($ => $.detailDrawer.opsCreateRecipe)}
         </Button>
       </div>
 
       {/* Pricing */}
       <div className="rounded-lg border bg-card p-4">
         <div className="flex items-center justify-between mb-1">
-          <p className="text-sm font-semibold">Pricing Review</p>
+          <p className="text-sm font-semibold">{t($ => $.detailDrawer.opsPricingReview)}</p>
           {product.pending_review === true
-            ? <Badge className="text-[11px] px-2 py-0.5 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">🟠 Review Required</Badge>
+            ? <Badge className="text-[11px] px-2 py-0.5 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">{t($ => $.detailDrawer.opsReviewRequired)}</Badge>
             : product.pending_review === false
-              ? <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">🟢 OK</Badge>
+              ? <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">{t($ => $.detailDrawer.opsOk)}</Badge>
               : null
           }
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Manage selling price decisions when product cost changes.
+          {t($ => $.detailDrawer.opsManagePricing)}
         </p>
         <Button
           size="sm"
@@ -1048,48 +1068,48 @@ function OperationsTab({ product }: { product: Product }) {
           onClick={() => navigate(ROUTES.costManagementPriceReview)}
         >
           <ArrowUpRight className="size-3.5" />
-          Price Review Center
+          {t($ => $.detailDrawer.opsPriceReviewCenter)}
         </Button>
       </div>
 
       {/* Manufacturing Availability (PART 7) */}
       <div className="rounded-lg border bg-card p-4">
         <div className="flex items-center justify-between mb-1">
-          <p className="text-sm font-semibold">Manufacturing Availability</p>
+          <p className="text-sm font-semibold">{t($ => $.detailDrawer.opsMfgAvailability)}</p>
           {product.manufacturing_availability === 'instock' ? (
-            <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">🟢 Available</Badge>
+            <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">{t($ => $.detailDrawer.opsMfgAvailableBadge)}</Badge>
           ) : product.manufacturing_availability === 'outofstock' ? (
-            <Badge className="text-[11px] px-2 py-0.5 bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">🔴 Blocked</Badge>
+            <Badge className="text-[11px] px-2 py-0.5 bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">{t($ => $.detailDrawer.opsMfgBlockedBadge)}</Badge>
           ) : product.manufacturing_availability === 'recipe_missing' ? (
-            <Badge className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700">⚪ Recipe Missing</Badge>
+            <Badge className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700">{t($ => $.detailDrawer.opsMfgRecipeMissingBadge)}</Badge>
           ) : product.has_recipe ? (
-            <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">✅ Recipe Available</Badge>
+            <Badge className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">{t($ => $.detailDrawer.opsMfgRecipeAvailableBadge)}</Badge>
           ) : (
-            <Badge className="text-[11px] px-2 py-0.5 bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800">🟠 No Recipe</Badge>
+            <Badge className="text-[11px] px-2 py-0.5 bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800">{t($ => $.detailDrawer.opsMfgNoRecipeBadge)}</Badge>
           )}
         </div>
         <p className="text-xs text-muted-foreground mb-3">
           {product.manufacturing_availability === 'instock'
-            ? 'All required materials are available. Ready to manufacture.'
+            ? t($ => $.detailDrawer.opsMfgAllAvailable)
             : product.manufacturing_availability === 'outofstock'
-              ? 'Some materials are unavailable. See blocking materials below.'
+              ? t($ => $.detailDrawer.opsMfgSomeMissing)
               : product.manufacturing_availability === 'recipe_missing'
-                ? 'No active recipe assigned. Create a recipe first.'
-                : 'Production orders and manufacturing workflows.'}
+                ? t($ => $.detailDrawer.opsMfgNoRecipe)
+                : t($ => $.detailDrawer.opsMfgWorkflows)}
         </p>
 
         {/* Blocking materials list */}
         {product.blocking_materials && product.blocking_materials.length > 0 ? (
           <div className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30">
             <p className="text-xs font-medium text-red-700 dark:text-red-400 mb-1.5">
-              Blocking Materials ({product.blocking_materials.length})
+              {tAny('detailDrawer.opsBlockingMaterials', { count: product.blocking_materials.length })}
             </p>
             <ul className="flex flex-col gap-1">
               {product.blocking_materials.map((m) => (
                 <li key={m.id} className="flex items-center justify-between text-xs">
                   <span className="text-red-700 dark:text-red-400">🔴 {m.name}</span>
                   <span className="tabular-nums text-red-600 dark:text-red-500 font-mono">
-                    {m.available_qty.toFixed(2)} avail
+                    {m.available_qty.toFixed(2)} {t($ => $.detailDrawer.opsAvail)}
                   </span>
                 </li>
               ))}
@@ -1099,28 +1119,12 @@ function OperationsTab({ product }: { product: Product }) {
 
         <Button size="sm" variant="outline" className="gap-1.5" disabled>
           <ArrowUpRight className="size-3.5" />
-          Manufacturing Module
-          <span className="text-[10px] text-muted-foreground">(coming soon)</span>
+          {t($ => $.detailDrawer.opsMfgModule)}
+          <span className="text-[10px] text-muted-foreground">{t($ => $.detailDrawer.opsComingSoon)}</span>
         </Button>
       </div>
     </div>
   );
-}
-
-// ── Tab builder ───────────────────────────────────────────────────────────────
-
-function viewTabs(product: Product) {
-  return [
-    { key: 'general',     label: 'General',     content: <GeneralTab product={product} /> },
-    { key: 'pricing',     label: 'Pricing',     content: <PricingTab product={product} /> },
-    { key: 'margin',      label: 'Margin',      content: <MarginTab product={product} /> },
-    { key: 'cost',        label: 'Cost',        content: <CostTab product={product} /> },
-    { key: 'inventory',   label: 'Inventory',   content: <InventoryTab product={product} /> },
-    { key: 'recipe',      label: 'Recipe',      content: <RecipeTab product={product} /> },
-    { key: 'woocommerce', label: 'Channels',    content: <WooCommerceTab product={product} /> },
-    { key: 'operations',  label: 'Operations',  content: <OperationsTab product={product} /> },
-    { key: 'history',     label: 'History',     content: <HistoryTab product={product} /> },
-  ];
 }
 
 // ── Edit form ─────────────────────────────────────────────────────────────────
@@ -1143,6 +1147,7 @@ export function ProductDetailDrawer({
   initialTab,
   defaultType = 'finished_good',
 }: ProductDetailDrawerProps) {
+  const { t } = useTranslation('products');
   const isNew = product === null;
   const [mode, setMode]               = useState<DrawerMode>(initialMode ?? (isNew ? 'edit' : 'view'));
   const [activeTab, setActiveTab]     = useState(initialTab ?? 'general');
@@ -1161,6 +1166,19 @@ export function ProductDetailDrawer({
     resolver: zodResolver(productSchema),
     defaultValues: toFormValues(product, defaultType),
   });
+
+  // ── View tabs (inside component to access t) ─────────────────────────────
+  const buildViewTabs = (p: Product) => [
+    { key: 'general',     label: t($ => $.detailDrawer.tabGeneral),     content: <GeneralTab product={p} /> },
+    { key: 'pricing',     label: t($ => $.detailDrawer.tabPricing),     content: <PricingTab product={p} /> },
+    { key: 'margin',      label: t($ => $.detailDrawer.tabMargin),      content: <MarginTab product={p} /> },
+    { key: 'cost',        label: t($ => $.detailDrawer.tabCost),        content: <CostTab product={p} /> },
+    { key: 'inventory',   label: t($ => $.detailDrawer.tabInventory),   content: <InventoryTab product={p} /> },
+    { key: 'recipe',      label: t($ => $.detailDrawer.tabRecipe),      content: <RecipeTab product={p} /> },
+    { key: 'woocommerce', label: t($ => $.detailDrawer.tabChannels),    content: <WooCommerceTab product={p} /> },
+    { key: 'operations',  label: t($ => $.detailDrawer.tabOperations),  content: <OperationsTab product={p} /> },
+    { key: 'history',     label: t($ => $.detailDrawer.tabHistory),     content: <HistoryTab product={p} /> },
+  ];
 
   useEffect(() => {
     if (open) {
@@ -1202,7 +1220,7 @@ export function ProductDetailDrawer({
         const uploaded = await uploadMaterialImage(imageFile, 'products');
         payload.image_url = uploaded.path;
       } catch {
-        setServerError('Image upload failed. Please try again.');
+        setServerError(t($ => $.detailDrawer.imageUploadFailed));
         setIsUploading(false);
         return;
       }
@@ -1230,9 +1248,9 @@ export function ProductDetailDrawer({
   if (!open) return null;
 
   const displayProduct = localProduct ?? product;
-  const tabs  = displayProduct ? viewTabs(displayProduct) : [];
+  const tabs  = displayProduct ? buildViewTabs(displayProduct) : [];
   const title = mode === 'edit'
-    ? (isNew ? 'New Product' : 'Edit Product')
+    ? (isNew ? t($ => $.detailDrawer.newProductTitle) : t($ => $.detailDrawer.editProductTitle))
     : (displayProduct?.name ?? '');
 
   return (
@@ -1275,7 +1293,7 @@ export function ProductDetailDrawer({
               {mode === 'view' && (
                 <Button size="sm" variant="outline" onClick={switchToEdit}>
                   <Edit className="size-3.5" />
-                  Edit
+                  {t($ => $.detailDrawer.editBtn)}
                 </Button>
               )}
               <SheetClose asChild>
@@ -1304,7 +1322,7 @@ export function ProductDetailDrawer({
               {serverError ? (
                 <Alert variant="destructive" className="mb-4">
                   <AlertCircle className="size-4" />
-                  <AlertTitle>Unable to save</AlertTitle>
+                  <AlertTitle>{t($ => $.detailDrawer.unableToSave)}</AlertTitle>
                   <AlertDescription>{serverError}</AlertDescription>
                 </Alert>
               ) : null}
@@ -1315,10 +1333,10 @@ export function ProductDetailDrawer({
 
             <div className="flex items-center justify-end gap-2 border-t bg-background p-4">
               <Button type="button" variant="outline" onClick={cancelEdit} disabled={isPending}>
-                {isNew ? 'Cancel' : 'Back to view'}
+                {isNew ? t($ => $.detailDrawer.cancel) : t($ => $.detailDrawer.backToView)}
               </Button>
               <Button type="submit" form={FORM_ID} disabled={isPending}>
-                {isUploading ? 'Uploading…' : isMutating ? 'Saving…' : isNew ? 'Create product' : 'Save changes'}
+                {isUploading ? t($ => $.detailDrawer.uploading) : isMutating ? t($ => $.detailDrawer.saving) : isNew ? t($ => $.detailDrawer.createProduct) : t($ => $.detailDrawer.saveChanges)}
               </Button>
             </div>
           </div>

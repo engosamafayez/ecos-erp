@@ -38,6 +38,7 @@ final class AssetHealthService
             $health = $connector->checkAssetHealth($asset, $connection);
         } catch (Throwable $e) {
             $health = AssetHealth::SyncFailed->value;
+
             return $this->stamp($asset, $health, ['error' => $e->getMessage()]);
         }
 
@@ -58,12 +59,12 @@ final class AssetHealthService
                 $health = $this->check($asset);
 
                 match (true) {
-                    $health === AssetHealth::Healthy->value  => $counts['healthy']++,
+                    $health === AssetHealth::Healthy->value => $counts['healthy']++,
                     in_array($health, [
                         AssetHealth::Warning->value,
                         AssetHealth::Inactive->value,
-                    ], true)                                 => $counts['warning']++,
-                    default                                  => $counts['error']++,
+                    ], true) => $counts['warning']++,
+                    default => $counts['error']++,
                 };
             });
 
@@ -73,9 +74,9 @@ final class AssetHealthService
     private function stamp(MarketingAsset $asset, string $health, array $meta): string
     {
         $asset->update([
-            'health_status'    => $health,
+            'health_status' => $health,
             'health_checked_at' => now(),
-            'health_metadata'  => $meta ?: null,
+            'health_metadata' => $meta ?: null,
         ]);
 
         return $health;

@@ -46,7 +46,7 @@ final class DisassemblyWorkflow
             return DisassemblyWorkflowResult::blocked(
                 reason: 'recipe_not_found',
                 metadata: array_merge($request->metadata, [
-                    'product_id'     => $request->product_id,
+                    'product_id' => $request->product_id,
                     'resolver_error' => $e->getMessage(),
                 ]),
             );
@@ -60,10 +60,10 @@ final class DisassemblyWorkflow
             return DisassemblyWorkflowResult::blocked(
                 reason: 'insufficient_finished_goods',
                 metadata: array_merge($request->metadata, [
-                    'product_id'    => $request->product_id,
+                    'product_id' => $request->product_id,
                     'qty_requested' => $request->quantity,
                     'qty_available' => $available,
-                    'qty_short'     => $request->quantity - $available,
+                    'qty_short' => $request->quantity - $available,
                 ]),
             );
         }
@@ -71,25 +71,25 @@ final class DisassemblyWorkflow
         // ── Stage 3: Build immutable plan ─────────────────────────────────────
         $componentOutputs = array_map(
             fn (RecipeComponent $c): ComponentProductionPlan => new ComponentProductionPlan(
-                component_id:     $c->component_id,
-                sku:              $c->sku,
-                name:             $c->name,
-                unit_symbol:      $c->unit_symbol,
-                qty_to_produce:   round($c->quantity * $request->quantity, 4),
+                component_id: $c->component_id,
+                sku: $c->sku,
+                name: $c->name,
+                unit_symbol: $c->unit_symbol,
+                qty_to_produce: round($c->quantity * $request->quantity, 4),
                 required_per_unit: $c->quantity,
             ),
             $snapshot->components,
         );
 
         $plan = new DisassemblyPlan(
-            plan_id:            Str::uuid()->toString(),
-            product_id:         $request->product_id,
-            warehouse_id:       $request->warehouse_id,
+            plan_id: Str::uuid()->toString(),
+            product_id: $request->product_id,
+            warehouse_id: $request->warehouse_id,
             qty_to_disassemble: $request->quantity,
-            recipe_snapshot:    $snapshot,
-            component_outputs:  $componentOutputs,
-            trigger_id:         $request->trigger_id,
-            metadata:           $request->metadata,
+            recipe_snapshot: $snapshot,
+            component_outputs: $componentOutputs,
+            trigger_id: $request->trigger_id,
+            metadata: $request->metadata,
         );
 
         return DisassemblyWorkflowResult::ready($plan, $request->metadata);

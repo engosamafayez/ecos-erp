@@ -16,7 +16,7 @@ final readonly class DisassemblyPlan
 {
     /**
      * @param  list<ComponentProductionPlan>  $component_outputs
-     * @param  array<string, mixed>           $metadata
+     * @param  array<string, mixed>  $metadata
      */
     public function __construct(
         /** UUID — primary idempotency key on disassembly_transactions. */

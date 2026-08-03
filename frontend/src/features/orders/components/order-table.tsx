@@ -102,7 +102,7 @@ export function OrderTable({
       pagination={pagination}
       skeletonRows={8}
       onRowClick={onView}
-      emptyState={emptyState ?? <EmptyState title={t('table.empty')} />}
+      emptyState={emptyState ?? <EmptyState title={t($ => $.table.empty)} />}
       errorState={<ErrorState />}
       renderMobileCard={(order, sel) => (
         <OrderMobileCard

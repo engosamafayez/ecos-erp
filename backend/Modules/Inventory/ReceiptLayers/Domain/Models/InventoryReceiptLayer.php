@@ -60,11 +60,11 @@ class InventoryReceiptLayer extends Model
     protected function casts(): array
     {
         return [
-            'received_qty'        => 'decimal:4',
-            'remaining_qty'       => 'decimal:4',
-            'landed_unit_cost'    => 'decimal:4',
+            'received_qty' => 'decimal:4',
+            'remaining_qty' => 'decimal:4',
+            'landed_unit_cost' => 'decimal:4',
             'sale_price_snapshot' => 'decimal:2',
-            'receipt_date'        => 'date:Y-m-d',
+            'receipt_date' => 'date:Y-m-d',
         ];
     }
 

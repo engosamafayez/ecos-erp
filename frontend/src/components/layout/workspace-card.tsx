@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Plus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,11 +29,12 @@ export function WorkspaceCard({
   count,
   countLabel,
   href,
-  newLabel = 'New',
+  newLabel,
   onNew,
   isLoading = false,
   extra,
 }: WorkspaceCardProps) {
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
 
   return (
@@ -87,7 +89,7 @@ export function WorkspaceCard({
               }}
             >
               <Plus className="size-3" />
-              {newLabel}
+              {newLabel ?? t($ => $.actions.new)}
             </Button>
           )}
           <Button
@@ -99,8 +101,8 @@ export function WorkspaceCard({
               navigate(href);
             }}
           >
-            View All
-            <ArrowRight className="size-3" />
+            {t($ => $.actions.viewAll)}
+            <ArrowRight className="size-3" data-flip-rtl />
           </Button>
         </div>
       </CardContent>

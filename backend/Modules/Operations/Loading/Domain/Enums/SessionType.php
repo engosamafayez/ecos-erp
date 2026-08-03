@@ -6,8 +6,8 @@ namespace Modules\Operations\Loading\Domain\Enums;
 
 enum SessionType: string
 {
-    case Standard      = 'standard';
-    case Rush          = 'rush';
-    case Rerun         = 'rerun';
+    case Standard = 'standard';
+    case Rush = 'rush';
+    case Rerun = 'rerun';
     case Supplementary = 'supplementary';
 }

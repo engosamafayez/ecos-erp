@@ -13,14 +13,14 @@ namespace Modules\Common\Snapshots\Domain\Events;
 final class SnapshotCreated
 {
     public function __construct(
-        public readonly string  $snapshotUuid,
-        public readonly string  $snapshotType,    // 'financial' | 'business_context'
-        public readonly string  $aggregateType,   // from SnapshotRegistry (e.g. 'order')
-        public readonly string  $aggregateId,
+        public readonly string $snapshotUuid,
+        public readonly string $snapshotType,    // 'financial' | 'business_context'
+        public readonly string $aggregateType,   // from SnapshotRegistry (e.g. 'order')
+        public readonly string $aggregateId,
         public readonly ?string $companyId,
         public readonly ?string $brandId,
         public readonly ?string $channelId,
-        public readonly string  $timestamp,
-        public readonly array   $metadata = [],
+        public readonly string $timestamp,
+        public readonly array $metadata = [],
     ) {}
 }

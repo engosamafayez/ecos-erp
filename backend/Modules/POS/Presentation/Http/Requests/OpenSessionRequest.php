@@ -17,11 +17,11 @@ final class OpenSessionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id'         => ['required', 'string', 'uuid'],
-            'channel_id'         => ['nullable', 'string', 'uuid'],
-            'warehouse_id'       => ['required', 'string', 'uuid'],
+            'company_id' => ['required', 'string', 'uuid'],
+            'channel_id' => ['nullable', 'string', 'uuid'],
+            'warehouse_id' => ['required', 'string', 'uuid'],
             'device_fingerprint' => ['sometimes', 'string', 'max:255'],
-            'device_type'        => ['sometimes', 'string', 'max:100'],
+            'device_type' => ['sometimes', 'string', 'max:100'],
         ];
     }
 }

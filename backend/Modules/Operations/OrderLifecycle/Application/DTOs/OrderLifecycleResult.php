@@ -52,14 +52,14 @@ final readonly class OrderLifecycleResult
         array $metadata = [],
     ): self {
         return new self(
-            order_id:             $orderId,
-            order_line_id:        $orderLineId,
-            handled:              false,
-            action:               LifecycleAction::StatusIgnored,
-            reason:               $reason,
-            policy_result:        null,
+            order_id: $orderId,
+            order_line_id: $orderLineId,
+            handled: false,
+            action: LifecycleAction::StatusIgnored,
+            reason: $reason,
+            policy_result: null,
             manufacturing_result: null,
-            metadata:             $metadata,
+            metadata: $metadata,
         );
     }
 
@@ -69,14 +69,14 @@ final readonly class OrderLifecycleResult
         ManufacturingPolicyResult $policyResult,
     ): self {
         return new self(
-            order_id:             $orderId,
-            order_line_id:        $orderLineId,
-            handled:              false,
-            action:               LifecycleAction::PolicyRejected,
-            reason:               $policyResult->reason,
-            policy_result:        $policyResult,
+            order_id: $orderId,
+            order_line_id: $orderLineId,
+            handled: false,
+            action: LifecycleAction::PolicyRejected,
+            reason: $policyResult->reason,
+            policy_result: $policyResult,
             manufacturing_result: null,
-            metadata:             $policyResult->metadata,
+            metadata: $policyResult->metadata,
         );
     }
 
@@ -87,14 +87,14 @@ final readonly class OrderLifecycleResult
         ManufactureProductResponse $mfgResult,
     ): self {
         return new self(
-            order_id:             $orderId,
-            order_line_id:        $orderLineId,
-            handled:              true,
-            action:               LifecycleAction::ManufacturingTriggered,
-            reason:               'Manufacturing triggered successfully.',
-            policy_result:        $policyResult,
+            order_id: $orderId,
+            order_line_id: $orderLineId,
+            handled: true,
+            action: LifecycleAction::ManufacturingTriggered,
+            reason: 'Manufacturing triggered successfully.',
+            policy_result: $policyResult,
             manufacturing_result: $mfgResult,
-            metadata:             $mfgResult->metadata,
+            metadata: $mfgResult->metadata,
         );
     }
 
@@ -105,14 +105,14 @@ final readonly class OrderLifecycleResult
         ManufactureProductResponse $mfgResult,
     ): self {
         return new self(
-            order_id:             $orderId,
-            order_line_id:        $orderLineId,
-            handled:              false,
-            action:               LifecycleAction::ManufacturingBlocked,
-            reason:               'Manufacturing workflow was blocked: ' . ($mfgResult->blocking_reason ?? 'unknown'),
-            policy_result:        $policyResult,
+            order_id: $orderId,
+            order_line_id: $orderLineId,
+            handled: false,
+            action: LifecycleAction::ManufacturingBlocked,
+            reason: 'Manufacturing workflow was blocked: '.($mfgResult->blocking_reason ?? 'unknown'),
+            policy_result: $policyResult,
             manufacturing_result: $mfgResult,
-            metadata:             $mfgResult->metadata,
+            metadata: $mfgResult->metadata,
         );
     }
 
@@ -123,14 +123,14 @@ final readonly class OrderLifecycleResult
         ManufactureProductResponse $mfgResult,
     ): self {
         return new self(
-            order_id:             $orderId,
-            order_line_id:        $orderLineId,
-            handled:              false,
-            action:               LifecycleAction::ManufacturingNotRequired,
-            reason:               'Manufacturing is not required: sufficient finished goods already in stock.',
-            policy_result:        $policyResult,
+            order_id: $orderId,
+            order_line_id: $orderLineId,
+            handled: false,
+            action: LifecycleAction::ManufacturingNotRequired,
+            reason: 'Manufacturing is not required: sufficient finished goods already in stock.',
+            policy_result: $policyResult,
             manufacturing_result: $mfgResult,
-            metadata:             $mfgResult->metadata,
+            metadata: $mfgResult->metadata,
         );
     }
 
@@ -140,14 +140,14 @@ final readonly class OrderLifecycleResult
         ManufacturingPolicyResult $policyResult,
     ): self {
         return new self(
-            order_id:             $orderId,
-            order_line_id:        $orderLineId,
-            handled:              false,
-            action:               LifecycleAction::ManufacturingAlreadyExecuted,
-            reason:               'Manufacturing already completed for this order line.',
-            policy_result:        $policyResult,
+            order_id: $orderId,
+            order_line_id: $orderLineId,
+            handled: false,
+            action: LifecycleAction::ManufacturingAlreadyExecuted,
+            reason: 'Manufacturing already completed for this order line.',
+            policy_result: $policyResult,
             manufacturing_result: null,
-            metadata:             $policyResult->metadata,
+            metadata: $policyResult->metadata,
         );
     }
 
@@ -155,14 +155,14 @@ final readonly class OrderLifecycleResult
     public function toArray(): array
     {
         return [
-            'order_id'             => $this->order_id,
-            'order_line_id'        => $this->order_line_id,
-            'handled'              => $this->handled,
-            'action'               => $this->action->value,
-            'reason'               => $this->reason,
-            'policy_result'        => $this->policy_result?->toArray(),
+            'order_id' => $this->order_id,
+            'order_line_id' => $this->order_line_id,
+            'handled' => $this->handled,
+            'action' => $this->action->value,
+            'reason' => $this->reason,
+            'policy_result' => $this->policy_result?->toArray(),
             'manufacturing_result' => $this->manufacturing_result?->toArray(),
-            'metadata'             => $this->metadata,
+            'metadata' => $this->metadata,
         ];
     }
 }

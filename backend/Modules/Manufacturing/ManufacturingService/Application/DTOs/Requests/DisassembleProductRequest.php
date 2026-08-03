@@ -23,8 +23,8 @@ final readonly class DisassembleProductRequest
         public string $company_id,
         public float $quantity,
         public string $actor_id,
-        public ?string $trigger_id  = null,
+        public ?string $trigger_id = null,
         public string $trigger_type = 'manual',
-        public array $metadata      = [],
+        public array $metadata = [],
     ) {}
 }

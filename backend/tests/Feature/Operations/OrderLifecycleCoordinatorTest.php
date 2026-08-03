@@ -18,11 +18,11 @@ use Modules\Manufacturing\DecisionOrchestrator\Domain\Services\DecisionOrchestra
 use Modules\Manufacturing\ManufacturingPolicy\Domain\Enums\PolicyCode;
 use Modules\Manufacturing\ManufacturingService\Application\Services\ManufacturingApplicationService;
 use Modules\Manufacturing\ManufacturingWorkflow\Domain\Services\ManufacturingWorkflow;
+use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\OrderLifecycle\Application\DTOs\OrderLifecycleRequest;
 use Modules\Operations\OrderLifecycle\Application\DTOs\OrderLifecycleResult;
 use Modules\Operations\OrderLifecycle\Application\Services\OrderLifecycleCoordinator;
 use Modules\Operations\OrderLifecycle\Domain\Enums\LifecycleAction;
-use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
@@ -45,7 +45,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
     use RefreshDatabase;
 
     private OrderLifecycleCoordinator $coordinator;
+
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
@@ -55,7 +57,7 @@ class OrderLifecycleCoordinatorTest extends TestCase
         $this->resetSingletons();
         $this->registerRule(DecisionType::Approve);
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
 
         $this->coordinator = app(OrderLifecycleCoordinator::class);
@@ -78,12 +80,12 @@ class OrderLifecycleCoordinatorTest extends TestCase
             'manufacturing',
             new InMemoryRuleProvider(
                 new DecisionRule(
-                    rule_id:       $id,
-                    name:          "Test rule: {$type->label()}",
-                    priority:      1,
+                    rule_id: $id,
+                    name: "Test rule: {$type->label()}",
+                    priority: 1,
                     decision_type: $type,
-                    reason:        new DecisionReason(code: "test_{$type->value}", message: $type->label()),
-                    condition:     fn ($ctx) => true,
+                    reason: new DecisionReason(code: "test_{$type->value}", message: $type->label()),
+                    condition: fn ($ctx) => true,
                 ),
             ),
         );
@@ -109,11 +111,11 @@ class OrderLifecycleCoordinatorTest extends TestCase
     private function makeRecipe(Product $output): Recipe
     {
         return Recipe::create([
-            'bom_number'         => 'BOM-OLC-' . uniqid(),
-            'product_id'         => $output->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-OLC-'.uniqid(),
+            'product_id' => $output->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => true,
+            'is_active' => true,
         ]);
     }
 
@@ -121,7 +123,7 @@ class OrderLifecycleCoordinatorTest extends TestCase
     {
         $recipe->components()->create([
             'raw_material_id' => $component->id,
-            'quantity'        => $qty,
+            'quantity' => $qty,
         ]);
     }
 
@@ -129,9 +131,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => 0.0,
         ]);
     }
@@ -147,19 +149,19 @@ class OrderLifecycleCoordinatorTest extends TestCase
         bool $isCancelled = false,
     ): OrderLifecycleRequest {
         return new OrderLifecycleRequest(
-            order_id:                    'order-' . Str::uuid(),
-            order_line_id:               'line-' . Str::uuid(),
-            order_status:                $status,
-            is_order_cancelled:          $isCancelled,
-            product_id:                  $output->id,
-            required_qty:                $qty,
-            product_can_manufacture:     $canManufacture,
-            product_has_active_recipe:   $hasRecipe,
+            order_id: 'order-'.Str::uuid(),
+            order_line_id: 'line-'.Str::uuid(),
+            order_status: $status,
+            is_order_cancelled: $isCancelled,
+            product_id: $output->id,
+            required_qty: $qty,
+            product_can_manufacture: $canManufacture,
+            product_has_active_recipe: $hasRecipe,
             product_is_inventory_managed: $inventoryManaged,
-            warehouse_id:                $this->warehouse->id,
-            company_id:                  $this->company->id,
-            actor_id:                    'test-actor',
-            already_manufactured:        $alreadyManufactured,
+            warehouse_id: $this->warehouse->id,
+            company_id: $this->company->id,
+            actor_id: 'test-actor',
+            already_manufactured: $alreadyManufactured,
         );
     }
 
@@ -167,9 +169,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     public function test_returns_manufacturing_triggered_for_eligible_pending_order(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 2.0);
         $this->seedInventory($component, 10.0);
 
@@ -186,9 +188,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     public function test_returns_manufacturing_triggered_for_eligible_processing_order(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -200,9 +202,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     public function test_manufacturing_triggered_creates_transaction_in_database(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -289,9 +291,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     public function test_returns_manufacturing_not_required_when_fg_stock_is_sufficient(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
         // Seeding the OUTPUT product with sufficient on-hand qty causes the workflow
@@ -315,9 +317,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
     {
         $this->rebuildCoordinatorWith(DecisionType::Reject);
 
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -337,9 +339,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
     {
         $this->rebuildCoordinatorWith(DecisionType::Reject);
 
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -393,14 +395,14 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     public function test_context_correctly_maps_order_and_product_ids_to_policy(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
         $request = $this->makeRequest($output);
-        $result  = $this->coordinator->handle($request);
+        $result = $this->coordinator->handle($request);
 
         // Policy result metadata must contain the order and product IDs from the request
         $this->assertEquals($request->product_id, $result->policy_result?->metadata['product_id'] ?? null);
@@ -410,14 +412,14 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     public function test_manufacturing_request_carries_order_metadata(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
         $request = $this->makeRequest($output);
-        $result  = $this->coordinator->handle($request);
+        $result = $this->coordinator->handle($request);
 
         // The executor stores request metadata nested under source_metadata inside transaction_metadata.
         // So order_id and order_line_id live at metadata['source_metadata']['order_id'].
@@ -448,9 +450,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
     {
         $this->rebuildCoordinatorWith(DecisionType::Reject);
 
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -461,9 +463,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     public function test_result_serializes_to_array_with_all_keys(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 

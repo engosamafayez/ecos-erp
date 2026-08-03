@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\POS\Shared\Domain\ValueObjects;
 
+use InvalidArgumentException;
+
 /**
  * Immutable quantity value with 4-decimal-place BCMath precision.
  *
@@ -18,20 +20,21 @@ final readonly class Quantity
 
     public function __construct(public string $value)
     {
-        if (!is_numeric($this->value)) {
-            throw new \InvalidArgumentException(
-                "Quantity value must be numeric, got: \"{$this->value}\"."
+        if (! is_numeric($this->value)) {
+            throw new InvalidArgumentException(
+                "Quantity value must be numeric, got: \"{$this->value}\".",
             );
         }
     }
 
     public static function of(string|int|float $value): self
     {
-        if (is_string($value) && !is_numeric($value)) {
-            throw new \InvalidArgumentException(
-                "Quantity value must be numeric, got: \"{$value}\"."
+        if (is_string($value) && ! is_numeric($value)) {
+            throw new InvalidArgumentException(
+                "Quantity value must be numeric, got: \"{$value}\".",
             );
         }
+
         return new self(bcadd((string) $value, '0', self::SCALE));
     }
 
@@ -63,8 +66,9 @@ final readonly class Quantity
     public function divide(string|int|float $divisor): self
     {
         if (bccomp((string) $divisor, '0', self::SCALE) === 0) {
-            throw new \InvalidArgumentException('Cannot divide a Quantity by zero.');
+            throw new InvalidArgumentException('Cannot divide a Quantity by zero.');
         }
+
         return new self(bcdiv($this->value, (string) $divisor, self::SCALE));
     }
 

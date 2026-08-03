@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 
@@ -10,7 +11,9 @@ type LoadingStateProps = {
 /**
  * Reusable centered loading indicator.
  */
-export function LoadingState({ label = 'Loading…', className }: LoadingStateProps) {
+export function LoadingState({ label, className }: LoadingStateProps) {
+  const { t } = useTranslation('common');
+
   return (
     <div
       className={cn(
@@ -19,7 +22,7 @@ export function LoadingState({ label = 'Loading…', className }: LoadingStatePr
       )}
     >
       <Loader2 className="size-6 animate-spin" />
-      <span className="text-sm">{label}</span>
+      <span className="text-sm">{label ?? t($ => $.loading)}</span>
     </div>
   );
 }

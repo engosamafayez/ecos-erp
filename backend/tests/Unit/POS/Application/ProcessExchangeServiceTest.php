@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Application;
 
+use Illuminate\Support\Facades\DB;
 use Modules\POS\Application\Commands\ProcessExchangeCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
 use Modules\POS\Application\Exceptions\SaleNotFoundException;
@@ -16,7 +17,6 @@ use Modules\POS\Sale\Domain\Contracts\SaleRepositoryInterface;
 use Modules\POS\Sale\Domain\Models\Sale;
 use Modules\POS\Sale\Domain\ValueObjects\PaymentSummaryLine;
 use Modules\POS\Sale\Domain\ValueObjects\SaleLine;
-use Illuminate\Support\Facades\DB;
 use Modules\POS\Shared\Domain\Enums\PaymentMethodType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Quantity;
@@ -25,10 +25,15 @@ use Tests\TestCase;
 final class ProcessExchangeServiceTest extends TestCase
 {
     private SaleRepositoryInterface $saleRepo;
+
     private ExchangeRepositoryInterface $exchangeRepo;
+
     private ReceiptRepositoryInterface $receiptRepo;
+
     private ReceiptNumberingStrategyInterface $numbering;
+
     private DomainEventPublisherInterface $publisher;
+
     private ProcessExchangeService $service;
 
     protected function setUp(): void
@@ -36,13 +41,13 @@ final class ProcessExchangeServiceTest extends TestCase
         parent::setUp();
 
         DB::shouldReceive('transaction')
-            ->andReturnUsing(fn(callable $cb) => $cb());
+            ->andReturnUsing(fn (callable $cb) => $cb());
 
-        $this->saleRepo     = $this->createMock(SaleRepositoryInterface::class);
+        $this->saleRepo = $this->createMock(SaleRepositoryInterface::class);
         $this->exchangeRepo = $this->createMock(ExchangeRepositoryInterface::class);
-        $this->receiptRepo  = $this->createMock(ReceiptRepositoryInterface::class);
-        $this->numbering    = $this->createMock(ReceiptNumberingStrategyInterface::class);
-        $this->publisher    = $this->createMock(DomainEventPublisherInterface::class);
+        $this->receiptRepo = $this->createMock(ReceiptRepositoryInterface::class);
+        $this->numbering = $this->createMock(ReceiptNumberingStrategyInterface::class);
+        $this->publisher = $this->createMock(DomainEventPublisherInterface::class);
 
         $this->numbering->method('next')->willReturn('RCP-EXC-00001');
 
@@ -113,7 +118,7 @@ final class ProcessExchangeServiceTest extends TestCase
         $this->publisher
             ->expects($this->once())
             ->method('publishAll')
-            ->with($this->callback(fn(array $events) => count($events) >= 4));
+            ->with($this->callback(fn (array $events) => count($events) >= 4));
 
         $this->service->execute($this->makeCommand());
     }
@@ -121,25 +126,25 @@ final class ProcessExchangeServiceTest extends TestCase
     private function makeSale(): Sale
     {
         $sale = Sale::record(
-            cartId:           'cart-1',
-            paymentId:        'pay-1',
-            sessionId:        'sess-1',
-            shiftId:          'shift-1',
-            terminalId:       'term-1',
-            cashierId:        'cashier-1',
-            customerId:       null,
-            currency:         'EGP',
-            receiptNumber:    'SALE-001',
-            lines:            [
+            cartId: 'cart-1',
+            paymentId: 'pay-1',
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            terminalId: 'term-1',
+            cashierId: 'cashier-1',
+            customerId: null,
+            currency: 'EGP',
+            receiptNumber: 'SALE-001',
+            lines: [
                 new SaleLine('ln-1', 'prod-1', 'Product A', 'SKU-001',
                     Quantity::of('1'), Money::of('100.00', 'EGP'), null, null,
                     Money::of('100.00', 'EGP'), 0),
             ],
-            subtotal:         Money::of('100.00', 'EGP'),
-            discountTotal:    Money::of('0.00', 'EGP'),
-            total:            Money::of('100.00', 'EGP'),
-            amountPaid:       Money::of('100.00', 'EGP'),
-            changeGiven:      Money::of('0.00', 'EGP'),
+            subtotal: Money::of('100.00', 'EGP'),
+            discountTotal: Money::of('0.00', 'EGP'),
+            total: Money::of('100.00', 'EGP'),
+            amountPaid: Money::of('100.00', 'EGP'),
+            changeGiven: Money::of('0.00', 'EGP'),
             paymentSummaries: [
                 new PaymentSummaryLine(PaymentMethodType::Cash, Money::of('100.00', 'EGP'), null),
             ],
@@ -154,40 +159,40 @@ final class ProcessExchangeServiceTest extends TestCase
     private function makeCommand(): ProcessExchangeCommand
     {
         return new ProcessExchangeCommand(
-            originalSaleId:   'sale-1',
+            originalSaleId: 'sale-1',
             originalSaleNumber: 'SALE-001',
-            sessionId:        'sess-1',
-            shiftId:          'shift-1',
-            terminalId:       'term-1',
-            cashierId:        'cashier-1',
-            customerId:       null,
-            currency:         'EGP',
-            exchangeNumber:   'EXC-001',
-            returnedLines:    [
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            terminalId: 'term-1',
+            cashierId: 'cashier-1',
+            customerId: null,
+            currency: 'EGP',
+            exchangeNumber: 'EXC-001',
+            returnedLines: [
                 [
                     'original_line_id' => 'ln-1',
-                    'product_id'       => 'prod-1',
-                    'product_name'     => 'Product A',
-                    'sku'              => 'SKU-001',
-                    'quantity'         => '1',
-                    'unit_price'       => ['amount' => '100.00', 'currency' => 'EGP'],
-                    'line_total'       => ['amount' => '100.00', 'currency' => 'EGP'],
-                    'sort_order'       => 0,
+                    'product_id' => 'prod-1',
+                    'product_name' => 'Product A',
+                    'sku' => 'SKU-001',
+                    'quantity' => '1',
+                    'unit_price' => ['amount' => '100.00', 'currency' => 'EGP'],
+                    'line_total' => ['amount' => '100.00', 'currency' => 'EGP'],
+                    'sort_order' => 0,
                 ],
             ],
             replacementLines: [
                 [
                     'original_line_id' => null,
-                    'product_id'       => 'prod-2',
-                    'product_name'     => 'Product B',
-                    'sku'              => 'SKU-002',
-                    'quantity'         => '1',
-                    'unit_price'       => ['amount' => '120.00', 'currency' => 'EGP'],
-                    'line_total'       => ['amount' => '120.00', 'currency' => 'EGP'],
-                    'sort_order'       => 0,
+                    'product_id' => 'prod-2',
+                    'product_name' => 'Product B',
+                    'sku' => 'SKU-002',
+                    'quantity' => '1',
+                    'unit_price' => ['amount' => '120.00', 'currency' => 'EGP'],
+                    'line_total' => ['amount' => '120.00', 'currency' => 'EGP'],
+                    'sort_order' => 0,
                 ],
             ],
-            reason:           'defective',
+            reason: 'defective',
         );
     }
 }

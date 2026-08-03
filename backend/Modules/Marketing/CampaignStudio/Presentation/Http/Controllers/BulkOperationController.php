@@ -18,13 +18,13 @@ class BulkOperationController extends Controller
     public function execute(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'operation'          => ['required', 'string', 'in:publish,pause,resume,archive,duplicate,assign_initiative,assign_owner,assign_tags,validate,schedule'],
-            'draft_ids'          => ['required', 'array', 'min:1', 'max:100'],
-            'draft_ids.*'        => ['required', 'uuid'],
-            'payload'            => ['nullable', 'array'],
+            'operation' => ['required', 'string', 'in:publish,pause,resume,archive,duplicate,assign_initiative,assign_owner,assign_tags,validate,schedule'],
+            'draft_ids' => ['required', 'array', 'min:1', 'max:100'],
+            'draft_ids.*' => ['required', 'uuid'],
+            'payload' => ['nullable', 'array'],
             'payload.initiative_id' => ['nullable', 'uuid'],
-            'payload.owner_id'   => ['nullable', 'string'],
-            'payload.tags'       => ['nullable', 'array'],
+            'payload.owner_id' => ['nullable', 'string'],
+            'payload.tags' => ['nullable', 'array'],
             'payload.scheduled_at' => ['nullable', 'date'],
         ]);
 
@@ -39,7 +39,7 @@ class BulkOperationController extends Controller
         );
 
         return response()->json([
-            'data'    => $job,
+            'data' => $job,
             'message' => "Bulk {$operationType->value} queued for {$job->total_count} campaigns.",
         ], 202);
     }
@@ -48,6 +48,7 @@ class BulkOperationController extends Controller
     public function status(string $job): JsonResponse
     {
         $bulkJob = \Modules\Marketing\CampaignStudio\Domain\Models\CampaignBulkJob::findOrFail($job);
+
         return response()->json(['data' => $bulkJob]);
     }
 }

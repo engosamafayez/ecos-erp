@@ -12,19 +12,19 @@ use Modules\Marketing\Synchronization\Domain\Enums\SyncStatus;
 use Modules\Marketing\Synchronization\Domain\Enums\SyncType;
 
 /**
- * @property string               $id
- * @property string               $marketing_connection_id
- * @property SyncType             $sync_type
- * @property SyncStatus           $status
- * @property int                  $assets_discovered
- * @property int                  $assets_created
- * @property int                  $assets_updated
- * @property int                  $assets_failed
- * @property \Carbon\Carbon|null  $started_at
- * @property \Carbon\Carbon|null  $completed_at
- * @property string|null          $triggered_by
- * @property string|null          $error_message
- * @property array|null           $sync_metadata
+ * @property string $id
+ * @property string $marketing_connection_id
+ * @property SyncType $sync_type
+ * @property SyncStatus $status
+ * @property int $assets_discovered
+ * @property int $assets_created
+ * @property int $assets_updated
+ * @property int $assets_failed
+ * @property \Carbon\Carbon|null $started_at
+ * @property \Carbon\Carbon|null $completed_at
+ * @property string|null $triggered_by
+ * @property string|null $error_message
+ * @property array|null $sync_metadata
  */
 class MarketingSyncLog extends Model
 {
@@ -56,9 +56,9 @@ class MarketingSyncLog extends Model
     protected function casts(): array
     {
         return [
-            'sync_type'    => SyncType::class,
-            'status'       => SyncStatus::class,
-            'started_at'   => 'datetime',
+            'sync_type' => SyncType::class,
+            'status' => SyncStatus::class,
+            'started_at' => 'datetime',
             'completed_at' => 'datetime',
             'sync_metadata' => 'array',
         ];

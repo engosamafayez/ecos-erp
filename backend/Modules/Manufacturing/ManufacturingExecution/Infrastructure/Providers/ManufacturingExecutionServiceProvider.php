@@ -41,9 +41,9 @@ final class ManufacturingExecutionServiceProvider extends ServiceProvider
         // binding when the first integration (Cost Engine, Procurement Queue, etc.) is ready.
         $this->app->singleton(ManufacturingExecutor::class, function ($app): ManufacturingExecutor {
             return new ManufacturingExecutor(
-                inventory:    $app->make(InventoryMutationInterface::class),
+                inventory: $app->make(InventoryMutationInterface::class),
                 transactions: $app->make(ManufacturingTransactionRepositoryInterface::class),
-                hooks:        null,
+                hooks: null,
             );
         });
     }

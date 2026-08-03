@@ -1,6 +1,8 @@
+import { useFormatter } from '@/hooks/use-formatter';
 import { useState } from 'react';
 import { ExternalLink, Info, Loader2, Package, Phone, ShoppingBag, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { PageDrawer } from '@/components/page/drawer/page-drawer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,44 +22,48 @@ import type {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/** Order statuses that have a dedicated translation; anything else falls back to the raw value. */
+const ORDER_STATUS_KEYS = ['confirmed', 'preparing', 'pending', 'processing'] as const;
+
 function OrderStatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation('logistics');
   const map: Record<string, string> = {
     confirmed:  'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
     preparing:  'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
     pending:    'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
   };
+  const known = (ORDER_STATUS_KEYS as readonly string[]).includes(status);
+
   return (
     <Badge className={`text-[11px] ${map[status] ?? 'bg-gray-100 text-gray-700'}`}>
-      {status.replace(/_/g, ' ')}
+      {known ? t($ => $.planning.orderStatus[status]) : status.replace(/_/g, ' ')}
     </Badge>
   );
 }
 
 function PlanningStatusBadge({ status }: { status: ZonePlanningStatus }) {
+  const { t } = useTranslation('logistics');
+
   if (status === 'planned') {
     return (
       <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-        Planned
+        {t($ => $.planning.status.planned)}
       </Badge>
     );
   }
   if (status === 'in_planning') {
     return (
       <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-        In Planning
+        {t($ => $.planning.status.inPlanning)}
       </Badge>
     );
   }
-  return <Badge variant="outline" className="text-muted-foreground">Ready</Badge>;
-}
-
-function fmtEgp(n: number) {
-  return `EGP ${Number(n).toLocaleString('en-EG', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
-function fmtEgp2(n: number) {
-  return `EGP ${Number(n).toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return (
+    <Badge variant="outline" className="text-muted-foreground">
+      {t($ => $.planning.status.ready)}
+    </Badge>
+  );
 }
 
 function paymentLabel(method: string | null) {
@@ -75,6 +81,7 @@ function paymentLabel(method: string | null) {
 // ── Orders tab ────────────────────────────────────────────────────────────────
 
 function OrdersTab({ zoneId, filters }: { zoneId: number; filters: PlanningFilters }) {
+  const { money } = useFormatter();
   const [search, setSearch] = useState('');
   const { data, isLoading } = useZoneDetail(zoneId, 'orders', {
     ...filters,
@@ -146,7 +153,7 @@ function OrdersTab({ zoneId, filters }: { zoneId: number; filters: PlanningFilte
                     <OrderStatusBadge status={order.status} />
                   </td>
                   <td className="py-2 px-3 text-end tabular-nums text-xs font-medium whitespace-nowrap">
-                    {fmtEgp2(order.total)}
+                    {money(order.total)}
                   </td>
                 </tr>
               ))}
@@ -161,6 +168,7 @@ function OrdersTab({ zoneId, filters }: { zoneId: number; filters: PlanningFilte
 // ── Products tab ──────────────────────────────────────────────────────────────
 
 function ProductsTab({ zoneId, filters }: { zoneId: number; filters: PlanningFilters }) {
+  const { money } = useFormatter();
   const [search, setSearch] = useState('');
   const { data, isLoading } = useZoneDetail(zoneId, 'products', {
     ...filters,
@@ -211,7 +219,7 @@ function ProductsTab({ zoneId, filters }: { zoneId: number; filters: PlanningFil
                   <td className="py-2 px-3 text-end tabular-nums text-xs text-muted-foreground">
                     {p.order_count}
                   </td>
-                  <td className="py-2 px-3 text-end tabular-nums text-xs">{fmtEgp(p.total_value)}</td>
+                  <td className="py-2 px-3 text-end tabular-nums text-xs">{money(p.total_value)}</td>
                 </tr>
               ))}
             </tbody>
@@ -225,6 +233,7 @@ function ProductsTab({ zoneId, filters }: { zoneId: number; filters: PlanningFil
 // ── Customers tab ─────────────────────────────────────────────────────────────
 
 function CustomersTab({ zoneId, filters }: { zoneId: number; filters: PlanningFilters }) {
+  const { money } = useFormatter();
   const [search, setSearch] = useState('');
   const { data, isLoading } = useZoneDetail(zoneId, 'customers', {
     ...filters,
@@ -279,7 +288,7 @@ function CustomersTab({ zoneId, filters }: { zoneId: number; filters: PlanningFi
                   <td className="py-2 px-3 text-xs text-muted-foreground">{c.city ?? '—'}</td>
                   <td className="py-2 px-3 text-end tabular-nums text-xs">{c.order_count}</td>
                   <td className="py-2 px-3 text-end tabular-nums text-xs">
-                    {fmtEgp(c.total_value)}
+                    {money(c.total_value)}
                   </td>
                 </tr>
               ))}
@@ -372,6 +381,7 @@ export function ZoneDetailDrawer({
   onMarkPlanned,
   isMarkingPlanned,
 }: Props) {
+  const { money } = useFormatter();
   if (!zone) return null;
 
   const isWorkspace = mode === 'workspace';
@@ -448,11 +458,7 @@ export function ZoneDetailDrawer({
                   <span className="font-semibold text-foreground">{zone.estimated_stops}</span> stops
                 </span>
                 <span className="font-semibold text-foreground">
-                  EGP{' '}
-                  {zone.total_collection.toLocaleString('en-EG', {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })}
+                  {money(zone.total_collection)}
                 </span>
               </div>
             </div>
@@ -473,11 +479,7 @@ export function ZoneDetailDrawer({
             <span>{zone.estimated_stops} stops</span>
             <span>{zone.distinct_products} products</span>
             <span className="font-medium text-foreground">
-              EGP{' '}
-              {zone.total_collection.toLocaleString('en-EG', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}
+              {money(zone.total_collection)}
             </span>
           </div>
         )}

@@ -45,13 +45,13 @@ final class BudgetAnalysisController extends Controller
 
         return response()->json([
             'period' => [
-                'date_from'   => $start,
-                'date_to'     => $end,
+                'date_from' => $start,
+                'date_to' => $end,
                 'date_preset' => $filter->datePreset,
             ],
-            'summary'             => $analysis['summary'],
-            'campaigns'           => $analysis['campaigns'],
-            'ad_sets'             => $adSets,
+            'summary' => $analysis['summary'],
+            'campaigns' => $analysis['campaigns'],
+            'ad_sets' => $adSets,
             'overspending_alerts' => $analysis['overspending_alerts'],
         ]);
     }
@@ -65,10 +65,10 @@ final class BudgetAnalysisController extends Controller
     {
         [$start, $end] = $filter->resolvedDates();
 
-        $rows = \Illuminate\Support\Facades\DB::table('marketing_campaign_insights as ins')
+        $rows = DB::table('marketing_campaign_insights as ins')
             ->join('marketing_campaign_ad_sets as ads', 'ads.id', '=', 'ins.marketing_campaign_ad_set_id')
             ->join('marketing_campaigns as c', 'c.id', '=', 'ins.marketing_campaign_id')
-            ->selectRaw("
+            ->selectRaw('
                 ads.id,
                 ads.name,
                 ads.status,
@@ -77,12 +77,12 @@ final class BudgetAnalysisController extends Controller
                 ads.marketing_campaign_id,
                 c.name as campaign_name,
                 SUM(ins.spend) as total_spend
-            ")
+            ')
             ->where('ins.level', 'adset')
             ->whereBetween('ins.date_start', [$start, $end])
             ->when($filter->connectionId, fn ($q) => $q->where('ins.marketing_connection_id', $filter->connectionId))
-            ->when($filter->campaignId,   fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
-            ->when($filter->companyId,    fn ($q) => $q->where('c.company_id', $filter->companyId))
+            ->when($filter->campaignId, fn ($q) => $q->where('ins.marketing_campaign_id', $filter->campaignId))
+            ->when($filter->companyId, fn ($q) => $q->where('c.company_id', $filter->companyId))
             ->groupBy('ads.id', 'ads.name', 'ads.status', 'ads.daily_budget', 'ads.lifetime_budget', 'ads.marketing_campaign_id', 'c.name')
             ->orderByDesc('total_spend')
             ->get();
@@ -90,19 +90,19 @@ final class BudgetAnalysisController extends Controller
         $totalSpend = (float) $rows->sum('total_spend');
 
         return $rows->map(function ($row) use ($totalSpend) {
-            $spend  = (float) ($row->total_spend ?? 0);
+            $spend = (float) ($row->total_spend ?? 0);
             $budget = (float) ($row->lifetime_budget ?? ($row->daily_budget ?? 0));
 
             return [
-                'id'              => $row->id,
-                'name'            => $row->name,
-                'status'          => $row->status,
-                'campaign_id'     => $row->marketing_campaign_id,
-                'campaign_name'   => $row->campaign_name,
-                'budget_type'     => $row->lifetime_budget ? 'LIFETIME' : ($row->daily_budget ? 'DAILY' : 'NONE'),
-                'budget'          => $budget,
-                'spend'           => $spend,
-                'remaining'       => $budget > 0 ? max(0, $budget - $spend) : null,
+                'id' => $row->id,
+                'name' => $row->name,
+                'status' => $row->status,
+                'campaign_id' => $row->marketing_campaign_id,
+                'campaign_name' => $row->campaign_name,
+                'budget_type' => $row->lifetime_budget ? 'LIFETIME' : ($row->daily_budget ? 'DAILY' : 'NONE'),
+                'budget' => $budget,
+                'spend' => $spend,
+                'remaining' => $budget > 0 ? max(0, $budget - $spend) : null,
                 'utilization_pct' => $budget > 0 ? round($spend / $budget * 100, 2) : null,
                 'spend_share_pct' => $totalSpend > 0 ? round($spend / $totalSpend * 100, 2) : null,
                 'is_overspending' => $budget > 0 && $spend > $budget * 1.05,

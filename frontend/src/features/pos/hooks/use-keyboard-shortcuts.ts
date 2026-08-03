@@ -48,7 +48,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[], enabled = tr
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 }
 
 /** Canonical POS keyboard shortcut definitions (for display in help panel). */

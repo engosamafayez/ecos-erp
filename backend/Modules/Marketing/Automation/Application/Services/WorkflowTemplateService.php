@@ -16,7 +16,7 @@ class WorkflowTemplateService
         return AutomationWorkflowTemplate::query()
             ->where(fn ($q) => $q->where('is_global', true)->orWhere('company_id', $filters['company_id'] ?? null))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
-            ->when($filters['search']   ?? null, fn ($q, $v) => $q->where('name', 'ilike', "%{$v}%"))
+            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('name', 'ilike', "%{$v}%"))
             ->where('is_active', true)
             ->orderByDesc('is_global')
             ->orderByDesc('usage_count')
@@ -34,6 +34,7 @@ class WorkflowTemplateService
     public function update(AutomationWorkflowTemplate $template, array $data, string $userId): AutomationWorkflowTemplate
     {
         $template->update(array_merge($data, ['updated_by' => $userId]));
+
         return $template->fresh();
     }
 
@@ -45,15 +46,15 @@ class WorkflowTemplateService
     public function createWorkflowFromTemplate(AutomationWorkflowTemplate $template, array $overrides, string $userId): AutomationWorkflow
     {
         $workflow = AutomationWorkflow::create([
-            'name'         => $overrides['name'] ?? "Workflow from: {$template->name}",
-            'description'  => $overrides['description'] ?? $template->description,
-            'company_id'   => $overrides['company_id'] ?? null,
-            'brand_id'     => $overrides['brand_id']   ?? null,
+            'name' => $overrides['name'] ?? "Workflow from: {$template->name}",
+            'description' => $overrides['description'] ?? $template->description,
+            'company_id' => $overrides['company_id'] ?? null,
+            'brand_id' => $overrides['brand_id'] ?? null,
             'trigger_type' => $template->trigger_type->value,
-            'status'       => WorkflowStatus::DRAFT,
-            'nodes_graph'  => $template->nodes_graph,
-            'created_by'   => $userId,
-            'updated_by'   => $userId,
+            'status' => WorkflowStatus::DRAFT,
+            'nodes_graph' => $template->nodes_graph,
+            'created_by' => $userId,
+            'updated_by' => $userId,
         ]);
 
         $template->increment('usage_count');
