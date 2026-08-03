@@ -74,20 +74,20 @@ function SourceSelectorDialog({
     {
       sourceType: 'material_request',
       icon: <FileText className="h-5 w-5" />,
-      title: t('purchasesPage.sourceSelector.sources.material_request.title'),
-      description: t('purchasesPage.sourceSelector.sources.material_request.description'),
+      title: t($ => $.purchasesPage.sourceSelector.sources.material_request.title),
+      description: t($ => $.purchasesPage.sourceSelector.sources.material_request.description),
     },
     {
       sourceType: 'direct',
       icon: <ShoppingCart className="h-5 w-5" />,
-      title: t('purchasesPage.sourceSelector.sources.direct.title'),
-      description: t('purchasesPage.sourceSelector.sources.direct.description'),
+      title: t($ => $.purchasesPage.sourceSelector.sources.direct.title),
+      description: t($ => $.purchasesPage.sourceSelector.sources.direct.description),
     },
     {
       sourceType: 'reorder',
       icon: <GitMerge className="h-5 w-5" />,
-      title: t('purchasesPage.sourceSelector.sources.reorder.title'),
-      description: t('purchasesPage.sourceSelector.sources.reorder.description'),
+      title: t($ => $.purchasesPage.sourceSelector.sources.reorder.title),
+      description: t($ => $.purchasesPage.sourceSelector.sources.reorder.description),
     },
   ];
 
@@ -95,7 +95,7 @@ function SourceSelectorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('purchasesPage.sourceSelector.title')}</DialogTitle>
+          <DialogTitle>{t($ => $.purchasesPage.sourceSelector.title)}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 pt-1">
           {SOURCE_OPTIONS.map((opt) => (
@@ -155,17 +155,17 @@ export function PurchasesPage() {
   const [pendingSourceType, setPendingSourceType] = useState<PurchaseSourceType>('direct');
 
   const STATUS_CHIPS: Array<{ value: PurchaseMaterialStatus | 'all'; label: string }> = [
-    { value: 'all', label: t('purchasesPage.statusChips.all') },
-    { value: 'draft', label: t('purchasesPage.statusChips.draft') },
-    { value: 'under_review', label: t('purchasesPage.statusChips.under_review') },
-    { value: 'waiting_supplier_selection', label: t('purchasesPage.statusChips.waiting_supplier_selection') },
-    { value: 'approved', label: t('purchasesPage.statusChips.approved') },
-    { value: 'purchasing', label: t('purchasesPage.statusChips.purchasing') },
-    { value: 'receiving', label: t('purchasesPage.statusChips.receiving') },
-    { value: 'completed', label: t('purchasesPage.statusChips.completed') },
-    { value: 'on_hold', label: t('purchasesPage.statusChips.on_hold') },
-    { value: 'rejected', label: t('purchasesPage.statusChips.rejected') },
-    { value: 'cancelled', label: t('purchasesPage.statusChips.cancelled') },
+    { value: 'all', label: t($ => $.purchasesPage.statusChips.all) },
+    { value: 'draft', label: t($ => $.purchasesPage.statusChips.draft) },
+    { value: 'under_review', label: t($ => $.purchasesPage.statusChips.under_review) },
+    { value: 'waiting_supplier_selection', label: t($ => $.purchasesPage.statusChips.waiting_supplier_selection) },
+    { value: 'approved', label: t($ => $.purchasesPage.statusChips.approved) },
+    { value: 'purchasing', label: t($ => $.purchasesPage.statusChips.purchasing) },
+    { value: 'receiving', label: t($ => $.purchasesPage.statusChips.receiving) },
+    { value: 'completed', label: t($ => $.purchasesPage.statusChips.completed) },
+    { value: 'on_hold', label: t($ => $.purchasesPage.statusChips.on_hold) },
+    { value: 'rejected', label: t($ => $.purchasesPage.statusChips.rejected) },
+    { value: 'cancelled', label: t($ => $.purchasesPage.statusChips.cancelled) },
   ];
 
   const { data: warehouseOptions } = useWarehouseOptions();
@@ -219,9 +219,9 @@ export function PurchasesPage() {
     if (!window.confirm(tAny('purchasesPage.delete.confirm', { number: purchase.request_number }))) return;
     try {
       await deleteMutation.mutateAsync(purchase.id);
-      toast.success(t('purchasesPage.toast.deleted'));
+      toast.success(t($ => $.purchasesPage.toast.deleted));
     } catch {
-      toast.error(t('purchasesPage.toast.deleteFailed'));
+      toast.error(t($ => $.purchasesPage.toast.deleteFailed));
     }
   }
 
@@ -235,30 +235,30 @@ export function PurchasesPage() {
   const fin = stats?.financial;
 
   const opKpis: Array<{ id: string; label: string; value: number; color: string; status: PurchaseMaterialStatus }> = [
-    { id: 'draft', label: t('purchasesPage.kpis.draft'), value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' },
-    { id: 'underReview', label: t('purchasesPage.kpis.underReview'), value: op?.under_review ?? 0, color: 'text-blue-700', status: 'under_review' },
-    { id: 'awaitingSupplier', label: t('purchasesPage.kpis.awaitingSupplier'), value: op?.waiting_supplier_selection ?? 0, color: 'text-violet-700', status: 'waiting_supplier_selection' },
-    { id: 'approved', label: t('purchasesPage.kpis.approved'), value: op?.approved ?? 0, color: 'text-emerald-700', status: 'approved' },
-    { id: 'purchasing', label: t('purchasesPage.kpis.purchasing'), value: op?.purchasing ?? 0, color: 'text-cyan-700', status: 'purchasing' },
-    { id: 'receiving', label: t('purchasesPage.kpis.receiving'), value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' },
+    { id: 'draft', label: t($ => $.purchasesPage.kpis.draft), value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' },
+    { id: 'underReview', label: t($ => $.purchasesPage.kpis.underReview), value: op?.under_review ?? 0, color: 'text-blue-700', status: 'under_review' },
+    { id: 'awaitingSupplier', label: t($ => $.purchasesPage.kpis.awaitingSupplier), value: op?.waiting_supplier_selection ?? 0, color: 'text-violet-700', status: 'waiting_supplier_selection' },
+    { id: 'approved', label: t($ => $.purchasesPage.kpis.approved), value: op?.approved ?? 0, color: 'text-emerald-700', status: 'approved' },
+    { id: 'purchasing', label: t($ => $.purchasesPage.kpis.purchasing), value: op?.purchasing ?? 0, color: 'text-cyan-700', status: 'purchasing' },
+    { id: 'receiving', label: t($ => $.purchasesPage.kpis.receiving), value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' },
   ];
 
   const finKpis: Array<{ id: string; label: string; value: number; color: string }> = [
-    { id: 'totalRequested', label: t('purchasesPage.kpis.totalRequested'), value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
-    { id: 'approvedValue', label: t('purchasesPage.kpis.approvedValue'), value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
-    { id: 'purchasedValue', label: t('purchasesPage.kpis.purchasedValue'), value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
-    { id: 'outstanding', label: t('purchasesPage.kpis.outstanding'), value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
+    { id: 'totalRequested', label: t($ => $.purchasesPage.kpis.totalRequested), value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
+    { id: 'approvedValue', label: t($ => $.purchasesPage.kpis.approvedValue), value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
+    { id: 'purchasedValue', label: t($ => $.purchasesPage.kpis.purchasedValue), value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
+    { id: 'outstanding', label: t($ => $.purchasesPage.kpis.outstanding), value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
   ];
 
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title={t('purchasesPage.title')}
-        subtitle={t('purchasesPage.subtitle')}
+        title={t($ => $.purchasesPage.title)}
+        subtitle={t($ => $.purchasesPage.subtitle)}
         actions={
           <Button onClick={() => setSourceSelectorOpen(true)} className="gap-1.5">
             <Plus className="h-4 w-4" />
-            {t('purchasesPage.newPurchase')}
+            {t($ => $.purchasesPage.newPurchase)}
           </Button>
         }
       />
@@ -268,7 +268,7 @@ export function PurchasesPage() {
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              {t('purchasesPage.operations')}
+              {t($ => $.purchasesPage.operations)}
             </p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {opKpis.map(({ id, label, value, color, status }) => (
@@ -288,7 +288,7 @@ export function PurchasesPage() {
 
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              {t('purchasesPage.financial')}
+              {t($ => $.purchasesPage.financial)}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {finKpis.map(({ id, label, value, color }) => (
@@ -324,7 +324,7 @@ export function PurchasesPage() {
           <div className="flex flex-wrap gap-2 items-center">
             <Input
               className="w-48 h-8 text-sm"
-              placeholder={t('purchasesPage.filters.search')}
+              placeholder={t($ => $.purchasesPage.filters.search)}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
@@ -341,7 +341,7 @@ export function PurchasesPage() {
               onChange={(e) => { setWarehouseFilter(e.target.value); setPage(1); }}
               className="h-8 w-44 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">{t('purchasesPage.filters.allWarehouses')}</option>
+              <option value="">{t($ => $.purchasesPage.filters.allWarehouses)}</option>
               {(warehouseOptions ?? []).map((w) => (
                 <option key={w.value} value={w.value}>{w.label}</option>
               ))}
@@ -352,22 +352,22 @@ export function PurchasesPage() {
               onChange={(e) => { setPriorityFilter(e.target.value as PurchaseMaterialPriority | 'all'); setPage(1); }}
               className="h-8 w-32 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="all">{t('purchasesPage.filters.allPriorities')}</option>
-              <option value="urgent">{t('purchasesPage.priority.urgent')}</option>
-              <option value="high">{t('purchasesPage.priority.high')}</option>
-              <option value="normal">{t('purchasesPage.priority.normal')}</option>
-              <option value="low">{t('purchasesPage.priority.low')}</option>
+              <option value="all">{t($ => $.purchasesPage.filters.allPriorities)}</option>
+              <option value="urgent">{t($ => $.purchasesPage.priority.urgent)}</option>
+              <option value="high">{t($ => $.purchasesPage.priority.high)}</option>
+              <option value="normal">{t($ => $.purchasesPage.priority.normal)}</option>
+              <option value="low">{t($ => $.purchasesPage.priority.low)}</option>
             </select>
 
             <Input
               className="h-8 w-36 text-sm"
-              placeholder={t('purchasesPage.filters.buyer')}
+              placeholder={t($ => $.purchasesPage.filters.buyer)}
               value={buyerFilter}
               onChange={(e) => { setBuyerFilter(e.target.value); setPage(1); }}
             />
 
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span>{t('purchasesPage.filters.requiredBy')}</span>
+              <span>{t($ => $.purchasesPage.filters.requiredBy)}</span>
               <Input type="date" className="h-8 w-36 text-sm" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} />
               <span>→</span>
               <Input type="date" className="h-8 w-36 text-sm" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
@@ -375,7 +375,7 @@ export function PurchasesPage() {
 
             {(search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter || buyerFilter || dateFrom || dateTo) && (
               <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={resetFilters}>
-                {t('purchasesPage.filters.clearFilters')}
+                {t($ => $.purchasesPage.filters.clearFilters)}
               </Button>
             )}
           </div>
@@ -388,18 +388,18 @@ export function PurchasesPage() {
               <table className="w-full text-sm whitespace-nowrap">
                 <thead className="bg-muted/40 border-b">
                   <tr>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.requestNo')}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.source')}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.company')}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.warehouse')}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.buyer')}</th>
-                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.items')}</th>
-                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.estValue')}</th>
-                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.approvedValue')}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.priority')}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.requiredBy')}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.status')}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('purchasesPage.columns.lastUpdated')}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.requestNo)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.source)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.company)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.warehouse)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.buyer)}</th>
+                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.items)}</th>
+                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.estValue)}</th>
+                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.approvedValue)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.priority)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.requiredBy)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.status)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.lastUpdated)}</th>
                     <th className="px-3 py-3 w-10" />
                   </tr>
                 </thead>
@@ -407,7 +407,7 @@ export function PurchasesPage() {
                   {isLoading ? (
                     <tr>
                       <td colSpan={13} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                        {t('purchasesPage.loading')}
+                        {t($ => $.purchasesPage.loading)}
                       </td>
                     </tr>
                   ) : items.length === 0 ? (
@@ -416,12 +416,12 @@ export function PurchasesPage() {
                         <Truck className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
                         <p className="text-sm text-muted-foreground">
                           {search || statusFilter !== 'all'
-                            ? t('purchasesPage.empty.noMatch')
-                            : t('purchasesPage.empty.none')}
+                            ? t($ => $.purchasesPage.empty.noMatch)
+                            : t($ => $.purchasesPage.empty.none)}
                         </p>
                         {!search && statusFilter === 'all' && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {t('purchasesPage.empty.createHint')}
+                            {t($ => $.purchasesPage.empty.createHint)}
                           </p>
                         )}
                       </td>
@@ -476,7 +476,7 @@ export function PurchasesPage() {
                               onClick={(e) => void handleDelete(purchase, e)}
                               className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                             >
-                              {t('purchasesPage.delete.button')}
+                              {t($ => $.purchasesPage.delete.button)}
                             </button>
                           )}
                         </td>
@@ -495,11 +495,11 @@ export function PurchasesPage() {
             <span>{tAny('purchasesPage.pagination.total', { count: meta.total })}</span>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                {t('purchasesPage.pagination.previous')}
+                {t($ => $.purchasesPage.pagination.previous)}
               </Button>
               <span>{tAny('purchasesPage.pagination.page', { current: meta.current_page, last: meta.last_page })}</span>
               <Button size="sm" variant="outline" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
-                {t('purchasesPage.pagination.next')}
+                {t($ => $.purchasesPage.pagination.next)}
               </Button>
             </div>
           </div>

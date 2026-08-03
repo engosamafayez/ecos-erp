@@ -26,14 +26,14 @@ function ScopeTypeBadge({ scope }: { scope: CategoryScope }) {
     return (
       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
         <Tag className="size-2.5" />
-        {t('scope.product')}
+        {t($ => $.scope.product)}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
       <Layers className="size-2.5" />
-      {t('scope.material')}
+      {t($ => $.scope.material)}
     </span>
   );
 }
@@ -122,7 +122,7 @@ export function CategoriesPage() {
         setDeleting(null);
         toast.success(tAny('toast.deleted', { name: cat.name }));
       },
-      onError: () => toast.error(t('toast.deleteError')),
+      onError: () => toast.error(t($ => $.toast.deleteError)),
     });
   }
 
@@ -140,9 +140,9 @@ export function CategoriesPage() {
   );
 
   const TABS: { id: ScopeTab; label: string; count: number | undefined }[] = [
-    { id: 'all',      label: t('tabs.all'),       count: allCount?.meta.total },
-    { id: 'product',  label: t('tabs.products'),  count: productCount?.meta.total },
-    { id: 'material', label: t('tabs.materials'), count: materialCount?.meta.total },
+    { id: 'all',      label: t($ => $.tabs.all),       count: allCount?.meta.total },
+    { id: 'product',  label: t($ => $.tabs.products),  count: productCount?.meta.total },
+    { id: 'material', label: t($ => $.tabs.materials), count: materialCount?.meta.total },
   ];
 
   const defaultScope = activeScope === 'all' ? undefined : activeScope;
@@ -150,12 +150,12 @@ export function CategoriesPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title={t('title')}
-        subtitle={t('pageSubtitle')}
+        title={t($ => $.title)}
+        subtitle={t($ => $.pageSubtitle)}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4 mr-1.5" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -191,7 +191,7 @@ export function CategoriesPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Input
             className="h-8 w-56 text-sm"
-            placeholder={t('filter.search')}
+            placeholder={t($ => $.filter.search)}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
@@ -200,9 +200,9 @@ export function CategoriesPage() {
             onChange={(e) => { setStatusFilter(e.target.value as CategoryStatusFilter); setPage(1); }}
             className="h-8 w-32 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
-            <option value="all">{t('filter.allStatus')}</option>
-            <option value="active">{t('filter.active')}</option>
-            <option value="inactive">{t('filter.inactive')}</option>
+            <option value="all">{t($ => $.filter.allStatus)}</option>
+            <option value="active">{t($ => $.filter.active)}</option>
+            <option value="inactive">{t($ => $.filter.inactive)}</option>
           </select>
           {(search || statusFilter !== 'all') && (
             <Button
@@ -211,7 +211,7 @@ export function CategoriesPage() {
               className="h-8 text-xs"
               onClick={() => { setSearch(''); setStatusFilter('all'); setPage(1); }}
             >
-              {t('filter.clear')}
+              {t($ => $.filter.clear)}
             </Button>
           )}
           <span className="ms-auto text-xs text-muted-foreground">
@@ -226,19 +226,19 @@ export function CategoriesPage() {
               <thead className="bg-muted/40 border-b">
                 <tr>
                   <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">
-                    <SortBtn field="name" label={t('columns.name')} />
+                    <SortBtn field="name" label={t($ => $.columns.name)} />
                   </th>
-                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('columns.type')}</th>
-                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('columns.parent')}</th>
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.columns.type)}</th>
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.columns.parent)}</th>
                   <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">
-                    <SortBtn field="level" label={t('columns.level')} />
+                    <SortBtn field="level" label={t($ => $.columns.level)} />
                   </th>
-                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t('columns.usedBy')}</th>
+                  <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.columns.usedBy)}</th>
                   <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">
-                    <SortBtn field="is_active" label={t('columns.status')} />
+                    <SortBtn field="is_active" label={t($ => $.columns.status)} />
                   </th>
                   <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">
-                    <SortBtn field="created_at" label={t('columns.updated')} />
+                    <SortBtn field="created_at" label={t($ => $.columns.updated)} />
                   </th>
                   <th className="px-3 py-3 w-20" />
                 </tr>
@@ -247,13 +247,13 @@ export function CategoriesPage() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                      {t('loading')}
+                      {t($ => $.loading)}
                     </td>
                   </tr>
                 ) : isError ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-12 text-center text-sm text-destructive">
-                      {t('error')}
+                      {t($ => $.error)}
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
@@ -262,10 +262,10 @@ export function CategoriesPage() {
                       {search
                         ? tAny('empty.search', { search })
                         : activeScope === 'product'
-                          ? t('empty.product')
+                          ? t($ => $.empty.product)
                           : activeScope === 'material'
-                            ? t('empty.material')
-                            : t('empty.default')}
+                            ? t($ => $.empty.material)
+                            : t($ => $.empty.default)}
                     </td>
                   </tr>
                 ) : (
@@ -285,7 +285,7 @@ export function CategoriesPage() {
                         <ScopeTypeBadge scope={cat.category_scope} />
                       </td>
                       <td className="px-3 py-2.5 text-muted-foreground text-xs">
-                        {cat.parent?.name ?? <span className="italic">{t('status.root')}</span>}
+                        {cat.parent?.name ?? <span className="italic">{t($ => $.status.root)}</span>}
                       </td>
                       <td className="px-3 py-2.5">
                         <span className="text-xs font-medium bg-secondary text-secondary-foreground rounded px-1.5 py-0.5">
@@ -296,7 +296,7 @@ export function CategoriesPage() {
                       <td className="px-3 py-2.5">
                         <span className={`inline-block w-2 h-2 rounded-full ${cat.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                         <span className="ml-1.5 text-xs text-muted-foreground">
-                          {cat.is_active ? t('status.active') : t('status.inactive')}
+                          {cat.is_active ? t($ => $.status.active) : t($ => $.status.inactive)}
                         </span>
                       </td>
                       <td className="px-3 py-2.5 text-muted-foreground text-xs">{fmtDate(cat.updated_at)}</td>
@@ -306,7 +306,7 @@ export function CategoriesPage() {
                             type="button"
                             onClick={(e) => { e.stopPropagation(); openEdit(cat); }}
                             className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                            title={t('tooltip.edit')}
+                            title={t($ => $.tooltip.edit)}
                           >
                             <Pencil className="size-3.5" />
                           </button>
@@ -314,7 +314,7 @@ export function CategoriesPage() {
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setDeleting(cat); }}
                             className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-destructive"
-                            title={t('tooltip.delete')}
+                            title={t($ => $.tooltip.delete)}
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -340,11 +340,11 @@ export function CategoriesPage() {
             </span>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                {t('pagination.previous')}
+                {t($ => $.pagination.previous)}
               </Button>
               <span>{tAny('pagination.page', { current: meta.current_page, last: meta.last_page })}</span>
               <Button size="sm" variant="outline" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
-                {t('pagination.next')}
+                {t($ => $.pagination.next)}
               </Button>
             </div>
           </div>
@@ -364,9 +364,9 @@ export function CategoriesPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={tCommon($ => $.dialogs.softDeleteMessage, { name: deleting?.name ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteCategory.isPending}
         onConfirm={() => { if (deleting) handleDelete(deleting); }}

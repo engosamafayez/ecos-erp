@@ -211,7 +211,7 @@ function BrandingPanel() {
                 color: '#22D3EE',
               }}
             >
-              {t('branding.eyebrow')}
+              {t($ => $.branding.eyebrow)}
             </span>
           </div>
 
@@ -226,7 +226,7 @@ function BrandingPanel() {
               color: '#F1F5F9',
             }}
           >
-            {t('branding.headline')}{' '}
+            {t($ => $.branding.headline)}{' '}
             <span
               style={{
                 background: 'linear-gradient(92deg, #818CF8 0%, #22D3EE 100%)',
@@ -235,7 +235,7 @@ function BrandingPanel() {
                 backgroundClip: 'text',
               }}
             >
-              {t('branding.headlineGradient')}
+              {t($ => $.branding.headlineGradient)}
             </span>
           </h1>
 
@@ -249,7 +249,7 @@ function BrandingPanel() {
               maxWidth: '400px',
             }}
           >
-            {t('branding.description')}
+            {t($ => $.branding.description)}
           </p>
 
           {/* Stats row — compressed ~20% */}
@@ -345,7 +345,7 @@ function BrandingPanel() {
         {/* Footer */}
         <div>
           <div style={{ color: '#1E293B', fontSize: '12px', marginBottom: '4px' }}>
-            {t('branding.copyright')}
+            {t($ => $.branding.copyright)}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ color: '#1E293B', fontSize: '11px' }}>

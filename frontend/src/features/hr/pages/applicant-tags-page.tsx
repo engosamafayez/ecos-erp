@@ -48,13 +48,13 @@ export function ApplicantTagsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('tags.title')}
-        subtitle={t('tags.subtitle')}
+        title={t($ => $.tags.title)}
+        subtitle={t($ => $.tags.subtitle)}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('tags.catalogue')}</CardTitle>
+          <CardTitle>{t($ => $.tags.catalogue)}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-2">
@@ -79,13 +79,13 @@ export function ApplicantTagsPage() {
           {selectedKeys.length > 0 && (
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <Button size="sm" variant={matchAll ? 'default' : 'outline'} onClick={() => setMatchAll((v) => !v)}>
-                {matchAll ? t('tags.matchAll') : t('tags.matchAny')}
+                {matchAll ? t($ => $.tags.matchAll) : t($ => $.tags.matchAny)}
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setSelectedKeys([])}>
-                {t('common.clear')}
+                {t($ => $.common.clear)}
               </Button>
               <span className="text-muted-foreground">
-                {t('tags.applicantCount', { count: search?.total ?? 0 })}
+                {t($ => $.tags.applicantCount, { count: search?.total ?? 0 })}
               </span>
             </div>
           )}
@@ -95,15 +95,15 @@ export function ApplicantTagsPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>{t('tags.matchingApplicants')}</CardTitle>
+            <CardTitle>{t($ => $.tags.matchingApplicants)}</CardTitle>
           </CardHeader>
           <CardContent>
             {selectedKeys.length === 0 && (
-              <p className="text-muted-foreground text-sm">{t('tags.selectTagHint')}</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.tags.selectTagHint)}</p>
             )}
             {selectedKeys.length > 0 && (search?.items ?? []).length === 0 && (
               <p className="text-muted-foreground text-sm">
-                {matchAll ? t('tags.emptyAll') : t('tags.emptyAny')}
+                {matchAll ? t($ => $.tags.emptyAll) : t($ => $.tags.emptyAny)}
               </p>
             )}
             <ul className="flex flex-col gap-2">
@@ -122,7 +122,7 @@ export function ApplicantTagsPage() {
                     </div>
                     <p className="text-muted-foreground text-xs">
                       {applicant.mobile ?? '—'} · {applicant.status}
-                      {applicant.in_talent_pool ? ` · ${t('tags.talentPool')}` : ''}
+                      {applicant.in_talent_pool ? ` · ${t($ => $.tags.talentPool)}` : ''}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {applicant.tags.map((tag: AssignedTag) => (
@@ -145,14 +145,14 @@ export function ApplicantTagsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('tags.timeline')}</CardTitle>
+            <CardTitle>{t($ => $.tags.timeline)}</CardTitle>
           </CardHeader>
           <CardContent>
             {!selectedApplicantId && (
-              <p className="text-muted-foreground text-sm">{t('tags.pickApplicantHint')}</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.tags.pickApplicantHint)}</p>
             )}
             {selectedApplicantId && (timeline?.events ?? []).length === 0 && (
-              <p className="text-muted-foreground text-sm">{t('tags.timelineEmpty')}</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.tags.timelineEmpty)}</p>
             )}
             <ol className="flex flex-col gap-3">
               {(timeline?.events ?? []).map((event: TimelineEvent) => (
@@ -164,7 +164,7 @@ export function ApplicantTagsPage() {
                   {event.summary && <p className="text-muted-foreground text-sm">{event.summary}</p>}
                   <p className="text-muted-foreground text-xs">
                     {event.occurred_at}
-                    {event.is_system ? ` · ${t('common.system')}` : event.actor_name ? ` · ${event.actor_name}` : ''}
+                    {event.is_system ? ` · ${t($ => $.common.system)}` : event.actor_name ? ` · ${event.actor_name}` : ''}
                   </p>
                 </li>
               ))}

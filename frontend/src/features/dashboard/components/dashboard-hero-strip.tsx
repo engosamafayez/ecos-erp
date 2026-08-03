@@ -32,66 +32,66 @@ function buildMetrics(data: ExecutiveDashboardData, profile: DashboardProfile, t
 
   const issueM: Metric = {
     id:     'issues',
-    label:  t('hero.criticalIssues'),
+    label:  t($ => $.hero.criticalIssues),
     value:  String(issues),
     status: issues > 0 ? 'alert' : 'ok',
   };
 
   switch (profile) {
     case 'executive': return [
-      { id: 'rev',     label: t('hero.revenueToday'),    value: fmtMoney(s.revenue_today),                      trend: s.revenue_trend_pct },
-      { id: 'orders',  label: t('hero.ordersToday'),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
-      { id: 'shipped', label: t('hero.shippedToday'),    value: s.orders_shipped_today.toLocaleString() },
-      { id: 'roas',    label: t('hero.roas'),            value: mk.roas != null ? `${mk.roas}×` : '—',     status: mk.roas == null ? undefined : mk.roas >= 3 ? 'ok' : mk.roas >= 1 ? 'warn' : 'alert' },
-      { id: 'pending', label: t('hero.pendingOrders'),   value: s.pending_count.toLocaleString(),            status: s.pending_count > 50 ? 'warn' : 'ok' },
+      { id: 'rev',     label: t($ => $.hero.revenueToday),    value: fmtMoney(s.revenue_today),                      trend: s.revenue_trend_pct },
+      { id: 'orders',  label: t($ => $.hero.ordersToday),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
+      { id: 'shipped', label: t($ => $.hero.shippedToday),    value: s.orders_shipped_today.toLocaleString() },
+      { id: 'roas',    label: t($ => $.hero.roas),            value: mk.roas != null ? `${mk.roas}×` : '—',     status: mk.roas == null ? undefined : mk.roas >= 3 ? 'ok' : mk.roas >= 1 ? 'warn' : 'alert' },
+      { id: 'pending', label: t($ => $.hero.pendingOrders),   value: s.pending_count.toLocaleString(),            status: s.pending_count > 50 ? 'warn' : 'ok' },
       issueM,
     ];
     case 'operations': return [
-      { id: 'orders',  label: t('hero.ordersToday'),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
-      { id: 'shipped', label: t('hero.shippedToday'),    value: s.orders_shipped_today.toLocaleString() },
-      { id: 'pending', label: t('hero.pending'),         value: s.pending_count.toLocaleString(),            status: s.pending_count > 50 ? 'warn' : 'ok' },
-      { id: 'ofd',     label: t('hero.outForDelivery'),  value: s.out_for_delivery.toLocaleString() },
-      { id: 'trips',   label: t('hero.activeTrips'),     value: op.active_trips.toLocaleString() },
+      { id: 'orders',  label: t($ => $.hero.ordersToday),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
+      { id: 'shipped', label: t($ => $.hero.shippedToday),    value: s.orders_shipped_today.toLocaleString() },
+      { id: 'pending', label: t($ => $.hero.pending),         value: s.pending_count.toLocaleString(),            status: s.pending_count > 50 ? 'warn' : 'ok' },
+      { id: 'ofd',     label: t($ => $.hero.outForDelivery),  value: s.out_for_delivery.toLocaleString() },
+      { id: 'trips',   label: t($ => $.hero.activeTrips),     value: op.active_trips.toLocaleString() },
       issueM,
     ];
     case 'marketing': return [
-      { id: 'roas',    label: t('hero.roas'),            value: mk.roas != null ? `${mk.roas}×` : '—',     status: mk.roas == null ? undefined : mk.roas >= 3 ? 'ok' : mk.roas >= 1 ? 'warn' : 'alert' },
-      { id: 'spend',   label: t('hero.spendToday'),      value: fmtMoney(mk.spend_today),                        trend: mk.spend_trend_pct },
-      { id: 'campr',   label: t('hero.campaignRevenue'), value: fmtMoney(mk.campaign_revenue) },
-      { id: 'newc',    label: t('hero.newCustomers'),    value: (mk.new_customers ?? 0).toLocaleString() },
-      { id: 'cvr',     label: t('hero.conversionRate'),  value: pct(mk.conversion_rate) },
-      { id: 'rev',     label: t('hero.revenueToday'),    value: fmtMoney(s.revenue_today),                       trend: s.revenue_trend_pct },
+      { id: 'roas',    label: t($ => $.hero.roas),            value: mk.roas != null ? `${mk.roas}×` : '—',     status: mk.roas == null ? undefined : mk.roas >= 3 ? 'ok' : mk.roas >= 1 ? 'warn' : 'alert' },
+      { id: 'spend',   label: t($ => $.hero.spendToday),      value: fmtMoney(mk.spend_today),                        trend: mk.spend_trend_pct },
+      { id: 'campr',   label: t($ => $.hero.campaignRevenue), value: fmtMoney(mk.campaign_revenue) },
+      { id: 'newc',    label: t($ => $.hero.newCustomers),    value: (mk.new_customers ?? 0).toLocaleString() },
+      { id: 'cvr',     label: t($ => $.hero.conversionRate),  value: pct(mk.conversion_rate) },
+      { id: 'rev',     label: t($ => $.hero.revenueToday),    value: fmtMoney(s.revenue_today),                       trend: s.revenue_trend_pct },
     ];
     case 'warehouse': return [
-      { id: 'orders',  label: t('hero.ordersToday'),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
-      { id: 'shipped', label: t('hero.shippedToday'),    value: s.orders_shipped_today.toLocaleString() },
-      { id: 'pending', label: t('hero.pending'),         value: s.pending_count.toLocaleString(),            status: s.pending_count > 50 ? 'warn' : 'ok' },
-      { id: 'trips',   label: t('hero.activeTrips'),     value: op.active_trips.toLocaleString() },
-      { id: 'cod',     label: t('hero.pendingCOD'),      value: fmtMoney(sh.cod_pending),                        status: sh.cod_pending > 10_000 ? 'warn' : 'ok' },
+      { id: 'orders',  label: t($ => $.hero.ordersToday),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
+      { id: 'shipped', label: t($ => $.hero.shippedToday),    value: s.orders_shipped_today.toLocaleString() },
+      { id: 'pending', label: t($ => $.hero.pending),         value: s.pending_count.toLocaleString(),            status: s.pending_count > 50 ? 'warn' : 'ok' },
+      { id: 'trips',   label: t($ => $.hero.activeTrips),     value: op.active_trips.toLocaleString() },
+      { id: 'cod',     label: t($ => $.hero.pendingCOD),      value: fmtMoney(sh.cod_pending),                        status: sh.cod_pending > 10_000 ? 'warn' : 'ok' },
       issueM,
     ];
     case 'finance': return [
-      { id: 'rev',     label: t('hero.revenueToday'),      value: fmtMoney(s.revenue_today),                       trend: s.revenue_trend_pct },
-      { id: 'month',   label: t('hero.revenueThisMonth'),  value: fmtMoney(s.revenue_this_month) },
-      { id: 'gp',      label: t('hero.grossProfitToday'),  value: s.gross_profit_today > 0 ? fmtMoney(s.gross_profit_today) : 'N/A' },
-      { id: 'roas',    label: t('hero.roas'),              value: mk.roas != null ? `${mk.roas}×` : '—',     status: mk.roas == null ? undefined : mk.roas >= 3 ? 'ok' : mk.roas >= 1 ? 'warn' : 'alert' },
-      { id: 'cod',     label: t('hero.pendingCOD'),        value: fmtMoney(sh.cod_pending),                        status: sh.cod_pending > 10_000 ? 'warn' : 'ok' },
+      { id: 'rev',     label: t($ => $.hero.revenueToday),      value: fmtMoney(s.revenue_today),                       trend: s.revenue_trend_pct },
+      { id: 'month',   label: t($ => $.hero.revenueThisMonth),  value: fmtMoney(s.revenue_this_month) },
+      { id: 'gp',      label: t($ => $.hero.grossProfitToday),  value: s.gross_profit_today > 0 ? fmtMoney(s.gross_profit_today) : 'N/A' },
+      { id: 'roas',    label: t($ => $.hero.roas),              value: mk.roas != null ? `${mk.roas}×` : '—',     status: mk.roas == null ? undefined : mk.roas >= 3 ? 'ok' : mk.roas >= 1 ? 'warn' : 'alert' },
+      { id: 'cod',     label: t($ => $.hero.pendingCOD),        value: fmtMoney(sh.cod_pending),                        status: sh.cod_pending > 10_000 ? 'warn' : 'ok' },
       issueM,
     ];
     case 'manufacturing': return [
-      { id: 'orders',  label: t('hero.ordersToday'),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
-      { id: 'shipped', label: t('hero.shippedToday'),    value: s.orders_shipped_today.toLocaleString() },
-      { id: 'waves',   label: t('hero.activeWaves'),     value: op.active_waves.toLocaleString() },
-      { id: 'pending', label: t('hero.pendingOrders'),   value: s.pending_count.toLocaleString(),            status: s.pending_count > 50 ? 'warn' : 'ok' },
-      { id: 'rev',     label: t('hero.revenueToday'),    value: fmtMoney(s.revenue_today),                       trend: s.revenue_trend_pct },
+      { id: 'orders',  label: t($ => $.hero.ordersToday),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
+      { id: 'shipped', label: t($ => $.hero.shippedToday),    value: s.orders_shipped_today.toLocaleString() },
+      { id: 'waves',   label: t($ => $.hero.activeWaves),     value: op.active_waves.toLocaleString() },
+      { id: 'pending', label: t($ => $.hero.pendingOrders),   value: s.pending_count.toLocaleString(),            status: s.pending_count > 50 ? 'warn' : 'ok' },
+      { id: 'rev',     label: t($ => $.hero.revenueToday),    value: fmtMoney(s.revenue_today),                       trend: s.revenue_trend_pct },
       issueM,
     ];
     case 'crm': return [
-      { id: 'orders',  label: t('hero.ordersToday'),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
-      { id: 'newc',    label: t('hero.newCustomers'),    value: (mk.new_customers ?? 0).toLocaleString() },
-      { id: 'retc',    label: t('hero.returning'),       value: (mk.returning_customers ?? 0).toLocaleString() },
-      { id: 'rev',     label: t('hero.revenueToday'),    value: fmtMoney(s.revenue_today),                       trend: s.revenue_trend_pct },
-      { id: 'cvr',     label: t('hero.conversionRate'),  value: pct(mk.conversion_rate) },
+      { id: 'orders',  label: t($ => $.hero.ordersToday),     value: s.orders_today.toLocaleString(),            trend: s.orders_trend_pct },
+      { id: 'newc',    label: t($ => $.hero.newCustomers),    value: (mk.new_customers ?? 0).toLocaleString() },
+      { id: 'retc',    label: t($ => $.hero.returning),       value: (mk.returning_customers ?? 0).toLocaleString() },
+      { id: 'rev',     label: t($ => $.hero.revenueToday),    value: fmtMoney(s.revenue_today),                       trend: s.revenue_trend_pct },
+      { id: 'cvr',     label: t($ => $.hero.conversionRate),  value: pct(mk.conversion_rate) },
       issueM,
     ];
     default: return [];
@@ -124,7 +124,7 @@ function TrendTag({ trend }: { trend: number | null | undefined }) {
       up ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500',
     )}>
       <Icon className="h-2.5 w-2.5 shrink-0" />
-      {abs}{t('hero.vsYesterday')}
+      {abs}{t($ => $.hero.vsYesterday)}
     </span>
   );
 }

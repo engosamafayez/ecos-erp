@@ -67,8 +67,8 @@ function EmptyDrivers({ hasFilter, onCreateFirst }: { hasFilter: boolean; onCrea
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
         <UserRound className="mb-3 size-10 text-muted-foreground/30" />
-        <p className="text-sm font-medium">{t('drivers.empty.filtered.title')}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{t('drivers.empty.filtered.hint')}</p>
+        <p className="text-sm font-medium">{t($ => $.drivers.empty.filtered.title)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t($ => $.drivers.empty.filtered.hint)}</p>
       </div>
     );
   }
@@ -76,13 +76,13 @@ function EmptyDrivers({ hasFilter, onCreateFirst }: { hasFilter: boolean; onCrea
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <UserRound className="mb-3 size-12 text-muted-foreground/20" />
-      <p className="text-sm font-medium">{t('drivers.empty.none.title')}</p>
+      <p className="text-sm font-medium">{t($ => $.drivers.empty.none.title)}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {t('drivers.empty.none.hint')}
+        {t($ => $.drivers.empty.none.hint)}
       </p>
       <Button size="sm" className="mt-4 gap-1.5" onClick={onCreateFirst}>
         <Plus className="size-3.5" />
-        {t('drivers.empty.none.action')}
+        {t($ => $.drivers.empty.none.action)}
       </Button>
     </div>
   );
@@ -94,15 +94,15 @@ function StatusBadge({ status }: { status: DriverStatus }) {
   const { t } = useTranslation('logistics');
 
   if (status === 'active') {
-    return <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">{t('common.active')}</Badge>;
+    return <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">{t($ => $.common.active)}</Badge>;
   }
   if (status === 'inactive') {
-    return <Badge variant="secondary" className="text-xs">{t('common.inactive')}</Badge>;
+    return <Badge variant="secondary" className="text-xs">{t($ => $.common.inactive)}</Badge>;
   }
   return (
     <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
       <Archive className="size-3" />
-      {t('drivers.status.archived')}
+      {t($ => $.drivers.status.archived)}
     </Badge>
   );
 }
@@ -133,13 +133,13 @@ function DriversTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/60">
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.code')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.driver')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('drivers.table.mobile')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('drivers.table.license')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.vehicle')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('drivers.table.shippingCompany')}</th>
-              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t('common.status')}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.code)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.driver)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.drivers.table.mobile)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.drivers.table.license)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.vehicle)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.drivers.table.shippingCompany)}</th>
+              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t($ => $.common.status)}</th>
               <th className="h-10 w-10 px-3" />
             </tr>
           </thead>
@@ -180,12 +180,12 @@ function DriversTable({
                       <span className="font-mono text-xs">{driver.current_vehicle.plate_number}</span>
                     </div>
                   ) : (
-                    <span className="text-xs text-amber-600">{t('common.unassigned')}</span>
+                    <span className="text-xs text-amber-600">{t($ => $.common.unassigned)}</span>
                   )}
                 </td>
 
                 <td className="px-3 py-2.5 text-xs text-muted-foreground">
-                  {driver.shipping_company_name ?? t('common.na')}
+                  {driver.shipping_company_name ?? t($ => $.common.na)}
                 </td>
 
                 <td className="w-24 px-3 py-2.5 text-center">
@@ -276,19 +276,19 @@ export function DriversPage() {
   }
 
   const metrics = [
-    { id: 'total',     icon: Users,       label: t('drivers.metrics.total'),           value: stats?.total_drivers            ?? 0, isLoading: !stats },
-    { id: 'active',    icon: CheckCircle, label: t('drivers.metrics.active'),          value: stats?.active_drivers           ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'inactive',  icon: XCircle,     label: t('drivers.metrics.inactive'),        value: stats?.inactive_drivers         ?? 0, isLoading: !stats },
-    { id: 'expired',   icon: ShieldAlert, label: t('drivers.metrics.expiredLicense'),  value: stats?.expired_license_drivers  ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
-    { id: 'novehicle', icon: Truck,       label: t('drivers.metrics.withoutVehicle'),  value: stats?.drivers_without_vehicle  ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'total',     icon: Users,       label: t($ => $.drivers.metrics.total),           value: stats?.total_drivers            ?? 0, isLoading: !stats },
+    { id: 'active',    icon: CheckCircle, label: t($ => $.drivers.metrics.active),          value: stats?.active_drivers           ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'inactive',  icon: XCircle,     label: t($ => $.drivers.metrics.inactive),        value: stats?.inactive_drivers         ?? 0, isLoading: !stats },
+    { id: 'expired',   icon: ShieldAlert, label: t($ => $.drivers.metrics.expiredLicense),  value: stats?.expired_license_drivers  ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
+    { id: 'novehicle', icon: Truck,       label: t($ => $.drivers.metrics.withoutVehicle),  value: stats?.drivers_without_vehicle  ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: t('drivers.page.breadcrumbModule') }, { label: t('drivers.page.title') }]}
-        title={t('drivers.page.title')}
-        description={t('drivers.page.description')}
+        breadcrumbs={[{ label: t($ => $.drivers.page.breadcrumbModule) }, { label: t($ => $.drivers.page.title) }]}
+        title={t($ => $.drivers.page.title)}
+        description={t($ => $.drivers.page.description)}
         metrics={metrics}
       />
 
@@ -296,7 +296,7 @@ export function DriversPage() {
         toolbar={
           <div className="px-4 sm:px-6">
             <SmartToolbar
-              primaryAction={{ label: t('drivers.page.newDriver'), icon: Plus, onClick: openCreate }}
+              primaryAction={{ label: t($ => $.drivers.page.newDriver), icon: Plus, onClick: openCreate }}
               onRefresh={() => refetch()}
               isFetching={isFetching}
             />
@@ -305,7 +305,7 @@ export function DriversPage() {
         quickFilters={
           <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
             <Input
-              placeholder={t('drivers.page.searchPlaceholder')}
+              placeholder={t($ => $.drivers.page.searchPlaceholder)}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="h-8 max-w-sm text-sm"

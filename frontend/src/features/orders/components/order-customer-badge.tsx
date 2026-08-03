@@ -77,7 +77,7 @@ export function OrderCustomerBadge({ order }: Props) {
     <div
       id="customer-card-portal"
       role="dialog"
-      aria-label={`${customer.name} — ${t('customerBadge.viewStats')}`}
+      aria-label={`${customer.name} — ${t($ => $.customerBadge.viewStats)}`}
       style={{ position: 'absolute', top: pos.top, left: pos.left, width: 268, zIndex: 9999 }}
       className="rounded-lg border bg-popover text-popover-foreground shadow-xl"
     >
@@ -98,10 +98,10 @@ export function OrderCustomerBadge({ order }: Props) {
                   : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
             )}>
               {isVip
-                ? `⭐ ${t('customerBadge.vip')}`
+                ? `⭐ ${t($ => $.customerBadge.vip)}`
                 : isRejected
-                  ? `⚠ ${t('customerBadge.rejected', 'Rejected')}`
-                  : `🔁 ${t('customerBadge.returning')}`}
+                  ? `⚠ ${t($ => $.customerBadge.rejected, 'Rejected')}`
+                  : `🔁 ${t($ => $.customerBadge.returning)}`}
             </span>
           ) : null}
         </div>
@@ -128,40 +128,40 @@ export function OrderCustomerBadge({ order }: Props) {
       {/* ── Stats ─────────────────────────────────────────────────────────── */}
       <div className="p-3">
         {isLoading ? (
-          <p className="text-xs text-muted-foreground">{t('customerBadge.loading')}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.customerBadge.loading)}</p>
         ) : data ? (
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
             <div>
-              <dt className="text-muted-foreground">{t('customerBadge.totalOrders')}</dt>
+              <dt className="text-muted-foreground">{t($ => $.customerBadge.totalOrders)}</dt>
               <dd className="font-semibold tabular-nums">{data.total}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">{t('customerBadge.completedOrders')}</dt>
+              <dt className="text-muted-foreground">{t($ => $.customerBadge.completedOrders)}</dt>
               <dd className="font-semibold tabular-nums text-green-600 dark:text-green-400">{data.completed}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">{t('customerBadge.cancelledOrders')}</dt>
+              <dt className="text-muted-foreground">{t($ => $.customerBadge.cancelledOrders)}</dt>
               <dd className="font-semibold tabular-nums text-red-500 dark:text-red-400">{data.cancelled}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">{t('customerBadge.totalSpend')}</dt>
+              <dt className="text-muted-foreground">{t($ => $.customerBadge.totalSpend)}</dt>
               <dd className="font-semibold tabular-nums">{fmt(data.totalSpend)}</dd>
             </div>
             {data.aov !== null ? (
               <div>
-                <dt className="text-muted-foreground">{t('customerBadge.aov')}</dt>
+                <dt className="text-muted-foreground">{t($ => $.customerBadge.aov)}</dt>
                 <dd className="font-semibold tabular-nums">{fmt(data.aov)}</dd>
               </div>
             ) : null}
             {data.firstOrderDate ? (
               <div>
-                <dt className="text-muted-foreground">{t('customerBadge.firstOrder')}</dt>
+                <dt className="text-muted-foreground">{t($ => $.customerBadge.firstOrder)}</dt>
                 <dd className="font-medium">{fmtDate(data.firstOrderDate)}</dd>
               </div>
             ) : null}
             {data.lastOrderDate ? (
               <div className={data.aov !== null && !data.firstOrderDate ? 'col-span-2' : ''}>
-                <dt className="text-muted-foreground">{t('customerBadge.lastOrder')}</dt>
+                <dt className="text-muted-foreground">{t($ => $.customerBadge.lastOrder)}</dt>
                 <dd className="font-medium">{fmtDate(data.lastOrderDate)}</dd>
               </div>
             ) : null}
@@ -176,17 +176,17 @@ export function OrderCustomerBadge({ order }: Props) {
             <a
               href={`tel:${digits}`}
               className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-foreground hover:bg-accent"
-              aria-label={t('quickActions.call')}
+              aria-label={t($ => $.quickActions.call)}
             >
               <Phone className="size-3" />
-              {t('quickActions.call')}
+              {t($ => $.quickActions.call)}
             </a>
             <a
               href={`https://wa.me/${digits}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-green-600 hover:bg-accent dark:text-green-400"
-              aria-label={t('quickActions.whatsapp')}
+              aria-label={t($ => $.quickActions.whatsapp)}
             >
               <MessageCircle className="size-3" />
               WA
@@ -197,14 +197,14 @@ export function OrderCustomerBadge({ order }: Props) {
           href={`/orders?customer_id=${customer.id}`}
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline"
         >
-          {t('customerBadge.openOrders', 'Orders')}
+          {t($ => $.customerBadge.openOrders, 'Orders')}
         </a>
         <a
           href={`/app/customers/${customer.id}`}
           className="ms-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
         >
           <ExternalLink className="size-3" />
-          {t('customerBadge.openProfile')}
+          {t($ => $.customerBadge.openProfile)}
         </a>
       </div>
     </div>
@@ -217,7 +217,7 @@ export function OrderCustomerBadge({ order }: Props) {
         type="button"
         onClick={(e) => { e.stopPropagation(); openCard(); }}
         onMouseDown={(e) => e.stopPropagation()}
-        aria-label={`${customer.name} — ${t('customerBadge.viewStats')}`}
+        aria-label={`${customer.name} — ${t($ => $.customerBadge.viewStats)}`}
         aria-expanded={open}
         className={cn(
           'inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition-colors',

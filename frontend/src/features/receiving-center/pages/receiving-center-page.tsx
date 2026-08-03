@@ -99,24 +99,24 @@ export function ReceivingCenterPage() {
   const columns: ColumnDef<GoodsReceipt>[] = [
     {
       key: 'receipt_number',
-      header: t('page.columns.receiptNo'),
+      header: t($ => $.page.columns.receiptNo),
       sortable: true,
       cell: (gr) => <span className="font-mono text-sm font-medium">{gr.receipt_number}</span>,
     },
     {
       key: 'receipt_date',
-      header: t('page.columns.date'),
+      header: t($ => $.page.columns.date),
       sortable: true,
       cell: (gr) => <span className="text-sm text-gray-600">{gr.receipt_date}</span>,
     },
     {
       key: 'supplier',
-      header: t('page.columns.supplier'),
+      header: t($ => $.page.columns.supplier),
       cell: (gr) => <span className="text-sm">{gr.purchase_order?.supplier?.name ?? '—'}</span>,
     },
     {
       key: 'warehouse',
-      header: t('page.columns.warehouse'),
+      header: t($ => $.page.columns.warehouse),
       cell: (gr) => (
         <span className="text-sm text-gray-600">
           {gr.warehouse ? `${gr.warehouse.code} — ${gr.warehouse.name}` : '—'}
@@ -125,18 +125,18 @@ export function ReceivingCenterPage() {
     },
     {
       key: 'status',
-      header: t('page.columns.status'),
+      header: t($ => $.page.columns.status),
       sortable: true,
       cell: (gr) => <GrStatusBadge status={gr.status} />,
     },
     {
       key: 'payment_status',
-      header: t('page.columns.payment'),
+      header: t($ => $.page.columns.payment),
       cell: (gr) => <GrPaymentStatusBadge status={gr.payment_status} />,
     },
     {
       key: 'invoice_total_amount',
-      header: t('page.columns.invoiceTotal'),
+      header: t($ => $.page.columns.invoiceTotal),
       cell: (gr) => (
         <span className="text-sm font-medium">
           {gr.invoice_total_amount > 0 ? fmt.money(gr.invoice_total_amount) : '—'}
@@ -150,25 +150,25 @@ export function ReceivingCenterPage() {
       <div className="px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-4">
           <PageHeader
-            title={t('page.title')}
-            subtitle={t('page.subtitle')}
+            title={t($ => $.page.title)}
+            subtitle={t($ => $.page.subtitle)}
           />
           <Button onClick={() => navigate(ROUTES.goodsReceiptsNew)} size="sm" className="gap-1.5">
             <Plus className="w-3.5 h-3.5" />
-            {t('page.actions.newReceipt')}
+            {t($ => $.page.actions.newReceipt)}
           </Button>
         </div>
 
         <div className="flex gap-3 flex-wrap">
-          <KpiChip label={t('page.kpis.totalReceipts')} value={meta?.total ?? '—'} color="gray" />
-          <KpiChip label={t('page.kpis.draft')} value={draftCount} color="yellow" />
-          <KpiChip label={t('page.kpis.posted')} value={postedCount} color="green" />
+          <KpiChip label={t($ => $.page.kpis.totalReceipts)} value={meta?.total ?? '—'} color="gray" />
+          <KpiChip label={t($ => $.page.kpis.draft)} value={draftCount} color="yellow" />
+          <KpiChip label={t($ => $.page.kpis.posted)} value={postedCount} color="green" />
           <button
             className="flex flex-col items-center px-5 py-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
             onClick={() => navigate(ROUTES.goodsReceiptsNew)}
           >
             <PackageOpen className="w-4 h-4 mb-0.5" />
-            <span className="text-xs">{t('page.actions.receiveGoods')}</span>
+            <span className="text-xs">{t($ => $.page.actions.receiveGoods)}</span>
           </button>
         </div>
       </div>
@@ -177,7 +177,7 @@ export function ReceivingCenterPage() {
         <Card className="shadow-none border-gray-200">
           <CardContent className="flex flex-col gap-4 pt-6">
             <EntityToolbar
-              searchPlaceholder={t('page.filters.search')}
+              searchPlaceholder={t($ => $.page.filters.search)}
               onSearchChange={(v) => { setSearch(v); setPage(1); }}
               onRefresh={() => void refetch()}
               isRefreshing={isFetching}
@@ -185,7 +185,7 @@ export function ReceivingCenterPage() {
               filterPanel={
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-medium">{t('page.columns.status')}</span>
+                    <span className="text-sm font-medium">{t($ => $.page.columns.status)}</span>
                     <select
                       value={statusFilter}
                       onChange={(e) => { setStatusFilter(e.target.value as GoodsReceiptStatus | 'all'); setPage(1); }}
@@ -214,26 +214,26 @@ export function ReceivingCenterPage() {
                   items={[
                     {
                       key: 'view',
-                      label: t('page.actions.view'),
+                      label: t($ => $.page.actions.view),
                       icon: Eye,
                       onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}`),
                     },
                     ...(gr.status === 'draft' ? [
                       {
                         key: 'edit',
-                        label: t('page.actions.edit'),
+                        label: t($ => $.page.actions.edit),
                         icon: Pencil,
                         onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}/edit`),
                       },
                       {
                         key: 'post',
-                        label: t('page.actions.post'),
+                        label: t($ => $.page.actions.post),
                         icon: Send,
                         onSelect: () => setPosting(gr),
                       },
                       {
                         key: 'delete',
-                        label: t('page.actions.delete'),
+                        label: t($ => $.page.actions.delete),
                         icon: Trash2,
                         variant: 'destructive' as const,
                         onSelect: () => setDeleting(gr),
@@ -257,9 +257,9 @@ export function ReceivingCenterPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('page.confirmDelete.title')}
-        description={t('page.confirmDelete.description')}
-        confirmLabel={t('page.confirmDelete.confirm')}
+        title={t($ => $.page.confirmDelete.title)}
+        description={t($ => $.page.confirmDelete.description)}
+        confirmLabel={t($ => $.page.confirmDelete.confirm)}
         variant="destructive"
         loading={deleteGR.isPending}
         onConfirm={() => {
@@ -270,9 +270,9 @@ export function ReceivingCenterPage() {
       <ConfirmDialog
         open={posting !== null}
         onOpenChange={(open) => { if (!open) setPosting(null); }}
-        title={t('page.confirmPost.title')}
-        description={t('page.confirmPost.description')}
-        confirmLabel={t('page.confirmPost.confirm')}
+        title={t($ => $.page.confirmPost.title)}
+        description={t($ => $.page.confirmPost.description)}
+        confirmLabel={t($ => $.page.confirmPost.confirm)}
         loading={postGR.isPending}
         onConfirm={() => {
           if (posting) postGR.mutate(posting.id, { onSuccess: () => setPosting(null) });

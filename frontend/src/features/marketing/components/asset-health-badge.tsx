@@ -29,7 +29,7 @@ export function AssetHealthBadge({ health, className }: Props) {
         className,
       )}
     >
-      {t(`assets.health.${health}`)}
+      {t($ => $.assets.health[health])}
     </span>
   );
 }

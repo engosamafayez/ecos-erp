@@ -33,49 +33,49 @@ export function InventoryProductsWorkspace() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('workspace.title')}
-        subtitle={t('workspace.subtitle')}
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('workspace.title') }]}
+        title={t($ => $.workspace.title)}
+        subtitle={t($ => $.workspace.subtitle)}
+        breadcrumbs={[{ label: tCommon($ => $.home), to: ROUTES.dashboard }, { label: t($ => $.workspace.title) }]}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <WorkspaceCard
           icon={Package}
-          title={tProd('finishedGoods.title')}
-          description={tProd('finishedGoods.subtitle')}
+          title={tProd($ => $.finishedGoods.title)}
+          description={tProd($ => $.finishedGoods.subtitle)}
           count={finishedData?.meta.total}
-          countLabel={t('workspace.countLabel')}
+          countLabel={t($ => $.workspace.countLabel)}
           href={ROUTES.products}
           isLoading={finishedLoading}
-          newLabel={tProd('actions.new')}
+          newLabel={tProd($ => $.actions.new)}
           onNew={() => navigate(ROUTES.products, { state: { openCreate: true } })}
         />
         <WorkspaceCard
           icon={Layers}
-          title={tProd('rawMaterials.title')}
-          description={tProd('rawMaterials.subtitle')}
+          title={tProd($ => $.rawMaterials.title)}
+          description={tProd($ => $.rawMaterials.subtitle)}
           count={rawData?.meta.total}
-          countLabel={t('workspace.countLabel')}
+          countLabel={t($ => $.workspace.countLabel)}
           href={ROUTES.rawMaterials}
           isLoading={rawLoading}
-          newLabel={tProd('actions.new')}
+          newLabel={tProd($ => $.actions.new)}
           onNew={() => navigate(ROUTES.rawMaterials, { state: { openCreate: true } })}
         />
         <WorkspaceCard
           icon={Tag}
-          title={tCat('title')}
-          description={tCat('subtitle')}
+          title={tCat($ => $.title)}
+          description={tCat($ => $.subtitle)}
           count={categoriesData?.meta.total}
-          countLabel={t('workspace.countLabel')}
+          countLabel={t($ => $.workspace.countLabel)}
           href={ROUTES.categories}
           isLoading={categoriesLoading}
         />
         <WorkspaceCard
           icon={Ruler}
-          title={tUnit('title')}
-          description={tUnit('subtitle')}
+          title={tUnit($ => $.title)}
+          description={tUnit($ => $.subtitle)}
           count={unitsData?.meta.total}
-          countLabel={t('workspace.countLabel')}
+          countLabel={t($ => $.workspace.countLabel)}
           href={ROUTES.units}
           isLoading={unitsLoading}
         />

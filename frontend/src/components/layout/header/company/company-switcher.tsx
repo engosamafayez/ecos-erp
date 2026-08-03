@@ -115,8 +115,8 @@ export function CompanySwitcher({ className }: { className?: string }) {
           size="sm"
           aria-label={
             active
-              ? t('switcher.currentCompany', { name: active.name })
-              : t('switcher.selectCompany')
+              ? t($ => $.switcher.currentCompany, { name: active.name })
+              : t($ => $.switcher.selectCompany)
           }
           aria-expanded={open}
           className={cn('h-9 gap-2 px-2 sm:px-3', className)}
@@ -135,7 +135,7 @@ export function CompanySwitcher({ className }: { className?: string }) {
           {/* Name + code — hidden on xs, visible sm+ */}
           <span className="hidden flex-col items-start sm:flex">
             <span className="max-w-[7rem] truncate text-xs font-semibold leading-tight lg:max-w-[9rem]">
-              {active?.name ?? t('loading')}
+              {active?.name ?? t($ => $.loading)}
             </span>
             <span className="max-w-[7rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[9rem]">
               {active?.code ?? ''}
@@ -156,9 +156,9 @@ export function CompanySwitcher({ className }: { className?: string }) {
             value={search}
             onChange={(e) => { setSearch(e.target.value); setFocusIdx(0); }}
             onKeyDown={handleInputKeyDown}
-            placeholder={t('switcher.searchCompanies')}
+            placeholder={t($ => $.switcher.searchCompanies)}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            aria-label={t('switcher.searchCompanies')}
+            aria-label={t($ => $.switcher.searchCompanies)}
             autoComplete="off"
           />
         </div>
@@ -166,16 +166,16 @@ export function CompanySwitcher({ className }: { className?: string }) {
         {/* ── Section label ── */}
         <div className="px-3 pb-1 pt-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {t('switcher.companies')}
+            {t($ => $.switcher.companies)}
           </p>
         </div>
 
         {/* ── List ── */}
-        <div className="px-1 pb-1" role="listbox" aria-label={t('switcher.availableCompanies')}>
+        <div className="px-1 pb-1" role="listbox" aria-label={t($ => $.switcher.availableCompanies)}>
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-1 py-8 text-center">
-              <p className="text-sm font-medium text-muted-foreground">{t('switcher.noCompaniesFound')}</p>
-              <p className="text-xs text-muted-foreground/60">{t('switcher.tryDifferentName')}</p>
+              <p className="text-sm font-medium text-muted-foreground">{t($ => $.switcher.noCompaniesFound)}</p>
+              <p className="text-xs text-muted-foreground/60">{t($ => $.switcher.tryDifferentName)}</p>
             </div>
           ) : (
             filtered.map((company, idx) => {
@@ -237,7 +237,7 @@ export function CompanySwitcher({ className }: { className?: string }) {
             <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/5 text-primary">
               <Plus className="size-3.5" aria-hidden />
             </span>
-            <span className="text-xs font-medium">{t('switcher.newCompany')}</span>
+            <span className="text-xs font-medium">{t($ => $.switcher.newCompany)}</span>
           </button>
         </div>
       </DropdownMenuContent>

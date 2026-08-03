@@ -61,7 +61,7 @@ export function EditGoodsReceiptPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <span className="text-muted-foreground text-sm">{t('detail.loading')}</span>
+        <span className="text-muted-foreground text-sm">{t($ => $.detail.loading)}</span>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export function EditGoodsReceiptPage() {
   if (isError || !receipt) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <span className="text-destructive text-sm">{t('detail.notFound')}</span>
+        <span className="text-destructive text-sm">{t($ => $.detail.notFound)}</span>
       </div>
     );
   }
@@ -87,13 +87,13 @@ export function EditGoodsReceiptPage() {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col gap-6">
           <PageHeader
-            title={`${t('edit.title')} ${receipt.receipt_number}`}
-            subtitle={t('edit.subtitle')}
+            title={`${t($ => $.edit.title)} ${receipt.receipt_number}`}
+            subtitle={t($ => $.edit.subtitle)}
             breadcrumbs={[
-              { label: tCommon('home'), to: ROUTES.dashboard },
-              { label: t('title'), to: ROUTES.goodsReceipts },
+              { label: tCommon($ => $.home), to: ROUTES.dashboard },
+              { label: t($ => $.title), to: ROUTES.goodsReceipts },
               { label: receipt.receipt_number, to: `${ROUTES.goodsReceipts}/${id}` },
-              { label: t('edit.editLabel') },
+              { label: t($ => $.edit.editLabel) },
             ]}
             actions={
               <div className="flex items-center gap-2">
@@ -102,10 +102,10 @@ export function EditGoodsReceiptPage() {
                   variant="outline"
                   onClick={() => navigate(`${ROUTES.goodsReceipts}/${id}`)}
                 >
-                  {tCommon('common.cancel')}
+                  {tCommon($ => $.common.cancel)}
                 </Button>
                 <Button type="submit" disabled={updateGR.isPending}>
-                  {updateGR.isPending ? t('edit.saving') : t('edit.submitEdit')}
+                  {updateGR.isPending ? t($ => $.edit.saving) : t($ => $.edit.submitEdit)}
                 </Button>
               </div>
             }
@@ -113,7 +113,7 @@ export function EditGoodsReceiptPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t('detail.receiptDetails')}</CardTitle>
+              <CardTitle>{t($ => $.detail.receiptDetails)}</CardTitle>
             </CardHeader>
             <CardContent>
               <GoodsReceiptHeaderFields onPoLinesLoaded={setOverridePoLineInfos} />
@@ -122,7 +122,7 @@ export function EditGoodsReceiptPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t('lines.title')}</CardTitle>
+              <CardTitle>{t($ => $.lines.title)}</CardTitle>
             </CardHeader>
             <CardContent>
               <GoodsReceiptLinesEditor poLineInfos={poLineInfos} />

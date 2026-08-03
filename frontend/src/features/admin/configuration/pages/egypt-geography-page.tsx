@@ -103,7 +103,7 @@ function GovDialog({
       if (isEdit && state.mode === 'edit') {
         const payload: Partial<MasterGovPayload> = { name: name.trim(), name_ar: nameAr.trim() || null };
         await updateGov.mutateAsync({ id: state.gov.id, payload });
-        toast({ title: t('masterGeo.gov.toastUpdated') });
+        toast({ title: t($ => $.masterGeo.gov.toastUpdated) });
       } else {
         if (!code.trim()) return;
         const payload: MasterGovPayload = {
@@ -112,12 +112,12 @@ function GovDialog({
           code: code.trim().toUpperCase(),
         };
         await createGov.mutateAsync(payload);
-        toast({ title: t('masterGeo.gov.toastCreated') });
+        toast({ title: t($ => $.masterGeo.gov.toastCreated) });
       }
       onClose();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('masterGeo.common.saveFailed');
-      toast({ title: t('masterGeo.common.error'), description: msg, variant: 'destructive' });
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t($ => $.masterGeo.common.saveFailed);
+      toast({ title: t($ => $.masterGeo.common.error), description: msg, variant: 'destructive' });
     }
   };
 
@@ -127,21 +127,21 @@ function GovDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? t('masterGeo.gov.editTitle') : t('masterGeo.gov.addTitle')}</DialogTitle>
+          <DialogTitle>{isEdit ? t($ => $.masterGeo.gov.editTitle) : t($ => $.masterGeo.gov.addTitle)}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label>{t('masterGeo.gov.nameEn')}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('masterGeo.gov.nameEnPlaceholder')} />
+            <Label>{t($ => $.masterGeo.gov.nameEn)}</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t($ => $.masterGeo.gov.nameEnPlaceholder)} />
           </div>
           <div className="space-y-1.5">
-            <Label>{t('masterGeo.gov.nameAr')}</Label>
-            <Input value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder={t('masterGeo.gov.nameArPlaceholder')} dir="rtl" />
+            <Label>{t($ => $.masterGeo.gov.nameAr)}</Label>
+            <Input value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder={t($ => $.masterGeo.gov.nameArPlaceholder)} dir="rtl" />
           </div>
           {!isEdit && (
             <div className="space-y-1.5">
-              <Label>{t('masterGeo.gov.code')} <span className="text-muted-foreground text-xs">{t('masterGeo.gov.codeHint')}</span></Label>
+              <Label>{t($ => $.masterGeo.gov.code)} <span className="text-muted-foreground text-xs">{t($ => $.masterGeo.gov.codeHint)}</span></Label>
               <Input
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
@@ -154,9 +154,9 @@ function GovDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{t('masterGeo.common.cancel')}</Button>
+          <Button variant="outline" onClick={onClose}>{t($ => $.masterGeo.common.cancel)}</Button>
           <Button onClick={handleSubmit} disabled={isPending || !name.trim() || (!isEdit && !code.trim())}>
-            {isPending ? t('masterGeo.common.saving') : isEdit ? t('masterGeo.common.save') : t('masterGeo.common.create')}
+            {isPending ? t($ => $.masterGeo.common.saving) : isEdit ? t($ => $.masterGeo.common.save) : t($ => $.masterGeo.common.create)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -205,15 +205,15 @@ function ZoneDialog({
     try {
       if (isEdit && state.mode === 'edit') {
         await updateZone.mutateAsync({ id: state.zone.id, payload });
-        toast({ title: t('masterGeo.zone.toastUpdated') });
+        toast({ title: t($ => $.masterGeo.zone.toastUpdated) });
       } else {
         await createZone.mutateAsync(payload);
-        toast({ title: t('masterGeo.zone.toastCreated') });
+        toast({ title: t($ => $.masterGeo.zone.toastCreated) });
       }
       onClose();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('masterGeo.common.saveFailed');
-      toast({ title: t('masterGeo.common.error'), description: msg, variant: 'destructive' });
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t($ => $.masterGeo.common.saveFailed);
+      toast({ title: t($ => $.masterGeo.common.error), description: msg, variant: 'destructive' });
     }
   };
 
@@ -223,23 +223,23 @@ function ZoneDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? t('masterGeo.zone.editTitle') : t('masterGeo.zone.addTitle')}</DialogTitle>
+          <DialogTitle>{isEdit ? t($ => $.masterGeo.zone.editTitle) : t($ => $.masterGeo.zone.addTitle)}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label>{t('masterGeo.zone.name')}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('masterGeo.zone.namePlaceholder')} />
+            <Label>{t($ => $.masterGeo.zone.name)}</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t($ => $.masterGeo.zone.namePlaceholder)} />
           </div>
           {isEdit && initial?.code && (
             <div className="space-y-1.5">
-              <Label className="text-muted-foreground">{t('masterGeo.zone.codeImmutable')}</Label>
+              <Label className="text-muted-foreground">{t($ => $.masterGeo.zone.codeImmutable)}</Label>
               <Input value={initial.code} readOnly className="font-mono bg-muted" />
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>{t('masterGeo.zone.slaHours')}</Label>
+              <Label>{t($ => $.masterGeo.zone.slaHours)}</Label>
               <Input
                 type="number"
                 min={1}
@@ -250,7 +250,7 @@ function ZoneDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t('masterGeo.zone.priority')}</Label>
+              <Label>{t($ => $.masterGeo.zone.priority)}</Label>
               <Input
                 type="number"
                 min={1}
@@ -262,33 +262,33 @@ function ZoneDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>{t('masterGeo.zone.difficulty')}</Label>
+            <Label>{t($ => $.masterGeo.zone.difficulty)}</Label>
             <Select value={difficulty} onValueChange={setDifficulty}>
               <SelectTrigger>
-                <SelectValue placeholder={t('masterGeo.zone.difficultyPlaceholder')} />
+                <SelectValue placeholder={t($ => $.masterGeo.zone.difficultyPlaceholder)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('masterGeo.zone.difficultyNone')}</SelectItem>
-                <SelectItem value="easy">{t('masterGeo.difficulty.easy')}</SelectItem>
-                <SelectItem value="medium">{t('masterGeo.difficulty.medium')}</SelectItem>
-                <SelectItem value="hard">{t('masterGeo.difficulty.hard')}</SelectItem>
+                <SelectItem value="">{t($ => $.masterGeo.zone.difficultyNone)}</SelectItem>
+                <SelectItem value="easy">{t($ => $.masterGeo.difficulty.easy)}</SelectItem>
+                <SelectItem value="medium">{t($ => $.masterGeo.difficulty.medium)}</SelectItem>
+                <SelectItem value="hard">{t($ => $.masterGeo.difficulty.hard)}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>{t('masterGeo.zone.hub')}</Label>
-            <Input value={hub} onChange={(e) => setHub(e.target.value)} placeholder={t('masterGeo.zone.hubPlaceholder')} />
+            <Label>{t($ => $.masterGeo.zone.hub)}</Label>
+            <Input value={hub} onChange={(e) => setHub(e.target.value)} placeholder={t($ => $.masterGeo.zone.hubPlaceholder)} />
           </div>
           <div className="space-y-1.5">
-            <Label>{t('masterGeo.zone.notes')}</Label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('masterGeo.zone.notesPlaceholder')} />
+            <Label>{t($ => $.masterGeo.zone.notes)}</Label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t($ => $.masterGeo.zone.notesPlaceholder)} />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{t('masterGeo.common.cancel')}</Button>
+          <Button variant="outline" onClick={onClose}>{t($ => $.masterGeo.common.cancel)}</Button>
           <Button onClick={handleSubmit} disabled={isPending || !name.trim()}>
-            {isPending ? t('masterGeo.common.saving') : isEdit ? t('masterGeo.common.save') : t('masterGeo.common.create')}
+            {isPending ? t($ => $.masterGeo.common.saving) : isEdit ? t($ => $.masterGeo.common.save) : t($ => $.masterGeo.common.create)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -319,21 +319,21 @@ function ConfirmDialog({
     try {
       if (state.mode === 'archive-gov') {
         await archiveGov.mutateAsync(state.gov.id);
-        toast({ title: t('masterGeo.confirm.archivedToast', { name: state.gov.name }) });
+        toast({ title: t($ => $.masterGeo.confirm.archivedToast, { name: state.gov.name }) });
       } else if (state.mode === 'delete-gov') {
         await deleteGov.mutateAsync(state.gov.id);
-        toast({ title: t('masterGeo.confirm.deletedToast', { name: state.gov.name }) });
+        toast({ title: t($ => $.masterGeo.confirm.deletedToast, { name: state.gov.name }) });
       } else if (state.mode === 'archive-zone') {
         await archiveZone.mutateAsync(state.zone.id);
-        toast({ title: t('masterGeo.confirm.archivedToast', { name: state.zone.name }) });
+        toast({ title: t($ => $.masterGeo.confirm.archivedToast, { name: state.zone.name }) });
       } else if (state.mode === 'delete-zone') {
         await deleteZone.mutateAsync(state.zone.id);
-        toast({ title: t('masterGeo.confirm.deletedToast', { name: state.zone.name }) });
+        toast({ title: t($ => $.masterGeo.confirm.deletedToast, { name: state.zone.name }) });
       }
       onClose();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('masterGeo.common.actionFailed');
-      toast({ title: t('masterGeo.common.error'), description: msg, variant: 'destructive' });
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t($ => $.masterGeo.common.actionFailed);
+      toast({ title: t($ => $.masterGeo.common.error), description: msg, variant: 'destructive' });
     }
   };
 
@@ -348,21 +348,21 @@ function ConfirmDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{isDelete ? t('masterGeo.confirm.deleteTitle') : t('masterGeo.confirm.archiveTitle')}</DialogTitle>
+          <DialogTitle>{isDelete ? t($ => $.masterGeo.confirm.deleteTitle) : t($ => $.masterGeo.confirm.archiveTitle)}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground py-2">
           {isDelete
-            ? t('masterGeo.confirm.deleteDesc', { name: label })
-            : t('masterGeo.confirm.archiveDesc', { name: label })}
+            ? t($ => $.masterGeo.confirm.deleteDesc, { name: label })
+            : t($ => $.masterGeo.confirm.archiveDesc, { name: label })}
         </p>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{t('masterGeo.common.cancel')}</Button>
+          <Button variant="outline" onClick={onClose}>{t($ => $.masterGeo.common.cancel)}</Button>
           <Button
             variant={isDelete ? 'destructive' : 'default'}
             onClick={handleConfirm}
             disabled={isPending}
           >
-            {isPending ? t('masterGeo.common.pleaseWait') : isArchive ? t('masterGeo.common.archive') : t('masterGeo.common.delete')}
+            {isPending ? t($ => $.masterGeo.common.pleaseWait) : isArchive ? t($ => $.masterGeo.common.archive) : t($ => $.masterGeo.common.delete)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -395,19 +395,19 @@ function ZoneRow({
             </span>
           )}
           <span className="font-medium text-sm truncate">{zone.name}</span>
-          {zone.is_archived && <Badge variant="outline" className="text-xs shrink-0">{t('masterGeo.badge.archived')}</Badge>}
-          {!zone.is_active && !zone.is_archived && <Badge variant="secondary" className="text-xs shrink-0">{t('masterGeo.badge.inactive')}</Badge>}
+          {zone.is_archived && <Badge variant="outline" className="text-xs shrink-0">{t($ => $.masterGeo.badge.archived)}</Badge>}
+          {!zone.is_active && !zone.is_archived && <Badge variant="secondary" className="text-xs shrink-0">{t($ => $.masterGeo.badge.inactive)}</Badge>}
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
           {zone.estimated_delivery_sla_hours && (
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {t('masterGeo.row.sla', { hours: zone.estimated_delivery_sla_hours })}
+              {t($ => $.masterGeo.row.sla, { hours: zone.estimated_delivery_sla_hours })}
             </span>
           )}
           {zone.delivery_difficulty && (
             <span className={`px-1.5 py-0.5 rounded capitalize ${DIFFICULTY_COLORS[zone.delivery_difficulty]}`}>
-              {t(`masterGeo.difficulty.${zone.delivery_difficulty}`)}
+              {t($ => $.masterGeo.difficulty[zone.delivery_difficulty!])}
             </span>
           )}
           {zone.default_logistics_hub && (
@@ -417,21 +417,21 @@ function ZoneRow({
             </span>
           )}
           {zone.dependency_count !== undefined && zone.dependency_count > 0 && (
-            <span className="text-blue-600">{t('masterGeo.row.brandZones', { count: zone.dependency_count })}</span>
+            <span className="text-blue-600">{t($ => $.masterGeo.row.brandZones, { count: zone.dependency_count })}</span>
           )}
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
         <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onEdit}>
-          {t('masterGeo.common.edit')}
+          {t($ => $.masterGeo.common.edit)}
         </Button>
         {!zone.is_archived && (
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-600 hover:text-amber-700" onClick={onArchive} title={t('masterGeo.common.archive')}>
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-amber-600 hover:text-amber-700" onClick={onArchive} title={t($ => $.masterGeo.common.archive)}>
             <Archive className="h-3.5 w-3.5" />
           </Button>
         )}
         {(zone.dependency_count ?? 0) === 0 && (
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600" onClick={onDelete} title={t('masterGeo.common.delete')}>
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:text-red-600" onClick={onDelete} title={t($ => $.masterGeo.common.delete)}>
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}
@@ -487,10 +487,10 @@ export function EgyptGeographyPage() {
               <Map className="h-5 w-5 text-slate-600" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold">{t('masterGeo.page.title')}</h1>
+              <h1 className="text-lg font-semibold">{t($ => $.masterGeo.page.title)}</h1>
               <p className="text-sm text-muted-foreground">
-                {t('masterGeo.page.summary', { govs: activeGovCount, zones: totalZoneCount })}
-                {archivedGovCount > 0 && t('masterGeo.page.archivedSuffix', { count: archivedGovCount })}
+                {t($ => $.masterGeo.page.summary, { govs: activeGovCount, zones: totalZoneCount })}
+                {archivedGovCount > 0 && t($ => $.masterGeo.page.archivedSuffix, { count: archivedGovCount })}
               </p>
             </div>
           </div>
@@ -502,11 +502,11 @@ export function EgyptGeographyPage() {
               onClick={() => setShowArchived((v) => !v)}
             >
               {showArchived ? <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> : <XCircle className="h-3.5 w-3.5 mr-1.5" />}
-              {showArchived ? t('masterGeo.page.hidingArchived') : t('masterGeo.page.showArchived')}
+              {showArchived ? t($ => $.masterGeo.page.hidingArchived) : t($ => $.masterGeo.page.showArchived)}
             </Button>
             <Button size="sm" onClick={() => setGovDialog({ mode: 'create' })}>
               <Plus className="h-4 w-4 me-1.5" />
-              {t('masterGeo.gov.addTitle')}
+              {t($ => $.masterGeo.gov.addTitle)}
             </Button>
           </div>
         </div>
@@ -517,7 +517,7 @@ export function EgyptGeographyPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('masterGeo.page.searchPlaceholder')}
+            placeholder={t($ => $.masterGeo.page.searchPlaceholder)}
             className="ps-8 h-8 text-sm"
           />
         </div>
@@ -528,9 +528,9 @@ export function EgyptGeographyPage() {
         {/* Left: Governorate list */}
         <div className="w-80 shrink-0 border-e overflow-y-auto">
           {govsLoading ? (
-            <div className="p-4 text-sm text-muted-foreground">{t('masterGeo.common.loading')}</div>
+            <div className="p-4 text-sm text-muted-foreground">{t($ => $.masterGeo.common.loading)}</div>
           ) : filteredGovs.length === 0 ? (
-            <div className="p-4 text-sm text-muted-foreground">{t('masterGeo.page.noGovs')}</div>
+            <div className="p-4 text-sm text-muted-foreground">{t($ => $.masterGeo.page.noGovs)}</div>
           ) : (
             filteredGovs.map((gov) => {
               const isSelected = selectedGov?.id === gov.id;
@@ -551,9 +551,9 @@ export function EgyptGeographyPage() {
                       <div className="text-xs text-muted-foreground mt-0.5 truncate" dir="rtl">{gov.name_ar}</div>
                     )}
                     <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                      <span>{t('masterGeo.page.zonesCount', { count: gov.zones_count ?? 0 })}</span>
-                      {gov.is_archived && <Badge variant="outline" className="text-xs py-0">{t('masterGeo.badge.archived')}</Badge>}
-                      {!gov.is_active && !gov.is_archived && <Badge variant="secondary" className="text-xs py-0">{t('masterGeo.badge.inactive')}</Badge>}
+                      <span>{t($ => $.masterGeo.page.zonesCount, { count: gov.zones_count ?? 0 })}</span>
+                      {gov.is_archived && <Badge variant="outline" className="text-xs py-0">{t($ => $.masterGeo.badge.archived)}</Badge>}
+                      {!gov.is_active && !gov.is_archived && <Badge variant="secondary" className="text-xs py-0">{t($ => $.masterGeo.badge.inactive)}</Badge>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -566,7 +566,7 @@ export function EgyptGeographyPage() {
                         setGovDialog({ mode: 'edit', gov });
                       }}
                     >
-                      {t('masterGeo.common.edit')}
+                      {t($ => $.masterGeo.common.edit)}
                     </Button>
                     <ChevronRight className={`h-4 w-4 text-muted-foreground ${isSelected ? 'text-primary' : ''}`} />
                   </div>
@@ -581,7 +581,7 @@ export function EgyptGeographyPage() {
           {!selectedGov ? (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
               <Map className="h-10 w-10 opacity-20" />
-              <p className="text-sm">{t('masterGeo.page.selectGovPrompt')}</p>
+              <p className="text-sm">{t($ => $.masterGeo.page.selectGovPrompt)}</p>
             </div>
           ) : (
             <>
@@ -595,7 +595,7 @@ export function EgyptGeographyPage() {
                     <span className="font-medium">{selectedGov.name}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {t('masterGeo.page.zonesCount', { count: filteredZones.length })}
+                    {t($ => $.masterGeo.page.zonesCount, { count: filteredZones.length })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -605,7 +605,7 @@ export function EgyptGeographyPage() {
                     className="text-xs"
                     onClick={() => setGovDialog({ mode: 'edit', gov: selectedGov })}
                   >
-                    {t('masterGeo.gov.editTitle')}
+                    {t($ => $.masterGeo.gov.editTitle)}
                   </Button>
                   {!selectedGov.is_archived && (
                     <Button
@@ -615,7 +615,7 @@ export function EgyptGeographyPage() {
                       onClick={() => setConfirmState({ mode: 'archive-gov', gov: selectedGov })}
                     >
                       <Archive className="h-3.5 w-3.5 me-1" />
-                      {t('masterGeo.common.archive')}
+                      {t($ => $.masterGeo.common.archive)}
                     </Button>
                   )}
                   {(selectedGov.brand_geo_count ?? 1) === 0 && (
@@ -626,7 +626,7 @@ export function EgyptGeographyPage() {
                       onClick={() => setConfirmState({ mode: 'delete-gov', gov: selectedGov })}
                     >
                       <Trash2 className="h-3.5 w-3.5 me-1" />
-                      {t('masterGeo.common.delete')}
+                      {t($ => $.masterGeo.common.delete)}
                     </Button>
                   )}
                   <Button
@@ -634,16 +634,16 @@ export function EgyptGeographyPage() {
                     onClick={() => setZoneDialog({ mode: 'create', govId: selectedGov.id })}
                   >
                     <Plus className="h-4 w-4 me-1.5" />
-                    {t('masterGeo.zone.addTitle')}
+                    {t($ => $.masterGeo.zone.addTitle)}
                   </Button>
                 </div>
               </div>
 
               {/* Zone rows */}
               {zonesLoading ? (
-                <div className="p-4 text-sm text-muted-foreground">{t('masterGeo.page.loadingZones')}</div>
+                <div className="p-4 text-sm text-muted-foreground">{t($ => $.masterGeo.page.loadingZones)}</div>
               ) : filteredZones.length === 0 ? (
-                <div className="p-6 text-sm text-muted-foreground text-center">{t('masterGeo.page.noZones')}</div>
+                <div className="p-6 text-sm text-muted-foreground text-center">{t($ => $.masterGeo.page.noZones)}</div>
               ) : (
                 <div>
                   {filteredZones.map((zone) => (

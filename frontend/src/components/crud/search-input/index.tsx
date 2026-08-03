@@ -28,7 +28,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
     const { t } = useTranslation('common');
     const [value, setValue] = useState(initialValue);
     const onChangeRef = useRef(onChange);
-    const resolvedPlaceholder = placeholder ?? t('search.placeholder');
+    const resolvedPlaceholder = placeholder ?? t($ => $.search.placeholder);
 
     useEffect(() => {
       onChangeRef.current = onChange;
@@ -56,7 +56,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
             type="button"
             variant="ghost"
             size="icon"
-            aria-label={t('search.clear')}
+            aria-label={t($ => $.search.clear)}
             onClick={() => setValue('')}
             className="absolute top-1/2 end-1 size-7 -translate-y-1/2"
           >

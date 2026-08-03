@@ -17,7 +17,7 @@ export function AppBreadcrumbs() {
   return (
     <div className="text-muted-foreground flex items-center gap-1.5 border-b px-4 py-2.5 text-sm sm:px-6">
       <Link to={ROUTES.dashboard} className="hover:text-foreground transition-colors">
-        {t('home')}
+        {t($ => $.home)}
       </Link>
       {!isDashboard && current ? (
         <>

@@ -193,7 +193,7 @@ export function UniversalDataGrid<T>({
     [visibleCols, hasSelection],
   );
 
-  const defaultEmpty = emptyState ?? <EmptyState title={t('table.noRecords')} />;
+  const defaultEmpty = emptyState ?? <EmptyState title={t($ => $.table.noRecords)} />;
   const defaultError = errorState ?? <ErrorState />;
 
   // ── Scroll interactions ───────────────────────────────────────────────────
@@ -309,7 +309,7 @@ export function UniversalDataGrid<T>({
                   <Th pinned style={{ left: 0 }} className="w-10">
                     <input
                       type="checkbox"
-                      aria-label={t('selection.selectAllRows')}
+                      aria-label={t($ => $.selection.selectAllRows)}
                       checked={selection.allSelected}
                       ref={(el) => { if (el) el.indeterminate = selection.someSelected; }}
                       onChange={(e) => selection.selectAll(e.target.checked)}
@@ -407,7 +407,7 @@ export function UniversalDataGrid<T>({
                         <Td pinned selected={isSelected} style={{ left: 0 }} className="w-10">
                           <input
                             type="checkbox"
-                            aria-label={t('selection.selectRow')}
+                            aria-label={t($ => $.selection.selectRow)}
                             checked={isSelected}
                             onClick={(e) => e.stopPropagation()}
                             onChange={(e) => selection.selectRow(id, e.target.checked)}

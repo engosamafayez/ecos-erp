@@ -39,7 +39,7 @@ export function MonthlyProgress({ data, loading }: Props) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Target className="h-4 w-4 text-indigo-500" />
-            {t('monthly.title')} — {monthLabel}
+            {t($ => $.monthly.title)} — {monthLabel}
           </CardTitle>
           {progress !== null && (
             <span className="text-sm font-bold text-foreground">
@@ -62,10 +62,10 @@ export function MonthlyProgress({ data, loading }: Props) {
             {/* Progress bar */}
             <div>
               <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
-                <span>{moneyCompact(data?.monthly_revenue ?? 0)} {t("monthly.actual")}</span>
+                <span>{moneyCompact(data?.monthly_revenue ?? 0)} {t($ => $.monthly.actual)}</span>
                 {target !== null
-                  ? <span>{moneyCompact(target)} {t("monthly.target")}</span>
-                  : <span className="italic">{t('monthly.noTarget')}</span>
+                  ? <span>{moneyCompact(target)} {t($ => $.monthly.target)}</span>
+                  : <span className="italic">{t($ => $.monthly.noTarget)}</span>
                 }
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
@@ -78,9 +78,9 @@ export function MonthlyProgress({ data, loading }: Props) {
 
             {/* 3 stat tiles */}
             <div className="grid grid-cols-3 gap-3">
-              <StatTile label={t('monthly.revenue')} value={moneyCompact(data?.monthly_revenue ?? 0)} />
-              <StatTile label={t('monthly.netRevenue')} value={moneyCompact(data?.monthly_revenue_net ?? 0)} />
-              <StatTile label={t('monthly.orders')} value={(data?.monthly_orders ?? 0).toLocaleString()} />
+              <StatTile label={t($ => $.monthly.revenue)} value={moneyCompact(data?.monthly_revenue ?? 0)} />
+              <StatTile label={t($ => $.monthly.netRevenue)} value={moneyCompact(data?.monthly_revenue_net ?? 0)} />
+              <StatTile label={t($ => $.monthly.orders)} value={(data?.monthly_orders ?? 0).toLocaleString()} />
             </div>
           </>
         )}

@@ -87,24 +87,24 @@ export function SegmentDrawer({ open, onClose, segment }: Props) {
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
       <SheetContent className="w-[420px]">
         <SheetHeader>
-          <SheetTitle>{isEditing ? t('audiences.drawer.editTitle') : t('audiences.drawer.newTitle')}</SheetTitle>
+          <SheetTitle>{isEditing ? t($ => $.audiences.drawer.editTitle) : t($ => $.audiences.drawer.newTitle)}</SheetTitle>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-6">
           <div className="space-y-1.5">
-            <Label>{t('audiences.drawer.nameLabel')}</Label>
-            <Input {...register('name', { required: true })} placeholder={t('audiences.drawer.namePlaceholder')} />
+            <Label>{t($ => $.audiences.drawer.nameLabel)}</Label>
+            <Input {...register('name', { required: true })} placeholder={t($ => $.audiences.drawer.namePlaceholder)} />
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t('common.description')}</Label>
-            <Textarea {...register('description')} placeholder={t('audiences.drawer.descriptionPlaceholder')} rows={2} />
+            <Label>{t($ => $.common.description)}</Label>
+            <Textarea {...register('description')} placeholder={t($ => $.audiences.drawer.descriptionPlaceholder)} rows={2} />
           </div>
 
           {!isEditing && (
             <>
               <div className="space-y-1.5">
-                <Label>{t('audiences.drawer.segmentTypeLabel')}</Label>
+                <Label>{t($ => $.audiences.drawer.segmentTypeLabel)}</Label>
                 <Select
                   value={segmentType}
                   onValueChange={v => setValue('segment_type', v as SegmentType)}
@@ -114,14 +114,14 @@ export function SegmentDrawer({ open, onClose, segment }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     {SEGMENT_TYPES.map(st => (
-                      <SelectItem key={st} value={st}>{t(`audiences.segmentType.${st}`)}</SelectItem>
+                      <SelectItem key={st} value={st}>{t($ => $.audiences.segmentType[st])}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label>{t('audiences.drawer.entityTypeLabel')}</Label>
+                <Label>{t($ => $.audiences.drawer.entityTypeLabel)}</Label>
                 <Select
                   value={watch('entity_type')}
                   onValueChange={v => setValue('entity_type', v)}
@@ -130,9 +130,9 @@ export function SegmentDrawer({ open, onClose, segment }: Props) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="customer">{t('audiences.entityType.customer')}</SelectItem>
-                    <SelectItem value="lead">{t('audiences.entityType.lead')}</SelectItem>
-                    <SelectItem value="order">{t('audiences.entityType.order')}</SelectItem>
+                    <SelectItem value="customer">{t($ => $.audiences.entityType.customer)}</SelectItem>
+                    <SelectItem value="lead">{t($ => $.audiences.entityType.lead)}</SelectItem>
+                    <SelectItem value="order">{t($ => $.audiences.entityType.order)}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -144,17 +144,17 @@ export function SegmentDrawer({ open, onClose, segment }: Props) {
                   {...register('is_dynamic')}
                   className="h-4 w-4"
                 />
-                <Label htmlFor="is_dynamic">{t('audiences.drawer.isDynamicLabel')}</Label>
+                <Label htmlFor="is_dynamic">{t($ => $.audiences.drawer.isDynamicLabel)}</Label>
               </div>
             </>
           )}
 
           <div className="flex gap-2 pt-2">
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? t('common.saving') : isEditing ? t('common.saveChanges') : t('audiences.drawer.create')}
+              {isSubmitting ? t($ => $.common.saving) : isEditing ? t($ => $.common.saveChanges) : t($ => $.audiences.drawer.create)}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>
-              {t('common.cancel')}
+              {t($ => $.common.cancel)}
             </Button>
           </div>
         </form>

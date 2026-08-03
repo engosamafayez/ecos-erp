@@ -27,8 +27,8 @@ export function PageNoResultsState({
 }: PageNoResultsStateProps) {
   const { t } = useTranslation('common');
   const defaultDescription = query
-    ? t('noResults.withQuery', { query })
-    : t('noResults.withoutQuery');
+    ? t($ => $.noResults.withQuery, { query })
+    : t($ => $.noResults.withoutQuery);
 
   return (
     <div
@@ -41,14 +41,14 @@ export function PageNoResultsState({
         <SearchX className="size-8" aria-hidden />
       </span>
       <div className="space-y-1">
-        <p className="text-base font-semibold">{t('noResults.title')}</p>
+        <p className="text-base font-semibold">{t($ => $.noResults.title)}</p>
         <p className="mx-auto max-w-xs text-sm text-muted-foreground">
           {description ?? defaultDescription}
         </p>
       </div>
       {onClear ? (
         <Button variant="outline" size="sm" onClick={onClear} className="mt-1">
-          {t('toolbar.clearFilters')}
+          {t($ => $.toolbar.clearFilters)}
         </Button>
       ) : null}
     </div>

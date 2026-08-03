@@ -157,53 +157,53 @@ export function InventoryDashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title={t('dashboard.title')}
-        subtitle={t('dashboard.subtitle')}
-        breadcrumbs={[{ label: t('dashboard.breadcrumb.home'), to: ROUTES.dashboard }, { label: t('dashboard.breadcrumb.page') }]}
+        title={t($ => $.dashboard.title)}
+        subtitle={t($ => $.dashboard.subtitle)}
+        breadcrumbs={[{ label: t($ => $.dashboard.breadcrumb.home), to: ROUTES.dashboard }, { label: t($ => $.dashboard.breadcrumb.page) }]}
       />
 
       {/* ── Section 1: Inventory Value ─────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
-        <SectionLabel>{t('dashboard.sections.inventoryValue')}</SectionLabel>
+        <SectionLabel>{t($ => $.dashboard.sections.inventoryValue)}</SectionLabel>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <ValueKpiCard
-            title={t('dashboard.kpis.totalValue')}
+            title={t($ => $.dashboard.kpis.totalValue)}
             value={allStats.data ? money(allStats.data.total_inventory_value) : '—'}
-            sub={allStats.data ? `${fmtQty(allStats.data.total_on_hand)} ${t('dashboard.kpis.unitsOnHand')}` : undefined}
+            sub={allStats.data ? `${fmtQty(allStats.data.total_on_hand)} ${t($ => $.dashboard.kpis.unitsOnHand)}` : undefined}
             icon={BarChart3}
             iconColor="text-primary"
             loading={statsLoading}
           />
           <ValueKpiCard
-            title={t('dashboard.kpis.rawMaterials')}
+            title={t($ => $.dashboard.kpis.rawMaterials)}
             value={rmStats.data ? money(rmStats.data.total_inventory_value) : '—'}
-            sub={rmStats.data ? `${rmStats.data.total_count} ${t('dashboard.kpis.sku')}` : undefined}
+            sub={rmStats.data ? `${rmStats.data.total_count} ${t($ => $.dashboard.kpis.sku)}` : undefined}
             icon={FlaskConical}
             iconColor="text-blue-500"
             loading={statsLoading}
             onClick={() => navigate(ROUTES.rawMaterials)}
           />
           <ValueKpiCard
-            title={t('dashboard.kpis.finishedGoods')}
+            title={t($ => $.dashboard.kpis.finishedGoods)}
             value={fgStats.data ? money(fgStats.data.total_inventory_value) : '—'}
-            sub={fgStats.data ? `${fgStats.data.total_count} ${t('dashboard.kpis.sku')}` : undefined}
+            sub={fgStats.data ? `${fgStats.data.total_count} ${t($ => $.dashboard.kpis.sku)}` : undefined}
             icon={Package}
             iconColor="text-emerald-500"
             loading={statsLoading}
             onClick={() => navigate(ROUTES.products)}
           />
           <ValueKpiCard
-            title={t('dashboard.kpis.packagingMaterials')}
+            title={t($ => $.dashboard.kpis.packagingMaterials)}
             value={pkgStats.data ? money(pkgStats.data.total_inventory_value) : '—'}
-            sub={pkgStats.data ? `${pkgStats.data.total_count} ${t('dashboard.kpis.sku')}` : undefined}
+            sub={pkgStats.data ? `${pkgStats.data.total_count} ${t($ => $.dashboard.kpis.sku)}` : undefined}
             icon={Archive}
             iconColor="text-amber-500"
             loading={statsLoading}
           />
           <ValueKpiCard
-            title={t('dashboard.kpis.availableUnits')}
+            title={t($ => $.dashboard.kpis.availableUnits)}
             value={allStats.data ? fmtQty(allStats.data.total_available) : '—'}
-            sub={allStats.data ? `${fmtQty(allStats.data.total_reserved)} ${t('dashboard.kpis.reserved')}` : undefined}
+            sub={allStats.data ? `${fmtQty(allStats.data.total_reserved)} ${t($ => $.dashboard.kpis.reserved)}` : undefined}
             icon={ShoppingBag}
             iconColor="text-purple-500"
             loading={statsLoading}
@@ -220,39 +220,39 @@ export function InventoryDashboardPage() {
         <>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <SectionLabel>{t('dashboard.sections.countHealth')}</SectionLabel>
+              <SectionLabel>{t($ => $.dashboard.sections.countHealth)}</SectionLabel>
               <Badge variant={healthVariant(countData.kpis.health)} className="text-xs">
                 {tAny(`dashboard.health.${countData.kpis.health}`)}
               </Badge>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               <ValueKpiCard
-                title={t('dashboard.kpis.accuracy')}
+                title={t($ => $.dashboard.kpis.accuracy)}
                 value={fmtPct(countData.kpis.accuracy_pct)}
-                sub={`${countData.kpis.matched_products}/${countData.kpis.total_counted_products} ${t('dashboard.kpis.matched')}`}
+                sub={`${countData.kpis.matched_products}/${countData.kpis.total_counted_products} ${t($ => $.dashboard.kpis.matched)}`}
                 icon={BarChart3}
                 iconColor="text-emerald-500"
               />
               <ValueKpiCard
-                title={t('dashboard.kpis.openSessions')}
+                title={t($ => $.dashboard.kpis.openSessions)}
                 value={String(countData.kpis.open_sessions)}
                 icon={ClipboardList}
                 iconColor="text-blue-500"
                 onClick={() => navigate(ROUTES.inventoryCount)}
               />
               <ValueKpiCard
-                title={t('dashboard.kpis.productsWithVariance')}
+                title={t($ => $.dashboard.kpis.productsWithVariance)}
                 value={String(countData.kpis.products_with_variance)}
                 icon={TrendingDown}
                 iconColor="text-amber-500"
               />
               <ValueKpiCard
-                title={t('dashboard.kpis.adjustmentValue')}
+                title={t($ => $.dashboard.kpis.adjustmentValue)}
                 value={money(countData.kpis.adjustment_value_month)}
                 icon={Package}
               />
               <ValueKpiCard
-                title={t('dashboard.kpis.shrinkage')}
+                title={t($ => $.dashboard.kpis.shrinkage)}
                 value={money(countData.kpis.shrinkage_value_month)}
                 icon={PackageX}
                 iconColor="text-destructive"
@@ -262,51 +262,51 @@ export function InventoryDashboardPage() {
 
           {/* Variance tables */}
           <div className="flex flex-col gap-3">
-            <SectionLabel>{t('dashboard.sections.variances')}</SectionLabel>
+            <SectionLabel>{t($ => $.dashboard.sections.variances)}</SectionLabel>
             <div className="flex flex-col gap-4 md:flex-row">
               <VarianceTable
                 rows={countData.top_negative}
-                title={t('dashboard.topVariances.negativeTitle')}
-                productLabel={t('dashboard.topVariances.product')}
-                qtyLabel={t('dashboard.topVariances.varianceQty')}
-                valueLabel={t('dashboard.topVariances.varianceValue')}
-                noDataLabel={t('dashboard.noData')}
+                title={t($ => $.dashboard.topVariances.negativeTitle)}
+                productLabel={t($ => $.dashboard.topVariances.product)}
+                qtyLabel={t($ => $.dashboard.topVariances.varianceQty)}
+                valueLabel={t($ => $.dashboard.topVariances.varianceValue)}
+                noDataLabel={t($ => $.dashboard.noData)}
               />
               <VarianceTable
                 rows={countData.top_positive}
-                title={t('dashboard.topVariances.positiveTitle')}
-                productLabel={t('dashboard.topVariances.product')}
-                qtyLabel={t('dashboard.topVariances.varianceQty')}
-                valueLabel={t('dashboard.topVariances.varianceValue')}
-                noDataLabel={t('dashboard.noData')}
+                title={t($ => $.dashboard.topVariances.positiveTitle)}
+                productLabel={t($ => $.dashboard.topVariances.product)}
+                qtyLabel={t($ => $.dashboard.topVariances.varianceQty)}
+                valueLabel={t($ => $.dashboard.topVariances.varianceValue)}
+                noDataLabel={t($ => $.dashboard.noData)}
               />
             </div>
           </div>
 
           {/* Recent sessions */}
           <div className="flex flex-col gap-3">
-            <SectionLabel>{t('dashboard.recentSessions.title')}</SectionLabel>
+            <SectionLabel>{t($ => $.dashboard.recentSessions.title)}</SectionLabel>
             <Card>
               <CardContent className="p-0">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-muted-foreground border-b text-xs">
-                      <th className="px-4 py-2 text-start font-medium">{t('dashboard.recentSessions.session')}</th>
-                      <th className="px-4 py-2 text-start font-medium">{t('dashboard.recentSessions.warehouse')}</th>
-                      <th className="px-4 py-2 text-start font-medium">{t('dashboard.recentSessions.completionDate')}</th>
-                      <th className="px-4 py-2 text-end font-medium">{t('dashboard.recentSessions.accuracy')}</th>
+                      <th className="px-4 py-2 text-start font-medium">{t($ => $.dashboard.recentSessions.session)}</th>
+                      <th className="px-4 py-2 text-start font-medium">{t($ => $.dashboard.recentSessions.warehouse)}</th>
+                      <th className="px-4 py-2 text-start font-medium">{t($ => $.dashboard.recentSessions.completionDate)}</th>
+                      <th className="px-4 py-2 text-end font-medium">{t($ => $.dashboard.recentSessions.accuracy)}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {countData.recent_sessions.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="text-muted-foreground px-4 py-6 text-center text-xs">
-                          {t('dashboard.recentSessions.noSessions')}{' '}
+                          {t($ => $.dashboard.recentSessions.noSessions)}{' '}
                           <button
                             onClick={() => navigate(ROUTES.inventoryCount)}
                             className="text-primary underline underline-offset-2"
                           >
-                            {t('dashboard.recentSessions.createSession')}
+                            {t($ => $.dashboard.recentSessions.createSession)}
                           </button>
                         </td>
                       </tr>

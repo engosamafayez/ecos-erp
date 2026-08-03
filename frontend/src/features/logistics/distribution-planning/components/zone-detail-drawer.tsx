@@ -37,7 +37,7 @@ function OrderStatusBadge({ status }: { status: string }) {
 
   return (
     <Badge className={`text-[11px] ${map[status] ?? 'bg-gray-100 text-gray-700'}`}>
-      {known ? t(`planning.orderStatus.${status}`) : status.replace(/_/g, ' ')}
+      {known ? t($ => $.planning.orderStatus[status]) : status.replace(/_/g, ' ')}
     </Badge>
   );
 }
@@ -48,20 +48,20 @@ function PlanningStatusBadge({ status }: { status: ZonePlanningStatus }) {
   if (status === 'planned') {
     return (
       <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-        {t('planning.status.planned')}
+        {t($ => $.planning.status.planned)}
       </Badge>
     );
   }
   if (status === 'in_planning') {
     return (
       <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-        {t('planning.status.inPlanning')}
+        {t($ => $.planning.status.inPlanning)}
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="text-muted-foreground">
-      {t('planning.status.ready')}
+      {t($ => $.planning.status.ready)}
     </Badge>
   );
 }

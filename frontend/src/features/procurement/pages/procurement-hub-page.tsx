@@ -145,14 +145,14 @@ export function ProcurementHubPage() {
         list.push({
           level: 'warning',
           title: tAny('hub.alertMessages.awaitingApproval', { count: pmStats.operational.approved }),
-          description: t('hub.alertMessages.awaitingApprovalDesc'),
+          description: t($ => $.hub.alertMessages.awaitingApprovalDesc),
         });
       }
       if ((pmStats.operational?.under_review ?? 0) > 0) {
         list.push({
           level: 'info',
           title: tAny('hub.alertMessages.underReview', { count: pmStats.operational.under_review }),
-          description: t('hub.alertMessages.underReviewDesc'),
+          description: t($ => $.hub.alertMessages.underReviewDesc),
         });
       }
     }
@@ -161,7 +161,7 @@ export function ProcurementHubPage() {
       list.push({
         level: 'warning',
         title: tAny('hub.alertMessages.returnsNeedApproval', { count: returnStats.waiting }),
-        description: t('hub.alertMessages.returnsNeedApprovalDesc'),
+        description: t($ => $.hub.alertMessages.returnsNeedApprovalDesc),
       });
     }
 
@@ -169,7 +169,7 @@ export function ProcurementHubPage() {
       list.push({
         level: 'error',
         title: tAny('hub.alertMessages.invoicesFailed', { count: invoiceStats.failed }),
-        description: t('hub.alertMessages.invoicesFailedDesc'),
+        description: t($ => $.hub.alertMessages.invoicesFailedDesc),
       });
     }
 
@@ -177,7 +177,7 @@ export function ProcurementHubPage() {
       list.push({
         level: 'info',
         title: tAny('hub.alertMessages.creditPending', { count: returnStats.credit_pending }),
-        description: t('hub.alertMessages.creditPendingDesc'),
+        description: t($ => $.hub.alertMessages.creditPendingDesc),
       });
     }
 
@@ -191,12 +191,12 @@ export function ProcurementHubPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">{t('hub.title')}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{t('hub.subtitle')}</p>
+            <h1 className="text-xl font-semibold text-gray-900">{t($ => $.hub.title)}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{t($ => $.hub.subtitle)}</p>
           </div>
           <Button onClick={() => navigate(ROUTES.purchases)} size="sm" className="gap-1.5">
             <Plus className="w-3.5 h-3.5" />
-            {t('hub.newPurchase')}
+            {t($ => $.hub.newPurchase)}
           </Button>
         </div>
 
@@ -210,8 +210,8 @@ export function ProcurementHubPage() {
               <ClipboardList className="w-4 h-4 text-blue-500" />
               <Badge variant="secondary" className="text-xs">{pmLoading ? '…' : (pmStats?.operational?.under_review ?? 0)}</Badge>
             </div>
-            <p className="text-sm font-medium text-gray-900">{t('hub.workQueue.materialRequests')}</p>
-            <p className="text-xs text-gray-400">{t('hub.workQueue.awaitingAction')}</p>
+            <p className="text-sm font-medium text-gray-900">{t($ => $.hub.workQueue.materialRequests)}</p>
+            <p className="text-xs text-gray-400">{t($ => $.hub.workQueue.awaitingAction)}</p>
           </button>
 
           <button
@@ -222,8 +222,8 @@ export function ProcurementHubPage() {
               <ShoppingCart className="w-4 h-4 text-amber-500" />
               <Badge variant="secondary" className="text-xs">{pmLoading ? '…' : (pmStats?.operational?.approved ?? 0)}</Badge>
             </div>
-            <p className="text-sm font-medium text-gray-900">{t('hub.workQueue.purchases')}</p>
-            <p className="text-xs text-gray-400">{t('hub.workQueue.pendingApproval')}</p>
+            <p className="text-sm font-medium text-gray-900">{t($ => $.hub.workQueue.purchases)}</p>
+            <p className="text-xs text-gray-400">{t($ => $.hub.workQueue.pendingApproval)}</p>
           </button>
 
           <button
@@ -234,8 +234,8 @@ export function ProcurementHubPage() {
               <PackageOpen className="w-4 h-4 text-green-500" />
               <Badge variant="secondary" className="text-xs">—</Badge>
             </div>
-            <p className="text-sm font-medium text-gray-900">{t('hub.workQueue.receiving')}</p>
-            <p className="text-xs text-gray-400">{t('hub.workQueue.goodsToReceive')}</p>
+            <p className="text-sm font-medium text-gray-900">{t($ => $.hub.workQueue.receiving)}</p>
+            <p className="text-xs text-gray-400">{t($ => $.hub.workQueue.goodsToReceive)}</p>
           </button>
 
           <button
@@ -246,8 +246,8 @@ export function ProcurementHubPage() {
               <RotateCcw className="w-4 h-4 text-red-400" />
               <Badge variant="secondary" className="text-xs">{returnStats?.waiting ?? '—'}</Badge>
             </div>
-            <p className="text-sm font-medium text-gray-900">{t('hub.workQueue.returns')}</p>
-            <p className="text-xs text-gray-400">{t('hub.workQueue.waitingApproval')}</p>
+            <p className="text-sm font-medium text-gray-900">{t($ => $.hub.workQueue.returns)}</p>
+            <p className="text-xs text-gray-400">{t($ => $.hub.workQueue.waitingApproval)}</p>
           </button>
         </div>
 
@@ -259,33 +259,33 @@ export function ProcurementHubPage() {
 
             {/* KPI Cards */}
             <div>
-              <h2 className="text-sm font-medium text-gray-700 mb-3">{t('hub.financialOverview')}</h2>
+              <h2 className="text-sm font-medium text-gray-700 mb-3">{t($ => $.hub.financialOverview)}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <KpiCard
-                  label={t('hub.kpis.approvedPurchases')}
+                  label={t($ => $.hub.kpis.approvedPurchases)}
                   value={pmStats ? `${pmStats.operational?.approved ?? 0}` : '—'}
-                  sub={t('hub.kpis.readyToExecute')}
+                  sub={t($ => $.hub.kpis.readyToExecute)}
                   icon={ShoppingCart}
                   color="blue"
                 />
                 <KpiCard
-                  label={t('hub.kpis.invoiceValuePosted')}
+                  label={t($ => $.hub.kpis.invoiceValuePosted)}
                   value={invoiceStats ? fmt.moneyCompact(invoiceStats.total_value) : '—'}
-                  sub={t('hub.kpis.thisPeriod')}
+                  sub={t($ => $.hub.kpis.thisPeriod)}
                   icon={DollarSign}
                   color="green"
                 />
                 <KpiCard
-                  label={t('hub.kpis.pendingInvoiceValue')}
+                  label={t($ => $.hub.kpis.pendingInvoiceValue)}
                   value={invoiceStats ? fmt.moneyCompact(invoiceStats.pending_value) : '—'}
-                  sub={t('hub.kpis.draftValidated')}
+                  sub={t($ => $.hub.kpis.draftValidated)}
                   icon={FileText}
                   color="yellow"
                 />
                 <KpiCard
-                  label={t('hub.kpis.returnsValue')}
+                  label={t($ => $.hub.kpis.returnsValue)}
                   value={returnStats ? fmt.moneyCompact(returnStats.total_value) : '—'}
-                  sub={t('hub.kpis.activeReturns')}
+                  sub={t($ => $.hub.kpis.activeReturns)}
                   icon={RotateCcw}
                   color="red"
                 />
@@ -295,7 +295,7 @@ export function ProcurementHubPage() {
             {/* Alerts */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-medium text-gray-700">{t('hub.alertsTitle')}</h2>
+                <h2 className="text-sm font-medium text-gray-700">{t($ => $.hub.alertsTitle)}</h2>
                 {alerts.length > 0 && (
                   <Badge variant="secondary" className="text-xs">{alerts.length}</Badge>
                 )}
@@ -303,7 +303,7 @@ export function ProcurementHubPage() {
               {alerts.length === 0 ? (
                 <div className="p-6 bg-white border border-gray-200 rounded-lg text-center">
                   <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">{t('hub.noAlerts')}</p>
+                  <p className="text-sm text-gray-500">{t($ => $.hub.noAlerts)}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -316,28 +316,28 @@ export function ProcurementHubPage() {
 
             {/* Module Status Cards */}
             <div>
-              <h2 className="text-sm font-medium text-gray-700 mb-3">{t('hub.moduleStatus')}</h2>
+              <h2 className="text-sm font-medium text-gray-700 mb-3">{t($ => $.hub.moduleStatus)}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                 <Card className="border border-gray-200 shadow-none">
                   <CardHeader className="pb-2 pt-4 px-4">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <FileText className="w-4 h-4 text-blue-500" />
-                      {t('hub.supplierInvoicesModule')}
+                      {t($ => $.hub.supplierInvoicesModule)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-4 pb-4">
                     <div className="space-y-1.5 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">{t('hub.invoiceStatus.draft')}</span>
+                        <span className="text-gray-500">{t($ => $.hub.invoiceStatus.draft)}</span>
                         <span className="font-medium">{invoiceStats?.draft ?? '—'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">{t('hub.invoiceStatus.validatedReady')}</span>
+                        <span className="text-gray-500">{t($ => $.hub.invoiceStatus.validatedReady)}</span>
                         <span className="font-medium text-blue-600">{invoiceStats?.validated ?? '—'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">{t('hub.invoiceStatus.posted')}</span>
+                        <span className="text-gray-500">{t($ => $.hub.invoiceStatus.posted)}</span>
                         <span className="font-medium text-green-600">{invoiceStats?.posted ?? '—'}</span>
                       </div>
                       <Separator className="my-1.5" />
@@ -347,7 +347,7 @@ export function ProcurementHubPage() {
                         className="w-full h-7 text-xs gap-1"
                         onClick={() => navigate(ROUTES.supplierInvoices)}
                       >
-                        {t('hub.invoiceStatus.viewAll')} <ArrowRight className="w-3 h-3" />
+                        {t($ => $.hub.invoiceStatus.viewAll)} <ArrowRight className="w-3 h-3" />
                       </Button>
                     </div>
                   </CardContent>
@@ -357,21 +357,21 @@ export function ProcurementHubPage() {
                   <CardHeader className="pb-2 pt-4 px-4">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <RotateCcw className="w-4 h-4 text-orange-500" />
-                      {t('hub.supplierReturnsModule')}
+                      {t($ => $.hub.supplierReturnsModule)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-4 pb-4">
                     <div className="space-y-1.5 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">{t('hub.returnStatus.draft')}</span>
+                        <span className="text-gray-500">{t($ => $.hub.returnStatus.draft)}</span>
                         <span className="font-medium">{returnStats?.draft ?? '—'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">{t('hub.returnStatus.waitingApproval')}</span>
+                        <span className="text-gray-500">{t($ => $.hub.returnStatus.waitingApproval)}</span>
                         <span className="font-medium text-yellow-600">{returnStats?.waiting ?? '—'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">{t('hub.returnStatus.creditPending')}</span>
+                        <span className="text-gray-500">{t($ => $.hub.returnStatus.creditPending)}</span>
                         <span className="font-medium text-orange-600">{returnStats?.credit_pending ?? '—'}</span>
                       </div>
                       <Separator className="my-1.5" />
@@ -381,7 +381,7 @@ export function ProcurementHubPage() {
                         className="w-full h-7 text-xs gap-1"
                         onClick={() => navigate(ROUTES.supplierReturns)}
                       >
-                        {t('hub.returnStatus.viewAll')} <ArrowRight className="w-3 h-3" />
+                        {t($ => $.hub.returnStatus.viewAll)} <ArrowRight className="w-3 h-3" />
                       </Button>
                     </div>
                   </CardContent>
@@ -395,45 +395,45 @@ export function ProcurementHubPage() {
 
             {/* Quick Actions */}
             <div>
-              <h2 className="text-sm font-medium text-gray-700 mb-3">{t('hub.quickActions')}</h2>
+              <h2 className="text-sm font-medium text-gray-700 mb-3">{t($ => $.hub.quickActions)}</h2>
               <div className="space-y-2">
                 <QuickAction
                   variant="primary"
-                  label={t('hub.actions2.newSupplierInvoice')}
-                  description={t('hub.actions2.newSupplierInvoiceDesc')}
+                  label={t($ => $.hub.actions2.newSupplierInvoice)}
+                  description={t($ => $.hub.actions2.newSupplierInvoiceDesc)}
                   icon={Zap}
                   shortcut="I"
                   onClick={() => navigate(ROUTES.supplierInvoices)}
                 />
                 <QuickAction
-                  label={t('hub.actions2.newMaterialRequest')}
-                  description={t('hub.actions2.newMaterialRequestDesc')}
+                  label={t($ => $.hub.actions2.newMaterialRequest)}
+                  description={t($ => $.hub.actions2.newMaterialRequestDesc)}
                   icon={ClipboardList}
                   shortcut="M"
                   onClick={() => navigate(ROUTES.materialRequests)}
                 />
                 <QuickAction
-                  label={t('hub.actions2.newPurchase')}
-                  description={t('hub.actions2.newPurchaseDesc')}
+                  label={t($ => $.hub.actions2.newPurchase)}
+                  description={t($ => $.hub.actions2.newPurchaseDesc)}
                   icon={ShoppingCart}
                   shortcut="P"
                   onClick={() => navigate(ROUTES.purchases)}
                 />
                 <QuickAction
-                  label={t('hub.actions2.receiveGoods')}
-                  description={t('hub.actions2.receiveGoodsDesc')}
+                  label={t($ => $.hub.actions2.receiveGoods)}
+                  description={t($ => $.hub.actions2.receiveGoodsDesc)}
                   icon={PackageOpen}
                   onClick={() => navigate(ROUTES.receivingCenter)}
                 />
                 <QuickAction
-                  label={t('hub.actions2.newSupplierReturn')}
-                  description={t('hub.actions2.newSupplierReturnDesc')}
+                  label={t($ => $.hub.actions2.newSupplierReturn)}
+                  description={t($ => $.hub.actions2.newSupplierReturnDesc)}
                   icon={RotateCcw}
                   onClick={() => navigate(ROUTES.supplierReturns)}
                 />
                 <QuickAction
-                  label={t('hub.actions2.supplierDirectory')}
-                  description={t('hub.actions2.supplierDirectoryDesc')}
+                  label={t($ => $.hub.actions2.supplierDirectory)}
+                  description={t($ => $.hub.actions2.supplierDirectoryDesc)}
                   icon={Truck}
                   onClick={() => navigate(ROUTES.suppliers)}
                 />
@@ -442,13 +442,13 @@ export function ProcurementHubPage() {
 
             {/* Performance snapshot */}
             <div>
-              <h2 className="text-sm font-medium text-gray-700 mb-3">{t('hub.performance.title')}</h2>
+              <h2 className="text-sm font-medium text-gray-700 mb-3">{t($ => $.hub.performance.title)}</h2>
               <Card className="border border-gray-200 shadow-none">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-green-500" />
-                      <span className="text-xs text-gray-700">{t('hub.performance.totalPurchases')}</span>
+                      <span className="text-xs text-gray-700">{t($ => $.hub.performance.totalPurchases)}</span>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">{pmStats ? (pmStats.operational?.draft ?? 0) + (pmStats.operational?.under_review ?? 0) + (pmStats.operational?.approved ?? 0) : '—'}</span>
                   </div>
@@ -456,7 +456,7 @@ export function ProcurementHubPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                      <span className="text-xs text-gray-700">{t('hub.performance.approved')}</span>
+                      <span className="text-xs text-gray-700">{t($ => $.hub.performance.approved)}</span>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">{pmStats?.operational?.approved ?? '—'}</span>
                   </div>
@@ -464,7 +464,7 @@ export function ProcurementHubPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-purple-500" />
-                      <span className="text-xs text-gray-700">{t('hub.performance.invoicesPosted')}</span>
+                      <span className="text-xs text-gray-700">{t($ => $.hub.performance.invoicesPosted)}</span>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">{invoiceStats?.posted ?? '—'}</span>
                   </div>
@@ -472,7 +472,7 @@ export function ProcurementHubPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <RotateCcw className="w-4 h-4 text-red-400" />
-                      <span className="text-xs text-gray-700">{t('hub.performance.returnsCompleted')}</span>
+                      <span className="text-xs text-gray-700">{t($ => $.hub.performance.returnsCompleted)}</span>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">{returnStats?.completed ?? '—'}</span>
                   </div>

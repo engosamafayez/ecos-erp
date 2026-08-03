@@ -12,9 +12,9 @@ const PAYMENT_STATUS_VARIANTS: Record<PaymentStatus, 'active' | 'pending' | 'ina
 export function GrPaymentStatusBadge({ status }: { status: PaymentStatus }) {
   const { t } = useTranslation('goods-receipts');
   const label: Record<PaymentStatus, string> = {
-    paid:           t('paymentStatus.paid'),
-    partially_paid: t('paymentStatus.partiallyPaid'),
-    unpaid:         t('paymentStatus.unpaid'),
+    paid:           t($ => $.paymentStatus.paid),
+    partially_paid: t($ => $.paymentStatus.partiallyPaid),
+    unpaid:         t($ => $.paymentStatus.unpaid),
   };
   return <StatusBadge status={PAYMENT_STATUS_VARIANTS[status]} label={label[status]} />;
 }

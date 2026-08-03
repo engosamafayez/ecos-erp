@@ -57,23 +57,23 @@ function CostBreakdownTab({ review }: { review: PricingReview; detailLoading: bo
   const totalPrevious = review.previous_product_cost;
 
   const rows = [
-    { label: t('drawer.costBreakdown.rows.rawMaterials'),  current: totalCurrent * 0.72, previous: totalPrevious * 0.72, category: 'raw_material' as const },
-    { label: t('drawer.costBreakdown.rows.packaging'),      current: totalCurrent * 0.18, previous: totalPrevious * 0.18, category: 'packaging' as const },
-    { label: t('drawer.costBreakdown.rows.otherCosts'),     current: totalCurrent * 0.10, previous: totalPrevious * 0.10, category: 'other' as const },
+    { label: t($ => $.drawer.costBreakdown.rows.rawMaterials),  current: totalCurrent * 0.72, previous: totalPrevious * 0.72, category: 'raw_material' as const },
+    { label: t($ => $.drawer.costBreakdown.rows.packaging),      current: totalCurrent * 0.18, previous: totalPrevious * 0.18, category: 'packaging' as const },
+    { label: t($ => $.drawer.costBreakdown.rows.otherCosts),     current: totalCurrent * 0.10, previous: totalPrevious * 0.10, category: 'other' as const },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <SectionLabel>{t('drawer.costBreakdown.title')}</SectionLabel>
+        <SectionLabel>{t($ => $.drawer.costBreakdown.title)}</SectionLabel>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-start text-muted-foreground">
-              <th className="pb-2 pe-4 font-medium">{t('drawer.costBreakdown.columns.component')}</th>
-              <th className="pb-2 pe-4 text-end font-medium">{t('drawer.costBreakdown.columns.previous')}</th>
-              <th className="pb-2 pe-4 text-end font-medium">{t('drawer.costBreakdown.columns.current')}</th>
-              <th className="pb-2 pe-4 text-end font-medium">{t('drawer.costBreakdown.columns.change')}</th>
-              <th className="pb-2 text-end font-medium">{t('drawer.costBreakdown.columns.pctOfTotal')}</th>
+              <th className="pb-2 pe-4 font-medium">{t($ => $.drawer.costBreakdown.columns.component)}</th>
+              <th className="pb-2 pe-4 text-end font-medium">{t($ => $.drawer.costBreakdown.columns.previous)}</th>
+              <th className="pb-2 pe-4 text-end font-medium">{t($ => $.drawer.costBreakdown.columns.current)}</th>
+              <th className="pb-2 pe-4 text-end font-medium">{t($ => $.drawer.costBreakdown.columns.change)}</th>
+              <th className="pb-2 text-end font-medium">{t($ => $.drawer.costBreakdown.columns.pctOfTotal)}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -106,7 +106,7 @@ function CostBreakdownTab({ review }: { review: PricingReview; detailLoading: bo
           </tbody>
           <tfoot>
             <tr className="border-t font-semibold">
-              <td className="py-2.5 pe-4">{t('drawer.costBreakdown.footer.recipeTotal')}</td>
+              <td className="py-2.5 pe-4">{t($ => $.drawer.costBreakdown.footer.recipeTotal)}</td>
               <td className="py-2.5 pe-4 text-end tabular-nums text-muted-foreground">{fmt(totalPrevious)}</td>
               <td className="py-2.5 pe-4 text-end tabular-nums">{fmt(totalCurrent)}</td>
               <td className="py-2.5 pe-4 text-end">
@@ -120,10 +120,10 @@ function CostBreakdownTab({ review }: { review: PricingReview; detailLoading: bo
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: t('drawer.costBreakdown.cards.previousProductCost'), value: fmt(totalPrevious), muted: true },
-          { label: t('drawer.costBreakdown.cards.productCost'), value: fmt(totalCurrent) },
+          { label: t($ => $.drawer.costBreakdown.cards.previousProductCost), value: fmt(totalPrevious), muted: true },
+          { label: t($ => $.drawer.costBreakdown.cards.productCost), value: fmt(totalCurrent) },
           {
-            label: t('drawer.costBreakdown.cards.netChange'),
+            label: t($ => $.drawer.costBreakdown.cards.netChange),
             value: `${totalCurrent >= totalPrevious ? '+' : ''}${fmt(totalCurrent - totalPrevious)}`,
             red: totalCurrent > totalPrevious,
             green: totalCurrent < totalPrevious,
@@ -152,7 +152,7 @@ function RecipeChangesTab({ review }: { review: PricingReview }) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <BookOpen className="size-8 text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground">{t('drawer.recipeChanges.empty')}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.drawer.recipeChanges.empty)}</p>
       </div>
     );
   }
@@ -164,7 +164,7 @@ function RecipeChangesTab({ review }: { review: PricingReview }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionLabel>{t('drawer.recipeChanges.title')}</SectionLabel>
+      <SectionLabel>{t($ => $.drawer.recipeChanges.title)}</SectionLabel>
       <div className="flex flex-col divide-y rounded-lg border overflow-hidden">
         {mockChanges.map((change) => {
           const diff = change.new_price - change.old_price;
@@ -177,12 +177,12 @@ function RecipeChangesTab({ review }: { review: PricingReview }) {
               </div>
               <div className="flex items-center gap-6 flex-shrink-0 text-sm">
                 <div className="text-end">
-                  <p className="text-xs text-muted-foreground">{t('drawer.recipeChanges.previous')}</p>
+                  <p className="text-xs text-muted-foreground">{t($ => $.drawer.recipeChanges.previous)}</p>
                   <p className="tabular-nums">{fmt(change.old_price)}</p>
                 </div>
                 <div className="text-muted-foreground">→</div>
                 <div className="text-end">
-                  <p className="text-xs text-muted-foreground">{t('drawer.recipeChanges.new')}</p>
+                  <p className="text-xs text-muted-foreground">{t($ => $.drawer.recipeChanges.new)}</p>
                   <p className="tabular-nums font-medium">{fmt(change.new_price)}</p>
                 </div>
                 <div className="w-16 text-end">
@@ -208,15 +208,15 @@ function PriceHistoryTab({ review }: { review: PricingReview }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionLabel>{t('drawer.priceHistory.title')}</SectionLabel>
+      <SectionLabel>{t($ => $.drawer.priceHistory.title)}</SectionLabel>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b text-start text-muted-foreground">
-            <th className="pb-2 pe-4 font-medium">{t('drawer.priceHistory.columns.date')}</th>
-            <th className="pb-2 pe-4 text-end font-medium">{t('drawer.priceHistory.columns.sellingPrice')}</th>
-            <th className="pb-2 pe-4 text-end font-medium">{t('drawer.priceHistory.columns.cost')}</th>
-            <th className="pb-2 pe-4 text-end font-medium">{t('drawer.priceHistory.columns.margin')}</th>
-            <th className="pb-2 font-medium">{t('drawer.priceHistory.columns.by')}</th>
+            <th className="pb-2 pe-4 font-medium">{t($ => $.drawer.priceHistory.columns.date)}</th>
+            <th className="pb-2 pe-4 text-end font-medium">{t($ => $.drawer.priceHistory.columns.sellingPrice)}</th>
+            <th className="pb-2 pe-4 text-end font-medium">{t($ => $.drawer.priceHistory.columns.cost)}</th>
+            <th className="pb-2 pe-4 text-end font-medium">{t($ => $.drawer.priceHistory.columns.margin)}</th>
+            <th className="pb-2 font-medium">{t($ => $.drawer.priceHistory.columns.by)}</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -258,13 +258,13 @@ function MarginSimulationTab({ review }: { review: PricingReview }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <SectionLabel>{t('drawer.marginSimulation.title')}</SectionLabel>
+        <SectionLabel>{t($ => $.drawer.marginSimulation.title)}</SectionLabel>
         <p className="text-xs text-muted-foreground mb-4">
-          {t('drawer.marginSimulation.description')}
+          {t($ => $.drawer.marginSimulation.description)}
         </p>
 
         <div className="max-w-xs">
-          <Label className="text-sm mb-1.5 block">{t('drawer.marginSimulation.label')}</Label>
+          <Label className="text-sm mb-1.5 block">{t($ => $.drawer.marginSimulation.label)}</Label>
           <Input
             type="number"
             min="0"
@@ -279,19 +279,19 @@ function MarginSimulationTab({ review }: { review: PricingReview }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
           {
-            label: t('drawer.marginSimulation.cards.expectedMargin'),
+            label: t($ => $.drawer.marginSimulation.cards.expectedMargin),
             value: `${margin.toFixed(2)}%`,
             sub: tAny('drawer.marginSimulation.cards.expectedMarginSub', { delta: `${marginDelta >= 0 ? '+' : ''}${marginDelta.toFixed(2)}%` }),
             good: margin >= review.target_margin,
           },
           {
-            label: t('drawer.marginSimulation.cards.profitPerUnit'),
+            label: t($ => $.drawer.marginSimulation.cards.profitPerUnit),
             value: fmt(profit),
             sub: tAny('drawer.marginSimulation.cards.profitPerUnitSub', { cost: fmt(cost) }),
             good: profit > 0,
           },
           {
-            label: t('drawer.marginSimulation.cards.vsTargetMargin'),
+            label: t($ => $.drawer.marginSimulation.cards.vsTargetMargin),
             value: `${targetDelta >= 0 ? '+' : ''}${targetDelta.toFixed(2)}%`,
             sub: tAny('drawer.marginSimulation.cards.vsTargetMarginSub', { target: review.target_margin.toFixed(1) }),
             good: margin >= review.target_margin,
@@ -317,23 +317,23 @@ function MarginSimulationTab({ review }: { review: PricingReview }) {
       <Separator />
 
       <div>
-        <SectionLabel>{t('drawer.marginSimulation.refPoints.title')}</SectionLabel>
+        <SectionLabel>{t($ => $.drawer.marginSimulation.refPoints.title)}</SectionLabel>
         <div className="flex flex-col gap-2 text-sm">
           {[
             {
-              label: t('drawer.marginSimulation.refPoints.currentSellingPrice'),
+              label: t($ => $.drawer.marginSimulation.refPoints.currentSellingPrice),
               value: review.selling_price,
               note: tAny('drawer.marginSimulation.refPoints.currentSellingPriceSub', { margin: currentMargin.toFixed(1) }),
             },
             {
-              label: t('drawer.marginSimulation.refPoints.suggestedPrice'),
+              label: t($ => $.drawer.marginSimulation.refPoints.suggestedPrice),
               value: review.suggested_selling_price,
-              note: t('drawer.marginSimulation.refPoints.suggestedPriceSub'),
+              note: t($ => $.drawer.marginSimulation.refPoints.suggestedPriceSub),
             },
             {
-              label: t('drawer.marginSimulation.refPoints.breakEven'),
+              label: t($ => $.drawer.marginSimulation.refPoints.breakEven),
               value: cost,
-              note: t('drawer.marginSimulation.refPoints.breakEvenSub'),
+              note: t($ => $.drawer.marginSimulation.refPoints.breakEvenSub),
             },
           ].map((ref) => (
             <button
@@ -360,11 +360,11 @@ function ApprovalHistoryTab({ review }: { review: PricingReview }) {
   const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
 
   const ACTION_LABELS: Record<string, string> = {
-    approved:     t('drawer.approvalHistory.actions.approved'),
-    kept:         t('drawer.approvalHistory.actions.kept'),
-    custom_price: t('drawer.approvalHistory.actions.customPrice'),
-    snoozed:      t('drawer.approvalHistory.actions.snoozed'),
-    assigned:     t('drawer.approvalHistory.actions.assigned'),
+    approved:     t($ => $.drawer.approvalHistory.actions.approved),
+    kept:         t($ => $.drawer.approvalHistory.actions.kept),
+    custom_price: t($ => $.drawer.approvalHistory.actions.customPrice),
+    snoozed:      t($ => $.drawer.approvalHistory.actions.snoozed),
+    assigned:     t($ => $.drawer.approvalHistory.actions.assigned),
   };
 
   const ACTION_COLORS: Record<string, string> = {
@@ -379,7 +379,7 @@ function ApprovalHistoryTab({ review }: { review: PricingReview }) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <BookOpen className="size-8 text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground">{t('drawer.approvalHistory.empty')}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.drawer.approvalHistory.empty)}</p>
       </div>
     );
   }
@@ -398,7 +398,7 @@ function ApprovalHistoryTab({ review }: { review: PricingReview }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <SectionLabel>{t('drawer.approvalHistory.title')}</SectionLabel>
+      <SectionLabel>{t($ => $.drawer.approvalHistory.title)}</SectionLabel>
       {mockHistory.map((entry) => (
         <div key={entry.id} className="rounded-lg border p-3">
           <div className="flex items-start justify-between gap-2">
@@ -443,28 +443,28 @@ export function ProductCostDrawer({ review, open, onOpenChange }: ProductCostDra
   const tabs = [
     {
       key: 'cost-breakdown',
-      label: t('drawer.tabs.costBreakdown'),
+      label: t($ => $.drawer.tabs.costBreakdown),
       content: <CostBreakdownTab review={review} detailLoading={false} />,
     },
     {
       key: 'recipe-changes',
-      label: t('drawer.tabs.recipeChanges'),
+      label: t($ => $.drawer.tabs.recipeChanges),
       badge: review.impacts.includes('recipe_changed') ? '!' : undefined,
       content: <RecipeChangesTab review={review} />,
     },
     {
       key: 'price-history',
-      label: t('drawer.tabs.priceHistory'),
+      label: t($ => $.drawer.tabs.priceHistory),
       content: <PriceHistoryTab review={review} />,
     },
     {
       key: 'simulation',
-      label: t('drawer.tabs.marginSimulation'),
+      label: t($ => $.drawer.tabs.marginSimulation),
       content: <MarginSimulationTab review={review} />,
     },
     {
       key: 'approval-history',
-      label: t('drawer.tabs.approvalHistory'),
+      label: t($ => $.drawer.tabs.approvalHistory),
       content: <ApprovalHistoryTab review={review} />,
     },
   ];
@@ -485,7 +485,7 @@ export function ProductCostDrawer({ review, open, onOpenChange }: ProductCostDra
               </p>
             </div>
             <div className="flex flex-col items-end gap-1 flex-shrink-0">
-              <span className="text-xs text-muted-foreground">{t('drawer.header.productCost')}</span>
+              <span className="text-xs text-muted-foreground">{t($ => $.drawer.header.productCost)}</span>
               <span className="text-lg font-semibold tabular-nums">{fmt(review.product_cost)}</span>
             </div>
           </div>

@@ -94,7 +94,7 @@ export function EntityTable<T>({
                 </TableHead>
               );
             })}
-            {rowActions ? <TableHead className="w-12 text-end">{t('table.actions')}</TableHead> : null}
+            {rowActions ? <TableHead className="w-12 text-end">{t($ => $.table.actions)}</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -117,7 +117,7 @@ export function EntityTable<T>({
           ) : data.length === 0 ? (
             <TableRow>
               <TableCell colSpan={totalColumns} className="p-0">
-                {emptyState ?? <EmptyState title={t('table.noRecords')} />}
+                {emptyState ?? <EmptyState title={t($ => $.table.noRecords)} />}
               </TableCell>
             </TableRow>
           ) : (

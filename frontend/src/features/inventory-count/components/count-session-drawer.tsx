@@ -71,7 +71,7 @@ function fmtDateTime(d: string | null | undefined): string {
 function VariancePill({ qty }: { qty: number | null }) {
   const { t } = useTranslation('inventory-count');
   if (qty == null) return <span className="text-muted-foreground text-xs">—</span>;
-  if (qty === 0) return <span className="text-xs text-emerald-600 font-medium">{t('drawer.variance.match')}</span>;
+  if (qty === 0) return <span className="text-xs text-emerald-600 font-medium">{t($ => $.drawer.variance.match)}</span>;
   return (
     <span className={`text-xs font-mono font-medium ${qty < 0 ? 'text-destructive' : 'text-amber-600'}`}>
       {qty > 0 ? '+' : ''}{qty.toFixed(2)}
@@ -111,7 +111,7 @@ function AttachmentThumbnail({
         <button
           onClick={onDelete}
           className="absolute inset-0 bg-destructive/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-          title={t('drawer.lines.removeAttachment')}
+          title={t($ => $.drawer.lines.removeAttachment)}
         >
           <X className="size-4 text-white" />
         </button>
@@ -164,8 +164,8 @@ function CountLineRow({
     uploadMutation.mutate(
       { lineId: line.id, file },
       {
-        onSuccess: () => toast.success(t('drawer.lines.attachAdded')),
-        onError:   () => toast.error(t('drawer.lines.attachFailed')),
+        onSuccess: () => toast.success(t($ => $.drawer.lines.attachAdded)),
+        onError:   () => toast.error(t($ => $.drawer.lines.attachFailed)),
       },
     );
     e.target.value = '';
@@ -258,13 +258,13 @@ function CountLineRow({
               }}
               className={`h-7 rounded border ${reasonRequired ? 'border-destructive' : 'border-input'} bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring`}
             >
-              <option value="">{damagedVal > 0 ? t('drawer.lines.reasonRequired') : '—'}</option>
+              <option value="">{damagedVal > 0 ? t($ => $.drawer.lines.reasonRequired) : '—'}</option>
               {DAMAGE_REASONS.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
             {reasonRequired && (
-              <p className="text-[10px] text-destructive">{t('drawer.lines.reasonHint')}</p>
+              <p className="text-[10px] text-destructive">{t($ => $.drawer.lines.reasonHint)}</p>
             )}
             {showOtherNotes && (
               <textarea
@@ -316,8 +316,8 @@ function CountLineRow({
               onDelete={() => deleteMutation.mutate(
                 { lineId: line.id, attachmentId: a.id },
                 {
-                  onSuccess: () => toast.success(t('drawer.lines.attachRemoved')),
-                  onError:   () => toast.error(t('drawer.lines.attachRemoveFailed')),
+                  onSuccess: () => toast.success(t($ => $.drawer.lines.attachRemoved)),
+                  onError:   () => toast.error(t($ => $.drawer.lines.attachRemoveFailed)),
                 },
               )}
             />
@@ -328,7 +328,7 @@ function CountLineRow({
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploadMutation.isPending}
-                title={t('drawer.lines.attachTitle')}
+                title={t($ => $.drawer.lines.attachTitle)}
                 className="w-14 h-14 rounded border border-dashed border-input flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary transition-colors disabled:opacity-50"
               >
                 {uploadMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
@@ -354,15 +354,15 @@ function Timeline({ session }: { session: CountSession }) {
   const { t } = useTranslation('inventory-count');
 
   const steps: { label: string; ts: string | null; done: boolean }[] = [
-    { label: t('drawer.timeline.sessionCreated'), ts: session.created_at,   done: true },
-    { label: t('drawer.timeline.countStarted'),   ts: session.started_at,   done: !!session.started_at },
-    { label: t('drawer.timeline.countCompleted'), ts: session.completed_at, done: !!session.completed_at },
-    { label: t('drawer.timeline.approvedPosted'), ts: session.approved_by ? session.updated_at : null, done: session.status === 'approved' },
+    { label: t($ => $.drawer.timeline.sessionCreated), ts: session.created_at,   done: true },
+    { label: t($ => $.drawer.timeline.countStarted),   ts: session.started_at,   done: !!session.started_at },
+    { label: t($ => $.drawer.timeline.countCompleted), ts: session.completed_at, done: !!session.completed_at },
+    { label: t($ => $.drawer.timeline.approvedPosted), ts: session.approved_by ? session.updated_at : null, done: session.status === 'approved' },
   ];
 
   return (
     <div className="px-6 py-4 border-t">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t('drawer.timeline.title')}</p>
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t($ => $.drawer.timeline.title)}</p>
       <ol className="relative border-l border-border ml-2 space-y-3">
         {steps.map((step, i) => (
           <li key={i} className="pl-4 relative">
@@ -380,7 +380,7 @@ function Timeline({ session }: { session: CountSession }) {
               <p className="text-[10px] text-muted-foreground mt-0.5">{fmtDateTime(step.ts)}</p>
             )}
             {!step.done && !step.ts && (
-              <p className="text-[10px] text-muted-foreground/50 mt-0.5">{t('drawer.timeline.pending')}</p>
+              <p className="text-[10px] text-muted-foreground/50 mt-0.5">{t($ => $.drawer.timeline.pending)}</p>
             )}
           </li>
         ))}
@@ -395,11 +395,11 @@ function DecisionBadge({ decision }: { decision: CountReportData['product_detail
   const { t } = useTranslation('inventory-count');
 
   const map: Record<string, { label: string; cls: string }> = {
-    match:              { label: t('drawer.report.decisions.match'),            cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    overstock:          { label: t('drawer.report.decisions.overstock'),        cls: 'bg-blue-100 text-blue-700 border-blue-200' },
-    shortage:           { label: t('drawer.report.decisions.shortage'),         cls: 'bg-red-100 text-red-700 border-red-200' },
-    waste:              { label: t('drawer.report.decisions.waste'),            cls: 'bg-amber-100 text-amber-700 border-amber-200' },
-    shortage_and_waste: { label: t('drawer.report.decisions.shortageAndWaste'), cls: 'bg-orange-100 text-orange-700 border-orange-200' },
+    match:              { label: t($ => $.drawer.report.decisions.match),            cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    overstock:          { label: t($ => $.drawer.report.decisions.overstock),        cls: 'bg-blue-100 text-blue-700 border-blue-200' },
+    shortage:           { label: t($ => $.drawer.report.decisions.shortage),         cls: 'bg-red-100 text-red-700 border-red-200' },
+    waste:              { label: t($ => $.drawer.report.decisions.waste),            cls: 'bg-amber-100 text-amber-700 border-amber-200' },
+    shortage_and_waste: { label: t($ => $.drawer.report.decisions.shortageAndWaste), cls: 'bg-orange-100 text-orange-700 border-orange-200' },
   };
   const cfg = map[decision] ?? { label: decision, cls: '' };
   return <Badge variant="outline" className={`text-[10px] ${cfg.cls}`}>{cfg.label}</Badge>;
@@ -415,14 +415,14 @@ function CountReport({ sessionId, currency, locale }: { sessionId: string; curre
   const fmtMoney = (v: number) => formatMoney(v, currency, locale);
 
   const inventoryKpis = [
-    { key: 'systemQty',   label: t('drawer.report.kpis.systemQty'),   value: fmt(report.inventory_summary.system_qty, 0) },
-    { key: 'countedQty',  label: t('drawer.report.kpis.countedQty'),  value: fmt(report.inventory_summary.counted_qty, 0) },
-    { key: 'damagedQty',  label: t('drawer.report.kpis.damagedQty'),  value: fmt(report.inventory_summary.damaged_qty, 0) },
-    { key: 'shortageQty', label: t('drawer.report.kpis.shortageQty'), value: fmt(report.inventory_summary.shortage_qty, 0) },
-    { key: 'lines',       label: t('drawer.report.kpis.lines'),        value: `${report.inventory_summary.counted_lines}/${report.inventory_summary.total_lines}` },
+    { key: 'systemQty',   label: t($ => $.drawer.report.kpis.systemQty),   value: fmt(report.inventory_summary.system_qty, 0) },
+    { key: 'countedQty',  label: t($ => $.drawer.report.kpis.countedQty),  value: fmt(report.inventory_summary.counted_qty, 0) },
+    { key: 'damagedQty',  label: t($ => $.drawer.report.kpis.damagedQty),  value: fmt(report.inventory_summary.damaged_qty, 0) },
+    { key: 'shortageQty', label: t($ => $.drawer.report.kpis.shortageQty), value: fmt(report.inventory_summary.shortage_qty, 0) },
+    { key: 'lines',       label: t($ => $.drawer.report.kpis.lines),        value: `${report.inventory_summary.counted_lines}/${report.inventory_summary.total_lines}` },
     {
       key: 'accuracy',
-      label: t('drawer.report.kpis.accuracy'),
+      label: t($ => $.drawer.report.kpis.accuracy),
       value: report.inventory_summary.inventory_accuracy != null
         ? `${report.inventory_summary.inventory_accuracy.toFixed(1)}%`
         : '—',
@@ -433,20 +433,20 @@ function CountReport({ sessionId, currency, locale }: { sessionId: string; curre
     <div className="flex-1 overflow-auto p-6 space-y-6">
       {/* Header */}
       <div className="rounded-lg border bg-card p-4">
-        <p className="text-sm font-semibold mb-2">{t('drawer.report.title')}</p>
+        <p className="text-sm font-semibold mb-2">{t($ => $.drawer.report.title)}</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-          <div className="text-muted-foreground">{t('drawer.report.sessionNo')}</div><div className="font-mono">{report.session.count_number}</div>
-          <div className="text-muted-foreground">{t('drawer.report.warehouse')}</div><div>{report.session.warehouse?.name ?? '—'}</div>
-          <div className="text-muted-foreground">{t('drawer.report.started')}</div><div>{fmtDateTime(report.session.started_at)}</div>
-          <div className="text-muted-foreground">{t('drawer.report.completed')}</div><div>{fmtDateTime(report.session.completed_at)}</div>
-          <div className="text-muted-foreground">{t('drawer.report.approvedBy')}</div><div>{report.session.approved_by ?? '—'}</div>
-          <div className="text-muted-foreground">{t('drawer.report.approvalDate')}</div><div>{fmtDateTime(report.session.approved_at)}</div>
+          <div className="text-muted-foreground">{t($ => $.drawer.report.sessionNo)}</div><div className="font-mono">{report.session.count_number}</div>
+          <div className="text-muted-foreground">{t($ => $.drawer.report.warehouse)}</div><div>{report.session.warehouse?.name ?? '—'}</div>
+          <div className="text-muted-foreground">{t($ => $.drawer.report.started)}</div><div>{fmtDateTime(report.session.started_at)}</div>
+          <div className="text-muted-foreground">{t($ => $.drawer.report.completed)}</div><div>{fmtDateTime(report.session.completed_at)}</div>
+          <div className="text-muted-foreground">{t($ => $.drawer.report.approvedBy)}</div><div>{report.session.approved_by ?? '—'}</div>
+          <div className="text-muted-foreground">{t($ => $.drawer.report.approvalDate)}</div><div>{fmtDateTime(report.session.approved_at)}</div>
         </div>
       </div>
 
       {/* Inventory Summary */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('drawer.report.inventorySummary')}</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t($ => $.drawer.report.inventorySummary)}</p>
         <div className="grid grid-cols-3 gap-3">
           {inventoryKpis.map((kpi) => (
             <div key={kpi.key} className="rounded-md border bg-card p-2.5">
@@ -459,18 +459,18 @@ function CountReport({ sessionId, currency, locale }: { sessionId: string; curre
 
       {/* Financial Summary */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('drawer.report.financialSummary')}</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t($ => $.drawer.report.financialSummary)}</p>
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-md border bg-card p-2.5">
-            <p className="text-[10px] text-muted-foreground">{t('drawer.report.kpis.shortageValue')}</p>
+            <p className="text-[10px] text-muted-foreground">{t($ => $.drawer.report.kpis.shortageValue)}</p>
             <p className="text-sm font-semibold text-destructive tabular-nums mt-0.5">{fmtMoney(report.financial_summary.shortage_value)}</p>
           </div>
           <div className="rounded-md border bg-card p-2.5">
-            <p className="text-[10px] text-muted-foreground">{t('drawer.report.kpis.wasteValue')}</p>
+            <p className="text-[10px] text-muted-foreground">{t($ => $.drawer.report.kpis.wasteValue)}</p>
             <p className="text-sm font-semibold text-amber-600 tabular-nums mt-0.5">{fmtMoney(report.financial_summary.waste_value)}</p>
           </div>
           <div className="rounded-md border bg-card p-2.5">
-            <p className="text-[10px] text-muted-foreground">{t('drawer.report.kpis.totalAdjustment')}</p>
+            <p className="text-[10px] text-muted-foreground">{t($ => $.drawer.report.kpis.totalAdjustment)}</p>
             <p className="text-sm font-semibold tabular-nums mt-0.5">{fmtMoney(report.financial_summary.total_adjustment)}</p>
           </div>
         </div>
@@ -479,39 +479,39 @@ function CountReport({ sessionId, currency, locale }: { sessionId: string; curre
       {/* Investigation & Liability Summary */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('drawer.report.investigationSummary')}</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t($ => $.drawer.report.investigationSummary)}</p>
           <div className="rounded-md border bg-card p-3 text-xs space-y-1">
-            <div className="flex justify-between"><span className="text-muted-foreground">{t('drawer.report.investigationKpis.pending')}</span><span className="font-medium">{report.investigation_summary.pending}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{t('drawer.report.investigationKpis.resolved')}</span><span className="font-medium">{report.investigation_summary.resolved}</span></div>
-            <div className="flex justify-between border-t pt-1 mt-1"><span className="text-muted-foreground">{t('drawer.report.investigationKpis.pendingValue')}</span><span className="font-medium text-amber-600">{fmtMoney(report.investigation_summary.pending_value)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{t($ => $.drawer.report.investigationKpis.pending)}</span><span className="font-medium">{report.investigation_summary.pending}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{t($ => $.drawer.report.investigationKpis.resolved)}</span><span className="font-medium">{report.investigation_summary.resolved}</span></div>
+            <div className="flex justify-between border-t pt-1 mt-1"><span className="text-muted-foreground">{t($ => $.drawer.report.investigationKpis.pendingValue)}</span><span className="font-medium text-amber-600">{fmtMoney(report.investigation_summary.pending_value)}</span></div>
           </div>
         </div>
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('drawer.report.liabilitySummary')}</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t($ => $.drawer.report.liabilitySummary)}</p>
           <div className="rounded-md border bg-card p-3 text-xs space-y-1">
-            <div className="flex justify-between"><span className="text-muted-foreground">{t('drawer.report.liabilityKpis.pending')}</span><span className="font-medium">{report.liability_summary.pending}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{t('drawer.report.liabilityKpis.approved')}</span><span className="font-medium">{report.liability_summary.approved}</span></div>
-            <div className="flex justify-between border-t pt-1 mt-1"><span className="text-muted-foreground">{t('drawer.report.liabilityKpis.pendingValue')}</span><span className="font-medium text-destructive">{fmtMoney(report.liability_summary.pending_value)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{t($ => $.drawer.report.liabilityKpis.pending)}</span><span className="font-medium">{report.liability_summary.pending}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{t($ => $.drawer.report.liabilityKpis.approved)}</span><span className="font-medium">{report.liability_summary.approved}</span></div>
+            <div className="flex justify-between border-t pt-1 mt-1"><span className="text-muted-foreground">{t($ => $.drawer.report.liabilityKpis.pendingValue)}</span><span className="font-medium text-destructive">{fmtMoney(report.liability_summary.pending_value)}</span></div>
           </div>
         </div>
       </div>
 
       {/* Product Details */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('drawer.report.productDetails')}</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t($ => $.drawer.report.productDetails)}</p>
         <div className="rounded-md border overflow-hidden">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b bg-muted/40">
-                <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('drawer.report.cols.product')}</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('drawer.report.cols.system')}</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('drawer.report.cols.counted')}</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('drawer.report.cols.damaged')}</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('drawer.report.cols.shortage')}</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('drawer.report.cols.unitCost')}</th>
-                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('drawer.report.cols.totalValue')}</th>
-                <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('drawer.report.cols.reason')}</th>
-                <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('drawer.report.cols.decision')}</th>
+                <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.drawer.report.cols.product)}</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.drawer.report.cols.system)}</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.drawer.report.cols.counted)}</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.drawer.report.cols.damaged)}</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.drawer.report.cols.shortage)}</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.drawer.report.cols.unitCost)}</th>
+                <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.drawer.report.cols.totalValue)}</th>
+                <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.drawer.report.cols.reason)}</th>
+                <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.drawer.report.cols.decision)}</th>
               </tr>
             </thead>
             <tbody>
@@ -589,9 +589,9 @@ export function CountSessionDrawer({ sessionId, open, onOpenChange }: Props) {
         lines: Object.entries(pendingLineUpdates).map(([id, upd]) => ({ id, ...upd })),
       });
       setPendingLineUpdates({});
-      toast.success(t('drawer.toast.saved'));
+      toast.success(t($ => $.drawer.toast.saved));
     } catch {
-      toast.error(t('drawer.toast.saveFailed'));
+      toast.error(t($ => $.drawer.toast.saveFailed));
     } finally {
       setSaving(false);
     }
@@ -624,10 +624,10 @@ export function CountSessionDrawer({ sessionId, open, onOpenChange }: Props) {
             onViewChange={setView}
             onLineChange={handleLineChange}
             onSaveLines={handleSaveLines}
-            onStart={() => handleAction(() => startMutation.mutateAsync(session.id), t('drawer.toast.started'), t('drawer.toast.startFailed'))}
-            onComplete={() => handleAction(() => completeMutation.mutateAsync(session.id), t('drawer.toast.completed'), t('drawer.toast.completeFailed'))}
-            onApprove={() => handleAction(() => approveMutation.mutateAsync({ id: session.id }), t('drawer.toast.approved'), t('drawer.toast.approveFailed'))}
-            onCancel={() => handleAction(() => cancelMutation.mutateAsync(session.id), t('drawer.toast.cancelled'), t('drawer.toast.cancelFailed'))}
+            onStart={() => handleAction(() => startMutation.mutateAsync(session.id), t($ => $.drawer.toast.started), t($ => $.drawer.toast.startFailed))}
+            onComplete={() => handleAction(() => completeMutation.mutateAsync(session.id), t($ => $.drawer.toast.completed), t($ => $.drawer.toast.completeFailed))}
+            onApprove={() => handleAction(() => approveMutation.mutateAsync({ id: session.id }), t($ => $.drawer.toast.approved), t($ => $.drawer.toast.approveFailed))}
+            onCancel={() => handleAction(() => cancelMutation.mutateAsync(session.id), t($ => $.drawer.toast.cancelled), t($ => $.drawer.toast.cancelFailed))}
           />
         )}
       </SheetContent>
@@ -699,13 +699,13 @@ function SessionContent({
                 onClick={() => onViewChange('count')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === 'count' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-accent'}`}
               >
-                <PackageSearch className="size-3.5 inline mr-1" />{t('drawer.viewCount')}
+                <PackageSearch className="size-3.5 inline mr-1" />{t($ => $.drawer.viewCount)}
               </button>
               <button
                 onClick={() => onViewChange('report')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === 'report' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-accent'}`}
               >
-                <FileText className="size-3.5 inline mr-1" />{t('drawer.viewReport')}
+                <FileText className="size-3.5 inline mr-1" />{t($ => $.drawer.viewReport)}
               </button>
             </div>
           )}
@@ -716,7 +716,7 @@ function SessionContent({
       {(session.status === 'in_progress' || session.status === 'completed') && (
         <Alert className="mx-6 mt-3 shrink-0 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
           <AlertDescription className="text-xs text-amber-800 dark:text-amber-200">
-            <strong>{t('drawer.blindCountActive')}</strong> — {t('drawer.blindCountDesc')}
+            <strong>{t($ => $.drawer.blindCountActive)}</strong> — {t($ => $.drawer.blindCountDesc)}
           </AlertDescription>
         </Alert>
       )}
@@ -729,20 +729,20 @@ function SessionContent({
           {/* Meta strip */}
           <div className="px-6 py-3 border-b shrink-0 grid grid-cols-4 gap-4 text-xs">
             <div>
-              <p className="text-muted-foreground">{t('drawer.meta.started')}</p>
+              <p className="text-muted-foreground">{t($ => $.drawer.meta.started)}</p>
               <p className="font-medium mt-0.5">{session.started_at ? fmtDateTime(session.started_at) : '—'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">{t('drawer.meta.completed')}</p>
+              <p className="text-muted-foreground">{t($ => $.drawer.meta.completed)}</p>
               <p className="font-medium mt-0.5">{session.completed_at ? fmtDateTime(session.completed_at) : '—'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">{t('drawer.meta.lines')}</p>
+              <p className="text-muted-foreground">{t($ => $.drawer.meta.lines)}</p>
               <p className="font-medium mt-0.5">{lines.length}</p>
             </div>
             {session.status === 'approved' && session.approved_by && (
               <div>
-                <p className="text-muted-foreground">{t('drawer.meta.approvedBy')}</p>
+                <p className="text-muted-foreground">{t($ => $.drawer.meta.approvedBy)}</p>
                 <p className="font-medium mt-0.5">{session.approved_by}</p>
               </div>
             )}
@@ -752,23 +752,23 @@ function SessionContent({
           {vs && showSystemQty && (
             <div className="px-6 py-3 border-b shrink-0 grid grid-cols-4 gap-3 text-xs">
               <div className="rounded-md border bg-card p-2.5">
-                <p className="text-muted-foreground">{t('drawer.summary.accuracy')}</p>
+                <p className="text-muted-foreground">{t($ => $.drawer.summary.accuracy)}</p>
                 <p className="text-base font-semibold mt-0.5 text-emerald-600">
                   {vs.inventory_accuracy_pct != null ? `${vs.inventory_accuracy_pct.toFixed(1)}%` : '—'}
                 </p>
               </div>
               <div className="rounded-md border bg-card p-2.5">
-                <p className="text-muted-foreground">{t('drawer.summary.shortageLines')}</p>
+                <p className="text-muted-foreground">{t($ => $.drawer.summary.shortageLines)}</p>
                 <p className="text-base font-semibold mt-0.5 text-destructive">{totalShortageLines}</p>
               </div>
               <div className="rounded-md border bg-card p-2.5">
-                <p className="text-muted-foreground">{t('drawer.summary.shortageValue')}</p>
+                <p className="text-muted-foreground">{t($ => $.drawer.summary.shortageValue)}</p>
                 <p className="text-sm font-semibold mt-0.5 text-destructive tabular-nums">
                   {session.shortage_value != null ? formatMoney(session.shortage_value, currency, locale) : '—'}
                 </p>
               </div>
               <div className="rounded-md border bg-card p-2.5">
-                <p className="text-muted-foreground">{t('drawer.summary.wasteValue')}</p>
+                <p className="text-muted-foreground">{t($ => $.drawer.summary.wasteValue)}</p>
                 <p className="text-sm font-semibold mt-0.5 text-amber-600 tabular-nums">
                   {session.waste_value != null ? formatMoney(session.waste_value, currency, locale) : '—'}
                 </p>
@@ -797,25 +797,25 @@ function SessionContent({
           {/* Lines table */}
           <div className="flex-1 overflow-auto">
             {lines.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-12">{t('drawer.lines.empty')}</p>
+              <p className="text-muted-foreground text-sm text-center py-12">{t($ => $.drawer.lines.empty)}</p>
             ) : (
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-background z-10 shadow-sm">
                   <tr className="border-b">
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t('drawer.lines.product')}</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t($ => $.drawer.lines.product)}</th>
                     {showSystemQty && (
-                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">{t('drawer.lines.systemQty')}</th>
+                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">{t($ => $.drawer.lines.systemQty)}</th>
                     )}
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t('drawer.lines.countedQty')}</th>
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t('drawer.lines.damagedQty')}</th>
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t('drawer.lines.damageReason')}</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t($ => $.drawer.lines.countedQty)}</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t($ => $.drawer.lines.damagedQty)}</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t($ => $.drawer.lines.damageReason)}</th>
                     {showSystemQty && (
-                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">{t('drawer.lines.shortage')}</th>
+                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">{t($ => $.drawer.lines.shortage)}</th>
                     )}
                     {showSystemQty && (
-                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">{t('drawer.lines.variance')}</th>
+                      <th className="px-3 py-2 text-end text-xs font-medium text-muted-foreground">{t($ => $.drawer.lines.variance)}</th>
                     )}
-                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t('drawer.lines.attachments')}</th>
+                    <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground">{t($ => $.drawer.lines.attachments)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -842,26 +842,26 @@ function SessionContent({
             {isEditable && hasPending && (
               <Button size="sm" onClick={onSaveLines} disabled={isBusy} className="gap-1.5">
                 {isBusy ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                {t('drawer.actions.saveCount')}
+                {t($ => $.drawer.actions.saveCount)}
               </Button>
             )}
 
             {session.status === 'draft' && (
               <Button size="sm" variant="default" onClick={onStart} disabled={isBusy} className="gap-1.5">
                 <PlayCircle className="size-3.5" />
-                {t('drawer.actions.startCount')}
+                {t($ => $.drawer.actions.startCount)}
               </Button>
             )}
             {session.status === 'in_progress' && (
               <Button size="sm" variant="default" onClick={onComplete} disabled={isBusy} className="gap-1.5">
                 <CheckCircle className="size-3.5" />
-                {t('drawer.actions.completeCount')}
+                {t($ => $.drawer.actions.completeCount)}
               </Button>
             )}
             {session.status === 'completed' && (
               <Button size="sm" variant="default" onClick={onApprove} disabled={isBusy} className="gap-1.5">
                 <CheckCircle2 className="size-3.5" />
-                {t('drawer.actions.approvePost')}
+                {t($ => $.drawer.actions.approvePost)}
               </Button>
             )}
             {(session.status === 'draft' || session.status === 'in_progress' || session.status === 'completed') && (
@@ -873,19 +873,19 @@ function SessionContent({
                 className="gap-1.5 text-destructive hover:text-destructive ms-auto"
               >
                 <XCircle className="size-3.5" />
-                {t('drawer.actions.cancel')}
+                {t($ => $.drawer.actions.cancel)}
               </Button>
             )}
             {session.status === 'approved' && (
               <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium ms-auto">
                 <Check className="size-3.5" />
-                {t('drawer.actions.approved')}
+                {t($ => $.drawer.actions.approved)}
               </div>
             )}
             {session.status === 'cancelled' && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground ms-auto">
                 <RotateCcw className="size-3.5" />
-                {t('drawer.actions.cancelled')}
+                {t($ => $.drawer.actions.cancelled)}
               </div>
             )}
           </div>

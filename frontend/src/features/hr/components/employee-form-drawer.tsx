@@ -52,7 +52,7 @@ export function EmployeeFormDrawer({ open, onOpenChange }: Props) {
     setError(null);
 
     if (!form.first_name.trim() || !form.last_name.trim()) {
-      setError(t('employeeForm.errors.nameRequired'));
+      setError(t($ => $.employeeForm.errors.nameRequired));
       return;
     }
 
@@ -70,7 +70,7 @@ export function EmployeeFormDrawer({ open, onOpenChange }: Props) {
       setForm({ ...EMPTY });
       onOpenChange(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('employeeForm.errors.createFailed'));
+      setError(e instanceof Error ? e.message : t($ => $.employeeForm.errors.createFailed));
     }
   };
 
@@ -78,15 +78,15 @@ export function EmployeeFormDrawer({ open, onOpenChange }: Props) {
     <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
-      title={t('employeeForm.title')}
-      description={t('employeeForm.description')}
+      title={t($ => $.employeeForm.title)}
+      description={t($ => $.employeeForm.description)}
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('common.cancel')}
+            {t($ => $.common.cancel)}
           </Button>
           <Button onClick={() => void submit()} disabled={create.isPending}>
-            {create.isPending ? t('common.creating') : t('employeeForm.submit')}
+            {create.isPending ? t($ => $.common.creating) : t($ => $.employeeForm.submit)}
           </Button>
         </div>
       }
@@ -96,47 +96,47 @@ export function EmployeeFormDrawer({ open, onOpenChange }: Props) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="first_name">{t('employeeForm.fields.firstName')}</Label>
+            <Label htmlFor="first_name">{t($ => $.employeeForm.fields.firstName)}</Label>
             <Input id="first_name" value={form.first_name} onChange={(e) => set('first_name')(e.target.value)} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="last_name">{t('employeeForm.fields.lastName')}</Label>
+            <Label htmlFor="last_name">{t($ => $.employeeForm.fields.lastName)}</Label>
             <Input id="last_name" value={form.last_name} onChange={(e) => set('last_name')(e.target.value)} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="work_email">{t('employeeForm.fields.workEmail')}</Label>
+            <Label htmlFor="work_email">{t($ => $.employeeForm.fields.workEmail)}</Label>
             <Input id="work_email" type="email" value={form.work_email} onChange={(e) => set('work_email')(e.target.value)} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="mobile">{t('employeeForm.fields.mobile')}</Label>
+            <Label htmlFor="mobile">{t($ => $.employeeForm.fields.mobile)}</Label>
             <Input id="mobile" value={form.mobile} onChange={(e) => set('mobile')(e.target.value)} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="national_id">{t('employeeForm.fields.nationalId')}</Label>
+            <Label htmlFor="national_id">{t($ => $.employeeForm.fields.nationalId)}</Label>
             <Input id="national_id" value={form.national_id} onChange={(e) => set('national_id')(e.target.value)} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="hire_date">{t('employeeForm.fields.hireDate')}</Label>
+            <Label htmlFor="hire_date">{t($ => $.employeeForm.fields.hireDate)}</Label>
             <Input id="hire_date" type="date" value={form.hire_date} onChange={(e) => set('hire_date')(e.target.value)} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="department_id">{t('employeeForm.fields.department')}</Label>
+            <Label htmlFor="department_id">{t($ => $.employeeForm.fields.department)}</Label>
             <select
               id="department_id"
               value={form.department_id}
               onChange={(e) => set('department_id')(e.target.value)}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="">{t('common.notAssigned')}</option>
+              <option value="">{t($ => $.common.notAssigned)}</option>
               {(departments ?? []).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -145,18 +145,18 @@ export function EmployeeFormDrawer({ open, onOpenChange }: Props) {
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="position_id">{t('employeeForm.fields.position')}</Label>
+            <Label htmlFor="position_id">{t($ => $.employeeForm.fields.position)}</Label>
             <select
               id="position_id"
               value={form.position_id}
               onChange={(e) => set('position_id')(e.target.value)}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="">{t('common.notAssigned')}</option>
+              <option value="">{t($ => $.common.notAssigned)}</option>
               {(positions ?? []).map((p) => (
                 <option key={p.id} value={p.id} disabled={!p.has_vacancy}>
                   {p.title}
-                  {p.has_vacancy ? '' : ` ${t('employeeForm.positionFull')}`}
+                  {p.has_vacancy ? '' : ` ${t($ => $.employeeForm.positionFull)}`}
                 </option>
               ))}
             </select>
@@ -165,14 +165,14 @@ export function EmployeeFormDrawer({ open, onOpenChange }: Props) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="job_grade_id">{t('employeeForm.fields.jobGrade')}</Label>
+            <Label htmlFor="job_grade_id">{t($ => $.employeeForm.fields.jobGrade)}</Label>
             <select
               id="job_grade_id"
               value={form.job_grade_id}
               onChange={(e) => set('job_grade_id')(e.target.value)}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="">{t('common.notAssigned')}</option>
+              <option value="">{t($ => $.common.notAssigned)}</option>
               {(grades ?? []).map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -181,14 +181,14 @@ export function EmployeeFormDrawer({ open, onOpenChange }: Props) {
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="employment_type_id">{t('employeeForm.fields.employmentType')}</Label>
+            <Label htmlFor="employment_type_id">{t($ => $.employeeForm.fields.employmentType)}</Label>
             <select
               id="employment_type_id"
               value={form.employment_type_id}
               onChange={(e) => set('employment_type_id')(e.target.value)}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="">{t('common.notAssigned')}</option>
+              <option value="">{t($ => $.common.notAssigned)}</option>
               {(types ?? []).map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}

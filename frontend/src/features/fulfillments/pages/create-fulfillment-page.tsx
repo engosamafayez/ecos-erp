@@ -72,20 +72,20 @@ export function CreateFulfillmentPage() {
     <FormProvider {...form}>
       <div className="flex flex-col gap-6">
         <PageHeader
-          title={t('create.title')}
-          subtitle={t('create.subtitle')}
+          title={t($ => $.create.title)}
+          subtitle={t($ => $.create.subtitle)}
           breadcrumbs={[
-            { label: tCommon('home'), to: ROUTES.dashboard },
-            { label: t('title'), to: ROUTES.fulfillments },
-            { label: t('create.new') },
+            { label: tCommon($ => $.home), to: ROUTES.dashboard },
+            { label: t($ => $.title), to: ROUTES.fulfillments },
+            { label: t($ => $.create.new) },
           ]}
           actions={
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => navigate(ROUTES.fulfillments)}>
-                {tCommon('common.cancel')}
+                {tCommon($ => $.common.cancel)}
               </Button>
               <Button type="submit" form={FORM_ID} disabled={createFulfillment.isPending}>
-                {createFulfillment.isPending ? t('create.creating') : t('create.submitCreate')}
+                {createFulfillment.isPending ? t($ => $.create.creating) : t($ => $.create.submitCreate)}
               </Button>
             </div>
           }
@@ -93,7 +93,7 @@ export function CreateFulfillmentPage() {
 
         {serverError ? (
           <Alert variant="destructive">
-            <AlertTitle>{t('create.errorTitle')}</AlertTitle>
+            <AlertTitle>{t($ => $.create.errorTitle)}</AlertTitle>
             <AlertDescription>{serverError}</AlertDescription>
           </Alert>
         ) : null}
@@ -101,7 +101,7 @@ export function CreateFulfillmentPage() {
         <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t('create.fulfillmentDetails')}</CardTitle>
+              <CardTitle className="text-base">{t($ => $.create.fulfillmentDetails)}</CardTitle>
             </CardHeader>
             <CardContent>
               <FulfillmentHeaderFields />
@@ -110,7 +110,7 @@ export function CreateFulfillmentPage() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t('create.lineItems')}</CardTitle>
+              <CardTitle className="text-base">{t($ => $.create.lineItems)}</CardTitle>
             </CardHeader>
             <CardContent>
               <FulfillmentLinesEditor />

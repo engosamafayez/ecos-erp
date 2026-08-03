@@ -49,10 +49,10 @@ function EmptyAreas({ hasFilter }: { hasFilter: boolean }) {
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <NetworkIcon className="mb-3 size-12 text-muted-foreground/20" />
       <p className="text-sm font-medium">
-        {hasFilter ? t('network.empty.filteredTitle') : t('network.empty.title')}
+        {hasFilter ? t($ => $.network.empty.filteredTitle) : t($ => $.network.empty.title)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {hasFilter ? t('network.empty.filteredHint') : t('network.empty.hint')}
+        {hasFilter ? t($ => $.network.empty.filteredHint) : t($ => $.network.empty.hint)}
       </p>
     </div>
   );
@@ -99,19 +99,19 @@ export function ServiceAreasPage() {
   const uncovered = areas.filter((a) => a.member_count === 0).length;
 
   const metrics = [
-    { id: 'areas', icon: NetworkIcon, label: t('network.metrics.serviceAreas'), value: meta?.total ?? 0, isLoading: !data },
-    { id: 'active', icon: MapPin, label: t('common.active'), value: activeCount, isLoading: !data, colorClass: 'text-emerald-600' },
-    { id: 'regions', icon: Layers, label: t('network.metrics.dispatchRegions'), value: regions?.length ?? 0, isLoading: !regions },
+    { id: 'areas', icon: NetworkIcon, label: t($ => $.network.metrics.serviceAreas), value: meta?.total ?? 0, isLoading: !data },
+    { id: 'active', icon: MapPin, label: t($ => $.common.active), value: activeCount, isLoading: !data, colorClass: 'text-emerald-600' },
+    { id: 'regions', icon: Layers, label: t($ => $.network.metrics.dispatchRegions), value: regions?.length ?? 0, isLoading: !regions },
     // An area with no members never matches an address — worth surfacing.
-    { id: 'uncovered', icon: PauseCircle, label: t('network.metrics.withoutCoverage'), value: uncovered, isLoading: !data, colorClass: 'text-amber-600' },
+    { id: 'uncovered', icon: PauseCircle, label: t($ => $.network.metrics.withoutCoverage), value: uncovered, isLoading: !data, colorClass: 'text-amber-600' },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: t('network.breadcrumbRoot') }, { label: t('network.breadcrumbNetwork') }]}
-        title={t('network.title')}
-        description={t('network.description')}
+        breadcrumbs={[{ label: t($ => $.network.breadcrumbRoot) }, { label: t($ => $.network.breadcrumbNetwork) }]}
+        title={t($ => $.network.title)}
+        description={t($ => $.network.description)}
         metrics={metrics}
       />
 
@@ -150,11 +150,11 @@ export function ServiceAreasPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="h-10 px-3 font-medium">{t('network.table.area')}</th>
-                    <th className="h-10 px-3 font-medium">{t('common.status')}</th>
-                    <th className="h-10 px-3 text-center font-medium">{t('network.table.members')}</th>
-                    <th className="h-10 px-3 font-medium">{t('network.area.dispatchRegion')}</th>
-                    <th className="h-10 px-3 text-end font-medium">{t('network.area.leadTime')}</th>
+                    <th className="h-10 px-3 font-medium">{t($ => $.network.table.area)}</th>
+                    <th className="h-10 px-3 font-medium">{t($ => $.common.status)}</th>
+                    <th className="h-10 px-3 text-center font-medium">{t($ => $.network.table.members)}</th>
+                    <th className="h-10 px-3 font-medium">{t($ => $.network.area.dispatchRegion)}</th>
+                    <th className="h-10 px-3 text-end font-medium">{t($ => $.network.area.leadTime)}</th>
                     <th className="h-10 w-10 px-3" />
                   </tr>
                 </thead>
@@ -177,7 +177,7 @@ export function ServiceAreasPage() {
                       </td>
                       <td className="px-3 py-2.5 text-center tabular-nums">
                         {area.member_count === 0 ? (
-                          <span className="text-amber-600" title={t('network.table.noCoverageTooltip')}>
+                          <span className="text-amber-600" title={t($ => $.network.table.noCoverageTooltip)}>
                             0
                           </span>
                         ) : (
@@ -188,7 +188,7 @@ export function ServiceAreasPage() {
                         {area.dispatch_region?.name ?? '—'}
                       </td>
                       <td className="px-3 py-2.5 text-end tabular-nums">
-                        {t('network.hoursShort', { hours: area.default_lead_time_hours })}
+                        {t($ => $.network.hoursShort, { hours: area.default_lead_time_hours })}
                       </td>
                       <td className="px-3 py-2.5 text-end">
                         <ChevronRight className="size-4 text-muted-foreground" />

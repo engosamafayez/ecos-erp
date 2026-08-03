@@ -124,7 +124,7 @@ export function OrderZoneEditor({ order }: Props) {
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           className="group flex flex-col rounded-sm px-1 py-0.5 text-start hover:bg-muted"
-          title={t('columns.editZone')}
+          title={t($ => $.columns.editZone)}
         >
           {displayZone ? (
             <span className="text-sm font-semibold text-primary leading-snug">
@@ -132,12 +132,12 @@ export function OrderZoneEditor({ order }: Props) {
             </span>
           ) : (
             <span className="text-xs text-muted-foreground group-hover:text-foreground">
-              + {t('columns.addZone')}
+              + {t($ => $.columns.addZone)}
             </span>
           )}
           {displayGov ? (
             <span className="text-xs text-muted-foreground leading-snug">
-              {t('columns.governorateWithName', { name: displayGov })}
+              {t($ => $.columns.governorateWithName, { name: displayGov })}
             </span>
           ) : null}
         </button>
@@ -153,14 +153,14 @@ export function OrderZoneEditor({ order }: Props) {
 
           {!brandId ? (
             <p className="text-[11px] text-amber-500">
-              {t('zoneEditor.noBrandChannel')}
+              {t($ => $.zoneEditor.noBrandChannel)}
             </p>
           ) : null}
 
           {/* Governorate ── from brand shipping config */}
           <div className="flex flex-col gap-1">
             <Label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              {t('workspace.fields.governorate')}
+              {t($ => $.workspace.fields.governorate)}
             </Label>
             <Select
               value={selectedGovId?.toString() ?? ''}
@@ -168,7 +168,7 @@ export function OrderZoneEditor({ order }: Props) {
               disabled={!brandId}
             >
               <SelectTrigger size="sm" className="h-7 text-xs">
-                <SelectValue placeholder={t('workspace.selectGovernorate')} />
+                <SelectValue placeholder={t($ => $.workspace.selectGovernorate)} />
               </SelectTrigger>
               <SelectContent>
                 {enabledGovs.map(g => (
@@ -187,7 +187,7 @@ export function OrderZoneEditor({ order }: Props) {
           {/* Zone / City ── filtered by selected governorate */}
           <div className="flex flex-col gap-1">
             <Label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              {t('zoneEditor.zoneCity')}
+              {t($ => $.zoneEditor.zoneCity)}
             </Label>
             <Select
               value={selectedCityId?.toString() ?? ''}
@@ -196,7 +196,7 @@ export function OrderZoneEditor({ order }: Props) {
             >
               <SelectTrigger size="sm" className="h-7 text-xs">
                 <SelectValue
-                  placeholder={selectedGovId ? t('workspace.selectZone') : t('workspace.selectGovFirst')}
+                  placeholder={selectedGovId ? t($ => $.workspace.selectZone) : t($ => $.workspace.selectGovFirst)}
                 />
               </SelectTrigger>
               <SelectContent>
@@ -212,7 +212,7 @@ export function OrderZoneEditor({ order }: Props) {
                   ))
                 ) : (
                   <SelectItem value="__none" disabled className="text-xs text-muted-foreground">
-                    {selectedGovId ? t('zoneEditor.noZonesFound') : t('workspace.selectGovFirst')}
+                    {selectedGovId ? t($ => $.zoneEditor.noZonesFound) : t($ => $.workspace.selectGovFirst)}
                   </SelectItem>
                 )}
               </SelectContent>
@@ -225,7 +225,7 @@ export function OrderZoneEditor({ order }: Props) {
             onClick={handleSave}
             disabled={isPending || !brandId}
           >
-            {isPending ? t('zoneEditor.saving') : t('zoneEditor.save')}
+            {isPending ? t($ => $.zoneEditor.saving) : t($ => $.zoneEditor.save)}
           </Button>
 
         </div>

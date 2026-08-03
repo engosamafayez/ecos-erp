@@ -83,7 +83,7 @@ function HealthRing({ score, grade }: { score: number; grade: string }) {
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={`text-3xl font-semibold tabular-nums ${scoreTone(score)}`}>{score}</span>
         <span className="text-xs text-muted-foreground">
-          {t('operations.readiness.gradeValue', { grade })}
+          {t($ => $.operations.readiness.gradeValue, { grade })}
         </span>
       </div>
     </div>
@@ -107,30 +107,30 @@ function ReadinessTab() {
 
   return (
     <div className="space-y-4">
-      <Panel title={t('operations.readiness.panel.healthScore')}>
+      <Panel title={t($ => $.operations.readiness.panel.healthScore)}>
         <div className="flex flex-wrap items-center gap-6">
           <HealthRing score={data.health_score} grade={gradeFor(data.health_score)} />
           <div className="space-y-2">
             <StatusBadge status={data.overall_status} />
             <div className="flex gap-4 text-xs text-muted-foreground">
               <span className="text-emerald-600">
-                {t('operations.readiness.countReady', { count: data.ready_count })}
+                {t($ => $.operations.readiness.countReady, { count: data.ready_count })}
               </span>
               <span className="text-amber-600">
-                {t('operations.readiness.countDegraded', { count: data.degraded_count })}
+                {t($ => $.operations.readiness.countDegraded, { count: data.degraded_count })}
               </span>
               <span className="text-destructive">
-                {t('operations.readiness.countNotReady', { count: data.not_ready_count })}
+                {t($ => $.operations.readiness.countNotReady, { count: data.not_ready_count })}
               </span>
             </div>
             <p className="max-w-md text-xs text-muted-foreground">
-              {t('operations.readiness.weightingNote')}
+              {t($ => $.operations.readiness.weightingNote)}
             </p>
           </div>
         </div>
       </Panel>
 
-      <Panel title={t('operations.readiness.panel.moduleReadiness')}>
+      <Panel title={t($ => $.operations.readiness.panel.moduleReadiness)}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data.modules.map((module) => (
             <div key={module.module} className="rounded-md border p-3">
@@ -139,7 +139,7 @@ function ReadinessTab() {
                 <StatusBadge status={module.status} />
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {t('operations.readiness.checksWeight', {
+                {t($ => $.operations.readiness.checksWeight, {
                   passed: module.passed_checks,
                   total: module.total_checks,
                   weight: module.weight,
@@ -153,10 +153,10 @@ function ReadinessTab() {
         </div>
       </Panel>
 
-      <Panel title={t('operations.readiness.panel.checklist')}>
+      <Panel title={t($ => $.operations.readiness.panel.checklist)}>
         {checklist && checklist.blocking_failures.length > 0 && (
           <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/5 p-2.5 text-xs text-destructive">
-            {t('operations.readiness.blockingChecks', {
+            {t($ => $.operations.readiness.blockingChecks, {
               count: checklist.blocking_failures.length,
             })}
           </div>
@@ -196,33 +196,33 @@ function DiagnosticsTab() {
   if (isLoading || !data) return <Skeleton className="h-96 w-full" />;
 
   const projections: Array<{ key: string; label: string; status: ModuleStatus }> = [
-    { key: 'queue', label: t('operations.readiness.projection.queue'), status: data.queue.status },
-    { key: 'capacity', label: t('common.capacity'), status: data.capacity.status },
-    { key: 'dispatch', label: t('operations.readiness.projection.dispatch'), status: data.dispatch.status },
-    { key: 'exceptions', label: t('operations.readiness.projection.exceptions'), status: data.exceptions.status },
+    { key: 'queue', label: t($ => $.operations.readiness.projection.queue), status: data.queue.status },
+    { key: 'capacity', label: t($ => $.common.capacity), status: data.capacity.status },
+    { key: 'dispatch', label: t($ => $.operations.readiness.projection.dispatch), status: data.dispatch.status },
+    { key: 'exceptions', label: t($ => $.operations.readiness.projection.exceptions), status: data.exceptions.status },
   ];
 
   return (
     <div className="space-y-4">
-      <Panel title={t('operations.readiness.panel.systemHealth')}>
+      <Panel title={t($ => $.operations.readiness.panel.systemHealth)}>
         <div className="flex flex-wrap items-center gap-4">
           <StatusBadge status={data.system.status} />
           {data.system.is_quiet && (
-            <span className="text-sm text-emerald-600">{t('operations.readiness.quiet')}</span>
+            <span className="text-sm text-emerald-600">{t($ => $.operations.readiness.quiet)}</span>
           )}
           <div className="flex gap-4 text-xs text-muted-foreground">
-            <span>{t('operations.readiness.countReady', { count: data.system.modules_ready })}</span>
+            <span>{t($ => $.operations.readiness.countReady, { count: data.system.modules_ready })}</span>
             <span>
-              {t('operations.readiness.countDegraded', { count: data.system.modules_degraded })}
+              {t($ => $.operations.readiness.countDegraded, { count: data.system.modules_degraded })}
             </span>
             <span>
-              {t('operations.readiness.countNotReady', { count: data.system.modules_not_ready })}
+              {t($ => $.operations.readiness.countNotReady, { count: data.system.modules_not_ready })}
             </span>
           </div>
         </div>
       </Panel>
 
-      <Panel title={t('operations.readiness.panel.dependencyHealth')}>
+      <Panel title={t($ => $.operations.readiness.panel.dependencyHealth)}>
         <div className="space-y-1.5">
           {data.dependencies.dependencies.map((dep) => (
             <div key={dep.name} className="flex items-start justify-between gap-3 text-sm">
@@ -238,7 +238,7 @@ function DiagnosticsTab() {
         </div>
       </Panel>
 
-      <Panel title={t('operations.readiness.panel.projections')}>
+      <Panel title={t($ => $.operations.readiness.panel.projections)}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {projections.map((p) => (
             <div key={p.key} className="rounded-md border p-3">
@@ -280,60 +280,60 @@ function SummaryTab() {
 
   return (
     <div className="space-y-4">
-      <Panel title={t('operations.readiness.panel.executive')}>
+      <Panel title={t($ => $.operations.readiness.panel.executive)}>
         <div className="grid gap-4 md:grid-cols-3">
           <SummaryStat
-            label={t('operations.readiness.stat.healthScore')}
+            label={t($ => $.operations.readiness.stat.healthScore)}
             value={`${exec.health_score} (${exec.grade})`}
           />
           <SummaryStat
-            label={t('operations.readiness.stat.criticalAlerts')}
+            label={t($ => $.operations.readiness.stat.criticalAlerts)}
             value={exec.headline.critical_alerts}
           />
           <SummaryStat
-            label={t('operations.readiness.stat.canFieldToday')}
+            label={t($ => $.operations.readiness.stat.canFieldToday)}
             value={exec.headline.fieldable_units}
           />
         </div>
       </Panel>
 
-      <Panel title={t('operations.readiness.panel.todaysOperations')}>
+      <Panel title={t($ => $.operations.readiness.panel.todaysOperations)}>
         <div className="grid gap-4 md:grid-cols-4">
           <SummaryStat
-            label={t('operations.readiness.stat.activeSessions')}
+            label={t($ => $.operations.readiness.stat.activeSessions)}
             value={today.sessions_active}
           />
           <SummaryStat
-            label={t('operations.readiness.stat.confirmed')}
+            label={t($ => $.operations.readiness.stat.confirmed)}
             value={today.allocations_confirmed}
           />
           <SummaryStat
-            label={t('operations.readiness.stat.confirmationRate')}
+            label={t($ => $.operations.readiness.stat.confirmationRate)}
             value={pct(today.confirmation_rate)}
           />
           <SummaryStat
-            label={t('operations.readiness.stat.queueDepth')}
+            label={t($ => $.operations.readiness.stat.queueDepth)}
             value={today.queue_depth}
           />
         </div>
       </Panel>
 
-      <Panel title={t('operations.readiness.panel.fleet')}>
+      <Panel title={t($ => $.operations.readiness.panel.fleet)}>
         <div className="grid gap-4 md:grid-cols-4">
           <SummaryStat
-            label={t('operations.readiness.stat.assignableVehicles')}
+            label={t($ => $.operations.readiness.stat.assignableVehicles)}
             value={fleet.vehicles.assignable}
           />
           <SummaryStat
-            label={t('operations.readiness.stat.availableDrivers')}
+            label={t($ => $.operations.readiness.stat.availableDrivers)}
             value={fleet.drivers.available}
           />
           <SummaryStat
-            label={t('operations.readiness.stat.fieldableUnits')}
+            label={t($ => $.operations.readiness.stat.fieldableUnits)}
             value={fleet.fieldable_units}
           />
           <SummaryStat
-            label={t('operations.readiness.stat.vehicleUseNow')}
+            label={t($ => $.operations.readiness.stat.vehicleUseNow)}
             value={pct(fleet.vehicles.utilisation_now)}
           />
         </div>
@@ -359,7 +359,7 @@ export function EnterpriseReadinessPage() {
     {
       id: 'score',
       icon: CheckCircle2,
-      label: t('operations.readiness.metrics.healthScore'),
+      label: t($ => $.operations.readiness.metrics.healthScore),
       value: score?.score ?? 0,
       isLoading: !score,
       colorClass: score ? scoreTone(score.score) : undefined,
@@ -367,14 +367,14 @@ export function EnterpriseReadinessPage() {
     {
       id: 'status',
       icon: score?.overall_status === 'ready' ? CheckCircle2 : AlertTriangle,
-      label: t('operations.readiness.metrics.overall'),
+      label: t($ => $.operations.readiness.metrics.overall),
       value: score ? t(STATUS[score.overall_status].labelKey) : '—',
       isLoading: !score,
     },
     {
       id: 'grade',
       icon: CheckCircle2,
-      label: t('operations.readiness.metrics.grade'),
+      label: t($ => $.operations.readiness.metrics.grade),
       value: score?.grade ?? '—',
       isLoading: !score,
     },
@@ -384,11 +384,11 @@ export function EnterpriseReadinessPage() {
     <>
       <WorkspaceHeader
         breadcrumbs={[
-          { label: t('operations.readiness.breadcrumbRoot') },
-          { label: t('operations.readiness.breadcrumbSection') },
+          { label: t($ => $.operations.readiness.breadcrumbRoot) },
+          { label: t($ => $.operations.readiness.breadcrumbSection) },
         ]}
-        title={t('operations.readiness.title')}
-        description={t('operations.readiness.description')}
+        title={t($ => $.operations.readiness.title)}
+        description={t($ => $.operations.readiness.description)}
         metrics={metrics}
       />
 

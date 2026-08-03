@@ -278,16 +278,16 @@ export function CustomersPage() {
     <div className="flex flex-col gap-6">
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.title) },
         ]}
         actions={
           <Button size="sm" onClick={() => openCreate()}>
             <Plus className="size-4" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -295,20 +295,20 @@ export function CustomersPage() {
       {/* ── Quick Stats ─────────────────────────────────────────────────── */}
       <div className="grid gap-3 sm:grid-cols-3">
         <QuickStatCard
-          title={t('quickStats.total')}
+          title={t($ => $.quickStats.total)}
           value={counts.total ?? '—'}
           icon={Users}
           onClick={() => { setStatusFilter('all'); setSearch(''); }}
         />
         <QuickStatCard
-          title={t('quickStats.active')}
+          title={t($ => $.quickStats.active)}
           value={counts.active ?? '—'}
           icon={Users}
           colorClassName="text-emerald-600 bg-emerald-100"
           onClick={() => { setStatusFilter('active'); setPage(1); }}
         />
         <QuickStatCard
-          title={t('quickStats.inactive')}
+          title={t($ => $.quickStats.inactive)}
           value={counts.inactive ?? '—'}
           icon={Users}
           colorClassName="text-amber-600 bg-amber-100"
@@ -323,14 +323,14 @@ export function CustomersPage() {
             ref={searchRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={`${t('search')} · / or Ctrl+K`}
+            placeholder={`${t($ => $.search)} · / or Ctrl+K`}
             className="max-w-lg"
             onKeyDown={(e) => {
               if (e.key === 'Escape') { setSearch(''); searchRef.current?.blur(); }
             }}
           />
           {isFetching && isSearching ? (
-            <span className="text-xs text-muted-foreground">{tCommon('loading') ?? 'Loading…'}</span>
+            <span className="text-xs text-muted-foreground">{tCommon($ => $.loading) ?? 'Loading…'}</span>
           ) : null}
         </div>
 
@@ -351,12 +351,12 @@ export function CustomersPage() {
         {noResults ? (
           <div className="flex max-w-md flex-col items-start gap-3 rounded-xl border border-dashed p-5">
             <div>
-              <p className="text-sm font-medium">{t('noResults.title')}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{t('noResults.description')}</p>
+              <p className="text-sm font-medium">{t($ => $.noResults.title)}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t($ => $.noResults.description)}</p>
             </div>
             <Button size="sm" onClick={() => openCreate(debouncedSearch)}>
               <Plus className="size-3.5" />
-              {t('noResults.createWithPhone')}
+              {t($ => $.noResults.createWithPhone)}
             </Button>
           </div>
         ) : null}
@@ -378,21 +378,21 @@ export function CustomersPage() {
                       if (e.target.checked) setSelectedIds(new Set(items.map((c) => c.id)));
                       else setSelectedIds(new Set());
                     }}
-                    aria-label={t('table.selectAll')}
+                    aria-label={t($ => $.table.selectAll)}
                   />
                 </th>
-                <SortTh field="name" label={t('columns.customer')} sort={sort} onSort={handleSortChange} />
+                <SortTh field="name" label={t($ => $.columns.customer)} sort={sort} onSort={handleSortChange} />
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                  {t('columns.phones')}
+                  {t($ => $.columns.phones)}
                 </th>
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                  {t('columns.defaultAddress')}
+                  {t($ => $.columns.defaultAddress)}
                 </th>
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                  {t('columns.previousOrders')}
+                  {t($ => $.columns.previousOrders)}
                 </th>
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                  {t('columns.intelligence')}
+                  {t($ => $.columns.intelligence)}
                 </th>
                 <th className="w-12 px-4 py-3" />
               </tr>
@@ -404,7 +404,7 @@ export function CustomersPage() {
                 <tr>
                   <td colSpan={7} className="py-12">
                     <ErrorState
-                      description={t('table.error')}
+                      description={t($ => $.table.error)}
                       onRetry={() => void refetch()}
                     />
                   </td>
@@ -412,7 +412,7 @@ export function CustomersPage() {
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12">
-                    <EmptyState title={t('table.empty')} />
+                    <EmptyState title={t($ => $.table.empty)} />
                   </td>
                 </tr>
               ) : (
@@ -474,9 +474,9 @@ export function CustomersPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={tCommon($ => $.dialogs.softDeleteMessage, { name: deleting?.name ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteCustomer.isPending}
         onConfirm={() => {
@@ -558,14 +558,14 @@ function CustomerRow({
             <div className="flex items-center gap-1.5">
               <span className="font-mono text-xs">{primaryPhone}</span>
               <Badge variant="secondary" className="h-4 px-1 text-[9px]">
-                {t('phone.primary')}
+                {t($ => $.phone.primary)}
               </Badge>
-              <Button size="icon" variant="ghost" className="size-5" asChild title={t('phone.call')}>
+              <Button size="icon" variant="ghost" className="size-5" asChild title={t($ => $.phone.call)}>
                 <a href={`tel:${primaryPhone.replace(/\D/g, '')}`}>
                   <Phone className="size-3" />
                 </a>
               </Button>
-              <Button size="icon" variant="ghost" className="size-5" asChild title={t('phone.whatsapp')}>
+              <Button size="icon" variant="ghost" className="size-5" asChild title={t($ => $.phone.whatsapp)}>
                 <a
                   href={`https://wa.me/${primaryPhone.replace(/\D/g, '')}`}
                   target="_blank"
@@ -611,7 +611,7 @@ function CustomerRow({
           className="h-6 gap-1.5 px-2 text-[11px] text-muted-foreground hover:text-foreground"
         >
           <ShoppingBag className="size-3.5" />
-          {t('table.viewOrders')}
+          {t($ => $.table.viewOrders)}
         </Button>
       </td>
 
@@ -624,12 +624,12 @@ function CustomerRow({
               className="h-5 gap-1 px-1.5 text-[10px] text-amber-700 bg-amber-100 border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800"
             >
               <FileText className="size-3" />
-              {t('intelligence.hasNotes')}
+              {t($ => $.intelligence.hasNotes)}
             </Badge>
           ) : null}
           {!customer.is_active ? (
             <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-              {t('tags.inactive')}
+              {t($ => $.tags.inactive)}
             </Badge>
           ) : null}
         </div>
@@ -643,13 +643,13 @@ function CustomerRow({
             items={[
               {
                 key: 'edit',
-                label: tCommon('common.edit'),
+                label: tCommon($ => $.common.edit),
                 icon: Pencil,
                 onSelect: () => onEdit(customer),
               },
               {
                 key: 'copyPhone',
-                label: t('quickCard.copyPhone'),
+                label: t($ => $.quickCard.copyPhone),
                 icon: Copy,
                 onSelect: () => {
                   if (primaryPhone) void navigator.clipboard.writeText(primaryPhone);
@@ -658,7 +658,7 @@ function CustomerRow({
               },
               {
                 key: 'delete',
-                label: tCommon('common.delete'),
+                label: tCommon($ => $.common.delete),
                 icon: Trash2,
                 variant: 'destructive' as const,
                 onSelect: () => onDelete(customer),

@@ -32,15 +32,15 @@ export function WaveRawMaterialsPage() {
   const [shortageFilter, setShortageFilter] = useState<ShortageFilter>('all');
 
   const SHORTAGE_TABS: Array<{ value: ShortageFilter; label: string }> = [
-    { value: 'all',      label: t('wave.rawMaterials.filters.all') },
-    { value: 'shortage', label: t('wave.rawMaterials.filters.shortage') },
-    { value: 'ok',       label: t('wave.rawMaterials.filters.ok') },
+    { value: 'all',      label: t($ => $.wave.rawMaterials.filters.all) },
+    { value: 'shortage', label: t($ => $.wave.rawMaterials.filters.shortage) },
+    { value: 'ok',       label: t($ => $.wave.rawMaterials.filters.ok) },
   ];
 
   const columns: DataGridColumnDef<WaveMaterialDemandItem>[] = useMemo(() => [
     {
       key: 'material',
-      label: t('wave.rawMaterials.columns.material'),
+      label: t($ => $.wave.rawMaterials.columns.material),
       alwaysVisible: true,
       cell: (m) => (
         <div>
@@ -53,30 +53,30 @@ export function WaveRawMaterialsPage() {
     },
     {
       key: 'status',
-      label: t('wave.rawMaterials.columns.status'),
+      label: t($ => $.wave.rawMaterials.columns.status),
       alwaysVisible: true,
       cell: (m) => {
         if (m.missing_qty > 0) {
           return (
             <Badge className="text-xs bg-red-100 text-red-700 flex items-center gap-1 w-fit">
               <AlertTriangle className="h-3 w-3" />
-              {t('wave.rawMaterials.statusShortage')}
+              {t($ => $.wave.rawMaterials.statusShortage)}
             </Badge>
           );
         }
-        return <Badge className="text-xs bg-green-100 text-green-700">{t('wave.rawMaterials.statusSufficient')}</Badge>;
+        return <Badge className="text-xs bg-green-100 text-green-700">{t($ => $.wave.rawMaterials.statusSufficient)}</Badge>;
       },
     },
     {
       key: 'required_qty',
-      label: t('wave.rawMaterials.columns.required'),
+      label: t($ => $.wave.rawMaterials.columns.required),
       defaultVisible: true,
       align: 'end',
       cell: (m) => <span className="text-sm tabular-nums">{fmt(m.required_qty)}</span>,
     },
     {
       key: 'available_qty',
-      label: t('wave.rawMaterials.columns.available'),
+      label: t($ => $.wave.rawMaterials.columns.available),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -87,7 +87,7 @@ export function WaveRawMaterialsPage() {
     },
     {
       key: 'missing_qty',
-      label: t('wave.rawMaterials.columns.missing'),
+      label: t($ => $.wave.rawMaterials.columns.missing),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -100,7 +100,7 @@ export function WaveRawMaterialsPage() {
     },
     {
       key: 'expected_today',
-      label: t('wave.rawMaterials.columns.expectedToday'),
+      label: t($ => $.wave.rawMaterials.columns.expectedToday),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -113,7 +113,7 @@ export function WaveRawMaterialsPage() {
     },
     {
       key: 'in_transit_qty',
-      label: t('wave.rawMaterials.columns.inTransit'),
+      label: t($ => $.wave.rawMaterials.columns.inTransit),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -126,7 +126,7 @@ export function WaveRawMaterialsPage() {
     },
     {
       key: 'coverage_pct',
-      label: t('wave.rawMaterials.columns.coverage'),
+      label: t($ => $.wave.rawMaterials.columns.coverage),
       defaultVisible: false,
       align: 'end',
       cell: (m) => (
@@ -137,7 +137,7 @@ export function WaveRawMaterialsPage() {
     },
     {
       key: 'reserved_qty',
-      label: t('wave.rawMaterials.columns.reserved'),
+      label: t($ => $.wave.rawMaterials.columns.reserved),
       defaultVisible: false,
       align: 'end',
       cell: (m) => (
@@ -234,12 +234,12 @@ export function WaveRawMaterialsPage() {
         {!waveId ? (
           <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
             <Waves className="h-8 w-8 opacity-30" />
-            <p className="text-sm">{t('wave.rawMaterials.noWave')}</p>
+            <p className="text-sm">{t($ => $.wave.rawMaterials.noWave)}</p>
           </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">{t('wave.loading')}</span>
+            <span className="text-sm">{t($ => $.wave.loading)}</span>
           </div>
         ) : (
           <UniversalDataGrid<WaveMaterialDemandItem>
@@ -253,8 +253,8 @@ export function WaveRawMaterialsPage() {
                 <FlaskConical className="w-8 h-8" />
                 <p className="text-sm">
                   {allMaterials.length === 0
-                    ? t('wave.rawMaterials.emptyNoDemand')
-                    : t('wave.rawMaterials.emptyNoMatch')}
+                    ? t($ => $.wave.rawMaterials.emptyNoDemand)
+                    : t($ => $.wave.rawMaterials.emptyNoMatch)}
                 </p>
               </div>
             }

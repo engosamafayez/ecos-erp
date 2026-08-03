@@ -60,13 +60,13 @@ export function AnalyticsRow() {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">{t('analyticsRow.ordersThisWeek')}</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t($ => $.analyticsRow.ordersThisWeek)}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </div>
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-bold mb-0.5">0</p>
-          <p className="text-xs text-muted-foreground mb-4">{t('analyticsRow.noDataYet')}</p>
+          <p className="text-xs text-muted-foreground mb-4">{t($ => $.analyticsRow.noDataYet)}</p>
           <Sparkline data={FLAT} gradId="spark-orders" stroke="#6366F1" />
           <div className="mt-1 flex justify-between">
             {DAYS.map((d, i) => (
@@ -81,7 +81,7 @@ export function AnalyticsRow() {
       {/* Top products */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">{t('analyticsRow.topProducts')}</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t($ => $.analyticsRow.topProducts)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -101,7 +101,7 @@ export function AnalyticsRow() {
               </div>
             ))}
             <p className="pt-3 text-center text-xs text-muted-foreground">
-              {t('analyticsRow.connectOrdersHint')}
+              {t($ => $.analyticsRow.connectOrdersHint)}
             </p>
           </div>
         </CardContent>
@@ -110,7 +110,7 @@ export function AnalyticsRow() {
       {/* Channel breakdown */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">{t('analyticsRow.salesChannels')}</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t($ => $.analyticsRow.salesChannels)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -129,7 +129,7 @@ export function AnalyticsRow() {
               </div>
             ))}
             <p className="pt-2 text-center text-xs text-muted-foreground">
-              {t('analyticsRow.noChannelData')}
+              {t($ => $.analyticsRow.noChannelData)}
             </p>
           </div>
         </CardContent>

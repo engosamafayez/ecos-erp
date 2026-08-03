@@ -18,7 +18,7 @@ export function StockSyncStatusBadge({ status }: { status: StockSyncStatus }) {
         STATUS_CLASS[status],
       )}
     >
-      {t(`status.${status}`)}
+      {t($ => $.status[status])}
     </span>
   );
 }

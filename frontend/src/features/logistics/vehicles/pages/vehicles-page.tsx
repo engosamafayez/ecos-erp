@@ -67,8 +67,8 @@ function EmptyVehicles({ hasFilter, onCreateFirst }: { hasFilter: boolean; onCre
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
         <Truck className="mb-3 size-10 text-muted-foreground/30" />
-        <p className="text-sm font-medium">{t('vehicles.empty.filteredTitle')}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{t('vehicles.empty.filteredDescription')}</p>
+        <p className="text-sm font-medium">{t($ => $.vehicles.empty.filteredTitle)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t($ => $.vehicles.empty.filteredDescription)}</p>
       </div>
     );
   }
@@ -76,13 +76,13 @@ function EmptyVehicles({ hasFilter, onCreateFirst }: { hasFilter: boolean; onCre
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <Truck className="mb-3 size-12 text-muted-foreground/20" />
-      <p className="text-sm font-medium">{t('vehicles.empty.title')}</p>
+      <p className="text-sm font-medium">{t($ => $.vehicles.empty.title)}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {t('vehicles.empty.description')}
+        {t($ => $.vehicles.empty.description)}
       </p>
       <Button size="sm" className="mt-4 gap-1.5" onClick={onCreateFirst}>
         <Plus className="size-3.5" />
-        {t('vehicles.empty.action')}
+        {t($ => $.vehicles.empty.action)}
       </Button>
     </div>
   );
@@ -114,13 +114,13 @@ function VehiclesTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/60">
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.code')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('vehicles.table.colVehicle')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.type')}</th>
-              <th className="h-10 px-3 text-end text-xs font-medium text-muted-foreground">{t('common.capacity')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.driver')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.status')}</th>
-              <th className="h-10 w-28 px-3 text-center text-xs font-medium text-muted-foreground">{t('vehicles.table.colDispatch')}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.code)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.vehicles.table.colVehicle)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.type)}</th>
+              <th className="h-10 px-3 text-end text-xs font-medium text-muted-foreground">{t($ => $.common.capacity)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.driver)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.status)}</th>
+              <th className="h-10 w-28 px-3 text-center text-xs font-medium text-muted-foreground">{t($ => $.vehicles.table.colDispatch)}</th>
               <th className="h-10 w-10 px-3" />
             </tr>
           </thead>

@@ -16,8 +16,8 @@ export function RecentActivity() {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>{t('recentActivity.title')}</CardTitle>
-        <CardDescription>{t('recentActivity.subtitle')}</CardDescription>
+        <CardTitle>{t($ => $.recentActivity.title)}</CardTitle>
+        <CardDescription>{t($ => $.recentActivity.subtitle)}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {activityKeys.map((key) => (
@@ -25,7 +25,7 @@ export function RecentActivity() {
             <Skeleton className="size-9 rounded-full" />
             <div className="flex flex-1 flex-col gap-1">
               <span className="text-sm">{t(key)}</span>
-              <span className="text-muted-foreground text-xs">{t('recentActivity.justNow')}</span>
+              <span className="text-muted-foreground text-xs">{t($ => $.recentActivity.justNow)}</span>
             </div>
           </div>
         ))}

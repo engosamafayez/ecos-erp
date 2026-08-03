@@ -59,7 +59,7 @@ function AssignLocationDialog({
   function handleSave() {
     const trimmed = value.trim();
     if (!isGoogleMapsUrl(trimmed)) {
-      setError(t('locationCell.error'));
+      setError(t($ => $.locationCell.error));
       return;
     }
     setError('');
@@ -80,12 +80,12 @@ function AssignLocationDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t('locationCell.dialogTitle')}</DialogTitle>
+          <DialogTitle>{t($ => $.locationCell.dialogTitle)}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-foreground" htmlFor="maps-link-input">
-            {t('locationCell.googleMapsLink')}
+            {t($ => $.locationCell.googleMapsLink)}
           </label>
           <input
             id="maps-link-input"
@@ -96,7 +96,7 @@ function AssignLocationDialog({
               if (e.key === 'Enter') handleSave();
               if (e.key === 'Escape') onClose();
             }}
-            placeholder={t('locationCell.placeholder')}
+            placeholder={t($ => $.locationCell.placeholder)}
             className={cn(
               'h-9 w-full rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring',
               error ? 'border-destructive' : 'border-input',
@@ -106,16 +106,16 @@ function AssignLocationDialog({
           {error ? (
             <p className="text-xs text-destructive">{error}</p>
           ) : (
-            <p className="text-xs text-muted-foreground">{t('locationCell.hint')}</p>
+            <p className="text-xs text-muted-foreground">{t($ => $.locationCell.hint)}</p>
           )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={onClose} disabled={isPending}>
-            {t('locationCell.cancel')}
+            {t($ => $.locationCell.cancel)}
           </Button>
           <Button size="sm" onClick={handleSave} disabled={isPending || !value.trim()}>
-            {isPending ? t('locationCell.saving') : t('locationCell.save')}
+            {isPending ? t($ => $.locationCell.saving) : t($ => $.locationCell.save)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -151,13 +151,13 @@ export function OrderLocationCell({ order, onEdit: _onEdit, onDelete }: Props) {
       <>
         <div className="relative flex items-center gap-1">
           <MapPin className="size-3 text-muted-foreground/40" />
-          <span className="text-xs text-muted-foreground">{t('columns.noGps')}</span>
+          <span className="text-xs text-muted-foreground">{t($ => $.columns.noGps)}</span>
           <Button
             variant="ghost"
             size="icon"
             className="size-5 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={openDialog}
-            aria-label={t('address.addLocation')}
+            aria-label={t($ => $.address.addLocation)}
           >
             <Plus className="size-2.5" />
           </Button>
@@ -222,12 +222,12 @@ export function OrderLocationCell({ order, onEdit: _onEdit, onDelete }: Props) {
               </a>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs space-y-0.5">
-              <p className="font-medium">{t('locationCell.tooltipTitle')}</p>
+              <p className="font-medium">{t($ => $.locationCell.tooltipTitle)}</p>
               <p className="font-mono text-muted-foreground">{latStr}, {lngStr}</p>
               {loc!.label ? <p>{loc!.label}</p> : null}
               {setBy ? (
                 <p className="text-muted-foreground capitalize">
-                  {t('locationCell.setBy')} <span className={setBy === 'employee' ? 'text-blue-400' : 'text-emerald-400'}>{setBy}</span>
+                  {t($ => $.locationCell.setBy)} <span className={setBy === 'employee' ? 'text-blue-400' : 'text-emerald-400'}>{setBy}</span>
                 </p>
               ) : null}
             </TooltipContent>
@@ -239,7 +239,7 @@ export function OrderLocationCell({ order, onEdit: _onEdit, onDelete }: Props) {
                 variant="ghost"
                 size="icon"
                 className="size-5 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label={t('address.locationActions')}
+                aria-label={t($ => $.address.locationActions)}
               >
                 <Pencil className="size-2.5" />
               </Button>
@@ -248,35 +248,35 @@ export function OrderLocationCell({ order, onEdit: _onEdit, onDelete }: Props) {
               <DropdownMenuItem asChild>
                 <a href={order.google_maps_url ?? mapsUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="size-3.5" />
-                  {t('locationCell.openInGoogleMaps')}
+                  {t($ => $.locationCell.openInGoogleMaps)}
                 </a>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <a href={wazeUrl} target="_blank" rel="noopener noreferrer">
                   <Navigation className="size-3.5" />
-                  {t('locationCell.openInWaze')}
+                  {t($ => $.locationCell.openInWaze)}
                 </a>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={copyCoords}>
                 {copied ? <CheckCheck className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-                {t('locationCell.copyCoordinates')}
+                {t($ => $.locationCell.copyCoordinates)}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={copyMapsUrl}>
                 <Copy className="size-3.5" />
-                {t('locationCell.copyMapsUrl')}
+                {t($ => $.locationCell.copyMapsUrl)}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={openDialog}>
                 <Pencil className="size-3.5" />
-                {t('locationCell.replaceLocation')}
+                {t($ => $.locationCell.replaceLocation)}
               </DropdownMenuItem>
               {onDelete ? (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={deleteLocation}>
                     <Trash2 className="size-3.5" />
-                    {t('locationCell.deleteLocation')}
+                    {t($ => $.locationCell.deleteLocation)}
                   </DropdownMenuItem>
                 </>
               ) : null}

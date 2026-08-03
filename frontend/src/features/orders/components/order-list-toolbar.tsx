@@ -173,18 +173,18 @@ export function OrderListToolbar({
 
   return (
     <SmartToolbar
-      primaryAction={{ label: t('actions.new'), onClick: onNew }}
+      primaryAction={{ label: t($ => $.actions.new), onClick: onNew }}
       secondaryActions={[
-        ...(onImport            ? [{ key: 'import', label: t('actions.import'),           onClick: onImport,            icon: Upload,    hideOnMobile: true }] : []),
-        ...(onExport            ? [{ key: 'export', label: t('actions.export'),           onClick: onExport,            icon: Download,  hideOnMobile: true }] : []),
-        ...(onCopyToClipboard   ? [{ key: 'copy',   label: t('actions.copyClipboard'), onClick: onCopyToClipboard, icon: Clipboard, hideOnMobile: true }] : []),
-        ...(onPrint             ? [{ key: 'print',  label: t('actions.print'),          onClick: onPrint,           icon: Printer,   hideOnMobile: true }] : []),
+        ...(onImport            ? [{ key: 'import', label: t($ => $.actions.import),           onClick: onImport,            icon: Upload,    hideOnMobile: true }] : []),
+        ...(onExport            ? [{ key: 'export', label: t($ => $.actions.export),           onClick: onExport,            icon: Download,  hideOnMobile: true }] : []),
+        ...(onCopyToClipboard   ? [{ key: 'copy',   label: t($ => $.actions.copyClipboard), onClick: onCopyToClipboard, icon: Clipboard, hideOnMobile: true }] : []),
+        ...(onPrint             ? [{ key: 'print',  label: t($ => $.actions.print),          onClick: onPrint,           icon: Printer,   hideOnMobile: true }] : []),
       ]}
       bulkActions={bulkActions}
-      bulkActionsLabel={t('actions.bulkActions')}
+      bulkActionsLabel={t($ => $.actions.bulkActions)}
       selectedCount={selectedCount}
       onRefresh={onRefresh}
-      refreshLabel={t('actions.refresh')}
+      refreshLabel={t($ => $.actions.refresh)}
       isFetching={isFetching}
       viewControls={
         <>
@@ -193,9 +193,9 @@ export function OrderListToolbar({
             visibility={columnVisibility}
             onToggle={onColumnToggle}
             onReset={onColumnReset}
-            label={t('toolbar.columns')}
+            label={t($ => $.toolbar.columns)}
           />
-          <SavedViewsMenu label={t('toolbar.views')} />
+          <SavedViewsMenu label={t($ => $.toolbar.views)} />
         </>
       }
     />

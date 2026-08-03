@@ -39,9 +39,9 @@ export function ProductCategorySelect({
       value={value ?? ''}
       onChange={onChange}
       loading={isLoading}
-      placeholder={placeholder ?? t('selects.categoryPlaceholder')}
-      searchPlaceholder={t('selects.categorySearch')}
-      emptyText={t('selects.productCategoryEmpty')}
+      placeholder={placeholder ?? t($ => $.selects.categoryPlaceholder)}
+      searchPlaceholder={t($ => $.selects.categorySearch)}
+      emptyText={t($ => $.selects.productCategoryEmpty)}
       disabled={disabled}
       className={className}
     />

@@ -85,9 +85,9 @@ export function CostManagementDashboardPage() {
       <div className="flex items-center gap-3">
         <BarChart3 className="size-5 text-primary" />
         <div>
-          <h1 className="text-lg font-semibold">{t('dashboard.title')}</h1>
+          <h1 className="text-lg font-semibold">{t($ => $.dashboard.title)}</h1>
           <p className="text-sm text-muted-foreground">
-            {t('dashboard.subtitle')}
+            {t($ => $.dashboard.subtitle)}
           </p>
         </div>
       </div>
@@ -101,55 +101,55 @@ export function CostManagementDashboardPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard
-            label={t('dashboard.kpi.pendingReviews.label')}
+            label={t($ => $.dashboard.kpi.pendingReviews.label)}
             value={fmt(stats?.pending_reviews)}
             icon={Clock}
-            description={t('dashboard.kpi.pendingReviews.description')}
+            description={t($ => $.dashboard.kpi.pendingReviews.description)}
             onClick={() => navigate(ROUTES.costManagementPriceReview)}
             variant={stats && stats.pending_reviews > 0 ? 'warning' : 'default'}
           />
           <KpiCard
-            label={t('dashboard.kpi.belowTargetMargin.label')}
+            label={t($ => $.dashboard.kpi.belowTargetMargin.label)}
             value={fmt(stats?.below_target_margin)}
             icon={AlertTriangle}
-            description={t('dashboard.kpi.belowTargetMargin.description')}
+            description={t($ => $.dashboard.kpi.belowTargetMargin.description)}
             onClick={() => navigate(ROUTES.costManagementPriceReview)}
             variant={stats && stats.below_target_margin > 0 ? 'warning' : 'success'}
           />
           <KpiCard
-            label={t('dashboard.kpi.costsIncreasedToday.label')}
+            label={t($ => $.dashboard.kpi.costsIncreasedToday.label)}
             value={fmt(stats?.cost_increased_today)}
             icon={TrendingUp}
-            description={t('dashboard.kpi.costsIncreasedToday.description')}
+            description={t($ => $.dashboard.kpi.costsIncreasedToday.description)}
             onClick={() => navigate(ROUTES.costManagementCostHistory)}
             variant={stats && stats.cost_increased_today > 0 ? 'warning' : 'default'}
           />
           <KpiCard
-            label={t('dashboard.kpi.costsDecreasedToday.label')}
+            label={t($ => $.dashboard.kpi.costsDecreasedToday.label)}
             value={fmt(stats?.cost_decreased_today)}
             icon={TrendingDown}
-            description={t('dashboard.kpi.costsDecreasedToday.description')}
+            description={t($ => $.dashboard.kpi.costsDecreasedToday.description)}
             onClick={() => navigate(ROUTES.costManagementCostHistory)}
             variant={stats && stats.cost_decreased_today > 0 ? 'success' : 'default'}
           />
           <KpiCard
-            label={t('dashboard.kpi.expectedProfitImpact.label')}
+            label={t($ => $.dashboard.kpi.expectedProfitImpact.label)}
             value={fmt(stats?.expected_profit_impact, 2)}
             icon={stats && stats.expected_profit_impact >= 0 ? ArrowUp : ArrowDown}
-            description={t('dashboard.kpi.expectedProfitImpact.description')}
+            description={t($ => $.dashboard.kpi.expectedProfitImpact.description)}
             variant="info"
           />
           <KpiCard
-            label={t('dashboard.kpi.averageMargin.label')}
+            label={t($ => $.dashboard.kpi.averageMargin.label)}
             value={stats?.average_margin != null ? `${fmt(stats.average_margin, 1)}%` : '—'}
             icon={BarChart3}
-            description={t('dashboard.kpi.averageMargin.description')}
+            description={t($ => $.dashboard.kpi.averageMargin.description)}
           />
           <KpiCard
-            label={t('dashboard.kpi.awaitingApproval.label')}
+            label={t($ => $.dashboard.kpi.awaitingApproval.label)}
             value={fmt(stats?.awaiting_approval)}
             icon={CheckCircle2}
-            description={t('dashboard.kpi.awaitingApproval.description')}
+            description={t($ => $.dashboard.kpi.awaitingApproval.description)}
             onClick={() => navigate(ROUTES.costManagementPriceReview)}
             variant={stats && stats.awaiting_approval > 0 ? 'info' : 'default'}
           />
@@ -163,14 +163,14 @@ export function CostManagementDashboardPage() {
           onClick={() => navigate(ROUTES.costManagementPriceReview)}
           className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted/40 transition-colors"
         >
-          {t('dashboard.actions.pricingReviewCenter')}
+          {t($ => $.dashboard.actions.pricingReviewCenter)}
         </button>
         <button
           type="button"
           onClick={() => navigate(ROUTES.costManagementCostHistory)}
           className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted/40 transition-colors"
         >
-          {t('dashboard.actions.viewCostHistory')}
+          {t($ => $.dashboard.actions.viewCostHistory)}
         </button>
       </div>
     </div>

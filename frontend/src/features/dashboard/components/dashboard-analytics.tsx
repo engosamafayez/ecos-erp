@@ -24,10 +24,10 @@ function AiReservedZone() {
       <div className="mb-4 flex items-center gap-2">
         <Brain className="h-4 w-4 text-violet-500" />
         <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-600 dark:text-violet-400">
-          {t('analytics.aiLayer')}
+          {t($ => $.analytics.aiLayer)}
         </span>
         <Badge variant="outline" className="border-violet-500/30 text-[10px] text-violet-600 dark:text-violet-400">
-          {t('analytics.aiPlanned')}
+          {t($ => $.analytics.aiPlanned)}
         </Badge>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">

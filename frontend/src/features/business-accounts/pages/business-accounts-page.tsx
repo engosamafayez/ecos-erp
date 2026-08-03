@@ -114,41 +114,41 @@ export function BusinessAccountsPage() {
   const columns: ColumnDef<BusinessAccount>[] = [
     {
       key: 'code',
-      header: t('columns.code'),
+      header: t($ => $.columns.code),
       cell: (a) => <span className="font-mono text-xs font-medium">{a.code}</span>,
     },
     {
       key: 'name',
-      header: t('columns.name'),
+      header: t($ => $.columns.name),
       cell: (a) => <span className="font-medium">{a.name}</span>,
     },
     {
       key: 'company',
-      header: t('columns.company'),
+      header: t($ => $.columns.company),
       cell: (a) => <span className="text-muted-foreground">{a.company?.name ?? '—'}</span>,
     },
     {
       key: 'brand',
-      header: t('columns.brand'),
+      header: t($ => $.columns.brand),
       cell: (a) => <span className="text-muted-foreground">{a.brand?.name ?? '—'}</span>,
     },
     {
       key: 'provider',
-      header: t('columns.provider'),
+      header: t($ => $.columns.provider),
       cell: (a) => <Badge variant="secondary">{a.provider}</Badge>,
     },
     {
       key: 'status',
-      header: t('columns.status'),
+      header: t($ => $.columns.status),
       cell: (a) => (
         <Badge variant={STATUS_BADGE_VARIANT[a.status] ?? 'secondary'}>
-          {t(`status.${a.status}`, { defaultValue: a.status })}
+          {t($ => $.status[a.status], { defaultValue: a.status })}
         </Badge>
       ),
     },
     {
       key: 'updated_at',
-      header: t('columns.updatedAt'),
+      header: t($ => $.columns.updatedAt),
       cell: (a) => (
         <span className="text-muted-foreground text-xs">
           {a.updated_at ? new Date(a.updated_at).toLocaleDateString() : '—'}
@@ -165,17 +165,17 @@ export function BusinessAccountsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('breadcrumbs.organization'), to: ROUTES.organization },
-          { label: t('title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.breadcrumbs.organization), to: ROUTES.organization },
+          { label: t($ => $.title) },
         ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -184,13 +184,13 @@ export function BusinessAccountsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('kpi.totalAccounts')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.totalAccounts)}</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : totalCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('kpi.active')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.active)}</div>
             <div className="text-2xl font-bold text-emerald-600">
               {isLoading ? '—' : activeCount}
             </div>
@@ -198,7 +198,7 @@ export function BusinessAccountsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('kpi.inactive')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.inactive)}</div>
             <div className="text-2xl font-bold text-slate-400">
               {isLoading ? '—' : inactiveCount}
             </div>
@@ -206,7 +206,7 @@ export function BusinessAccountsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('kpi.suspended')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.suspended)}</div>
             <div className="text-2xl font-bold text-red-500">
               {isLoading ? '—' : suspendedCount}
             </div>
@@ -214,9 +214,9 @@ export function BusinessAccountsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('kpi.connected')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.connected)}</div>
             <div className="text-2xl font-bold text-slate-400">0</div>
-            <div className="text-muted-foreground/60 text-xs">{t('kpi.integrationSoon')}</div>
+            <div className="text-muted-foreground/60 text-xs">{t($ => $.kpi.integrationSoon)}</div>
           </CardContent>
         </Card>
       </div>
@@ -224,7 +224,7 @@ export function BusinessAccountsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={t($ => $.search)}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}

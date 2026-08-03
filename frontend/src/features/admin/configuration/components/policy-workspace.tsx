@@ -295,8 +295,8 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
       (form['required_approval_above'] === null || form['required_approval_above'] === undefined || form['required_approval_above'] === '')
     ) {
       toast({
-        title:       t('policy.toast.approvalRequired'),
-        description: t('policy.toast.approvalRequiredDesc'),
+        title:       t($ => $.policy.toast.approvalRequired),
+        description: t($ => $.policy.toast.approvalRequiredDesc),
         type:        'error',
       });
       return;
@@ -308,8 +308,8 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
       toast({ title: tAny('policy.savedSuccessfully'), type: 'success' });
     } catch {
       toast({
-        title:       t('policy.toast.saveFailed'),
-        description: t('policy.toast.saveFailedDesc'),
+        title:       t($ => $.policy.toast.saveFailed),
+        description: t($ => $.policy.toast.saveFailedDesc),
         type:        'error',
       });
     }
@@ -359,15 +359,15 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
           <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-              {t('policy.banner.orderPriceProtection')}
+              {t($ => $.policy.banner.orderPriceProtection)}
             </p>
             <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1 leading-relaxed">
-              {t('policy.banner.orderPriceProtectionDesc')}
+              {t($ => $.policy.banner.orderPriceProtectionDesc)}
             </p>
           </div>
           <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
             <CheckCircle2 className="h-2.5 w-2.5" />
-            {t('policy.banner.enforced')}
+            {t($ => $.policy.banner.enforced)}
           </span>
         </div>
       )}
@@ -383,13 +383,13 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
             <>
               <Badge className="text-[10px] py-0 h-5 bg-emerald-50 text-emerald-700 border-emerald-200">
                 <CheckCircle2 className="h-2.5 w-2.5 me-1" />
-                {t('policy.configuredVersion', { version: data?.version ?? 1 })}
+                {t($ => $.policy.configuredVersion, { version: data?.version ?? 1 })}
               </Badge>
             </>
           ) : (
             <Badge className="text-[10px] py-0 h-5 bg-amber-50 text-amber-700 border-amber-200">
               <XCircle className="h-2.5 w-2.5 me-1" />
-              {t('policy.usingDefaults')}
+              {t($ => $.policy.usingDefaults)}
             </Badge>
           )}
         </div>
@@ -414,7 +414,7 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
         </div>
       ) : (
         <p className="text-sm text-muted-foreground italic">
-          {t('policy.noSettings')}
+          {t($ => $.policy.noSettings)}
         </p>
       )}
 
@@ -422,11 +422,11 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
       {fields.length > 0 && (
         <div className="space-y-3 pt-2 border-t border-border/60">
           <div className="space-y-1">
-            <Label className="text-xs">{t('policy.reasonPlaceholder')}</Label>
+            <Label className="text-xs">{t($ => $.policy.reasonPlaceholder)}</Label>
             <Input
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder={t('policy.reasonNote')}
+              placeholder={t($ => $.policy.reasonNote)}
               className="h-8 text-sm max-w-sm"
             />
           </div>
@@ -440,7 +440,7 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
               ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
               : <Save    className="h-3.5 w-3.5" />
             }
-            {isPending ? t('policy.saving') : isDirty ? t('policy.save') : t('policy.saved')}
+            {isPending ? t($ => $.policy.saving) : isDirty ? t($ => $.policy.save) : t($ => $.policy.saved)}
           </Button>
         </div>
       )}
@@ -554,7 +554,7 @@ function PolicyField({
                 {row.locked ? (
                   <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 rounded-md px-2 py-1">
                     <Lock className="h-3 w-3 shrink-0" />
-                    {tAny(`policy.lockLabels.${row.value}`, { defaultValue: row.lockLabel ?? t('policy.locked') })}
+                    {tAny(`policy.lockLabels.${row.value}`, { defaultValue: row.lockLabel ?? t($ => $.policy.locked) })}
                   </span>
                 ) : row.multiSelect ? (
                   <div className="flex flex-wrap gap-x-4 gap-y-1.5">
@@ -608,7 +608,7 @@ function PolicyField({
         <div className="flex items-center gap-2">
           <Label className="text-xs">{tAny(`policy.fields.${field.key}`, { defaultValue: field.label })}</Label>
           <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground border">
-            {t('policy.comingSoon')}
+            {t($ => $.policy.comingSoon)}
           </span>
         </div>
         <select
@@ -657,7 +657,7 @@ function PolicyField({
               onChange={(e) => onChange(e.target.checked ? 0 : null)}
               className="h-3 w-3 rounded"
             />
-            {t('policy.enabled')}
+            {t($ => $.policy.enabled)}
           </label>
         </div>
         <Input
@@ -665,7 +665,7 @@ function PolicyField({
           value={isNull ? '' : String(value)}
           onChange={(e) => onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
           disabled={isNull}
-          placeholder={t('policy.notSet')}
+          placeholder={t($ => $.policy.notSet)}
           min={field.min}
           max={field.max}
           className="h-8 text-sm"
@@ -700,7 +700,7 @@ function PolicyField({
         value={value === null || value === undefined ? '' : String(value)}
         onChange={(e) => onChange(e.target.value || null)}
         className="h-8 text-sm"
-        placeholder={t('policy.notSet')}
+        placeholder={t($ => $.policy.notSet)}
       />
       {field.hint && <p className="text-[11px] text-muted-foreground">{tAny(`policy.hints.${field.key}`, { defaultValue: field.hint })}</p>}
     </div>

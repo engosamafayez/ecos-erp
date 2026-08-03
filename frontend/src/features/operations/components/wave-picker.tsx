@@ -43,7 +43,7 @@ export function WavePicker({ className, showBadge = true }: Props) {
       <Select value={waveId} onValueChange={handleChange}>
         <SelectTrigger className="h-7 text-xs w-52 border-dashed">
           <SelectValue
-            placeholder={isLoading ? t('wave.picker.loading') : t('wave.picker.placeholder')}
+            placeholder={isLoading ? t($ => $.wave.picker.loading) : t($ => $.wave.picker.placeholder)}
           />
         </SelectTrigger>
         <SelectContent>
@@ -57,7 +57,7 @@ export function WavePicker({ className, showBadge = true }: Props) {
           ))}
           {!isLoading && waves.length === 0 && (
             <SelectItem value="__none__" disabled className="text-xs text-muted-foreground">
-              {t('wave.picker.noWaves')}
+              {t($ => $.wave.picker.noWaves)}
             </SelectItem>
           )}
         </SelectContent>

@@ -89,7 +89,7 @@ export function WorkspaceCard({
               }}
             >
               <Plus className="size-3" />
-              {newLabel ?? t('actions.new')}
+              {newLabel ?? t($ => $.actions.new)}
             </Button>
           )}
           <Button
@@ -101,7 +101,7 @@ export function WorkspaceCard({
               navigate(href);
             }}
           >
-            {t('actions.viewAll')}
+            {t($ => $.actions.viewAll)}
             <ArrowRight className="size-3" data-flip-rtl />
           </Button>
         </div>

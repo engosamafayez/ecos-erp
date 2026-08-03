@@ -80,8 +80,8 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('importModal.title')}</DialogTitle>
-          <DialogDescription>{t('importModal.description')}</DialogDescription>
+          <DialogTitle>{t($ => $.importModal.title)}</DialogTitle>
+          <DialogDescription>{t($ => $.importModal.description)}</DialogDescription>
         </DialogHeader>
 
         {/* Drop zone */}
@@ -101,13 +101,13 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-medium">{file.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {(file.size / 1024).toFixed(1)} {t('importModal.clickToChange')}
+                  {(file.size / 1024).toFixed(1)} {t($ => $.importModal.clickToChange)}
                 </p>
               </div>
             ) : (
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">{t('importModal.dropzone')}</p>
-                <p className="text-xs text-muted-foreground">{t('importModal.dropzoneSize')}</p>
+                <p className="text-sm font-medium">{t($ => $.importModal.dropzone)}</p>
+                <p className="text-xs text-muted-foreground">{t($ => $.importModal.dropzoneSize)}</p>
               </div>
             )}
             <input
@@ -140,8 +140,8 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
                 <table className="w-full text-xs">
                   <thead className="border-b bg-muted/40">
                     <tr>
-                      <th className="px-3 py-2 text-start font-medium">{t('importModal.rowHeader')}</th>
-                      <th className="px-3 py-2 text-start font-medium">{t('importModal.errorHeader')}</th>
+                      <th className="px-3 py-2 text-start font-medium">{t($ => $.importModal.rowHeader)}</th>
+                      <th className="px-3 py-2 text-start font-medium">{t($ => $.importModal.errorHeader)}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -164,16 +164,16 @@ export function ProductImportModal({ open, onOpenChange, onSuccess }: ProductImp
           {result?.errors.length ? (
             <Button variant="outline" size="sm" onClick={downloadErrorReport}>
               <Download className="size-3.5" />
-              {t('importModal.downloadErrorReport')}
+              {t($ => $.importModal.downloadErrorReport)}
             </Button>
           ) : null}
           {result && result.errors.length === 0 ? (
-            <Button onClick={handleClose}>{t('importModal.done')}</Button>
+            <Button onClick={handleClose}>{t($ => $.importModal.done)}</Button>
           ) : (
             <>
-              <Button variant="outline" onClick={handleClose}>{t('importModal.cancel')}</Button>
+              <Button variant="outline" onClick={handleClose}>{t($ => $.importModal.cancel)}</Button>
               <Button onClick={handleImport} disabled={!file || isPending}>
-                {isPending ? t('importModal.importing') : t('importModal.import')}
+                {isPending ? t($ => $.importModal.importing) : t($ => $.importModal.import)}
               </Button>
             </>
           )}

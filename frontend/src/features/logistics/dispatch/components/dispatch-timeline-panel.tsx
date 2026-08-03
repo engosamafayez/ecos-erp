@@ -32,16 +32,16 @@ export function DispatchTimelinePanel({ boardId }: { boardId: string | null }) {
 
   return (
     <div className="space-y-4">
-      <Panel title={t('dispatch.timeline.boardTitle')}>
+      <Panel title={t($ => $.dispatch.timeline.boardTitle)}>
         {boardId === null ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {t('dispatch.timeline.pickBoard')}
+            {t($ => $.dispatch.timeline.pickBoard)}
           </p>
         ) : isLoading ? (
           <Skeleton className="h-40 w-full" />
         ) : !events || events.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {t('dispatch.timeline.empty')}
+            {t($ => $.dispatch.timeline.empty)}
           </p>
         ) : (
           <ol className="relative space-y-4 border-s ps-5">
@@ -68,10 +68,10 @@ export function DispatchTimelinePanel({ boardId }: { boardId: string | null }) {
         )}
       </Panel>
 
-      <Panel title={t('dispatch.timeline.overridesTitle')}>
+      <Panel title={t($ => $.dispatch.timeline.overridesTitle)}>
         {!audit || audit.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {t('dispatch.timeline.overridesEmpty')}
+            {t($ => $.dispatch.timeline.overridesEmpty)}
           </p>
         ) : (
           <ul className="space-y-2">

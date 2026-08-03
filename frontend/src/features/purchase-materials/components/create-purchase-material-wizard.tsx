@@ -40,10 +40,10 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
   const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
 
   const PRIORITY_OPTIONS: Array<{ value: PurchaseMaterialPriority; label: string }> = [
-    { value: 'low', label: t('wizard.priority.low') },
-    { value: 'normal', label: t('wizard.priority.normal') },
-    { value: 'high', label: t('wizard.priority.high') },
-    { value: 'urgent', label: t('wizard.priority.urgent') },
+    { value: 'low', label: t($ => $.wizard.priority.low) },
+    { value: 'normal', label: t($ => $.wizard.priority.normal) },
+    { value: 'high', label: t($ => $.wizard.priority.high) },
+    { value: 'urgent', label: t($ => $.wizard.priority.urgent) },
   ];
 
   const [step, setStep] = useState(1);
@@ -137,10 +137,10 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
           notes: ln,
         })),
       });
-      toast.success(t('wizard.toast.success'));
+      toast.success(t($ => $.wizard.toast.success));
       handleClose();
     } catch {
-      toast.error(t('wizard.toast.failed'));
+      toast.error(t($ => $.wizard.toast.failed));
     }
   }
 
@@ -149,16 +149,16 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
   const stepName =
     step === 1
-      ? t('wizard.steps.generalInfo')
+      ? t($ => $.wizard.steps.generalInfo)
       : step === 2
-        ? t('wizard.steps.requestedMaterials')
-        : t('wizard.steps.reviewSubmit');
+        ? t($ => $.wizard.steps.requestedMaterials)
+        : t($ => $.wizard.steps.reviewSubmit);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>{t('wizard.title')}</DialogTitle>
+          <DialogTitle>{t($ => $.wizard.title)}</DialogTitle>
           <DialogDescription>
             {tAny('wizard.stepOf', { step, total: TOTAL_STEPS })} {stepName}
           </DialogDescription>
@@ -180,16 +180,16 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
             <div className="flex flex-col gap-4 px-1 overflow-y-auto max-h-[60vh] py-1">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">{t('wizard.step1.company')}</label>
+                  <label className="text-sm font-medium">{t($ => $.wizard.step1.company)}</label>
                   <CompanySelect
                     value={companyId || null}
                     onChange={(v) => { setCompanyId(v ?? ''); setWarehouseId(''); }}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">{t('wizard.step1.channel')}</label>
+                  <label className="text-sm font-medium">{t($ => $.wizard.step1.channel)}</label>
                   <Input
-                    placeholder={t('wizard.step1.channelPlaceholder')}
+                    placeholder={t($ => $.wizard.step1.channelPlaceholder)}
                     value={channelId}
                     onChange={(e) => setChannelId(e.target.value)}
                   />
@@ -198,11 +198,11 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium">
-                  {t('wizard.step1.warehouse')} <span className="text-destructive">*</span>
+                  {t($ => $.wizard.step1.warehouse)} <span className="text-destructive">*</span>
                 </label>
                 {wLoading ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="size-3.5 animate-spin" /> {t('wizard.step1.loadingWarehouses')}
+                    <Loader2 className="size-3.5 animate-spin" /> {t($ => $.wizard.step1.loadingWarehouses)}
                   </div>
                 ) : (
                   <select
@@ -210,7 +210,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                     onChange={(e) => setWarehouseId(e.target.value)}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    <option value="">{t('wizard.step1.selectWarehouse')}</option>
+                    <option value="">{t($ => $.wizard.step1.selectWarehouse)}</option>
                     {warehouses.map((w) => (
                       <option key={w.id} value={w.id}>{w.name}</option>
                     ))}
@@ -220,7 +220,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">{t('wizard.step1.priority')}</label>
+                  <label className="text-sm font-medium">{t($ => $.wizard.step1.priority)}</label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as PurchaseMaterialPriority)}
@@ -232,18 +232,18 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">{t('wizard.step1.requiredBy')}</label>
+                  <label className="text-sm font-medium">{t($ => $.wizard.step1.requiredBy)}</label>
                   <Input type="date" value={requiredDate} onChange={(e) => setRequiredDate(e.target.value)} />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">{t('wizard.step1.notes')}</label>
+                <label className="text-sm font-medium">{t($ => $.wizard.step1.notes)}</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  placeholder={t('wizard.step1.notesPlaceholder')}
+                  placeholder={t($ => $.wizard.step1.notesPlaceholder)}
                   className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
                 />
               </div>
@@ -256,12 +256,12 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
               {/* Left: product picker + selected lines */}
               <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-2">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">{t('wizard.step2.searchProducts')}</label>
+                  <label className="text-sm font-medium">{t($ => $.wizard.step2.searchProducts)}</label>
                   <div className="relative">
                     <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
                     <Input
                       className="pl-9"
-                      placeholder={t('wizard.step2.searchPlaceholder')}
+                      placeholder={t($ => $.wizard.step2.searchPlaceholder)}
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
                     />
@@ -272,11 +272,11 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 <div className="border rounded-md overflow-hidden">
                   {pLoading ? (
                     <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                      <Loader2 className="size-4 animate-spin" /> {t('wizard.step2.searching')}
+                      <Loader2 className="size-4 animate-spin" /> {t($ => $.wizard.step2.searching)}
                     </div>
                   ) : products.length === 0 ? (
                     <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-                      {t('wizard.step2.noProducts')}
+                      {t($ => $.wizard.step2.noProducts)}
                     </div>
                   ) : (
                     <table className="w-full text-sm">
@@ -305,7 +305,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                                   }}
                                 >
                                   {added ? <Minus className="size-3.5" /> : <Plus className="size-3.5" />}
-                                  {added ? t('wizard.step2.remove') : t('wizard.step2.add')}
+                                  {added ? t($ => $.wizard.step2.remove) : t($ => $.wizard.step2.add)}
                                 </Button>
                               </td>
                             </tr>
@@ -326,8 +326,8 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                       <table className="w-full text-sm">
                         <thead className="bg-muted/40">
                           <tr>
-                            <th className="px-3 py-1.5 text-start font-medium text-xs text-muted-foreground">{t('wizard.step2.material')}</th>
-                            <th className="px-3 py-1.5 text-center font-medium text-xs text-muted-foreground w-24">{t('wizard.step2.qty')}</th>
+                            <th className="px-3 py-1.5 text-start font-medium text-xs text-muted-foreground">{t($ => $.wizard.step2.material)}</th>
+                            <th className="px-3 py-1.5 text-center font-medium text-xs text-muted-foreground w-24">{t($ => $.wizard.step2.qty)}</th>
                             <th className="px-3 py-1.5 w-8" />
                           </tr>
                         </thead>
@@ -373,7 +373,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 {lines.length === 0 && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground border border-dashed rounded-md p-4">
                     <AlertCircle className="size-4 shrink-0" />
-                    {t('wizard.step2.addAtLeastOne')}
+                    {t($ => $.wizard.step2.addAtLeastOne)}
                   </div>
                 )}
               </div>
@@ -381,7 +381,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
               {/* Right: Enterprise Demand Panel */}
               <div className="w-64 shrink-0 border-l pl-4 overflow-y-auto">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                  {t('wizard.step2.demandIntelligence')}
+                  {t($ => $.wizard.step2.demandIntelligence)}
                 </p>
                 <EnterpriseDemandPanel
                   productId={panelProductId}
@@ -398,22 +398,22 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
             <div className="flex flex-col gap-4 px-1 overflow-y-auto max-h-[60vh] py-1">
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div>
-                  <p className="text-xs text-muted-foreground">{t('wizard.step3.warehouse')}</p>
+                  <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.warehouse)}</p>
                   <p className="font-medium">{warehouses.find((w) => w.id === warehouseId)?.name ?? warehouseId}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">{t('wizard.step3.priority')}</p>
+                  <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.priority)}</p>
                   <p className="font-medium capitalize">{priority}</p>
                 </div>
                 {channelId && (
                   <div>
-                    <p className="text-xs text-muted-foreground">{t('wizard.step3.channel')}</p>
+                    <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.channel)}</p>
                     <p className="font-medium">{channelId}</p>
                   </div>
                 )}
                 {requiredDate && (
                   <div>
-                    <p className="text-xs text-muted-foreground">{t('wizard.step3.requiredBy')}</p>
+                    <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.requiredBy)}</p>
                     <p className="font-medium">
                       {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(requiredDate))}
                     </p>
@@ -421,7 +421,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 )}
                 {notes && (
                   <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground">{t('wizard.step3.notes')}</p>
+                    <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.notes)}</p>
                     <p>{notes}</p>
                   </div>
                 )}
@@ -431,8 +431,8 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr>
-                      <th className="px-3 py-2 text-start font-medium text-xs text-muted-foreground">{t('wizard.step3.material')}</th>
-                      <th className="px-3 py-2 text-end font-medium text-xs text-muted-foreground">{t('wizard.step3.requestedQty')}</th>
+                      <th className="px-3 py-2 text-start font-medium text-xs text-muted-foreground">{t($ => $.wizard.step3.material)}</th>
+                      <th className="px-3 py-2 text-end font-medium text-xs text-muted-foreground">{t($ => $.wizard.step3.requestedQty)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -455,11 +455,11 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
         <DialogFooter className="gap-2 pt-2">
           {step > 1 && (
             <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
-              {t('wizard.buttons.previous')}
+              {t($ => $.wizard.buttons.previous)}
             </Button>
           )}
           <Button type="button" variant="ghost" onClick={handleClose}>
-            {t('wizard.buttons.cancel')}
+            {t($ => $.wizard.buttons.cancel)}
           </Button>
           {step < TOTAL_STEPS ? (
             <Button
@@ -467,7 +467,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
               disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
               onClick={() => setStep((s) => s + 1)}
             >
-              {t('wizard.buttons.next')}
+              {t($ => $.wizard.buttons.next)}
             </Button>
           ) : (
             <Button
@@ -478,9 +478,9 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
               {create.isPending ? (
                 <>
                   <Loader2 className="size-4 animate-spin mr-2" />
-                  {t('wizard.buttons.creating')}
+                  {t($ => $.wizard.buttons.creating)}
                 </>
-              ) : t('wizard.buttons.create')}
+              ) : t($ => $.wizard.buttons.create)}
             </Button>
           )}
         </DialogFooter>

@@ -89,20 +89,20 @@ export function InventoryCountPage() {
     if (!confirm(tAny('sessions.toast.confirmDelete', { number: session.count_number }))) return;
     try {
       await deleteMutation.mutateAsync(session.id);
-      toast.success(t('sessions.toast.deleted'));
+      toast.success(t($ => $.sessions.toast.deleted));
     } catch {
-      toast.error(t('sessions.toast.deleteFail'));
+      toast.error(t($ => $.sessions.toast.deleteFail));
     }
   }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('sessions.pageTitle')}
-        subtitle={t('sessions.pageSubtitle')}
-        breadcrumbs={[{ label: t('sessions.breadcrumb.home'), to: ROUTES.dashboard }, { label: t('sessions.breadcrumb.page') }]}
+        title={t($ => $.sessions.pageTitle)}
+        subtitle={t($ => $.sessions.pageSubtitle)}
+        breadcrumbs={[{ label: t($ => $.sessions.breadcrumb.home), to: ROUTES.dashboard }, { label: t($ => $.sessions.breadcrumb.page) }]}
         actions={
-          <Button onClick={() => setNewDialogOpen(true)}>+ {t('sessions.actions.new')}</Button>
+          <Button onClick={() => setNewDialogOpen(true)}>+ {t($ => $.sessions.actions.new)}</Button>
         }
       />
 
@@ -129,7 +129,7 @@ export function InventoryCountPage() {
           {/* Toolbar */}
           <div className="flex items-center gap-3 flex-wrap">
             <Input
-              placeholder={t('sessions.searchPlaceholder')}
+              placeholder={t($ => $.sessions.searchPlaceholder)}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 w-56 text-sm"
@@ -141,7 +141,7 @@ export function InventoryCountPage() {
               disabled={isFetching}
               className="h-8"
             >
-              {t('sessions.actions.refresh')}
+              {t($ => $.sessions.actions.refresh)}
             </Button>
             <span className="ms-auto text-xs text-muted-foreground">
               {meta ? tAny('sessions.totalCount', { count: meta.total }) : ''}
@@ -153,15 +153,15 @@ export function InventoryCountPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('sessions.columns.sessionNo')}</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('sessions.columns.warehouse')}</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('sessions.columns.status')}</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('sessions.columns.startDate')}</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('sessions.columns.completionDate')}</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('sessions.columns.accuracy')}</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('sessions.columns.shortageValue')}</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('sessions.columns.wasteValue')}</th>
-                  <th className="px-4 py-2.5 text-center text-xs font-medium text-muted-foreground">{t('sessions.columns.attachments')}</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.sessions.columns.sessionNo)}</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.sessions.columns.warehouse)}</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.sessions.columns.status)}</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.sessions.columns.startDate)}</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.sessions.columns.completionDate)}</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t($ => $.sessions.columns.accuracy)}</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t($ => $.sessions.columns.shortageValue)}</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t($ => $.sessions.columns.wasteValue)}</th>
+                  <th className="px-4 py-2.5 text-center text-xs font-medium text-muted-foreground">{t($ => $.sessions.columns.attachments)}</th>
                   <th className="px-4 py-2.5" />
                 </tr>
               </thead>
@@ -169,13 +169,13 @@ export function InventoryCountPage() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                      {t('sessions.loading')}
+                      {t($ => $.sessions.loading)}
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                      {search ? t('sessions.noMatches') : t('sessions.empty')}
+                      {search ? t($ => $.sessions.noMatches) : t($ => $.sessions.empty)}
                     </td>
                   </tr>
                 ) : (
@@ -213,7 +213,7 @@ export function InventoryCountPage() {
                             onClick={(e) => void handleDelete(session, e)}
                             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                           >
-                            {t('sessions.actions.delete')}
+                            {t($ => $.sessions.actions.delete)}
                           </button>
                         )}
                       </td>
@@ -238,7 +238,7 @@ export function InventoryCountPage() {
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                 >
-                  {t('sessions.paginationPrev')}
+                  {t($ => $.sessions.paginationPrev)}
                 </Button>
                 <Button
                   variant="outline"
@@ -247,7 +247,7 @@ export function InventoryCountPage() {
                   disabled={page >= meta.last_page}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  {t('sessions.paginationNext')}
+                  {t($ => $.sessions.paginationNext)}
                 </Button>
               </div>
             </div>

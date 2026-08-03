@@ -24,7 +24,7 @@ export function PublishBadge({ published, className }: PublishBadgeProps) {
       )}
     >
       <Eye className="size-3 shrink-0" />
-      {t('badges.published')}
+      {t($ => $.badges.published)}
     </span>
   ) : (
     <span
@@ -34,7 +34,7 @@ export function PublishBadge({ published, className }: PublishBadgeProps) {
       )}
     >
       <EyeOff className="size-3 shrink-0" />
-      {t('badges.draft')}
+      {t($ => $.badges.draft)}
     </span>
   );
 }

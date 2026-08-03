@@ -51,11 +51,11 @@ export function LicenseStatusBadge({
     if (status === 'expiring_soon') {
       text =
         daysRemaining === 0
-          ? t('drivers.license.countdown.expiresToday')
-          : t('drivers.license.countdown.expiresInDays', { days: daysRemaining });
+          ? t($ => $.drivers.license.countdown.expiresToday)
+          : t($ => $.drivers.license.countdown.expiresInDays, { days: daysRemaining });
     } else if (status === 'expired') {
       const days = Math.abs(daysRemaining);
-      text = t('drivers.license.countdown.expiredAgo', { days });
+      text = t($ => $.drivers.license.countdown.expiredAgo, { days });
     }
   }
 

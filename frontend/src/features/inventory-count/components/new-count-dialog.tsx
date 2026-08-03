@@ -52,10 +52,10 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
     if (!companyId || !warehouseId) return;
     try {
       await create.mutateAsync({ company_id: companyId, warehouse_id: warehouseId, notes: notes || undefined });
-      toast.success(t('sessions.toast.created'));
+      toast.success(t($ => $.sessions.toast.created));
       handleClose();
     } catch {
-      toast.error(t('sessions.toast.createFailed'));
+      toast.error(t($ => $.sessions.toast.createFailed));
     }
   }
 
@@ -63,32 +63,32 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('sessions.newDialog.title')}</DialogTitle>
+          <DialogTitle>{t($ => $.sessions.newDialog.title)}</DialogTitle>
           <DialogDescription>
-            {t('sessions.newDialog.description')}
+            {t($ => $.sessions.newDialog.description)}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-4 py-2">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">
-              {t('sessions.newDialog.companyLabel')} <span className="text-destructive">*</span>
+              {t($ => $.sessions.newDialog.companyLabel)} <span className="text-destructive">*</span>
             </label>
             <CompanySelect value={companyId || null} onChange={(v) => { setCompanyId(v ?? ''); setWarehouseId(''); }} />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">
-              {t('sessions.newDialog.warehouseLabel')} <span className="text-destructive">*</span>
+              {t($ => $.sessions.newDialog.warehouseLabel)} <span className="text-destructive">*</span>
             </label>
             {!companyId ? (
-              <p className="text-xs text-muted-foreground italic">{t('sessions.newDialog.selectCompanyFirst')}</p>
+              <p className="text-xs text-muted-foreground italic">{t($ => $.sessions.newDialog.selectCompanyFirst)}</p>
             ) : wLoading ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" /> {t('sessions.newDialog.loadingWarehouses')}
+                <Loader2 className="size-3.5 animate-spin" /> {t($ => $.sessions.newDialog.loadingWarehouses)}
               </div>
             ) : warehouses.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">{t('sessions.newDialog.noWarehouses')}</p>
+              <p className="text-xs text-muted-foreground italic">{t($ => $.sessions.newDialog.noWarehouses)}</p>
             ) : (
               <select
                 value={warehouseId}
@@ -105,7 +105,7 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">{t('sessions.newDialog.notesLabel')}</label>
+            <label className="text-sm font-medium">{t($ => $.sessions.newDialog.notesLabel)}</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -116,10 +116,10 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
           </div>
 
           <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={handleClose}>{t('sessions.newDialog.cancel')}</Button>
+            <Button type="button" variant="outline" onClick={handleClose}>{t($ => $.sessions.newDialog.cancel)}</Button>
             <Button type="submit" disabled={!companyId || !warehouseId || create.isPending}>
               {create.isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
-              {t('sessions.newDialog.submit')}
+              {t($ => $.sessions.newDialog.submit)}
             </Button>
           </DialogFooter>
         </form>

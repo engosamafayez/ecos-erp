@@ -63,10 +63,10 @@ function EmptyDeliveries({ hasFilter }: { hasFilter: boolean }) {
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <Truck className="mb-3 size-12 text-muted-foreground/20" />
       <p className="text-sm font-medium">
-        {hasFilter ? t('delivery.empty.filteredTitle') : t('delivery.empty.title')}
+        {hasFilter ? t($ => $.delivery.empty.filteredTitle) : t($ => $.delivery.empty.title)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {hasFilter ? t('delivery.empty.filteredHint') : t('delivery.empty.hint')}
+        {hasFilter ? t($ => $.delivery.empty.filteredHint) : t($ => $.delivery.empty.hint)}
       </p>
     </div>
   );
@@ -105,12 +105,12 @@ function DeliveriesTable({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="h-10 px-3 font-medium">{t('delivery.field.order')}</th>
-            <th className="h-10 px-3 font-medium">{t('common.status')}</th>
-            <th className="h-10 px-3 text-center font-medium">{t('delivery.field.attempts')}</th>
-            <th className="h-10 px-3 font-medium">{t('delivery.table.lastFailure')}</th>
-            <th className="h-10 px-3 font-medium">{t('delivery.field.promised')}</th>
-            <th className="h-10 px-3 font-medium">{t('delivery.table.sla')}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.delivery.field.order)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.common.status)}</th>
+            <th className="h-10 px-3 text-center font-medium">{t($ => $.delivery.field.attempts)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.delivery.table.lastFailure)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.delivery.field.promised)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.delivery.table.sla)}</th>
             <th className="h-10 w-10 px-3" />
           </tr>
         </thead>
@@ -144,7 +144,7 @@ function DeliveriesTable({
                       {failure.reason_label}
                       {!failure.is_retryable && (
                         <Badge variant="destructive" className="ms-1.5 text-[10px]">
-                          {t('delivery.table.final')}
+                          {t($ => $.delivery.table.final)}
                         </Badge>
                       )}
                     </span>
@@ -159,10 +159,10 @@ function DeliveriesTable({
                   {delivery.sla_breached ? (
                     <Badge variant="destructive" className="gap-1 text-[10px]">
                       <Clock className="size-3" />
-                      {t('delivery.sla.breached')}
+                      {t($ => $.delivery.sla.breached)}
                     </Badge>
                   ) : (
-                    <span className="text-xs text-muted-foreground">{t('delivery.sla.onTime')}</span>
+                    <span className="text-xs text-muted-foreground">{t($ => $.delivery.sla.onTime)}</span>
                   )}
                 </td>
                 <td className="px-3 py-2.5 text-end">
@@ -239,20 +239,20 @@ export function DeliveryPage() {
   }
 
   const metrics = [
-    { id: 'out', icon: Truck, label: t('delivery.status.outForDelivery'), value: stats?.out_for_delivery ?? 0, isLoading: !stats },
-    { id: 'delivered', icon: CheckCircle, label: t('delivery.status.delivered'), value: stats?.delivered ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'failed', icon: PackageX, label: t('common.failed'), value: stats?.failed ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
-    { id: 'retry', icon: RotateCcw, label: t('delivery.status.awaitingRetry'), value: stats?.awaiting_retry ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
-    { id: 'sla', icon: AlertTriangle, label: t('delivery.stats.slaBreached'), value: stats?.sla_breached ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
-    { id: 'returning', icon: Undo2, label: t('delivery.status.returning'), value: stats?.returning ?? 0, isLoading: !stats },
+    { id: 'out', icon: Truck, label: t($ => $.delivery.status.outForDelivery), value: stats?.out_for_delivery ?? 0, isLoading: !stats },
+    { id: 'delivered', icon: CheckCircle, label: t($ => $.delivery.status.delivered), value: stats?.delivered ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'failed', icon: PackageX, label: t($ => $.common.failed), value: stats?.failed ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
+    { id: 'retry', icon: RotateCcw, label: t($ => $.delivery.status.awaitingRetry), value: stats?.awaiting_retry ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'sla', icon: AlertTriangle, label: t($ => $.delivery.stats.slaBreached), value: stats?.sla_breached ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
+    { id: 'returning', icon: Undo2, label: t($ => $.delivery.status.returning), value: stats?.returning ?? 0, isLoading: !stats },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: t('delivery.page.breadcrumbRoot') }, { label: t('delivery.entity') }]}
-        title={t('delivery.page.title')}
-        description={t('delivery.page.description')}
+        breadcrumbs={[{ label: t($ => $.delivery.page.breadcrumbRoot) }, { label: t($ => $.delivery.entity) }]}
+        title={t($ => $.delivery.page.title)}
+        description={t($ => $.delivery.page.description)}
         metrics={metrics}
       />
 
@@ -265,7 +265,7 @@ export function DeliveryPage() {
         quickFilters={
           <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
             <Input
-              placeholder={t('delivery.filter.orderIdPlaceholder')}
+              placeholder={t($ => $.delivery.filter.orderIdPlaceholder)}
               value={orderId}
               onChange={(e) => {
                 setOrderId(e.target.value);
@@ -295,7 +295,7 @@ export function DeliveryPage() {
               onClick={() => resetPage(setSlaOnly)(!slaOnly)}
             >
               <Clock className="size-3" />
-              {t('delivery.filter.slaBreached')}
+              {t($ => $.delivery.filter.slaBreached)}
             </Button>
 
             {(options?.failure_categories ?? []).map((category) => (

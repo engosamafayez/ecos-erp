@@ -27,7 +27,7 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
 
   return (
     <nav
-      aria-label={t('nav.mobileNavigation')}
+      aria-label={t($ => $.nav.mobileNavigation)}
       className="fixed inset-x-0 bottom-0 z-40 flex h-14 items-stretch border-t bg-background md:hidden"
     >
       {PINNED.map(({ key, labelKey, icon: Icon, path }) => {
@@ -54,21 +54,21 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
       <button
         type="button"
         onClick={openSearch}
-        aria-label={t('common.search')}
+        aria-label={t($ => $.common.search)}
         className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <Search className="size-5" aria-hidden />
-        <span>{t('common.search')}</span>
+        <span>{t($ => $.common.search)}</span>
       </button>
 
       <button
         type="button"
         onClick={onOpenMenu}
-        aria-label={t('actions.more')}
+        aria-label={t($ => $.actions.more)}
         className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <Menu className="size-5" aria-hidden />
-        <span>{t('actions.more')}</span>
+        <span>{t($ => $.actions.more)}</span>
       </button>
     </nav>
   );

@@ -52,21 +52,21 @@ export function CareersApplyPage() {
       setReceipt(await submit.mutateAsync({ slug, form: payload }));
     } catch (e) {
       const response = (e as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }).response;
-      setErrors(response?.data?.errors ?? { _: [response?.data?.message ?? t('careers.apply.submitFailed')] });
+      setErrors(response?.data?.errors ?? { _: [response?.data?.message ?? t($ => $.careers.apply.submitFailed)] });
     }
   };
 
   if (isLoading) {
-    return <p className="text-muted-foreground py-20 text-center text-sm">{t('common.loading')}</p>;
+    return <p className="text-muted-foreground py-20 text-center text-sm">{t($ => $.common.loading)}</p>;
   }
 
   if (isError || !job) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-20 text-center">
-        <h1 className="text-xl font-semibold">{t('careers.apply.unavailableTitle')}</h1>
-        <p className="text-muted-foreground mt-2 text-sm">{t('careers.apply.unavailableHint')}</p>
+        <h1 className="text-xl font-semibold">{t($ => $.careers.apply.unavailableTitle)}</h1>
+        <p className="text-muted-foreground mt-2 text-sm">{t($ => $.careers.apply.unavailableHint)}</p>
         <Button asChild variant="outline" className="mt-6">
-          <Link to="/careers">{t('careers.apply.backToRoles')}</Link>
+          <Link to="/careers">{t($ => $.careers.apply.backToRoles)}</Link>
         </Button>
       </div>
     );
@@ -92,7 +92,7 @@ export function CareersApplyPage() {
               />
             </p>
             <Button asChild variant="outline" className="mt-4">
-              <Link to="/careers">{t('careers.apply.backToRoles')}</Link>
+              <Link to="/careers">{t($ => $.careers.apply.backToRoles)}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -106,7 +106,7 @@ export function CareersApplyPage() {
         <Button asChild variant="ghost" size="sm" className="mb-6 -ms-2">
           <Link to="/careers">
             <ArrowLeft className="size-4" />
-            {t('careers.apply.allRoles')}
+            {t($ => $.careers.apply.allRoles)}
           </Link>
         </Button>
 
@@ -132,59 +132,59 @@ export function CareersApplyPage() {
 
         {job.description ? (
           <section className="mt-8">
-            <h2 className="font-semibold">{t('careers.apply.aboutRole')}</h2>
+            <h2 className="font-semibold">{t($ => $.careers.apply.aboutRole)}</h2>
             <p className="text-muted-foreground mt-2 whitespace-pre-line text-sm">{job.description}</p>
           </section>
         ) : null}
 
         {job.responsibilities ? (
           <section className="mt-6">
-            <h2 className="font-semibold">{t('careers.apply.responsibilities')}</h2>
+            <h2 className="font-semibold">{t($ => $.careers.apply.responsibilities)}</h2>
             <p className="text-muted-foreground mt-2 whitespace-pre-line text-sm">{job.responsibilities}</p>
           </section>
         ) : null}
 
         {job.requirements ? (
           <section className="mt-6">
-            <h2 className="font-semibold">{t('careers.apply.requirements')}</h2>
+            <h2 className="font-semibold">{t($ => $.careers.apply.requirements)}</h2>
             <p className="text-muted-foreground mt-2 whitespace-pre-line text-sm">{job.requirements}</p>
           </section>
         ) : null}
 
         <Card className="mt-10">
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold">{t('careers.apply.applyHeading')}</h2>
+            <h2 className="text-lg font-semibold">{t($ => $.careers.apply.applyHeading)}</h2>
 
             {!job.accepting_applications ? (
-              <p className="text-muted-foreground mt-2 text-sm">{t('careers.apply.closed')}</p>
+              <p className="text-muted-foreground mt-2 text-sm">{t($ => $.careers.apply.closed)}</p>
             ) : (
               <form className="mt-6 flex flex-col gap-5" onSubmit={onSubmit} noValidate>
                 {errors._ ? <p className="text-destructive text-sm">{errors._[0]}</p> : null}
 
                 <fieldset className="flex flex-col gap-4">
-                  <legend className="text-sm font-medium">{t('careers.apply.yourDetails')}</legend>
+                  <legend className="text-sm font-medium">{t($ => $.careers.apply.yourDetails)}</legend>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label={t('careers.apply.fields.fullName')} name="full_name" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.fullName)} name="full_name" errors={errors}>
                       <Input value={form.full_name} onChange={(e) => set('full_name')(e.target.value)} required />
                     </Field>
-                    <Field label={t('careers.apply.fields.mobile')} name="mobile" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.mobile)} name="mobile" errors={errors}>
                       <Input value={form.mobile} onChange={(e) => set('mobile')(e.target.value)} required />
                     </Field>
-                    <Field label={t('careers.apply.fields.email')} name="email" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.email)} name="email" errors={errors}>
                       <Input type="email" value={form.email} onChange={(e) => set('email')(e.target.value)} />
                     </Field>
-                    <Field label={t('careers.apply.fields.birthDate')} name="birth_date" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.birthDate)} name="birth_date" errors={errors}>
                       <Input type="date" value={form.birth_date} onChange={(e) => set('birth_date')(e.target.value)} />
                     </Field>
                   </div>
                 </fieldset>
 
                 <fieldset className="flex flex-col gap-4">
-                  <legend className="text-sm font-medium">{t('careers.apply.yourExperience')}</legend>
+                  <legend className="text-sm font-medium">{t($ => $.careers.apply.yourExperience)}</legend>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label={t('careers.apply.fields.yearsExperience')} name="years_experience" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.yearsExperience)} name="years_experience" errors={errors}>
                       <Input
                         type="number"
                         min={0}
@@ -193,13 +193,13 @@ export function CareersApplyPage() {
                         onChange={(e) => set('years_experience')(e.target.value)}
                       />
                     </Field>
-                    <Field label={t('careers.apply.fields.currentEmployer')} name="current_employer" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.currentEmployer)} name="current_employer" errors={errors}>
                       <Input
                         value={form.current_employer}
                         onChange={(e) => set('current_employer')(e.target.value)}
                       />
                     </Field>
-                    <Field label={t('careers.apply.fields.expectedSalary')} name="expected_salary" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.expectedSalary)} name="expected_salary" errors={errors}>
                       <Input
                         type="number"
                         min={0}
@@ -207,7 +207,7 @@ export function CareersApplyPage() {
                         onChange={(e) => set('expected_salary')(e.target.value)}
                       />
                     </Field>
-                    <Field label={t('careers.apply.fields.availableFrom')} name="available_from" errors={errors}>
+                    <Field label={t($ => $.careers.apply.fields.availableFrom)} name="available_from" errors={errors}>
                       <Input
                         type="date"
                         value={form.available_from}
@@ -217,7 +217,7 @@ export function CareersApplyPage() {
                   </div>
                 </fieldset>
 
-                <Field label={t('careers.apply.fields.cv')} name="cv" errors={errors}>
+                <Field label={t($ => $.careers.apply.fields.cv)} name="cv" errors={errors}>
                   <Input
                     type="file"
                     accept=".pdf,.doc,.docx"
@@ -225,7 +225,7 @@ export function CareersApplyPage() {
                   />
                 </Field>
 
-                <Field label={t('careers.apply.fields.additionalNotes')} name="additional_notes" errors={errors}>
+                <Field label={t($ => $.careers.apply.fields.additionalNotes)} name="additional_notes" errors={errors}>
                   <textarea
                     value={form.additional_notes}
                     onChange={(e) => set('additional_notes')(e.target.value)}
@@ -235,7 +235,7 @@ export function CareersApplyPage() {
                 </Field>
 
                 <Button type="submit" disabled={submit.isPending} className="self-start">
-                  {submit.isPending ? t('careers.apply.submitting') : t('careers.apply.submitButton')}
+                  {submit.isPending ? t($ => $.careers.apply.submitting) : t($ => $.careers.apply.submitButton)}
                 </Button>
               </form>
             )}

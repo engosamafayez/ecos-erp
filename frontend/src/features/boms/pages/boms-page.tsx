@@ -71,39 +71,39 @@ export function BomsPage() {
     () => [
       {
         key: 'bom_number',
-        header: t('columns.bomNumber'),
+        header: t($ => $.columns.bomNumber),
         sortable: true,
         cell: (bom) => <span className="font-mono font-medium">{bom.bom_number}</span>,
       },
       {
         key: 'product',
-        header: t('columns.product'),
+        header: t($ => $.columns.product),
         cell: (bom) => bom.product?.name ?? '—',
       },
       {
         key: 'version',
-        header: t('columns.version'),
+        header: t($ => $.columns.version),
         sortable: true,
         cell: (bom) => bom.version,
       },
       {
         key: 'lines',
-        header: t('columns.lines'),
+        header: t($ => $.columns.lines),
         cell: (bom) => bom.lines?.length ?? 0,
       },
       {
         key: 'is_active',
-        header: t('columns.status'),
+        header: t($ => $.columns.status),
         cell: (bom) =>
           bom.is_active ? (
-            <Badge variant="default">{t('status.active')}</Badge>
+            <Badge variant="default">{t($ => $.status.active)}</Badge>
           ) : (
-            <Badge variant="secondary">{t('status.inactive')}</Badge>
+            <Badge variant="secondary">{t($ => $.status.inactive)}</Badge>
           ),
       },
       {
         key: 'created_at',
-        header: t('columns.createdAt'),
+        header: t($ => $.columns.createdAt),
         sortable: true,
         cell: (bom) => (bom.created_at ? bom.created_at.slice(0, 10) : '—'),
       },
@@ -114,13 +114,13 @@ export function BomsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: t('title') }]}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
+        breadcrumbs={[{ label: tCommon($ => $.home), to: ROUTES.dashboard }, { label: t($ => $.title) }]}
         actions={
           <Button onClick={() => navigate(ROUTES.bomsNew)}>
             <Plus className="size-4" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -128,7 +128,7 @@ export function BomsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={t($ => $.search)}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -139,7 +139,7 @@ export function BomsPage() {
             }}
             filterPanel={
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{t('filters.status')}</span>
+                <span className="text-sm font-medium">{t($ => $.filters.status)}</span>
                 <select
                   value={activeFilter}
                   onChange={(e) => {
@@ -148,9 +148,9 @@ export function BomsPage() {
                   }}
                   className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                 >
-                  <option value="all">{t('filters.allStatuses')}</option>
-                  <option value="true">{t('filters.activeOnly')}</option>
-                  <option value="false">{t('filters.inactiveOnly')}</option>
+                  <option value="all">{t($ => $.filters.allStatuses)}</option>
+                  <option value="true">{t($ => $.filters.activeOnly)}</option>
+                  <option value="false">{t($ => $.filters.inactiveOnly)}</option>
                 </select>
               </div>
             }
@@ -166,23 +166,23 @@ export function BomsPage() {
             onSortChange={handleSort}
             rowActions={(bom) => (
               <ActionMenu
-                label={t('actions.actionsFor', { number: bom.bom_number })}
+                label={t($ => $.actions.actionsFor, { number: bom.bom_number })}
                 items={[
                   {
                     key: 'view',
-                    label: tCommon('actions.view'),
+                    label: tCommon($ => $.actions.view),
                     icon: Eye,
                     onSelect: () => navigate(`${ROUTES.boms}/${bom.id}`),
                   },
                   {
                     key: 'edit',
-                    label: tCommon('common.edit'),
+                    label: tCommon($ => $.common.edit),
                     icon: Pencil,
                     onSelect: () => navigate(`${ROUTES.boms}/${bom.id}/edit`),
                   },
                   {
                     key: 'delete',
-                    label: tCommon('common.delete'),
+                    label: tCommon($ => $.common.delete),
                     icon: Trash2,
                     variant: 'destructive' as const,
                     onSelect: () => setDeleting(bom),
@@ -211,9 +211,9 @@ export function BomsPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title={t('delete.title')}
-        description={t('workspace.deleteMessage', { number: deleting?.bom_number ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={t($ => $.workspace.deleteMessage, { number: deleting?.bom_number ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteBom.isPending}
         onConfirm={() => {

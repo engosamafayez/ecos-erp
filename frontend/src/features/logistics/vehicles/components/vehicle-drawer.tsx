@@ -199,7 +199,7 @@ function DetailsFields({
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="vh-code">{t('vehicles.form.vehicleCode')} *</Label>
+          <Label htmlFor="vh-code">{t($ => $.vehicles.form.vehicleCode)} *</Label>
           <Input
             id="vh-code"
             value={form.vehicle_code}
@@ -210,7 +210,7 @@ function DetailsFields({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="vh-plate">{t('vehicles.form.plateNumber')} *</Label>
+          <Label htmlFor="vh-plate">{t($ => $.vehicles.form.plateNumber)} *</Label>
           <Input
             id="vh-plate"
             value={form.plate_number}
@@ -223,20 +223,20 @@ function DetailsFields({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="vh-name">{t('vehicles.form.vehicleName')}</Label>
+          <Label htmlFor="vh-name">{t($ => $.vehicles.form.vehicleName)}</Label>
           <Input
             id="vh-name"
             value={form.name}
             disabled={disabled}
-            placeholder={t('vehicles.form.vehicleNamePlaceholder')}
+            placeholder={t($ => $.vehicles.form.vehicleNamePlaceholder)}
             onChange={(e) => set('name')(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>{t('vehicles.form.vehicleType')} *</Label>
+          <Label>{t($ => $.vehicles.form.vehicleType)} *</Label>
           <Select value={form.type} onValueChange={onTypeChange}>
             <SelectTrigger disabled={disabled}>
-              <SelectValue placeholder={t('vehicles.form.selectType')} />
+              <SelectValue placeholder={t($ => $.vehicles.form.selectType)} />
             </SelectTrigger>
             <SelectContent>
               {(options?.types ?? []).map((t) => (
@@ -248,10 +248,10 @@ function DetailsFields({
       </div>
 
       <div className="space-y-1.5">
-        <Label>{t('vehicles.form.shippingCompany')}</Label>
+        <Label>{t($ => $.vehicles.form.shippingCompany)}</Label>
         <Select value={form.shipping_company_id} onValueChange={set('shipping_company_id')}>
           <SelectTrigger disabled={disabled}>
-            <SelectValue placeholder={t('vehicles.form.selectCarrier')} />
+            <SelectValue placeholder={t($ => $.vehicles.form.selectCarrier)} />
           </SelectTrigger>
           <SelectContent>
             {(carriers?.data ?? []).map((c) => (
@@ -264,10 +264,10 @@ function DetailsFields({
       </div>
 
       <Separator />
-      <p className="text-sm font-semibold">{t('common.capacity')}</p>
+      <p className="text-sm font-semibold">{t($ => $.common.capacity)}</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
-          <Label htmlFor="vh-cap-o">{t('vehicles.form.capacityOrders')} *</Label>
+          <Label htmlFor="vh-cap-o">{t($ => $.vehicles.form.capacityOrders)} *</Label>
           <Input
             id="vh-cap-o"
             type="number"
@@ -278,7 +278,7 @@ function DetailsFields({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="vh-cap-w">{t('vehicles.form.capacityWeight')}</Label>
+          <Label htmlFor="vh-cap-w">{t($ => $.vehicles.form.capacityWeight)}</Label>
           <Input
             id="vh-cap-w"
             type="number"
@@ -290,7 +290,7 @@ function DetailsFields({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="vh-cap-v">{t('vehicles.form.capacityVolume')}</Label>
+          <Label htmlFor="vh-cap-v">{t($ => $.vehicles.form.capacityVolume)}</Label>
           <Input
             id="vh-cap-v"
             type="number"
@@ -302,16 +302,16 @@ function DetailsFields({
           />
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">{t('vehicles.form.capacityHint')}</p>
+      <p className="text-xs text-muted-foreground">{t($ => $.vehicles.form.capacityHint)}</p>
 
       <Separator />
-      <p className="text-sm font-semibold">{t('vehicles.form.specification')}</p>
+      <p className="text-sm font-semibold">{t($ => $.vehicles.form.specification)}</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label>{t('vehicles.form.fuelType')}</Label>
+          <Label>{t($ => $.vehicles.form.fuelType)}</Label>
           <Select value={form.fuel_type} onValueChange={set('fuel_type')}>
             <SelectTrigger disabled={disabled}>
-              <SelectValue placeholder={t('vehicles.form.selectFuelType')} />
+              <SelectValue placeholder={t($ => $.vehicles.form.selectFuelType)} />
             </SelectTrigger>
             <SelectContent>
               {(options?.fuel_types ?? []).map((f) => (
@@ -321,7 +321,7 @@ function DetailsFields({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="vh-manu">{t('vehicles.form.manufacturer')}</Label>
+          <Label htmlFor="vh-manu">{t($ => $.vehicles.form.manufacturer)}</Label>
           <Input
             id="vh-manu"
             value={form.manufacturer}
@@ -333,11 +333,11 @@ function DetailsFields({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
-          <Label htmlFor="vh-model">{t('vehicles.form.model')}</Label>
+          <Label htmlFor="vh-model">{t($ => $.vehicles.form.model)}</Label>
           <Input id="vh-model" value={form.model} disabled={disabled} onChange={(e) => set('model')(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="vh-year">{t('vehicles.form.year')}</Label>
+          <Label htmlFor="vh-year">{t($ => $.vehicles.form.year)}</Label>
           <Input
             id="vh-year"
             type="number"
@@ -349,25 +349,25 @@ function DetailsFields({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="vh-color">{t('vehicles.form.color')}</Label>
+          <Label htmlFor="vh-color">{t($ => $.vehicles.form.color)}</Label>
           <Input id="vh-color" value={form.color} disabled={disabled} onChange={(e) => set('color')(e.target.value)} />
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="vh-vin">{t('vehicles.form.vin')}</Label>
+        <Label htmlFor="vh-vin">{t($ => $.vehicles.form.vin)}</Label>
         <Input
           id="vh-vin"
           value={form.vin}
           disabled={disabled}
           className="font-mono"
-          placeholder={t('common.optional')}
+          placeholder={t($ => $.common.optional)}
           onChange={(e) => set('vin')(e.target.value.toUpperCase())}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="vh-notes">{t('common.notes')}</Label>
+        <Label htmlFor="vh-notes">{t($ => $.common.notes)}</Label>
         <Textarea id="vh-notes" rows={3} value={form.notes} disabled={disabled} onChange={(e) => set('notes')(e.target.value)} />
       </div>
     </div>
@@ -436,7 +436,7 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
 
   async function handleSave() {
     if (!form.performed_on) {
-      toast({ title: t('vehicles.maintenance.toast.dateRequired'), variant: 'destructive' });
+      toast({ title: t($ => $.vehicles.maintenance.toast.dateRequired), variant: 'destructive' });
       return;
     }
     const payload = {
@@ -451,14 +451,14 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
     try {
       if (editingId !== null) {
         await amend.mutateAsync({ vehicleId: vehicle.id, recordId: editingId, payload });
-        toast({ title: t('vehicles.maintenance.toast.amended') });
+        toast({ title: t($ => $.vehicles.maintenance.toast.amended) });
       } else {
         await record.mutateAsync({ vehicleId: vehicle.id, payload });
-        toast({ title: t('vehicles.maintenance.toast.recorded') });
+        toast({ title: t($ => $.vehicles.maintenance.toast.recorded) });
       }
       setFormOpen(false);
     } catch (err) {
-      toast({ title: apiErrorMessage(err, t('vehicles.maintenance.toast.saveFailed')), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t($ => $.vehicles.maintenance.toast.saveFailed)), variant: 'destructive' });
     }
   }
 
@@ -466,9 +466,9 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
     if (deleteTarget === null) return;
     try {
       await remove.mutateAsync({ vehicleId: vehicle.id, recordId: deleteTarget });
-      toast({ title: t('vehicles.maintenance.toast.deleted') });
+      toast({ title: t($ => $.vehicles.maintenance.toast.deleted) });
     } catch (err) {
-      toast({ title: apiErrorMessage(err, t('vehicles.maintenance.toast.deleteFailed')), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t($ => $.vehicles.maintenance.toast.deleteFailed)), variant: 'destructive' });
     } finally {
       setDeleteTarget(null);
     }
@@ -478,13 +478,13 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {t('vehicles.maintenance.recordCount', { count: records.length })}
-          {!canManage && ` ${t('vehicles.maintenance.immutableNote')}`}
+          {t($ => $.vehicles.maintenance.recordCount, { count: records.length })}
+          {!canManage && ` ${t($ => $.vehicles.maintenance.immutableNote)}`}
         </p>
         {!formOpen && (
           <Button size="sm" className="shrink-0 gap-1.5" onClick={openCreate}>
             <Wrench className="size-3.5" />
-            {t('vehicles.maintenance.recordService')}
+            {t($ => $.vehicles.maintenance.recordService)}
           </Button>
         )}
       </div>
@@ -493,7 +493,7 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
         <Alert>
           <Lock className="size-4" />
           <AlertDescription className="text-sm">
-            {t('vehicles.maintenance.permissionNotice')}
+            {t($ => $.vehicles.maintenance.permissionNotice)}
           </AlertDescription>
         </Alert>
       )}
@@ -501,11 +501,11 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
       {formOpen && (
         <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
           <p className="text-sm font-semibold">
-            {editingId !== null ? t('vehicles.maintenance.amendRecord') : t('vehicles.maintenance.newRecord')}
+            {editingId !== null ? t($ => $.vehicles.maintenance.amendRecord) : t($ => $.vehicles.maintenance.newRecord)}
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="mt-date">{t('common.date')} *</Label>
+              <Label htmlFor="mt-date">{t($ => $.common.date)} *</Label>
               <Input
                 id="mt-date"
                 type="date"
@@ -515,7 +515,7 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t('common.type')} *</Label>
+              <Label>{t($ => $.common.type)} *</Label>
               <Select value={form.type} onValueChange={set('type')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -527,21 +527,21 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="mt-desc">{t('common.description')}</Label>
+            <Label htmlFor="mt-desc">{t($ => $.common.description)}</Label>
             <Textarea id="mt-desc" rows={2} value={form.description} onChange={(e) => set('description')(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="mt-cost">{t('vehicles.maintenance.cost')}</Label>
+              <Label htmlFor="mt-cost">{t($ => $.vehicles.maintenance.cost)}</Label>
               <Input id="mt-cost" type="number" min={0} step="0.01" value={form.cost} onChange={(e) => set('cost')(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="mt-vendor">{t('vehicles.maintenance.vendor')}</Label>
+              <Label htmlFor="mt-vendor">{t($ => $.vehicles.maintenance.vendor)}</Label>
               <Input id="mt-vendor" value={form.vendor} onChange={(e) => set('vendor')(e.target.value)} />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="mt-next">{t('vehicles.maintenance.nextDate')}</Label>
+            <Label htmlFor="mt-next">{t($ => $.vehicles.maintenance.nextDate)}</Label>
             <Input
               id="mt-next"
               type="date"
@@ -552,11 +552,11 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="ghost" size="sm" onClick={() => setFormOpen(false)} disabled={saving}>
-              {t('common.cancel')}
+              {t($ => $.common.cancel)}
             </Button>
             <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="size-3.5 animate-spin" />}
-              {editingId !== null ? t('vehicles.maintenance.saveAmendment') : t('vehicles.maintenance.record')}
+              {editingId !== null ? t($ => $.vehicles.maintenance.saveAmendment) : t($ => $.vehicles.maintenance.record)}
             </Button>
           </div>
         </div>
@@ -565,8 +565,8 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
       {records.length === 0 && !formOpen ? (
         <div className="flex flex-col items-center justify-center rounded-lg border py-12 text-center">
           <Wrench className="mb-2 size-8 text-muted-foreground/30" />
-          <p className="text-sm font-medium">{t('vehicles.maintenance.emptyTitle')}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{t('vehicles.maintenance.emptyDescription')}</p>
+          <p className="text-sm font-medium">{t($ => $.vehicles.maintenance.emptyTitle)}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{t($ => $.vehicles.maintenance.emptyDescription)}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -583,24 +583,24 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
                       </span>
                     )}
                     {r.is_next_service_due && (
-                      <Badge variant="destructive" className="text-xs">{t('vehicles.maintenance.serviceDue')}</Badge>
+                      <Badge variant="destructive" className="text-xs">{t($ => $.vehicles.maintenance.serviceDue)}</Badge>
                     )}
                     {r.was_amended && (
-                      <Badge variant="secondary" className="text-xs">{t('vehicles.maintenance.amended')}</Badge>
+                      <Badge variant="secondary" className="text-xs">{t($ => $.vehicles.maintenance.amended)}</Badge>
                     )}
                   </div>
                   {r.description && <p className="mt-1 text-xs text-muted-foreground">{r.description}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {r.vendor ? `${r.vendor}` : t('vehicles.maintenance.noVendor')}
+                    {r.vendor ? `${r.vendor}` : t($ => $.vehicles.maintenance.noVendor)}
                     {r.next_maintenance_date
-                      ? ` · ${t('vehicles.maintenance.nextOn', { date: formatDate(r.next_maintenance_date) })}`
+                      ? ` · ${t($ => $.vehicles.maintenance.nextOn, { date: formatDate(r.next_maintenance_date) })}`
                       : ''}
-                    {r.recorded_by ? ` · ${t('vehicles.maintenance.byUser', { name: r.recorded_by })}` : ''}
+                    {r.recorded_by ? ` · ${t($ => $.vehicles.maintenance.byUser, { name: r.recorded_by })}` : ''}
                   </p>
                   {r.was_amended && (
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {t('vehicles.maintenance.amendedBy', {
-                        name: r.amended_by ?? t('common.unknown'),
+                      {t($ => $.vehicles.maintenance.amendedBy, {
+                        name: r.amended_by ?? t($ => $.common.unknown),
                         date: formatDate(r.amended_at),
                       })}
                     </p>
@@ -630,18 +630,18 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
       <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('vehicles.maintenance.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogTitle>{t($ => $.vehicles.maintenance.deleteTitle)}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('vehicles.maintenance.deleteDescription')}
+              {t($ => $.vehicles.maintenance.deleteDescription)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>{t($ => $.common.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {t('common.delete')}
+              {t($ => $.common.delete)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -671,7 +671,7 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
 
   async function handleUpload() {
     if (!file) {
-      toast({ title: t('vehicles.documents.toast.chooseFile'), variant: 'destructive' });
+      toast({ title: t($ => $.vehicles.documents.toast.chooseFile), variant: 'destructive' });
       return;
     }
     const form = new FormData();
@@ -682,13 +682,13 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
 
     try {
       await upload.mutateAsync({ vehicleId: vehicle.id, form });
-      toast({ title: t('vehicles.documents.toast.uploaded') });
+      toast({ title: t($ => $.vehicles.documents.toast.uploaded) });
       setFile(null);
       setReference('');
       setExpiresAt('');
       if (fileRef.current) fileRef.current.value = '';
     } catch (err) {
-      toast({ title: apiErrorMessage(err, t('vehicles.documents.toast.uploadFailed')), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t($ => $.vehicles.documents.toast.uploadFailed)), variant: 'destructive' });
     }
   }
 
@@ -696,7 +696,7 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
     try {
       await vehicleService.downloadDocument(vehicle.id, doc);
     } catch (err) {
-      toast({ title: apiErrorMessage(err, t('vehicles.documents.toast.downloadFailed')), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t($ => $.vehicles.documents.toast.downloadFailed)), variant: 'destructive' });
     }
   }
 
@@ -704,17 +704,17 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
     if (!deleteTarget) return;
     try {
       await remove.mutateAsync({ vehicleId: vehicle.id, documentId: deleteTarget.id });
-      toast({ title: t('vehicles.documents.toast.deleted') });
+      toast({ title: t($ => $.vehicles.documents.toast.deleted) });
     } catch (err) {
-      toast({ title: apiErrorMessage(err, t('vehicles.documents.toast.deleteFailed')), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t($ => $.vehicles.documents.toast.deleteFailed)), variant: 'destructive' });
     } finally {
       setDeleteTarget(null);
     }
   }
 
   const blockingDocumentNames = (vehicle.blocking_expired_documents ?? [])
-    .map((d) => t(`vehicles.documentType.${d.type}`, { defaultValue: d.type.replace('_', ' ') }))
-    .join(t('vehicles.documents.joinAnd'));
+    .map((d) => t($ => $.vehicles.documentType[d.type], { defaultValue: d.type.replace('_', ' ') }))
+    .join(t($ => $.vehicles.documents.joinAnd));
 
   return (
     <div className="space-y-4">
@@ -722,7 +722,7 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
         <Alert className="border-destructive/40 bg-destructive/5">
           <ShieldAlert className="size-4" />
           <AlertDescription className="text-sm">
-            {t('vehicles.documents.blockedAlert', { documents: blockingDocumentNames })}
+            {t($ => $.vehicles.documents.blockedAlert, { documents: blockingDocumentNames })}
           </AlertDescription>
         </Alert>
       )}
@@ -730,15 +730,15 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
       {isArchived ? (
         <Alert>
           <AlertDescription className="text-sm">
-            {t('vehicles.documents.archivedNotice')}
+            {t($ => $.vehicles.documents.archivedNotice)}
           </AlertDescription>
         </Alert>
       ) : (
         <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
-          <p className="text-sm font-semibold">{t('vehicles.documents.uploadTitle')}</p>
+          <p className="text-sm font-semibold">{t($ => $.vehicles.documents.uploadTitle)}</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{t('common.type')} *</Label>
+              <Label>{t($ => $.common.type)} *</Label>
               <Select value={type} onValueChange={setType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -749,18 +749,18 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="vd-exp">{t('vehicles.documents.expiresOn')}</Label>
+              <Label htmlFor="vd-exp">{t($ => $.vehicles.documents.expiresOn)}</Label>
               <Input id="vd-exp" type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="vd-ref">{t('vehicles.documents.referenceNumber')}</Label>
+            <Label htmlFor="vd-ref">{t($ => $.vehicles.documents.referenceNumber)}</Label>
             <Input id="vd-ref" value={reference} onChange={(e) => setReference(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="vd-file">
-              {t('vehicles.documents.file')} *{' '}
-              <span className="font-normal text-muted-foreground">{t('vehicles.documents.fileHint')}</span>
+              {t($ => $.vehicles.documents.file)} *{' '}
+              <span className="font-normal text-muted-foreground">{t($ => $.vehicles.documents.fileHint)}</span>
             </Label>
             <Input
               id="vd-file"
@@ -773,7 +773,7 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
           <div className="flex justify-end">
             <Button size="sm" className="gap-1.5" onClick={handleUpload} disabled={upload.isPending || !file}>
               {upload.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
-              {t('vehicles.documents.upload')}
+              {t($ => $.vehicles.documents.upload)}
             </Button>
           </div>
         </div>
@@ -782,8 +782,8 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
       {documents.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border py-12 text-center">
           <Paperclip className="mb-2 size-8 text-muted-foreground/30" />
-          <p className="text-sm font-medium">{t('vehicles.documents.emptyTitle')}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{t('vehicles.documents.emptyDescription')}</p>
+          <p className="text-sm font-medium">{t($ => $.vehicles.documents.emptyTitle)}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{t($ => $.vehicles.documents.emptyDescription)}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -798,22 +798,22 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
                     {doc.is_expired && (
                       <Badge variant="destructive" className="gap-1 text-xs">
                         <AlertTriangle className="size-3" />
-                        {t('vehicles.documents.expired')}
+                        {t($ => $.vehicles.documents.expired)}
                       </Badge>
                     )}
                     {doc.is_expiring_soon && (
                       <Badge className="bg-amber-500 text-xs hover:bg-amber-500">
-                        {t('vehicles.documents.expiresInDays', { days: doc.days_until_expiry })}
+                        {t($ => $.vehicles.documents.expiresInDays, { days: doc.days_until_expiry })}
                       </Badge>
                     )}
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {doc.file_name} · {formatBytes(doc.size_bytes)}
                     {doc.reference_number
-                      ? ` · ${t('vehicles.documents.ref', { value: doc.reference_number })}`
+                      ? ` · ${t($ => $.vehicles.documents.ref, { value: doc.reference_number })}`
                       : ''}
                     {doc.expires_at
-                      ? ` · ${t('vehicles.documents.expiresValue', { date: formatDate(doc.expires_at) })}`
+                      ? ` · ${t($ => $.vehicles.documents.expiresValue, { date: formatDate(doc.expires_at) })}`
                       : ''}
                   </p>
                 </div>
@@ -839,20 +839,20 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
       <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('vehicles.documents.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogTitle>{t($ => $.vehicles.documents.deleteTitle)}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('vehicles.documents.deletePrefix')}{' '}
+              {t($ => $.vehicles.documents.deletePrefix)}{' '}
               <strong>{deleteTarget?.title || deleteTarget?.file_name}</strong>
-              {t('vehicles.documents.deleteSuffix')}
+              {t($ => $.vehicles.documents.deleteSuffix)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>{t($ => $.common.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {t('common.delete')}
+              {t($ => $.common.delete)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -868,13 +868,13 @@ function AssignmentTab({ vehicle }: { vehicle: Vehicle }) {
   const driver = vehicle.current_driver ?? null;
 
   const blockingDocumentNames = (vehicle.blocking_expired_documents ?? [])
-    .map((d) => t(`vehicles.documentType.${d.type}`, { defaultValue: d.type.replace('_', ' ') }))
-    .join(t('vehicles.documents.joinAnd'));
+    .map((d) => t($ => $.vehicles.documentType[d.type], { defaultValue: d.type.replace('_', ' ') }))
+    .join(t($ => $.vehicles.documents.joinAnd));
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {t('vehicles.assignment.intro')}
+        {t($ => $.vehicles.assignment.intro)}
       </p>
 
       {driver ? (
@@ -887,7 +887,7 @@ function AssignmentTab({ vehicle }: { vehicle: Vehicle }) {
                 <Badge variant="outline" className="font-mono text-xs">{driver.driver_code}</Badge>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {t('vehicles.assignment.assignedOn', { date: formatDate(driver.assigned_at) })}
+                {t($ => $.vehicles.assignment.assignedOn, { date: formatDate(driver.assigned_at) })}
               </p>
             </div>
           </div>
@@ -895,9 +895,9 @@ function AssignmentTab({ vehicle }: { vehicle: Vehicle }) {
       ) : (
         <div className="flex flex-col items-center justify-center rounded-lg border py-10 text-center">
           <UserRound className="mb-2 size-8 text-muted-foreground/30" />
-          <p className="text-sm font-medium">{t('vehicles.assignment.emptyTitle')}</p>
+          <p className="text-sm font-medium">{t($ => $.vehicles.assignment.emptyTitle)}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {t('vehicles.assignment.emptyDescription')}
+            {t($ => $.vehicles.assignment.emptyDescription)}
           </p>
         </div>
       )}
@@ -905,28 +905,28 @@ function AssignmentTab({ vehicle }: { vehicle: Vehicle }) {
       <Separator />
 
       <div className="space-y-2">
-        <p className="text-sm font-semibold">{t('vehicles.assignment.dispatchReadiness')}</p>
+        <p className="text-sm font-semibold">{t($ => $.vehicles.assignment.dispatchReadiness)}</p>
         <div className="flex items-center gap-2">
           {vehicle.can_be_dispatched ? (
             <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">
-              {t('vehicles.dispatch.readyForDispatch')}
+              {t($ => $.vehicles.dispatch.readyForDispatch)}
             </Badge>
           ) : (
             <Badge variant="destructive" className="gap-1 text-xs">
               <ShieldAlert className="size-3" />
-              {t('vehicles.dispatch.notDispatchable')}
+              {t($ => $.vehicles.dispatch.notDispatchable)}
             </Badge>
           )}
           <span className="text-xs text-muted-foreground">
-            {t('vehicles.assignment.statusLine', { status: t(STATUS_LABEL_KEYS[vehicle.status]) })}
+            {t($ => $.vehicles.assignment.statusLine, { status: t(STATUS_LABEL_KEYS[vehicle.status]) })}
             {vehicle.next_document_expiry
-              ? ` · ${t('vehicles.assignment.nextDocExpiry', { date: formatDate(vehicle.next_document_expiry) })}`
+              ? ` · ${t($ => $.vehicles.assignment.nextDocExpiry, { date: formatDate(vehicle.next_document_expiry) })}`
               : ''}
           </span>
         </div>
         {(vehicle.blocking_expired_documents?.length ?? 0) > 0 && (
           <p className="text-xs text-destructive">
-            {t('vehicles.assignment.blockedByExpired', { documents: blockingDocumentNames })}
+            {t($ => $.vehicles.assignment.blockedByExpired, { documents: blockingDocumentNames })}
           </p>
         )}
       </div>
@@ -1002,20 +1002,20 @@ export function VehicleDrawer({
 
   async function handleSave() {
     if (!form.vehicle_code.trim() || !form.plate_number.trim() || !form.capacity_orders) {
-      toast({ title: t('vehicles.toast.requiredFields'), variant: 'destructive' });
+      toast({ title: t($ => $.vehicles.toast.requiredFields), variant: 'destructive' });
       return;
     }
     try {
       if (isCreate) {
         await createVehicle.mutateAsync(toPayload(form));
-        toast({ title: t('vehicles.toast.created', { plate: form.plate_number }) });
+        toast({ title: t($ => $.vehicles.toast.created, { plate: form.plate_number }) });
         onOpenChange(false);
       } else {
         await updateVehicle.mutateAsync({ id: editVehicle.id, payload: toPayload(form) });
-        toast({ title: t('vehicles.toast.saved') });
+        toast({ title: t($ => $.vehicles.toast.saved) });
       }
     } catch (err) {
-      toast({ title: apiErrorMessage(err, t('vehicles.toast.saveFailed')), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t($ => $.vehicles.toast.saveFailed)), variant: 'destructive' });
     }
   }
 
@@ -1023,10 +1023,10 @@ export function VehicleDrawer({
     if (!editVehicle) return;
     try {
       await setStatus.mutateAsync({ id: editVehicle.id, status });
-      toast({ title: t('vehicles.toast.statusChanged', { status: t(STATUS_LABEL_KEYS[status]) }) });
+      toast({ title: t($ => $.vehicles.toast.statusChanged, { status: t(STATUS_LABEL_KEYS[status]) }) });
       setStatusTarget(null);
     } catch (err) {
-      toast({ title: apiErrorMessage(err, t('vehicles.toast.statusChangeFailed')), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t($ => $.vehicles.toast.statusChangeFailed)), variant: 'destructive' });
       setStatusTarget(null);
     }
   }
@@ -1040,11 +1040,11 @@ export function VehicleDrawer({
       <PageDrawer
         open={open}
         onOpenChange={onOpenChange}
-        title={isCreate ? t('vehicles.drawer.newTitle') : (vehicle?.label ?? t('vehicles.drawer.fallbackTitle'))}
+        title={isCreate ? t($ => $.vehicles.drawer.newTitle) : (vehicle?.label ?? t($ => $.vehicles.drawer.fallbackTitle))}
         description={
           isCreate
-            ? t('vehicles.drawer.createDescription')
-            : t('vehicles.drawer.editDescription', { code: vehicle?.vehicle_code ?? '' })
+            ? t($ => $.vehicles.drawer.createDescription)
+            : t($ => $.vehicles.drawer.editDescription, { code: vehicle?.vehicle_code ?? '' })
         }
         size="xl"
       >
@@ -1065,7 +1065,7 @@ export function VehicleDrawer({
               {vehicle.can_be_dispatched === false && (
                 <Badge variant="destructive" className="gap-1 text-xs">
                   <ShieldAlert className="size-3" />
-                  {t('vehicles.dispatch.notDispatchable')}
+                  {t($ => $.vehicles.dispatch.notDispatchable)}
                 </Badge>
               )}
             </div>
@@ -1079,11 +1079,11 @@ export function VehicleDrawer({
               <Separator className="my-4" />
               <div className="flex shrink-0 justify-end gap-2">
                 <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
-                  {t('common.cancel')}
+                  {t($ => $.common.cancel)}
                 </Button>
                 <Button onClick={handleSave} disabled={saving} className="gap-1.5">
                   {saving && <Loader2 className="size-4 animate-spin" />}
-                  {t('vehicles.actions.create')}
+                  {t($ => $.vehicles.actions.create)}
                 </Button>
               </div>
             </>
@@ -1097,9 +1097,9 @@ export function VehicleDrawer({
             vehicle && (
               <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
                 <TabsList className="grid w-full shrink-0 grid-cols-4">
-                  <TabsTrigger value="details">{t('vehicles.tabs.details')}</TabsTrigger>
+                  <TabsTrigger value="details">{t($ => $.vehicles.tabs.details)}</TabsTrigger>
                   <TabsTrigger value="maintenance" className="gap-1.5">
-                    {t('vehicles.tabs.service')}
+                    {t($ => $.vehicles.tabs.service)}
                     {vehicle.maintenance_records_count != null && vehicle.maintenance_records_count > 0 && (
                       <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
                         {vehicle.maintenance_records_count}
@@ -1107,14 +1107,14 @@ export function VehicleDrawer({
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="documents" className="gap-1.5">
-                    {t('vehicles.tabs.docs')}
+                    {t($ => $.vehicles.tabs.docs)}
                     {vehicle.documents_count != null && vehicle.documents_count > 0 && (
                       <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
                         {vehicle.documents_count}
                       </Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="assignment">{t('common.driver')}</TabsTrigger>
+                  <TabsTrigger value="assignment">{t($ => $.common.driver)}</TabsTrigger>
                 </TabsList>
 
                 <div className="min-h-0 flex-1 overflow-y-auto pe-1 pt-4">
@@ -1134,7 +1134,7 @@ export function VehicleDrawer({
                           >
                             {transition.value === 'archived' && <Archive className="size-3.5" />}
                             {transition.value === 'maintenance' && <Wrench className="size-3.5" />}
-                            {t('vehicles.actions.mark', {
+                            {t($ => $.vehicles.actions.mark, {
                               status: STATUS_LABEL_KEYS[transition.value as VehicleStatus]
                                 ? t(STATUS_LABEL_KEYS[transition.value as VehicleStatus])
                                 : transition.label,
@@ -1145,7 +1145,7 @@ export function VehicleDrawer({
                       {!readOnly && (
                         <Button onClick={handleSave} disabled={saving} className="gap-1.5">
                           {saving && <Loader2 className="size-4 animate-spin" />}
-                          {t('common.saveChanges')}
+                          {t($ => $.common.saveChanges)}
                         </Button>
                       )}
                     </div>
@@ -1172,23 +1172,23 @@ export function VehicleDrawer({
       <AlertDialog open={statusTarget !== null} onOpenChange={(o) => { if (!o) setStatusTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('vehicles.statusDialog.title')}</AlertDialogTitle>
+            <AlertDialogTitle>{t($ => $.vehicles.statusDialog.title)}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('vehicles.statusDialog.movePrefix')} <strong>{vehicle?.plate_number}</strong>{' '}
-              {t('vehicles.statusDialog.moveMiddle')}{' '}
+              {t($ => $.vehicles.statusDialog.movePrefix)} <strong>{vehicle?.plate_number}</strong>{' '}
+              {t($ => $.vehicles.statusDialog.moveMiddle)}{' '}
               <strong>{statusTarget ? t(STATUS_LABEL_KEYS[statusTarget]) : ''}</strong>
-              {t('vehicles.statusDialog.moveSuffix')}
-              {statusTarget === 'archived' && ` ${t('vehicles.statusDialog.archivedNote')}`}
-              {statusTarget === 'out_of_service' && ` ${t('vehicles.statusDialog.outOfServiceNote')}`}
+              {t($ => $.vehicles.statusDialog.moveSuffix)}
+              {statusTarget === 'archived' && ` ${t($ => $.vehicles.statusDialog.archivedNote)}`}
+              {statusTarget === 'out_of_service' && ` ${t($ => $.vehicles.statusDialog.outOfServiceNote)}`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>{t($ => $.common.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => statusTarget && handleStatusChange(statusTarget)}
               className={statusTarget === 'archived' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
             >
-              {t('common.confirm')}
+              {t($ => $.common.confirm)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

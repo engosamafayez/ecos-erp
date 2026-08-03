@@ -235,7 +235,7 @@ function SmartStatusPanel({
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium uppercase tracking-wide">
           <DollarSign className="size-3.5 flex-none text-blue-500" />
-          <span>{t('detail.smartPanel.materialCost')}</span>
+          <span>{t($ => $.detail.smartPanel.materialCost)}</span>
           {source && (
             <span
               className={cn(
@@ -246,8 +246,8 @@ function SmartStatusPanel({
               )}
             >
               {source === 'purchase_invoice'
-                ? t('detail.smartPanel.sourcePO')
-                : t('detail.smartPanel.sourceManual')}
+                ? t($ => $.detail.smartPanel.sourcePO)
+                : t($ => $.detail.smartPanel.sourceManual)}
             </span>
           )}
         </div>
@@ -273,19 +273,19 @@ function SmartStatusPanel({
       </div>
 
       <StatTile
-        label={t('detail.smartPanel.unit')}
+        label={t($ => $.detail.smartPanel.unit)}
         value={material.unit?.name ?? '—'}
         icon={Box}
         iconClass="text-amber-500"
       />
       <StatTile
-        label={t('detail.smartPanel.category')}
+        label={t($ => $.detail.smartPanel.category)}
         value={material.category?.name ?? '—'}
         icon={Tag}
         iconClass="text-cyan-500"
       />
       <StatTile
-        label={t('detail.smartPanel.lastUpdated')}
+        label={t($ => $.detail.smartPanel.lastUpdated)}
         value={formatDate(material.updated_at)}
         icon={Calendar}
         iconClass="text-slate-400"
@@ -310,30 +310,30 @@ function OverviewTab({
   );
 
   function costSourceLabel(source: string | null | undefined): string {
-    if (source === 'manual')   return t('detail.overview.costManual');
-    if (source === 'purchase') return t('detail.overview.costPurchase');
+    if (source === 'manual')   return t($ => $.detail.overview.costManual);
+    if (source === 'purchase') return t($ => $.detail.overview.costPurchase);
     return '—';
   }
 
   return (
     <div className="space-y-7">
       <div>
-        <SectionTitle>{t('detail.overview.generalInfo')}</SectionTitle>
+        <SectionTitle>{t($ => $.detail.overview.generalInfo)}</SectionTitle>
         <DetailGrid>
-          <DetailRow label={t('detail.overview.fullName')} value={material.name} />
+          <DetailRow label={t($ => $.detail.overview.fullName)} value={material.name} />
           <DetailRow
-            label={t('detail.overview.sku')}
+            label={t($ => $.detail.overview.sku)}
             value={
               <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                 {material.sku}
               </code>
             }
           />
-          <DetailRow label={t('detail.overview.category')}       value={material.category?.name} />
-          <DetailRow label={t('detail.overview.unitOfMeasure')}  value={material.unit?.name} />
-          <DetailRow label={t('detail.overview.materialType')}   value={t('detail.overview.materialTypeValue')} />
-          <DetailRow label={t('detail.overview.createdAt')}      value={formatDate(material.created_at)} />
-          <DetailRow label={t('detail.overview.lastUpdated')}    value={formatDate(material.updated_at)} />
+          <DetailRow label={t($ => $.detail.overview.category)}       value={material.category?.name} />
+          <DetailRow label={t($ => $.detail.overview.unitOfMeasure)}  value={material.unit?.name} />
+          <DetailRow label={t($ => $.detail.overview.materialType)}   value={t($ => $.detail.overview.materialTypeValue)} />
+          <DetailRow label={t($ => $.detail.overview.createdAt)}      value={formatDate(material.created_at)} />
+          <DetailRow label={t($ => $.detail.overview.lastUpdated)}    value={formatDate(material.updated_at)} />
         </DetailGrid>
       </div>
 
@@ -341,7 +341,7 @@ function OverviewTab({
         <>
           <Separator />
           <div>
-            <SectionTitle>{t('detail.overview.description')}</SectionTitle>
+            <SectionTitle>{t($ => $.detail.overview.description)}</SectionTitle>
             {(material.short_description ?? material.description) && (
               <p className="text-sm text-foreground mb-2">
                 {material.short_description ?? material.description}
@@ -359,18 +359,18 @@ function OverviewTab({
       <Separator />
 
       <div>
-        <SectionTitle>{t('detail.overview.cost')}</SectionTitle>
+        <SectionTitle>{t($ => $.detail.overview.cost)}</SectionTitle>
         <DetailGrid>
           <DetailRow
-            label={t('detail.overview.currentCost')}
+            label={t($ => $.detail.overview.currentCost)}
             value={formatCost(resolveCurrentCost(material, latestCostEntry), material.unit?.name, currency, locale)}
           />
           <DetailRow
-            label={t('detail.overview.lastUpdated')}
+            label={t($ => $.detail.overview.lastUpdated)}
             value={formatDate(latestCostEntry?.occurred_at ?? null)}
           />
           <DetailRow
-            label={t('detail.overview.source')}
+            label={t($ => $.detail.overview.source)}
             value={costSourceLabel(material.cost_source)}
           />
         </DetailGrid>
@@ -398,8 +398,8 @@ function InventoryTab({ material }: { material: RawMaterial }) {
   const { data: distribution } = useRawMaterialWarehouseDistribution(material.id);
   const avail    = stockStatusConfig(material.available_qty, material.allow_negative_stock);
   const statusLabel = avail.status === 'in_stock'
-    ? t('detail.status.inStock')
-    : t('detail.status.outOfStock');
+    ? t($ => $.detail.status.inStock)
+    : t($ => $.detail.status.outOfStock);
   const unit     = material.unit?.name;
   const onHand   = material.on_hand_qty   ?? null;
   const reserved = material.reserved_qty  ?? null;
@@ -408,25 +408,25 @@ function InventoryTab({ material }: { material: RawMaterial }) {
 
   const metrics = [
     {
-      label: t('detail.inventory.available'),
+      label: t($ => $.detail.inventory.available),
       value: fmtQtyStr(available, unit),
-      sub:   t('detail.inventory.availableSub'),
+      sub:   t($ => $.detail.inventory.availableSub),
       highlight: available != null && available <= 0 ? 'border-red-200 dark:border-red-800' : undefined,
     },
     {
-      label: t('detail.inventory.reserved'),
+      label: t($ => $.detail.inventory.reserved),
       value: fmtQtyStr(reserved, unit),
-      sub:   t('detail.inventory.reservedSub'),
+      sub:   t($ => $.detail.inventory.reservedSub),
     },
     {
-      label: t('detail.inventory.onHand'),
+      label: t($ => $.detail.inventory.onHand),
       value: fmtQtyStr(onHand, unit),
-      sub:   t('detail.inventory.onHandSub'),
+      sub:   t($ => $.detail.inventory.onHandSub),
     },
     {
-      label: t('detail.inventory.inventoryValue'),
+      label: t($ => $.detail.inventory.inventoryValue),
       value: fmtCostStr(invValue, currency, locale),
-      sub:   t('detail.inventory.inventoryValueSub'),
+      sub:   t($ => $.detail.inventory.inventoryValueSub),
     },
   ];
 
@@ -438,14 +438,14 @@ function InventoryTab({ material }: { material: RawMaterial }) {
         <div>
           <p className={cn('text-sm font-semibold', avail.text)}>{statusLabel}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {t('detail.inventory.aggregatedNote')}
+            {t($ => $.detail.inventory.aggregatedNote)}
           </p>
         </div>
       </div>
 
       {/* Inventory snapshot */}
       <div>
-        <SectionTitle>{t('detail.inventory.snapshotTitle')}</SectionTitle>
+        <SectionTitle>{t($ => $.detail.inventory.snapshotTitle)}</SectionTitle>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {metrics.map((card) => (
             <div
@@ -464,19 +464,19 @@ function InventoryTab({ material }: { material: RawMaterial }) {
 
       {/* Warehouse distribution — per-warehouse breakdown from the canonical inventory service */}
       <div>
-        <SectionTitle>{t('detail.inventory.distributionTitle')}</SectionTitle>
+        <SectionTitle>{t($ => $.detail.inventory.distributionTitle)}</SectionTitle>
         {(distribution?.warehouses.length ?? 0) === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('detail.inventory.distributionEmpty')}</p>
+          <p className="text-sm text-muted-foreground">{t($ => $.detail.inventory.distributionEmpty)}</p>
         ) : (
           <div className="rounded-md border overflow-hidden overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
                   {[
-                    t('detail.inventory.colWarehouse'),
-                    t('detail.inventory.onHand'),
-                    t('detail.inventory.reserved'),
-                    t('detail.inventory.available'),
+                    t($ => $.detail.inventory.colWarehouse),
+                    t($ => $.detail.inventory.onHand),
+                    t($ => $.detail.inventory.reserved),
+                    t($ => $.detail.inventory.available),
                   ].map((h) => (
                     <th
                       key={h}
@@ -504,13 +504,13 @@ function InventoryTab({ material }: { material: RawMaterial }) {
 
       {/* Inventory rules — canonical location, real fields only */}
       <div>
-        <SectionTitle>{t('detail.inventory.rulesTitle')}</SectionTitle>
+        <SectionTitle>{t($ => $.detail.inventory.rulesTitle)}</SectionTitle>
         <DetailGrid>
           <DetailRow
-            label={t('detail.inventory.negativeStock')}
+            label={t($ => $.detail.inventory.negativeStock)}
             value={material.allow_negative_stock
-              ? t('detail.inventory.negAllowed')
-              : t('detail.inventory.negBlocked')}
+              ? t($ => $.detail.inventory.negAllowed)
+              : t($ => $.detail.inventory.negBlocked)}
           />
         </DetailGrid>
       </div>
@@ -570,8 +570,8 @@ function SuppliersTab({ materialId, unit }: { materialId: string; unit?: string 
     return (
       <EmptyState
         icon={Truck}
-        title={t('detail.suppliers.emptyTitle')}
-        description={t('detail.suppliers.emptyDesc')}
+        title={t($ => $.detail.suppliers.emptyTitle)}
+        description={t($ => $.detail.suppliers.emptyDesc)}
       />
     );
   }
@@ -582,10 +582,10 @@ function SuppliersTab({ materialId, unit }: { materialId: string; unit?: string 
         <thead>
           <tr className="border-b bg-muted/50">
             {[
-              t('detail.suppliers.colSupplier'),
-              t('detail.suppliers.colLastPurchase'),
-              t('detail.suppliers.colLastCost'),
-              t('detail.suppliers.colTotalReceived'),
+              t($ => $.detail.suppliers.colSupplier),
+              t($ => $.detail.suppliers.colLastPurchase),
+              t($ => $.detail.suppliers.colLastCost),
+              t($ => $.detail.suppliers.colTotalReceived),
             ].map((h) => (
               <th
                 key={h}
@@ -604,7 +604,7 @@ function SuppliersTab({ materialId, unit }: { materialId: string; unit?: string 
                   {s.supplier_name}
                   {i === 0 && (
                     <span className="rounded-full bg-amber-100 px-1.5 py-0 text-[10px] font-semibold uppercase text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                      {t('detail.suppliers.lastSupplier')}
+                      {t($ => $.detail.suppliers.lastSupplier)}
                     </span>
                   )}
                 </span>
@@ -647,7 +647,7 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-lg border bg-card p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t('detail.priceHistory.currentCost')}
+            {t($ => $.detail.priceHistory.currentCost)}
           </p>
           <p className="mt-1 text-xl font-bold text-foreground">
             {formatCost(currentCost, undefined, currency, locale)}
@@ -659,8 +659,8 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
       {entries.length === 0 ? (
         <EmptyState
           icon={TrendingUp}
-          title={t('detail.priceHistory.emptyTitle')}
-          description={t('detail.priceHistory.emptyDesc')}
+          title={t($ => $.detail.priceHistory.emptyTitle)}
+          description={t($ => $.detail.priceHistory.emptyDesc)}
         />
       ) : (
         <>
@@ -669,13 +669,13 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
               <thead>
                 <tr className="border-b bg-muted/50">
                   {[
-                    t('detail.priceHistory.colDate'),
-                    t('detail.priceHistory.colPrevCost'),
-                    t('detail.priceHistory.colNewCost'),
-                    t('detail.priceHistory.colChange'),
-                    t('detail.priceHistory.colSource'),
-                    t('detail.priceHistory.colBy'),
-                    t('detail.priceHistory.colRecipes'),
+                    t($ => $.detail.priceHistory.colDate),
+                    t($ => $.detail.priceHistory.colPrevCost),
+                    t($ => $.detail.priceHistory.colNewCost),
+                    t($ => $.detail.priceHistory.colChange),
+                    t($ => $.detail.priceHistory.colSource),
+                    t($ => $.detail.priceHistory.colBy),
+                    t($ => $.detail.priceHistory.colRecipes),
                   ].map((h) => (
                     <th
                       key={h}
@@ -727,8 +727,8 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
                           )}
                         >
                           {entry.source === 'purchase_invoice'
-                            ? t('detail.priceHistory.sourcePurchase')
-                            : t('detail.priceHistory.sourceManual')}
+                            ? t($ => $.detail.priceHistory.sourcePurchase)
+                            : t($ => $.detail.priceHistory.sourceManual)}
                         </span>
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
@@ -737,7 +737,7 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
                       <td className="px-3 py-2.5 whitespace-nowrap text-xs">
                         {entry.affected_recipe_count > 0 ? (
                           <span className="font-medium">
-                            {t('detail.priceHistory.recipesCount', { count: entry.affected_recipe_count })}
+                            {t($ => $.detail.priceHistory.recipesCount, { count: entry.affected_recipe_count })}
                           </span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
@@ -793,23 +793,23 @@ function StockHistoryTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {pagination ? t('detail.stockHistory.movementsTotal', { count: pagination.total }) : ''}
+          {pagination ? t($ => $.detail.stockHistory.movementsTotal, { count: pagination.total }) : ''}
         </p>
         <Button size="sm" className="gap-1.5" onClick={onAddStock}>
           <PackagePlus className="size-4" />
-          {t('detail.stockHistory.addStock')}
+          {t($ => $.detail.stockHistory.addStock)}
         </Button>
       </div>
 
       {movements.length === 0 ? (
         <EmptyState
           icon={RotateCcw}
-          title={t('detail.stockHistory.emptyTitle')}
-          description={t('detail.stockHistory.emptyDesc')}
+          title={t($ => $.detail.stockHistory.emptyTitle)}
+          description={t($ => $.detail.stockHistory.emptyDesc)}
           action={
             <Button size="sm" onClick={onAddStock} className="gap-1.5 mt-1">
               <PackagePlus className="size-4" />
-              {t('detail.stockHistory.addFirstEntry')}
+              {t($ => $.detail.stockHistory.addFirstEntry)}
             </Button>
           }
         />
@@ -820,12 +820,12 @@ function StockHistoryTab({
               <thead>
                 <tr className="border-b bg-muted/50">
                   {[
-                    t('detail.stockHistory.colDate'),
-                    t('detail.stockHistory.colWarehouse'),
-                    t('detail.stockHistory.colType'),
-                    t('detail.stockHistory.colQty'),
-                    t('detail.stockHistory.colBalanceAfter'),
-                    t('detail.stockHistory.colNotes'),
+                    t($ => $.detail.stockHistory.colDate),
+                    t($ => $.detail.stockHistory.colWarehouse),
+                    t($ => $.detail.stockHistory.colType),
+                    t($ => $.detail.stockHistory.colQty),
+                    t($ => $.detail.stockHistory.colBalanceAfter),
+                    t($ => $.detail.stockHistory.colNotes),
                   ].map((h) => (
                     <th
                       key={h}
@@ -899,8 +899,8 @@ function PurchaseHistoryTab() {
   return (
     <EmptyState
       icon={ShoppingCart}
-      title={t('detail.purchaseHistory.emptyTitle')}
-      description={t('detail.purchaseHistory.emptyDesc')}
+      title={t($ => $.detail.purchaseHistory.emptyTitle)}
+      description={t($ => $.detail.purchaseHistory.emptyDesc)}
     />
   );
 }
@@ -912,8 +912,8 @@ function ManufacturingTab() {
   return (
     <EmptyState
       icon={Factory}
-      title={t('detail.manufacturing.emptyTitle')}
-      description={t('detail.manufacturing.emptyDesc')}
+      title={t($ => $.detail.manufacturing.emptyTitle)}
+      description={t($ => $.detail.manufacturing.emptyDesc)}
     />
   );
 }
@@ -931,21 +931,21 @@ function AnalyticsTab({ material }: { material: RawMaterial }) {
     icon:      LucideIcon;
     iconClass: string;
   }> = [
-    { label: t('detail.analytics.avgPurchaseCost'),    value: '—', sub: t('detail.analytics.avgPurchaseSub'),        icon: DollarSign,  iconClass: 'text-blue-500'   },
-    { label: t('detail.analytics.monthlyConsumption'), value: '—', sub: t('detail.analytics.monthlyConsumptionSub'), icon: TrendingDown, iconClass: 'text-purple-500' },
-    { label: t('detail.analytics.stockCoverage'),      value: '—', sub: t('detail.analytics.stockCoverageSub'),      icon: Calendar,    iconClass: 'text-green-500'  },
+    { label: t($ => $.detail.analytics.avgPurchaseCost),    value: '—', sub: t($ => $.detail.analytics.avgPurchaseSub),        icon: DollarSign,  iconClass: 'text-blue-500'   },
+    { label: t($ => $.detail.analytics.monthlyConsumption), value: '—', sub: t($ => $.detail.analytics.monthlyConsumptionSub), icon: TrendingDown, iconClass: 'text-purple-500' },
+    { label: t($ => $.detail.analytics.stockCoverage),      value: '—', sub: t($ => $.detail.analytics.stockCoverageSub),      icon: Calendar,    iconClass: 'text-green-500'  },
     {
-      label: t('detail.analytics.unitCost'),
+      label: t($ => $.detail.analytics.unitCost),
       value: formatCost(material.material_cost, undefined, currency, locale),
-      sub:   t('detail.analytics.unitCostSub'),
+      sub:   t($ => $.detail.analytics.unitCostSub),
       icon:  BarChart2,
       iconClass: 'text-amber-500',
     },
-    { label: t('detail.analytics.linkedSuppliers'), value: '0', sub: t('detail.analytics.linkedSuppliersSub'), icon: Truck,       iconClass: 'text-cyan-500'   },
-    { label: t('detail.analytics.usedInRecipes'),   value: '0', sub: t('detail.analytics.usedInRecipesSub'),  icon: Factory,     iconClass: 'text-red-500'    },
-    { label: t('detail.analytics.stockoutEvents'),  value: '—', sub: t('detail.analytics.stockoutEventsSub'), icon: TrendingDown, iconClass: 'text-orange-500' },
-    { label: t('detail.analytics.costChanges'),     value: '—', sub: t('detail.analytics.costChangesSub'),    icon: TrendingUp,  iconClass: 'text-indigo-500' },
-    { label: t('detail.analytics.avgLeadTime'),     value: '—', sub: t('detail.analytics.avgLeadTimeSub'),    icon: Calendar,    iconClass: 'text-teal-500'   },
+    { label: t($ => $.detail.analytics.linkedSuppliers), value: '0', sub: t($ => $.detail.analytics.linkedSuppliersSub), icon: Truck,       iconClass: 'text-cyan-500'   },
+    { label: t($ => $.detail.analytics.usedInRecipes),   value: '0', sub: t($ => $.detail.analytics.usedInRecipesSub),  icon: Factory,     iconClass: 'text-red-500'    },
+    { label: t($ => $.detail.analytics.stockoutEvents),  value: '—', sub: t($ => $.detail.analytics.stockoutEventsSub), icon: TrendingDown, iconClass: 'text-orange-500' },
+    { label: t($ => $.detail.analytics.costChanges),     value: '—', sub: t($ => $.detail.analytics.costChangesSub),    icon: TrendingUp,  iconClass: 'text-indigo-500' },
+    { label: t($ => $.detail.analytics.avgLeadTime),     value: '—', sub: t($ => $.detail.analytics.avgLeadTimeSub),    icon: Calendar,    iconClass: 'text-teal-500'   },
   ];
 
   return (
@@ -965,9 +965,9 @@ function AnalyticsTab({ material }: { material: RawMaterial }) {
 
       <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 px-4 py-6 text-center">
         <BarChart2 className="mx-auto size-8 text-muted-foreground mb-2" />
-        <p className="text-sm font-medium text-muted-foreground">{t('detail.analytics.comingSoon')}</p>
+        <p className="text-sm font-medium text-muted-foreground">{t($ => $.detail.analytics.comingSoon)}</p>
         <p className="text-xs text-muted-foreground mt-1">
-          {t('detail.analytics.comingSoonDesc')}
+          {t($ => $.detail.analytics.comingSoonDesc)}
         </p>
       </div>
     </div>
@@ -1002,8 +1002,8 @@ export function RawMaterialDetailDrawer({
 
   const avail = stockStatusConfig(material.available_qty, material.allow_negative_stock);
   const statusLabel = avail.status === 'in_stock'
-    ? t('detail.status.inStock')
-    : t('detail.status.outOfStock');
+    ? t($ => $.detail.status.inStock)
+    : t($ => $.detail.status.outOfStock);
 
   function openAddStock() {
     setAddStockOpen(true);
@@ -1012,42 +1012,42 @@ export function RawMaterialDetailDrawer({
   const tabs: TabItem[] = [
     {
       key:     'overview',
-      label:   t('detail.tabs.overview'),
+      label:   t($ => $.detail.tabs.overview),
       content: <OverviewTab material={material} latestCostEntry={latestCostEntry} />,
     },
     {
       key:     'inventory',
-      label:   t('detail.tabs.inventory'),
+      label:   t($ => $.detail.tabs.inventory),
       content: <InventoryTab material={material} />,
     },
     {
       key:     'suppliers',
-      label:   t('detail.tabs.suppliers'),
+      label:   t($ => $.detail.tabs.suppliers),
       content: <SuppliersTab materialId={material.id} unit={material.unit?.name} />,
     },
     {
       key:     'price-history',
-      label:   t('detail.tabs.priceHistory'),
+      label:   t($ => $.detail.tabs.priceHistory),
       content: <PriceHistoryTab materialId={material.id} />,
     },
     {
       key:     'stock-history',
-      label:   t('detail.tabs.stockHistory'),
+      label:   t($ => $.detail.tabs.stockHistory),
       content: <StockHistoryTab material={material} onAddStock={openAddStock} />,
     },
     {
       key:     'purchase-history',
-      label:   t('detail.tabs.purchaseHistory'),
+      label:   t($ => $.detail.tabs.purchaseHistory),
       content: <PurchaseHistoryTab />,
     },
     {
       key:     'manufacturing',
-      label:   t('detail.tabs.manufacturing'),
+      label:   t($ => $.detail.tabs.manufacturing),
       content: <ManufacturingTab />,
     },
     {
       key:     'analytics',
-      label:   t('detail.tabs.analytics'),
+      label:   t($ => $.detail.tabs.analytics),
       content: <AnalyticsTab material={material} />,
     },
   ];
@@ -1061,7 +1061,7 @@ export function RawMaterialDetailDrawer({
           style={{ maxWidth: 1400 }}
         >
           <SheetTitle className="sr-only">
-            {t('detail.titleSr', { name: material.name })}
+            {t($ => $.detail.titleSr, { name: material.name })}
           </SheetTitle>
 
           {/* ── Drawer Header ── */}
@@ -1117,7 +1117,7 @@ export function RawMaterialDetailDrawer({
                 onClick={openAddStock}
               >
                 <Zap className="size-3.5" />
-                {t('detail.addStock')}
+                {t($ => $.detail.addStock)}
               </Button>
               {onEdit && (
                 <Button
@@ -1130,7 +1130,7 @@ export function RawMaterialDetailDrawer({
                   }}
                 >
                   <Pencil className="size-3.5" />
-                  {t('detail.edit')}
+                  {t($ => $.detail.edit)}
                 </Button>
               )}
             </div>

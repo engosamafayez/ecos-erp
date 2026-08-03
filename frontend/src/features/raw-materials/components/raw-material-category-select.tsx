@@ -43,9 +43,9 @@ export function RawMaterialCategorySelect({
       value={value ?? ''}
       onChange={onChange}
       loading={isLoading}
-      placeholder={placeholder ?? t('categorySelect.placeholder')}
-      searchPlaceholder={t('categorySelect.searchPlaceholder')}
-      emptyText={t('categorySelect.emptyText')}
+      placeholder={placeholder ?? t($ => $.categorySelect.placeholder)}
+      searchPlaceholder={t($ => $.categorySelect.searchPlaceholder)}
+      emptyText={t($ => $.categorySelect.emptyText)}
       disabled={disabled}
       className={className}
     />

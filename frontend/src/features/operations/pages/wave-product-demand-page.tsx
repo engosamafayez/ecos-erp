@@ -33,16 +33,16 @@ export function WaveProductDemandPage() {
   const [filter, setFilter] = useState<CompletionFilter>('all');
 
   const COMPLETION_TABS: Array<{ value: CompletionFilter; label: string }> = [
-    { value: 'all',         label: t('wave.productDemand.filters.all') },
-    { value: 'not_started', label: t('wave.productDemand.filters.notStarted') },
-    { value: 'in_progress', label: t('wave.productDemand.filters.inProgress') },
-    { value: 'completed',   label: t('wave.productDemand.filters.completed') },
+    { value: 'all',         label: t($ => $.wave.productDemand.filters.all) },
+    { value: 'not_started', label: t($ => $.wave.productDemand.filters.notStarted) },
+    { value: 'in_progress', label: t($ => $.wave.productDemand.filters.inProgress) },
+    { value: 'completed',   label: t($ => $.wave.productDemand.filters.completed) },
   ];
 
   const columns: DataGridColumnDef<WaveProductDemandItem>[] = useMemo(() => [
     {
       key: 'product',
-      label: t('wave.productDemand.columns.product'),
+      label: t($ => $.wave.productDemand.columns.product),
       alwaysVisible: true,
       cell: (item) => (
         <div>
@@ -55,14 +55,14 @@ export function WaveProductDemandPage() {
     },
     {
       key: 'required_qty',
-      label: t('wave.productDemand.columns.required'),
+      label: t($ => $.wave.productDemand.columns.required),
       defaultVisible: true,
       align: 'end',
       cell: (item) => <span className="text-sm tabular-nums">{fmt(item.required_qty)}</span>,
     },
     {
       key: 'prepared_qty',
-      label: t('wave.productDemand.columns.prepared'),
+      label: t($ => $.wave.productDemand.columns.prepared),
       defaultVisible: true,
       align: 'end',
       cell: (item) => (
@@ -71,7 +71,7 @@ export function WaveProductDemandPage() {
     },
     {
       key: 'remaining_qty',
-      label: t('wave.productDemand.columns.remaining'),
+      label: t($ => $.wave.productDemand.columns.remaining),
       defaultVisible: true,
       align: 'end',
       cell: (item) => (
@@ -82,7 +82,7 @@ export function WaveProductDemandPage() {
     },
     {
       key: 'orders_count',
-      label: t('wave.productDemand.columns.orders'),
+      label: t($ => $.wave.productDemand.columns.orders),
       defaultVisible: true,
       align: 'end',
       cell: (item) => (
@@ -91,7 +91,7 @@ export function WaveProductDemandPage() {
     },
     {
       key: 'completion_pct',
-      label: t('wave.productDemand.columns.progress'),
+      label: t($ => $.wave.productDemand.columns.progress),
       defaultVisible: true,
       width: 140,
       cell: (item) => (
@@ -103,16 +103,16 @@ export function WaveProductDemandPage() {
     },
     {
       key: 'manufacture',
-      label: t('wave.productDemand.columns.action'),
+      label: t($ => $.wave.productDemand.columns.action),
       alwaysVisible: true,
       align: 'end',
       cell: () => (
         <span
           className="inline-flex items-center gap-1 text-xs text-muted-foreground border rounded px-2 py-1 opacity-50 cursor-not-allowed select-none"
-          title={t('wave.productDemand.manufactureNow')}
+          title={t($ => $.wave.productDemand.manufactureNow)}
         >
           <Factory className="h-3 w-3" />
-          {t('wave.productDemand.manufactureNow')}
+          {t($ => $.wave.productDemand.manufactureNow)}
         </span>
       ),
     },
@@ -179,11 +179,11 @@ export function WaveProductDemandPage() {
       {allItems.length > 0 && (
         <div className="flex items-center gap-2 px-4 py-2 border-b bg-background overflow-x-auto shrink-0">
           {[
-            { label: t('wave.productDemand.kpis.products'),   value: allItems.length,                                                            cls: '' },
-            { label: t('wave.productDemand.kpis.required'),   value: fmt(allItems.reduce((s, i) => s + i.required_qty, 0)),                       cls: 'tabular-nums' },
-            { label: t('wave.productDemand.kpis.prepared'),   value: fmt(allItems.reduce((s, i) => s + i.prepared_qty, 0)),                       cls: 'tabular-nums text-emerald-700' },
-            { label: t('wave.productDemand.kpis.remaining'),  value: fmt(allItems.reduce((s, i) => s + i.remaining_qty, 0)),                      cls: `tabular-nums ${allItems.some((i) => i.remaining_qty > 0) ? 'text-amber-700' : 'text-muted-foreground'}` },
-            { label: t('wave.productDemand.kpis.completion'), value: `${completionPct.toFixed(1)}%`,                                              cls: `tabular-nums ${completionPct >= 100 ? 'text-emerald-700' : ''}` },
+            { label: t($ => $.wave.productDemand.kpis.products),   value: allItems.length,                                                            cls: '' },
+            { label: t($ => $.wave.productDemand.kpis.required),   value: fmt(allItems.reduce((s, i) => s + i.required_qty, 0)),                       cls: 'tabular-nums' },
+            { label: t($ => $.wave.productDemand.kpis.prepared),   value: fmt(allItems.reduce((s, i) => s + i.prepared_qty, 0)),                       cls: 'tabular-nums text-emerald-700' },
+            { label: t($ => $.wave.productDemand.kpis.remaining),  value: fmt(allItems.reduce((s, i) => s + i.remaining_qty, 0)),                      cls: `tabular-nums ${allItems.some((i) => i.remaining_qty > 0) ? 'text-amber-700' : 'text-muted-foreground'}` },
+            { label: t($ => $.wave.productDemand.kpis.completion), value: `${completionPct.toFixed(1)}%`,                                              cls: `tabular-nums ${completionPct >= 100 ? 'text-emerald-700' : ''}` },
           ].map((kpi) => (
             <div
               key={kpi.label}
@@ -238,12 +238,12 @@ export function WaveProductDemandPage() {
         {!waveId ? (
           <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
             <Waves className="h-8 w-8 opacity-30" />
-            <p className="text-sm">{t('wave.productDemand.noWave')}</p>
+            <p className="text-sm">{t($ => $.wave.productDemand.noWave)}</p>
           </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">{t('wave.loading')}</span>
+            <span className="text-sm">{t($ => $.wave.loading)}</span>
           </div>
         ) : (
           <UniversalDataGrid<WaveProductDemandItem>
@@ -257,8 +257,8 @@ export function WaveProductDemandPage() {
                 <Package className="w-8 h-8" />
                 <p className="text-sm">
                   {allItems.length === 0
-                    ? t('wave.productDemand.emptyNoDemand')
-                    : t('wave.productDemand.emptyNoMatch')}
+                    ? t($ => $.wave.productDemand.emptyNoDemand)
+                    : t($ => $.wave.productDemand.emptyNoMatch)}
                 </p>
               </div>
             }

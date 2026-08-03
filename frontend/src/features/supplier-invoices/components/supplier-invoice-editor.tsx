@@ -114,12 +114,12 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
     + (parseFloat(additional) || 0);
 
   const handleSubmit = async () => {
-    if (!supplierId) { toast.error(t('editor.toast.supplierRequired')); return; }
-    if (!warehouseId) { toast.error(t('editor.toast.warehouseRequired')); return; }
-    if (!invoiceDate) { toast.error(t('editor.toast.invoiceDateRequired')); return; }
+    if (!supplierId) { toast.error(t($ => $.editor.toast.supplierRequired)); return; }
+    if (!warehouseId) { toast.error(t($ => $.editor.toast.warehouseRequired)); return; }
+    if (!invoiceDate) { toast.error(t($ => $.editor.toast.invoiceDateRequired)); return; }
     const validLines = lines.filter(l => l.product_id && parseFloat(l.quantity) > 0 && parseFloat(l.unit_price) >= 0);
     if (validLines.length === 0) {
-      toast.error(t('editor.toast.atLeastOneItem'));
+      toast.error(t($ => $.editor.toast.atLeastOneItem));
       return;
     }
 
@@ -151,10 +151,10 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
         <SheetHeader className="pb-4">
           <SheetTitle className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-500" />
-            {t('editor.title')}
+            {t($ => $.editor.title)}
           </SheetTitle>
           <p className="text-xs text-gray-500">
-            {t('editor.subtitle')}
+            {t($ => $.editor.subtitle)}
           </p>
         </SheetHeader>
 
@@ -162,29 +162,29 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
           {/* Header fields */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs">{t('editor.fields.supplier')}</Label>
+              <Label className="text-xs">{t($ => $.editor.fields.supplier)}</Label>
               <div className="mt-1">
                 <Combobox
                   options={supplierOptions}
                   value={supplierId}
                   onChange={setSupplierId}
-                  placeholder={t('editor.placeholders.selectSupplier')}
+                  placeholder={t($ => $.editor.placeholders.selectSupplier)}
                 />
               </div>
             </div>
             <div>
-              <Label className="text-xs">{t('editor.fields.warehouse')}</Label>
+              <Label className="text-xs">{t($ => $.editor.fields.warehouse)}</Label>
               <div className="mt-1">
                 <Combobox
                   options={warehouseOptions}
                   value={warehouseId}
                   onChange={setWarehouseId}
-                  placeholder={t('editor.placeholders.selectWarehouse')}
+                  placeholder={t($ => $.editor.placeholders.selectWarehouse)}
                 />
               </div>
             </div>
             <div>
-              <Label className="text-xs">{t('editor.fields.invoiceDate')}</Label>
+              <Label className="text-xs">{t($ => $.editor.fields.invoiceDate)}</Label>
               <Input
                 type="date"
                 value={invoiceDate}
@@ -193,7 +193,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
               />
             </div>
             <div>
-              <Label className="text-xs">{t('editor.fields.dueDate')}</Label>
+              <Label className="text-xs">{t($ => $.editor.fields.dueDate)}</Label>
               <Input
                 type="date"
                 value={dueDate}
@@ -202,11 +202,11 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
               />
             </div>
             <div className="col-span-2">
-              <Label className="text-xs">{t('editor.fields.supplierRef')}</Label>
+              <Label className="text-xs">{t($ => $.editor.fields.supplierRef)}</Label>
               <Input
                 value={supplierRef}
                 onChange={e => setSupplierRef(e.target.value)}
-                placeholder={t('editor.placeholders.supplierRef')}
+                placeholder={t($ => $.editor.placeholders.supplierRef)}
                 className="mt-1 h-9 text-sm"
               />
             </div>
@@ -217,21 +217,21 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
           {/* Lines */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Label className="text-xs font-semibold uppercase">{t('editor.items.title')}</Label>
+              <Label className="text-xs font-semibold uppercase">{t($ => $.editor.items.title)}</Label>
               <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={addLine}>
                 <Plus className="w-3 h-3" />
-                {t('editor.items.addItem')}
+                {t($ => $.editor.items.addItem)}
               </Button>
             </div>
 
             <div className="space-y-2">
               {/* Header row */}
               <div className="grid grid-cols-12 gap-2 px-1">
-                <span className="col-span-4 text-xs text-gray-400">{t('editor.items.columns.product')}</span>
-                <span className="col-span-2 text-xs text-gray-400">{t('editor.items.columns.qty')}</span>
-                <span className="col-span-2 text-xs text-gray-400">{t('editor.items.columns.unitPrice')}</span>
-                <span className="col-span-2 text-xs text-gray-400">{t('editor.items.columns.vatPct')}</span>
-                <span className="col-span-1 text-xs text-gray-400 text-end">{t('editor.items.columns.total')}</span>
+                <span className="col-span-4 text-xs text-gray-400">{t($ => $.editor.items.columns.product)}</span>
+                <span className="col-span-2 text-xs text-gray-400">{t($ => $.editor.items.columns.qty)}</span>
+                <span className="col-span-2 text-xs text-gray-400">{t($ => $.editor.items.columns.unitPrice)}</span>
+                <span className="col-span-2 text-xs text-gray-400">{t($ => $.editor.items.columns.vatPct)}</span>
+                <span className="col-span-1 text-xs text-gray-400 text-end">{t($ => $.editor.items.columns.total)}</span>
                 <span className="col-span-1" />
               </div>
 
@@ -242,7 +242,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
                       options={productOptions}
                       value={line.product_id}
                       onChange={v => updateLine(i, 'product_id', v)}
-                      placeholder={t('editor.placeholders.selectProduct')}
+                      placeholder={t($ => $.editor.placeholders.selectProduct)}
                     />
                   </div>
                   <div className="col-span-2">
@@ -304,7 +304,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-3">
               <div>
-                <Label className="text-xs">{t('editor.additionalCosts.freight')}</Label>
+                <Label className="text-xs">{t($ => $.editor.additionalCosts.freight)}</Label>
                 <Input
                   type="number"
                   min="0"
@@ -315,7 +315,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
                 />
               </div>
               <div>
-                <Label className="text-xs">{t('editor.additionalCosts.additionalCosts')}</Label>
+                <Label className="text-xs">{t($ => $.editor.additionalCosts.additionalCosts)}</Label>
                 <Input
                   type="number"
                   min="0"
@@ -326,11 +326,11 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
                 />
               </div>
               <div>
-                <Label className="text-xs">{t('editor.fields.notes')}</Label>
+                <Label className="text-xs">{t($ => $.editor.fields.notes)}</Label>
                 <Input
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder={t('editor.fields.notesPlaceholder')}
+                  placeholder={t($ => $.editor.fields.notesPlaceholder)}
                   className="mt-1 h-9 text-sm"
                 />
               </div>
@@ -338,24 +338,24 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
 
             <div className="bg-gray-50 rounded-lg p-4 space-y-2 self-start">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">{t('editor.summary.subtotal')}</span>
+                <span className="text-gray-500">{t($ => $.editor.summary.subtotal)}</span>
                 <span>{lines.reduce((s, l) => s + lineTotal(l), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               {parseFloat(freight) > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">{t('editor.summary.freight')}</span>
+                  <span className="text-gray-500">{t($ => $.editor.summary.freight)}</span>
                   <span>{parseFloat(freight).toLocaleString()}</span>
                 </div>
               )}
               {parseFloat(additional) > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">{t('editor.summary.additionalCosts')}</span>
+                  <span className="text-gray-500">{t($ => $.editor.summary.additionalCosts)}</span>
                   <span>{parseFloat(additional).toLocaleString()}</span>
                 </div>
               )}
               <Separator className="my-1" />
               <div className="flex justify-between text-sm font-semibold">
-                <span>{t('editor.summary.grandTotal')} ({currency})</span>
+                <span>{t($ => $.editor.summary.grandTotal)} ({currency})</span>
                 <span className="text-gray-900">{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
@@ -369,10 +369,10 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
               disabled={createMutation.isPending}
             >
               <Zap className="w-3.5 h-3.5" />
-              {createMutation.isPending ? t('editor.buttons.creating') : t('editor.buttons.create')}
+              {createMutation.isPending ? t($ => $.editor.buttons.creating) : t($ => $.editor.buttons.create)}
             </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t('editor.buttons.cancel')}
+              {t($ => $.editor.buttons.cancel)}
             </Button>
           </div>
         </div>

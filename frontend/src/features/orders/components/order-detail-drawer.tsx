@@ -235,77 +235,77 @@ function SummaryTab({ order, t }: { order: Order; t: OrdersT }) {
   const hasDiscount = order.discount_amount > 0.005;
   const hasDeposit  = order.deposit_paid > 0.005;
 
-  const formulaParts: string[] = [t('detail.productsTotal')];
-  if (order.shipping_amount > 0.005) formulaParts.push(t('detail.shipping'));
-  if (order.tax_amount > 0.005)      formulaParts.push(t('detail.tax'));
+  const formulaParts: string[] = [t($ => $.detail.productsTotal)];
+  if (order.shipping_amount > 0.005) formulaParts.push(t($ => $.detail.shipping));
+  if (order.tax_amount > 0.005)      formulaParts.push(t($ => $.detail.tax));
 
   return (
     <div className="flex flex-col gap-6 p-4">
       <DetailGrid>
-        <DetailRow label={t('detail.orderNumber')}><span className="font-mono font-medium">{order.order_number}</span></DetailRow>
-        <DetailRow label={t('detail.orderDate')}>{formatDate(order.order_date)}</DetailRow>
-        <DetailRow label={t('detail.status')}><OrderStatusBadge status={order.status} /></DetailRow>
-        <DetailRow label={t('detail.channel')}>{order.channel?.name}</DetailRow>
-        <DetailRow label={t('detail.externalOrderId')}><span className="font-mono text-xs">{order.external_order_id ?? '—'}</span></DetailRow>
-        <DetailRow label={t('detail.paymentMethodTitle')}>{paymentLabel}</DetailRow>
+        <DetailRow label={t($ => $.detail.orderNumber)}><span className="font-mono font-medium">{order.order_number}</span></DetailRow>
+        <DetailRow label={t($ => $.detail.orderDate)}>{formatDate(order.order_date)}</DetailRow>
+        <DetailRow label={t($ => $.detail.status)}><OrderStatusBadge status={order.status} /></DetailRow>
+        <DetailRow label={t($ => $.detail.channel)}>{order.channel?.name}</DetailRow>
+        <DetailRow label={t($ => $.detail.externalOrderId)}><span className="font-mono text-xs">{order.external_order_id ?? '—'}</span></DetailRow>
+        <DetailRow label={t($ => $.detail.paymentMethodTitle)}>{paymentLabel}</DetailRow>
       </DetailGrid>
 
       <Separator />
 
       {/* ── Financial Summary ── */}
       <div>
-        <SectionTitle>{t('detail.financialSummary')}</SectionTitle>
+        <SectionTitle>{t($ => $.detail.financialSummary)}</SectionTitle>
         <div className="flex flex-col gap-2">
-          <FinancialRow label={t('detail.productsTotal')} value={order.products_total} />
-          <FinancialRow label={t('detail.shipping')}      value={order.shipping_amount} />
+          <FinancialRow label={t($ => $.detail.productsTotal)} value={order.products_total} />
+          <FinancialRow label={t($ => $.detail.shipping)}      value={order.shipping_amount} />
           {hasDiscount && (
             <FinancialRow
-              label={t('detail.discount')}
+              label={t($ => $.detail.discount)}
               pct={order.discount_percentage}
               value={order.discount_amount}
               isDiscount
             />
           )}
           <FinancialRow
-            label={t('detail.tax')}
+            label={t($ => $.detail.tax)}
             value={order.tax_amount > 0 ? order.tax_amount : 'not_applicable'}
           />
           <Separator className="my-1" />
-          <FinancialRow label={t('detail.grandTotal')} value={order.grand_total} bold allowZero />
+          <FinancialRow label={t($ => $.detail.grandTotal)} value={order.grand_total} bold allowZero />
           {hasDeposit && (
             <>
-              <FinancialRow label={t('detail.deposit')}           value={order.deposit_paid} isDiscount />
-              <FinancialRow label={t('detail.remainingBalance')}  value={order.remaining_balance} bold allowZero />
+              <FinancialRow label={t($ => $.detail.deposit)}           value={order.deposit_paid} isDiscount />
+              <FinancialRow label={t($ => $.detail.remainingBalance)}  value={order.remaining_balance} bold allowZero />
             </>
           )}
         </div>
 
         {/* Calculation transparency footer */}
         <div className="mt-4 rounded-md bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
-          <span className="font-medium">{t('detail.formula')}: </span>
+          <span className="font-medium">{t($ => $.detail.formula)}: </span>
           {formulaParts.join(' + ')}
-          {hasDiscount ? ' − ' + t('detail.discount') : ''}
-          {' = ' + t('detail.grandTotal')}
-          {hasDeposit ? ' | ' + t('detail.grandTotal') + ' − ' + t('detail.deposit') + ' = ' + t('detail.remainingBalance') : ''}
+          {hasDiscount ? ' − ' + t($ => $.detail.discount) : ''}
+          {' = ' + t($ => $.detail.grandTotal)}
+          {hasDeposit ? ' | ' + t($ => $.detail.grandTotal) + ' − ' + t($ => $.detail.deposit) + ' = ' + t($ => $.detail.remainingBalance) : ''}
         </div>
       </div>
 
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 gap-3">
-        <KpiCard label={t('detail.productsTotal')} value={fmtCur(order.products_total, true)} />
+        <KpiCard label={t($ => $.detail.productsTotal)} value={fmtCur(order.products_total, true)} />
         <KpiCard
-          label={order.discount_percentage != null ? `${t('detail.discountTotal')} (${order.discount_percentage}%)` : t('detail.discountTotal')}
+          label={order.discount_percentage != null ? `${t($ => $.detail.discountTotal)} (${order.discount_percentage}%)` : t($ => $.detail.discountTotal)}
           value={hasDiscount ? fmtCur(order.discount_amount) : '—'}
           variant="discount"
         />
-        <KpiCard label={t('detail.deposit')}           value={hasDeposit ? fmtCur(order.deposit_paid) : '—'} />
-        <KpiCard label={t('detail.remainingBalance')}  value={fmtCur(order.remaining_balance, true)} />
+        <KpiCard label={t($ => $.detail.deposit)}           value={hasDeposit ? fmtCur(order.deposit_paid) : '—'} />
+        <KpiCard label={t($ => $.detail.remainingBalance)}  value={fmtCur(order.remaining_balance, true)} />
       </div>
 
       {order.notes ? (
         <>
           <Separator />
-          <DetailRow label={t('detail.notes')}>{order.notes}</DetailRow>
+          <DetailRow label={t($ => $.detail.notes)}>{order.notes}</DetailRow>
         </>
       ) : null}
     </div>
@@ -410,21 +410,21 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2.5">
           <User className="size-3.5 text-muted-foreground" />
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t('detail.customerInformation')}
+            {t($ => $.detail.customerInformation)}
           </span>
         </div>
         <div className="p-4">
           <DetailGrid cols={2}>
-            <DetailRow label={t('drawer.customer.name')}>
+            <DetailRow label={t($ => $.drawer.customer.name)}>
               <span className="font-medium">{cust?.name ?? '—'}</span>
             </DetailRow>
-            <DetailRow label={t('drawer.customer.code')}>
+            <DetailRow label={t($ => $.drawer.customer.code)}>
               <span className="flex items-center gap-1 font-mono text-xs">
                 <Hash className="size-3 text-muted-foreground" />
                 {cust?.code ?? '—'}
               </span>
             </DetailRow>
-            <DetailRow label={t('drawer.customer.primaryPhone')}>
+            <DetailRow label={t($ => $.drawer.customer.primaryPhone)}>
               {primaryPhone ? (
                 <a href={`tel:${primaryPhone}`} className="flex items-center gap-1 text-sm hover:underline">
                   <Phone className="size-3 shrink-0 text-muted-foreground" />
@@ -432,7 +432,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 </a>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label={t('drawer.customer.secondaryPhone')}>
+            <DetailRow label={t($ => $.drawer.customer.secondaryPhone)}>
               {secondaryPhone ? (
                 <a href={`tel:${secondaryPhone}`} className="flex items-center gap-1 text-sm hover:underline">
                   <Phone className="size-3 shrink-0 text-muted-foreground" />
@@ -440,7 +440,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 </a>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label={t('drawer.customer.email')}>
+            <DetailRow label={t($ => $.drawer.customer.email)}>
               {email ? (
                 <a href={`mailto:${email}`} className="flex min-w-0 items-center gap-1 text-sm text-primary hover:underline">
                   <Mail className="size-3 shrink-0" />
@@ -448,12 +448,12 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 </a>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label={t('drawer.customer.since')}>
+            <DetailRow label={t($ => $.drawer.customer.since)}>
               {cust?.created_at
                 ? formatDate(cust.created_at)
                 : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label={t('drawer.customer.status')}>
+            <DetailRow label={t($ => $.drawer.customer.status)}>
               {cust?.is_active !== undefined ? (
                 <span className={cn(
                   'inline-flex items-center gap-1 text-sm font-medium',
@@ -462,11 +462,11 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                   {cust.is_active
                     ? <CheckCircle2 className="size-3" />
                     : <XCircle className="size-3" />}
-                  {cust.is_active ? t('drawer.customer.active') : t('drawer.customer.inactive')}
+                  {cust.is_active ? t($ => $.drawer.customer.active) : t($ => $.drawer.customer.inactive)}
                 </span>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
-            <DetailRow label={t('drawer.customer.lastOrder')}>
+            <DetailRow label={t($ => $.drawer.customer.lastOrder)}>
               {stats?.last_order_date
                 ? formatDate(stats.last_order_date)
                 : <span className="text-muted-foreground">—</span>}
@@ -480,23 +480,23 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         <div className="rounded-lg border overflow-hidden">
           <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2.5">
             <Activity className="size-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('drawer.customer.summary')}</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t($ => $.drawer.customer.summary)}</span>
           </div>
           <div className="grid grid-cols-2 divide-x divide-y">
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t('drawer.customer.lifetimeValue')}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t($ => $.drawer.customer.lifetimeValue)}</p>
               <p className="text-sm font-semibold tabular-nums">{fmtCur(stats.lifetime_value, true)}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t('drawer.customer.avgOrderValue')}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t($ => $.drawer.customer.avgOrderValue)}</p>
               <p className="text-sm font-semibold tabular-nums">{aov != null ? fmtCur(aov, true) : '—'}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t('drawer.customer.totalOrders')}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t($ => $.drawer.customer.totalOrders)}</p>
               <p className="text-sm font-semibold">{stats.total_orders.toLocaleString()}</p>
             </div>
             <div className="p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t('drawer.customer.firstOrder')}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t($ => $.drawer.customer.firstOrder)}</p>
               <p className="text-sm">{stats.first_order_date ? formatDate(stats.first_order_date) : '—'}</p>
             </div>
           </div>
@@ -509,11 +509,11 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2.5">
           <div className="flex items-center gap-2">
             <MapPin className="size-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('drawer.customer.deliveryAddress')}</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t($ => $.drawer.customer.deliveryAddress)}</span>
             {hasLocation && (
               <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
                 <BadgeCheck className="size-2.5" />
-                {t('drawer.customer.gpsPinned')}
+                {t($ => $.drawer.customer.gpsPinned)}
               </span>
             )}
           </div>
@@ -522,14 +522,14 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
               <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" asChild>
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="size-3" />
-                  {t('drawer.customer.map')}
+                  {t($ => $.drawer.customer.map)}
                 </a>
               </Button>
             ) : null}
             {(hasAddrData || hasMapsData) ? (
               <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copyAddress}>
                 <Copy className="size-3" />
-                {t('drawer.customer.copy')}
+                {t($ => $.drawer.customer.copy)}
               </Button>
             ) : null}
           </div>
@@ -541,33 +541,33 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
           {/* Top-left: Location */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              📍 {t('drawer.customer.location')}
+              📍 {t($ => $.drawer.customer.location)}
             </p>
             <div className="flex flex-col gap-3">
-              <AddrField icon={<Globe className="size-3.5" />}      label={t('drawer.customer.governorate')} value={order.governorate} />
-              <AddrField icon={<Building className="size-3.5" />}   label={t('drawer.customer.city')}        value={order.city} />
-              <AddrField icon={<LayoutGrid className="size-3.5" />} label={t('drawer.customer.district')}    value={order.delivery_zone} />
-              <AddrField icon={<Navigation className="size-3.5" />} label={t('drawer.customer.street')}      value={order.shipping_address} />
+              <AddrField icon={<Globe className="size-3.5" />}      label={t($ => $.drawer.customer.governorate)} value={order.governorate} />
+              <AddrField icon={<Building className="size-3.5" />}   label={t($ => $.drawer.customer.city)}        value={order.city} />
+              <AddrField icon={<LayoutGrid className="size-3.5" />} label={t($ => $.drawer.customer.district)}    value={order.delivery_zone} />
+              <AddrField icon={<Navigation className="size-3.5" />} label={t($ => $.drawer.customer.street)}      value={order.shipping_address} />
             </div>
           </div>
 
           {/* Top-right: Building Details */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              🏢 {t('drawer.customer.buildingDetails')}
+              🏢 {t($ => $.drawer.customer.buildingDetails)}
             </p>
             <div className="flex flex-col gap-3">
-              <AddrField icon={<Building2 className="size-3.5" />} label={t('drawer.customer.building')}  value={order.building} />
-              <AddrField icon={<Layers className="size-3.5" />}    label={t('drawer.customer.floor')}     value={order.floor} />
-              <AddrField icon={<Home className="size-3.5" />}      label={t('drawer.customer.apartment')} value={order.apartment} />
-              <AddrField icon={<Flag className="size-3.5" />}      label={t('drawer.customer.landmark')}  value={order.landmark} />
+              <AddrField icon={<Building2 className="size-3.5" />} label={t($ => $.drawer.customer.building)}  value={order.building} />
+              <AddrField icon={<Layers className="size-3.5" />}    label={t($ => $.drawer.customer.floor)}     value={order.floor} />
+              <AddrField icon={<Home className="size-3.5" />}      label={t($ => $.drawer.customer.apartment)} value={order.apartment} />
+              <AddrField icon={<Flag className="size-3.5" />}      label={t($ => $.drawer.customer.landmark)}  value={order.landmark} />
             </div>
           </div>
 
           {/* Bottom-left: Full Address */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              📋 {t('drawer.customer.fullAddress')}
+              📋 {t($ => $.drawer.customer.fullAddress)}
             </p>
             {fullAddressParts.length > 0 ? (
               <p className="text-sm leading-relaxed whitespace-pre-line">{fullAddress}</p>
@@ -576,7 +576,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
             )}
             {order.address_notes ? (
               <div className="mt-3 border-t pt-3">
-                <p className="mb-1 text-[10px] font-medium text-muted-foreground">{t('drawer.customer.addressNotes')}</p>
+                <p className="mb-1 text-[10px] font-medium text-muted-foreground">{t($ => $.drawer.customer.addressNotes)}</p>
                 <p className="text-xs leading-relaxed text-muted-foreground">{order.address_notes}</p>
               </div>
             ) : null}
@@ -588,7 +588,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
               >
                 <ExternalLink className="size-3" />
-                {t('drawer.customer.viewOnGoogleMaps')}
+                {t($ => $.drawer.customer.viewOnGoogleMaps)}
               </a>
             ) : null}
           </div>
@@ -596,7 +596,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
           {/* Bottom-right: Map Preview */}
           <div className="p-4">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              🗺 {t('drawer.customer.mapPreview')}
+              🗺 {t($ => $.drawer.customer.mapPreview)}
             </p>
             {order.location ? (
               <div className="flex flex-col gap-2">
@@ -620,12 +620,12 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                   <Button variant="outline" size="sm" className="h-7 flex-1 text-xs" asChild>
                     <a href={mapsUrl!} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="mr-1 size-3" />
-                      {t('drawer.customer.open')}
+                      {t($ => $.drawer.customer.open)}
                     </a>
                   </Button>
                   <Button variant="outline" size="sm" className="h-7 flex-1 text-xs" onClick={copyMapsLink}>
                     <Copy className="mr-1 size-3" />
-                    {t('drawer.customer.copy')}
+                    {t($ => $.drawer.customer.copy)}
                   </Button>
                 </div>
               </div>
@@ -634,13 +634,13 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                 <div className="flex aspect-video items-center justify-center rounded-md border bg-muted/30">
                   <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
                     <MapIcon className="size-5" />
-                    <p className="text-[10px]">{t('drawer.customer.urlOnlyNoGps')}</p>
+                    <p className="text-[10px]">{t($ => $.drawer.customer.urlOnlyNoGps)}</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm" className="h-7 w-full text-xs" asChild>
                   <a href={mapsUrl!} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="mr-1 size-3" />
-                    {t('drawer.customer.openMap')}
+                    {t($ => $.drawer.customer.openMap)}
                   </a>
                 </Button>
               </div>
@@ -648,7 +648,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
               <div className="flex aspect-video items-center justify-center rounded-md border border-dashed bg-muted/20">
                 <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
                   <MapIcon className="size-5" />
-                  <p className="text-[10px]">{t('drawer.customer.noLocationData')}</p>
+                  <p className="text-[10px]">{t($ => $.drawer.customer.noLocationData)}</p>
                 </div>
               </div>
             )}
@@ -660,25 +660,25 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
       {/* ── 4. Notes (3 independent cards) ── */}
       {(cust?.notes || internalNoteContent || order.customer_note) ? (
         <div className="flex flex-col gap-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('drawer.customer.notes')}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t($ => $.drawer.customer.notes)}</h3>
           {cust?.notes ? (
             <NoteCard
               icon={<User className="size-3.5" />}
-              title={t('drawer.customer.customerNotes')}
+              title={t($ => $.drawer.customer.customerNotes)}
               content={cust.notes}
             />
           ) : null}
           {internalNoteContent ? (
             <NoteCard
               icon={<Lock className="size-3.5" />}
-              title={t('drawer.customer.internalNotes')}
+              title={t($ => $.drawer.customer.internalNotes)}
               content={internalNoteContent}
             />
           ) : null}
           {order.customer_note ? (
             <NoteCard
               icon={<StickyNote className="size-3.5" />}
-              title={t('drawer.customer.woocommerceNotes')}
+              title={t($ => $.drawer.customer.woocommerceNotes)}
               content={order.customer_note}
             />
           ) : null}
@@ -690,22 +690,22 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         <>
           <Separator />
           <div>
-            <SectionTitle>{t('detail.billingInformation')}</SectionTitle>
+            <SectionTitle>{t($ => $.detail.billingInformation)}</SectionTitle>
             <DetailGrid cols={2}>
               {(order.billing_first_name || order.billing_last_name) ? (
-                <DetailRow label={t('detail.billingName')}>
+                <DetailRow label={t($ => $.detail.billingName)}>
                   {[order.billing_first_name, order.billing_last_name].filter(Boolean).join(' ')}
                 </DetailRow>
               ) : null}
               {order.billing_phone && order.billing_phone !== primaryPhone ? (
-                <DetailRow label={t('detail.billingPhone')}>{order.billing_phone}</DetailRow>
+                <DetailRow label={t($ => $.detail.billingPhone)}>{order.billing_phone}</DetailRow>
               ) : null}
               {order.billing_email && order.billing_email !== email ? (
-                <DetailRow label={t('detail.billingEmail')}>{order.billing_email}</DetailRow>
+                <DetailRow label={t($ => $.detail.billingEmail)}>{order.billing_email}</DetailRow>
               ) : null}
-              {order.billing_address_1 ? <DetailRow label={t('detail.billingAddress1')}>{order.billing_address_1}</DetailRow> : null}
-              {order.billing_city      ? <DetailRow label={t('detail.billingCity')}>{order.billing_city}</DetailRow>           : null}
-              {order.billing_country   ? <DetailRow label={t('detail.billingCountry')}>{order.billing_country}</DetailRow>     : null}
+              {order.billing_address_1 ? <DetailRow label={t($ => $.detail.billingAddress1)}>{order.billing_address_1}</DetailRow> : null}
+              {order.billing_city      ? <DetailRow label={t($ => $.detail.billingCity)}>{order.billing_city}</DetailRow>           : null}
+              {order.billing_country   ? <DetailRow label={t($ => $.detail.billingCountry)}>{order.billing_country}</DetailRow>     : null}
             </DetailGrid>
           </div>
         </>
@@ -716,17 +716,17 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
         <>
           <Separator />
           <div>
-            <SectionTitle>{t('detail.shippingInformation')}</SectionTitle>
+            <SectionTitle>{t($ => $.detail.shippingInformation)}</SectionTitle>
             <DetailGrid cols={2}>
               {(order.shipping_first_name || order.shipping_last_name) ? (
-                <DetailRow label={t('detail.shippingName')}>
+                <DetailRow label={t($ => $.detail.shippingName)}>
                   {[order.shipping_first_name, order.shipping_last_name].filter(Boolean).join(' ')}
                 </DetailRow>
               ) : null}
-              {order.shipping_company   ? <DetailRow label={t('detail.shippingCompany')}>{order.shipping_company}</DetailRow>   : null}
-              {order.shipping_address_1 ? <DetailRow label={t('detail.shippingAddress1')}>{order.shipping_address_1}</DetailRow> : null}
-              {order.shipping_city      ? <DetailRow label={t('detail.shippingCity')}>{order.shipping_city}</DetailRow>          : null}
-              {order.shipping_country   ? <DetailRow label={t('detail.shippingCountry')}>{order.shipping_country}</DetailRow>    : null}
+              {order.shipping_company   ? <DetailRow label={t($ => $.detail.shippingCompany)}>{order.shipping_company}</DetailRow>   : null}
+              {order.shipping_address_1 ? <DetailRow label={t($ => $.detail.shippingAddress1)}>{order.shipping_address_1}</DetailRow> : null}
+              {order.shipping_city      ? <DetailRow label={t($ => $.detail.shippingCity)}>{order.shipping_city}</DetailRow>          : null}
+              {order.shipping_country   ? <DetailRow label={t($ => $.detail.shippingCountry)}>{order.shipping_country}</DetailRow>    : null}
             </DetailGrid>
           </div>
         </>
@@ -744,13 +744,13 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
       <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30 px-3 py-2 flex items-start gap-2">
         <Lock className="h-3 w-3 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
         <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-          <span className="font-semibold">{t('drawer.products_tab.priceLockTitle')} —</span>{' '}
-          {t('drawer.products_tab.priceLockDesc')}
+          <span className="font-semibold">{t($ => $.drawer.products_tab.priceLockTitle)} —</span>{' '}
+          {t($ => $.drawer.products_tab.priceLockDesc)}
         </p>
       </div>
 
       {(order.lines ?? []).length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground py-8">{t('table.empty')}</p>
+        <p className="text-center text-sm text-muted-foreground py-8">{t($ => $.table.empty)}</p>
       ) : (
         <div className="flex flex-col divide-y">
           {(order.lines ?? []).map((line) => (
@@ -772,7 +772,7 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
                   <p className="text-xs text-muted-foreground">{line.quantity} × {fmtCur(line.unit_price, true)}</p>
                   <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                     <Lock className="h-2.5 w-2.5" />
-                    {t('drawer.products_tab.locked')}
+                    {t($ => $.drawer.products_tab.locked)}
                   </span>
                 </div>
               </div>
@@ -784,7 +784,7 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
         <>
           <Separator />
           <div className="py-3">
-            <SectionTitle>{t('detail.fees')}</SectionTitle>
+            <SectionTitle>{t($ => $.detail.fees)}</SectionTitle>
             {(order.fees ?? []).map((f) => (
               <div key={f.id} className="flex justify-between text-sm py-1">
                 <span className="text-muted-foreground">{f.name}</span>
@@ -798,7 +798,7 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
         <>
           <Separator />
           <div className="py-3">
-            <SectionTitle>{t('detail.coupons')}</SectionTitle>
+            <SectionTitle>{t($ => $.detail.coupons)}</SectionTitle>
             {(order.coupons ?? []).map((c) => (
               <div key={c.id} className="flex justify-between text-sm py-1">
                 <span className="font-mono text-xs text-muted-foreground">{c.code}</span>
@@ -822,7 +822,7 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
   const hasRemaining = order.remaining_balance > 0;
   const isPartial  = !isPaid && hasDeposit;
 
-  const paymentStatusLabel = isPaid ? t('drawer.payment.paid') : isPartial ? t('drawer.payment.partiallyPaid') : t('drawer.payment.unpaid');
+  const paymentStatusLabel = isPaid ? t($ => $.drawer.payment.paid) : isPartial ? t($ => $.drawer.payment.partiallyPaid) : t($ => $.drawer.payment.unpaid);
   const paymentStatusCls   = isPaid
     ? 'text-emerald-600 dark:text-emerald-400'
     : isPartial
@@ -837,7 +837,7 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
   if (!hasAnyPayment) {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-center p-4">
-        <p className="text-sm text-muted-foreground">{t('drawer.payment.noInfo')}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.drawer.payment.noInfo)}</p>
       </div>
     );
   }
@@ -847,7 +847,7 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── Payment Status ── */}
       <div>
-        <SectionTitle>{t('drawer.payment.statusSection')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.payment.statusSection)}</SectionTitle>
         <div className="rounded-md border bg-muted/20 px-4 py-3 flex items-center gap-3">
           {isPaid
             ? <ShieldCheck className="size-4 text-emerald-500 shrink-0" />
@@ -856,7 +856,7 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
           <div className="flex-1 min-w-0">
             <p className={cn('text-sm font-semibold', paymentStatusCls)}>{paymentStatusLabel}</p>
             {isPaid && order.date_paid ? (
-              <p className="text-xs text-muted-foreground">{t('drawer.payment.verifiedAt', { date: formatDateTime(order.date_paid) })}</p>
+              <p className="text-xs text-muted-foreground">{t($ => $.drawer.payment.verifiedAt, { date: formatDateTime(order.date_paid) })}</p>
             ) : null}
           </div>
         </div>
@@ -864,25 +864,25 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── Payment Details ── */}
       <div>
-        <SectionTitle>{t('drawer.payment.detailsSection')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.payment.detailsSection)}</SectionTitle>
         <DetailGrid cols={1}>
           {paymentLabel ? (
-            <DetailRow label={t('drawer.payment.method')}>
+            <DetailRow label={t($ => $.drawer.payment.method)}>
               <span className="font-medium">{paymentLabel}</span>
             </DetailRow>
           ) : null}
           {order.transaction_id ? (
-            <DetailRow label={t('drawer.payment.transactionId')}>
+            <DetailRow label={t($ => $.drawer.payment.transactionId)}>
               <span className="font-mono text-xs">{order.transaction_id}</span>
             </DetailRow>
           ) : null}
-          <DetailRow label={t('drawer.payment.verificationStatus')}>
+          <DetailRow label={t($ => $.drawer.payment.verificationStatus)}>
             <span className={cn('font-medium', isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
-              {isPaid ? t('drawer.payment.verified') : t('drawer.payment.awaitingVerification')}
+              {isPaid ? t($ => $.drawer.payment.verified) : t($ => $.drawer.payment.awaitingVerification)}
             </span>
           </DetailRow>
           {order.date_paid ? (
-            <DetailRow label={t('drawer.payment.verificationDate')}>{formatDateTime(order.date_paid)}</DetailRow>
+            <DetailRow label={t($ => $.drawer.payment.verificationDate)}>{formatDateTime(order.date_paid)}</DetailRow>
           ) : null}
         </DetailGrid>
       </div>
@@ -891,26 +891,26 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── Financial Details — canonical fields only, no legacy calculations ── */}
       <div>
-        <SectionTitle>{t('detail.financialSummary')}</SectionTitle>
+        <SectionTitle>{t($ => $.detail.financialSummary)}</SectionTitle>
         <div className="flex flex-col gap-2">
-          <FinancialRow label={t('detail.productsTotal')} value={order.products_total} allowZero />
-          <FinancialRow label={t('detail.shipping')}      value={order.shipping_amount} />
+          <FinancialRow label={t($ => $.detail.productsTotal)} value={order.products_total} allowZero />
+          <FinancialRow label={t($ => $.detail.shipping)}      value={order.shipping_amount} />
           {order.discount_amount > 0.005 && (
             <FinancialRow
-              label={order.discount_percentage != null ? `${t('detail.discount')} (${order.discount_percentage}%)` : t('detail.discount')}
+              label={order.discount_percentage != null ? `${t($ => $.detail.discount)} (${order.discount_percentage}%)` : t($ => $.detail.discount)}
               value={order.discount_amount}
               isDiscount
             />
           )}
           <FinancialRow
-            label={t('detail.tax')}
+            label={t($ => $.detail.tax)}
             value={order.tax_amount > 0.005 ? order.tax_amount : 'not_applicable'}
           />
           <Separator />
-          <FinancialRow label={t('detail.grandTotal')} value={order.grand_total} allowZero bold />
+          <FinancialRow label={t($ => $.detail.grandTotal)} value={order.grand_total} allowZero bold />
           {hasDeposit && (
             <div className="flex items-baseline justify-between gap-4">
-              <span className="text-sm text-muted-foreground">{t('detail.deposit')}</span>
+              <span className="text-sm text-muted-foreground">{t($ => $.detail.deposit)}</span>
               <span className="text-sm font-semibold tabular-nums text-sky-600 dark:text-sky-400">
                 {fmtCur(order.deposit_paid)}
               </span>
@@ -918,7 +918,7 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
           )}
           {order.remaining_balance > 0.005 && (
             <div className="flex items-baseline justify-between gap-4">
-              <span className="text-sm text-muted-foreground">{t('detail.remainingBalance')}</span>
+              <span className="text-sm text-muted-foreground">{t($ => $.detail.remainingBalance)}</span>
               <span className="text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
                 {fmtCur(order.remaining_balance)}
               </span>
@@ -931,23 +931,23 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── Payment Proof ── */}
       <div>
-        <SectionTitle>{t('drawer.payment.proofSection')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.payment.proofSection)}</SectionTitle>
         {order.payment_proof_path ? (
           <MediaViewer
             path={order.payment_proof_path}
-            title={t('drawer.payment.proofSection')}
+            title={t($ => $.drawer.payment.proofSection)}
             trigger={
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
               >
                 <Paperclip className="size-3.5" />
-                {t('drawer.payment.proofSection')}
+                {t($ => $.drawer.payment.proofSection)}
               </button>
             }
           />
         ) : (
-          <p className="text-sm text-muted-foreground">{t('drawer.payment.noProof')}</p>
+          <p className="text-sm text-muted-foreground">{t($ => $.drawer.payment.noProof)}</p>
         )}
       </div>
 
@@ -956,13 +956,13 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
         <>
           <Separator />
           <div>
-            <SectionTitle>{t('drawer.payment.woocommerceRef')}</SectionTitle>
+            <SectionTitle>{t($ => $.drawer.payment.woocommerceRef)}</SectionTitle>
             <DetailGrid>
-              <DetailRow label={t('drawer.payment.gatewayCode')}>
+              <DetailRow label={t($ => $.drawer.payment.gatewayCode)}>
                 <span className="font-mono text-xs text-muted-foreground">{order.payment_method}</span>
               </DetailRow>
               {order.payment_method_title ? (
-                <DetailRow label={t('drawer.payment.gatewayName')}>{order.payment_method_title}</DetailRow>
+                <DetailRow label={t($ => $.drawer.payment.gatewayName)}>{order.payment_method_title}</DetailRow>
               ) : null}
             </DetailGrid>
           </div>
@@ -1048,7 +1048,7 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── 1. Delivery Address ── */}
       <div>
-        <SectionTitle>{t('drawer.shipping.deliveryAddress')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.shipping.deliveryAddress)}</SectionTitle>
 
         {/* 2-column grid: Location | Building Details */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-0">
@@ -1056,37 +1056,37 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
           {/* Column 1 — Location */}
           <div className="flex flex-col gap-1 mb-1">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5 mb-1">
-              <MapPin className="size-3" />{t('drawer.shipping.location')}
+              <MapPin className="size-3" />{t($ => $.drawer.shipping.location)}
             </p>
-            <DetailRow label={t('drawer.shipping.governorate')}>{order.governorate}</DetailRow>
-            <DetailRow label={t('drawer.shipping.city')}>{order.city}</DetailRow>
-            <DetailRow label={t('drawer.shipping.district')}>{order.delivery_zone}</DetailRow>
-            <DetailRow label={t('drawer.shipping.street')}>{order.shipping_address}</DetailRow>
+            <DetailRow label={t($ => $.drawer.shipping.governorate)}>{order.governorate}</DetailRow>
+            <DetailRow label={t($ => $.drawer.shipping.city)}>{order.city}</DetailRow>
+            <DetailRow label={t($ => $.drawer.shipping.district)}>{order.delivery_zone}</DetailRow>
+            <DetailRow label={t($ => $.drawer.shipping.street)}>{order.shipping_address}</DetailRow>
           </div>
 
           {/* Column 2 — Building Details */}
           <div className="flex flex-col gap-1 mb-1">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5 mb-1">
-              <Building2 className="size-3" />{t('drawer.shipping.buildingDetails')}
+              <Building2 className="size-3" />{t($ => $.drawer.shipping.buildingDetails)}
             </p>
-            <DetailRow label={t('drawer.shipping.building')}>{order.building}</DetailRow>
-            <DetailRow label={t('drawer.shipping.floor')}>{order.floor}</DetailRow>
-            <DetailRow label={t('drawer.shipping.apartment')}>{order.apartment}</DetailRow>
-            <DetailRow label={t('drawer.shipping.landmark')}>{order.landmark}</DetailRow>
+            <DetailRow label={t($ => $.drawer.shipping.building)}>{order.building}</DetailRow>
+            <DetailRow label={t($ => $.drawer.shipping.floor)}>{order.floor}</DetailRow>
+            <DetailRow label={t($ => $.drawer.shipping.apartment)}>{order.apartment}</DetailRow>
+            <DetailRow label={t($ => $.drawer.shipping.landmark)}>{order.landmark}</DetailRow>
           </div>
         </div>
 
         {/* Column 3 — Address Summary */}
         <div className="mt-4 rounded-md border bg-muted/20 px-3 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">{t('drawer.shipping.addressSummary')}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">{t($ => $.drawer.shipping.addressSummary)}</p>
           <dl className="flex flex-col gap-2">
-            <DetailRow label={t('drawer.shipping.fullAddress')}>
+            <DetailRow label={t($ => $.drawer.shipping.fullAddress)}>
               {fullAddress || null}
             </DetailRow>
-            <DetailRow label={t('drawer.shipping.addressNotes')}>
+            <DetailRow label={t($ => $.drawer.shipping.addressNotes)}>
               {order.address_notes}
             </DetailRow>
-            <DetailRow label={t('drawer.shipping.googleMapsLink')}>
+            <DetailRow label={t($ => $.drawer.shipping.googleMapsLink)}>
               {order.google_maps_url ? (
                 <a
                   href={order.google_maps_url}
@@ -1124,18 +1124,18 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
               <Button variant="outline" size="sm" asChild>
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                   <MapPin className="size-3.5" />
-                  {t('drawer.shipping.openMap')}
+                  {t($ => $.drawer.shipping.openMap)}
                 </a>
               </Button>
               <Button variant="outline" size="sm" asChild>
                 <a href={`https://www.waze.com/ul?ll=${loc.lat}%2C${loc.lng}&navigate=yes`} target="_blank" rel="noopener noreferrer">
                   <Navigation className="size-3.5" />
-                  {t('drawer.shipping.waze')}
+                  {t($ => $.drawer.shipping.waze)}
                 </a>
               </Button>
               {loc.set_by ? (
                 <span className="ms-auto self-center text-[10px] text-muted-foreground">
-                  {t('drawer.shipping.addedBy', { name: loc.set_by })}
+                  {t($ => $.drawer.shipping.addedBy, { name: loc.set_by })}
                 </span>
               ) : null}
             </div>
@@ -1143,7 +1143,7 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
         ) : hasMapsData ? (
           <div className="mt-4 rounded-lg border border-dashed bg-muted/10 flex items-center justify-center gap-2 py-6 text-muted-foreground">
             <MapIcon className="size-5" />
-            <span className="text-xs">{t('drawer.shipping.noGpsMapLinkOnly')}</span>
+            <span className="text-xs">{t($ => $.drawer.shipping.noGpsMapLinkOnly)}</span>
           </div>
         ) : null}
       </div>
@@ -1152,11 +1152,11 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── 2. Delivery Schedule ── */}
       <div>
-        <SectionTitle>{t('drawer.shipping.schedule')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.shipping.schedule)}</SectionTitle>
         <DetailGrid>
-          <DetailRow label={t('drawer.shipping.requestedDelivery')}>{formatDate(order.requested_delivery_date)}</DetailRow>
-          <DetailRow label={t('drawer.shipping.deliveryWindow')}>{order.delivery_window}</DetailRow>
-          <DetailRow label={t('drawer.shipping.preferredTime')}>{order.preferred_delivery_time}</DetailRow>
+          <DetailRow label={t($ => $.drawer.shipping.requestedDelivery)}>{formatDate(order.requested_delivery_date)}</DetailRow>
+          <DetailRow label={t($ => $.drawer.shipping.deliveryWindow)}>{order.delivery_window}</DetailRow>
+          <DetailRow label={t($ => $.drawer.shipping.preferredTime)}>{order.preferred_delivery_time}</DetailRow>
         </DetailGrid>
       </div>
 
@@ -1164,10 +1164,10 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── 3. Shipping Assignment ── */}
       <div>
-        <SectionTitle>{t('drawer.shipping.assignment')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.shipping.assignment)}</SectionTitle>
         <DetailGrid>
-          <DetailRow label={t('drawer.shipping.shippingCompany')}>{order.shipping_company_name}</DetailRow>
-          <DetailRow label={t('drawer.shipping.carrier')}>{order.shipping_method}</DetailRow>
+          <DetailRow label={t($ => $.drawer.shipping.shippingCompany)}>{order.shipping_company_name}</DetailRow>
+          <DetailRow label={t($ => $.drawer.shipping.carrier)}>{order.shipping_method}</DetailRow>
         </DetailGrid>
       </div>
 
@@ -1175,14 +1175,14 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── 4. Tracking ── */}
       <div>
-        <SectionTitle>{t('drawer.shipping.tracking')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.shipping.tracking)}</SectionTitle>
         <DetailGrid>
-          <DetailRow label={t('drawer.shipping.trackingNumber')}>
+          <DetailRow label={t($ => $.drawer.shipping.trackingNumber)}>
             {order.tracking_number
               ? <span className="font-mono text-xs">{order.tracking_number}</span>
               : null}
           </DetailRow>
-          <DetailRow label={t('drawer.shipping.shipmentStatus')}>
+          <DetailRow label={t($ => $.drawer.shipping.shipmentStatus)}>
             {attemptsLabel}
           </DetailRow>
         </DetailGrid>
@@ -1192,41 +1192,41 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── 5. Delivery Verification ── */}
       <div>
-        <SectionTitle>{t('drawer.shipping.verification')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.shipping.verification)}</SectionTitle>
         <div className="grid grid-cols-2 gap-2">
           <VerificationBadge
-            label={t('drawer.shipping.locationPinned')}
+            label={t($ => $.drawer.shipping.locationPinned)}
             icon={MapPin}
             verified={hasMapsData}
           />
           <VerificationBadge
-            label={t('drawer.shipping.addressComplete')}
+            label={t($ => $.drawer.shipping.addressComplete)}
             icon={Building2}
             verified={!!(order.governorate && order.city)}
           />
           <VerificationBadge
-            label={t('drawer.shipping.phoneRegistered')}
+            label={t($ => $.drawer.shipping.phoneRegistered)}
             icon={Phone}
             verified={!!order.billing_phone}
             detail={order.billing_phone}
           />
           <VerificationBadge
-            label={t('drawer.shipping.customerConfirmation')}
+            label={t($ => $.drawer.shipping.customerConfirmation)}
             icon={UserCheck}
             verified={order.confirmation_result === 'confirmed'}
             detail={
               order.confirmation_result === 'confirmed' && order.customer_confirmed_at
                 ? formatDate(order.customer_confirmed_at)
                 : order.confirmation_result && order.confirmation_result !== 'confirmed'
-                ? (order.customer_confirmed_by ? `${t('drawer.customer.copy')}: ${order.customer_confirmed_by}` : null)
+                ? (order.customer_confirmed_by ? `${t($ => $.drawer.customer.copy)}: ${order.customer_confirmed_by}` : null)
                 : null
             }
             statusText={
-              order.confirmation_result === 'confirmed'   ? t('drawer.shipping.confirmed') :
-              order.confirmation_result === 'not_answered'? t('drawer.shipping.noAnswer') :
-              order.confirmation_result === 'rejected'    ? t('drawer.shipping.rejected')  :
-              order.confirmation_result === 'postponed'   ? t('drawer.shipping.postponed') :
-              t('drawer.shipping.pending')
+              order.confirmation_result === 'confirmed'   ? t($ => $.drawer.shipping.confirmed) :
+              order.confirmation_result === 'not_answered'? t($ => $.drawer.shipping.noAnswer) :
+              order.confirmation_result === 'rejected'    ? t($ => $.drawer.shipping.rejected)  :
+              order.confirmation_result === 'postponed'   ? t($ => $.drawer.shipping.postponed) :
+              t($ => $.drawer.shipping.pending)
             }
             statusColor={
               order.confirmation_result === 'confirmed'   ? 'text-emerald-600 dark:text-emerald-400' :
@@ -1243,13 +1243,13 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── 6. Shipping Actions ── */}
       <div>
-        <SectionTitle>{t('drawer.shipping.shippingActions')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.shipping.shippingActions)}</SectionTitle>
         <div className="flex flex-wrap gap-2">
           {hasMapsData && (
             <Button variant="outline" size="sm" asChild>
               <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
                 <MapPin className="size-3.5" />
-                {t('drawer.shipping.openMap')}
+                {t($ => $.drawer.shipping.openMap)}
               </a>
             </Button>
           )}
@@ -1260,7 +1260,7 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
               onClick={() => void navigator.clipboard.writeText(fullAddress)}
             >
               <Copy className="size-3.5" />
-              {t('drawer.shipping.copyAddress')}
+              {t($ => $.drawer.shipping.copyAddress)}
             </Button>
           )}
           {coordsStr && (
@@ -1270,7 +1270,7 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
               onClick={() => void navigator.clipboard.writeText(coordsStr)}
             >
               <Navigation className="size-3.5" />
-              {t('drawer.shipping.copyCoordinates')}
+              {t($ => $.drawer.shipping.copyCoordinates)}
             </Button>
           )}
         </div>
@@ -1317,7 +1317,7 @@ function LocationTab({ order, t }: { order: Order; t: OrdersT }) {
                 rel="noopener noreferrer"
               >
                 <Navigation className="size-3.5" />
-                {t('address.openMaps')}
+                {t($ => $.address.openMaps)}
               </a>
             </Button>
             <Button variant="outline" size="sm" asChild>
@@ -1336,19 +1336,19 @@ function LocationTab({ order, t }: { order: Order; t: OrdersT }) {
               onClick={() => void navigator.clipboard.writeText(`https://www.google.com/maps?q=${loc.lat},${loc.lng}`)}
             >
               <MapPin className="size-3.5" />
-              {t('address.copyLink')}
+              {t($ => $.address.copyLink)}
             </Button>
           </div>
           {loc.set_by ? (
             <p className="text-xs text-muted-foreground">
-              {t('drawer.locationSetBy', { by: loc.set_by })}
+              {t($ => $.drawer.locationSetBy, { by: loc.set_by })}
             </p>
           ) : null}
         </>
       ) : (
         <div className="flex flex-col items-center gap-3 py-12 text-center">
           <MapPin className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{t('drawer.noLocation')}</p>
+          <p className="text-sm text-muted-foreground">{t($ => $.drawer.noLocation)}</p>
         </div>
       )}
     </div>
@@ -1414,16 +1414,16 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
-        <SectionTitle>{t('drawer.workflow.currentStatus')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.workflow.currentStatus)}</SectionTitle>
         <OrderStatusBadge status={order.status} />
       </div>
       {transitions.length > 0 ? (
         <div>
-          <SectionTitle>{t('drawer.workflow.availableActions')}</SectionTitle>
+          <SectionTitle>{t($ => $.drawer.workflow.availableActions)}</SectionTitle>
           <div className="flex flex-col gap-2">
             {showRescheduleForm ? (
               <div className="flex flex-col gap-2 rounded-md border p-3">
-                <label className="text-xs font-medium text-muted-foreground">{t('drawer.workflow.newDeliveryDate')}</label>
+                <label className="text-xs font-medium text-muted-foreground">{t($ => $.drawer.workflow.newDeliveryDate)}</label>
                 <input
                   type="date"
                   value={rescheduleDate}
@@ -1439,10 +1439,10 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
                     className="gap-1.5"
                   >
                     {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
-                    {t('drawer.workflow.confirmReschedule')}
+                    {t($ => $.drawer.workflow.confirmReschedule)}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => setShowRescheduleForm(false)}>
-                    {t('drawer.workflow.cancel')}
+                    {t($ => $.drawer.workflow.cancel)}
                   </Button>
                 </div>
               </div>
@@ -1493,7 +1493,7 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
                             disabled={isPending}
                             onClick={() => handleAction(tr.target_status)}
                           >
-                            {isPending ? <Loader2 className="size-3 animate-spin" /> : t('drawer.workflow.confirmReschedule')}
+                            {isPending ? <Loader2 className="size-3 animate-spin" /> : t($ => $.drawer.workflow.confirmReschedule)}
                           </Button>
                           <Button
                             size="sm"
@@ -1501,7 +1501,7 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
                             className="h-6 text-xs"
                             onClick={() => { setActiveReason(null); setReasonText(''); }}
                           >
-                            {t('drawer.workflow.cancel')}
+                            {t($ => $.drawer.workflow.cancel)}
                           </Button>
                         </div>
                       </div>
@@ -1513,7 +1513,7 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
           </div>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">{t('drawer.workflow.noActions')}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.drawer.workflow.noActions)}</p>
       )}
     </div>
   );
@@ -1535,14 +1535,14 @@ function InventoryTab({ order }: { order: Order }) {
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
-        <SectionTitle>{t('drawer.inventory_tab.reservationStatus')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.inventory_tab.reservationStatus)}</SectionTitle>
         <DetailGrid>
-          <DetailRow label={t('drawer.inventory_tab.reservedAt')}>
+          <DetailRow label={t($ => $.drawer.inventory_tab.reservedAt)}>
             {inv.inventory_reserved_at ? formatDate(inv.inventory_reserved_at) : (
-              <span className="text-amber-600 text-sm font-medium">{t('drawer.inventory_tab.notReserved')}</span>
+              <span className="text-amber-600 text-sm font-medium">{t($ => $.drawer.inventory_tab.notReserved)}</span>
             )}
           </DetailRow>
-          <DetailRow label={t('drawer.inventory_tab.shippedAt')}>
+          <DetailRow label={t($ => $.drawer.inventory_tab.shippedAt)}>
             {inv.inventory_shipped_at ? formatDate(inv.inventory_shipped_at) : (
               <span className="text-muted-foreground text-sm">—</span>
             )}
@@ -1551,29 +1551,29 @@ function InventoryTab({ order }: { order: Order }) {
       </div>
       <Separator />
       <div>
-        <SectionTitle>{t('drawer.inventory_tab.fulfillment')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.inventory_tab.fulfillment)}</SectionTitle>
         <DetailGrid>
-          <DetailRow label={t('drawer.inventory_tab.assignedWarehouse')}>
+          <DetailRow label={t($ => $.drawer.inventory_tab.assignedWarehouse)}>
             {warehouseName ?? <span className="text-muted-foreground text-sm">—</span>}
           </DetailRow>
-          <DetailRow label={t('drawer.inventory_tab.lineItems')}>
-            {t('drawer.inventory_tab.itemCount', { count: lines.length })}
+          <DetailRow label={t($ => $.drawer.inventory_tab.lineItems)}>
+            {t($ => $.drawer.inventory_tab.itemCount, { count: lines.length })}
           </DetailRow>
         </DetailGrid>
       </div>
       <Separator />
       <div>
-        <SectionTitle>{t('drawer.inventory_tab.inventoryItems')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.inventory_tab.inventoryItems)}</SectionTitle>
         <div className="flex flex-col gap-2">
           {lines.map((line) => {
             const steps: Array<{ label: string; value: number }> = [
-              { label: t('drawer.inventory_tab.qty.reserved'),  value: line.reserved_qty },
-              { label: t('drawer.inventory_tab.qty.prepared'),  value: line.prepared_qty },
-              { label: t('drawer.inventory_tab.qty.packed'),    value: line.packed_qty },
-              { label: t('drawer.inventory_tab.qty.loaded'),    value: line.loaded_qty },
-              { label: t('drawer.inventory_tab.qty.delivered'), value: line.delivered_qty },
-              { label: t('drawer.inventory_tab.qty.returned'),  value: line.returned_qty },
-              { label: t('drawer.inventory_tab.qty.cancelled'), value: line.cancelled_qty },
+              { label: t($ => $.drawer.inventory_tab.qty.reserved),  value: line.reserved_qty },
+              { label: t($ => $.drawer.inventory_tab.qty.prepared),  value: line.prepared_qty },
+              { label: t($ => $.drawer.inventory_tab.qty.packed),    value: line.packed_qty },
+              { label: t($ => $.drawer.inventory_tab.qty.loaded),    value: line.loaded_qty },
+              { label: t($ => $.drawer.inventory_tab.qty.delivered), value: line.delivered_qty },
+              { label: t($ => $.drawer.inventory_tab.qty.returned),  value: line.returned_qty },
+              { label: t($ => $.drawer.inventory_tab.qty.cancelled), value: line.cancelled_qty },
             ].filter((s) => s.value > 0);
             return (
               <div key={line.id} className="rounded-md border bg-muted/20 px-3 py-2 text-sm">
@@ -1599,7 +1599,7 @@ function InventoryTab({ order }: { order: Order }) {
                     )}
                     {line.batch_number && (
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
-                        {t('drawer.inventory_tab.qty.batch')} {line.batch_number}
+                        {t($ => $.drawer.inventory_tab.qty.batch)} {line.batch_number}
                       </span>
                     )}
                   </div>
@@ -1626,7 +1626,7 @@ const ADDRESS_FIELD_KEYS = new Set([
 
 function fmtRelative(d: Date, t: OrdersT): string {
   const diff = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (diff < 60)    return t('drawer.timeline_tab.justNow');
+  if (diff < 60)    return t($ => $.drawer.timeline_tab.justNow);
   if (diff < 3600)  return `${Math.floor(diff / 60)}m`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   return '';
@@ -1634,10 +1634,10 @@ function fmtRelative(d: Date, t: OrdersT): string {
 
 function fmtDayLabel(d: Date, t: OrdersT): string {
   const today = new Date();
-  if (d.toDateString() === today.toDateString()) return t('drawer.timeline_tab.today');
+  if (d.toDateString() === today.toDateString()) return t($ => $.drawer.timeline_tab.today);
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === yesterday.toDateString()) return t('drawer.timeline_tab.yesterday');
+  if (d.toDateString() === yesterday.toDateString()) return t($ => $.drawer.timeline_tab.yesterday);
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
 }
 
@@ -1711,14 +1711,14 @@ function FieldChange({ label, oldVal, newVal, t }: { label: string; oldVal: stri
       <p className="font-semibold text-foreground mb-2">{label}</p>
       <div className="space-y-1.5">
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{t('drawer.timeline_tab.before')}</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{t($ => $.drawer.timeline_tab.before)}</p>
           <p className={cn('font-mono break-all', oldVal ? 'line-through text-rose-600 dark:text-rose-400' : 'text-muted-foreground italic')}>{oldVal || '—'}</p>
         </div>
         <div className="flex justify-center">
           <ArrowDown className="size-3 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{t('drawer.timeline_tab.after')}</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{t($ => $.drawer.timeline_tab.after)}</p>
           <p className={cn('font-mono break-all font-medium', newVal ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground italic')}>{newVal || '—'}</p>
         </div>
       </div>
@@ -1757,21 +1757,21 @@ function StatusTransitionCard({
     <div className="rounded-md border border-border bg-muted/20 p-3 text-xs space-y-2.5">
       <div className="space-y-1.5">
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.previousStatus')}</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t($ => $.drawer.timeline_tab.previousStatus)}</p>
           <span className={badgeCls(oldStatus)}>{(t as unknown as TDynamic)(`status.${oldStatus}`, { defaultValue: oldStatus })}</span>
         </div>
         <div className="flex justify-center">
           <ArrowDown className="size-3 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.newStatus')}</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t($ => $.drawer.timeline_tab.newStatus)}</p>
           <span className={badgeCls(newStatus)}>{(t as unknown as TDynamic)(`status.${newStatus}`, { defaultValue: newStatus })}</span>
         </div>
       </div>
       {(byName || reason) ? (
         <div className="border-t border-border pt-2 space-y-1">
-          {byName  ? <p className="text-muted-foreground">{t('drawer.timeline_tab.by')} <span className="font-medium text-foreground">{byName}</span></p> : null}
-          {reason  ? <p className="text-muted-foreground">{t('drawer.timeline_tab.reason')} <span className="font-medium text-foreground">{reason}</span></p> : null}
+          {byName  ? <p className="text-muted-foreground">{t($ => $.drawer.timeline_tab.by)} <span className="font-medium text-foreground">{byName}</span></p> : null}
+          {reason  ? <p className="text-muted-foreground">{t($ => $.drawer.timeline_tab.reason)} <span className="font-medium text-foreground">{reason}</span></p> : null}
         </div>
       ) : null}
     </div>
@@ -1791,9 +1791,9 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
     case 'order_created':
       return (
         <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-          {meta.channel       ? <span>{t('drawer.timeline_tab.channel')}: <span className="font-medium text-foreground">{String(meta.channel)}</span></span> : null}
-          {meta.customer_name ? <span>{t('drawer.timeline_tab.customer')}: <span className="font-medium text-foreground">{String(meta.customer_name)}</span></span> : null}
-          {meta.order_total != null ? <span>{t('drawer.timeline_tab.total')}: <span className="font-medium text-foreground">{fmtCur(Number(meta.order_total))}</span></span> : null}
+          {meta.channel       ? <span>{t($ => $.drawer.timeline_tab.channel)}: <span className="font-medium text-foreground">{String(meta.channel)}</span></span> : null}
+          {meta.customer_name ? <span>{t($ => $.drawer.timeline_tab.customer)}: <span className="font-medium text-foreground">{String(meta.customer_name)}</span></span> : null}
+          {meta.order_total != null ? <span>{t($ => $.drawer.timeline_tab.total)}: <span className="font-medium text-foreground">{fmtCur(Number(meta.order_total))}</span></span> : null}
         </div>
       );
 
@@ -1803,9 +1803,9 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
       const notes  = String(meta.notes  ?? pl.notes  ?? '');
       return (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-1">
-          {method ? <p className="text-muted-foreground">{t('drawer.timeline_tab.method')} <span className="font-medium text-foreground capitalize">{method}</span></p> : null}
+          {method ? <p className="text-muted-foreground">{t($ => $.drawer.timeline_tab.method)} <span className="font-medium text-foreground capitalize">{method}</span></p> : null}
           {result ? (
-            <p className="text-muted-foreground">{t('drawer.timeline_tab.result')}{' '}
+            <p className="text-muted-foreground">{t($ => $.drawer.timeline_tab.result)}{' '}
               <span className={cn('font-semibold', result === 'confirmed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
                 {result}
               </span>
@@ -1828,7 +1828,7 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
           <div className="space-y-2">
             <FieldChange
               t={t}
-              label={t('drawer.timeline_tab.discount')}
+              label={t($ => $.drawer.timeline_tab.discount)}
               oldVal={fmt_(prev.discount_amount, prev.discount_type)}
               newVal={fmt_(next.discount_amount, next.discount_type)}
             />
@@ -1838,15 +1838,15 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
 
       return (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-1">
-          {type_  ? <p className="text-muted-foreground">{t('drawer.timeline_tab.type')} <span className="font-medium text-foreground capitalize">{type_}</span></p> : null}
+          {type_  ? <p className="text-muted-foreground">{t($ => $.drawer.timeline_tab.type)} <span className="font-medium text-foreground capitalize">{type_}</span></p> : null}
           {amount != null ? (
             <p className="text-muted-foreground">
-              {t('drawer.timeline_tab.value')} <span className="font-medium text-foreground">{type_ === 'percentage' ? `${amount}%` : fmtCur(Number(amount))}</span>
+              {t($ => $.drawer.timeline_tab.value)} <span className="font-medium text-foreground">{type_ === 'percentage' ? `${amount}%` : fmtCur(Number(amount))}</span>
             </p>
           ) : null}
           {calcVal != null ? (
             <p className="text-muted-foreground border-t border-border pt-1 mt-1">
-              {t('drawer.timeline_tab.calculated')} <span className="font-semibold text-amber-600 dark:text-amber-400">{fmtCur(Number(calcVal))}</span>
+              {t($ => $.drawer.timeline_tab.calculated)} <span className="font-semibold text-amber-600 dark:text-amber-400">{fmtCur(Number(calcVal))}</span>
             </p>
           ) : null}
         </div>
@@ -1864,9 +1864,9 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
       if (prevDep !== undefined && nextDep !== undefined) {
         return (
           <div className="space-y-2">
-            <FieldChange t={t} label={t('drawer.timeline_tab.deposit')} oldVal={fmtCur(Number(prevDep))} newVal={fmtCur(Number(nextDep))} />
+            <FieldChange t={t} label={t($ => $.drawer.timeline_tab.deposit)} oldVal={fmtCur(Number(prevDep))} newVal={fmtCur(Number(nextDep))} />
             {prevRem !== undefined && nextRem !== undefined
-              ? <FieldChange t={t} label={t('drawer.timeline_tab.remainingBalance')} oldVal={fmtCur(Number(prevRem))} newVal={fmtCur(Number(nextRem))} />
+              ? <FieldChange t={t} label={t($ => $.drawer.timeline_tab.remainingBalance)} oldVal={fmtCur(Number(prevRem))} newVal={fmtCur(Number(nextRem))} />
               : null}
           </div>
         );
@@ -1875,8 +1875,8 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
       const amount = pl.amount ?? meta.amount;
       return (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-1">
-          {amount != null ? <p className="text-muted-foreground">{t('drawer.timeline_tab.deposit')} <span className="font-medium text-foreground">{fmtCur(Number(amount))}</span></p> : null}
-          {grandTotal != null ? <p className="text-muted-foreground">{t('drawer.timeline_tab.grandTotal')} <span className="font-medium text-foreground">{fmtCur(Number(grandTotal))}</span></p> : null}
+          {amount != null ? <p className="text-muted-foreground">{t($ => $.drawer.timeline_tab.deposit)} <span className="font-medium text-foreground">{fmtCur(Number(amount))}</span></p> : null}
+          {grandTotal != null ? <p className="text-muted-foreground">{t($ => $.drawer.timeline_tab.grandTotal)} <span className="font-medium text-foreground">{fmtCur(Number(grandTotal))}</span></p> : null}
         </div>
       );
     }
@@ -1885,7 +1885,7 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
       const content = String(meta.content ?? pl.preview ?? '');
       return content ? (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.content')}</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t($ => $.drawer.timeline_tab.content)}</p>
           <p className="text-foreground whitespace-pre-wrap line-clamp-4">{content}</p>
         </div>
       ) : null;
@@ -1899,7 +1899,7 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
           <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs space-y-2">
             {oldContent ? (
               <div>
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.previous')}</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t($ => $.drawer.timeline_tab.previous)}</p>
                 <p className="text-muted-foreground line-through whitespace-pre-wrap line-clamp-3">{oldContent}</p>
               </div>
             ) : null}
@@ -1907,7 +1907,7 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
               <ArrowDown className="size-3 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.current')}</p>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t($ => $.drawer.timeline_tab.current)}</p>
               <p className="text-foreground whitespace-pre-wrap line-clamp-3">{newContent || '—'}</p>
             </div>
           </div>
@@ -1920,7 +1920,7 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
       const preview = String(meta.content_preview ?? '');
       return preview ? (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t('drawer.timeline_tab.deletedContent')}</p>
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">{t($ => $.drawer.timeline_tab.deletedContent)}</p>
           <p className="text-muted-foreground line-through whitespace-pre-wrap line-clamp-3">{preview}</p>
         </div>
       ) : null;
@@ -1983,19 +1983,19 @@ function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
         );
       }
       return ev.changed_fields?.length ? (
-        <p className="text-xs text-muted-foreground">{t('drawer.timeline_tab.modified')} {ev.changed_fields.join(', ')}</p>
+        <p className="text-xs text-muted-foreground">{t($ => $.drawer.timeline_tab.modified)} {ev.changed_fields.join(', ')}</p>
       ) : null;
 
     case 'order_zone_updated': {
       const prev_ = String(pl.previous_zone ?? '');
       const next_ = String(pl.new_zone ?? '');
-      return prev_ || next_ ? <FieldChange t={t} label={t('drawer.timeline_tab.deliveryZone')} oldVal={prev_} newVal={next_} /> : null;
+      return prev_ || next_ ? <FieldChange t={t} label={t($ => $.drawer.timeline_tab.deliveryZone)} oldVal={prev_} newVal={next_} /> : null;
     }
 
     case 'shipping_override':
       return pl.cost != null ? (
         <div className="rounded-md border border-border bg-muted/20 p-2.5 text-xs">
-          <p className="text-muted-foreground">{t('drawer.timeline_tab.customCost')} <span className="font-semibold text-foreground">{fmtCur(Number(pl.cost))}</span></p>
+          <p className="text-muted-foreground">{t($ => $.drawer.timeline_tab.customCost)} <span className="font-semibold text-foreground">{fmtCur(Number(pl.cost))}</span></p>
         </div>
       ) : null;
 
@@ -2025,10 +2025,10 @@ function ActorBlock({ ev }: { ev: OrderActivity }) {
     <div className="mt-1.5 space-y-1 text-xs">
       {/* Identity */}
       <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
-        {name     ? <><span className="text-muted-foreground">{t('drawer.actor.by')}</span><span className="font-medium text-foreground">{name}</span></> : null}
-        {username ? <><span className="text-muted-foreground">{t('drawer.actor.user')}</span><span className="font-mono text-foreground">{username}</span></> : null}
-        {role     ? <><span className="text-muted-foreground">{t('drawer.actor.role')}</span><span className="text-foreground">{role}</span></> : null}
-        {branch   ? <><span className="text-muted-foreground">{t('drawer.actor.branch')}</span><span className="text-foreground">{branch}</span></> : null}
+        {name     ? <><span className="text-muted-foreground">{t($ => $.drawer.actor.by)}</span><span className="font-medium text-foreground">{name}</span></> : null}
+        {username ? <><span className="text-muted-foreground">{t($ => $.drawer.actor.user)}</span><span className="font-mono text-foreground">{username}</span></> : null}
+        {role     ? <><span className="text-muted-foreground">{t($ => $.drawer.actor.role)}</span><span className="text-foreground">{role}</span></> : null}
+        {branch   ? <><span className="text-muted-foreground">{t($ => $.drawer.actor.branch)}</span><span className="text-foreground">{branch}</span></> : null}
       </div>
       {/* Exact timestamp */}
       <div className="flex items-baseline gap-2 text-muted-foreground">
@@ -2079,7 +2079,7 @@ function TimelineTab({ order }: { order: Order }) {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-center p-4">
         <Activity className="size-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">{t('drawer.timeline_tab.noEvents')}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.drawer.timeline_tab.noEvents)}</p>
       </div>
     );
   }
@@ -2148,7 +2148,7 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
     <div className="flex flex-col gap-6 p-4">
       {/* Current status */}
       <div>
-        <SectionTitle>{t('drawer.history_tab.currentStatus')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.history_tab.currentStatus)}</SectionTitle>
         <div className="rounded-md border bg-muted/20 px-4 py-3 flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -2156,14 +2156,14 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
             </div>
             {typedOrder.status_entered_at ? (
               <p className="text-xs text-muted-foreground">
-                {t('drawer.history_tab.enteredAt')}{' '}
+                {t($ => $.drawer.history_tab.enteredAt)}{' '}
                 {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
                   new Date(typedOrder.status_entered_at),
                 )}
               </p>
             ) : null}
             {typedOrder.status_entered_by ? (
-              <p className="text-xs text-muted-foreground">{t('drawer.history_tab.by')} {typedOrder.status_entered_by}</p>
+              <p className="text-xs text-muted-foreground">{t($ => $.drawer.history_tab.by)} {typedOrder.status_entered_by}</p>
             ) : null}
           </div>
         </div>
@@ -2172,7 +2172,7 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
       {/* Previous status */}
       {typedOrder.previous_status ? (
         <div>
-          <SectionTitle>{t('drawer.history_tab.previousStatus')}</SectionTitle>
+          <SectionTitle>{t($ => $.drawer.history_tab.previousStatus)}</SectionTitle>
           <div className="rounded-md border px-4 py-3">
             <p className="text-sm font-medium capitalize text-muted-foreground">
               {(t as unknown as TDynamic)(`status.${String(typedOrder.previous_status)}`, { defaultValue: String(typedOrder.previous_status).replace(/_/g, ' ') })}
@@ -2183,28 +2183,28 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
 
       {/* Key dates */}
       <div>
-        <SectionTitle>{t('drawer.history_tab.keyDates')}</SectionTitle>
+        <SectionTitle>{t($ => $.drawer.history_tab.keyDates)}</SectionTitle>
         <DetailGrid>
-          <DetailRow label={t('drawer.history_tab.createdAt')}>
+          <DetailRow label={t($ => $.drawer.history_tab.createdAt)}>
             {formatDate(order.created_at)}
           </DetailRow>
           {order.date_paid ? (
-            <DetailRow label={t('drawer.history_tab.paymentConfirmed')}>
+            <DetailRow label={t($ => $.drawer.history_tab.paymentConfirmed)}>
               {formatDate(order.date_paid)}
             </DetailRow>
           ) : null}
           {order.inventory_reserved_at ? (
-            <DetailRow label={t('drawer.history_tab.reserved')}>
+            <DetailRow label={t($ => $.drawer.history_tab.reserved)}>
               {formatDate(order.inventory_reserved_at)}
             </DetailRow>
           ) : null}
           {order.inventory_shipped_at ? (
-            <DetailRow label={t('drawer.history_tab.shipped')}>
+            <DetailRow label={t($ => $.drawer.history_tab.shipped)}>
               {formatDate(order.inventory_shipped_at)}
             </DetailRow>
           ) : null}
           {order.requested_delivery_date ? (
-            <DetailRow label={t('drawer.history_tab.requestedDelivery')}>
+            <DetailRow label={t($ => $.drawer.history_tab.requestedDelivery)}>
               {formatDate(order.requested_delivery_date)}
             </DetailRow>
           ) : null}
@@ -2213,12 +2213,12 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
 
       {/* Order source */}
       <div>
-        <SectionTitle>{t('drawer.history_tab.orderSource')}</SectionTitle>
-        <p className="text-sm capitalize">{order.source ?? t('drawer.history_tab.manual')}</p>
+        <SectionTitle>{t($ => $.drawer.history_tab.orderSource)}</SectionTitle>
+        <p className="text-sm capitalize">{order.source ?? t($ => $.drawer.history_tab.manual)}</p>
       </div>
 
       <p className="text-xs text-muted-foreground border-t pt-3">
-        {t('drawer.history_tab.auditLogNote')}
+        {t($ => $.drawer.history_tab.auditLogNote)}
       </p>
     </div>
   );
@@ -2247,17 +2247,17 @@ export function OrderDetailDrawer({ order, open, onOpenChange, onEdit }: OrderDe
   const isEnriching = detailLoading && !detailOrder;
 
   const tabs = [
-    { key: 'summary',   label: t('drawer.tabs.summary'),   content: <SummaryTab order={displayOrder} t={t} /> },
-    { key: 'workflow',  label: t('drawer.tabs.workflow'),   content: <WorkflowTab order={displayOrder} onClose={() => onOpenChange(false)} /> },
-    { key: 'history',   label: t('drawer.tabs.history'),   content: <WorkflowHistoryTab order={displayOrder} /> },
-    { key: 'customer',  label: t('drawer.tabs.customer'),   content: <CustomerTab order={displayOrder} t={t} /> },
-    { key: 'products',  label: t('drawer.tabs.products'),   content: <ProductsTab order={displayOrder} t={t} />, badge: (displayOrder.lines ?? []).length },
-    { key: 'inventory', label: t('drawer.tabs.inventory'),  content: <InventoryTab order={displayOrder} /> },
-    { key: 'timeline',  label: t('drawer.tabs.timeline'),   content: <TimelineTab order={displayOrder} /> },
-    { key: 'payment',   label: t('drawer.tabs.payment'),    content: <PaymentTab order={displayOrder} t={t} /> },
-    { key: 'shipping',  label: t('drawer.tabs.shipping'),   content: <ShippingTab order={displayOrder} t={t} /> },
-    { key: 'notes',     label: t('drawer.tabs.notes'),      content: <OrderNotesTab order={displayOrder} /> },
-    { key: 'location',  label: t('drawer.tabs.location'),   content: <LocationTab order={displayOrder} t={t} /> },
+    { key: 'summary',   label: t($ => $.drawer.tabs.summary),   content: <SummaryTab order={displayOrder} t={t} /> },
+    { key: 'workflow',  label: t($ => $.drawer.tabs.workflow),   content: <WorkflowTab order={displayOrder} onClose={() => onOpenChange(false)} /> },
+    { key: 'history',   label: t($ => $.drawer.tabs.history),   content: <WorkflowHistoryTab order={displayOrder} /> },
+    { key: 'customer',  label: t($ => $.drawer.tabs.customer),   content: <CustomerTab order={displayOrder} t={t} /> },
+    { key: 'products',  label: t($ => $.drawer.tabs.products),   content: <ProductsTab order={displayOrder} t={t} />, badge: (displayOrder.lines ?? []).length },
+    { key: 'inventory', label: t($ => $.drawer.tabs.inventory),  content: <InventoryTab order={displayOrder} /> },
+    { key: 'timeline',  label: t($ => $.drawer.tabs.timeline),   content: <TimelineTab order={displayOrder} /> },
+    { key: 'payment',   label: t($ => $.drawer.tabs.payment),    content: <PaymentTab order={displayOrder} t={t} /> },
+    { key: 'shipping',  label: t($ => $.drawer.tabs.shipping),   content: <ShippingTab order={displayOrder} t={t} /> },
+    { key: 'notes',     label: t($ => $.drawer.tabs.notes),      content: <OrderNotesTab order={displayOrder} /> },
+    { key: 'location',  label: t($ => $.drawer.tabs.location),   content: <LocationTab order={displayOrder} t={t} /> },
   ];
 
   return (
@@ -2285,7 +2285,7 @@ export function OrderDetailDrawer({ order, open, onOpenChange, onEdit }: OrderDe
                 onClick={() => { onEdit(displayOrder); onOpenChange(false); }}
               >
                 <Edit className="size-3.5" />
-                {t('actions.edit')}
+                {t($ => $.actions.edit)}
               </Button>
             ) : null}
             <SheetClose asChild>

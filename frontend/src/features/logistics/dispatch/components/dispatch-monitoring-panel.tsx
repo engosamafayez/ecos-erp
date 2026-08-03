@@ -40,76 +40,76 @@ export function DispatchMonitoringPanel() {
    * nothing was attempted invites a decision that the data does not support.
    */
   const percent = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return t('common.noDataYet');
+    if (value === null || value === undefined) return t($ => $.common.noDataYet);
     return `${Math.round(value * 100)}%`;
   };
 
   const minutes = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return t('common.noDataYet');
-    return t('dispatch.units.minutes', { value });
+    if (value === null || value === undefined) return t($ => $.common.noDataYet);
+    return t($ => $.dispatch.units.minutes, { value });
   };
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Panel title={t('dispatch.monitoring.dispatch')}>
-        <Row label={t('dispatch.monitoring.sessionsOpened')} value={kpis?.sessions_opened} />
-        <Row label={t('dispatch.monitoring.sessionsActive')} value={kpis?.sessions_active} />
-        <Row label={t('dispatch.monitoring.sessionsAbandoned')} value={kpis?.sessions_abandoned} />
+      <Panel title={t($ => $.dispatch.monitoring.dispatch)}>
+        <Row label={t($ => $.dispatch.monitoring.sessionsOpened)} value={kpis?.sessions_opened} />
+        <Row label={t($ => $.dispatch.monitoring.sessionsActive)} value={kpis?.sessions_active} />
+        <Row label={t($ => $.dispatch.monitoring.sessionsAbandoned)} value={kpis?.sessions_abandoned} />
         <Row
-          label={t('dispatch.monitoring.allocationsAttempted')}
+          label={t($ => $.dispatch.monitoring.allocationsAttempted)}
           value={kpis?.allocations_attempted}
         />
         <Row
-          label={t('dispatch.monitoring.allocationsConfirmed')}
+          label={t($ => $.dispatch.monitoring.allocationsConfirmed)}
           value={kpis?.allocations_confirmed}
         />
-        <Row label={t('dispatch.monitoring.allocationsFailed')} value={kpis?.allocations_failed} />
+        <Row label={t($ => $.dispatch.monitoring.allocationsFailed)} value={kpis?.allocations_failed} />
         <Row
-          label={t('dispatch.monitoring.confirmationRate')}
+          label={t($ => $.dispatch.monitoring.confirmationRate)}
           value={percent(kpis?.confirmation_rate)}
         />
-        <Row label={t('dispatch.monitoring.automaticShare')} value={percent(kpis?.automatic_share)} />
+        <Row label={t($ => $.dispatch.monitoring.automaticShare)} value={percent(kpis?.automatic_share)} />
         <Row
-          label={t('dispatch.monitoring.avgSessionLength')}
+          label={t($ => $.dispatch.monitoring.avgSessionLength)}
           value={minutes(kpis?.avg_session_minutes)}
         />
       </Panel>
 
-      <Panel title={t('dispatch.monitoring.queue')}>
-        <Row label={t('dispatch.monitoring.depth')} value={queue?.depth} />
-        <Row label={t('dispatch.monitoring.needsAction')} value={queue?.needs_action} />
-        <Row label={t('dispatch.monitoring.stuck')} value={queue?.stuck} />
-        <Row label={t('dispatch.monitoring.avgWait')} value={minutes(queue?.avg_wait_minutes)} />
+      <Panel title={t($ => $.dispatch.monitoring.queue)}>
+        <Row label={t($ => $.dispatch.monitoring.depth)} value={queue?.depth} />
+        <Row label={t($ => $.dispatch.monitoring.needsAction)} value={queue?.needs_action} />
+        <Row label={t($ => $.dispatch.monitoring.stuck)} value={queue?.stuck} />
+        <Row label={t($ => $.dispatch.monitoring.avgWait)} value={minutes(queue?.avg_wait_minutes)} />
         <Row
-          label={t('dispatch.monitoring.longestWait')}
+          label={t($ => $.dispatch.monitoring.longestWait)}
           value={minutes(queue?.oldest_wait_minutes)}
         />
       </Panel>
 
-      <Panel title={t('dispatch.monitoring.assignmentHealth')}>
-        <Row label={t('dispatch.monitoring.openConflicts')} value={health?.open_conflicts} />
-        <Row label={t('dispatch.monitoring.blockingConflicts')} value={health?.blocking_conflicts} />
+      <Panel title={t($ => $.dispatch.monitoring.assignmentHealth)}>
+        <Row label={t($ => $.dispatch.monitoring.openConflicts)} value={health?.open_conflicts} />
+        <Row label={t($ => $.dispatch.monitoring.blockingConflicts)} value={health?.blocking_conflicts} />
         <Row
-          label={t('dispatch.monitoring.oldestConflict')}
+          label={t($ => $.dispatch.monitoring.oldestConflict)}
           value={minutes(health?.oldest_conflict_minutes)}
         />
-        <Row label={t('dispatch.monitoring.pendingReviews')} value={health?.pending_reviews} />
+        <Row label={t($ => $.dispatch.monitoring.pendingReviews)} value={health?.pending_reviews} />
         <Row
-          label={t('dispatch.monitoring.oldestReview')}
+          label={t($ => $.dispatch.monitoring.oldestReview)}
           value={minutes(health?.oldest_review_minutes)}
         />
-        <Row label={t('dispatch.monitoring.heldResources')} value={health?.held_locks} />
+        <Row label={t($ => $.dispatch.monitoring.heldResources)} value={health?.held_locks} />
       </Panel>
 
       {/* Read from Network's ledger. Dispatch reports it; it does not own it. */}
-      <Panel title={t('dispatch.monitoring.capacityOwnedByNetwork')}>
-        <Row label={t('dispatch.monitoring.slots')} value={capacity?.slot_count} />
+      <Panel title={t($ => $.dispatch.monitoring.capacityOwnedByNetwork)}>
+        <Row label={t($ => $.dispatch.monitoring.slots)} value={capacity?.slot_count} />
         <Row
-          label={t('dispatch.monitoring.avgUtilisation')}
+          label={t($ => $.dispatch.monitoring.avgUtilisation)}
           value={percent(capacity?.avg_utilisation)}
         />
-        <Row label={t('dispatch.monitoring.nearCapacity')} value={capacity?.at_warn_threshold} />
-        <Row label={t('dispatch.monitoring.exhausted')} value={capacity?.exhausted} />
+        <Row label={t($ => $.dispatch.monitoring.nearCapacity)} value={capacity?.at_warn_threshold} />
+        <Row label={t($ => $.dispatch.monitoring.exhausted)} value={capacity?.exhausted} />
       </Panel>
     </div>
   );

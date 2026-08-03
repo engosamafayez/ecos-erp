@@ -45,20 +45,20 @@ export function OrderInlineStatusCell({ order, onSuccess }: Props) {
   const transition = useOrderWorkflowTransition();
 
   const statusLabel: Record<string, string> = {
-    scheduled:        t('status.scheduled'),
-    pending:          t('status.pending'),
-    awaiting_payment: t('status.awaiting_payment'),
-    processing:       t('status.processing'),
-    awaiting_stock:   t('status.awaiting_stock'),
-    confirmed:        t('status.confirmed'),
-    preparing:        t('status.preparing'),
-    out_for_delivery: t('status.out_for_delivery'),
-    delivered:        t('status.delivered'),
-    completed:        t('status.completed'),
-    cancelled:        t('status.cancelled'),
-    review:           t('status.review'),
-    rescheduled:      t('status.rescheduled'),
-    returned:         t('status.returned'),
+    scheduled:        t($ => $.status.scheduled),
+    pending:          t($ => $.status.pending),
+    awaiting_payment: t($ => $.status.awaiting_payment),
+    processing:       t($ => $.status.processing),
+    awaiting_stock:   t($ => $.status.awaiting_stock),
+    confirmed:        t($ => $.status.confirmed),
+    preparing:        t($ => $.status.preparing),
+    out_for_delivery: t($ => $.status.out_for_delivery),
+    delivered:        t($ => $.status.delivered),
+    completed:        t($ => $.status.completed),
+    cancelled:        t($ => $.status.cancelled),
+    review:           t($ => $.status.review),
+    rescheduled:      t($ => $.status.rescheduled),
+    returned:         t($ => $.status.returned),
   };
 
   const transitions = order.allowed_status_transitions ?? [];
@@ -107,11 +107,11 @@ export function OrderInlineStatusCell({ order, onSuccess }: Props) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48 max-h-72 overflow-y-auto">
         <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {t('statusSelector.moveTo')}
+          {t($ => $.statusSelector.moveTo)}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {transitions.length === 0 ? (
-          <DropdownMenuItem disabled>{t('statusSelector.noTransitions')}</DropdownMenuItem>
+          <DropdownMenuItem disabled>{t($ => $.statusSelector.noTransitions)}</DropdownMenuItem>
         ) : (
           transitions.map((tr) => (
             <DropdownMenuItem key={tr.target_status} onClick={() => handleSelect(tr.target_status)}>

@@ -152,7 +152,7 @@ export function AuthorityBadge({ authority }: { authority: 'fleet' | 'drivers' }
 
   return (
     <Badge variant="outline" className="text-[10px]">
-      {t(`operations.badges.authority.${authority}`)}
+      {t($ => $.operations.badges.authority[authority])}
     </Badge>
   );
 }

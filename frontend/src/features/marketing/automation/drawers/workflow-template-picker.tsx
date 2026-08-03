@@ -41,12 +41,12 @@ function TemplateCard({ template, onUse }: { template: AutomationWorkflowTemplat
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">{template.name}</p>
           <p className="text-xs text-muted-foreground">
-            {t(`automation.templateCategory.${template.category}`, { defaultValue: template.category })}
+            {t($ => $.automation.templateCategory[template.category], { defaultValue: template.category })}
           </p>
         </div>
         {template.is_global && (
           <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded flex-shrink-0">
-            {t('automation.templates.global')}
+            {t($ => $.automation.templates.global)}
           </span>
         )}
       </div>
@@ -55,10 +55,10 @@ function TemplateCard({ template, onUse }: { template: AutomationWorkflowTemplat
       )}
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
-          {t('automation.templates.usedTimes', { count: template.usage_count })}
+          {t($ => $.automation.templates.usedTimes, { count: template.usage_count })}
         </span>
         <Button size="sm" className="h-6 text-xs" onClick={onUse}>
-          {t('automation.templates.use')}
+          {t($ => $.automation.templates.use)}
         </Button>
       </div>
     </div>
@@ -86,13 +86,13 @@ export function WorkflowTemplatePicker({ open, onClose }: Props) {
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
       <SheetContent className="w-[540px] flex flex-col">
         <SheetHeader>
-          <SheetTitle>{t('automation.templates.title')}</SheetTitle>
+          <SheetTitle>{t($ => $.automation.templates.title)}</SheetTitle>
         </SheetHeader>
 
         <div className="relative mt-4">
           <Search className="absolute start-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder={t('automation.templates.search')}
+            placeholder={t($ => $.automation.templates.search)}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="ps-8 h-8"
@@ -107,7 +107,7 @@ export function WorkflowTemplatePicker({ open, onClose }: Props) {
                 !category ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
-              {t('common.all')}
+              {t($ => $.common.all)}
             </button>
             {categories.map(cat => (
               <button
@@ -117,7 +117,7 @@ export function WorkflowTemplatePicker({ open, onClose }: Props) {
                   category === cat ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                {CATEGORY_ICONS[cat]} {t(`automation.templateCategory.${cat}`, { defaultValue: cat })}
+                {CATEGORY_ICONS[cat]} {t($ => $.automation.templateCategory[cat], { defaultValue: cat })}
               </button>
             ))}
           </div>
@@ -125,11 +125,11 @@ export function WorkflowTemplatePicker({ open, onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto mt-4">
           {isLoading ? (
-            <div className="text-sm text-muted-foreground">{t('automation.templates.loading')}</div>
+            <div className="text-sm text-muted-foreground">{t($ => $.automation.templates.loading)}</div>
           ) : templates.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-2">
               <Zap className="h-6 w-6 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">{t('automation.templates.empty')}</p>
+              <p className="text-sm text-muted-foreground">{t($ => $.automation.templates.empty)}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2">

@@ -48,13 +48,13 @@ function ConflictRow({ conflict }: { conflict: DispatchConflict }) {
             <AuthorityBadge authority={conflict.authority} />
             {conflict.blocks_release && (
               <Badge variant="destructive" className="text-[10px]">
-                {t('dispatch.conflicts.blocksRelease')}
+                {t($ => $.dispatch.conflicts.blocksRelease)}
               </Badge>
             )}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">{conflict.description}</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {t('dispatch.conflicts.openFor', { minutes: conflict.age_minutes })} ·{' '}
+            {t($ => $.dispatch.conflicts.openFor, { minutes: conflict.age_minutes })} ·{' '}
             {conflict.status_label}
           </p>
         </div>
@@ -65,8 +65,8 @@ function ConflictRow({ conflict }: { conflict: DispatchConflict }) {
           {!canOverride && (
             <p className="text-[11px] text-muted-foreground">
               {/* Named plainly so the dispatcher goes to the right module. */}
-              {t('dispatch.conflicts.ownedByOther', {
-                authority: t(`dispatch.authority.${conflict.authority}`),
+              {t($ => $.dispatch.conflicts.ownedByOther, {
+                authority: t($ => $.dispatch.authority[conflict.authority]),
               })}
             </p>
           )}
@@ -74,7 +74,7 @@ function ConflictRow({ conflict }: { conflict: DispatchConflict }) {
           <Input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder={t('dispatch.conflicts.actionPlaceholder')}
+            placeholder={t($ => $.dispatch.conflicts.actionPlaceholder)}
             className="h-8 text-xs"
           />
 
@@ -88,10 +88,10 @@ function ConflictRow({ conflict }: { conflict: DispatchConflict }) {
                 resolve.mutate(
                   { id: conflict.id, resolution: 'resolved', reason: reason.trim() || undefined },
                   {
-                    onSuccess: () => toast({ title: t('dispatch.toast.conflictClosed') }),
+                    onSuccess: () => toast({ title: t($ => $.dispatch.toast.conflictClosed) }),
                     onError: () =>
                       toast({
-                        title: t('dispatch.toast.conflictCloseFailed'),
+                        title: t($ => $.dispatch.toast.conflictCloseFailed),
                         variant: 'destructive',
                       }),
                   },
@@ -99,7 +99,7 @@ function ConflictRow({ conflict }: { conflict: DispatchConflict }) {
               }
             >
               <CheckCircle2 className="me-1 size-3.5" />
-              {t('dispatch.conflicts.markResolved')}
+              {t($ => $.dispatch.conflicts.markResolved)}
             </Button>
 
             {canOverride && (
@@ -112,17 +112,17 @@ function ConflictRow({ conflict }: { conflict: DispatchConflict }) {
                   override.mutate(
                     { id: conflict.id, reason: reason.trim() },
                     {
-                      onSuccess: () => toast({ title: t('dispatch.toast.overrideRecorded') }),
+                      onSuccess: () => toast({ title: t($ => $.dispatch.toast.overrideRecorded) }),
                       onError: () =>
                         toast({
-                          title: t('dispatch.toast.overrideRefused'),
+                          title: t($ => $.dispatch.toast.overrideRefused),
                           variant: 'destructive',
                         }),
                     },
                   )
                 }
               >
-                {t('dispatch.conflicts.override')}
+                {t($ => $.dispatch.conflicts.override)}
               </Button>
             )}
           </div>
@@ -144,7 +144,7 @@ function PendingReviews() {
   if (!reviews || reviews.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        {t('dispatch.reviews.empty')}
+        {t($ => $.dispatch.reviews.empty)}
       </p>
     );
   }
@@ -161,7 +161,7 @@ function PendingReviews() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">{review.trigger_reason ?? review.trigger}</p>
                 <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  {t('dispatch.reviews.waitingFor', { minutes: review.waiting_minutes })}
+                  {t($ => $.dispatch.reviews.waitingFor, { minutes: review.waiting_minutes })}
                 </p>
               </div>
             </div>
@@ -170,7 +170,7 @@ function PendingReviews() {
               <Input
                 value={reason}
                 onChange={(e) => setReasons((r) => ({ ...r, [review.id]: e.target.value }))}
-                placeholder={t('dispatch.reviews.notePlaceholder')}
+                placeholder={t($ => $.dispatch.reviews.notePlaceholder)}
                 className="h-8 max-w-xs text-xs"
               />
               <Button
@@ -181,15 +181,15 @@ function PendingReviews() {
                   approve.mutate(
                     { id: review.id, reason: reason.trim() || undefined },
                     {
-                      onSuccess: () => toast({ title: t('dispatch.toast.approved') }),
+                      onSuccess: () => toast({ title: t($ => $.dispatch.toast.approved) }),
                       onError: () =>
-                        toast({ title: t('dispatch.toast.approveFailed'), variant: 'destructive' }),
+                        toast({ title: t($ => $.dispatch.toast.approveFailed), variant: 'destructive' }),
                     },
                   )
                 }
               >
                 <ShieldCheck className="me-1 size-3.5" />
-                {t('dispatch.reviews.approve')}
+                {t($ => $.dispatch.reviews.approve)}
               </Button>
               <Button
                 size="sm"
@@ -201,14 +201,14 @@ function PendingReviews() {
                   reject.mutate(
                     { id: review.id, reason: reason.trim() },
                     {
-                      onSuccess: () => toast({ title: t('dispatch.toast.rejected') }),
+                      onSuccess: () => toast({ title: t($ => $.dispatch.toast.rejected) }),
                       onError: () =>
-                        toast({ title: t('dispatch.toast.rejectFailed'), variant: 'destructive' }),
+                        toast({ title: t($ => $.dispatch.toast.rejectFailed), variant: 'destructive' }),
                     },
                   )
                 }
               >
-                {t('dispatch.reviews.reject')}
+                {t($ => $.dispatch.reviews.reject)}
               </Button>
             </div>
           </div>
@@ -247,19 +247,19 @@ export function DispatchConflictsPanel() {
         <Alert>
           <ShieldAlert className="size-4" />
           <AlertDescription className="text-xs">
-            {t('dispatch.conflicts.ownedElsewhere', {
+            {t($ => $.dispatch.conflicts.ownedElsewhere, {
               list: elsewhere
-                .map(([authority, count]) => `${t(`dispatch.authority.${authority}`)}: ${count}`)
+                .map(([authority, count]) => `${t($ => $.dispatch.authority[authority])}: ${count}`)
                 .join(', '),
             })}
           </AlertDescription>
         </Alert>
       )}
 
-      <Panel title={t('dispatch.conflicts.title', { total: items.length })}>
+      <Panel title={t($ => $.dispatch.conflicts.title, { total: items.length })}>
         {items.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {t('dispatch.conflicts.empty')}
+            {t($ => $.dispatch.conflicts.empty)}
           </p>
         ) : (
           <div className="space-y-2">
@@ -270,7 +270,7 @@ export function DispatchConflictsPanel() {
         )}
       </Panel>
 
-      <Panel title={t('dispatch.reviews.title', { total: health?.pending_reviews ?? 0 })}>
+      <Panel title={t($ => $.dispatch.reviews.title, { total: health?.pending_reviews ?? 0 })}>
         <PendingReviews />
       </Panel>
     </div>

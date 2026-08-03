@@ -23,39 +23,39 @@ function deriveInsights(data: ExecutiveDashboardData, t: DashboardT, money: (n: 
   const { sales: s, shipping: sh, marketing: mk } = data;
 
   if (s.revenue_trend_pct !== null && s.revenue_trend_pct > 20)
-    out.push({ level: 'positive', message: t('brief.revenueUp', { pct: s.revenue_trend_pct.toFixed(1) }) });
+    out.push({ level: 'positive', message: t($ => $.brief.revenueUp, { pct: s.revenue_trend_pct.toFixed(1) }) });
   else if (s.revenue_trend_pct !== null && s.revenue_trend_pct < -20)
-    out.push({ level: 'alert',    message: t('brief.revenueDown', { pct: Math.abs(s.revenue_trend_pct).toFixed(1) }) });
+    out.push({ level: 'alert',    message: t($ => $.brief.revenueDown, { pct: Math.abs(s.revenue_trend_pct).toFixed(1) }) });
 
   if (s.cancelled_today > 0 && s.orders_today > 0) {
     const rate = ((s.cancelled_today / s.orders_today) * 100).toFixed(0);
     out.push({ level: s.cancelled_today / s.orders_today > 0.1 ? 'alert' : 'info',
-      message: t('brief.cancelledOrders', { count: s.cancelled_today, rate }) });
+      message: t($ => $.brief.cancelledOrders, { count: s.cancelled_today, rate }) });
   }
 
   if (mk.roas !== null && mk.roas > 4)
-    out.push({ level: 'positive', message: t('brief.roasHigh', { roas: mk.roas }) });
+    out.push({ level: 'positive', message: t($ => $.brief.roasHigh, { roas: mk.roas }) });
   else if (mk.roas !== null && mk.roas < 1 && mk.spend_this_month > 0)
-    out.push({ level: 'alert',    message: t('brief.roasLow') });
+    out.push({ level: 'alert',    message: t($ => $.brief.roasLow) });
 
   if (sh.failed_today > 0) {
     const rate = sh.shipments_today > 0 ? ((sh.failed_today / sh.shipments_today) * 100).toFixed(0) : '100';
     out.push({ level: sh.failed_today >= 3 ? 'alert' : 'tip',
       message: sh.failed_today === 1
-        ? t('brief.failedDelivery', { count: sh.failed_today, rate })
-        : t('brief.failedDeliveries', { count: sh.failed_today, rate }) });
+        ? t($ => $.brief.failedDelivery, { count: sh.failed_today, rate })
+        : t($ => $.brief.failedDeliveries, { count: sh.failed_today, rate }) });
   }
 
   if (sh.cod_pending > 10_000)
-    out.push({ level: 'tip', message: t('brief.codPending', { amount: money(sh.cod_pending) }) });
+    out.push({ level: 'tip', message: t($ => $.brief.codPending, { amount: money(sh.cod_pending) }) });
 
   if (s.pending_count > 50)
-    out.push({ level: 'tip', message: t('brief.pendingQueue', { count: s.pending_count }) });
+    out.push({ level: 'tip', message: t($ => $.brief.pendingQueue, { count: s.pending_count }) });
 
   if (out.length === 0) {
     out.push(s.orders_today === 0
-      ? { level: 'info', message: t('brief.noOrdersYet') }
-      : { level: 'info', message: t('brief.allOnTrack', { count: s.orders_today, revenue: money(s.revenue_today) }) });
+      ? { level: 'info', message: t($ => $.brief.noOrdersYet) }
+      : { level: 'info', message: t($ => $.brief.allOnTrack, { count: s.orders_today, revenue: money(s.revenue_today) }) });
   }
 
   return out.slice(0, 5);
@@ -97,14 +97,14 @@ export function DashboardAiBrief({ data, loading }: Props) {
         <div className="mb-3 flex items-center gap-2.5">
           <Sparkles className="h-3.5 w-3.5 shrink-0 text-violet-500" />
           <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-600 dark:text-violet-400">
-            {t('brief.header')}
+            {t($ => $.brief.header)}
           </span>
           {alertCount > 0 && (
             <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
-              {alertCount} {alertCount === 1 ? t('brief.alert') : t('brief.alerts')}
+              {alertCount} {alertCount === 1 ? t($ => $.brief.alert) : t($ => $.brief.alerts)}
             </span>
           )}
-          <span className="ml-auto text-[10px] text-muted-foreground/50">{t('brief.caption')}</span>
+          <span className="ml-auto text-[10px] text-muted-foreground/50">{t($ => $.brief.caption)}</span>
         </div>
 
         {/* Insights */}

@@ -26,16 +26,16 @@ export function SavedViewsMenu({ label }: SavedViewsMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5">
           <Bookmark className="size-3.5" />
-          {label ?? t('savedViews.label')}
+          {label ?? t($ => $.savedViews.label)}
           <ChevronDown className="size-3" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-          {t('savedViews.empty')}
+          {t($ => $.savedViews.empty)}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>{t('savedViews.saveCurrent')}</DropdownMenuItem>
+        <DropdownMenuItem disabled>{t($ => $.savedViews.saveCurrent)}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

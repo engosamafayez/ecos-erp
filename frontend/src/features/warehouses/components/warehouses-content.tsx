@@ -69,18 +69,18 @@ export function WarehousesContent() {
   };
 
   const columns: ColumnDef<Warehouse>[] = [
-    { key: 'company', header: t('columns.company'), cell: (w) => w.company?.name ?? '—' },
+    { key: 'company', header: t($ => $.columns.company), cell: (w) => w.company?.name ?? '—' },
     {
       key: 'code',
-      header: t('columns.code'),
+      header: t($ => $.columns.code),
       sortable: true,
       cell: (w) => <span className="font-medium">{w.code}</span>,
     },
-    { key: 'name', header: t('columns.name'), sortable: true, cell: (w) => w.name },
-    { key: 'city', header: t('columns.city'), sortable: true, cell: (w) => w.city ?? '—' },
+    { key: 'name', header: t($ => $.columns.name), sortable: true, cell: (w) => w.name },
+    { key: 'city', header: t($ => $.columns.city), sortable: true, cell: (w) => w.city ?? '—' },
     {
       key: 'is_active',
-      header: t('columns.status'),
+      header: t($ => $.columns.status),
       sortable: true,
       cell: (w) => <StatusBadge status={w.is_active ? 'active' : 'inactive'} />,
     },
@@ -89,7 +89,7 @@ export function WarehousesContent() {
   return (
     <>
       <EntityToolbar
-        searchPlaceholder={t('search')}
+        searchPlaceholder={t($ => $.search)}
         onSearchChange={(v) => { setSearch(v); setPage(1); }}
         onRefresh={() => void refetch()}
         isRefreshing={isFetching}
@@ -98,23 +98,23 @@ export function WarehousesContent() {
         filterPanel={
           <>
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">{tCommon('filters.company')}</span>
+              <span className="text-sm font-medium">{tCommon($ => $.filters.company)}</span>
               <CompanySelect
                 value={companyFilter}
                 onChange={(v) => { setCompanyFilter(v); setPage(1); }}
-                placeholder={tCommon('filters.allCompanies')}
+                placeholder={tCommon($ => $.filters.allCompanies)}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">{tCommon('filters.status')}</span>
+              <span className="text-sm font-medium">{tCommon($ => $.filters.status)}</span>
               <select
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value as WarehouseStatusFilter); setPage(1); }}
                 className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
               >
-                <option value="all">{tCommon('status.all')}</option>
-                <option value="active">{tCommon('status.active')}</option>
-                <option value="inactive">{tCommon('status.inactive')}</option>
+                <option value="all">{tCommon($ => $.status.all)}</option>
+                <option value="active">{tCommon($ => $.status.active)}</option>
+                <option value="inactive">{tCommon($ => $.status.inactive)}</option>
               </select>
             </div>
           </>
@@ -122,7 +122,7 @@ export function WarehousesContent() {
       >
         <Button onClick={() => { setDrawerWarehouse(null); setDrawerOpen(true); }}>
           <Plus className="size-4" />
-          {t('actions.new')}
+          {t($ => $.actions.new)}
         </Button>
       </EntityToolbar>
 
@@ -138,11 +138,11 @@ export function WarehousesContent() {
           <ActionMenu
             label={`Actions for ${warehouse.name}`}
             items={[
-              { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => { setDrawerWarehouse(warehouse); setDrawerOpen(true); } },
-              { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => { setDrawerWarehouse(warehouse); setDrawerOpen(true); } },
+              { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => { setDrawerWarehouse(warehouse); setDrawerOpen(true); } },
+              { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => { setDrawerWarehouse(warehouse); setDrawerOpen(true); } },
               {
                 key: 'delete',
-                label: tCommon('common.delete'),
+                label: tCommon($ => $.common.delete),
                 icon: Trash2,
                 variant: 'destructive',
                 onSelect: () => setDeleting(warehouse),
@@ -168,9 +168,9 @@ export function WarehousesContent() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={tCommon($ => $.dialogs.softDeleteMessage, { name: deleting?.name ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteWarehouse.isPending}
         onConfirm={() => {

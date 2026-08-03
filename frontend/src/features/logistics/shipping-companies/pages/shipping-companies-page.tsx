@@ -80,9 +80,9 @@ function EmptyCompanies({
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
         <Truck className="mb-3 size-10 text-muted-foreground/30" />
-        <p className="text-sm font-medium">{t('shippingCompanies.empty.filteredTitle')}</p>
+        <p className="text-sm font-medium">{t($ => $.shippingCompanies.empty.filteredTitle)}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {t('shippingCompanies.empty.filteredHint')}
+          {t($ => $.shippingCompanies.empty.filteredHint)}
         </p>
       </div>
     );
@@ -91,11 +91,11 @@ function EmptyCompanies({
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <Truck className="mb-3 size-12 text-muted-foreground/20" />
-      <p className="text-sm font-medium">{t('shippingCompanies.empty.title')}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{t('shippingCompanies.empty.hint')}</p>
+      <p className="text-sm font-medium">{t($ => $.shippingCompanies.empty.title)}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{t($ => $.shippingCompanies.empty.hint)}</p>
       <Button size="sm" className="mt-4 gap-1.5" onClick={onCreateFirst}>
         <Plus className="size-3.5" />
-        {t('shippingCompanies.empty.addFirst')}
+        {t($ => $.shippingCompanies.empty.addFirst)}
       </Button>
     </div>
   );
@@ -109,12 +109,12 @@ function TypeBadge({ type }: { type: ShippingCompanyType }) {
   return type === 'internal' ? (
     <Badge variant="secondary" className="gap-1 text-xs">
       <Warehouse className="size-3" />
-      {t('shippingCompanies.type.internal')}
+      {t($ => $.shippingCompanies.type.internal)}
     </Badge>
   ) : (
     <Badge variant="outline" className="gap-1 text-xs">
       <Truck className="size-3" />
-      {t('shippingCompanies.type.external')}
+      {t($ => $.shippingCompanies.type.external)}
     </Badge>
   );
 }
@@ -123,15 +123,15 @@ function StatusBadge({ status }: { status: ShippingCompanyStatus }) {
   const { t } = useTranslation('logistics');
 
   if (status === 'active') {
-    return <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">{t('common.active')}</Badge>;
+    return <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">{t($ => $.common.active)}</Badge>;
   }
   if (status === 'inactive') {
-    return <Badge variant="secondary" className="text-xs">{t('common.inactive')}</Badge>;
+    return <Badge variant="secondary" className="text-xs">{t($ => $.common.inactive)}</Badge>;
   }
   return (
     <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
       <Archive className="size-3" />
-      {t('shippingCompanies.status.archived')}
+      {t($ => $.shippingCompanies.status.archived)}
     </Badge>
   );
 }
@@ -165,14 +165,14 @@ function CompaniesTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/60">
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.code')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('shippingCompanies.table.company')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.type')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('shippingCompanies.table.contact')}</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('shippingCompanies.table.activeContract')}</th>
-              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t('shippingCompanies.table.contracts')}</th>
-              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t('shippingCompanies.table.companies')}</th>
-              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t('common.status')}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.code)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.company)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.common.type)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.contact)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.activeContract)}</th>
+              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.contracts)}</th>
+              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t($ => $.shippingCompanies.table.companies)}</th>
+              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t($ => $.common.status)}</th>
               <th className="h-10 w-10 px-3" />
             </tr>
           </thead>
@@ -223,7 +223,7 @@ function CompaniesTable({
                     </div>
                   ) : (
                     <span className="text-xs text-muted-foreground">
-                      {t('shippingCompanies.table.noActiveContract')}
+                      {t($ => $.shippingCompanies.table.noActiveContract)}
                     </span>
                   )}
                 </td>
@@ -310,21 +310,21 @@ export function ShippingCompaniesPage() {
   }
 
   const metrics = [
-    { id: 'total',    icon: Truck,       label: t('shippingCompanies.metrics.total'),    value: stats?.total_companies    ?? 0, isLoading: !stats },
-    { id: 'active',   icon: CheckCircle, label: t('shippingCompanies.metrics.active'),   value: stats?.active_companies   ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'internal', icon: Warehouse,   label: t('shippingCompanies.metrics.internal'), value: stats?.internal_companies ?? 0, isLoading: !stats },
-    { id: 'external', icon: Building2,   label: t('shippingCompanies.metrics.external'), value: stats?.external_companies ?? 0, isLoading: !stats },
+    { id: 'total',    icon: Truck,       label: t($ => $.shippingCompanies.metrics.total),    value: stats?.total_companies    ?? 0, isLoading: !stats },
+    { id: 'active',   icon: CheckCircle, label: t($ => $.shippingCompanies.metrics.active),   value: stats?.active_companies   ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'internal', icon: Warehouse,   label: t($ => $.shippingCompanies.metrics.internal), value: stats?.internal_companies ?? 0, isLoading: !stats },
+    { id: 'external', icon: Building2,   label: t($ => $.shippingCompanies.metrics.external), value: stats?.external_companies ?? 0, isLoading: !stats },
   ];
 
   return (
     <>
       <WorkspaceHeader
         breadcrumbs={[
-          { label: t('shippingCompanies.breadcrumbRoot') },
-          { label: t('shippingCompanies.title') },
+          { label: t($ => $.shippingCompanies.breadcrumbRoot) },
+          { label: t($ => $.shippingCompanies.title) },
         ]}
-        title={t('shippingCompanies.title')}
-        description={t('shippingCompanies.description')}
+        title={t($ => $.shippingCompanies.title)}
+        description={t($ => $.shippingCompanies.description)}
         metrics={metrics}
       />
 
@@ -332,7 +332,7 @@ export function ShippingCompaniesPage() {
         toolbar={
           <div className="px-4 sm:px-6">
             <SmartToolbar
-              primaryAction={{ label: t('shippingCompanies.newCompany'), icon: Plus, onClick: openCreate }}
+              primaryAction={{ label: t($ => $.shippingCompanies.newCompany), icon: Plus, onClick: openCreate }}
               onRefresh={() => refetch()}
               isFetching={isFetching}
             />
@@ -341,7 +341,7 @@ export function ShippingCompaniesPage() {
         quickFilters={
           <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
             <Input
-              placeholder={t('shippingCompanies.searchPlaceholder')}
+              placeholder={t($ => $.shippingCompanies.searchPlaceholder)}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="h-8 max-w-xs text-sm"

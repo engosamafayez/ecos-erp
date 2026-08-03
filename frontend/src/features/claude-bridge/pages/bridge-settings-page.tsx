@@ -21,23 +21,23 @@ export function BridgeSettingsPage() {
 
   return (
     <div className="space-y-6 p-6 max-w-2xl mx-auto">
-      <PageHeader title={t('bridgeSettings.pageTitle')} />
+      <PageHeader title={t($ => $.bridgeSettings.pageTitle)} />
 
       {/* Worker status */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t('bridgeSettings.worker.title')}</CardTitle>
+          <CardTitle className="text-base">{t($ => $.bridgeSettings.worker.title)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div>
             <p className="text-muted-foreground text-sm mb-3">
-              {t('bridgeSettings.worker.noWorker')}
+              {t($ => $.bridgeSettings.worker.noWorker)}
             </p>
             <Button size="sm" disabled>
-              {t('bridgeSettings.register')}
+              {t($ => $.bridgeSettings.register)}
             </Button>
             <p className="text-muted-foreground text-xs mt-2">
-              {t('bridgeSettings.worker.regAvailable')}
+              {t($ => $.bridgeSettings.worker.regAvailable)}
             </p>
           </div>
         </CardContent>
@@ -46,11 +46,11 @@ export function BridgeSettingsPage() {
       {/* Default settings */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t('bridgeSettings.defaults.title')}</CardTitle>
+          <CardTitle className="text-base">{t($ => $.bridgeSettings.defaults.title)}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="default-repo">{t('bridgeSettings.defaults.repoPath')}</Label>
+            <Label htmlFor="default-repo">{t($ => $.bridgeSettings.defaults.repoPath)}</Label>
             <Input
               id="default-repo"
               placeholder="C:\Projects\ecos-erp"
@@ -59,7 +59,7 @@ export function BridgeSettingsPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="default-branch">{t('bridgeSettings.defaults.branch')}</Label>
+            <Label htmlFor="default-branch">{t($ => $.bridgeSettings.defaults.branch)}</Label>
             <Input
               id="default-branch"
               value={defaultBranch}
@@ -67,10 +67,10 @@ export function BridgeSettingsPage() {
             />
           </div>
           <Button size="sm" onClick={saveDefaults}>
-            {t('bridgeSettings.saveDefaults')}
+            {t($ => $.bridgeSettings.saveDefaults)}
           </Button>
           <p className="text-muted-foreground text-xs">
-            {t('bridgeSettings.defaults.savedNote')}
+            {t($ => $.bridgeSettings.defaults.savedNote)}
           </p>
         </CardContent>
       </Card>
@@ -78,23 +78,23 @@ export function BridgeSettingsPage() {
       {/* Worker setup instructions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t('bridgeSettings.worker.subtitle')}</CardTitle>
+          <CardTitle className="text-base">{t($ => $.bridgeSettings.worker.subtitle)}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <ol className="text-sm space-y-1 list-decimal pl-4">
-            <li>{t('bridgeSettings.worker.steps.1')}</li>
-            <li>{t('bridgeSettings.worker.steps.2')}</li>
-            <li>{t('bridgeSettings.worker.steps.3')}</li>
-            <li>{t('bridgeSettings.worker.steps.4')}</li>
-            <li>{t('bridgeSettings.worker.steps.5')}</li>
-            <li>{t('bridgeSettings.worker.steps.6')}</li>
-            <li>{t('bridgeSettings.worker.steps.7')}</li>
+            <li>{t($ => $.bridgeSettings.worker.steps["1"])}</li>
+            <li>{t($ => $.bridgeSettings.worker.steps["2"])}</li>
+            <li>{t($ => $.bridgeSettings.worker.steps["3"])}</li>
+            <li>{t($ => $.bridgeSettings.worker.steps["4"])}</li>
+            <li>{t($ => $.bridgeSettings.worker.steps["5"])}</li>
+            <li>{t($ => $.bridgeSettings.worker.steps["6"])}</li>
+            <li>{t($ => $.bridgeSettings.worker.steps["7"])}</li>
           </ol>
           <Button size="sm" variant="outline" disabled>
-            {t('bridgeSettings.download')}
+            {t($ => $.bridgeSettings.download)}
           </Button>
           <p className="text-muted-foreground text-xs">
-            {t('bridgeSettings.worker.availableSoon')}
+            {t($ => $.bridgeSettings.worker.availableSoon)}
           </p>
         </CardContent>
       </Card>

@@ -31,7 +31,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
   const { t } = useTranslation('orders');
   const defaultMethods = PAYMENT_METHOD_VALUES.map((v) => ({
     value: v,
-    label: t(`workspace.paymentMethodLabels.${v}`, { defaultValue: v }),
+    label: t($ => $.workspace.paymentMethodLabels[v], { defaultValue: v }),
   }));
   const methods = paymentMethods && paymentMethods.length > 0 ? paymentMethods : defaultMethods;
   const { control, watch, setValue, formState: { errors } } = useFormContext<ManualOrderFormValues>();
@@ -56,7 +56,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
     if (!file) return;
 
     if (file.size > MAX_MB * 1024 * 1024) {
-      setUploadError(t('workspace.paymentSection.fileTooLarge', { max: MAX_MB }));
+      setUploadError(t($ => $.workspace.paymentSection.fileTooLarge, { max: MAX_MB }));
       return;
     }
 
@@ -75,7 +75,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
       );
       setValue('payment_proof_path', data.data.path, { shouldValidate: true });
     } catch {
-      setUploadError(t('workspace.paymentSection.uploadFailed'));
+      setUploadError(t($ => $.workspace.paymentSection.uploadFailed));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -93,7 +93,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
-        <FormField name="payment_method_manual" label={t('workspace.paymentSection.methodLabel')}>
+        <FormField name="payment_method_manual" label={t($ => $.workspace.paymentSection.methodLabel)}>
           <Controller
             control={control}
             name="payment_method_manual"
@@ -103,7 +103,7 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
                 onValueChange={(v) => field.onChange(v || undefined)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t('workspace.paymentSection.selectMethod')} />
+                  <SelectValue placeholder={t($ => $.workspace.paymentSection.selectMethod)} />
                 </SelectTrigger>
                 <SelectContent>
                   {methods.map((m) => (
@@ -151,9 +151,9 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
                   <Upload className="size-5 text-muted-foreground" />
                 )}
                 <p className="text-sm text-muted-foreground">
-                  {uploading ? t('workspace.paymentSection.uploading') : t('workspace.paymentSection.uploadCta')}
+                  {uploading ? t($ => $.workspace.paymentSection.uploading) : t($ => $.workspace.paymentSection.uploadCta)}
                 </p>
-                <p className="text-xs text-muted-foreground">{t('workspace.paymentSection.uploadMax', { max: MAX_MB })}</p>
+                <p className="text-xs text-muted-foreground">{t($ => $.workspace.paymentSection.uploadMax, { max: MAX_MB })}</p>
               </div>
             )}
             <input
@@ -170,10 +170,10 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
             )}
             <p className="mt-1 text-xs text-muted-foreground">
               {proofRequirement === 'required'
-                ? t('workspace.paymentSection.proofRequired')
+                ? t($ => $.workspace.paymentSection.proofRequired)
                 : proofRequirement === 'optional'
-                ? t('workspace.paymentSection.proofOptionalNote')
-                : t('workspace.paymentSection.proofNotRequired')}
+                ? t($ => $.workspace.paymentSection.proofOptionalNote)
+                : t($ => $.workspace.paymentSection.proofNotRequired)}
             </p>
           </FormField>
         </div>

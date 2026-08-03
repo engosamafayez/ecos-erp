@@ -42,9 +42,9 @@ export function UnitSelect({
       value={value ?? ''}
       onChange={onChange}
       loading={isLoading}
-      placeholder={placeholder ?? t('selects.unitPlaceholder')}
-      searchPlaceholder={t('selects.unitSearch')}
-      emptyText={t('selects.unitEmpty')}
+      placeholder={placeholder ?? t($ => $.selects.unitPlaceholder)}
+      searchPlaceholder={t($ => $.selects.unitSearch)}
+      emptyText={t($ => $.selects.unitEmpty)}
       disabled={disabled}
       className={className}
     />

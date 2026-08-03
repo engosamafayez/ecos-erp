@@ -74,10 +74,10 @@ export function SupplierReturnsPage() {
   const meta  = data?.meta;
 
   const statusChips: ChipDef[] = stats ? [
-    { id: 'draft',          label: t('page.statusChips.draft'),          filterKey: 'draft',            count: Number(stats.draft),          color: 'gray'   },
-    { id: 'waiting',        label: t('page.statusChips.waiting'),        filterKey: 'waiting_approval', count: Number(stats.waiting),        color: 'yellow' },
-    { id: 'credit_pending', label: t('page.statusChips.credit_pending'), filterKey: 'credit_pending',   count: Number(stats.credit_pending), color: 'orange' },
-    { id: 'completed',      label: t('page.statusChips.completed'),      filterKey: 'completed',        count: Number(stats.completed),      color: 'green'  },
+    { id: 'draft',          label: t($ => $.page.statusChips.draft),          filterKey: 'draft',            count: Number(stats.draft),          color: 'gray'   },
+    { id: 'waiting',        label: t($ => $.page.statusChips.waiting),        filterKey: 'waiting_approval', count: Number(stats.waiting),        color: 'yellow' },
+    { id: 'credit_pending', label: t($ => $.page.statusChips.credit_pending), filterKey: 'credit_pending',   count: Number(stats.credit_pending), color: 'orange' },
+    { id: 'completed',      label: t($ => $.page.statusChips.completed),      filterKey: 'completed',        count: Number(stats.completed),      color: 'green'  },
   ] : [];
 
   const handleSort = (field: string) => {
@@ -140,12 +140,12 @@ export function SupplierReturnsPage() {
       <div className="px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-4">
           <PageHeader
-            title={t('page.title')}
-            subtitle={t('page.subtitle')}
+            title={t($ => $.page.title)}
+            subtitle={t($ => $.page.subtitle)}
           />
           <Button onClick={() => setCreatingNew(true)} size="sm" className="gap-1.5">
             <Plus className="w-3.5 h-3.5" />
-            {t('page.newReturn')}
+            {t($ => $.page.newReturn)}
           </Button>
         </div>
 
@@ -164,7 +164,7 @@ export function SupplierReturnsPage() {
               onClick={() => { setStatus('all'); setPage(1); }}
               className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200"
             >
-              {t('page.statusChips.all')}: {stats.total}
+              {t($ => $.page.statusChips.all)}: {stats.total}
             </button>
           </div>
         )}
@@ -174,7 +174,7 @@ export function SupplierReturnsPage() {
         <Card className="shadow-none border-gray-200">
           <CardContent className="flex flex-col gap-4 pt-6">
             <EntityToolbar
-              searchPlaceholder={t('page.search')}
+              searchPlaceholder={t($ => $.page.search)}
               onSearchChange={(v) => { setSearch(v); setPage(1); }}
               onRefresh={() => void refetch()}
               isRefreshing={isFetching}
@@ -182,20 +182,20 @@ export function SupplierReturnsPage() {
               filterPanel={
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-medium">{t('page.columns.status')}</span>
+                    <span className="text-sm font-medium">{t($ => $.page.columns.status)}</span>
                     <select
                       value={statusFilter}
                       onChange={(e) => { setStatus(e.target.value as SupplierReturnStatus | 'all'); setPage(1); }}
                       className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                     >
-                      <option value="all">{t('page.statusChips.all')}</option>
-                      <option value="draft">{t('status.draft')}</option>
-                      <option value="waiting_approval">{t('status.waiting_approval')}</option>
-                      <option value="approved">{t('status.approved')}</option>
-                      <option value="sent">{t('status.sent')}</option>
-                      <option value="credit_pending">{t('status.credit_pending')}</option>
-                      <option value="completed">{t('status.completed')}</option>
-                      <option value="cancelled">{t('status.cancelled')}</option>
+                      <option value="all">{t($ => $.page.statusChips.all)}</option>
+                      <option value="draft">{t($ => $.status.draft)}</option>
+                      <option value="waiting_approval">{t($ => $.status.waiting_approval)}</option>
+                      <option value="approved">{t($ => $.status.approved)}</option>
+                      <option value="sent">{t($ => $.status.sent)}</option>
+                      <option value="credit_pending">{t($ => $.status.credit_pending)}</option>
+                      <option value="completed">{t($ => $.status.completed)}</option>
+                      <option value="cancelled">{t($ => $.status.cancelled)}</option>
                     </select>
                   </div>
                 </div>
@@ -216,14 +216,14 @@ export function SupplierReturnsPage() {
                   items={[
                     {
                       key: 'view',
-                      label: t('page.actions.viewDetails'),
+                      label: t($ => $.page.actions.viewDetails),
                       icon: RotateCcw,
                       onSelect: () => setSelectedId(r.id),
                     },
                     ...(r.status === 'draft' ? [
                       {
                         key: 'submit',
-                        label: t('page.actions.submit'),
+                        label: t($ => $.page.actions.submit),
                         icon: Send,
                         onSelect: () => submitMutation.mutate(r.id),
                       },
@@ -231,7 +231,7 @@ export function SupplierReturnsPage() {
                     ...(r.status === 'waiting_approval' ? [
                       {
                         key: 'approve',
-                        label: t('page.actions.approve'),
+                        label: t($ => $.page.actions.approve),
                         icon: CheckCircle2,
                         onSelect: () => approveMutation.mutate(r.id),
                       },
@@ -239,7 +239,7 @@ export function SupplierReturnsPage() {
                     ...(['draft', 'waiting_approval'].includes(r.status) ? [
                       {
                         key: 'cancel',
-                        label: t('page.actions.cancel'),
+                        label: t($ => $.page.actions.cancel),
                         icon: XCircle,
                         variant: 'destructive' as const,
                         onSelect: () => setCancelling(r),
@@ -248,7 +248,7 @@ export function SupplierReturnsPage() {
                     ...(r.status === 'draft' ? [
                       {
                         key: 'delete',
-                        label: t('page.actions.delete'),
+                        label: t($ => $.page.actions.delete),
                         icon: Trash2,
                         variant: 'destructive' as const,
                         onSelect: () => setDeleting(r),
@@ -285,9 +285,9 @@ export function SupplierReturnsPage() {
       <ConfirmDialog
         open={cancelling !== null}
         onOpenChange={(open) => { if (!open) setCancelling(null); }}
-        title={t('page.confirmCancel.title')}
-        description={t('page.confirmCancel.description')}
-        confirmLabel={t('page.confirmCancel.confirm')}
+        title={t($ => $.page.confirmCancel.title)}
+        description={t($ => $.page.confirmCancel.description)}
+        confirmLabel={t($ => $.page.confirmCancel.confirm)}
         variant="destructive"
         loading={cancelMutation.isPending}
         onConfirm={() => {
@@ -298,9 +298,9 @@ export function SupplierReturnsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('page.confirmDelete.title')}
-        description={t('page.confirmDelete.description')}
-        confirmLabel={t('page.confirmDelete.confirm')}
+        title={t($ => $.page.confirmDelete.title)}
+        description={t($ => $.page.confirmDelete.description)}
+        confirmLabel={t($ => $.page.confirmDelete.confirm)}
         variant="destructive"
         loading={deleteMutation.isPending}
         onConfirm={() => {

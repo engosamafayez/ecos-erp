@@ -67,19 +67,19 @@ export function StockSyncLogsPage() {
   const columns: ColumnDef<StockSyncLog>[] = [
     {
       key: 'synced_at',
-      header: t('columns.date'),
+      header: t($ => $.columns.date),
       sortable: true,
       cell: (log) =>
         log.synced_at ? new Date(log.synced_at).toLocaleString() : '—',
     },
     {
       key: 'channel',
-      header: t('columns.channel'),
+      header: t($ => $.columns.channel),
       cell: (log) => <span className="font-medium">{log.channel?.name ?? '—'}</span>,
     },
     {
       key: 'product',
-      header: t('columns.product'),
+      header: t($ => $.columns.product),
       cell: (log) => (
         <div>
           <span className="font-medium">{log.product?.name ?? '—'}</span>
@@ -91,7 +91,7 @@ export function StockSyncLogsPage() {
     },
     {
       key: 'stock_quantity',
-      header: t('columns.quantity'),
+      header: t($ => $.columns.quantity),
       sortable: true,
       cell: (log) => (
         <span className="font-mono tabular-nums">{log.stock_quantity}</span>
@@ -99,12 +99,12 @@ export function StockSyncLogsPage() {
     },
     {
       key: 'sync_status',
-      header: t('columns.status'),
+      header: t($ => $.columns.status),
       cell: (log) => <StockSyncStatusBadge status={log.sync_status} />,
     },
     {
       key: 'response_message',
-      header: t('columns.message'),
+      header: t($ => $.columns.message),
       cell: (log) => (
         <span className="text-muted-foreground max-w-xs truncate text-xs">
           {log.response_message ?? '—'}
@@ -116,18 +116,18 @@ export function StockSyncLogsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.title) },
         ]}
       />
 
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={t($ => $.search)}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -141,13 +141,13 @@ export function StockSyncLogsPage() {
             filterPanel={
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.channel')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.channel)}</span>
                   <select
                     value={channelFilter}
                     onChange={(e) => { setChannelFilter(e.target.value); setPage(1); }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">{t('filters.allChannels')}</option>
+                    <option value="">{t($ => $.filters.allChannels)}</option>
                     {channelOptions.map((c) => (
                       <option key={c.value} value={c.value}>{c.label}</option>
                     ))}
@@ -155,7 +155,7 @@ export function StockSyncLogsPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.status')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.status)}</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => { setStatusFilter(e.target.value as StockSyncStatus | 'all'); setPage(1); }}
@@ -163,14 +163,14 @@ export function StockSyncLogsPage() {
                   >
                     {STATUS_VALUES.map((val) => (
                       <option key={val} value={val}>
-                        {t(`status.${val}`)}
+                        {t($ => $.status[val])}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.dateFrom')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.dateFrom)}</span>
                   <input
                     type="date"
                     value={dateFrom}
@@ -180,7 +180,7 @@ export function StockSyncLogsPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.dateTo')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.dateTo)}</span>
                   <input
                     type="date"
                     value={dateTo}

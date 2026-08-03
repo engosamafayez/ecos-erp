@@ -50,15 +50,15 @@ export function ExceptionsPanel() {
         <Alert>
           <ShieldAlert className="size-4" />
           <AlertDescription className="text-xs">
-            {t('operations.exceptions.alertsLive', { count: alerts.length })}
+            {t($ => $.operations.exceptions.alertsLive, { count: alerts.length })}
             {summary && summary.overdue_for_escalation > 0
-              ? ` · ${t('operations.exceptions.pastEscalationThreshold', {
+              ? ` · ${t($ => $.operations.exceptions.pastEscalationThreshold, {
                   value: summary.overdue_for_escalation,
                 })}`
               : ''}
             .{' '}
             {bySource.length > 0 &&
-              t('operations.exceptions.ownedElsewhere', {
+              t($ => $.operations.exceptions.ownedElsewhere, {
                 list: bySource.map(([s, n]) => `${s}: ${n}`).join(', '),
               })}
           </AlertDescription>
@@ -83,9 +83,9 @@ export function ExceptionsPanel() {
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
         <div className="rounded-lg border bg-card py-16 text-center">
-          <p className="text-sm font-medium">{t('operations.exceptions.emptyTitle')}</p>
+          <p className="text-sm font-medium">{t($ => $.operations.exceptions.emptyTitle)}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {t('operations.exceptions.emptyBody')}
+            {t($ => $.operations.exceptions.emptyBody)}
           </p>
         </div>
       ) : (
@@ -116,7 +116,7 @@ export function ExceptionsPanel() {
                       )}
                       {exception.is_overdue_for_escalation && (
                         <Badge variant="destructive" className="text-[10px]">
-                          {t('operations.exceptions.overdue')}
+                          {t($ => $.operations.exceptions.overdue)}
                         </Badge>
                       )}
                     </div>
@@ -127,12 +127,12 @@ export function ExceptionsPanel() {
                     )}
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
                       {exception.category_label} ·{' '}
-                      {t('operations.exceptions.openMinutes', { minutes: exception.age_minutes })}
+                      {t($ => $.operations.exceptions.openMinutes, { minutes: exception.age_minutes })}
                       {exception.unacknowledged_minutes !== null
-                        ? ` · ${t('operations.exceptions.unlookedAtMinutes', {
+                        ? ` · ${t($ => $.operations.exceptions.unlookedAtMinutes, {
                             minutes: exception.unacknowledged_minutes,
                           })}`
-                        : ` · ${t('operations.exceptions.acknowledged')}`}
+                        : ` · ${t($ => $.operations.exceptions.acknowledged)}`}
                     </p>
                   </div>
                   <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

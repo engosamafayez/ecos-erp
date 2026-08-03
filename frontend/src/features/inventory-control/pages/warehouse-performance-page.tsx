@@ -24,10 +24,10 @@ export function WarehousePerformancePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('warehousePerformance.title')}
+        title={t($ => $.warehousePerformance.title)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('warehousePerformance.title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.warehousePerformance.title) },
         ]}
       />
 
@@ -41,14 +41,14 @@ export function WarehousePerformancePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground border-b text-xs">
-                  <th className="px-4 py-3 text-start font-medium">{t('warehousePerformance.table.warehouse')}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t('warehousePerformance.table.accuracy')}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t('warehousePerformance.table.avgVariance')}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t('warehousePerformance.table.adjIn')}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t('warehousePerformance.table.adjOut')}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t('warehousePerformance.table.completionRate')}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t('warehousePerformance.table.openCounts')}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t('warehousePerformance.table.totalSessions')}</th>
+                  <th className="px-4 py-3 text-start font-medium">{t($ => $.warehousePerformance.table.warehouse)}</th>
+                  <th className="px-4 py-3 text-end font-medium">{t($ => $.warehousePerformance.table.accuracy)}</th>
+                  <th className="px-4 py-3 text-end font-medium">{t($ => $.warehousePerformance.table.avgVariance)}</th>
+                  <th className="px-4 py-3 text-end font-medium">{t($ => $.warehousePerformance.table.adjIn)}</th>
+                  <th className="px-4 py-3 text-end font-medium">{t($ => $.warehousePerformance.table.adjOut)}</th>
+                  <th className="px-4 py-3 text-end font-medium">{t($ => $.warehousePerformance.table.completionRate)}</th>
+                  <th className="px-4 py-3 text-end font-medium">{t($ => $.warehousePerformance.table.openCounts)}</th>
+                  <th className="px-4 py-3 text-end font-medium">{t($ => $.warehousePerformance.table.totalSessions)}</th>
                 </tr>
               </thead>
               <tbody>

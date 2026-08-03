@@ -60,10 +60,10 @@ function EmptyUnits({ hasFilter }: { hasFilter: boolean }) {
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <Truck className="mb-3 size-12 text-muted-foreground/20" />
       <p className="text-sm font-medium">
-        {hasFilter ? t('fleet.empty.filteredTitle') : t('fleet.empty.title')}
+        {hasFilter ? t($ => $.fleet.empty.filteredTitle) : t($ => $.fleet.empty.title)}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {hasFilter ? t('fleet.empty.filteredHint') : t('fleet.empty.hint')}
+        {hasFilter ? t($ => $.fleet.empty.filteredHint) : t($ => $.fleet.empty.hint)}
       </p>
     </div>
   );
@@ -92,11 +92,11 @@ function UnitsTable({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="h-10 px-3 font-medium">{t('common.vehicle')}</th>
-            <th className="h-10 px-3 font-medium">{t('fleet.table.fitness')}</th>
-            <th className="h-10 px-3 font-medium">{t('fleet.table.lifecycle')}</th>
-            <th className="h-10 px-3 font-medium">{t('fleet.table.why')}</th>
-            <th className="h-10 px-3 text-end font-medium">{t('fleet.table.odometer')}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.common.vehicle)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.fleet.table.fitness)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.fleet.table.lifecycle)}</th>
+            <th className="h-10 px-3 font-medium">{t($ => $.fleet.table.why)}</th>
+            <th className="h-10 px-3 text-end font-medium">{t($ => $.fleet.table.odometer)}</th>
             <th className="h-10 w-10 px-3" />
           </tr>
         </thead>
@@ -125,7 +125,7 @@ function UnitsTable({
               </td>
               <td className="px-3 py-2.5 text-end tabular-nums">
                 {unit.current_odometer_km !== null
-                  ? t('fleet.kmValue', { value: unit.current_odometer_km.toLocaleString() })
+                  ? t($ => $.fleet.kmValue, { value: unit.current_odometer_km.toLocaleString() })
                   : '—'}
               </td>
               <td className="px-3 py-2.5 text-end">
@@ -188,21 +188,21 @@ export function FleetDashboardPage() {
   const hasFilter = stateFilter !== 'open' || criticalOnly;
 
   const metrics = [
-    { id: 'active', icon: CheckCircle, label: t('common.active'), value: stats?.active ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'critical', icon: XCircle, label: t('fleet.metrics.criticalDefects'), value: stats?.open_critical_defects ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
-    { id: 'overdue', icon: AlertTriangle, label: t('fleet.metrics.overdueMaintenance'), value: stats?.overdue_maintenance ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
-    { id: 'work', icon: Wrench, label: t('fleet.metrics.openWorkOrders'), value: stats?.open_work_orders ?? 0, isLoading: !stats },
-    { id: 'suspended', icon: Truck, label: t('fleet.lifecycle.suspended'), value: stats?.suspended ?? 0, isLoading: !stats },
+    { id: 'active', icon: CheckCircle, label: t($ => $.common.active), value: stats?.active ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'critical', icon: XCircle, label: t($ => $.fleet.metrics.criticalDefects), value: stats?.open_critical_defects ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
+    { id: 'overdue', icon: AlertTriangle, label: t($ => $.fleet.metrics.overdueMaintenance), value: stats?.overdue_maintenance ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'work', icon: Wrench, label: t($ => $.fleet.metrics.openWorkOrders), value: stats?.open_work_orders ?? 0, isLoading: !stats },
+    { id: 'suspended', icon: Truck, label: t($ => $.fleet.lifecycle.suspended), value: stats?.suspended ?? 0, isLoading: !stats },
     // Distance is the denominator of most cost metrics — silence is a signal.
-    { id: 'stale', icon: Gauge, label: t('fleet.metrics.staleOdometer'), value: stats?.stale_odometer ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'stale', icon: Gauge, label: t($ => $.fleet.metrics.staleOdometer), value: stats?.stale_odometer ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: t('fleet.breadcrumbRoot') }, { label: t('fleet.breadcrumbFleet') }]}
-        title={t('fleet.title')}
-        description={t('fleet.description')}
+        breadcrumbs={[{ label: t($ => $.fleet.breadcrumbRoot) }, { label: t($ => $.fleet.breadcrumbFleet) }]}
+        title={t($ => $.fleet.title)}
+        description={t($ => $.fleet.description)}
         metrics={metrics}
       />
 
@@ -241,7 +241,7 @@ export function FleetDashboardPage() {
               }}
             >
               <XCircle className="size-3" />
-              {t('fleet.filters.criticalDefects')}
+              {t($ => $.fleet.filters.criticalDefects)}
             </Button>
           </div>
         }

@@ -91,7 +91,7 @@ export function ProductTable({
       columnVisibility={columnVisibility}
       pagination={pagination}
       skeletonRows={8}
-      emptyState={emptyState ?? <EmptyState title={t('emptyState.withFiltersTitle')} />}
+      emptyState={emptyState ?? <EmptyState title={t($ => $.emptyState.withFiltersTitle)} />}
       errorState={<ErrorState />}
       renderMobileCard={(product, sel) => (
         <ProductMobileCard

@@ -33,10 +33,10 @@ export function CareersPortalPage() {
       <header className="border-b">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-12">
           <span className="text-muted-foreground text-sm font-medium uppercase tracking-wide">
-            {t('careers.portal.eyebrow')}
+            {t($ => $.careers.portal.eyebrow)}
           </span>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t('careers.portal.heading')}</h1>
-          <p className="text-muted-foreground max-w-2xl">{t('careers.portal.intro')}</p>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t($ => $.careers.portal.heading)}</h1>
+          <p className="text-muted-foreground max-w-2xl">{t($ => $.careers.portal.intro)}</p>
 
           <form
             className="flex max-w-md gap-2"
@@ -48,12 +48,12 @@ export function CareersPortalPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('careers.portal.searchPlaceholder')}
-              aria-label={t('careers.portal.searchLabel')}
+              placeholder={t($ => $.careers.portal.searchPlaceholder)}
+              aria-label={t($ => $.careers.portal.searchLabel)}
             />
             <Button type="submit" variant="outline">
               <Search className="size-4" />
-              {t('common.search')}
+              {t($ => $.common.search)}
             </Button>
           </form>
         </div>
@@ -61,16 +61,16 @@ export function CareersPortalPage() {
 
       <main className="mx-auto max-w-5xl px-6 py-10">
         {isLoading ? (
-          <p className="text-muted-foreground py-16 text-center text-sm">{t('careers.portal.loading')}</p>
+          <p className="text-muted-foreground py-16 text-center text-sm">{t($ => $.careers.portal.loading)}</p>
         ) : isError ? (
-          <p className="text-muted-foreground py-16 text-center text-sm">{t('careers.portal.loadError')}</p>
+          <p className="text-muted-foreground py-16 text-center text-sm">{t($ => $.careers.portal.loadError)}</p>
         ) : openings.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
               <Briefcase className="text-muted-foreground size-8" />
-              <p className="font-medium">{t('careers.portal.emptyTitle')}</p>
+              <p className="font-medium">{t($ => $.careers.portal.emptyTitle)}</p>
               <p className="text-muted-foreground text-sm">
-                {submitted ? t('careers.portal.emptySearch') : t('careers.portal.emptyHint')}
+                {submitted ? t($ => $.careers.portal.emptySearch) : t($ => $.careers.portal.emptyHint)}
               </p>
             </CardContent>
           </Card>
@@ -92,7 +92,7 @@ export function CareersPortalPage() {
                           </span>
                         ) : null}
                         <span className="capitalize">{job.work_mode}</span>
-                        {job.openings > 1 ? <span>{t('careers.portal.openings', { count: job.openings })}</span> : null}
+                        {job.openings > 1 ? <span>{t($ => $.careers.portal.openings, { count: job.openings })}</span> : null}
                       </div>
                       {/* Only shown when the company published the band. */}
                       {job.salary ? (
@@ -104,7 +104,7 @@ export function CareersPortalPage() {
                     </div>
 
                     <Button asChild>
-                      <Link to={`/careers/${job.slug}`}>{t('careers.portal.viewAndApply')}</Link>
+                      <Link to={`/careers/${job.slug}`}>{t($ => $.careers.portal.viewAndApply)}</Link>
                     </Button>
                   </CardContent>
                 </Card>

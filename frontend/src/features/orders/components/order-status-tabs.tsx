@@ -120,7 +120,7 @@ export function OrderStatusTabs({ activeStatus, counts, onChange }: OrderStatusT
       <button
         type="button"
         onClick={() => scrollBy('left')}
-        aria-label={t('statusTabs.scrollLeft')}
+        aria-label={t($ => $.statusTabs.scrollLeft)}
         className="shrink-0 flex items-center justify-center px-1.5 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors z-10 border-r"
       >
         <ChevronLeft className="size-4" />
@@ -130,7 +130,7 @@ export function OrderStatusTabs({ activeStatus, counts, onChange }: OrderStatusT
       <div
         ref={scrollRef}
         role="tablist"
-        aria-label={t('statusTabs.label')}
+        aria-label={t($ => $.statusTabs.label)}
         onWheel={handleWheel}
         className="flex flex-1 gap-2 overflow-x-auto scrollbar-none py-3 px-3"
       >
@@ -192,7 +192,7 @@ export function OrderStatusTabs({ activeStatus, counts, onChange }: OrderStatusT
       <button
         type="button"
         onClick={() => scrollBy('right')}
-        aria-label={t('statusTabs.scrollRight')}
+        aria-label={t($ => $.statusTabs.scrollRight)}
         className="shrink-0 flex items-center justify-center px-1.5 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors z-10 border-l"
       >
         <ChevronRight className="size-4" />

@@ -101,51 +101,51 @@ export function OrderQuickActions({
     <TooltipProvider delayDuration={300}>
       <div className="flex items-center gap-0.5">
         {onView ? (
-          <IconBtn icon={Eye} label={t('actions.view')} onClick={() => onView(order)} />
+          <IconBtn icon={Eye} label={t($ => $.actions.view)} onClick={() => onView(order)} />
         ) : null}
 
         {onEdit ? (
-          <IconBtn icon={Pencil} label={t('actions.edit')} onClick={() => onEdit(order)} />
+          <IconBtn icon={Pencil} label={t($ => $.actions.edit)} onClick={() => onEdit(order)} />
         ) : null}
 
         {phone ? (
           <>
-            <IconBtn icon={Phone} label={t('quickActions.call')} href={`tel:${digits}`} />
-            <IconBtn icon={MessageCircle} label={t('quickActions.whatsapp')} href={`https://wa.me/${digits}`} />
+            <IconBtn icon={Phone} label={t($ => $.quickActions.call)} href={`tel:${digits}`} />
+            <IconBtn icon={MessageCircle} label={t($ => $.quickActions.whatsapp)} href={`https://wa.me/${digits}`} />
           </>
         ) : null}
 
         {mapsUrl ? (
-          <IconBtn icon={MapPin} label={t('quickActions.maps')} href={mapsUrl} />
+          <IconBtn icon={MapPin} label={t($ => $.quickActions.maps)} href={mapsUrl} />
         ) : null}
 
         {onTimeline ? (
-          <IconBtn icon={History} label={t('drawer.tabs.timeline')} onClick={() => onTimeline(order)} />
+          <IconBtn icon={History} label={t($ => $.drawer.tabs.timeline)} onClick={() => onTimeline(order)} />
         ) : null}
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-6" onClick={copyLink} aria-label={t('actions.copyLink')}>
+            <Button variant="ghost" size="icon" className="size-6" onClick={copyLink} aria-label={t($ => $.actions.copyLink)}>
               {copied ? <Check className="size-3 text-emerald-500" /> : <ClipboardCopy className="size-3" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">{copied ? t('actions.linkCopied') : t('actions.copyLink')}</TooltipContent>
+          <TooltipContent side="top" className="text-xs">{copied ? t($ => $.actions.linkCopied) : t($ => $.actions.copyLink)}</TooltipContent>
         </Tooltip>
 
         {needsPaymentVerify && onVerifyPayment ? (
-          <IconBtn icon={Phone} label={t('quickActions.verifyPayment')} onClick={() => onVerifyPayment(order)} />
+          <IconBtn icon={Phone} label={t($ => $.quickActions.verifyPayment)} onClick={() => onVerifyPayment(order)} />
         ) : null}
 
         {onConfirmCustomer && !order.confirmation_result ? (
           <IconBtn
             icon={Pencil}
-            label={t('quickActions.confirmCustomer')}
+            label={t($ => $.quickActions.confirmCustomer)}
             onClick={() => onConfirmCustomer(order)}
           />
         ) : null}
 
         {onPrint ? (
-          <IconBtn icon={Printer} label={t('quickActions.printInvoice')} onClick={() => onPrint(order)} />
+          <IconBtn icon={Printer} label={t($ => $.quickActions.printInvoice)} onClick={() => onPrint(order)} />
         ) : null}
       </div>
     </TooltipProvider>

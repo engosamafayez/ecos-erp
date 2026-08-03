@@ -117,7 +117,7 @@ export function ProductMobileCard({
           size="icon"
           className="size-7"
           onClick={(e) => { e.stopPropagation(); onView(product); }}
-          aria-label={t('mobileCard.viewProduct')}
+          aria-label={t($ => $.mobileCard.viewProduct)}
         >
           <Eye className="size-3.5" />
         </Button>
@@ -127,7 +127,7 @@ export function ProductMobileCard({
             size="icon"
             className="size-7"
             onClick={(e) => { e.stopPropagation(); onEdit(product); }}
-            aria-label={t('mobileCard.editProduct')}
+            aria-label={t($ => $.mobileCard.editProduct)}
           >
             <Pencil className="size-3.5" />
           </Button>

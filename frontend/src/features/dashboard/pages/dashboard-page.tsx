@@ -77,9 +77,9 @@ function SectionLabel({
 export function DashboardPage() {
   const { t, i18n } = useTranslation('dashboard');
   const user      = useAuthStore((s) => s.user);
-  const firstName = user?.name?.split(' ')[0] ?? t('page.fallbackName');
+  const firstName = user?.name?.split(' ')[0] ?? t($ => $.page.fallbackName);
   const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
-  const greetingText = (() => { const h = new Date().getHours(); if (h < 12) return t('page.goodMorning'); if (h < 17) return t('page.goodAfternoon'); if (h < 21) return t('page.goodEvening'); return t('page.goodNight'); })();
+  const greetingText = (() => { const h = new Date().getHours(); if (h < 12) return t($ => $.page.goodMorning); if (h < 17) return t($ => $.page.goodAfternoon); if (h < 21) return t($ => $.page.goodEvening); return t($ => $.page.goodNight); })();
   const todayText = new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' });
 
   const [profile, setProfile] = useState<DashboardProfile>(loadProfile);
@@ -128,16 +128,16 @@ export function DashboardPage() {
                 'inline-block h-1.5 w-1.5 rounded-full',
                 operational ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse',
               )} />
-              {operational ? t('page.statusOperational') : (alertCount > 1 ? t('page.statusAlertPlural', { count: alertCount }) : t('page.statusAlertSingular', { count: alertCount }))}
+              {operational ? t($ => $.page.statusOperational) : (alertCount > 1 ? t($ => $.page.statusAlertPlural, { count: alertCount }) : t($ => $.page.statusAlertSingular, { count: alertCount }))}
             </Badge>
             {data?.sales.out_for_delivery ? (
               <Badge variant="outline" className="gap-1.5 text-xs text-blue-600 dark:text-blue-400">
-                {t('page.outForDelivery', { count: data.sales.out_for_delivery })}
+                {t($ => $.page.outForDelivery, { count: data.sales.out_for_delivery })}
               </Badge>
             ) : null}
             {data?.operations.active_waves ? (
               <Badge variant="outline" className="gap-1.5 text-xs text-violet-600 dark:text-violet-400">
-                {data.operations.active_waves === 1 ? t('page.activeWaveSingular', { count: data.operations.active_waves }) : t('page.activeWavePlural', { count: data.operations.active_waves })}
+                {data.operations.active_waves === 1 ? t($ => $.page.activeWaveSingular, { count: data.operations.active_waves }) : t($ => $.page.activeWavePlural, { count: data.operations.active_waves })}
               </Badge>
             ) : null}
           </div>
@@ -148,13 +148,13 @@ export function DashboardPage() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs">
               <ProfileIcon className="h-3.5 w-3.5" />
-              {t(`profiles.${profile}.label`)}
+              {t($ => $.profiles[profile].label)}
               <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {t('page.profileLabel')}
+              {t($ => $.page.profileLabel)}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {(Object.entries(PROFILE_ICONS) as [DashboardProfile, React.ComponentType<{ className?: string }>][]).map(([key, Icon]) => (
@@ -165,15 +165,15 @@ export function DashboardPage() {
               >
                 <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                 <div className="min-w-0">
-                  <p className="font-medium">{t(`profiles.${key}.label`)}</p>
-                  <p className="truncate text-[10px] text-muted-foreground">{t(`profiles.${key}.description`)}</p>
+                  <p className="font-medium">{t($ => $.profiles[key].label)}</p>
+                  <p className="truncate text-[10px] text-muted-foreground">{t($ => $.profiles[key].description)}</p>
                 </div>
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 text-xs text-muted-foreground" disabled>
               <Settings className="h-3.5 w-3.5" />
-              {t('page.workspaceSettings')}
+              {t($ => $.page.workspaceSettings)}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -190,11 +190,11 @@ export function DashboardPage() {
           <SectionLabel
             aside={
               <span className="text-[10px] text-muted-foreground/50">
-                {t('page.updatesEvery5min')}
+                {t($ => $.page.updatesEvery5min)}
               </span>
             }
           >
-            {t('page.aiBriefSection')}
+            {t($ => $.page.aiBriefSection)}
           </SectionLabel>
           <DashboardAiBrief data={data} loading={loading} />
         </section>
@@ -207,11 +207,11 @@ export function DashboardPage() {
           <SectionLabel
             aside={
               <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                {t('page.monthlyHistorical')}
+                {t($ => $.page.monthlyHistorical)}
               </Badge>
             }
           >
-            {t('page.analyticsSection')}
+            {t($ => $.page.analyticsSection)}
           </SectionLabel>
           <DashboardAnalytics data={data} loading={loading} />
         </section>

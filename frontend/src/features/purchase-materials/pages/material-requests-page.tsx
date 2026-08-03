@@ -72,7 +72,7 @@ function InlineStockHint({
   });
 
   if (!productId) return null;
-  if (isLoading) return <span className="text-xs text-muted-foreground">{t('materialRequestsPage.createPanel.loadingHint')}</span>;
+  if (isLoading) return <span className="text-xs text-muted-foreground">{t($ => $.materialRequestsPage.createPanel.loadingHint)}</span>;
   if (!data) return null;
 
   const available = data.inventory.available_qty;
@@ -125,7 +125,7 @@ function ProductSearchInput({
     <div className="relative">
       <Input
         ref={inputRef}
-        placeholder={t('materialRequestsPage.createPanel.table.searchProduct')}
+        placeholder={t($ => $.materialRequestsPage.createPanel.table.searchProduct)}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
@@ -140,11 +140,11 @@ function ProductSearchInput({
           {isFetching && (
             <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              {t('materialRequestsPage.createPanel.searching')}
+              {t($ => $.materialRequestsPage.createPanel.searching)}
             </div>
           )}
           {!isFetching && products.length === 0 && (
-            <div className="px-3 py-2 text-xs text-muted-foreground">{t('materialRequestsPage.createPanel.noProducts')}</div>
+            <div className="px-3 py-2 text-xs text-muted-foreground">{t($ => $.materialRequestsPage.createPanel.noProducts)}</div>
           )}
           {products.map((p) => (
             <button
@@ -221,12 +221,12 @@ function CreateMaterialRequestPanel({
 
   async function handleSave(andSubmit: boolean) {
     if (!warehouseId) {
-      toast.error(t('materialRequestsPage.createPanel.toast.warehouseRequired'));
+      toast.error(t($ => $.materialRequestsPage.createPanel.toast.warehouseRequired));
       return;
     }
     const validLines = lines.filter((l) => l.product_id && parseFloat(l.requested_qty) > 0);
     if (validLines.length === 0) {
-      toast.error(t('materialRequestsPage.createPanel.toast.addAtLeastOne'));
+      toast.error(t($ => $.materialRequestsPage.createPanel.toast.addAtLeastOne));
       return;
     }
 
@@ -248,13 +248,13 @@ function CreateMaterialRequestPanel({
 
       if (andSubmit) {
         await submitMutation.mutateAsync(created.id);
-        toast.success(t('materialRequestsPage.createPanel.toast.createdAndSubmitted'));
+        toast.success(t($ => $.materialRequestsPage.createPanel.toast.createdAndSubmitted));
       } else {
-        toast.success(t('materialRequestsPage.createPanel.toast.savedAsDraft'));
+        toast.success(t($ => $.materialRequestsPage.createPanel.toast.savedAsDraft));
       }
       onCreated();
     } catch {
-      toast.error(t('materialRequestsPage.createPanel.toast.failed'));
+      toast.error(t($ => $.materialRequestsPage.createPanel.toast.failed));
     }
   }
 
@@ -264,7 +264,7 @@ function CreateMaterialRequestPanel({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <h2 className="text-base font-semibold">{t('materialRequestsPage.createPanel.title')}</h2>
+        <h2 className="text-base font-semibold">{t($ => $.materialRequestsPage.createPanel.title)}</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
@@ -275,16 +275,16 @@ function CreateMaterialRequestPanel({
         {/* Header fields */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">{t('materialRequestsPage.createPanel.company')}</Label>
+            <Label className="text-xs">{t($ => $.materialRequestsPage.createPanel.company)}</Label>
             <CompanySelect value={companyId} onChange={setCompanyId} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">
-              {t('materialRequestsPage.createPanel.warehouseRequired')}
+              {t($ => $.materialRequestsPage.createPanel.warehouseRequired)}
             </Label>
             <Select value={warehouseId} onValueChange={setWarehouseId}>
               <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder={t('materialRequestsPage.createPanel.selectWarehouse')} />
+                <SelectValue placeholder={t($ => $.materialRequestsPage.createPanel.selectWarehouse)} />
               </SelectTrigger>
               <SelectContent>
                 {(warehouseOptions ?? []).map((w) => (
@@ -296,7 +296,7 @@ function CreateMaterialRequestPanel({
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">{t('materialRequestsPage.createPanel.priority')}</Label>
+            <Label className="text-xs">{t($ => $.materialRequestsPage.createPanel.priority)}</Label>
             <Select
               value={priority}
               onValueChange={(v) => setPriority(v as PurchaseMaterialPriority)}
@@ -305,15 +305,15 @@ function CreateMaterialRequestPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">{t('materialRequestsPage.createPanel.priorityOptions.low')}</SelectItem>
-                <SelectItem value="normal">{t('materialRequestsPage.createPanel.priorityOptions.normal')}</SelectItem>
-                <SelectItem value="high">{t('materialRequestsPage.createPanel.priorityOptions.high')}</SelectItem>
-                <SelectItem value="urgent">{t('materialRequestsPage.createPanel.priorityOptions.urgent')}</SelectItem>
+                <SelectItem value="low">{t($ => $.materialRequestsPage.createPanel.priorityOptions.low)}</SelectItem>
+                <SelectItem value="normal">{t($ => $.materialRequestsPage.createPanel.priorityOptions.normal)}</SelectItem>
+                <SelectItem value="high">{t($ => $.materialRequestsPage.createPanel.priorityOptions.high)}</SelectItem>
+                <SelectItem value="urgent">{t($ => $.materialRequestsPage.createPanel.priorityOptions.urgent)}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">{t('materialRequestsPage.createPanel.requiredDate')}</Label>
+            <Label className="text-xs">{t($ => $.materialRequestsPage.createPanel.requiredDate)}</Label>
             <Input
               type="date"
               className="h-9 text-sm"
@@ -323,9 +323,9 @@ function CreateMaterialRequestPanel({
           </div>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">{t('materialRequestsPage.createPanel.notes')}</Label>
+          <Label className="text-xs">{t($ => $.materialRequestsPage.createPanel.notes)}</Label>
           <Textarea
-            placeholder={t('materialRequestsPage.createPanel.notesPlaceholder')}
+            placeholder={t($ => $.materialRequestsPage.createPanel.notesPlaceholder)}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="min-h-[60px] resize-none text-sm"
@@ -335,19 +335,19 @@ function CreateMaterialRequestPanel({
         {/* Product lines */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-medium">{t('materialRequestsPage.createPanel.products')}</Label>
+            <Label className="text-xs font-medium">{t($ => $.materialRequestsPage.createPanel.products)}</Label>
             <span className="text-xs text-muted-foreground">
-              {t('materialRequestsPage.createPanel.enterKey')}
+              {t($ => $.materialRequestsPage.createPanel.enterKey)}
             </span>
           </div>
 
           <div className="rounded-md border">
             {/* Column headers */}
             <div className="grid grid-cols-[1fr_80px_70px_1fr_28px] gap-2 border-b bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-              <span>{t('materialRequestsPage.createPanel.table.product')}</span>
-              <span>{t('materialRequestsPage.createPanel.table.qty')}</span>
-              <span>{t('materialRequestsPage.createPanel.table.unit')}</span>
-              <span>{t('materialRequestsPage.createPanel.table.notes')}</span>
+              <span>{t($ => $.materialRequestsPage.createPanel.table.product)}</span>
+              <span>{t($ => $.materialRequestsPage.createPanel.table.qty)}</span>
+              <span>{t($ => $.materialRequestsPage.createPanel.table.unit)}</span>
+              <span>{t($ => $.materialRequestsPage.createPanel.table.notes)}</span>
               <span />
             </div>
 
@@ -370,20 +370,20 @@ function CreateMaterialRequestPanel({
                     type="number"
                     min="0.0001"
                     step="any"
-                    placeholder={t('materialRequestsPage.createPanel.table.qtyPlaceholder')}
+                    placeholder={t($ => $.materialRequestsPage.createPanel.table.qtyPlaceholder)}
                     value={line.requested_qty}
                     onChange={(e) => updateLine(line.localId, { requested_qty: e.target.value })}
                     onKeyDown={(e) => handleQtyKeyDown(e, idx)}
                     className="h-8 text-sm"
                   />
                   <Input
-                    placeholder={t('materialRequestsPage.createPanel.table.unitPlaceholder')}
+                    placeholder={t($ => $.materialRequestsPage.createPanel.table.unitPlaceholder)}
                     value={line.unit_label}
                     onChange={(e) => updateLine(line.localId, { unit_label: e.target.value })}
                     className="h-8 text-sm"
                   />
                   <Input
-                    placeholder={t('materialRequestsPage.createPanel.table.notesPlaceholder')}
+                    placeholder={t($ => $.materialRequestsPage.createPanel.table.notesPlaceholder)}
                     value={line.notes}
                     onChange={(e) => updateLine(line.localId, { notes: e.target.value })}
                     className="h-8 text-sm"
@@ -411,7 +411,7 @@ function CreateMaterialRequestPanel({
 
           <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={addLine}>
             <Plus className="h-3.5 w-3.5" />
-            {t('materialRequestsPage.createPanel.addProduct')}
+            {t($ => $.materialRequestsPage.createPanel.addProduct)}
           </Button>
         </div>
       </div>
@@ -419,7 +419,7 @@ function CreateMaterialRequestPanel({
       {/* Footer */}
       <div className="flex items-center justify-between border-t px-4 py-3">
         <Button variant="ghost" onClick={onClose} disabled={isBusy}>
-          {t('materialRequestsPage.createPanel.cancel')}
+          {t($ => $.materialRequestsPage.createPanel.cancel)}
         </Button>
         <div className="flex gap-2">
           <Button
@@ -430,7 +430,7 @@ function CreateMaterialRequestPanel({
             {createMutation.isPending && !submitAfterSave ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : null}
-            {t('materialRequestsPage.createPanel.saveAsDraft')}
+            {t($ => $.materialRequestsPage.createPanel.saveAsDraft)}
           </Button>
           <Button
             onClick={() => {
@@ -442,7 +442,7 @@ function CreateMaterialRequestPanel({
             {submitMutation.isPending ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : null}
-            {t('materialRequestsPage.createPanel.submitToProcurement')}
+            {t($ => $.materialRequestsPage.createPanel.submitToProcurement)}
           </Button>
         </div>
       </div>
@@ -463,11 +463,11 @@ export function MaterialRequestsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const STATUS_CHIPS: Array<{ value: PurchaseMaterialStatus | 'all'; label: string }> = [
-    { value: 'all', label: t('materialRequestsPage.statusChips.all') },
-    { value: 'draft', label: t('materialRequestsPage.statusChips.draft') },
-    { value: 'under_review', label: t('materialRequestsPage.statusChips.under_review') },
-    { value: 'on_hold', label: t('materialRequestsPage.statusChips.on_hold') },
-    { value: 'cancelled', label: t('materialRequestsPage.statusChips.cancelled') },
+    { value: 'all', label: t($ => $.materialRequestsPage.statusChips.all) },
+    { value: 'draft', label: t($ => $.materialRequestsPage.statusChips.draft) },
+    { value: 'under_review', label: t($ => $.materialRequestsPage.statusChips.under_review) },
+    { value: 'on_hold', label: t($ => $.materialRequestsPage.statusChips.on_hold) },
+    { value: 'cancelled', label: t($ => $.materialRequestsPage.statusChips.cancelled) },
   ];
 
   const { data, isLoading } = usePurchaseMaterialsQuery({
@@ -490,12 +490,12 @@ export function MaterialRequestsPage() {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <PageHeader
-          title={t('materialRequestsPage.title')}
-          subtitle={t('materialRequestsPage.subtitle')}
+          title={t($ => $.materialRequestsPage.title)}
+          subtitle={t($ => $.materialRequestsPage.subtitle)}
           actions={
             <Button onClick={() => setShowCreatePanel(true)} className="gap-1.5">
               <Plus className="h-4 w-4" />
-              {t('materialRequestsPage.newRequest')}
+              {t($ => $.materialRequestsPage.newRequest)}
             </Button>
           }
         />
@@ -506,7 +506,7 @@ export function MaterialRequestsPage() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder={t('materialRequestsPage.searchPlaceholder')}
+                placeholder={t($ => $.materialRequestsPage.searchPlaceholder)}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -545,28 +545,28 @@ export function MaterialRequestsPage() {
                 <thead>
                   <tr className="border-b bg-muted/30">
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      {t('materialRequestsPage.columns.requestNo')}
+                      {t($ => $.materialRequestsPage.columns.requestNo)}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      {t('materialRequestsPage.columns.warehouse')}
+                      {t($ => $.materialRequestsPage.columns.warehouse)}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      {t('materialRequestsPage.columns.products')}
+                      {t($ => $.materialRequestsPage.columns.products)}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      {t('materialRequestsPage.columns.priority')}
+                      {t($ => $.materialRequestsPage.columns.priority)}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      {t('materialRequestsPage.columns.requiredDate')}
+                      {t($ => $.materialRequestsPage.columns.requiredDate)}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      {t('materialRequestsPage.columns.status')}
+                      {t($ => $.materialRequestsPage.columns.status)}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      {t('materialRequestsPage.columns.requestedBy')}
+                      {t($ => $.materialRequestsPage.columns.requestedBy)}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      {t('materialRequestsPage.columns.createdAt')}
+                      {t($ => $.materialRequestsPage.columns.createdAt)}
                     </th>
                   </tr>
                 </thead>
@@ -586,9 +586,9 @@ export function MaterialRequestsPage() {
                     <tr>
                       <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                         <AlertCircle className="mx-auto mb-2 h-6 w-6 opacity-40" />
-                        <p className="text-sm">{t('materialRequestsPage.empty.title')}</p>
+                        <p className="text-sm">{t($ => $.materialRequestsPage.empty.title)}</p>
                         <p className="text-xs mt-1">
-                          {t('materialRequestsPage.empty.description')}
+                          {t($ => $.materialRequestsPage.empty.description)}
                         </p>
                       </td>
                     </tr>
@@ -647,7 +647,7 @@ export function MaterialRequestsPage() {
                       disabled={page === 1}
                       onClick={() => setPage((p) => p - 1)}
                     >
-                      {t('materialRequestsPage.pagination.previous')}
+                      {t($ => $.materialRequestsPage.pagination.previous)}
                     </Button>
                     <Button
                       variant="outline"
@@ -655,7 +655,7 @@ export function MaterialRequestsPage() {
                       disabled={page === meta.last_page}
                       onClick={() => setPage((p) => p + 1)}
                     >
-                      {t('materialRequestsPage.pagination.next')}
+                      {t($ => $.materialRequestsPage.pagination.next)}
                     </Button>
                   </div>
                 </div>

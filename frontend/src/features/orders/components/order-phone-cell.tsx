@@ -17,10 +17,10 @@ export function OrderPhoneCell({ phone }: OrderPhoneCellProps) {
     <PhoneCell
       phone={phone}
       labels={{
-        call:     t('phone.call'),
-        whatsapp: t('phone.whatsapp'),
-        copy:     t('phone.copy'),
-        copied:   t('phone.copied'),
+        call:     t($ => $.phone.call),
+        whatsapp: t($ => $.phone.whatsapp),
+        copy:     t($ => $.phone.copy),
+        copied:   t($ => $.phone.copied),
       }}
     />
   );

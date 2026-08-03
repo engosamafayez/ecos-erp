@@ -90,11 +90,11 @@ export function MarketingSettingsPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       setDirty(false);
       toast({
-        title:       t('marketingSettings.toast.saved'),
-        description: t('marketingSettings.toast.savedDesc'),
+        title:       t($ => $.marketingSettings.toast.saved),
+        description: t($ => $.marketingSettings.toast.savedDesc),
       });
     } catch {
-      toast({ title: t('marketingSettings.toast.failed'), variant: 'destructive' });
+      toast({ title: t($ => $.marketingSettings.toast.failed), variant: 'destructive' });
     }
   }
 
@@ -110,26 +110,26 @@ export function MarketingSettingsPage() {
         <div>
           <h1 className="text-xl font-semibold flex items-center gap-2">
             <Settings className="h-5 w-5 text-muted-foreground" />
-            {t('marketingSettings.title')}
+            {t($ => $.marketingSettings.title)}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {t('marketingSettings.subtitle')}
+            {t($ => $.marketingSettings.subtitle)}
           </p>
         </div>
         {dirty && (
           <Button size="sm" onClick={save} className="flex-shrink-0">
-            <Save className="h-3.5 w-3.5 mr-1.5" /> {t('marketingSettings.save')}
+            <Save className="h-3.5 w-3.5 mr-1.5" /> {t($ => $.marketingSettings.save)}
           </Button>
         )}
       </div>
 
       {/* Cache & Refresh */}
       <div className="rounded-lg border bg-card p-4">
-        <SectionHeader icon={<RefreshCw className="h-4 w-4" />} title={t('marketingSettings.sections.cache')} />
+        <SectionHeader icon={<RefreshCw className="h-4 w-4" />} title={t($ => $.marketingSettings.sections.cache)} />
         <div className="divide-y">
           <SettingRow
-            label={t('marketingSettings.rows.cacheTtl.label')}
-            description={t('marketingSettings.rows.cacheTtl.desc')}
+            label={t($ => $.marketingSettings.rows.cacheTtl.label)}
+            description={t($ => $.marketingSettings.rows.cacheTtl.desc)}
           >
             <Select
               value={String(settings.cache_ttl_minutes)}
@@ -139,17 +139,17 @@ export function MarketingSettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="5">{t('marketingSettings.options.ttl5')}</SelectItem>
-                <SelectItem value="15">{t('marketingSettings.options.ttl15')}</SelectItem>
-                <SelectItem value="30">{t('marketingSettings.options.ttl30')}</SelectItem>
-                <SelectItem value="60">{t('marketingSettings.options.ttl60')}</SelectItem>
+                <SelectItem value="5">{t($ => $.marketingSettings.options.ttl5)}</SelectItem>
+                <SelectItem value="15">{t($ => $.marketingSettings.options.ttl15)}</SelectItem>
+                <SelectItem value="30">{t($ => $.marketingSettings.options.ttl30)}</SelectItem>
+                <SelectItem value="60">{t($ => $.marketingSettings.options.ttl60)}</SelectItem>
               </SelectContent>
             </Select>
           </SettingRow>
 
           <SettingRow
-            label={t('marketingSettings.rows.autoRefresh.label')}
-            description={t('marketingSettings.rows.autoRefresh.desc')}
+            label={t($ => $.marketingSettings.rows.autoRefresh.label)}
+            description={t($ => $.marketingSettings.rows.autoRefresh.desc)}
           >
             <Select
               value={String(settings.auto_refresh_interval)}
@@ -159,10 +159,10 @@ export function MarketingSettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0">{t('marketingSettings.options.off')}</SelectItem>
-                <SelectItem value="5">{t('marketingSettings.options.interval300')}</SelectItem>
-                <SelectItem value="15">{t('marketingSettings.options.ttl15')}</SelectItem>
-                <SelectItem value="30">{t('marketingSettings.options.ttl30')}</SelectItem>
+                <SelectItem value="0">{t($ => $.marketingSettings.options.off)}</SelectItem>
+                <SelectItem value="5">{t($ => $.marketingSettings.options.interval300)}</SelectItem>
+                <SelectItem value="15">{t($ => $.marketingSettings.options.ttl15)}</SelectItem>
+                <SelectItem value="30">{t($ => $.marketingSettings.options.ttl30)}</SelectItem>
               </SelectContent>
             </Select>
           </SettingRow>
@@ -171,22 +171,22 @@ export function MarketingSettingsPage() {
 
       {/* Dashboard Preferences */}
       <div className="rounded-lg border bg-card p-4">
-        <SectionHeader icon={<Clock className="h-4 w-4" />} title={t('marketingSettings.sections.preferences')} />
+        <SectionHeader icon={<Clock className="h-4 w-4" />} title={t($ => $.marketingSettings.sections.preferences)} />
         <div className="divide-y">
           <SettingRow
-            label={t('marketingSettings.rows.showGrowth.label')}
-            description={t('marketingSettings.rows.showGrowth.desc')}
+            label={t($ => $.marketingSettings.rows.showGrowth.label)}
+            description={t($ => $.marketingSettings.rows.showGrowth.desc)}
           >
             <Switch
               checked={settings.show_growth_indicators}
               onCheckedChange={(v) => patch({ show_growth_indicators: v })}
-              aria-label={t('marketingSettings.rows.showGrowth.label')}
+              aria-label={t($ => $.marketingSettings.rows.showGrowth.label)}
             />
           </SettingRow>
 
           <SettingRow
-            label={t('marketingSettings.rows.defaultCurrency.label')}
-            description={t('marketingSettings.rows.defaultCurrency.desc')}
+            label={t($ => $.marketingSettings.rows.defaultCurrency.label)}
+            description={t($ => $.marketingSettings.rows.defaultCurrency.desc)}
           >
             <Select
               value={settings.default_currency}
@@ -196,10 +196,10 @@ export function MarketingSettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USD">{t('marketingSettings.options.usd')}</SelectItem>
-                <SelectItem value="EGP">{t('marketingSettings.options.egp')}</SelectItem>
-                <SelectItem value="EUR">{t('marketingSettings.options.eur')}</SelectItem>
-                <SelectItem value="GBP">{t('marketingSettings.options.gbp')}</SelectItem>
+                <SelectItem value="USD">{t($ => $.marketingSettings.options.usd)}</SelectItem>
+                <SelectItem value="EGP">{t($ => $.marketingSettings.options.egp)}</SelectItem>
+                <SelectItem value="EUR">{t($ => $.marketingSettings.options.eur)}</SelectItem>
+                <SelectItem value="GBP">{t($ => $.marketingSettings.options.gbp)}</SelectItem>
               </SelectContent>
             </Select>
           </SettingRow>
@@ -208,11 +208,11 @@ export function MarketingSettingsPage() {
 
       {/* Default Filters */}
       <div className="rounded-lg border bg-card p-4">
-        <SectionHeader icon={<Filter className="h-4 w-4" />} title={t('marketingSettings.sections.filters')} />
+        <SectionHeader icon={<Filter className="h-4 w-4" />} title={t($ => $.marketingSettings.sections.filters)} />
         <div className="divide-y">
           <SettingRow
-            label={t('marketingSettings.rows.defaultDateRange.label')}
-            description={t('marketingSettings.rows.defaultDateRange.desc')}
+            label={t($ => $.marketingSettings.rows.defaultDateRange.label)}
+            description={t($ => $.marketingSettings.rows.defaultDateRange.desc)}
           >
             <Select
               value={settings.default_date_preset}
@@ -222,20 +222,20 @@ export function MarketingSettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="today">{t('marketingSettings.options.today')}</SelectItem>
-                <SelectItem value="yesterday">{t('marketingSettings.options.yesterday')}</SelectItem>
-                <SelectItem value="last_7d">{t('marketingSettings.options.last7')}</SelectItem>
-                <SelectItem value="last_30d">{t('marketingSettings.options.last30')}</SelectItem>
-                <SelectItem value="last_90d">{t('marketingSettings.options.last90')}</SelectItem>
-                <SelectItem value="this_month">{t('marketingSettings.options.thisMonth')}</SelectItem>
-                <SelectItem value="last_month">{t('marketingSettings.options.lastMonth')}</SelectItem>
+                <SelectItem value="today">{t($ => $.marketingSettings.options.today)}</SelectItem>
+                <SelectItem value="yesterday">{t($ => $.marketingSettings.options.yesterday)}</SelectItem>
+                <SelectItem value="last_7d">{t($ => $.marketingSettings.options.last7)}</SelectItem>
+                <SelectItem value="last_30d">{t($ => $.marketingSettings.options.last30)}</SelectItem>
+                <SelectItem value="last_90d">{t($ => $.marketingSettings.options.last90)}</SelectItem>
+                <SelectItem value="this_month">{t($ => $.marketingSettings.options.thisMonth)}</SelectItem>
+                <SelectItem value="last_month">{t($ => $.marketingSettings.options.lastMonth)}</SelectItem>
               </SelectContent>
             </Select>
           </SettingRow>
 
           <SettingRow
-            label={t('marketingSettings.rows.rowsPerPage.label')}
-            description={t('marketingSettings.rows.rowsPerPage.desc')}
+            label={t($ => $.marketingSettings.rows.rowsPerPage.label)}
+            description={t($ => $.marketingSettings.rows.rowsPerPage.desc)}
           >
             <Select
               value={String(settings.default_per_page)}
@@ -254,8 +254,8 @@ export function MarketingSettingsPage() {
           </SettingRow>
 
           <SettingRow
-            label={t('marketingSettings.rows.granularity.label')}
-            description={t('marketingSettings.rows.granularity.desc')}
+            label={t($ => $.marketingSettings.rows.granularity.label)}
+            description={t($ => $.marketingSettings.rows.granularity.desc)}
           >
             <Select
               value={settings.default_granularity}
@@ -265,9 +265,9 @@ export function MarketingSettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="day">{t('marketingSettings.options.daily')}</SelectItem>
-                <SelectItem value="week">{t('marketingSettings.options.weekly')}</SelectItem>
-                <SelectItem value="month">{t('marketingSettings.options.monthly')}</SelectItem>
+                <SelectItem value="day">{t($ => $.marketingSettings.options.daily)}</SelectItem>
+                <SelectItem value="week">{t($ => $.marketingSettings.options.weekly)}</SelectItem>
+                <SelectItem value="month">{t($ => $.marketingSettings.options.monthly)}</SelectItem>
               </SelectContent>
             </Select>
           </SettingRow>
@@ -276,27 +276,27 @@ export function MarketingSettingsPage() {
 
       {/* Notifications */}
       <div className="rounded-lg border bg-card p-4">
-        <SectionHeader icon={<Bell className="h-4 w-4" />} title={t('marketingSettings.sections.alerts')} />
+        <SectionHeader icon={<Bell className="h-4 w-4" />} title={t($ => $.marketingSettings.sections.alerts)} />
         <div className="divide-y">
           <SettingRow
-            label={t('marketingSettings.rows.roasAlert.label')}
-            description={t('marketingSettings.rows.roasAlert.desc')}
+            label={t($ => $.marketingSettings.rows.roasAlert.label)}
+            description={t($ => $.marketingSettings.rows.roasAlert.desc)}
           >
             <Switch
               checked={settings.notify_overspend}
               onCheckedChange={(v) => patch({ notify_overspend: v })}
-              aria-label={t('marketingSettings.rows.roasAlert.label')}
+              aria-label={t($ => $.marketingSettings.rows.roasAlert.label)}
             />
           </SettingRow>
 
           <SettingRow
-            label={t('marketingSettings.rows.budgetAlert.label')}
-            description={t('marketingSettings.rows.budgetAlert.desc')}
+            label={t($ => $.marketingSettings.rows.budgetAlert.label)}
+            description={t($ => $.marketingSettings.rows.budgetAlert.desc)}
           >
             <Switch
               checked={settings.notify_sync_failure}
               onCheckedChange={(v) => patch({ notify_sync_failure: v })}
-              aria-label={t('marketingSettings.rows.budgetAlert.label')}
+              aria-label={t($ => $.marketingSettings.rows.budgetAlert.label)}
             />
           </SettingRow>
         </div>
@@ -305,10 +305,10 @@ export function MarketingSettingsPage() {
       {/* Actions */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground">
-          {t('marketingSettings.reset')}
+          {t($ => $.marketingSettings.reset)}
         </Button>
         <Button onClick={save} disabled={!dirty}>
-          <Save className="h-4 w-4 mr-2" /> {t('marketingSettings.save')}
+          <Save className="h-4 w-4 mr-2" /> {t($ => $.marketingSettings.save)}
         </Button>
       </div>
     </div>

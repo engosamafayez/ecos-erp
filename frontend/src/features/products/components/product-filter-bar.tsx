@@ -178,22 +178,22 @@ export function ProductFilterBar({ filters, onChange, onClear }: ProductFilterBa
       {/* Primary row */}
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">{t('filterBar.category')}</label>
+          <label className="text-xs font-medium text-muted-foreground">{t($ => $.filterBar.category)}</label>
           <ProductCategorySelect
             value={filters.category_id}
             onChange={(v) => onChange({ category_id: v })}
-            placeholder={t('filterBar.allCategories')}
+            placeholder={t($ => $.filterBar.allCategories)}
             className="h-8 text-sm"
           />
         </div>
 
         {/* Brand — appears before Channel per ADR-013 ownership hierarchy */}
         <FilterSelect
-          label={t('filterBar.brand')}
+          label={t($ => $.filterBar.brand)}
           value={filters.brand_id ?? ''}
           onChange={handleBrandChange}
         >
-          <option value="">{t('filterBar.allBrands')}</option>
+          <option value="">{t($ => $.filterBar.allBrands)}</option>
           {brandOptions.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
@@ -201,12 +201,12 @@ export function ProductFilterBar({ filters, onChange, onClear }: ProductFilterBa
 
         {/* Channel — scoped to selected brand when a brand is chosen */}
         <FilterSelect
-          label={filters.brand_id ? t('filterBar.channelBrand') : t('filterBar.channel')}
+          label={filters.brand_id ? t($ => $.filterBar.channelBrand) : t($ => $.filterBar.channel)}
           value={filters.channel_id ?? ''}
           onChange={(v) => onChange({ channel_id: v || null })}
         >
           <option value="">
-            {filters.brand_id ? t('filterBar.allBrandChannels') : t('filterBar.allChannels')}
+            {filters.brand_id ? t($ => $.filterBar.allBrandChannels) : t($ => $.filterBar.allChannels)}
           </option>
           {channelOptions.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -214,13 +214,13 @@ export function ProductFilterBar({ filters, onChange, onClear }: ProductFilterBa
         </FilterSelect>
 
         <FilterSelect
-          label={t('filterBar.status')}
+          label={t($ => $.filterBar.status)}
           value={filters.status}
           onChange={(v) => onChange({ status: v as ProductStatusFilter })}
         >
-          <option value="all">{t('filterBar.allStatuses')}</option>
-          <option value="active">{t('filterBar.active')}</option>
-          <option value="inactive">{t('filterBar.inactive')}</option>
+          <option value="all">{t($ => $.filterBar.allStatuses)}</option>
+          <option value="active">{t($ => $.filterBar.active)}</option>
+          <option value="inactive">{t($ => $.filterBar.inactive)}</option>
         </FilterSelect>
 
         {/* Action buttons */}
@@ -232,13 +232,13 @@ export function ProductFilterBar({ filters, onChange, onClear }: ProductFilterBa
             onClick={() => setShowMore((v) => !v)}
           >
             <SlidersHorizontal className="size-3.5" />
-            {t('filterBar.more')}
+            {t($ => $.filterBar.more)}
             {showMore ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
           </Button>
           {active ? (
             <Button type="button" variant="ghost" size="sm" onClick={onClear}>
               <X className="size-3.5" />
-              {t('filterBar.clear')}
+              {t($ => $.filterBar.clear)}
             </Button>
           ) : null}
         </div>
@@ -248,17 +248,17 @@ export function ProductFilterBar({ filters, onChange, onClear }: ProductFilterBa
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
         {/* Manufacturing Availability */}
         <ToggleChip
-          label={t('filterBar.mfgInStock')}
+          label={t($ => $.filterBar.mfgInStock)}
           active={filters.manufacturing_availability === 'instock'}
           onClick={() => onChange({ manufacturing_availability: filters.manufacturing_availability !== 'instock' ? 'instock' : '' })}
         />
         <ToggleChip
-          label={t('filterBar.mfgOutOfStock')}
+          label={t($ => $.filterBar.mfgOutOfStock)}
           active={filters.manufacturing_availability === 'outofstock'}
           onClick={() => onChange({ manufacturing_availability: filters.manufacturing_availability !== 'outofstock' ? 'outofstock' : '' })}
         />
         <ToggleChip
-          label={t('filterBar.mfgRecipeMissing')}
+          label={t($ => $.filterBar.mfgRecipeMissing)}
           active={filters.manufacturing_availability === 'recipe_missing'}
           onClick={() => onChange({ manufacturing_availability: filters.manufacturing_availability !== 'recipe_missing' ? 'recipe_missing' : '' })}
         />
@@ -267,12 +267,12 @@ export function ProductFilterBar({ filters, onChange, onClear }: ProductFilterBa
 
         {/* Recipe */}
         <ToggleChip
-          label={t('filterBar.hasRecipe')}
+          label={t($ => $.filterBar.hasRecipe)}
           active={filters.has_recipe === 'true'}
           onClick={() => onChange({ has_recipe: filters.has_recipe !== 'true' ? 'true' : null })}
         />
         <ToggleChip
-          label={t('filterBar.missingRecipe')}
+          label={t($ => $.filterBar.missingRecipe)}
           active={filters.has_recipe === 'false'}
           onClick={() => onChange({ has_recipe: filters.has_recipe !== 'false' ? 'false' : null })}
         />
@@ -281,12 +281,12 @@ export function ProductFilterBar({ filters, onChange, onClear }: ProductFilterBa
 
         {/* Publish */}
         <ToggleChip
-          label={t('filterBar.published')}
+          label={t($ => $.filterBar.published)}
           active={filters.is_published === true}
           onClick={() => onChange({ is_published: filters.is_published !== true ? true : null })}
         />
         <ToggleChip
-          label={t('filterBar.unpublished')}
+          label={t($ => $.filterBar.unpublished)}
           active={filters.is_published === false}
           onClick={() => onChange({ is_published: filters.is_published !== false ? false : null })}
         />
@@ -295,17 +295,17 @@ export function ProductFilterBar({ filters, onChange, onClear }: ProductFilterBa
 
         {/* Lifecycle */}
         <ToggleChip
-          label={t('filterBar.priceReviewRequired')}
+          label={t($ => $.filterBar.priceReviewRequired)}
           active={filters.needs_pricing_review}
           onClick={() => onChange({ needs_pricing_review: !filters.needs_pricing_review })}
         />
         <ToggleChip
-          label={t('filterBar.mfgReady')}
+          label={t($ => $.filterBar.mfgReady)}
           active={filters.manufacturing_ready}
           onClick={() => onChange({ manufacturing_ready: !filters.manufacturing_ready })}
         />
         <ToggleChip
-          label={t('filterBar.lowMargin')}
+          label={t($ => $.filterBar.lowMargin)}
           active={filters.low_margin}
           onClick={() => onChange({ low_margin: !filters.low_margin })}
         />
@@ -315,46 +315,46 @@ export function ProductFilterBar({ filters, onChange, onClear }: ProductFilterBa
       {showMore ? (
         <div className="mt-3 flex flex-wrap items-end gap-3 border-t pt-3">
           <FilterSelect
-            label={t('filterBar.warehouse')}
+            label={t($ => $.filterBar.warehouse)}
             value={filters.warehouse_id ?? ''}
             onChange={(v) => onChange({ warehouse_id: v || null })}
           >
-            <option value="">{t('filterBar.allWarehouses')}</option>
+            <option value="">{t($ => $.filterBar.allWarehouses)}</option>
             {warehouseOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </FilterSelect>
 
           <FilterSelect
-            label={t('filterBar.stockStatus')}
+            label={t($ => $.filterBar.stockStatus)}
             value={filters.stock_status}
             onChange={(v) => onChange({ stock_status: v as ProductStockStatusFilter })}
           >
-            <option value="">{t('filterBar.allStock')}</option>
-            <option value="instock">{t('filterBar.instock')}</option>
-            <option value="outofstock">{t('filterBar.outofstock')}</option>
+            <option value="">{t($ => $.filterBar.allStock)}</option>
+            <option value="instock">{t($ => $.filterBar.instock)}</option>
+            <option value="outofstock">{t($ => $.filterBar.outofstock)}</option>
           </FilterSelect>
 
           <FilterSelect
-            label={t('filterBar.hasImages')}
+            label={t($ => $.filterBar.hasImages)}
             value={filters.has_images === null ? '' : String(filters.has_images)}
             onChange={(v) => onChange({ has_images: v === '' ? null : v === 'true' })}
           >
-            <option value="">{t('filterBar.allStock')}</option>
-            <option value="true">{t('filterBar.withImages')}</option>
-            <option value="false">{t('filterBar.withoutImages')}</option>
+            <option value="">{t($ => $.filterBar.allStock)}</option>
+            <option value="true">{t($ => $.filterBar.withImages)}</option>
+            <option value="false">{t($ => $.filterBar.withoutImages)}</option>
           </FilterSelect>
 
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">{t('filterBar.other')}</span>
+            <span className="text-xs font-medium text-muted-foreground">{t($ => $.filterBar.other)}</span>
             <div className="flex items-center gap-1.5">
               <ToggleChip
-                label={t('filterBar.lowStock')}
+                label={t($ => $.filterBar.lowStock)}
                 active={filters.low_stock}
                 onClick={() => onChange({ low_stock: !filters.low_stock })}
               />
               <ToggleChip
-                label={t('filterBar.notSynced')}
+                label={t($ => $.filterBar.notSynced)}
                 active={filters.not_synced}
                 onClick={() => onChange({ not_synced: !filters.not_synced })}
               />

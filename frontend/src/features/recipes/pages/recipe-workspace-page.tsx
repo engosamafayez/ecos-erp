@@ -84,13 +84,13 @@ function MaterialTypeBadge({ type }: { type: string }) {
   if (type === 'packaging_material') {
     return (
       <Badge variant="outline" className="text-xs border-violet-300 text-violet-700 dark:border-violet-700 dark:text-violet-400">
-        {t('materialTypes.packaging')}
+        {t($ => $.materialTypes.packaging)}
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="text-xs border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400">
-      {t('materialTypes.rawMaterial')}
+      {t($ => $.materialTypes.rawMaterial)}
     </Badge>
   );
 }
@@ -149,9 +149,9 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
   }
 
   function handleSave() {
-    if (!name.trim())    { setError(t('createMaterial.nameRequired'));      return; }
-    if (!categoryId)     { setError(t('createMaterial.categoryRequired')); return; }
-    if (!unitId)         { setError(t('createMaterial.unitRequired'));     return; }
+    if (!name.trim())    { setError(t($ => $.createMaterial.nameRequired));      return; }
+    if (!categoryId)     { setError(t($ => $.createMaterial.categoryRequired)); return; }
+    if (!unitId)         { setError(t($ => $.createMaterial.unitRequired));     return; }
 
     setError('');
     createMaterial.mutate(
@@ -166,7 +166,7 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
       },
       {
         onSuccess: (product) => {
-          toast.success(t('createMaterial.createdSuccess', { name: product.name }));
+          toast.success(t($ => $.createMaterial.createdSuccess, { name: product.name }));
           onCreated(product as unknown as Product);
           handleClose(false);
         },
@@ -179,7 +179,7 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t('createMaterial.title')}</DialogTitle>
+          <DialogTitle>{t($ => $.createMaterial.title)}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-1">
@@ -189,7 +189,7 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
 
           {/* Type */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('createMaterial.typeLabel')}</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t($ => $.createMaterial.typeLabel)}</Label>
             <div className="flex gap-2">
               {(['raw_material', 'packaging_material'] as const).map((tp) => (
                 <button
@@ -203,7 +203,7 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
                       : 'border-border hover:bg-muted',
                   )}
                 >
-                  {tp === 'raw_material' ? t('materialTypes.rawMaterial') : t('materialTypes.packaging')}
+                  {tp === 'raw_material' ? t($ => $.materialTypes.rawMaterial) : t($ => $.materialTypes.packaging)}
                 </button>
               ))}
             </div>
@@ -211,24 +211,24 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
 
           {/* Name */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('createMaterial.nameLabel')}</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t($ => $.createMaterial.nameLabel)}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t('createMaterial.namePlaceholder')}
+              placeholder={t($ => $.createMaterial.namePlaceholder)}
               autoFocus
             />
           </div>
 
           {/* Category */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('createMaterial.categoryLabel')}</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t($ => $.createMaterial.categoryLabel)}</Label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
             >
-              <option value="">{t('createMaterial.categoryPlaceholder')}</option>
+              <option value="">{t($ => $.createMaterial.categoryPlaceholder)}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -237,13 +237,13 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
 
           {/* Unit */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('createMaterial.unitLabel')}</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t($ => $.createMaterial.unitLabel)}</Label>
             <select
               value={unitId}
               onChange={(e) => setUnitId(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
             >
-              <option value="">{t('createMaterial.unitPlaceholder')}</option>
+              <option value="">{t($ => $.createMaterial.unitPlaceholder)}</option>
               {units.map((u) => (
                 <option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>
               ))}
@@ -252,9 +252,9 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleClose(false)}>{t('createMaterial.cancel')}</Button>
+          <Button variant="outline" onClick={() => handleClose(false)}>{t($ => $.createMaterial.cancel)}</Button>
           <Button onClick={handleSave} disabled={createMaterial.isPending}>
-            {createMaterial.isPending ? t('createMaterial.creating') : t('createMaterial.submit')}
+            {createMaterial.isPending ? t($ => $.createMaterial.creating) : t($ => $.createMaterial.submit)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -308,14 +308,14 @@ function MaterialPicker({
       <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setSearch(''); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{t('materialPicker.title')}</DialogTitle>
+            <DialogTitle>{t($ => $.materialPicker.title)}</DialogTitle>
           </DialogHeader>
 
           <div className="relative">
             <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
             <Input
               className="pl-8"
-              placeholder={t('materialPicker.searchPlaceholder')}
+              placeholder={t($ => $.materialPicker.searchPlaceholder)}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -324,16 +324,16 @@ function MaterialPicker({
 
           <div className="max-h-[360px] overflow-y-auto divide-y">
             {isLoading ? (
-              <p className="text-muted-foreground py-6 text-center text-sm">{t('materialPicker.loading')}</p>
+              <p className="text-muted-foreground py-6 text-center text-sm">{t($ => $.materialPicker.loading)}</p>
             ) : filtered.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-muted-foreground text-sm mb-3">{t('materialPicker.noMaterials')}</p>
+                <p className="text-muted-foreground text-sm mb-3">{t($ => $.materialPicker.noMaterials)}</p>
                 <div className="flex gap-2 justify-center">
                   <Button type="button" size="sm" variant="outline" onClick={() => handleOpenCreate('raw_material')}>
-                    <Plus className="size-3.5 mr-1" /> {t('materialTypes.rawMaterial')}
+                    <Plus className="size-3.5 mr-1" /> {t($ => $.materialTypes.rawMaterial)}
                   </Button>
                   <Button type="button" size="sm" variant="outline" onClick={() => handleOpenCreate('packaging_material')}>
-                    <Plus className="size-3.5 mr-1" /> {t('materialTypes.packaging')}
+                    <Plus className="size-3.5 mr-1" /> {t($ => $.materialTypes.packaging)}
                   </Button>
                 </div>
               </div>
@@ -344,10 +344,10 @@ function MaterialPicker({
                   <>
                     <div className="px-3 py-1.5 bg-muted/40 flex items-center justify-between">
                       <span className="text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                        {t('materialsGroup.rawMaterials')}
+                        {t($ => $.materialsGroup.rawMaterials)}
                       </span>
                       <Button type="button" size="sm" variant="ghost" className="h-5 px-1.5 text-xs" onClick={() => handleOpenCreate('raw_material')}>
-                        <Plus className="size-3" /> {t('actions.newButton')}
+                        <Plus className="size-3" /> {t($ => $.actions.newButton)}
                       </Button>
                     </div>
                     {rawMaterials.map((m) => <MaterialRow key={m.id} m={m} alreadySelected={alreadySelected} onSelect={onSelect} onClose={() => { onOpenChange(false); setSearch(''); }} />)}
@@ -359,10 +359,10 @@ function MaterialPicker({
                   <>
                     <div className="px-3 py-1.5 bg-muted/40 flex items-center justify-between">
                       <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                        {t('materialsGroup.packagingMaterials')}
+                        {t($ => $.materialsGroup.packagingMaterials)}
                       </span>
                       <Button type="button" size="sm" variant="ghost" className="h-5 px-1.5 text-xs" onClick={() => handleOpenCreate('packaging_material')}>
-                        <Plus className="size-3" /> {t('actions.newButton')}
+                        <Plus className="size-3" /> {t($ => $.actions.newButton)}
                       </Button>
                     </div>
                     {pkgMaterials.map((m) => <MaterialRow key={m.id} m={m} alreadySelected={alreadySelected} onSelect={onSelect} onClose={() => { onOpenChange(false); setSearch(''); }} />)}
@@ -376,10 +376,10 @@ function MaterialPicker({
           {!isLoading && filtered.length > 0 && (
             <div className="border-t pt-3 flex gap-2">
               <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => handleOpenCreate('raw_material')}>
-                <Plus className="size-3.5 mr-1" /> {t('materialPicker.createRawMaterial')}
+                <Plus className="size-3.5 mr-1" /> {t($ => $.materialPicker.createRawMaterial)}
               </Button>
               <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => handleOpenCreate('packaging_material')}>
-                <Plus className="size-3.5 mr-1" /> {t('materialPicker.createPackaging')}
+                <Plus className="size-3.5 mr-1" /> {t($ => $.materialPicker.createPackaging)}
               </Button>
             </div>
           )}
@@ -431,11 +431,11 @@ function MaterialRow({
           <span className="text-xs font-medium tabular-nums">{fmtCost(m.material_cost, currency, locale)}</span>
         ) : (
           <span className="text-xs text-amber-500 flex items-center gap-0.5">
-            <TriangleAlert className="size-3" />{t('noCost')}
+            <TriangleAlert className="size-3" />{t($ => $.noCost)}
           </span>
         )}
       </div>
-      {added && <Badge variant="secondary" className="text-xs ml-1">{t('materialPicker.added')}</Badge>}
+      {added && <Badge variant="secondary" className="text-xs ml-1">{t($ => $.materialPicker.added)}</Badge>}
     </button>
   );
 }
@@ -493,14 +493,14 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
       <PageHeader
         title={recipe.product?.name ?? recipe.bom_number}
         breadcrumbs={[
-          { label: t('page.breadcrumbs.home'),    to: ROUTES.dashboard },
-          { label: t('page.breadcrumbs.recipes'), to: ROUTES.recipes },
+          { label: t($ => $.page.breadcrumbs.home),    to: ROUTES.dashboard },
+          { label: t($ => $.page.breadcrumbs.recipes), to: ROUTES.recipes },
           { label: recipe.product?.name ?? recipe.bom_number },
         ]}
         actions={
           <Button onClick={() => navigate(`${ROUTES.recipes}/${recipe.id}/edit`)}>
             <Pencil className="size-4" />
-            {t('actions.edit')}
+            {t($ => $.actions.edit)}
           </Button>
         }
       />
@@ -508,39 +508,39 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-6">
           {/* Details */}
-          <WorkspaceCard title={t('workspace.details')}>
+          <WorkspaceCard title={t($ => $.workspace.details)}>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <LabelValue label={t('workspace.recipeNumber')} value={<span className="font-mono text-xs">{recipe.bom_number}</span>} />
-              <LabelValue label={t('workspace.product_label')} value={recipe.product?.name} />
+              <LabelValue label={t($ => $.workspace.recipeNumber)} value={<span className="font-mono text-xs">{recipe.bom_number}</span>} />
+              <LabelValue label={t($ => $.workspace.product_label)} value={recipe.product?.name} />
               <LabelValue
-                label={t('workspace.status')}
+                label={t($ => $.workspace.status)}
                 value={
                   recipe.is_active
-                    ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">{t('status.active')}</Badge>
-                    : <Badge variant="outline" className="text-xs text-muted-foreground">{t('status.draft')}</Badge>
+                    ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">{t($ => $.status.active)}</Badge>
+                    : <Badge variant="outline" className="text-xs text-muted-foreground">{t($ => $.status.draft)}</Badge>
                 }
               />
             </div>
           </WorkspaceCard>
 
           {/* Materials — grouped */}
-          <WorkspaceCard title={t('workspace.materials')}>
+          <WorkspaceCard title={t($ => $.workspace.materials)}>
             {recipe.lines.length === 0 ? (
-              <p className="text-muted-foreground text-sm">{t('workspace.noMaterialsView')}</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.workspace.noMaterialsView)}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-muted-foreground border-b text-start">
-                      <th className="pb-2 pe-3 font-medium">{t('tableColumns.material')}</th>
-                      <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.type')}</th>
-                      <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.category')}</th>
-                      <th className="pb-2 pe-3 font-medium w-14">{t('tableColumns.unit')}</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-20">{t('tableColumns.reqQty')}</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-16">{t('tableColumns.wastePct')}</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-20">{t('tableColumns.effQty')}</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-28">{t('tableColumns.unitCost')}</th>
-                      <th className="pb-2 text-end font-medium w-28">{t('tableColumns.totalCost')}</th>
+                      <th className="pb-2 pe-3 font-medium">{t($ => $.tableColumns.material)}</th>
+                      <th className="pb-2 pe-3 font-medium w-24">{t($ => $.tableColumns.type)}</th>
+                      <th className="pb-2 pe-3 font-medium w-24">{t($ => $.tableColumns.category)}</th>
+                      <th className="pb-2 pe-3 font-medium w-14">{t($ => $.tableColumns.unit)}</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-20">{t($ => $.tableColumns.reqQty)}</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-16">{t($ => $.tableColumns.wastePct)}</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-20">{t($ => $.tableColumns.effQty)}</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-28">{t($ => $.tableColumns.unitCost)}</th>
+                      <th className="pb-2 text-end font-medium w-28">{t($ => $.tableColumns.totalCost)}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -550,7 +550,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                         <tr>
                           <td colSpan={9} className="py-1.5 px-0">
                             <span className="text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                              {t('materialsGroup.rawMaterials')}
+                              {t($ => $.materialsGroup.rawMaterials)}
                             </span>
                           </td>
                         </tr>
@@ -558,7 +558,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                           <MaterialViewRow key={line.id} line={line} onOpenDrawer={(p) => setDrawerMaterial(p)} />
                         ))}
                         <tr className="bg-muted/30">
-                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.rawSubtotal')}</td>
+                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">{t($ => $.materialsGroup.rawSubtotal)}</td>
                           <td className="py-1.5 text-end text-xs font-semibold tabular-nums">{fmtCost(rawSubtotal, currency, locale)}</td>
                         </tr>
                       </>
@@ -570,7 +570,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                         <tr>
                           <td colSpan={9} className="py-1.5 px-0">
                             <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                              {t('materialsGroup.packagingMaterials')}
+                              {t($ => $.materialsGroup.packagingMaterials)}
                             </span>
                           </td>
                         </tr>
@@ -578,7 +578,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                           <MaterialViewRow key={line.id} line={line} onOpenDrawer={(p) => setDrawerMaterial(p)} />
                         ))}
                         <tr className="bg-muted/30">
-                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.packagingSubtotal')}</td>
+                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">{t($ => $.materialsGroup.packagingSubtotal)}</td>
                           <td className="py-1.5 text-end text-xs font-semibold tabular-nums">{fmtCost(pkgSubtotal, currency, locale)}</td>
                         </tr>
                       </>
@@ -591,14 +591,14 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
 
           {/* Recipe Notes */}
           {recipe.notes && (
-            <WorkspaceCard title={t('workspace.recipeNotes')}>
+            <WorkspaceCard title={t($ => $.workspace.recipeNotes)}>
               <p className="text-sm whitespace-pre-wrap">{recipe.notes}</p>
             </WorkspaceCard>
           )}
 
           {/* Execution Instructions */}
           {recipe.execution_instructions && (
-            <WorkspaceCard title={t('workspace.executionInstructions')}>
+            <WorkspaceCard title={t($ => $.workspace.executionInstructions)}>
               <p className="text-sm whitespace-pre-wrap font-mono text-muted-foreground">{recipe.execution_instructions}</p>
             </WorkspaceCard>
           )}
@@ -606,30 +606,30 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
 
         {/* Cost Summary */}
         <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-          <WorkspaceCard title={t('costSummary.title')}>
+          <WorkspaceCard title={t($ => $.costSummary.title)}>
             <div className="flex flex-col gap-3">
-              <LabelValue label={t('costSummary.totalMaterials')} value={recipe.lines.length} />
+              <LabelValue label={t($ => $.costSummary.totalMaterials)} value={recipe.lines.length} />
               <Separator />
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('costSummary.rawMaterials')}</span>
+                <span className="text-muted-foreground">{t($ => $.costSummary.rawMaterials)}</span>
                 <span className="tabular-nums">{fmtCost(rawMaterialCost, currency, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('costSummary.packaging')}</span>
+                <span className="text-muted-foreground">{t($ => $.costSummary.packaging)}</span>
                 <span className="tabular-nums">{fmtCost(packagingCost, currency, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('costSummary.manufacturing')}</span>
+                <span className="text-muted-foreground">{t($ => $.costSummary.manufacturing)}</span>
                 <span className="tabular-nums">{fmtCost(manufacturingCost, currency, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('costSummary.otherCosts')}</span>
+                <span className="text-muted-foreground">{t($ => $.costSummary.otherCosts)}</span>
                 <span className="tabular-nums">{fmtCost(otherCosts, currency, locale)}</span>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-sm font-semibold">
-                  {t('costSummary.recipeCost')}
+                  {t($ => $.costSummary.recipeCost)}
                   <LiveCostBadge />
                 </span>
                 <span className="text-sm font-bold tabular-nums">{fmtCost(recipeCost, currency, locale)}</span>
@@ -712,7 +712,7 @@ function MaterialViewRow({ line, onOpenDrawer }: { line: LineCostRow; onOpenDraw
           <span className="tabular-nums">{fmtCost(line.unitCost as number, currency, locale)}</span>
         ) : (
           <span className="text-amber-500 text-xs flex items-center justify-end gap-1">
-            <TriangleAlert className="size-3" />{t('noCost')}
+            <TriangleAlert className="size-3" />{t($ => $.noCost)}
           </span>
         )}
       </td>
@@ -740,14 +740,14 @@ function DuplicateDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t('duplicateDialog.title')}</DialogTitle>
+          <DialogTitle>{t($ => $.duplicateDialog.title)}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          {t('duplicateDialog.description', { name: productName })}
+          {t($ => $.duplicateDialog.description, { name: productName })}
         </p>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>{t('duplicateDialog.cancel')}</Button>
-          <Button variant="destructive" onClick={onReplace}>{t('duplicateDialog.replace')}</Button>
+          <Button variant="outline" onClick={onCancel}>{t($ => $.duplicateDialog.cancel)}</Button>
+          <Button variant="destructive" onClick={onReplace}>{t($ => $.duplicateDialog.replace)}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -1053,16 +1053,16 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
 
   const isPending = createRecipe.isPending || updateRecipe.isPending;
   const title = mode === 'create'
-    ? t('workspace.createTitle')
-    : t('workspace.editTitle', { name: recipe?.product?.name ?? recipe?.bom_number ?? '' });
+    ? t($ => $.workspace.createTitle)
+    : t($ => $.workspace.editTitle, { name: recipe?.product?.name ?? recipe?.bom_number ?? '' });
 
   return (
     <div className="flex flex-col gap-6 pb-24">
       <PageHeader
         title={title}
         breadcrumbs={[
-          { label: t('page.breadcrumbs.home'),    to: ROUTES.dashboard },
-          { label: t('page.breadcrumbs.recipes'), to: ROUTES.recipes },
+          { label: t($ => $.page.breadcrumbs.home),    to: ROUTES.dashboard },
+          { label: t($ => $.page.breadcrumbs.recipes), to: ROUTES.recipes },
           { label: title },
         ]}
       />
@@ -1070,7 +1070,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
       {serverError && (
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
-          <AlertTitle>{t('workspace.error')}</AlertTitle>
+          <AlertTitle>{t($ => $.workspace.error)}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       )}
@@ -1080,11 +1080,11 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
             <div className="flex flex-col gap-6">
               {/* Product selection */}
-              <WorkspaceCard title={t('workspace.product')}>
+              <WorkspaceCard title={t($ => $.workspace.product)}>
                 {/* Company filter */}
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    {t('companyFilter.label')} <span className="font-normal">{t('companyFilter.hint')}</span>
+                    {t($ => $.companyFilter.label)} <span className="font-normal">{t($ => $.companyFilter.hint)}</span>
                   </Label>
                   <Combobox
                     options={companyOptions ?? []}
@@ -1094,7 +1094,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       setSelectedChannelId('');
                       form.setValue('product_id', '');
                     }}
-                    placeholder={t('companyFilter.placeholder')}
+                    placeholder={t($ => $.companyFilter.placeholder)}
                     loading={loadingCompanies}
                   />
                 </div>
@@ -1102,7 +1102,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                 {/* Channel filter */}
                 <div className="mt-3 flex flex-col gap-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    {t('channelFilter.label')} <span className="font-normal">{t('channelFilter.hint')}</span>
+                    {t($ => $.channelFilter.label)} <span className="font-normal">{t($ => $.channelFilter.hint)}</span>
                   </Label>
                   <Combobox
                     options={filteredChannelOptions}
@@ -1111,13 +1111,13 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       setSelectedChannelId(v ?? '');
                       form.setValue('product_id', '');
                     }}
-                    placeholder={selectedCompanyId ? t('channelFilter.placeholder') : t('channelFilter.selectCompanyFirst')}
+                    placeholder={selectedCompanyId ? t($ => $.channelFilter.placeholder) : t($ => $.channelFilter.selectCompanyFirst)}
                     loading={loadingChannels}
                   />
                 </div>
 
                 <div className="mt-3">
-                  <FormField name="product_id" label={t('workspace.product_label')} required>
+                  <FormField name="product_id" label={t($ => $.workspace.product_label)} required>
                     <Controller
                       control={form.control}
                       name="product_id"
@@ -1126,7 +1126,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                           options={fgOptions}
                           value={field.value || null}
                           onChange={(v) => void handleProductChange(v)}
-                          placeholder={t('productFilter.placeholder')}
+                          placeholder={t($ => $.productFilter.placeholder)}
                           loading={loadingFG || isCheckingDuplicate}
                         />
                       )}
@@ -1137,13 +1137,13 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                 {!watchedProductId && (
                   <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
                     <TriangleAlert className="size-4 flex-shrink-0" />
-                    {t('workspace.selectProductWarning')}
+                    {t($ => $.workspace.selectProductWarning)}
                   </div>
                 )}
               </WorkspaceCard>
 
               {/* Materials table */}
-              <WorkspaceCard title={t('workspace.materials')}>
+              <WorkspaceCard title={t($ => $.workspace.materials)}>
                 <div className="flex flex-col gap-4">
                   {typeof form.formState.errors.lines?.message === 'string' && (
                     <Alert variant="destructive">
@@ -1155,9 +1155,9 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   {fields.length === 0 ? (
                     <div className="rounded-lg border-2 border-dashed py-10 text-center">
                       <PackageOpen className="size-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-muted-foreground text-sm">{t('workspace.noMaterialsForm')}</p>
+                      <p className="text-muted-foreground text-sm">{t($ => $.workspace.noMaterialsForm)}</p>
                       <p className="text-muted-foreground mt-1 text-xs">
-                        {t('workspace.noMaterialsHint')}
+                        {t($ => $.workspace.noMaterialsHint)}
                       </p>
                     </div>
                   ) : (
@@ -1165,15 +1165,15 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-muted-foreground border-b text-start">
-                            <th className="pb-2 pe-3 font-medium">{t('tableColumns.material')}</th>
-                            <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.type')}</th>
-                            <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.category')}</th>
-                            <th className="pb-2 pe-3 font-medium w-14">{t('tableColumns.unit')}</th>
-                            <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.reqQty')}</th>
-                            <th className="pb-2 pe-3 font-medium w-20">{t('tableColumns.wastePct')}</th>
-                            <th className="pb-2 pe-3 text-end font-medium w-20">{t('tableColumns.effQty')}</th>
-                            <th className="pb-2 pe-3 text-end font-medium w-28">{t('tableColumns.unitCost')}</th>
-                            <th className="pb-2 pe-3 text-end font-medium w-28">{t('tableColumns.totalCost')}</th>
+                            <th className="pb-2 pe-3 font-medium">{t($ => $.tableColumns.material)}</th>
+                            <th className="pb-2 pe-3 font-medium w-24">{t($ => $.tableColumns.type)}</th>
+                            <th className="pb-2 pe-3 font-medium w-24">{t($ => $.tableColumns.category)}</th>
+                            <th className="pb-2 pe-3 font-medium w-14">{t($ => $.tableColumns.unit)}</th>
+                            <th className="pb-2 pe-3 font-medium w-24">{t($ => $.tableColumns.reqQty)}</th>
+                            <th className="pb-2 pe-3 font-medium w-20">{t($ => $.tableColumns.wastePct)}</th>
+                            <th className="pb-2 pe-3 text-end font-medium w-20">{t($ => $.tableColumns.effQty)}</th>
+                            <th className="pb-2 pe-3 text-end font-medium w-28">{t($ => $.tableColumns.unitCost)}</th>
+                            <th className="pb-2 pe-3 text-end font-medium w-28">{t($ => $.tableColumns.totalCost)}</th>
                             <th className="pb-2 w-16" />
                           </tr>
                         </thead>
@@ -1184,7 +1184,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                               <tr>
                                 <td colSpan={10} className="py-1.5 px-0">
                                   <span className="text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                                    {t('materialsGroup.rawMaterials')}
+                                    {t($ => $.materialsGroup.rawMaterials)}
                                   </span>
                                 </td>
                               </tr>
@@ -1202,7 +1202,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                                 />
                               ))}
                               <tr className="bg-muted/30">
-                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.rawSubtotal')}</td>
+                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t($ => $.materialsGroup.rawSubtotal)}</td>
                                 <td className="py-1 pe-3 text-end text-xs font-semibold tabular-nums">{fmtCost(rawSubtotal, currency, locale)}</td>
                                 <td />
                               </tr>
@@ -1215,7 +1215,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                               <tr>
                                 <td colSpan={10} className="py-1.5 px-0">
                                   <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                                    {t('materialsGroup.packagingMaterials')}
+                                    {t($ => $.materialsGroup.packagingMaterials)}
                                   </span>
                                 </td>
                               </tr>
@@ -1233,7 +1233,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                                 />
                               ))}
                               <tr className="bg-muted/30">
-                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.packagingSubtotal')}</td>
+                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t($ => $.materialsGroup.packagingSubtotal)}</td>
                                 <td className="py-1 pe-3 text-end text-xs font-semibold tabular-nums">{fmtCost(pkgSubtotal, currency, locale)}</td>
                                 <td />
                               </tr>
@@ -1252,16 +1252,16 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                     disabled={!watchedProductId}
                   >
                     <Plus className="size-4" />
-                    {t('actions.addMaterial')}
+                    {t($ => $.actions.addMaterial)}
                   </Button>
                 </div>
               </WorkspaceCard>
 
               {/* Recipe Notes */}
-              <WorkspaceCard title={t('workspace.recipeNotes')}>
+              <WorkspaceCard title={t($ => $.workspace.recipeNotes)}>
                 <FormField name="notes" label="">
                   <Textarea
-                    placeholder={t('workspace.notesPlaceholder')}
+                    placeholder={t($ => $.workspace.notesPlaceholder)}
                     rows={3}
                     {...form.register('notes')}
                   />
@@ -1269,17 +1269,17 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
               </WorkspaceCard>
 
               {/* Execution Instructions */}
-              <WorkspaceCard title={t('workspace.executionInstructions')}>
+              <WorkspaceCard title={t($ => $.workspace.executionInstructions)}>
                 <FormField name="execution_instructions" label="">
                   <Textarea
-                    placeholder={t('workspace.executionPlaceholder')}
+                    placeholder={t($ => $.workspace.executionPlaceholder)}
                     rows={5}
                     className="font-mono text-sm"
                     {...form.register('execution_instructions')}
                   />
                 </FormField>
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  {t('workspace.executionHint')}
+                  {t($ => $.workspace.executionHint)}
                 </p>
               </WorkspaceCard>
             </div>
@@ -1289,7 +1289,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
 
               {/* Start From — create mode only */}
               {mode === 'create' && (
-                <WorkspaceCard title={t('startFrom.title')}>
+                <WorkspaceCard title={t($ => $.startFrom.title)}>
                   <div className="flex flex-col gap-3">
                     {/* Radio buttons */}
                     <div className="flex flex-col gap-2">
@@ -1304,7 +1304,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                             className="accent-primary size-3.5"
                           />
                           <span className="text-sm font-medium">
-                            {opt === 'blank' ? t('startFrom.blank') : t('startFrom.existing')}
+                            {opt === 'blank' ? t($ => $.startFrom.blank) : t($ => $.startFrom.existing)}
                           </span>
                         </label>
                       ))}
@@ -1315,24 +1315,24 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       <>
                         <Separator />
                         <div className="flex flex-col gap-1.5">
-                          <Label className="text-xs text-muted-foreground">{t('startFrom.selectExisting')}</Label>
+                          <Label className="text-xs text-muted-foreground">{t($ => $.startFrom.selectExisting)}</Label>
                           <Combobox
                             options={recipeOptions}
                             value={sourceRecipeId || null}
                             onChange={(v) => setSourceRecipeId(v ?? '')}
-                            placeholder={t('startFrom.searchPlaceholder')}
+                            placeholder={t($ => $.startFrom.searchPlaceholder)}
                             loading={false}
                           />
                           {loadingSourceRecipe && (
-                            <p className="text-xs text-muted-foreground">{t('startFrom.loadingRecipe')}</p>
+                            <p className="text-xs text-muted-foreground">{t($ => $.startFrom.loadingRecipe)}</p>
                           )}
                           {sourceRecipeId && sourceRecipeDetail && !loadingSourceRecipe && (
                             <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-2 text-xs text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
                               <Copy className="size-3.5 shrink-0 mt-0.5" />
                               <span>
-                                {t('startFrom.copiedCount', { count: sourceRecipeDetail.lines?.length ?? 0 })}
-                                {(sourceRecipeDetail.manufacturing_cost ?? 0) > 0 && t('startFrom.manufacturingAppend', { cost: fmtCost(sourceRecipeDetail.manufacturing_cost ?? 0, currency, locale) })}
-                                {' '}{t('startFrom.fromLabel')} <strong>{sourceRecipeDetail.product?.name ?? sourceRecipeDetail.bom_number}</strong>{t('startFrom.period')}
+                                {t($ => $.startFrom.copiedCount, { count: sourceRecipeDetail.lines?.length ?? 0 })}
+                                {(sourceRecipeDetail.manufacturing_cost ?? 0) > 0 && t($ => $.startFrom.manufacturingAppend, { cost: fmtCost(sourceRecipeDetail.manufacturing_cost ?? 0, currency, locale) })}
+                                {' '}{t($ => $.startFrom.fromLabel)} <strong>{sourceRecipeDetail.product?.name ?? sourceRecipeDetail.bom_number}</strong>{t($ => $.startFrom.period)}
                               </span>
                             </div>
                           )}
@@ -1344,24 +1344,24 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
               )}
 
               {/* Cost Summary */}
-              <WorkspaceCard title={t('costSummary.title')}>
+              <WorkspaceCard title={t($ => $.costSummary.title)}>
                 <div className="flex flex-col gap-3">
                   {recipe && (
                     <LabelValue
-                      label={t('costSummary.recipeNumber')}
+                      label={t($ => $.costSummary.recipeNumber)}
                       value={<span className="font-mono text-xs">{recipe.bom_number}</span>}
                     />
                   )}
-                  <LabelValue label={t('costSummary.totalMaterials')} value={fields.length} />
+                  <LabelValue label={t($ => $.costSummary.totalMaterials)} value={fields.length} />
                   <Separator />
 
                   {/* Raw / Packaging live rows */}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{t('costSummary.rawMaterials')}</span>
+                    <span className="text-muted-foreground">{t($ => $.costSummary.rawMaterials)}</span>
                     <span className="tabular-nums">{fmtCost(rawMaterialCost, currency, locale)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{t('costSummary.packaging')}</span>
+                    <span className="text-muted-foreground">{t($ => $.costSummary.packaging)}</span>
                     <span className="tabular-nums">{fmtCost(packagingCost, currency, locale)}</span>
                   </div>
 
@@ -1369,7 +1369,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
 
                   {/* Yield Quantity — units produced per recipe run (drives per-unit costing) */}
                   <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">{t('costSummary.yieldQuantity')}</Label>
+                    <Label className="text-xs text-muted-foreground">{t($ => $.costSummary.yieldQuantity)}</Label>
                     <Input
                       type="number"
                       min="0.0001"
@@ -1381,12 +1381,12 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                     {form.formState.errors.yield_quantity && (
                       <p className="text-xs text-destructive">{form.formState.errors.yield_quantity.message}</p>
                     )}
-                    <p className="text-[10px] text-muted-foreground">{t('costSummary.yieldHint')}</p>
+                    <p className="text-[10px] text-muted-foreground">{t($ => $.costSummary.yieldHint)}</p>
                   </div>
 
                   {/* Manufacturing Cost — editable */}
                   <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">{t('costSummary.manufacturingCost')}</Label>
+                    <Label className="text-xs text-muted-foreground">{t($ => $.costSummary.manufacturingCost)}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -1398,12 +1398,12 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                     {form.formState.errors.manufacturing_cost && (
                       <p className="text-xs text-destructive">{form.formState.errors.manufacturing_cost.message}</p>
                     )}
-                    <p className="text-[10px] text-muted-foreground">{t('costSummary.manufacturingHint')}</p>
+                    <p className="text-[10px] text-muted-foreground">{t($ => $.costSummary.manufacturingHint)}</p>
                   </div>
 
                   {/* Other Costs — editable */}
                   <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">{t('costSummary.otherCosts')}</Label>
+                    <Label className="text-xs text-muted-foreground">{t($ => $.costSummary.otherCosts)}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -1420,7 +1420,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   <Separator />
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 text-sm font-semibold">
-                      {t('costSummary.recipeCost')}
+                      {t($ => $.costSummary.recipeCost)}
                       <LiveCostBadge />
                     </span>
                     <span className="text-sm font-bold tabular-nums">{fmtCost(recipeCost, currency, locale)}</span>
@@ -1429,7 +1429,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   {anyMissingCost && (
                     <div className="flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
                       <TriangleAlert className="size-3.5 flex-shrink-0 mt-0.5" />
-                      <span>{t('costSummary.missingCost')}</span>
+                      <span>{t($ => $.costSummary.missingCost)}</span>
                     </div>
                   )}
                 </div>
@@ -1447,12 +1447,12 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
             variant="outline"
             onClick={() => navigate(recipe ? `${ROUTES.recipes}/${recipe.id}` : ROUTES.recipes)}
           >
-            {t('footer.cancel')}
+            {t($ => $.footer.cancel)}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
             {isPending
-              ? (mode === 'create' ? t('footer.creating') : t('footer.saving'))
-              : (mode === 'create' ? t('footer.create') : t('footer.save'))}
+              ? (mode === 'create' ? t($ => $.footer.creating) : t($ => $.footer.saving))
+              : (mode === 'create' ? t($ => $.footer.create) : t($ => $.footer.save))}
           </Button>
         </div>
       </div>
@@ -1595,7 +1595,7 @@ function MaterialFormRow({
           fmtCost(unitCost as number, currency, locale)
         ) : (
           <span className="text-amber-500 text-xs flex items-center justify-end gap-1">
-            <TriangleAlert className="size-3" />{t('noCost')}
+            <TriangleAlert className="size-3" />{t($ => $.noCost)}
           </span>
         )}
       </td>
@@ -1615,7 +1615,7 @@ function MaterialFormRow({
               size="icon"
               className="size-7"
               onClick={() => onView(product)}
-              title={t('actions.viewMaterialDetails')}
+              title={t($ => $.actions.viewMaterialDetails)}
             >
               <Eye className="size-3.5" />
             </Button>
@@ -1649,7 +1649,7 @@ export function RecipeWorkspacePage() {
   if (id && isLoading) {
     return (
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        {t('workspace.loading')}
+        {t($ => $.workspace.loading)}
       </div>
     );
   }
@@ -1657,9 +1657,9 @@ export function RecipeWorkspacePage() {
   if (id && (isError || (recipe === undefined && !isLoading))) {
     return (
       <div className="flex h-48 flex-col items-center justify-center gap-1">
-        <p className="font-medium">{t('workspace.notFound')}</p>
+        <p className="font-medium">{t($ => $.workspace.notFound)}</p>
         <p className="text-muted-foreground text-sm">
-          {t('workspace.notFoundDesc')}
+          {t($ => $.workspace.notFoundDesc)}
         </p>
       </div>
     );

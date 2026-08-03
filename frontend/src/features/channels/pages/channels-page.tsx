@@ -265,29 +265,29 @@ export function ChannelsPage() {
   const columns: ColumnDef<Channel>[] = [
     {
       key: 'name',
-      header: t('columns.name'),
+      header: t($ => $.columns.name),
       sortable: true,
       cell: (c) => <span className="font-medium">{c.name}</span>,
     },
     {
       key: 'brand',
-      header: t('columns.brand', 'Brand'),
+      header: t($ => $.columns.brand, 'Brand'),
       cell: (c) => <span className="text-muted-foreground">{c.brand?.name ?? '—'}</span>,
     },
     {
       key: 'company',
-      header: t('columns.company'),
+      header: t($ => $.columns.company),
       cell: (c) => <span className="text-muted-foreground">{c.brand?.company?.name ?? '—'}</span>,
     },
     {
       key: 'platform',
-      header: t('columns.platform'),
+      header: t($ => $.columns.platform),
       sortable: true,
       cell: (c) => <PlatformBadge platform={c.platform} />,
     },
     {
       key: 'store_url',
-      header: t('columns.storeUrl'),
+      header: t($ => $.columns.storeUrl),
       cell: (c) => (
         <a
           href={c.store_url}
@@ -301,18 +301,18 @@ export function ChannelsPage() {
     },
     {
       key: 'connection_status',
-      header: t('columns.connection'),
+      header: t($ => $.columns.connection),
       cell: (c) => <ConnectionStatusBadge status={c.connection_status} />,
     },
     {
       key: 'is_active',
-      header: t('columns.status'),
+      header: t($ => $.columns.status),
       sortable: true,
       cell: (c) => <StatusBadge status={c.is_active ? 'active' : 'inactive'} />,
     },
     {
       key: 'last_sync_at',
-      header: t('columns.lastSync'),
+      header: t($ => $.columns.lastSync),
       sortable: true,
       cell: (c) => (
         <span className="text-muted-foreground">
@@ -327,17 +327,17 @@ export function ChannelsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
           { label: 'Organization', to: ROUTES.organization },
-          { label: t('title') },
+          { label: t($ => $.title) },
         ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -346,13 +346,13 @@ export function ChannelsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('kpi.total', 'Total Channels')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.total, 'Total Channels')}</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : (meta?.total ?? 0)}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('kpi.active', 'Active')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.active, 'Active')}</div>
             <div className="text-2xl font-bold text-emerald-600">
               {isLoading ? '—' : items.filter((c) => c.is_active).length}
             </div>
@@ -360,7 +360,7 @@ export function ChannelsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('kpi.connected', 'Connected')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.connected, 'Connected')}</div>
             <div className="text-2xl font-bold text-blue-600">
               {isLoading ? '—' : items.filter((c) => c.connection_status === 'connected').length}
             </div>
@@ -368,7 +368,7 @@ export function ChannelsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('kpi.platforms', 'Platforms')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.platforms, 'Platforms')}</div>
             <div className="text-2xl font-bold">
               {isLoading ? '—' : new Set(items.map((c) => c.platform)).size}
             </div>
@@ -379,7 +379,7 @@ export function ChannelsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={`${t('search')} · / or Ctrl+K`}
+            searchPlaceholder={`${t($ => $.search)} · / or Ctrl+K`}
             onSearchChange={(v) => { setSearch(v); setPage(1); }}
             searchRef={searchRef}
             onRefresh={() => void refetch()}
@@ -389,25 +389,25 @@ export function ChannelsPage() {
             filterPanel={
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{tCommon('filters.status')}</span>
+                  <span className="text-sm font-medium">{tCommon($ => $.filters.status)}</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => { setStatusFilter(e.target.value as ChannelStatusFilter); setPage(1); }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">{tCommon('status.all')}</option>
-                    <option value="active">{tCommon('status.active')}</option>
-                    <option value="inactive">{tCommon('status.inactive')}</option>
+                    <option value="all">{tCommon($ => $.status.all)}</option>
+                    <option value="active">{tCommon($ => $.status.active)}</option>
+                    <option value="inactive">{tCommon($ => $.status.inactive)}</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.platform')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.platform)}</span>
                   <select
                     value={platformFilter}
                     onChange={(e) => { setPlatformFilter(e.target.value); setPage(1); }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">{t('filters.allPlatforms')}</option>
+                    <option value="">{t($ => $.filters.allPlatforms)}</option>
                     {PLATFORM_OPTIONS.map((p) => (
                       <option key={p.value} value={p.value}>
                         {p.label}
@@ -456,32 +456,32 @@ export function ChannelsPage() {
                 items={[
                   {
                     key: 'import-products',
-                    label: importingId === channel.id ? t('actions.importing') : t('actions.importProducts'),
+                    label: importingId === channel.id ? t($ => $.actions.importing) : t($ => $.actions.importProducts),
                     icon: Download,
                     onSelect: () => handleImportProducts(channel),
                   },
                   {
                     key: 'import-orders',
-                    label: importingOrdersId === channel.id ? t('actions.importing') : t('actions.importOrders'),
+                    label: importingOrdersId === channel.id ? t($ => $.actions.importing) : t($ => $.actions.importOrders),
                     icon: Download,
                     onSelect: () => handleImportOrders(channel),
                   },
                   {
                     key: 'sync-stock',
-                    label: syncingId === channel.id ? t('actions.syncing') : t('actions.syncStock'),
+                    label: syncingId === channel.id ? t($ => $.actions.syncing) : t($ => $.actions.syncStock),
                     icon: RefreshCw,
                     onSelect: () => handleSyncStock(channel),
                   },
                   {
                     key: 'test-connection',
-                    label: testingId === channel.id ? t('actions.testing') : t('actions.testConnection'),
+                    label: testingId === channel.id ? t($ => $.actions.testing) : t($ => $.actions.testConnection),
                     icon: Wifi,
                     onSelect: () => handleTestConnection(channel),
                   },
-                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(channel) },
+                  { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(channel) },
                   {
                     key: 'delete',
-                    label: tCommon('common.delete'),
+                    label: tCommon($ => $.common.delete),
                     icon: Trash2,
                     variant: 'destructive' as const,
                     onSelect: () => setDeleting(channel),
@@ -509,9 +509,9 @@ export function ChannelsPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={tCommon($ => $.dialogs.softDeleteMessage, { name: deleting?.name ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteChannel.isPending}
         onConfirm={() => {

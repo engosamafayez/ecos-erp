@@ -35,20 +35,20 @@ export function AbcClassificationPage() {
   const meta  = data?.meta;
 
   const filters: { label: string; value: AbcClass | undefined }[] = [
-    { label: t('abc.filterAll'), value: undefined },
-    { label: t('abc.filterA'),   value: 'A' },
-    { label: t('abc.filterB'),   value: 'B' },
-    { label: t('abc.filterC'),   value: 'C' },
+    { label: t($ => $.abc.filterAll), value: undefined },
+    { label: t($ => $.abc.filterA),   value: 'A' },
+    { label: t($ => $.abc.filterB),   value: 'B' },
+    { label: t($ => $.abc.filterC),   value: 'C' },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('abc.title')}
-        subtitle={t('abc.description')}
+        title={t($ => $.abc.title)}
+        subtitle={t($ => $.abc.description)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('abc.title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.abc.title) },
         ]}
         actions={
           <Button
@@ -56,7 +56,7 @@ export function AbcClassificationPage() {
             onClick={() => void recalculate.mutateAsync()}
             disabled={recalculate.isPending}
           >
-            {recalculate.isPending ? t('abc.recalculating') : t('abc.recalculate')}
+            {recalculate.isPending ? t($ => $.abc.recalculating) : t($ => $.abc.recalculate)}
           </Button>
         }
       />
@@ -85,12 +85,12 @@ export function AbcClassificationPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground border-b text-xs">
-                  <th className="px-4 py-2 text-start font-medium">{t('abc.table.product')}</th>
-                  <th className="px-4 py-2 text-start font-medium">{t('abc.table.sku')}</th>
-                  <th className="px-4 py-2 text-center font-medium">{t('abc.table.class')}</th>
-                  <th className="px-4 py-2 text-end font-medium">{t('abc.table.annualValue')}</th>
-                  <th className="px-4 py-2 text-end font-medium">{t('abc.table.cumulativePct')}</th>
-                  <th className="px-4 py-2 text-start font-medium">{t('abc.table.calculatedAt')}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t($ => $.abc.table.product)}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t($ => $.abc.table.sku)}</th>
+                  <th className="px-4 py-2 text-center font-medium">{t($ => $.abc.table.class)}</th>
+                  <th className="px-4 py-2 text-end font-medium">{t($ => $.abc.table.annualValue)}</th>
+                  <th className="px-4 py-2 text-end font-medium">{t($ => $.abc.table.cumulativePct)}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t($ => $.abc.table.calculatedAt)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -104,7 +104,7 @@ export function AbcClassificationPage() {
                     <td className="text-muted-foreground px-4 py-2 font-mono text-xs">{row.product?.sku ?? '—'}</td>
                     <td className="px-4 py-2 text-center">
                       <Badge variant={abcVariant(row.classification)}>
-                        {t(`abc.classLabels.${row.classification}`)}
+                        {t($ => $.abc.classLabels[row.classification])}
                       </Badge>
                     </td>
                     <td className="px-4 py-2 text-end font-mono tabular-nums">

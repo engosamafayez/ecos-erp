@@ -175,14 +175,14 @@ export function BrandConfigurationPage() {
         </button>
         <div className="flex-1 min-w-0">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <h1 className="text-base font-semibold leading-none">{t('brandConfig.pageTitle' as any)}</h1>
+          <h1 className="text-base font-semibold leading-none">{t($ => $.brandConfig.pageTitle as any)}</h1>
           {brand && (
             <p className="text-xs text-muted-foreground mt-0.5">{brand.name}</p>
           )}
         </div>
         {health && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{t('brandConfig.health.scoreLabel')}</span>
+            <span className="text-xs text-muted-foreground">{t($ => $.brandConfig.health.scoreLabel)}</span>
             <span className={`text-sm font-bold ${
               health.score >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
               health.score >= 50 ? 'text-amber-600 dark:text-amber-400' :
@@ -201,7 +201,7 @@ export function BrandConfigurationPage() {
 
         {/* OPERATIONS section */}
         <DashboardSection
-          label={t('brandConfig.sections.operations')}
+          label={t($ => $.brandConfig.sections.operations)}
           cards={OPERATIONS_CARDS}
           health={health}
           onOpen={openWorkspace}
@@ -209,7 +209,7 @@ export function BrandConfigurationPage() {
 
         {/* COMMERCE section */}
         <DashboardSection
-          label={t('brandConfig.sections.commerce')}
+          label={t($ => $.brandConfig.sections.commerce)}
           cards={COMMERCE_CARDS}
           health={health}
           onOpen={openWorkspace}
@@ -217,7 +217,7 @@ export function BrandConfigurationPage() {
 
         {/* SYSTEM section */}
         <DashboardSection
-          label={t('brandConfig.sections.system')}
+          label={t($ => $.brandConfig.sections.system)}
           cards={SYSTEM_CARDS}
           health={health}
           onOpen={openWorkspace}
@@ -253,9 +253,9 @@ function ConfigHealthPanel({ health }: { health: ConfigHealthScore | undefined }
     <div className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-sm font-semibold">{t('brandConfig.health.title')}</h2>
+          <h2 className="text-sm font-semibold">{t($ => $.brandConfig.health.title)}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {t('brandConfig.health.checksComplete', { passed: health.passed, total: health.total })}
+            {t($ => $.brandConfig.health.checksComplete, { passed: health.passed, total: health.total })}
           </p>
         </div>
         <span className={`text-3xl font-bold tabular-nums ${textColor}`}>
@@ -285,7 +285,7 @@ function ConfigHealthPanel({ health }: { health: ConfigHealthScore | undefined }
               : <XCircle      className="h-3 w-3 shrink-0 opacity-40" />
             }
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            <span className={!ok ? 'opacity-60' : ''}>{t(`brandConfig.checkLabels.${key}` as any)}</span>
+            <span className={!ok ? 'opacity-60' : ''}>{t($ => $.brandConfig.checkLabels[key] as any)}</span>
           </span>
         ))}
       </div>
@@ -355,24 +355,24 @@ function WorkspaceConfigCard({
         </div>
         {status === 'complete' && (
           <Badge className="text-[10px] py-0 h-5 bg-emerald-50 text-emerald-700 border-emerald-200 shrink-0">
-            {t('brandConfig.statusBadge.complete')}
+            {t($ => $.brandConfig.statusBadge.complete)}
           </Badge>
         )}
         {status === 'partial' && (
           <Badge className="text-[10px] py-0 h-5 bg-amber-50 text-amber-700 border-amber-200 shrink-0">
-            {t('brandConfig.statusBadge.partial')}
+            {t($ => $.brandConfig.statusBadge.partial)}
           </Badge>
         )}
         {status === 'missing' && (
           <Badge className="text-[10px] py-0 h-5 bg-muted text-muted-foreground border-0 shrink-0">
-            {t('brandConfig.statusBadge.notSet')}
+            {t($ => $.brandConfig.statusBadge.notSet)}
           </Badge>
         )}
       </div>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <h3 className="text-sm font-semibold mb-0.5">{t(`brandConfig.cards.${card.id}.label` as any)}</h3>
+      <h3 className="text-sm font-semibold mb-0.5">{t($ => $.brandConfig.cards[card.id].label as any)}</h3>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <p className="text-xs text-muted-foreground line-clamp-2">{t(`brandConfig.cards.${card.id}.desc` as any)}</p>
+      <p className="text-xs text-muted-foreground line-clamp-2">{t($ => $.brandConfig.cards[card.id].desc as any)}</p>
       <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
         <ChevronRight className="h-4 w-4 text-primary" />
       </div>
@@ -402,7 +402,7 @@ function WorkspaceView({
   const { t } = useTranslation('settings');
   const tAny = t as (key: string) => string;
   const workspaceLabel =
-    workspace === 'audit' ? t('brandConfig.auditLog') :
+    workspace === 'audit' ? t($ => $.brandConfig.auditLog) :
     (tAny(`brandConfig.cards.${workspace}.label`) || POLICY_GROUP_LABELS[workspace as PolicyGroup] || workspace);
 
   return (
@@ -414,7 +414,7 @@ function WorkspaceView({
           className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted/50"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          {t('brandConfig.back')}
+          {t($ => $.brandConfig.back)}
         </button>
         <div className="h-4 w-px bg-border/60" />
         <div className="flex-1 min-w-0">
@@ -481,7 +481,7 @@ function AuditWorkspace({ brandId }: { brandId: string }) {
     return (
       <div className="flex items-center justify-center py-16 gap-2 text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="text-sm">{t('brandConfig.audit.loading')}</span>
+        <span className="text-sm">{t($ => $.brandConfig.audit.loading)}</span>
       </div>
     );
   }
@@ -491,15 +491,14 @@ function AuditWorkspace({ brandId }: { brandId: string }) {
   return (
     <div className="p-6 max-w-4xl space-y-4">
       <div className="flex items-center gap-2">
-        <h2 className="text-sm font-semibold">{t('brandConfig.audit.title')}</h2>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        <Badge variant="outline" className="text-xs">{t('brandConfig.audit.entries', { count } as any)}</Badge>
+        <h2 className="text-sm font-semibold">{t($ => $.brandConfig.audit.title)}</h2>
+        <Badge variant="outline" className="text-xs">{t($ => $.brandConfig.audit.entries, { count })}</Badge>
       </div>
 
       {entries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 rounded-lg border border-dashed border-border/60">
           <History className="h-8 w-8 text-muted-foreground/30 mb-2" />
-          <p className="text-sm text-muted-foreground">{t('brandConfig.audit.empty')}</p>
+          <p className="text-sm text-muted-foreground">{t($ => $.brandConfig.audit.empty)}</p>
         </div>
       ) : (
         <div className="space-y-1">
@@ -518,9 +517,9 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
     : entry.action === 'delete' ? 'bg-red-500'
     : 'bg-blue-500';
 
-  const actionLabel = entry.action === 'create' ? t('brandConfig.audit.created')
-    : entry.action === 'delete' ? t('brandConfig.audit.deleted')
-    : t('brandConfig.audit.updated');
+  const actionLabel = entry.action === 'create' ? t($ => $.brandConfig.audit.created)
+    : entry.action === 'delete' ? t($ => $.brandConfig.audit.deleted)
+    : t($ => $.brandConfig.audit.updated);
 
   const hasChanges = entry.old_value || entry.new_value;
 
@@ -552,7 +551,7 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
           {entry.actor_name && (
             <span className="text-xs text-muted-foreground">
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {t('brandConfig.audit.by' as any, { actor: entry.actor_name })}
+              {t($ => $.brandConfig.audit.by as any, { actor: entry.actor_name })}
             </span>
           )}
           {entry.reason && (
@@ -563,7 +562,7 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
               onClick={() => setExpanded(!expanded)}
               className="text-[11px] text-primary underline underline-offset-2 hover:no-underline"
             >
-              {expanded ? t('brandConfig.audit.hideDiff') : t('brandConfig.audit.showDiff')}
+              {expanded ? t($ => $.brandConfig.audit.hideDiff) : t($ => $.brandConfig.audit.showDiff)}
             </button>
           )}
         </div>
@@ -572,7 +571,7 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
           <div className="mt-2 grid grid-cols-2 gap-2">
             {entry.old_value && (
               <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 p-2">
-                <p className="text-[10px] font-medium text-red-700 dark:text-red-400 mb-1">{t('brandConfig.audit.before')}</p>
+                <p className="text-[10px] font-medium text-red-700 dark:text-red-400 mb-1">{t($ => $.brandConfig.audit.before)}</p>
                 <pre className="text-[10px] text-muted-foreground overflow-auto max-h-24 whitespace-pre-wrap">
                   {JSON.stringify(entry.old_value, null, 2)}
                 </pre>
@@ -580,7 +579,7 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
             )}
             {entry.new_value && (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800 p-2">
-                <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 mb-1">{t('brandConfig.audit.after')}</p>
+                <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 mb-1">{t($ => $.brandConfig.audit.after)}</p>
                 <pre className="text-[10px] text-muted-foreground overflow-auto max-h-24 whitespace-pre-wrap">
                   {JSON.stringify(entry.new_value, null, 2)}
                 </pre>

@@ -73,21 +73,21 @@ function WorkflowCard({ workflow, onOpen }: { workflow: AutomationWorkflow; onOp
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onOpen}>{t('automation.workflows.actions.editDetails')}</DropdownMenuItem>
+            <DropdownMenuItem onClick={onOpen}>{t($ => $.automation.workflows.actions.editDetails)}</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate(ROUTES.workflowBuilder.replace(':workflowId', workflow.id))}>
-              {t('automation.workflows.actions.openBuilder')}
+              {t($ => $.automation.workflows.actions.openBuilder)}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => duplicate.mutate(workflow.id)}>
-              <Copy className="h-3.5 w-3.5 me-2" /> {t('automation.workflows.actions.duplicate')}
+              <Copy className="h-3.5 w-3.5 me-2" /> {t($ => $.automation.workflows.actions.duplicate)}
             </DropdownMenuItem>
             {workflow.can_activate && (
               <DropdownMenuItem onClick={() => activate.mutate(workflow.id)}>
-                <Play className="h-3.5 w-3.5 me-2" /> {t('automation.workflows.actions.activate')}
+                <Play className="h-3.5 w-3.5 me-2" /> {t($ => $.automation.workflows.actions.activate)}
               </DropdownMenuItem>
             )}
             {workflow.can_pause && (
               <DropdownMenuItem onClick={() => pause.mutate(workflow.id)}>
-                <Pause className="h-3.5 w-3.5 me-2" /> {t('automation.workflows.actions.pause')}
+                <Pause className="h-3.5 w-3.5 me-2" /> {t($ => $.automation.workflows.actions.pause)}
               </DropdownMenuItem>
             )}
             {workflow.can_archive && (
@@ -95,7 +95,7 @@ function WorkflowCard({ workflow, onOpen }: { workflow: AutomationWorkflow; onOp
                 className="text-destructive"
                 onClick={() => archive.mutate(workflow.id)}
               >
-                <Archive className="h-3.5 w-3.5 me-2" /> {t('automation.workflows.actions.archive')}
+                <Archive className="h-3.5 w-3.5 me-2" /> {t($ => $.automation.workflows.actions.archive)}
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -104,17 +104,17 @@ function WorkflowCard({ workflow, onOpen }: { workflow: AutomationWorkflow; onOp
 
       <div className="flex items-center gap-2 mt-3">
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[workflow.status]}`}>
-          {t(`automation.workflowStatus.${workflow.status}`, { defaultValue: workflow.status })}
+          {t($ => $.automation.workflowStatus[workflow.status], { defaultValue: workflow.status })}
         </span>
         <span className="text-xs text-muted-foreground">
-          {t(`automation.triggerType.${workflow.trigger_type}`, { defaultValue: workflow.trigger_type })}
+          {t($ => $.automation.triggerType[workflow.trigger_type], { defaultValue: workflow.trigger_type })}
         </span>
       </div>
 
       <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-        <span>{t('automation.dashboard.trending.runs', { count: workflow.execution_count })}</span>
+        <span>{t($ => $.automation.dashboard.trending.runs, { count: workflow.execution_count })}</span>
         {workflow.last_executed_at && (
-          <span>{t('automation.workflows.lastRun', { date: new Date(workflow.last_executed_at).toLocaleDateString() })}</span>
+          <span>{t($ => $.automation.workflows.lastRun, { date: new Date(workflow.last_executed_at).toLocaleDateString() })}</span>
         )}
       </div>
     </div>
@@ -142,15 +142,15 @@ export function AutomationWorkspacePage() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b">
         <div>
-          <h1 className="text-lg font-semibold">{t('automation.workflows.title')}</h1>
-          <p className="text-xs text-muted-foreground">{t('automation.workflows.subtitle')}</p>
+          <h1 className="text-lg font-semibold">{t($ => $.automation.workflows.title)}</h1>
+          <p className="text-xs text-muted-foreground">{t($ => $.automation.workflows.subtitle)}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setTemplatePickerOpen(true)}>
-            {t('automation.workflows.actions.templates')}
+            {t($ => $.automation.workflows.actions.templates)}
           </Button>
           <Button size="sm" onClick={() => { setSelectedWorkflow(undefined); setDrawerOpen(true); }}>
-            <Plus className="h-3.5 w-3.5 me-1" /> {t('automation.workflows.actions.new')}
+            <Plus className="h-3.5 w-3.5 me-1" /> {t($ => $.automation.workflows.actions.new)}
           </Button>
         </div>
       </div>
@@ -158,17 +158,17 @@ export function AutomationWorkspacePage() {
       {/* KPIs */}
       {kpis && (
         <div className="grid grid-cols-4 gap-3 px-6 py-4 border-b">
-          <KpiCard icon={Activity}  label={t('automation.dashboard.kpis.activeWorkflows')} value={kpis.active}   color="bg-green-50 text-green-600" />
-          <KpiCard icon={Zap}       label={t('automation.dashboard.kpis.totalExecutions')} value={kpis.total_executions} color="bg-blue-50 text-blue-600" />
-          <KpiCard icon={Clock}     label={t('automation.workflowStatus.pending_approval')} value={kpis.pending_approval} color="bg-yellow-50 text-yellow-600" />
-          <KpiCard icon={XCircle}   label={t('automation.executionStatus.failed')}          value={kpis.failed}   color="bg-red-50 text-red-600" />
+          <KpiCard icon={Activity}  label={t($ => $.automation.dashboard.kpis.activeWorkflows)} value={kpis.active}   color="bg-green-50 text-green-600" />
+          <KpiCard icon={Zap}       label={t($ => $.automation.dashboard.kpis.totalExecutions)} value={kpis.total_executions} color="bg-blue-50 text-blue-600" />
+          <KpiCard icon={Clock}     label={t($ => $.automation.workflowStatus.pending_approval)} value={kpis.pending_approval} color="bg-yellow-50 text-yellow-600" />
+          <KpiCard icon={XCircle}   label={t($ => $.automation.executionStatus.failed)}          value={kpis.failed}   color="bg-red-50 text-red-600" />
         </div>
       )}
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-6 py-3 border-b">
         <Input
-          placeholder={t('automation.workflows.search')}
+          placeholder={t($ => $.automation.workflows.search)}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="h-8 w-64"
@@ -184,7 +184,7 @@ export function AutomationWorkspacePage() {
                   : 'text-muted-foreground hover:bg-muted'
               }`}
             >
-              {tab === 'all' ? t('common.all') : t(`automation.workflowStatus.${tab}`)}
+              {tab === 'all' ? t($ => $.common.all) : t($ => $.automation.workflowStatus[tab])}
             </button>
           ))}
         </div>
@@ -193,12 +193,12 @@ export function AutomationWorkspacePage() {
       {/* Grid */}
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
-          <div className="text-sm text-muted-foreground">{t('automation.workflows.loading')}</div>
+          <div className="text-sm text-muted-foreground">{t($ => $.automation.workflows.loading)}</div>
         ) : workflows.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 gap-3">
             <Zap className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">{t('automation.workflows.empty')}</p>
-            <Button size="sm" onClick={() => setTemplatePickerOpen(true)}>{t('automation.workflows.actions.browseTemplates')}</Button>
+            <p className="text-sm text-muted-foreground">{t($ => $.automation.workflows.empty)}</p>
+            <Button size="sm" onClick={() => setTemplatePickerOpen(true)}>{t($ => $.automation.workflows.actions.browseTemplates)}</Button>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3">

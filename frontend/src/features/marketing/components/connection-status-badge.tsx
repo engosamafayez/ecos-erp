@@ -35,7 +35,7 @@ export function ConnectionStatusBadge({ status, className }: Props) {
         className,
       )}
     >
-      {t(`connections.status.${status}`)}
+      {t($ => $.connections.status[status])}
     </span>
   );
 }

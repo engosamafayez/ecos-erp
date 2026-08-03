@@ -17,9 +17,9 @@ export function CycleCountPlannerPage() {
   const { t: tCommon } = useTranslation('common');
 
   const freqLabel: Partial<Record<number, string>> = {
-    30:  t('cyclePlanner.frequencies.30'),
-    90:  t('cyclePlanner.frequencies.90'),
-    180: t('cyclePlanner.frequencies.180'),
+    30:  t($ => $.cyclePlanner.frequencies["30"]),
+    90:  t($ => $.cyclePlanner.frequencies["90"]),
+    180: t($ => $.cyclePlanner.frequencies["180"]),
   };
 
   const [overdueOnly, setOverdueOnly] = useState(false);
@@ -38,7 +38,7 @@ export function CycleCountPlannerPage() {
   const overdue = items.filter((p) => p.is_overdue).length;
 
   const classFilters: { label: string; value: AbcClass | undefined }[] = [
-    { label: t('abc.filterAll'), value: undefined },
+    { label: t($ => $.abc.filterAll), value: undefined },
     { label: 'A', value: 'A' },
     { label: 'B', value: 'B' },
     { label: 'C', value: 'C' },
@@ -47,16 +47,16 @@ export function CycleCountPlannerPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('cyclePlanner.title')}
+        title={t($ => $.cyclePlanner.title)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('cyclePlanner.title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.cyclePlanner.title) },
         ]}
       />
 
       {overdue > 0 && (
         <Alert variant="destructive">
-          <AlertDescription>{t('cyclePlanner.overdueAlert', { count: overdue })}</AlertDescription>
+          <AlertDescription>{t($ => $.cyclePlanner.overdueAlert, { count: overdue })}</AlertDescription>
         </Alert>
       )}
 
@@ -68,14 +68,14 @@ export function CycleCountPlannerPage() {
               variant={!overdueOnly ? 'default' : 'outline'}
               onClick={() => { setOverdueOnly(false); setPage(1); }}
             >
-              {t('cyclePlanner.filterAll')}
+              {t($ => $.cyclePlanner.filterAll)}
             </Button>
             <Button
               size="sm"
               variant={overdueOnly ? 'destructive' : 'outline'}
               onClick={() => { setOverdueOnly(true); setPage(1); }}
             >
-              {t('cyclePlanner.filterOverdue')}
+              {t($ => $.cyclePlanner.filterOverdue)}
             </Button>
             {classFilters.map((f) => (
               <Button
@@ -97,13 +97,13 @@ export function CycleCountPlannerPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground border-b text-xs">
-                  <th className="px-4 py-2 text-start font-medium">{t('cyclePlanner.table.product')}</th>
-                  <th className="px-4 py-2 text-start font-medium">{t('cyclePlanner.table.sku')}</th>
-                  <th className="px-4 py-2 text-center font-medium">{t('cyclePlanner.table.class')}</th>
-                  <th className="px-4 py-2 text-center font-medium">{t('cyclePlanner.table.frequency')}</th>
-                  <th className="px-4 py-2 text-start font-medium">{t('cyclePlanner.table.lastCounted')}</th>
-                  <th className="px-4 py-2 text-start font-medium">{t('cyclePlanner.table.nextDue')}</th>
-                  <th className="px-4 py-2 text-center font-medium">{t('cyclePlanner.table.status')}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t($ => $.cyclePlanner.table.product)}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t($ => $.cyclePlanner.table.sku)}</th>
+                  <th className="px-4 py-2 text-center font-medium">{t($ => $.cyclePlanner.table.class)}</th>
+                  <th className="px-4 py-2 text-center font-medium">{t($ => $.cyclePlanner.table.frequency)}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t($ => $.cyclePlanner.table.lastCounted)}</th>
+                  <th className="px-4 py-2 text-start font-medium">{t($ => $.cyclePlanner.table.nextDue)}</th>
+                  <th className="px-4 py-2 text-center font-medium">{t($ => $.cyclePlanner.table.status)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -124,14 +124,14 @@ export function CycleCountPlannerPage() {
                       {freqLabel[plan.frequency_days] ?? `${plan.frequency_days}d`}
                     </td>
                     <td className="text-muted-foreground px-4 py-2 text-xs">
-                      {plan.last_counted_at ?? t('cyclePlanner.neverCounted')}
+                      {plan.last_counted_at ?? t($ => $.cyclePlanner.neverCounted)}
                     </td>
                     <td className={`px-4 py-2 text-xs ${plan.is_overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
                       {plan.next_due_at ?? '—'}
                     </td>
                     <td className="px-4 py-2 text-center">
                       <Badge variant={plan.is_overdue ? 'destructive' : 'secondary'}>
-                        {plan.is_overdue ? t('cyclePlanner.status.overdue') : t('cyclePlanner.status.upcoming')}
+                        {plan.is_overdue ? t($ => $.cyclePlanner.status.overdue) : t($ => $.cyclePlanner.status.upcoming)}
                       </Badge>
                     </td>
                   </tr>

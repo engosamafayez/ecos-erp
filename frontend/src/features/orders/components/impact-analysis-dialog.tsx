@@ -39,7 +39,7 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Icon className={`size-5 ${iconClass}`} />
-            {t('impactDialog.title')}
+            {t($ => $.impactDialog.title)}
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-sm text-foreground">
@@ -59,7 +59,7 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
                   {stage.wave_number ? (
                     <span className="flex items-center gap-1">
                       <Route className="size-3" />
-                      {t('impactDialog.wave', { number: stage.wave_number })}
+                      {t($ => $.impactDialog.wave, { number: stage.wave_number })}
                     </span>
                   ) : null}
                   {stage.governorate ? (
@@ -75,7 +75,7 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
               {stage.impact_list.length > 0 ? (
                 <div>
                   <p className="font-medium text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
-                    {t('impactDialog.whatWillHappen')}
+                    {t($ => $.impactDialog.whatWillHappen)}
                   </p>
                   <ul className="space-y-1">
                     {stage.impact_list.map((item) => (
@@ -91,7 +91,7 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
               {/* Manifest note */}
               {stage.manifest_exists ? (
                 <p className="text-xs text-muted-foreground border-t pt-2">
-                  {t('impactDialog.manifestNote')}
+                  {t($ => $.impactDialog.manifestNote)}
                 </p>
               ) : null}
             </div>
@@ -99,12 +99,12 @@ export function ImpactAnalysisDialog({ open, onConfirm, onCancel, stage }: Props
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>{t('statusSelector.cancel')}</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>{t($ => $.statusSelector.cancel)}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className={isCritical ? 'bg-red-600 hover:bg-red-700' : ''}
           >
-            {isCritical ? t('impactDialog.saveAnyway') : t('impactDialog.confirmSave')}
+            {isCritical ? t($ => $.impactDialog.saveAnyway) : t($ => $.impactDialog.confirmSave)}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -58,7 +58,7 @@ export function LineChart({
     return (
       <div className={cn('flex items-center justify-center text-sm text-muted-foreground', className)}
         style={{ height }}>
-        {t('common.noData')}
+        {t($ => $.common.noData)}
       </div>
     );
   }
@@ -73,7 +73,7 @@ export function LineChart({
         width="100%"
         height={height}
         role="img"
-        aria-label={t('intelligence.chart.lineChartAria')}
+        aria-label={t($ => $.intelligence.chart.lineChartAria)}
       >
         {/* Grid lines */}
         {showGrid && [0.25, 0.5, 0.75].map((t) => (

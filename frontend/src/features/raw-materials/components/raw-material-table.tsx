@@ -62,7 +62,7 @@ function AllowNegativeToggle({
       checked={allowed}
       onCheckedChange={(checked) => toggle.mutate({ id: material.id, allow_negative_stock: checked })}
       disabled={!canEdit || toggle.isPending}
-      aria-label={allowed ? t('table.allowNegativeOn') : t('table.allowNegativeOff')}
+      aria-label={allowed ? t($ => $.table.allowNegativeOn) : t($ => $.table.allowNegativeOff)}
       onClick={(e) => e.stopPropagation()}
     />
   );
@@ -73,7 +73,7 @@ function AllowNegativeToggle({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>{switchEl}</TooltipTrigger>
-        <TooltipContent>{t('table.noPermission')}</TooltipContent>
+        <TooltipContent>{t($ => $.table.noPermission)}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -194,59 +194,59 @@ export function RawMaterialTable({
               <Checkbox
                 checked={allSelected ? true : someSelected ? 'indeterminate' : false}
                 onCheckedChange={toggleAll}
-                aria-label={t('table.name')}
+                aria-label={t($ => $.table.name)}
               />
             </TableHead>
 
             {/* 1 — Image */}
-            {show('image') && <TableHead className="w-14">{t('table.image')}</TableHead>}
+            {show('image') && <TableHead className="w-14">{t($ => $.table.image)}</TableHead>}
 
             {/* 2 — Name (locked) */}
             {show('name') && (
-              <SortableHead field="name" label={t('table.name')} sort={sort} onSort={onSortChange} />
+              <SortableHead field="name" label={t($ => $.table.name)} sort={sort} onSort={onSortChange} />
             )}
 
             {/* 3 — Material Type */}
-            {show('material_type') && <TableHead>{t('table.materialType')}</TableHead>}
+            {show('material_type') && <TableHead>{t($ => $.table.materialType)}</TableHead>}
 
             {/* 4 — Category */}
-            {show('category') && <TableHead>{t('table.category')}</TableHead>}
+            {show('category') && <TableHead>{t($ => $.table.category)}</TableHead>}
 
             {/* 5 — Unit */}
-            {show('unit') && <TableHead>{t('table.unit')}</TableHead>}
+            {show('unit') && <TableHead>{t($ => $.table.unit)}</TableHead>}
 
             {/* 6 — Stock Status */}
-            {show('stock_status') && <TableHead>{t('table.stockStatus')}</TableHead>}
+            {show('stock_status') && <TableHead>{t($ => $.table.stockStatus)}</TableHead>}
 
             {/* 7 — On Hand */}
             {show('on_hand') && (
-              <SortableHead field="on_hand_qty" label={t('table.onHand')} sort={sort} onSort={onSortChange} align="right" />
+              <SortableHead field="on_hand_qty" label={t($ => $.table.onHand)} sort={sort} onSort={onSortChange} align="right" />
             )}
 
             {/* 8 — Reserved */}
-            {show('reserved') && <TableHead className="text-end">{t('table.reserved')}</TableHead>}
+            {show('reserved') && <TableHead className="text-end">{t($ => $.table.reserved)}</TableHead>}
 
             {/* 9 — Available */}
-            {show('available') && <TableHead className="text-end">{t('table.available')}</TableHead>}
+            {show('available') && <TableHead className="text-end">{t($ => $.table.available)}</TableHead>}
 
             {/* 10 — Current Cost */}
             {show('current_cost') && (
-              <SortableHead field="material_cost" label={t('table.currentCost')} sort={sort} onSort={onSortChange} align="right" />
+              <SortableHead field="material_cost" label={t($ => $.table.currentCost)} sort={sort} onSort={onSortChange} align="right" />
             )}
 
             {/* 11 — Inventory Value */}
-            {show('inventory_value') && <TableHead className="text-end">{t('table.inventoryValue')}</TableHead>}
+            {show('inventory_value') && <TableHead className="text-end">{t($ => $.table.inventoryValue)}</TableHead>}
 
             {/* 12 — Allow Negative */}
-            {show('allow_negative') && <TableHead>{t('table.allowNegative')}</TableHead>}
+            {show('allow_negative') && <TableHead>{t($ => $.table.allowNegative)}</TableHead>}
 
             {/* 13 — SKU */}
             {show('sku') && (
-              <SortableHead field="sku" label={t('table.sku')} sort={sort} onSort={onSortChange} />
+              <SortableHead field="sku" label={t($ => $.table.sku)} sort={sort} onSort={onSortChange} />
             )}
 
             {/* 14 — Actions (locked) */}
-            {show('actions') && <TableHead className="w-12 text-end">{t('table.actions')}</TableHead>}
+            {show('actions') && <TableHead className="w-12 text-end">{t($ => $.table.actions)}</TableHead>}
           </TableRow>
         </TableHeader>
 
@@ -269,8 +269,8 @@ export function RawMaterialTable({
             <TableRow>
               <TableCell colSpan={colCount} className="p-0">
                 <EmptyState
-                  title={t('table.empty.title')}
-                  description={t('table.empty.description')}
+                  title={t($ => $.table.empty.title)}
+                  description={t($ => $.table.empty.description)}
                 />
               </TableCell>
             </TableRow>
@@ -297,7 +297,7 @@ export function RawMaterialTable({
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => toggleOne(m.id)}
-                      aria-label={t('table.actionsLabel', { name: m.name })}
+                      aria-label={t($ => $.table.actionsLabel, { name: m.name })}
                     />
                   </TableCell>
 
@@ -339,8 +339,8 @@ export function RawMaterialTable({
                         )}
                       >
                         {m.product_type === 'packaging_material'
-                          ? t('table.typePackaging')
-                          : t('table.typeRaw')}
+                          ? t($ => $.table.typePackaging)
+                          : t($ => $.table.typeRaw)}
                       </Badge>
                     </TableCell>
                   )}
@@ -364,11 +364,11 @@ export function RawMaterialTable({
                     <TableCell>
                       {stockStatus === 'in_stock' ? (
                         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 text-xs">
-                          {t('table.inStock')}
+                          {t($ => $.table.inStock)}
                         </Badge>
                       ) : (
                         <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 text-xs">
-                          {t('table.outOfStock')}
+                          {t($ => $.table.outOfStock)}
                         </Badge>
                       )}
                     </TableCell>
@@ -433,14 +433,14 @@ export function RawMaterialTable({
                   {show('actions') && (
                     <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu
-                        label={t('table.actionsLabel', { name: m.name })}
+                        label={t($ => $.table.actionsLabel, { name: m.name })}
                         items={[
-                          { key: 'view',          label: t('table.actionView'),         icon: Package,     onSelect: () => onRowClick(m) },
-                          { key: 'edit',          label: t('table.actionEdit'),         icon: Edit,        onSelect: () => onEdit(m) },
-                          { key: 'price-history', label: t('table.actionPriceHistory'), icon: BarChart2,   onSelect: () => onPriceHistory(m) },
-                          { key: 'stock-history', label: t('table.actionStockHistory'), icon: History,     onSelect: () => onStockHistory(m) },
-                          { key: 'add-stock',     label: t('table.actionAddStock'),     icon: PackagePlus, onSelect: () => onAddStock(m) },
-                          { key: 'delete', label: t('table.actionDelete'), icon: Trash2, onSelect: () => onDelete(m), variant: 'destructive' },
+                          { key: 'view',          label: t($ => $.table.actionView),         icon: Package,     onSelect: () => onRowClick(m) },
+                          { key: 'edit',          label: t($ => $.table.actionEdit),         icon: Edit,        onSelect: () => onEdit(m) },
+                          { key: 'price-history', label: t($ => $.table.actionPriceHistory), icon: BarChart2,   onSelect: () => onPriceHistory(m) },
+                          { key: 'stock-history', label: t($ => $.table.actionStockHistory), icon: History,     onSelect: () => onStockHistory(m) },
+                          { key: 'add-stock',     label: t($ => $.table.actionAddStock),     icon: PackagePlus, onSelect: () => onAddStock(m) },
+                          { key: 'delete', label: t($ => $.table.actionDelete), icon: Trash2, onSelect: () => onDelete(m), variant: 'destructive' },
                         ]}
                       />
                     </TableCell>

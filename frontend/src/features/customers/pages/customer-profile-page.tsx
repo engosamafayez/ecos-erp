@@ -40,13 +40,13 @@ export function CustomerProfilePage() {
   if (isError || !customer) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 p-16 text-center">
-        <p className="text-sm font-medium text-destructive">{t('profile.notFound')}</p>
+        <p className="text-sm font-medium text-destructive">{t($ => $.profile.notFound)}</p>
         <button
           type="button"
           className="text-xs text-muted-foreground underline"
           onClick={() => navigate(ROUTES.customers)}
         >
-          {t('profile.backToCustomers')}
+          {t($ => $.profile.backToCustomers)}
         </button>
       </div>
     );

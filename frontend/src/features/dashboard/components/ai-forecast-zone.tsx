@@ -26,13 +26,13 @@ export function AiForecastZone() {
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold">{t('aiForecast.title')}</h3>
+            <h3 className="text-sm font-semibold">{t($ => $.aiForecast.title)}</h3>
             <Badge variant="outline" className="border-violet-500/30 text-[10px] text-violet-600 dark:text-violet-400">
-              {t('aiForecast.reserved')}
+              {t($ => $.aiForecast.reserved)}
             </Badge>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            {t('aiForecast.description')}
+            {t($ => $.aiForecast.description)}
           </p>
         </div>
       </div>

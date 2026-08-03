@@ -63,7 +63,7 @@ export function CategoryFormDrawer({ open, onOpenChange, category, defaultScope 
     const payload = toPayload(values);
     const handlers = {
       onSuccess: () => handleOpenChange(false),
-      onError: (error: unknown) => setServerError(extractMessage(error, t('drawer.errorFallback'))),
+      onError: (error: unknown) => setServerError(extractMessage(error, t($ => $.drawer.errorFallback))),
     };
 
     if (isEdit && category) {
@@ -77,26 +77,26 @@ export function CategoryFormDrawer({ open, onOpenChange, category, defaultScope 
     <EntityDrawer
       open={open}
       onOpenChange={handleOpenChange}
-      title={isEdit ? t('drawer.editTitle') : t('drawer.createTitle')}
-      description={isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle')}
+      title={isEdit ? t($ => $.drawer.editTitle) : t($ => $.drawer.createTitle)}
+      description={isEdit ? t($ => $.drawer.editSubtitle) : t($ => $.drawer.createSubtitle)}
       footer={
         <>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            {tCommon('common.cancel')}
+            {tCommon($ => $.common.cancel)}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
             {isPending
-              ? t('drawer.saving')
+              ? t($ => $.drawer.saving)
               : isEdit
-                ? t('drawer.submitEdit')
-                : t('drawer.submitCreate')}
+                ? t($ => $.drawer.submitEdit)
+                : t($ => $.drawer.submitCreate)}
           </Button>
         </>
       }
     >
       {serverError ? (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
+          <AlertTitle>{t($ => $.drawer.errorTitle)}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}

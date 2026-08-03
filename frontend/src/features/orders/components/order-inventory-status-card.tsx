@@ -162,7 +162,7 @@ export function OrderInventoryStatusCard({
           className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
           onClick={onViewPolicy}
         >
-          {t('inventoryCard.viewPolicy')}
+          {t($ => $.inventoryCard.viewPolicy)}
         </Button>
       </div>
 
@@ -170,7 +170,7 @@ export function OrderInventoryStatusCard({
       <div className="mt-2 space-y-1.5 text-xs">
         {cfg.policyKey && (
           <div>
-            <span className="text-muted-foreground">{t('inventoryCard.reservationPolicy')}</span>
+            <span className="text-muted-foreground">{t($ => $.inventoryCard.reservationPolicy)}</span>
             <span className="ml-1.5 font-medium">{t(cfg.policyKey)}</span>
           </div>
         )}
@@ -181,7 +181,7 @@ export function OrderInventoryStatusCard({
             {entryStatuses.length > 0 ? (
               <div className="space-y-0.5">
                 <p className="text-muted-foreground">
-                  {t('inventoryCard.autoReserveOnEnter')}
+                  {t($ => $.inventoryCard.autoReserveOnEnter)}
                 </p>
                 <ul className="mt-1 space-y-0.5">
                   {entryStatuses.map((s) => (
@@ -197,7 +197,7 @@ export function OrderInventoryStatusCard({
               </div>
             ) : (
               <p className="text-muted-foreground">
-                {t('inventoryCard.autoReserveOnCreate')}
+                {t($ => $.inventoryCard.autoReserveOnCreate)}
               </p>
             )}
           </>
@@ -206,34 +206,34 @@ export function OrderInventoryStatusCard({
         {/* Manual reservation */}
         {scenario === 'manual' && (
           <p className="text-muted-foreground">
-            {t('inventoryCard.manualReserveDesc')}
+            {t($ => $.inventoryCard.manualReserveDesc)}
           </p>
         )}
 
         {/* Idle */}
         {scenario === 'idle' && (
           <p className="text-muted-foreground">
-            {t('inventoryCard.idleDesc')}
+            {t($ => $.inventoryCard.idleDesc)}
           </p>
         )}
 
         {/* Negative stock */}
         {scenario === 'negative' && (
           <p className="text-muted-foreground">
-            {t('inventoryCard.negativeDesc')}
+            {t($ => $.inventoryCard.negativeDesc)}
           </p>
         )}
 
         {/* Shortage product list */}
         {shortageItems.length > 0 && (
           <>
-            <p className="text-muted-foreground">{t('inventoryCard.unavailableProducts')}</p>
+            <p className="text-muted-foreground">{t($ => $.inventoryCard.unavailableProducts)}</p>
             <ul className="space-y-0.5">
               {shortageItems.map((p) => (
                 <li key={p.id} className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
                   <AlertTriangle className="size-2.5 shrink-0" />
                   <span className="font-medium">{p.name}</span>
-                  <span className="text-muted-foreground">— {t('inventoryCard.outOfStock')}</span>
+                  <span className="text-muted-foreground">— {t($ => $.inventoryCard.outOfStock)}</span>
                 </li>
               ))}
             </ul>

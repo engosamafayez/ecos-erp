@@ -62,7 +62,7 @@ export function OrderInventoryExecutionCell({ reservationStatus, failureReason }
   const { t } = useTranslation('orders');
   const status = reservationStatus ?? 'pending'
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending
-  const label = t(`reservationBadge.${status}` as `reservationBadge.${ReservationStatus}`)
+  const label = t($ => $.reservationBadge[status] as `reservationBadge.${ReservationStatus}`)
 
   const showTooltip = (status === 'awaiting_stock' || status === 'partial_reserved' || status === 'failed') && failureReason
 

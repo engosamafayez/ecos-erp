@@ -23,45 +23,45 @@ function deriveInsights(data: ExecutiveDashboardData, t: TFunction<'dashboard'>,
 
   // Revenue trend alert
   if (s.revenue_trend_pct !== null && s.revenue_trend_pct < -20) {
-    insights.push({ type: 'alert', message: t('aiInsights.revenueDown', { pct: Math.abs(s.revenue_trend_pct).toFixed(1) }) });
+    insights.push({ type: 'alert', message: t($ => $.aiInsights.revenueDown, { pct: Math.abs(s.revenue_trend_pct).toFixed(1) }) });
   } else if (s.revenue_trend_pct !== null && s.revenue_trend_pct > 20) {
-    insights.push({ type: 'info', message: t('aiInsights.revenueUp', { pct: s.revenue_trend_pct.toFixed(1) }) });
+    insights.push({ type: 'info', message: t($ => $.aiInsights.revenueUp, { pct: s.revenue_trend_pct.toFixed(1) }) });
   }
 
   // High cancellations
   if (s.orders_today > 0 && s.cancelled_today / s.orders_today > 0.1) {
-    insights.push({ type: 'alert', message: t('aiInsights.cancellations', { count: s.cancelled_today, rate: ((s.cancelled_today / s.orders_today) * 100).toFixed(0) }) });
+    insights.push({ type: 'alert', message: t($ => $.aiInsights.cancellations, { count: s.cancelled_today, rate: ((s.cancelled_today / s.orders_today) * 100).toFixed(0) }) });
   }
 
   // Shipping failures
   if (sh.failed_today > 0) {
     const failRate = sh.shipments_today > 0 ? (sh.failed_today / sh.shipments_today) * 100 : 100;
-    insights.push({ type: failRate > 15 ? 'alert' : 'tip', message: t('aiInsights.failedDeliveries', { count: sh.failed_today, rate: failRate.toFixed(0) }) });
+    insights.push({ type: failRate > 15 ? 'alert' : 'tip', message: t($ => $.aiInsights.failedDeliveries, { count: sh.failed_today, rate: failRate.toFixed(0) }) });
   }
 
   // High ROAS signal
   if (mk.roas !== null && mk.roas > 4) {
-    insights.push({ type: 'tip', message: t('aiInsights.roasHigh', { roas: mk.roas }) });
+    insights.push({ type: 'tip', message: t($ => $.aiInsights.roasHigh, { roas: mk.roas }) });
   } else if (mk.roas !== null && mk.roas < 1 && mk.spend_this_month > 0) {
-    insights.push({ type: 'alert', message: t('aiInsights.roasLow') });
+    insights.push({ type: 'alert', message: t($ => $.aiInsights.roasLow) });
   }
 
   // COD pending
   if (sh.cod_pending > 10_000) {
-    insights.push({ type: 'tip', message: t('aiInsights.codPending', { amount: money(sh.cod_pending) }) });
+    insights.push({ type: 'tip', message: t($ => $.aiInsights.codPending, { amount: money(sh.cod_pending) }) });
   }
 
   // Pending orders accumulating
   if (s.pending_count > 50) {
-    insights.push({ type: 'tip', message: t('aiInsights.pendingQueue', { count: s.pending_count }) });
+    insights.push({ type: 'tip', message: t($ => $.aiInsights.pendingQueue, { count: s.pending_count }) });
   }
 
   // No data fallback
   if (insights.length === 0) {
     if (s.orders_today === 0) {
-      insights.push({ type: 'info', message: t('aiInsights.noOrdersYet') });
+      insights.push({ type: 'info', message: t($ => $.aiInsights.noOrdersYet) });
     } else {
-      insights.push({ type: 'info', message: t('aiInsights.ordersOnTrack', { count: s.orders_today, revenue: money(s.revenue_today) }) });
+      insights.push({ type: 'info', message: t($ => $.aiInsights.ordersOnTrack, { count: s.orders_today, revenue: money(s.revenue_today) }) });
     }
   }
 
@@ -84,9 +84,9 @@ export function AiInsightsCard({ data }: Props) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
           <Sparkles className="h-4 w-4 text-violet-500" />
-          {t('aiInsights.title')}
+          {t($ => $.aiInsights.title)}
           <Badge variant="outline" className="ml-auto text-[10px] text-violet-600 dark:text-violet-400 border-violet-500/30">
-            {t('aiInsights.ruleBased')}
+            {t($ => $.aiInsights.ruleBased)}
           </Badge>
         </CardTitle>
       </CardHeader>

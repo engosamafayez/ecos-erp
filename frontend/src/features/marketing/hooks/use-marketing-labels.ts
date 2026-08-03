@@ -27,28 +27,28 @@ export function useMarketingLabels() {
   const { t } = useTranslation('marketing');
 
   const internalStatusLabel: Record<CampaignInternalStatus, string> = {
-    draft:          t('campaigns.status.draft'),
-    pending_review: t('campaigns.status.pending_review'),
-    approved:       t('campaigns.status.approved'),
-    scheduled:      t('campaigns.status.scheduled'),
-    publishing:     t('campaigns.status.publishing'),
-    published:      t('campaigns.status.published'),
-    paused:         t('campaigns.status.paused'),
-    archived:       t('campaigns.status.archived'),
-    failed:         t('campaigns.status.failed'),
-    rejected:       t('campaigns.status.rejected'),
+    draft:          t($ => $.campaigns.status.draft),
+    pending_review: t($ => $.campaigns.status.pending_review),
+    approved:       t($ => $.campaigns.status.approved),
+    scheduled:      t($ => $.campaigns.status.scheduled),
+    publishing:     t($ => $.campaigns.status.publishing),
+    published:      t($ => $.campaigns.status.published),
+    paused:         t($ => $.campaigns.status.paused),
+    archived:       t($ => $.campaigns.status.archived),
+    failed:         t($ => $.campaigns.status.failed),
+    rejected:       t($ => $.campaigns.status.rejected),
   };
 
   const internalStatusTabLabel: Partial<Record<CampaignInternalStatus | 'all', string>> = {
-    all:            t('campaigns.statusTab.all'),
-    draft:          t('campaigns.statusTab.draft'),
-    pending_review: t('campaigns.statusTab.pending_review'),
-    approved:       t('campaigns.statusTab.approved'),
-    scheduled:      t('campaigns.statusTab.scheduled'),
-    published:      t('campaigns.statusTab.published'),
-    paused:         t('campaigns.statusTab.paused'),
-    archived:       t('campaigns.statusTab.archived'),
-    failed:         t('campaigns.statusTab.failed'),
+    all:            t($ => $.campaigns.statusTab.all),
+    draft:          t($ => $.campaigns.statusTab.draft),
+    pending_review: t($ => $.campaigns.statusTab.pending_review),
+    approved:       t($ => $.campaigns.statusTab.approved),
+    scheduled:      t($ => $.campaigns.statusTab.scheduled),
+    published:      t($ => $.campaigns.statusTab.published),
+    paused:         t($ => $.campaigns.statusTab.paused),
+    archived:       t($ => $.campaigns.statusTab.archived),
+    failed:         t($ => $.campaigns.statusTab.failed),
   };
 
   return { internalStatusLabel, internalStatusTabLabel };

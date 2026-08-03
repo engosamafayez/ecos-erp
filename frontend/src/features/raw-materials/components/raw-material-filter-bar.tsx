@@ -34,14 +34,14 @@ function ColumnManagerPanel({ visibleColumns, onToggleColumn, onRestoreDefaults,
   return (
     <PopoverContent align="end" className="w-56 p-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium">{t('filters.columns')}</p>
+        <p className="text-sm font-medium">{t($ => $.filters.columns)}</p>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onShowAll}>
-            {t('filters.showAll')}
+            {t($ => $.filters.showAll)}
           </Button>
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onRestoreDefaults}>
             <RotateCcw className="size-3 mr-1" />
-            {t('filters.reset')}
+            {t($ => $.filters.reset)}
           </Button>
         </div>
       </div>
@@ -60,7 +60,7 @@ function ColumnManagerPanel({ visibleColumns, onToggleColumn, onRestoreDefaults,
             />
             <span>{col.label}</span>
             {col.locked && (
-              <span className="ms-auto text-[10px] text-muted-foreground">{t('filters.locked')}</span>
+              <span className="ms-auto text-[10px] text-muted-foreground">{t($ => $.filters.locked)}</span>
             )}
           </label>
         ))}
@@ -114,17 +114,17 @@ export function RawMaterialFilterBar({
   const warehouses = warehousesResult?.items ?? [];
 
   const newLabel = materialType === 'packaging_material'
-    ? t('filters.newPackagingMaterial')
+    ? t($ => $.filters.newPackagingMaterial)
     : materialType === 'raw_material'
-      ? t('filters.newRawMaterial')
-      : t('filters.newMaterial');
+      ? t($ => $.filters.newRawMaterial)
+      : t($ => $.filters.newMaterial);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Search */}
       <div className="relative flex-1 min-w-52 max-w-80">
         <Input
-          placeholder={t('filters.searchPlaceholder')}
+          placeholder={t($ => $.filters.searchPlaceholder)}
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           className="h-9"
@@ -134,22 +134,22 @@ export function RawMaterialFilterBar({
       {/* Material Type */}
       <Select value={materialType || '_all'} onValueChange={(v) => onMaterialType(v === '_all' ? '' : v as MaterialType)}>
         <SelectTrigger className="h-9 w-44">
-          <SelectValue placeholder={t('filters.allMaterials')} />
+          <SelectValue placeholder={t($ => $.filters.allMaterials)} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">{t('filters.allMaterials')}</SelectItem>
-          <SelectItem value="raw_material">{t('filters.rawMaterials')}</SelectItem>
-          <SelectItem value="packaging_material">{t('filters.packagingMaterials')}</SelectItem>
+          <SelectItem value="_all">{t($ => $.filters.allMaterials)}</SelectItem>
+          <SelectItem value="raw_material">{t($ => $.filters.rawMaterials)}</SelectItem>
+          <SelectItem value="packaging_material">{t($ => $.filters.packagingMaterials)}</SelectItem>
         </SelectContent>
       </Select>
 
       {/* Category */}
       <Select value={categoryId || '_all'} onValueChange={(v) => onCategory(v === '_all' ? '' : v)}>
         <SelectTrigger className="h-9 w-44">
-          <SelectValue placeholder={t('filters.allCategories')} />
+          <SelectValue placeholder={t($ => $.filters.allCategories)} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">{t('filters.allCategories')}</SelectItem>
+          <SelectItem value="_all">{t($ => $.filters.allCategories)}</SelectItem>
           {categories.map((c) => (
             <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
           ))}
@@ -159,10 +159,10 @@ export function RawMaterialFilterBar({
       {/* Supplier */}
       <Select value={supplierId || '_all'} onValueChange={(v) => onSupplier(v === '_all' ? '' : v)}>
         <SelectTrigger className="h-9 w-40">
-          <SelectValue placeholder={t('filters.allSuppliers')} />
+          <SelectValue placeholder={t($ => $.filters.allSuppliers)} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">{t('filters.allSuppliers')}</SelectItem>
+          <SelectItem value="_all">{t($ => $.filters.allSuppliers)}</SelectItem>
           {suppliers.map((s) => (
             <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
           ))}
@@ -172,10 +172,10 @@ export function RawMaterialFilterBar({
       {/* Warehouse */}
       <Select value={warehouseId || '_all'} onValueChange={(v) => onWarehouse(v === '_all' ? '' : v)}>
         <SelectTrigger className="h-9 w-40">
-          <SelectValue placeholder={t('filters.allWarehouses')} />
+          <SelectValue placeholder={t($ => $.filters.allWarehouses)} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">{t('filters.allWarehouses')}</SelectItem>
+          <SelectItem value="_all">{t($ => $.filters.allWarehouses)}</SelectItem>
           {warehouses.map((w) => (
             <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
           ))}
@@ -185,24 +185,24 @@ export function RawMaterialFilterBar({
       {/* Stock Status */}
       <Select value={availability || '_all'} onValueChange={(v) => onAvailability(v === '_all' ? '' : v)}>
         <SelectTrigger className="h-9 w-36">
-          <SelectValue placeholder={t('filters.stockStatus')} />
+          <SelectValue placeholder={t($ => $.filters.stockStatus)} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">{t('filters.allStock')}</SelectItem>
-          <SelectItem value="available">{t('filters.inStock')}</SelectItem>
-          <SelectItem value="out_of_stock">{t('filters.outOfStock')}</SelectItem>
+          <SelectItem value="_all">{t($ => $.filters.allStock)}</SelectItem>
+          <SelectItem value="available">{t($ => $.filters.inStock)}</SelectItem>
+          <SelectItem value="out_of_stock">{t($ => $.filters.outOfStock)}</SelectItem>
         </SelectContent>
       </Select>
 
       {/* Negative stock */}
       <Select value={allowNegative || '_all'} onValueChange={(v) => onAllowNegative(v === '_all' ? '' : v)}>
         <SelectTrigger className="h-9 w-44">
-          <SelectValue placeholder={t('filters.negStock')} />
+          <SelectValue placeholder={t($ => $.filters.negStock)} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="_all">{t('filters.allStock')}</SelectItem>
-          <SelectItem value="allowed">{t('filters.negAllowed')}</SelectItem>
-          <SelectItem value="blocked">{t('filters.negBlocked')}</SelectItem>
+          <SelectItem value="_all">{t($ => $.filters.allStock)}</SelectItem>
+          <SelectItem value="allowed">{t($ => $.filters.negAllowed)}</SelectItem>
+          <SelectItem value="blocked">{t($ => $.filters.negBlocked)}</SelectItem>
         </SelectContent>
       </Select>
 
@@ -217,7 +217,7 @@ export function RawMaterialFilterBar({
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
               <Columns3 className="size-4" />
-              {t('filters.columns')}
+              {t($ => $.filters.columns)}
             </Button>
           </PopoverTrigger>
           <ColumnManagerPanel
@@ -236,12 +236,12 @@ export function RawMaterialFilterBar({
           className="gap-1.5"
         >
           <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {t('filters.refresh')}
+          {t($ => $.filters.refresh)}
         </Button>
 
         <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5">
           <Download className="size-4" />
-          {t('filters.export')}
+          {t($ => $.filters.export)}
         </Button>
       </div>
     </div>

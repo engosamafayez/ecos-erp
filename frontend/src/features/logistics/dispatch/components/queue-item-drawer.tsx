@@ -70,42 +70,42 @@ export function QueueItemDrawer({
     <PageDrawer
       open={open}
       onOpenChange={onOpenChange}
-      title={item.trip_number ?? t('dispatch.queue.itemFallbackTitle')}
-      description={t('dispatch.queue.drawerDescription')}
+      title={item.trip_number ?? t($ => $.dispatch.queue.itemFallbackTitle)}
+      description={t($ => $.dispatch.queue.drawerDescription)}
       size="lg"
     >
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
-          <Field label={t('common.status')}>
+          <Field label={t($ => $.common.status)}>
             <QueueStatusBadge status={item.status} />
           </Field>
-          <Field label={t('common.priority')}>
+          <Field label={t($ => $.common.priority)}>
             <PriorityBadge priority={item.priority} />
           </Field>
-          <Field label={t('dispatch.queue.rank')}>{item.rank}</Field>
-          <Field label={t('dispatch.queue.colWaiting')}>
-            {t('dispatch.units.minutes', { value: item.waiting_minutes })}
+          <Field label={t($ => $.dispatch.queue.rank)}>{item.rank}</Field>
+          <Field label={t($ => $.dispatch.queue.colWaiting)}>
+            {t($ => $.dispatch.units.minutes, { value: item.waiting_minutes })}
           </Field>
-          <Field label={t('dispatch.queue.colAttempts')}>{item.attempt_count}</Field>
-          <Field label={t('dispatch.queue.colClaimedBy')}>{item.claimed_by ?? '—'}</Field>
-          <Field label={t('dispatch.queue.tripCapacity')}>{item.trip_capacity ?? '—'}</Field>
-          <Field label={t('dispatch.queue.queuedAt')}>
+          <Field label={t($ => $.dispatch.queue.colAttempts)}>{item.attempt_count}</Field>
+          <Field label={t($ => $.dispatch.queue.colClaimedBy)}>{item.claimed_by ?? '—'}</Field>
+          <Field label={t($ => $.dispatch.queue.tripCapacity)}>{item.trip_capacity ?? '—'}</Field>
+          <Field label={t($ => $.dispatch.queue.queuedAt)}>
             {item.queued_at ? new Date(item.queued_at).toLocaleString() : '—'}
           </Field>
         </div>
 
         {item.priority_reason && (
-          <Field label={t('dispatch.queue.whyPriority')}>{item.priority_reason}</Field>
+          <Field label={t($ => $.dispatch.queue.whyPriority)}>{item.priority_reason}</Field>
         )}
 
         {item.is_stuck && (
           <Alert variant="destructive">
             <AlertDescription className="text-xs">
-              {t('dispatch.queue.stuckFailed', { count: item.attempt_count })}
+              {t($ => $.dispatch.queue.stuckFailed, { count: item.attempt_count })}
               {item.last_failure_reason
-                ? ` ${t('dispatch.queue.stuckLastReason', { reason: item.last_failure_reason })}`
+                ? ` ${t($ => $.dispatch.queue.stuckLastReason, { reason: item.last_failure_reason })}`
                 : ''}{' '}
-              {t('dispatch.queue.stuckAdvice')}
+              {t($ => $.dispatch.queue.stuckAdvice)}
             </AlertDescription>
           </Alert>
         )}
@@ -114,13 +114,13 @@ export function QueueItemDrawer({
 
         {!canReorder ? (
           <p className="text-xs text-muted-foreground">
-            {t('dispatch.queue.notEditable', { status: item.status_label.toLowerCase() })}
+            {t($ => $.dispatch.queue.notEditable, { status: item.status_label.toLowerCase() })}
           </p>
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">{t('common.priority')}</Label>
+                <Label className="text-xs">{t($ => $.common.priority)}</Label>
                 <Select
                   value={priority}
                   onValueChange={(v) => setPriority(v as QueuePriority)}
@@ -138,11 +138,11 @@ export function QueueItemDrawer({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">{t('common.reason')}</Label>
+                <Label className="text-xs">{t($ => $.common.reason)}</Label>
                 <Input
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder={t('dispatch.queue.changeReasonPlaceholder')}
+                  placeholder={t($ => $.dispatch.queue.changeReasonPlaceholder)}
                   className="h-9"
                 />
               </div>
@@ -158,20 +158,20 @@ export function QueueItemDrawer({
                     { itemId: item.id, priority, reason: reason.trim() },
                     {
                       onSuccess: () => {
-                        toast({ title: t('dispatch.toast.priorityUpdated') });
+                        toast({ title: t($ => $.dispatch.toast.priorityUpdated) });
                         setReason('');
                         onOpenChange(false);
                       },
                       onError: () =>
                         toast({
-                          title: t('dispatch.toast.priorityFailed'),
+                          title: t($ => $.dispatch.toast.priorityFailed),
                           variant: 'destructive',
                         }),
                     },
                   )
                 }
               >
-                {t('dispatch.queue.setPriority')}
+                {t($ => $.dispatch.queue.setPriority)}
               </Button>
 
               <Button
@@ -184,16 +184,16 @@ export function QueueItemDrawer({
                     { itemId: item.id, reason: reason.trim() || undefined },
                     {
                       onSuccess: () => {
-                        toast({ title: t('dispatch.toast.itemDeferred') });
+                        toast({ title: t($ => $.dispatch.toast.itemDeferred) });
                         onOpenChange(false);
                       },
                       onError: () =>
-                        toast({ title: t('dispatch.toast.deferFailed'), variant: 'destructive' }),
+                        toast({ title: t($ => $.dispatch.toast.deferFailed), variant: 'destructive' }),
                     },
                   )
                 }
               >
-                {t('dispatch.queue.defer')}
+                {t($ => $.dispatch.queue.defer)}
               </Button>
             </div>
           </div>

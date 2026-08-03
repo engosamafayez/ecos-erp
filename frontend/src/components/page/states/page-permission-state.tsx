@@ -15,8 +15,8 @@ export function PagePermissionState({
   className,
 }: PagePermissionStateProps) {
   const { t } = useTranslation('common');
-  const displayTitle = title ?? t('permission.accessDenied');
-  const displayDescription = description ?? t('permission.description');
+  const displayTitle = title ?? t($ => $.permission.accessDenied);
+  const displayDescription = description ?? t($ => $.permission.description);
 
   return (
     <div

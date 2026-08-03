@@ -37,8 +37,8 @@ export function CostHistoryPage() {
   const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
 
   const SOURCE_LABELS: Record<string, string> = {
-    manual:           t('history.filters.manualAdjustment'),
-    purchase_invoice: t('history.filters.purchaseInvoice'),
+    manual:           t($ => $.history.filters.manualAdjustment),
+    purchase_invoice: t($ => $.history.filters.purchaseInvoice),
   };
 
   const [rows, setRows]       = useState<MaterialCostHistoryEntry[]>([]);
@@ -78,9 +78,9 @@ export function CostHistoryPage() {
       <div className="flex items-center gap-3">
         <History className="size-5 text-primary" />
         <div>
-          <h1 className="text-lg font-semibold">{t('history.title')}</h1>
+          <h1 className="text-lg font-semibold">{t($ => $.history.title)}</h1>
           <p className="text-sm text-muted-foreground">
-            {t('history.subtitle')}
+            {t($ => $.history.subtitle)}
           </p>
         </div>
       </div>
@@ -91,7 +91,7 @@ export function CostHistoryPage() {
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder={t('history.search')}
+            placeholder={t($ => $.history.search)}
             value={search}
             onChange={handleSearch}
             className="pl-8 w-64"
@@ -102,9 +102,9 @@ export function CostHistoryPage() {
           onChange={handleSourceFilter}
           defaultValue=""
         >
-          <option value="">{t('history.filters.allSources')}</option>
-          <option value="manual">{t('history.filters.manualAdjustment')}</option>
-          <option value="purchase_invoice">{t('history.filters.purchaseInvoice')}</option>
+          <option value="">{t($ => $.history.filters.allSources)}</option>
+          <option value="manual">{t($ => $.history.filters.manualAdjustment)}</option>
+          <option value="purchase_invoice">{t($ => $.history.filters.purchaseInvoice)}</option>
         </select>
       </div>
 
@@ -113,14 +113,14 @@ export function CostHistoryPage() {
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr>
-              <th className="px-4 py-2.5 text-start font-medium text-muted-foreground">{t('history.columns.material')}</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.previousCost')}</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.newCost')}</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.difference')}</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.changePct')}</th>
-              <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">{t('history.columns.source')}</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.affected')}</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.date')}</th>
+              <th className="px-4 py-2.5 text-start font-medium text-muted-foreground">{t($ => $.history.columns.material)}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t($ => $.history.columns.previousCost)}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t($ => $.history.columns.newCost)}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t($ => $.history.columns.difference)}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t($ => $.history.columns.changePct)}</th>
+              <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">{t($ => $.history.columns.source)}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t($ => $.history.columns.affected)}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t($ => $.history.columns.date)}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -137,7 +137,7 @@ export function CostHistoryPage() {
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
-                  {t('history.empty')}
+                  {t($ => $.history.empty)}
                 </td>
               </tr>
             ) : (

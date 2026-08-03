@@ -55,13 +55,13 @@ function MaterialTypeBadge({ type }: { type: string | undefined }) {
   if (type === 'packaging_material') {
     return (
       <Badge variant="outline" className="text-[10px] border-violet-300 text-violet-700 dark:border-violet-700 dark:text-violet-400 px-1 py-0">
-        {t('materialTypes.packaging')}
+        {t($ => $.materialTypes.packaging)}
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="text-[10px] border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400 px-1 py-0">
-      {t('materialTypes.raw')}
+      {t($ => $.materialTypes.raw)}
     </Badge>
   );
 }
@@ -108,44 +108,44 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
         <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
           <AlertTriangle className="size-3.5 mt-0.5 shrink-0" />
           <span>
-            {t('overview.missingCost', { count: recipe.cost_summary?.missing_material_count ?? '?' })}
+            {t($ => $.overview.missingCost, { count: recipe.cost_summary?.missing_material_count ?? '?' })}
           </span>
         </div>
       )}
 
       {/* Meta */}
       <div className="grid grid-cols-2 gap-4">
-        <LabelValue label={t('overview.labels.recipeNumber')} value={<span className="font-mono text-xs">{recipe.bom_number}</span>} />
-        <LabelValue label={t('overview.labels.sku')} value={<span className="font-mono text-xs">{recipe.product?.sku ?? '—'}</span>} />
+        <LabelValue label={t($ => $.overview.labels.recipeNumber)} value={<span className="font-mono text-xs">{recipe.bom_number}</span>} />
+        <LabelValue label={t($ => $.overview.labels.sku)} value={<span className="font-mono text-xs">{recipe.product?.sku ?? '—'}</span>} />
         <LabelValue
-          label={t('overview.labels.status')}
+          label={t($ => $.overview.labels.status)}
           value={
             recipe.is_active ? (
-              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">{t('status.active')}</Badge>
+              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">{t($ => $.status.active)}</Badge>
             ) : (
-              <Badge variant="outline" className="text-muted-foreground text-xs">{t('status.draft')}</Badge>
+              <Badge variant="outline" className="text-muted-foreground text-xs">{t($ => $.status.draft)}</Badge>
             )
           }
         />
         <LabelValue
-          label={t('overview.labels.totalMaterials')}
+          label={t($ => $.overview.labels.totalMaterials)}
           value={(() => {
             const n = recipe.lines?.length ?? recipe.lines_count ?? 0;
-            return t('overview.materialsCount', { count: n });
+            return t($ => $.overview.materialsCount, { count: n });
           })()}
         />
         <LabelValue
-          label={t('overview.labels.lastUpdated')}
+          label={t($ => $.overview.labels.lastUpdated)}
           value={recipe.updated_at ? recipe.updated_at.slice(0, 10) : '—'}
         />
         {recipe.cost_summary?.last_calculated_at && (
           <LabelValue
-            label={t('overview.labels.lastCosted')}
+            label={t($ => $.overview.labels.lastCosted)}
             value={recipe.cost_summary.last_calculated_at.slice(0, 10)}
           />
         )}
         {recipe.product?.channels?.[0] && (
-          <LabelValue label={t('overview.labels.channel')} value={recipe.product.channels[0].name} />
+          <LabelValue label={t($ => $.overview.labels.channel)} value={recipe.product.channels[0].name} />
         )}
       </div>
 
@@ -158,7 +158,7 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
           onClick={() => setBreakdownOpen((v) => !v)}
           className="flex items-center justify-between w-full text-start"
         >
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('overview.costDetails')}</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t($ => $.overview.costDetails)}</p>
           {breakdownOpen
             ? <ChevronUp className="size-3.5 text-muted-foreground" />
             : <ChevronDown className="size-3.5 text-muted-foreground" />}
@@ -167,19 +167,19 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
         {breakdownOpen && (
           <div className="flex flex-col gap-2.5 pt-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('costSummary.rawMaterials')}</span>
+              <span className="text-muted-foreground">{t($ => $.costSummary.rawMaterials)}</span>
               <span className="tabular-nums">{fmtCost(rawMaterialCost, currency, locale)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('costSummary.packaging')}</span>
+              <span className="text-muted-foreground">{t($ => $.costSummary.packaging)}</span>
               <span className="tabular-nums">{fmtCost(packagingCost, currency, locale)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('costSummary.manufacturing')}</span>
+              <span className="text-muted-foreground">{t($ => $.costSummary.manufacturing)}</span>
               <span className="tabular-nums">{fmtCost(manufacturingCost, currency, locale)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('costSummary.otherCosts')}</span>
+              <span className="text-muted-foreground">{t($ => $.costSummary.otherCosts)}</span>
               <span className="tabular-nums">{fmtCost(otherCosts, currency, locale)}</span>
             </div>
             <Separator />
@@ -188,7 +188,7 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
 
         <div className="flex items-center justify-between mt-1">
           <span className="flex items-center gap-1.5 text-sm font-semibold">
-            {t('costSummary.totalCost')}
+            {t($ => $.costSummary.totalCost)}
             <LiveCostBadge />
           </span>
           <span className="text-sm font-bold tabular-nums">{fmtCost(totalCost, currency, locale)}</span>
@@ -199,7 +199,7 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
       {recipe.notes && (
         <>
           <Separator />
-          <LabelValue label={t('overview.labels.recipeNotes')} value={<span className="whitespace-pre-wrap">{recipe.notes}</span>} />
+          <LabelValue label={t($ => $.overview.labels.recipeNotes)} value={<span className="whitespace-pre-wrap">{recipe.notes}</span>} />
         </>
       )}
 
@@ -208,7 +208,7 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
         <>
           <Separator />
           <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('overview.labels.executionInstructions')}</span>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t($ => $.overview.labels.executionInstructions)}</span>
             <pre className="mt-1 text-xs font-mono text-muted-foreground whitespace-pre-wrap bg-muted/40 rounded-md p-3">
               {recipe.execution_instructions}
             </pre>
@@ -229,7 +229,7 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
   if (lines.length === 0) {
     return (
       <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-        {t('materialsTab.noMaterials')}
+        {t($ => $.materialsTab.noMaterials)}
       </div>
     );
   }
@@ -246,19 +246,19 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
       {hasMissing && (
         <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
           <TriangleAlert className="size-3.5 shrink-0" />
-          {t('materialsTab.missingCost')}
+          {t($ => $.materialsTab.missingCost)}
         </div>
       )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-muted-foreground text-start">
-              <th className="pb-2 pe-3 font-medium">{t('tableColumns.material')}</th>
-              <th className="pb-2 pe-3 font-medium w-16">{t('tableColumns.type')}</th>
-              <th className="pb-2 pe-3 text-end font-medium w-16">{t('tableColumns.qty')}</th>
-              <th className="pb-2 pe-3 text-end font-medium w-14">{t('tableColumns.wastePct')}</th>
-              <th className="pb-2 pe-3 text-end font-medium w-16">{t('tableColumns.effQty')}</th>
-              <th className="pb-2 text-end font-medium w-32">{t('tableColumns.totalCost')}</th>
+              <th className="pb-2 pe-3 font-medium">{t($ => $.tableColumns.material)}</th>
+              <th className="pb-2 pe-3 font-medium w-16">{t($ => $.tableColumns.type)}</th>
+              <th className="pb-2 pe-3 text-end font-medium w-16">{t($ => $.tableColumns.qty)}</th>
+              <th className="pb-2 pe-3 text-end font-medium w-14">{t($ => $.tableColumns.wastePct)}</th>
+              <th className="pb-2 pe-3 text-end font-medium w-16">{t($ => $.tableColumns.effQty)}</th>
+              <th className="pb-2 text-end font-medium w-32">{t($ => $.tableColumns.totalCost)}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -267,7 +267,7 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
                 <tr>
                   <td colSpan={6} className="py-1.5">
                     <span className="text-[10px] font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                      {t('materialsGroup.rawMaterials')}
+                      {t($ => $.materialsGroup.rawMaterials)}
                     </span>
                   </td>
                 </tr>
@@ -275,7 +275,7 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
                   <MaterialRow key={line.id} line={line} />
                 ))}
                 <tr className="bg-muted/30">
-                  <td colSpan={5} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.rawSubtotal')}</td>
+                  <td colSpan={5} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t($ => $.materialsGroup.rawSubtotal)}</td>
                   <td className="py-1 text-end text-xs font-semibold tabular-nums">{fmtCost(rawSubtotal, currency, locale)}</td>
                 </tr>
               </>
@@ -286,7 +286,7 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
                 <tr>
                   <td colSpan={6} className="py-1.5">
                     <span className="text-[10px] font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                      {t('materialsGroup.packagingMaterials')}
+                      {t($ => $.materialsGroup.packagingMaterials)}
                     </span>
                   </td>
                 </tr>
@@ -294,7 +294,7 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
                   <MaterialRow key={line.id} line={line} />
                 ))}
                 <tr className="bg-muted/30">
-                  <td colSpan={5} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.packagingSubtotal')}</td>
+                  <td colSpan={5} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t($ => $.materialsGroup.packagingSubtotal)}</td>
                   <td className="py-1 text-end text-xs font-semibold tabular-nums">{fmtCost(pkgSubtotal, currency, locale)}</td>
                 </tr>
               </>
@@ -302,7 +302,7 @@ function MaterialsTab({ recipe }: { recipe: Recipe }) {
           </tbody>
           <tfoot>
             <tr className="border-t">
-              <td colSpan={5} className="pt-3 text-sm font-medium">{t('materialsTab.totalMaterials')}</td>
+              <td colSpan={5} className="pt-3 text-sm font-medium">{t($ => $.materialsTab.totalMaterials)}</td>
               <td className="pt-3 text-end text-sm font-bold tabular-nums">{fmtCost(totalCost, currency, locale)}</td>
             </tr>
           </tfoot>
@@ -373,7 +373,7 @@ function CostHistoryTab({ recipeId }: { recipeId: string }) {
     return (
       <div className="flex items-center justify-center py-16 gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
-        {t('costHistory.loading')}
+        {t($ => $.costHistory.loading)}
       </div>
     );
   }
@@ -384,7 +384,7 @@ function CostHistoryTab({ recipeId }: { recipeId: string }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-2 text-sm text-muted-foreground">
         <Clock className="size-5 opacity-40" />
-        {t('costHistory.empty')}
+        {t($ => $.costHistory.empty)}
       </div>
     );
   }
@@ -447,7 +447,7 @@ function CostHistoryRow({
 
         {entry.has_missing_costs && (
           <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400">
-            {t('costHistory.partial')}
+            {t($ => $.costHistory.partial)}
           </Badge>
         )}
       </div>
@@ -512,9 +512,9 @@ export function RecipeDetailDrawer({
 
   const tabs: TabItem[] = display
     ? [
-        { key: 'overview',           label: t('drawer.tabs.overview'),           content: <OverviewTab recipe={display} /> },
-        { key: 'materials',          label: t('drawer.tabs.materials'),          content: <MaterialsTab recipe={display} />, badge: display.lines?.length ?? display.lines_count },
-        { key: 'cost-history',       label: t('drawer.tabs.costHistory'),        content: <CostHistoryTab recipeId={display.id} /> },
+        { key: 'overview',           label: t($ => $.drawer.tabs.overview),           content: <OverviewTab recipe={display} /> },
+        { key: 'materials',          label: t($ => $.drawer.tabs.materials),          content: <MaterialsTab recipe={display} />, badge: display.lines?.length ?? display.lines_count },
+        { key: 'cost-history',       label: t($ => $.drawer.tabs.costHistory),        content: <CostHistoryTab recipeId={display.id} /> },
       ]
     : [];
 
@@ -522,7 +522,7 @@ export function RecipeDetailDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col gap-0">
         <SheetTitle className="sr-only">
-          {recipe ? t('drawer.title', { name: recipe.product?.name ?? recipe.bom_number }) : t('drawer.titleFallback')}
+          {recipe ? t($ => $.drawer.title, { name: recipe.product?.name ?? recipe.bom_number }) : t($ => $.drawer.titleFallback)}
         </SheetTitle>
 
         {/* Summary Header */}
@@ -545,11 +545,11 @@ export function RecipeDetailDrawer({
                 <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                   {display?.is_active ? (
                     <Badge className="text-[10px] px-1.5 py-0 h-4 leading-none bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
-                      {t('status.active')}
+                      {t($ => $.status.active)}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-none text-muted-foreground">
-                      {t('status.draft')}
+                      {t($ => $.status.draft)}
                     </Badge>
                   )}
                   <span className="text-[10px] text-muted-foreground font-mono">{display?.bom_number}</span>
@@ -574,7 +574,7 @@ export function RecipeDetailDrawer({
                   aria-label={`Clone recipe ${display?.bom_number ?? ''}`}
                 >
                   <Copy className="size-3" aria-hidden />
-                  {t('drawer.clone')}
+                  {t($ => $.drawer.clone)}
                 </Button>
                 <Button
                   size="sm"
@@ -584,7 +584,7 @@ export function RecipeDetailDrawer({
                   aria-label={`Edit recipe ${display?.bom_number ?? ''}`}
                 >
                   <Pencil className="size-3" aria-hidden />
-                  {t('drawer.edit')}
+                  {t($ => $.drawer.edit)}
                 </Button>
               </div>
             )}
@@ -595,25 +595,25 @@ export function RecipeDetailDrawer({
             <div className="flex items-center flex-wrap">
               <MetricPill
                 dot={false}
-                label={t('drawer.metrics.cost')}
+                label={t($ => $.drawer.metrics.cost)}
                 value={fmtCost(headerCost, currency, locale)}
                 warn={display.cost_pending}
               />
               {(display.total_waste_pct ?? 0) > 0 && (
                 <MetricPill
-                  label={t('drawer.metrics.waste')}
+                  label={t($ => $.drawer.metrics.waste)}
                   value={`${(display.total_waste_pct ?? 0).toFixed(2)}%`}
                 />
               )}
               <MetricPill
-                label={t('drawer.metrics.materials')}
+                label={t($ => $.drawer.metrics.materials)}
                 value={String(display.lines?.length ?? display.lines_count ?? 0)}
               />
               {display.product?.channels?.[0] && (
-                <MetricPill label={t('drawer.metrics.channel')} value={display.product.channels[0].name} />
+                <MetricPill label={t($ => $.drawer.metrics.channel)} value={display.product.channels[0].name} />
               )}
               {display.product?.channels?.[0]?.company_name && (
-                <MetricPill label={t('drawer.metrics.company')} value={display.product.channels[0].company_name} />
+                <MetricPill label={t($ => $.drawer.metrics.company)} value={display.product.channels[0].company_name} />
               )}
             </div>
           )}
@@ -630,7 +630,7 @@ export function RecipeDetailDrawer({
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-            {t('drawer.selectRecipe')}
+            {t($ => $.drawer.selectRecipe)}
           </div>
         )}
       </SheetContent>

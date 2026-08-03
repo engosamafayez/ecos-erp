@@ -92,9 +92,9 @@ export function ProductsView({
   const deleteProduct = useDeleteProduct();
 
   const productTypeLabel: Record<ProductType, string> = {
-    finished_good: t('types.finished_good'),
-    raw_material: t('types.raw_material'),
-    packaging_material: t('types.packaging_material'),
+    finished_good: t($ => $.types.finished_good),
+    raw_material: t($ => $.types.raw_material),
+    packaging_material: t($ => $.types.packaging_material),
   };
 
   const items = data?.items ?? [];
@@ -127,7 +127,7 @@ export function ProductsView({
   const columns: ColumnDef<Product>[] = [
     {
       key: 'image_url',
-      header: t('columns.image'),
+      header: t($ => $.columns.image),
       cell: (p) =>
         getMediaUrl(p.image_url) ? (
           <img src={getMediaUrl(p.image_url)!} alt={p.name} className="size-10 rounded object-cover" />
@@ -137,21 +137,21 @@ export function ProductsView({
     },
     {
       key: 'sku',
-      header: t('columns.sku'),
+      header: t($ => $.columns.sku),
       sortable: true,
       cell: (p) => <span className="font-medium">{p.sku}</span>,
     },
     {
       key: 'barcode',
-      header: t('columns.barcode'),
+      header: t($ => $.columns.barcode),
       cell: (p) => <span className="text-muted-foreground">{p.barcode ?? '—'}</span>,
     },
-    { key: 'name', header: t('columns.name'), sortable: true, cell: (p) => p.name },
-    { key: 'category', header: t('columns.category'), cell: (p) => p.category?.name ?? '—' },
-    { key: 'unit', header: t('columns.unit'), cell: (p) => p.unit?.name ?? '—' },
+    { key: 'name', header: t($ => $.columns.name), sortable: true, cell: (p) => p.name },
+    { key: 'category', header: t($ => $.columns.category), cell: (p) => p.category?.name ?? '—' },
+    { key: 'unit', header: t($ => $.columns.unit), cell: (p) => p.unit?.name ?? '—' },
     {
       key: 'regular_price',
-      header: t('columns.regularPrice'),
+      header: t($ => $.columns.regularPrice),
       cell: (p) => (
         <span className="tabular-nums">
           {p.regular_price != null ? p.regular_price.toFixed(2) : '—'}
@@ -160,7 +160,7 @@ export function ProductsView({
     },
     {
       key: 'sale_price',
-      header: t('columns.salePrice'),
+      header: t($ => $.columns.salePrice),
       cell: (p) => (
         <span className="tabular-nums">
           {p.sale_price != null ? p.sale_price.toFixed(2) : '—'}
@@ -169,12 +169,12 @@ export function ProductsView({
     },
     {
       key: 'stock_status',
-      header: t('columns.stockStatus'),
+      header: t($ => $.columns.stockStatus),
       cell: (p) => <StockStatusBadge status={p.stock_status} />,
     },
     {
       key: 'product_type',
-      header: t('columns.type'),
+      header: t($ => $.columns.type),
       sortable: true,
       cell: (p) => (
         <Badge variant="outline">
@@ -184,7 +184,7 @@ export function ProductsView({
     },
     {
       key: 'is_active',
-      header: t('columns.status'),
+      header: t($ => $.columns.status),
       sortable: true,
       cell: (p) => <StatusBadge status={p.is_active ? 'active' : 'inactive'} />,
     },
@@ -213,31 +213,31 @@ export function ProductsView({
           filterPanel={
             <>
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{t('filters.category')}</span>
+                <span className="text-sm font-medium">{t($ => $.filters.category)}</span>
                 <CategorySelect
                   value={categoryFilter}
                   onChange={(value) => { setCategoryFilter(value); setPage(1); }}
-                  placeholder={t('filters.allCategories')}
+                  placeholder={t($ => $.filters.allCategories)}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{t('filters.unit')}</span>
+                <span className="text-sm font-medium">{t($ => $.filters.unit)}</span>
                 <UnitSelect
                   value={unitFilter}
                   onChange={(value) => { setUnitFilter(value); setPage(1); }}
-                  placeholder={t('filters.allUnits')}
+                  placeholder={t($ => $.filters.allUnits)}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{tCommon('filters.status')}</span>
+                <span className="text-sm font-medium">{tCommon($ => $.filters.status)}</span>
                 <select
                   value={statusFilter}
                   onChange={(event) => { setStatusFilter(event.target.value as ProductStatusFilter); setPage(1); }}
                   className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                 >
-                  <option value="all">{tCommon('status.all')}</option>
-                  <option value="active">{tCommon('status.active')}</option>
-                  <option value="inactive">{tCommon('status.inactive')}</option>
+                  <option value="all">{tCommon($ => $.status.all)}</option>
+                  <option value="active">{tCommon($ => $.status.active)}</option>
+                  <option value="inactive">{tCommon($ => $.status.inactive)}</option>
                 </select>
               </div>
             </>
@@ -259,24 +259,24 @@ export function ProductsView({
           onSortChange={handleSort}
           rowActions={(product) => (
             <ActionMenu
-              label={t('viewTabs.actionsFor', { name: product.name })}
+              label={t($ => $.viewTabs.actionsFor, { name: product.name })}
               items={[
                 {
                   key: 'view',
-                  label: tCommon('actions.view'),
+                  label: tCommon($ => $.actions.view),
                   icon: Eye,
                   onSelect: () => (onView ? onView(product) : openEdit(product)),
                 },
-                { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(product) },
+                { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(product) },
                 ...(onViewTab
                   ? [
-                      { key: 'stock-history', label: t('viewTabs.stockHistory'), icon: History, onSelect: () => onViewTab(product, 'stock-history') },
-                      { key: 'price-history', label: t('viewTabs.priceHistory'), icon: TrendingUp, onSelect: () => onViewTab(product, 'price-history') },
+                      { key: 'stock-history', label: t($ => $.viewTabs.stockHistory), icon: History, onSelect: () => onViewTab(product, 'stock-history') },
+                      { key: 'price-history', label: t($ => $.viewTabs.priceHistory), icon: TrendingUp, onSelect: () => onViewTab(product, 'price-history') },
                     ]
                   : []),
                 {
                   key: 'delete',
-                  label: tCommon('common.delete'),
+                  label: tCommon($ => $.common.delete),
                   icon: Trash2,
                   variant: 'destructive',
                   onSelect: () => setDeleting(product),
@@ -303,9 +303,9 @@ export function ProductsView({
         <ConfirmDialog
           open={deleting !== null}
           onOpenChange={(open) => { if (!open) setDeleting(null); }}
-          title={t('delete.title')}
-          description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
-          confirmLabel={t('delete.confirm')}
+          title={t($ => $.delete.title)}
+          description={tCommon($ => $.dialogs.softDeleteMessage, { name: deleting?.name ?? '' })}
+          confirmLabel={t($ => $.delete.confirm)}
           variant="destructive"
           loading={deleteProduct.isPending}
           onConfirm={confirmDelete}
@@ -319,7 +319,7 @@ export function ProductsView({
       <PageHeader
         title={title}
         subtitle={subtitle}
-        breadcrumbs={[{ label: tCommon('home'), to: ROUTES.dashboard }, { label: breadcrumbLabel }]}
+        breadcrumbs={[{ label: tCommon($ => $.home), to: ROUTES.dashboard }, { label: breadcrumbLabel }]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
@@ -345,29 +345,29 @@ export function ProductsView({
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.category')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.category)}</span>
                   <CategorySelect
                     value={categoryFilter}
                     onChange={(value) => {
                       setCategoryFilter(value);
                       setPage(1);
                     }}
-                    placeholder={t('filters.allCategories')}
+                    placeholder={t($ => $.filters.allCategories)}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('filters.unit')}</span>
+                  <span className="text-sm font-medium">{t($ => $.filters.unit)}</span>
                   <UnitSelect
                     value={unitFilter}
                     onChange={(value) => {
                       setUnitFilter(value);
                       setPage(1);
                     }}
-                    placeholder={t('filters.allUnits')}
+                    placeholder={t($ => $.filters.allUnits)}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{tCommon('filters.status')}</span>
+                  <span className="text-sm font-medium">{tCommon($ => $.filters.status)}</span>
                   <select
                     value={statusFilter}
                     onChange={(event) => {
@@ -376,9 +376,9 @@ export function ProductsView({
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="all">{tCommon('status.all')}</option>
-                    <option value="active">{tCommon('status.active')}</option>
-                    <option value="inactive">{tCommon('status.inactive')}</option>
+                    <option value="all">{tCommon($ => $.status.all)}</option>
+                    <option value="active">{tCommon($ => $.status.active)}</option>
+                    <option value="inactive">{tCommon($ => $.status.inactive)}</option>
                   </select>
                 </div>
               </>
@@ -395,13 +395,13 @@ export function ProductsView({
             onSortChange={handleSort}
             rowActions={(product) => (
               <ActionMenu
-                label={t('viewTabs.actionsFor', { name: product.name })}
+                label={t($ => $.viewTabs.actionsFor, { name: product.name })}
                 items={[
-                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(product) },
-                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(product) },
+                  { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => openEdit(product) },
+                  { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(product) },
                   {
                     key: 'delete',
-                    label: tCommon('common.delete'),
+                    label: tCommon($ => $.common.delete),
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(product),
@@ -440,9 +440,9 @@ export function ProductsView({
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={tCommon($ => $.dialogs.softDeleteMessage, { name: deleting?.name ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteProduct.isPending}
         onConfirm={confirmDelete}

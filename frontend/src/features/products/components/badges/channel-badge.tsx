@@ -53,7 +53,7 @@ export function ChannelCell({ channels }: ChannelCellProps) {
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-64">
-              <p className="text-xs font-medium mb-1 text-muted-foreground">{t('badges.allChannels')}</p>
+              <p className="text-xs font-medium mb-1 text-muted-foreground">{t($ => $.badges.allChannels)}</p>
               <p className="text-xs">
                 {channels.map((ch) => ch.name).join(' • ')}
               </p>

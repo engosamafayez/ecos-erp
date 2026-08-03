@@ -84,7 +84,7 @@ export function AttendanceWorkspacePage() {
     }));
 
     const result = await register.mutateAsync({ work_date: date, entries });
-    setSaved(t('attendance.savedSummary', { registered: result.registered, total: entries.length }));
+    setSaved(t($ => $.attendance.savedSummary, { registered: result.registered, total: entries.length }));
   };
 
   if (isLoading) return <LoadingState />;
@@ -93,8 +93,8 @@ export function AttendanceWorkspacePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('attendance.title')}
-        subtitle={t('attendance.subtitle')}
+        title={t($ => $.attendance.title)}
+        subtitle={t($ => $.attendance.subtitle)}
         actions={
           <div className="flex items-center gap-2">
             <input
@@ -106,7 +106,7 @@ export function AttendanceWorkspacePage() {
             />
             <Button size="sm" onClick={() => void save()} disabled={register.isPending || rows.length === 0}>
               <Save className="size-4" />
-              {register.isPending ? t('common.saving') : t('attendance.saveRegister')}
+              {register.isPending ? t($ => $.common.saving) : t($ => $.attendance.saveRegister)}
             </Button>
           </div>
         }
@@ -117,7 +117,7 @@ export function AttendanceWorkspacePage() {
           <CardContent className="flex items-center gap-3 pt-6">
             <CalendarDays className="size-5 text-purple-600" />
             <div className="text-sm">
-              <span className="font-medium">{sheet.holiday.name}</span> {t('attendance.holidayNotice')}
+              <span className="font-medium">{sheet.holiday.name}</span> {t($ => $.attendance.holidayNotice)}
             </div>
           </CardContent>
         </Card>
@@ -127,7 +127,7 @@ export function AttendanceWorkspacePage() {
         <Card>
           <CardContent className="flex items-center gap-3 pt-6">
             <CalendarDays className="size-5 text-slate-500" />
-            <div className="text-sm">{t('attendance.nonWorkingDayNotice')}</div>
+            <div className="text-sm">{t($ => $.attendance.nonWorkingDayNotice)}</div>
           </CardContent>
         </Card>
       ) : null}
@@ -145,13 +145,13 @@ export function AttendanceWorkspacePage() {
         <CardContent className="flex flex-col gap-4 pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t('common.department')}</span>
+              <span className="text-sm font-medium">{t($ => $.common.department)}</span>
               <select
                 value={departmentId}
                 onChange={(e) => setDepartmentId(e.target.value)}
                 className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
               >
-                <option value="">{t('common.allDepartments')}</option>
+                <option value="">{t($ => $.common.allDepartments)}</option>
                 {(departments ?? []).map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.name}
@@ -161,7 +161,7 @@ export function AttendanceWorkspacePage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">{t('attendance.markAll')}</span>
+              <span className="text-muted-foreground text-sm">{t($ => $.attendance.markAll)}</span>
               {STATUS_OPTIONS.map((option) => (
                 <Button
                   key={option.value}
@@ -177,34 +177,34 @@ export function AttendanceWorkspacePage() {
 
           <div className="flex flex-wrap gap-4 text-sm">
             <span className="text-emerald-600">
-              {t('attendance.status.present')}: {counts.present ?? 0}
+              {t($ => $.attendance.status.present)}: {counts.present ?? 0}
             </span>
             <span className="text-red-600">
-              {t('attendance.status.absent')}: {counts.absent ?? 0}
+              {t($ => $.attendance.status.absent)}: {counts.absent ?? 0}
             </span>
             <span className="text-amber-600">
-              {t('attendance.status.leave')}: {counts.leave ?? 0}
+              {t($ => $.attendance.status.leave)}: {counts.leave ?? 0}
             </span>
             <span className="text-purple-600">
-              {t('attendance.status.holiday')}: {counts.holiday ?? 0}
+              {t($ => $.attendance.status.holiday)}: {counts.holiday ?? 0}
             </span>
             <span className="text-slate-500">
-              {t('attendance.status.restDay')}: {counts.rest_day ?? 0}
+              {t($ => $.attendance.status.restDay)}: {counts.rest_day ?? 0}
             </span>
           </div>
 
           {rows.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">{t('attendance.emptySheet')}</p>
+            <p className="text-muted-foreground py-8 text-center text-sm">{t($ => $.attendance.emptySheet)}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-muted-foreground border-b text-start text-xs uppercase">
                   <tr>
-                    <th className="py-2 pe-4 font-medium">{t('attendance.table.number')}</th>
-                    <th className="py-2 pe-4 font-medium">{t('attendance.table.employee')}</th>
-                    <th className="py-2 pe-4 font-medium">{t('attendance.table.department')}</th>
-                    <th className="py-2 pe-4 font-medium">{t('attendance.table.recorded')}</th>
-                    <th className="py-2 pe-4 font-medium">{t('attendance.table.status')}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.attendance.table.number)}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.attendance.table.employee)}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.attendance.table.department)}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.attendance.table.recorded)}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.attendance.table.status)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -215,9 +215,9 @@ export function AttendanceWorkspacePage() {
                       <td className="text-muted-foreground py-2 pe-4">{row.department ?? '—'}</td>
                       <td className="py-2 pe-4">
                         {row.registered ? (
-                          <span className="text-emerald-600 text-xs">{t('attendance.recorded')}</span>
+                          <span className="text-emerald-600 text-xs">{t($ => $.attendance.recorded)}</span>
                         ) : (
-                          <span className="text-muted-foreground text-xs">{t('attendance.notYet')}</span>
+                          <span className="text-muted-foreground text-xs">{t($ => $.attendance.notYet)}</span>
                         )}
                       </td>
                       <td className="py-2 pe-4">

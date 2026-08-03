@@ -32,10 +32,10 @@ export function FilterPanel({
   return (
     <div className={cn('bg-muted/30 flex flex-col gap-3 rounded-lg border p-4', className)}>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{title ?? t('toolbar.filters')}</span>
+        <span className="text-sm font-medium">{title ?? t($ => $.toolbar.filters)}</span>
         {onClear ? (
           <Button type="button" variant="ghost" size="sm" onClick={onClear}>
-            {t('actions.clear')}
+            {t($ => $.actions.clear)}
           </Button>
         ) : null}
       </div>

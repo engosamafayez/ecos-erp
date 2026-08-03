@@ -71,20 +71,20 @@ export function EditPurchaseOrderPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={isLoading ? t('detail.loading') : `${t('edit.title')} ${order?.po_number ?? ''}`}
-        subtitle={t('edit.subtitle')}
+        title={isLoading ? t($ => $.detail.loading) : `${t($ => $.edit.title)} ${order?.po_number ?? ''}`}
+        subtitle={t($ => $.edit.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('title'), to: ROUTES.purchaseOrders },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.title), to: ROUTES.purchaseOrders },
           { label: order?.po_number ?? '…' },
         ]}
         actions={
           <>
             <Button variant="outline" onClick={() => navigate(`${ROUTES.purchaseOrders}/${id}`)}>
-              {tCommon('common.cancel')}
+              {tCommon($ => $.common.cancel)}
             </Button>
             <Button type="submit" form={FORM_ID} disabled={updatePO.isPending || isLoading}>
-              {updatePO.isPending ? t('edit.saving') : t('edit.submitEdit')}
+              {updatePO.isPending ? t($ => $.edit.saving) : t($ => $.edit.submitEdit)}
             </Button>
           </>
         }
@@ -92,7 +92,7 @@ export function EditPurchaseOrderPage() {
 
       {serverError ? (
         <Alert variant="destructive">
-          <AlertTitle>{t('edit.errorTitle')}</AlertTitle>
+          <AlertTitle>{t($ => $.edit.errorTitle)}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}
@@ -100,7 +100,7 @@ export function EditPurchaseOrderPage() {
       <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>{t('create.orderDetails')}</CardTitle>
+            <CardTitle>{t($ => $.create.orderDetails)}</CardTitle>
           </CardHeader>
           <CardContent>
             <PurchaseOrderHeaderFields />
@@ -109,7 +109,7 @@ export function EditPurchaseOrderPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('lines.title')}</CardTitle>
+            <CardTitle>{t($ => $.lines.title)}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <PurchaseOrderLinesEditor />

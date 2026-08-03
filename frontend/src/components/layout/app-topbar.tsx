@@ -42,7 +42,7 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
         size="icon"
         className="hidden md:flex lg:hidden shrink-0"
         onClick={onOpenSidebar}
-        aria-label={t('nav.toggleSidebar')}
+        aria-label={t($ => $.nav.toggleSidebar)}
       >
         <PanelLeft className="size-5" aria-hidden data-flip-rtl />
       </Button>

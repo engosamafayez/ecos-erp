@@ -51,7 +51,7 @@ export function OrderConfirmationBadge({ order }: Props) {
 
   const config = RESULT_CONFIG[result as ResultKey] ?? RESULT_CONFIG.confirmed;
   const Icon = config.icon;
-  const label = t(`confirmationBadge.${result as ResultKey}`);
+  const label = t($ => $.confirmationBadge[result as ResultKey]);
 
   return (
     <TooltipProvider delayDuration={400}>
@@ -65,11 +65,11 @@ export function OrderConfirmationBadge({ order }: Props) {
           </span>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="text-xs space-y-0.5">
-          <p className="font-medium">{t('confirmationBadge.tooltipTitle', { label })}</p>
+          <p className="font-medium">{t($ => $.confirmationBadge.tooltipTitle, { label })}</p>
           {at ? <p className="text-muted-foreground">{fmtDateTime(at)}</p> : null}
           {by ? (
             <p>
-              {t('confirmationBadge.by')} <span className="font-medium">{by}</span>
+              {t($ => $.confirmationBadge.by)} <span className="font-medium">{by}</span>
             </p>
           ) : null}
         </TooltipContent>

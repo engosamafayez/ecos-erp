@@ -167,30 +167,30 @@ function UnassignedPanel({
       <div className="flex items-center gap-2 px-4 py-3 border-b border-amber-200 dark:border-amber-700/40">
         <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
         <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-          {t('planning.unassigned.title')}
+          {t($ => $.planning.unassigned.title)}
         </h3>
         <p className="text-xs text-amber-600 dark:text-amber-400 ms-1">
-          {t('planning.unassigned.hint')}
+          {t($ => $.planning.unassigned.hint)}
         </p>
       </div>
 
       {isLoading ? (
-        <p className="text-xs text-muted-foreground px-4 py-3">{t('common.loading')}</p>
+        <p className="text-xs text-muted-foreground px-4 py-3">{t($ => $.common.loading)}</p>
       ) : !orders.length ? (
         <p className="text-xs text-muted-foreground px-4 py-3">
-          {t('planning.unassigned.empty')}
+          {t($ => $.planning.unassigned.empty)}
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-amber-200 dark:border-amber-700/40 text-muted-foreground">
-                <th className="text-start py-2 px-4 font-medium">{t('planning.unassigned.colOrderNumber')}</th>
-                <th className="text-start py-2 px-3 font-medium">{t('planning.unassigned.colCustomer')}</th>
-                <th className="text-start py-2 px-3 font-medium">{t('common.phone')}</th>
-                <th className="text-start py-2 px-3 font-medium">{t('common.city')}</th>
-                <th className="text-start py-2 px-3 font-medium">{t('planning.unassigned.colReason')}</th>
-                <th className="text-end py-2 px-3 font-medium">{t('common.total')}</th>
+                <th className="text-start py-2 px-4 font-medium">{t($ => $.planning.unassigned.colOrderNumber)}</th>
+                <th className="text-start py-2 px-3 font-medium">{t($ => $.planning.unassigned.colCustomer)}</th>
+                <th className="text-start py-2 px-3 font-medium">{t($ => $.common.phone)}</th>
+                <th className="text-start py-2 px-3 font-medium">{t($ => $.common.city)}</th>
+                <th className="text-start py-2 px-3 font-medium">{t($ => $.planning.unassigned.colReason)}</th>
+                <th className="text-end py-2 px-3 font-medium">{t($ => $.common.total)}</th>
                 <th className="py-2 px-3" />
               </tr>
             </thead>
@@ -223,7 +223,7 @@ function UnassignedPanel({
                       target="_blank"
                       className="text-primary hover:underline flex items-center gap-0.5 whitespace-nowrap"
                     >
-                      {t('planning.unassigned.open')}
+                      {t($ => $.planning.unassigned.open)}
                       <ExternalLink className="h-2.5 w-2.5" />
                     </Link>
                   </td>
@@ -299,10 +299,10 @@ function StartPlanningDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {t('planning.dialog.startTitle', { name: zone.name_ar })}
+            {t($ => $.planning.dialog.startTitle, { name: zone.name_ar })}
           </DialogTitle>
           <DialogDescription>
-            {t('planning.dialog.startDescription')}
+            {t($ => $.planning.dialog.startDescription)}
           </DialogDescription>
         </DialogHeader>
 
@@ -321,24 +321,24 @@ function StartPlanningDialog({
 
           <div className="grid grid-cols-2 gap-3 rounded-lg border bg-muted/30 p-4">
             <div>
-              <p className="text-xs text-muted-foreground">{t('planning.metrics.orders')}</p>
+              <p className="text-xs text-muted-foreground">{t($ => $.planning.metrics.orders)}</p>
               <p className="text-xl font-bold tabular-nums">{zone.orders_count}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{t('planning.metrics.customers')}</p>
+              <p className="text-xs text-muted-foreground">{t($ => $.planning.metrics.customers)}</p>
               <p className="text-xl font-bold tabular-nums">{zone.customers_count}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{t('planning.metrics.products')}</p>
+              <p className="text-xs text-muted-foreground">{t($ => $.planning.metrics.products)}</p>
               <p className="text-xl font-bold tabular-nums">{zone.distinct_products}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{t('planning.metrics.estimatedStops')}</p>
+              <p className="text-xs text-muted-foreground">{t($ => $.planning.metrics.estimatedStops)}</p>
               <p className="text-xl font-bold tabular-nums">{zone.estimated_stops}</p>
             </div>
             <div className="col-span-2 border-t pt-2">
               <p className="text-xs text-muted-foreground">
-                {t('planning.metrics.expectedCollection')}
+                {t($ => $.planning.metrics.expectedCollection)}
               </p>
               <p className="text-lg font-bold tabular-nums">{money(zone.total_collection)}</p>
             </div>
@@ -347,10 +347,10 @@ function StartPlanningDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            {t('common.cancel')}
+            {t($ => $.common.cancel)}
           </Button>
           <Button onClick={onConfirm} disabled={isPending}>
-            {isPending ? t('planning.dialog.starting') : t('planning.actions.startPlanning')}
+            {isPending ? t($ => $.planning.dialog.starting) : t($ => $.planning.actions.startPlanning)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -478,11 +478,11 @@ export function DistributionPlanningPage() {
     if (!confirmZone) return;
     try {
       await startMutation.mutateAsync({ zoneId: confirmZone.zone_id, date: date || undefined });
-      toast({ title: t('planning.toast.started', { name: confirmZone.name_ar }) });
+      toast({ title: t($ => $.planning.toast.started, { name: confirmZone.name_ar }) });
       setWorkspaceZone({ ...confirmZone, planning_status: 'in_planning' });
       setConfirmZone(null);
     } catch {
-      toast({ title: t('planning.toast.startFailed'), variant: 'destructive' });
+      toast({ title: t($ => $.planning.toast.startFailed), variant: 'destructive' });
     }
   }
 
@@ -490,10 +490,10 @@ export function DistributionPlanningPage() {
     if (!workspaceZone) return;
     try {
       await markMutation.mutateAsync({ zoneId: workspaceZone.zone_id, date: date || undefined });
-      toast({ title: t('planning.toast.markedPlanned', { name: workspaceZone.name_ar }) });
+      toast({ title: t($ => $.planning.toast.markedPlanned, { name: workspaceZone.name_ar }) });
       setWorkspaceZone(null);
     } catch {
-      toast({ title: t('planning.toast.markFailed'), variant: 'destructive' });
+      toast({ title: t($ => $.planning.toast.markFailed), variant: 'destructive' });
     }
   }
 
@@ -502,7 +502,7 @@ export function DistributionPlanningPage() {
     {
       id:         'ready',
       icon:       Circle,
-      label:      t('planning.kpi.readyZones'),
+      label:      t($ => $.planning.kpi.readyZones),
       value:      planningKpis.ready,
       colorClass: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400',
       onClick:    () => setStatus((s) => (s === 'ready' ? 'all' : 'ready')),
@@ -512,7 +512,7 @@ export function DistributionPlanningPage() {
     {
       id:         'in_planning',
       icon:       Clock,
-      label:      t('planning.status.inPlanning'),
+      label:      t($ => $.planning.status.inPlanning),
       value:      planningKpis.in_planning,
       colorClass: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400',
       onClick:    () => setStatus((s) => (s === 'in_planning' ? 'all' : 'in_planning')),
@@ -522,7 +522,7 @@ export function DistributionPlanningPage() {
     {
       id:         'planned',
       icon:       CheckCircle2,
-      label:      t('planning.kpi.plannedZones'),
+      label:      t($ => $.planning.kpi.plannedZones),
       value:      planningKpis.planned,
       colorClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400',
       onClick:    () => setStatus((s) => (s === 'planned' ? 'all' : 'planned')),
@@ -532,7 +532,7 @@ export function DistributionPlanningPage() {
     {
       id:         'ready_orders',
       icon:       ListOrdered,
-      label:      t('planning.kpi.readyOrders'),
+      label:      t($ => $.planning.kpi.readyOrders),
       value:      planningKpis.ready_orders,
       colorClass: 'bg-primary/10 text-primary',
       isLoading:  statsLoading,
@@ -555,7 +555,7 @@ export function DistributionPlanningPage() {
         size="sm"
         variant={view === 'card' ? 'secondary' : 'ghost'}
         className="h-7 w-7 p-0"
-        title={t('planning.toolbar.cardView')}
+        title={t($ => $.planning.toolbar.cardView)}
         onClick={() => toggleView('card')}
       >
         <LayoutGrid className="h-3.5 w-3.5" />
@@ -564,7 +564,7 @@ export function DistributionPlanningPage() {
         size="sm"
         variant={view === 'table' ? 'secondary' : 'ghost'}
         className="h-7 w-7 p-0"
-        title={t('planning.toolbar.tableView')}
+        title={t($ => $.planning.toolbar.tableView)}
         onClick={() => toggleView('table')}
       >
         <List className="h-3.5 w-3.5" />
@@ -577,7 +577,7 @@ export function DistributionPlanningPage() {
           onClick={() => setUnassignedOpen((v) => !v)}
         >
           <AlertCircle className="h-3.5 w-3.5" />
-          {t('planning.toolbar.unassignedCount', { count: stats!.unassigned_orders })}
+          {t($ => $.planning.toolbar.unassignedCount, { count: stats!.unassigned_orders })}
         </Button>
       )}
     </div>
@@ -588,17 +588,17 @@ export function DistributionPlanningPage() {
   return (
     <div className="flex flex-col min-h-full">
       <WorkspaceHeader
-        title={t('planning.title')}
-        description={t('planning.description')}
+        title={t($ => $.planning.title)}
+        description={t($ => $.planning.description)}
         breadcrumbs={[
-          { label: t('planning.breadcrumbRoot') },
-          { label: t('planning.title') },
+          { label: t($ => $.planning.breadcrumbRoot) },
+          { label: t($ => $.planning.title) },
         ]}
         metrics={metrics}
         secondaryActions={[
           {
             key:     'export',
-            label:   t('common.export'),
+            label:   t($ => $.common.export),
             onClick: () => undefined,
             variant: 'outline',
             soon:    true,
@@ -614,8 +614,8 @@ export function DistributionPlanningPage() {
           {
             key:          'show-empty',
             label:        showEmpty
-              ? t('planning.toolbar.hideEmptyZones')
-              : t('planning.toolbar.showEmptyZones'),
+              ? t($ => $.planning.toolbar.hideEmptyZones)
+              : t($ => $.planning.toolbar.showEmptyZones),
             onClick:      () => setShowEmpty((v) => !v),
             hideOnMobile: true,
           },
@@ -628,7 +628,7 @@ export function DistributionPlanningPage() {
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground flex items-center gap-1">
             <CalendarDays className="h-3 w-3" />
-            {t('planning.filters.deliveryDate')}
+            {t($ => $.planning.filters.deliveryDate)}
           </Label>
           <Input
             type="date"
@@ -640,30 +640,30 @@ export function DistributionPlanningPage() {
 
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">
-            {t('planning.filters.planningStatus')}
+            {t($ => $.planning.filters.planningStatus)}
           </Label>
           <Select
             value={statusFilter}
             onValueChange={(v) => setStatus(v as ZonePlanningStatus | 'all')}
           >
             <SelectTrigger className="h-8 text-sm w-40">
-              <SelectValue placeholder={t('planning.filters.allStatuses')} />
+              <SelectValue placeholder={t($ => $.planning.filters.allStatuses)} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('planning.filters.allStatuses')}</SelectItem>
-              <SelectItem value="ready">{t('planning.status.ready')}</SelectItem>
-              <SelectItem value="in_planning">{t('planning.status.inPlanning')}</SelectItem>
-              <SelectItem value="planned">{t('planning.status.planned')}</SelectItem>
+              <SelectItem value="all">{t($ => $.planning.filters.allStatuses)}</SelectItem>
+              <SelectItem value="ready">{t($ => $.planning.status.ready)}</SelectItem>
+              <SelectItem value="in_planning">{t($ => $.planning.status.inPlanning)}</SelectItem>
+              <SelectItem value="planned">{t($ => $.planning.status.planned)}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="flex flex-col gap-1 flex-1 min-w-[180px] max-w-xs">
           <Label className="text-xs text-muted-foreground">
-            {t('planning.filters.searchZone')}
+            {t($ => $.planning.filters.searchZone)}
           </Label>
           <Input
-            placeholder={t('planning.filters.searchZonePlaceholder')}
+            placeholder={t($ => $.planning.filters.searchZonePlaceholder)}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 text-sm"
@@ -674,17 +674,17 @@ export function DistributionPlanningPage() {
         <div className="ms-auto flex items-end gap-1.5 pb-0.5">
           {planningKpis.ready > 0 && (
             <Badge variant="outline" className="text-xs">
-              {t('planning.summary.readyCount', { count: planningKpis.ready })}
+              {t($ => $.planning.summary.readyCount, { count: planningKpis.ready })}
             </Badge>
           )}
           {planningKpis.in_planning > 0 && (
             <Badge className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border-0">
-              {t('planning.summary.inPlanningCount', { count: planningKpis.in_planning })}
+              {t($ => $.planning.summary.inPlanningCount, { count: planningKpis.in_planning })}
             </Badge>
           )}
           {planningKpis.planned > 0 && (
             <Badge className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border-0">
-              {t('planning.summary.plannedCount', { count: planningKpis.planned })}
+              {t($ => $.planning.summary.plannedCount, { count: planningKpis.planned })}
             </Badge>
           )}
         </div>
@@ -702,13 +702,13 @@ export function DistributionPlanningPage() {
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <CheckCircle2 className="h-16 w-16 text-emerald-500 mb-4" />
             <h3 className="text-xl font-semibold text-foreground">
-              {t('planning.empty.allPlannedTitle')}
+              {t($ => $.planning.empty.allPlannedTitle)}
             </h3>
             <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              {t('planning.empty.allPlannedHint')}
+              {t($ => $.planning.empty.allPlannedHint)}
             </p>
             <Button variant="outline" size="sm" className="mt-5 gap-1.5" onClick={handleRefresh}>
-              {t('common.refresh')}
+              {t($ => $.common.refresh)}
             </Button>
           </div>
         )}
@@ -725,14 +725,14 @@ export function DistributionPlanningPage() {
                 <thead className="bg-muted/50">
                   <tr className="border-b text-muted-foreground">
                     {[
-                      t('common.zone'),
-                      t('planning.metrics.orders'),
-                      t('planning.metrics.customers'),
-                      t('planning.metrics.products'),
-                      t('planning.metrics.stops'),
-                      t('planning.metrics.collection'),
-                      t('planning.metrics.weight'),
-                      t('common.status'),
+                      t($ => $.common.zone),
+                      t($ => $.planning.metrics.orders),
+                      t($ => $.planning.metrics.customers),
+                      t($ => $.planning.metrics.products),
+                      t($ => $.planning.metrics.stops),
+                      t($ => $.planning.metrics.collection),
+                      t($ => $.planning.metrics.weight),
+                      t($ => $.common.status),
                       '',
                     ].map((h, i) => (
                       <th key={i} className="py-2 px-3 font-medium text-start">{h}</th>
@@ -761,21 +761,21 @@ export function DistributionPlanningPage() {
             <Map className="h-12 w-12 text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-muted-foreground">
               {hasActiveFilter
-                ? t('planning.empty.noMatchTitle')
-                : t('planning.empty.noOrdersTitle')}
+                ? t($ => $.planning.empty.noMatchTitle)
+                : t($ => $.planning.empty.noOrdersTitle)}
             </h3>
             <p className="text-sm text-muted-foreground/70 mt-1 max-w-sm">
               {hasActiveFilter
-                ? t('planning.empty.noMatchHint')
+                ? t($ => $.planning.empty.noMatchHint)
                 : date
-                  ? t('planning.empty.noOrdersForDate', { date })
-                  : t('planning.empty.noOrdersAssigned')}
+                  ? t($ => $.planning.empty.noOrdersForDate, { date })
+                  : t($ => $.planning.empty.noOrdersAssigned)}
             </p>
             {(stats?.unassigned_orders ?? 0) > 0 && !hasActiveFilter && (
               <div className="mt-4">
                 <Badge variant="outline" className="text-amber-700 border-amber-300 gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  {t('planning.empty.needZoneAssignment', { count: stats!.unassigned_orders })}
+                  {t($ => $.planning.empty.needZoneAssignment, { count: stats!.unassigned_orders })}
                 </Badge>
               </div>
             )}
@@ -785,7 +785,7 @@ export function DistributionPlanningPage() {
               className="mt-5 gap-1.5"
               onClick={handleRefresh}
             >
-              {t('common.refresh')}
+              {t($ => $.common.refresh)}
             </Button>
           </div>
         )}
@@ -815,15 +815,15 @@ export function DistributionPlanningPage() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 sticky top-0 z-10">
                   <tr className="border-b text-muted-foreground">
-                    <SortTh label={t('common.zone')}                        col="name_ar"           sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                    <SortTh label={t('planning.metrics.orders')}            col="orders_count"      sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
-                    <SortTh label={t('planning.metrics.customers')}         col="customers_count"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
-                    <SortTh label={t('planning.metrics.products')}          col="distinct_products" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
-                    <SortTh label={t('planning.metrics.stops')}             col="estimated_stops"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
-                    <SortTh label={t('planning.metrics.collection')}        col="total_collection"  sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
-                    <SortTh label={t('planning.metrics.weight')}            col={null}              sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
-                    <SortTh label={t('common.status')}                      col="planning_status"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                    <th className="py-2 px-3 font-medium text-end">{t('planning.table.colAction')}</th>
+                    <SortTh label={t($ => $.common.zone)}                        col="name_ar"           sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                    <SortTh label={t($ => $.planning.metrics.orders)}            col="orders_count"      sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t($ => $.planning.metrics.customers)}         col="customers_count"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t($ => $.planning.metrics.products)}          col="distinct_products" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t($ => $.planning.metrics.stops)}             col="estimated_stops"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t($ => $.planning.metrics.collection)}        col="total_collection"  sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t($ => $.planning.metrics.weight)}            col={null}              sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t($ => $.common.status)}                      col="planning_status"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                    <th className="py-2 px-3 font-medium text-end">{t($ => $.planning.table.colAction)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -876,16 +876,16 @@ export function DistributionPlanningPage() {
                         {zone.planning_status === 'planned' ? (
                           <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
                             <CheckCircle2 className="h-3 w-3 me-1" />
-                            {t('planning.status.planned')}
+                            {t($ => $.planning.status.planned)}
                           </Badge>
                         ) : zone.planning_status === 'in_planning' ? (
                           <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                             <Clock className="h-3 w-3 me-1" />
-                            {t('planning.status.inPlanning')}
+                            {t($ => $.planning.status.inPlanning)}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">
-                            {t('planning.status.ready')}
+                            {t($ => $.planning.status.ready)}
                           </Badge>
                         )}
                       </td>
@@ -893,7 +893,7 @@ export function DistributionPlanningPage() {
                       <td className="py-2.5 px-3 text-end whitespace-nowrap">
                         {zone.orders_count === 0 ? (
                           <span className="text-xs text-muted-foreground">
-                            {t('planning.table.empty')}
+                            {t($ => $.planning.table.empty)}
                           </span>
                         ) : zone.planning_status === 'planned' ? (
                           <Button
@@ -902,7 +902,7 @@ export function DistributionPlanningPage() {
                             className="h-7 text-xs"
                             onClick={() => setWorkspaceZone(zone)}
                           >
-                            {t('planning.actions.viewPlan')}
+                            {t($ => $.planning.actions.viewPlan)}
                           </Button>
                         ) : zone.planning_status === 'in_planning' ? (
                           <Button
@@ -912,7 +912,7 @@ export function DistributionPlanningPage() {
                             onClick={() => setWorkspaceZone(zone)}
                           >
                             <ShoppingBag className="h-3 w-3" />
-                            {t('planning.actions.continue')}
+                            {t($ => $.planning.actions.continue)}
                           </Button>
                         ) : (
                           <Button
@@ -920,7 +920,7 @@ export function DistributionPlanningPage() {
                             className="h-7 text-xs"
                             onClick={() => setConfirmZone(zone)}
                           >
-                            {t('planning.actions.startPlanning')}
+                            {t($ => $.planning.actions.startPlanning)}
                           </Button>
                         )}
                       </td>
@@ -931,24 +931,24 @@ export function DistributionPlanningPage() {
             </div>
             {/* Table footer */}
             <div className="flex items-center justify-between border-t bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
-              <span>{t('planning.table.zoneCount', { count: zones.length })}</span>
+              <span>{t($ => $.planning.table.zoneCount, { count: zones.length })}</span>
               <div className="flex items-center gap-3">
                 {activeWithOrders.length > 0 && (
                   <>
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {t('planning.table.customerCount', {
+                      {t($ => $.planning.table.customerCount, {
                         count: rawZones.reduce((s, z) => s + z.customers_count, 0),
                       })}
                     </span>
                     <span className="flex items-center gap-1">
                       <Package className="h-3 w-3" />
-                      {t('planning.table.productCount', {
+                      {t($ => $.planning.table.productCount, {
                         count: rawZones.reduce((s, z) => s + z.distinct_products, 0),
                       })}
                     </span>
                     <span className="font-medium text-foreground">
-                      {t('planning.table.totalCollection', {
+                      {t($ => $.planning.table.totalCollection, {
                         amount: fmt(rawZones.reduce((s, z) => s + z.total_collection, 0)),
                       })}
                     </span>

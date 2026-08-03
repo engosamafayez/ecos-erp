@@ -29,7 +29,7 @@ export function ColumnVisibilityMenu({
   label,
 }: ColumnVisibilityMenuProps) {
   const { t } = useTranslation('common');
-  const buttonLabel = label ?? t('dataGrid.columns');
+  const buttonLabel = label ?? t($ => $.dataGrid.columns);
   const toggleable = columns.filter((c) => !c.alwaysVisible && c.label);
 
   return (
@@ -66,7 +66,7 @@ export function ColumnVisibilityMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onReset} className="gap-2">
           <RotateCcw className="size-3.5" />
-          <span className="text-sm">{t('dataGrid.resetToDefaults')}</span>
+          <span className="text-sm">{t($ => $.dataGrid.resetToDefaults)}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

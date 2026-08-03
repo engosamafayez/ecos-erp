@@ -131,27 +131,27 @@ export function StockLedgerPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
-        breadcrumbs={[{ label: t('breadcrumb.home'), to: ROUTES.dashboard }, { label: t('breadcrumb.page') }]}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
+        breadcrumbs={[{ label: t($ => $.breadcrumb.home), to: ROUTES.dashboard }, { label: t($ => $.breadcrumb.page) }]}
         actions={
           <Button
             variant="outline"
             size="sm"
             onClick={() => exportCsv(items, [
-              t('csv.date'),
-              t('csv.type'),
-              t('csv.product'),
-              t('csv.sku'),
-              t('csv.warehouse'),
-              t('csv.in'),
-              t('csv.out'),
-              t('csv.balance'),
-              t('csv.reference'),
+              t($ => $.csv.date),
+              t($ => $.csv.type),
+              t($ => $.csv.product),
+              t($ => $.csv.sku),
+              t($ => $.csv.warehouse),
+              t($ => $.csv.in),
+              t($ => $.csv.out),
+              t($ => $.csv.balance),
+              t($ => $.csv.reference),
             ])}
             disabled={items.length === 0}
           >
-            {t('actions.exportCsv')}
+            {t($ => $.actions.exportCsv)}
           </Button>
         }
       />
@@ -161,7 +161,7 @@ export function StockLedgerPage() {
           {/* Toolbar */}
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1 min-w-[180px]">
-              <label className="text-xs text-muted-foreground">{t('filters.searchLabel')}</label>
+              <label className="text-xs text-muted-foreground">{t($ => $.filters.searchLabel)}</label>
               <Input
                 placeholder={tAny('filters.searchPlaceholder')}
                 value={search}
@@ -171,7 +171,7 @@ export function StockLedgerPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">{t('filters.typeLabel')}</label>
+              <label className="text-xs text-muted-foreground">{t($ => $.filters.typeLabel)}</label>
               <select
                 value={movementTypeFilter}
                 onChange={(e) => { setMovementTypeFilter(e.target.value as MovementType | 'all'); setPage(1); }}
@@ -184,7 +184,7 @@ export function StockLedgerPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">{t('filters.fromLabel')}</label>
+              <label className="text-xs text-muted-foreground">{t($ => $.filters.fromLabel)}</label>
               <input
                 type="date"
                 value={dateFrom}
@@ -194,7 +194,7 @@ export function StockLedgerPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">{t('filters.toLabel')}</label>
+              <label className="text-xs text-muted-foreground">{t($ => $.filters.toLabel)}</label>
               <input
                 type="date"
                 value={dateTo}
@@ -211,7 +211,7 @@ export function StockLedgerPage() {
                   className="h-8 text-xs"
                   onClick={() => { setMovementTypeFilter('all'); setDateFrom(''); setDateTo(''); setSearch(''); setPage(1); }}
                 >
-                  {t('actions.clear')}
+                  {t($ => $.actions.clear)}
                 </Button>
               )}
               <Button
@@ -221,7 +221,7 @@ export function StockLedgerPage() {
                 onClick={() => void refetch()}
                 disabled={isFetching}
               >
-                {t('actions.refresh')}
+                {t($ => $.actions.refresh)}
               </Button>
             </div>
           </div>
@@ -235,39 +235,39 @@ export function StockLedgerPage() {
                     className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
                     onClick={() => handleSort('movement_date')}
                   >
-                    {t('columns.date')} <SortIcon field="movement_date" />
+                    {t($ => $.columns.date)} <SortIcon field="movement_date" />
                   </th>
                   <th
                     className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
                     onClick={() => handleSort('movement_type')}
                   >
-                    {t('columns.type')} <SortIcon field="movement_type" />
+                    {t($ => $.columns.type)} <SortIcon field="movement_type" />
                   </th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('columns.productMaterial')}</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('columns.warehouse')}</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-emerald-700">{t('columns.in')}</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-red-600">{t('columns.out')}</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.columns.productMaterial)}</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.columns.warehouse)}</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-emerald-700">{t($ => $.columns.in)}</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-red-600">{t($ => $.columns.out)}</th>
                   <th
                     className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
                     onClick={() => handleSort('quantity')}
                   >
-                    {t('columns.balance')} <SortIcon field="quantity" />
+                    {t($ => $.columns.balance)} <SortIcon field="quantity" />
                   </th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('columns.reference')}</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.columns.reference)}</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">{t('table.loading')}</td>
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">{t($ => $.table.loading)}</td>
                   </tr>
                 ) : isError ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-destructive">{t('table.error')}</td>
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-destructive">{t($ => $.table.error)}</td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">{t('table.empty')}</td>
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">{t($ => $.table.empty)}</td>
                   </tr>
                 ) : (
                   items.map((m) => {

@@ -52,20 +52,20 @@ export function CreatePurchaseOrderPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('create.title')}
-        subtitle={t('create.subtitle')}
+        title={t($ => $.create.title)}
+        subtitle={t($ => $.create.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('title'), to: ROUTES.purchaseOrders },
-          { label: t('create.new') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.title), to: ROUTES.purchaseOrders },
+          { label: t($ => $.create.new) },
         ]}
         actions={
           <>
             <Button variant="outline" onClick={() => navigate(ROUTES.purchaseOrders)}>
-              {tCommon('common.cancel')}
+              {tCommon($ => $.common.cancel)}
             </Button>
             <Button type="submit" form={FORM_ID} disabled={createPO.isPending}>
-              {createPO.isPending ? t('create.creating') : t('create.submitCreate')}
+              {createPO.isPending ? t($ => $.create.creating) : t($ => $.create.submitCreate)}
             </Button>
           </>
         }
@@ -73,7 +73,7 @@ export function CreatePurchaseOrderPage() {
 
       {serverError ? (
         <Alert variant="destructive">
-          <AlertTitle>{t('create.errorTitle')}</AlertTitle>
+          <AlertTitle>{t($ => $.create.errorTitle)}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}
@@ -81,7 +81,7 @@ export function CreatePurchaseOrderPage() {
       <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>{t('create.orderDetails')}</CardTitle>
+            <CardTitle>{t($ => $.create.orderDetails)}</CardTitle>
           </CardHeader>
           <CardContent>
             <PurchaseOrderHeaderFields />
@@ -90,7 +90,7 @@ export function CreatePurchaseOrderPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('lines.title')}</CardTitle>
+            <CardTitle>{t($ => $.lines.title)}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <PurchaseOrderLinesEditor />

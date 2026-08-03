@@ -21,20 +21,20 @@ export function useInventoryCountLabels() {
   const { t } = useTranslation('inventory-count');
 
   const countStatusLabel: Record<CountSessionStatus, string> = {
-    draft:       t('sessions.status.draft'),
-    in_progress: t('sessions.status.in_progress'),
-    completed:   t('sessions.status.completed'),
-    approved:    t('sessions.status.approved'),
-    cancelled:   t('sessions.status.cancelled'),
+    draft:       t($ => $.sessions.status.draft),
+    in_progress: t($ => $.sessions.status.in_progress),
+    completed:   t($ => $.sessions.status.completed),
+    approved:    t($ => $.sessions.status.approved),
+    cancelled:   t($ => $.sessions.status.cancelled),
   };
 
   const countStatusFilter: Array<{ value: CountSessionStatus | 'all'; label: string }> = [
-    { value: 'all',         label: t('sessions.status.all',         'All') },
-    { value: 'draft',       label: t('sessions.status.draft') },
-    { value: 'in_progress', label: t('sessions.status.in_progress') },
-    { value: 'completed',   label: t('sessions.status.completed') },
-    { value: 'approved',    label: t('sessions.status.approved') },
-    { value: 'cancelled',   label: t('sessions.status.cancelled') },
+    { value: 'all',         label: t($ => $.sessions.status.all,         'All') },
+    { value: 'draft',       label: t($ => $.sessions.status.draft) },
+    { value: 'in_progress', label: t($ => $.sessions.status.in_progress) },
+    { value: 'completed',   label: t($ => $.sessions.status.completed) },
+    { value: 'approved',    label: t($ => $.sessions.status.approved) },
+    { value: 'cancelled',   label: t($ => $.sessions.status.cancelled) },
   ];
 
   return { countStatusLabel, countStatusFilter };

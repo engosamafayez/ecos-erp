@@ -28,7 +28,7 @@ export function ActionMenu({ items, label }: ActionMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={label ?? t('actions.openActions')}>
+        <Button variant="ghost" size="icon" aria-label={label ?? t($ => $.actions.openActions)}>
           <MoreHorizontal className="size-4" />
         </Button>
       </DropdownMenuTrigger>

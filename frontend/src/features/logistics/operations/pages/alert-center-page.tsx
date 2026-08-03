@@ -68,9 +68,9 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
       ) : rows.length === 0 ? (
         <div className="rounded-lg border bg-card py-16 text-center">
           <BellRing className="mx-auto mb-3 size-10 text-muted-foreground/20" />
-          <p className="text-sm font-medium">{t('operations.alertCenter.empty.title')}</p>
+          <p className="text-sm font-medium">{t($ => $.operations.alertCenter.empty.title)}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {t('operations.alertCenter.empty.hint')}
+            {t($ => $.operations.alertCenter.empty.hint)}
           </p>
         </div>
       ) : (
@@ -100,19 +100,19 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
                     )}
                     {alert.is_overdue && (
                       <Badge variant="destructive" className="text-[10px]">
-                        {t('operations.alertCenter.overdue')}
+                        {t($ => $.operations.alertCenter.overdue)}
                       </Badge>
                     )}
                   </div>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {t('operations.alertCenter.meta.open', { minutes: alert.age_minutes })}
+                    {t($ => $.operations.alertCenter.meta.open, { minutes: alert.age_minutes })}
                     {alert.unacknowledged_minutes !== null
-                      ? t('operations.alertCenter.meta.unacknowledgedFor', {
+                      ? t($ => $.operations.alertCenter.meta.unacknowledgedFor, {
                           minutes: alert.unacknowledged_minutes,
                         })
-                      : t('operations.alertCenter.meta.acknowledged')}
+                      : t($ => $.operations.alertCenter.meta.acknowledged)}
                     {alert.escalation_level > 0
-                      ? t('operations.alertCenter.meta.level', { level: alert.escalation_level })
+                      ? t($ => $.operations.alertCenter.meta.level, { level: alert.escalation_level })
                       : ''}
                   </p>
                 </button>
@@ -124,17 +124,17 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
                     disabled={acknowledge.isPending}
                     onClick={() =>
                       acknowledge.mutate(alert.exception_id, {
-                        onSuccess: () => toast({ title: t('operations.alertCenter.toast.acknowledged') }),
+                        onSuccess: () => toast({ title: t($ => $.operations.alertCenter.toast.acknowledged) }),
                         onError: () =>
                           toast({
-                            title: t('operations.alertCenter.toast.acknowledgeFailed'),
+                            title: t($ => $.operations.alertCenter.toast.acknowledgeFailed),
                             variant: 'destructive',
                           }),
                       })
                     }
                   >
                     <Check className="me-1 size-3.5" />
-                    {t('operations.alertCenter.ack')}
+                    {t($ => $.operations.alertCenter.ack)}
                   </Button>
                 )}
               </li>
@@ -179,7 +179,7 @@ function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {
         <Skeleton className="h-64 w-full" />
       ) : rows.length === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
-          {t('operations.alertCenter.history.empty')}
+          {t($ => $.operations.alertCenter.history.empty)}
         </p>
       ) : (
         <div className="overflow-hidden rounded-lg border bg-card">
@@ -232,21 +232,21 @@ export function AlertCenterPage() {
   };
 
   const metrics = [
-    { id: 'total', icon: BellRing, label: t('operations.alertCenter.metrics.live'), value: summary?.total ?? 0, isLoading: !summary },
-    { id: 'critical', icon: BellRing, label: t('common.critical'), value: summary?.critical ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
-    { id: 'unack', icon: BellRing, label: t('operations.alertCenter.metrics.unacknowledged'), value: summary?.unacknowledged ?? 0, isLoading: !summary, colorClass: 'text-amber-600' },
-    { id: 'overdue', icon: BellRing, label: t('operations.alertCenter.overdue'), value: summary?.overdue ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
+    { id: 'total', icon: BellRing, label: t($ => $.operations.alertCenter.metrics.live), value: summary?.total ?? 0, isLoading: !summary },
+    { id: 'critical', icon: BellRing, label: t($ => $.common.critical), value: summary?.critical ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
+    { id: 'unack', icon: BellRing, label: t($ => $.operations.alertCenter.metrics.unacknowledged), value: summary?.unacknowledged ?? 0, isLoading: !summary, colorClass: 'text-amber-600' },
+    { id: 'overdue', icon: BellRing, label: t($ => $.operations.alertCenter.overdue), value: summary?.overdue ?? 0, isLoading: !summary, colorClass: 'text-destructive' },
   ];
 
   return (
     <>
       <WorkspaceHeader
         breadcrumbs={[
-          { label: t('operations.alertCenter.breadcrumbRoot') },
-          { label: t('operations.alertCenter.breadcrumbSection') },
+          { label: t($ => $.operations.alertCenter.breadcrumbRoot) },
+          { label: t($ => $.operations.alertCenter.breadcrumbSection) },
         ]}
-        title={t('operations.alertCenter.title')}
-        description={t('operations.alertCenter.description')}
+        title={t($ => $.operations.alertCenter.title)}
+        description={t($ => $.operations.alertCenter.description)}
         metrics={metrics}
       />
 
@@ -261,10 +261,10 @@ export function AlertCenterPage() {
           <Tabs defaultValue="live" className="w-full">
             <TabsList>
               <TabsTrigger value="live">
-                {t('operations.alertCenter.tabs.live')}
+                {t($ => $.operations.alertCenter.tabs.live)}
                 {summary && summary.total > 0 ? ` (${summary.total})` : ''}
               </TabsTrigger>
-              <TabsTrigger value="history">{t('common.history')}</TabsTrigger>
+              <TabsTrigger value="history">{t($ => $.common.history)}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="live" className="pt-4">

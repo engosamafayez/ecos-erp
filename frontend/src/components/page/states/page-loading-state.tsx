@@ -20,7 +20,7 @@ function SpinnerLoading({ label, className }: { label?: string; className?: stri
   return (
     <div className={cn('flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground', className)}>
       <Loader2 className="size-8 animate-spin" />
-      <span className="text-sm">{label ?? t('loading')}</span>
+      <span className="text-sm">{label ?? t($ => $.loading)}</span>
     </div>
   );
 }

@@ -86,7 +86,7 @@ export function ProductMappingsPage() {
   const columns: ColumnDef<ProductMapping>[] = [
     {
       key: 'product',
-      header: t('columns.product'),
+      header: t($ => $.columns.product),
       cell: (m) => (
         <div className="flex flex-col">
           <span className="font-medium">{m.product?.name ?? '—'}</span>
@@ -96,7 +96,7 @@ export function ProductMappingsPage() {
     },
     {
       key: 'channel',
-      header: t('columns.channel'),
+      header: t($ => $.columns.channel),
       cell: (m) => (
         <div className="flex flex-col">
           <span>{m.channel?.name ?? '—'}</span>
@@ -106,13 +106,13 @@ export function ProductMappingsPage() {
     },
     {
       key: 'external_product_id',
-      header: t('columns.externalId'),
+      header: t($ => $.columns.externalId),
       sortable: true,
       cell: (m) => <span className="font-mono text-sm">{m.external_product_id}</span>,
     },
     {
       key: 'external_sku',
-      header: t('columns.externalSku'),
+      header: t($ => $.columns.externalSku),
       sortable: true,
       cell: (m) => (
         <span className="text-muted-foreground font-mono text-sm">{m.external_sku ?? '—'}</span>
@@ -120,13 +120,13 @@ export function ProductMappingsPage() {
     },
     {
       key: 'sync_status',
-      header: t('columns.syncStatus'),
+      header: t($ => $.columns.syncStatus),
       sortable: true,
       cell: (m) => <SyncStatusBadge status={m.sync_status} />,
     },
     {
       key: 'last_sync_at',
-      header: t('columns.lastSyncedAt'),
+      header: t($ => $.columns.lastSyncedAt),
       sortable: true,
       cell: (m) => (
         <span className="text-muted-foreground">
@@ -139,16 +139,16 @@ export function ProductMappingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.title) },
         ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -156,7 +156,7 @@ export function ProductMappingsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={t($ => $.search)}
             onSearchChange={(v) => {
               setSearch(v);
               setPage(1);
@@ -170,7 +170,7 @@ export function ProductMappingsPage() {
             }}
             filterPanel={
               <div className="flex flex-col gap-1.5">
-                <span className="text-sm font-medium">{t('filters.syncStatus')}</span>
+                <span className="text-sm font-medium">{t($ => $.filters.syncStatus)}</span>
                 <select
                   value={syncStatusFilter}
                   onChange={(e) => {
@@ -179,10 +179,10 @@ export function ProductMappingsPage() {
                   }}
                   className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                 >
-                  <option value="">{t('filters.allStatuses')}</option>
-                  <option value="pending">{t('syncStatus.pending')}</option>
-                  <option value="synced">{t('syncStatus.synced')}</option>
-                  <option value="failed">{t('syncStatus.failed')}</option>
+                  <option value="">{t($ => $.filters.allStatuses)}</option>
+                  <option value="pending">{t($ => $.syncStatus.pending)}</option>
+                  <option value="synced">{t($ => $.syncStatus.synced)}</option>
+                  <option value="failed">{t($ => $.syncStatus.failed)}</option>
                 </select>
               </div>
             }
@@ -202,13 +202,13 @@ export function ProductMappingsPage() {
                 items={[
                   {
                     key: 'edit',
-                    label: tCommon('common.edit'),
+                    label: tCommon($ => $.common.edit),
                     icon: Pencil,
                     onSelect: () => openEdit(mapping),
                   },
                   {
                     key: 'delete',
-                    label: tCommon('common.delete'),
+                    label: tCommon($ => $.common.delete),
                     icon: Trash2,
                     variant: 'destructive' as const,
                     onSelect: () => setDeleting(mapping),
@@ -246,11 +246,11 @@ export function ProductMappingsPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title={t('delete.title')}
-        description={t('delete.description', {
+        title={t($ => $.delete.title)}
+        description={t($ => $.delete.description, {
           name: deleting?.product?.name ?? deleting?.external_product_id ?? '',
         })}
-        confirmLabel={t('delete.confirm')}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteMapping.isPending}
         onConfirm={() => {

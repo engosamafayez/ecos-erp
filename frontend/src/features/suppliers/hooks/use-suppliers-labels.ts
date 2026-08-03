@@ -20,23 +20,23 @@ export function useSupplierLabels() {
   const { t } = useTranslation('suppliers');
 
   const supplierStatusLabel: Record<SupplierStatus, string> = {
-    draft:     t('status.draft'),
-    active:    t('status.active'),
-    preferred: t('status.preferred'),
-    on_hold:   t('status.on_hold'),
-    blocked:   t('status.blocked'),
-    archived:  t('status.archived'),
+    draft:     t($ => $.status.draft),
+    active:    t($ => $.status.active),
+    preferred: t($ => $.status.preferred),
+    on_hold:   t($ => $.status.on_hold),
+    blocked:   t($ => $.status.blocked),
+    archived:  t($ => $.status.archived),
   };
 
   const supplierColumnHeaders = {
-    code:          t('columns.code'),
-    name:          t('columns.name'),
-    contactPerson: t('columns.contactPerson'),
-    email:         t('columns.email'),
-    phone:         t('columns.phone'),
-    country:       t('columns.country'),
-    city:          t('columns.city'),
-    status:        t('columns.status'),
+    code:          t($ => $.columns.code),
+    name:          t($ => $.columns.name),
+    contactPerson: t($ => $.columns.contactPerson),
+    email:         t($ => $.columns.email),
+    phone:         t($ => $.columns.phone),
+    country:       t($ => $.columns.country),
+    city:          t($ => $.columns.city),
+    status:        t($ => $.columns.status),
   };
 
   return { supplierStatusLabel, supplierColumnHeaders };

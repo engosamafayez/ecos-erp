@@ -59,55 +59,55 @@ function ViewWorkspace({ bom }: { bom: Bom }) {
       <PageHeader
         title={bom.bom_number}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('title'), to: ROUTES.boms },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.title), to: ROUTES.boms },
           { label: bom.bom_number },
         ]}
         actions={
           <Button onClick={() => navigate(`${ROUTES.boms}/${bom.id}/edit`)}>
             <Pencil className="size-4" />
-            {t('workspace.edit')}
+            {t($ => $.workspace.edit)}
           </Button>
         }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-6">
-          <WorkspaceCard title={t('workspace.details')}>
+          <WorkspaceCard title={t($ => $.workspace.details)}>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <LabelValue label={t('workspace.bomNumber')} value={bom.bom_number} />
-              <LabelValue label={t('workspace.finishedGood')} value={bom.product?.name} />
-              <LabelValue label={t('workspace.version')} value={bom.version} />
+              <LabelValue label={t($ => $.workspace.bomNumber)} value={bom.bom_number} />
+              <LabelValue label={t($ => $.workspace.finishedGood)} value={bom.product?.name} />
+              <LabelValue label={t($ => $.workspace.version)} value={bom.version} />
               <LabelValue
-                label={t('columns.status')}
+                label={t($ => $.columns.status)}
                 value={
                   bom.is_active ? (
-                    <Badge variant="default">{t('status.active')}</Badge>
+                    <Badge variant="default">{t($ => $.status.active)}</Badge>
                   ) : (
-                    <Badge variant="secondary">{t('status.inactive')}</Badge>
+                    <Badge variant="secondary">{t($ => $.status.inactive)}</Badge>
                   )
                 }
               />
               {bom.notes ? (
                 <div className="col-span-full">
-                  <LabelValue label={t('workspace.notes')} value={bom.notes} />
+                  <LabelValue label={t($ => $.workspace.notes)} value={bom.notes} />
                 </div>
               ) : null}
             </div>
           </WorkspaceCard>
 
-          <WorkspaceCard title={t('workspace.materials')}>
+          <WorkspaceCard title={t($ => $.workspace.materials)}>
             {bom.lines.length === 0 ? (
-              <p className="text-muted-foreground text-sm">{t('workspace.noLines')}</p>
+              <p className="text-muted-foreground text-sm">{t($ => $.workspace.noLines)}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="pb-2 text-start font-medium">{t('workspace.material')}</th>
-                      <th className="pb-2 text-end font-medium">{t('workspace.quantity')}</th>
-                      <th className="pb-2 text-end font-medium">{t('workspace.wastePercentage')}</th>
-                      <th className="pb-2 text-end font-medium">{t('workspace.unit')}</th>
+                      <th className="pb-2 text-start font-medium">{t($ => $.workspace.material)}</th>
+                      <th className="pb-2 text-end font-medium">{t($ => $.workspace.quantity)}</th>
+                      <th className="pb-2 text-end font-medium">{t($ => $.workspace.wastePercentage)}</th>
+                      <th className="pb-2 text-end font-medium">{t($ => $.workspace.unit)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -132,23 +132,23 @@ function ViewWorkspace({ bom }: { bom: Bom }) {
         </div>
 
         <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-          <WorkspaceCard title={t('workspace.summary')}>
+          <WorkspaceCard title={t($ => $.workspace.summary)}>
             <div className="flex flex-col gap-3">
-              <LabelValue label={t('workspace.bomNumber')} value={<span className="font-mono">{bom.bom_number}</span>} />
-              <LabelValue label={t('workspace.finishedGood')} value={bom.product?.name} />
-              <LabelValue label={t('workspace.version')} value={bom.version} />
+              <LabelValue label={t($ => $.workspace.bomNumber)} value={<span className="font-mono">{bom.bom_number}</span>} />
+              <LabelValue label={t($ => $.workspace.finishedGood)} value={bom.product?.name} />
+              <LabelValue label={t($ => $.workspace.version)} value={bom.version} />
               <LabelValue
-                label={t('columns.status')}
+                label={t($ => $.columns.status)}
                 value={
                   bom.is_active ? (
-                    <Badge variant="default">{t('status.active')}</Badge>
+                    <Badge variant="default">{t($ => $.status.active)}</Badge>
                   ) : (
-                    <Badge variant="secondary">{t('status.inactive')}</Badge>
+                    <Badge variant="secondary">{t($ => $.status.inactive)}</Badge>
                   )
                 }
               />
               <div className="border-t pt-3">
-                <LabelValue label={t('workspace.totalMaterials')} value={bom.lines.length} />
+                <LabelValue label={t($ => $.workspace.totalMaterials)} value={bom.lines.length} />
               </div>
             </div>
           </WorkspaceCard>
@@ -231,26 +231,26 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
     if (mode === 'create') {
       createBom.mutate(payload, {
         onSuccess: (created) => navigate(`${ROUTES.boms}/${created.id}`),
-        onError: (error) => setServerError(extractMessage(error, t('workspace.unknownError'))),
+        onError: (error) => setServerError(extractMessage(error, t($ => $.workspace.unknownError))),
       });
     } else {
       updateBom.mutate(payload, {
         onSuccess: () => navigate(`${ROUTES.boms}/${bom!.id}`),
-        onError: (error) => setServerError(extractMessage(error, t('workspace.unknownError'))),
+        onError: (error) => setServerError(extractMessage(error, t($ => $.workspace.unknownError))),
       });
     }
   };
 
   const isPending = createBom.isPending || updateBom.isPending;
-  const title = mode === 'create' ? t('workspace.newTitle') : t('workspace.editTitle');
+  const title = mode === 'create' ? t($ => $.workspace.newTitle) : t($ => $.workspace.editTitle);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={title}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('title'), to: ROUTES.boms },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.title), to: ROUTES.boms },
           { label: title },
         ]}
         actions={
@@ -259,16 +259,16 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
               variant="outline"
               onClick={() => navigate(bom ? `${ROUTES.boms}/${bom.id}` : ROUTES.boms)}
             >
-              {t('workspace.cancel')}
+              {t($ => $.workspace.cancel)}
             </Button>
             <Button type="submit" form={FORM_ID} disabled={isPending}>
               {isPending
                 ? mode === 'create'
-                  ? t('workspace.creating')
-                  : t('workspace.saving')
+                  ? t($ => $.workspace.creating)
+                  : t($ => $.workspace.saving)
                 : mode === 'create'
-                  ? t('workspace.create')
-                  : t('workspace.save')}
+                  ? t($ => $.workspace.create)
+                  : t($ => $.workspace.save)}
             </Button>
           </>
         }
@@ -277,7 +277,7 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
       {serverError ? (
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
-          <AlertTitle>{t('workspace.errorTitle')}</AlertTitle>
+          <AlertTitle>{t($ => $.workspace.errorTitle)}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       ) : null}
@@ -286,10 +286,10 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
         <form id={FORM_ID} onSubmit={form.handleSubmit(handleSubmit)} noValidate>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
             <div className="flex flex-col gap-6">
-              <WorkspaceCard title={t('workspace.details')}>
+              <WorkspaceCard title={t($ => $.workspace.details)}>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <FormField name="product_id" label={t('workspace.finishedGood')} required>
+                    <FormField name="product_id" label={t($ => $.workspace.finishedGood)} required>
                       <Controller
                         control={form.control}
                         name="product_id"
@@ -298,7 +298,7 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                             options={fgOptions}
                             value={field.value || null}
                             onChange={field.onChange}
-                            placeholder={t('workspace.selectProduct')}
+                            placeholder={t($ => $.workspace.selectProduct)}
                             loading={loadingFG}
                           />
                         )}
@@ -306,14 +306,14 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                     </FormField>
                   </div>
 
-                  <FormField name="version" label={t('workspace.version')} required>
+                  <FormField name="version" label={t($ => $.workspace.version)} required>
                     <Input
-                      placeholder={t('workspace.versionPlaceholder')}
+                      placeholder={t($ => $.workspace.versionPlaceholder)}
                       {...form.register('version')}
                     />
                   </FormField>
 
-                  <FormField name="is_active" label={t('workspace.isActive')}>
+                  <FormField name="is_active" label={t($ => $.workspace.isActive)}>
                     <div className="flex items-start gap-2 pt-1">
                       <Controller
                         control={form.control}
@@ -329,15 +329,15 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                         )}
                       />
                       <label htmlFor="is_active" className="text-muted-foreground cursor-pointer text-xs">
-                        {t('workspace.isActiveHint')}
+                        {t($ => $.workspace.isActiveHint)}
                       </label>
                     </div>
                   </FormField>
 
                   <div className="sm:col-span-2">
-                    <FormField name="notes" label={t('workspace.notes')}>
+                    <FormField name="notes" label={t($ => $.workspace.notes)}>
                       <Textarea
-                        placeholder={t('workspace.notesPlaceholder')}
+                        placeholder={t($ => $.workspace.notesPlaceholder)}
                         rows={3}
                         {...form.register('notes')}
                       />
@@ -346,7 +346,7 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                 </div>
               </WorkspaceCard>
 
-              <WorkspaceCard title={t('workspace.materials')}>
+              <WorkspaceCard title={t($ => $.workspace.materials)}>
                 <div className="flex flex-col gap-3">
                   {typeof form.formState.errors.lines?.message === 'string' && (
                     <p className="text-destructive text-xs">{form.formState.errors.lines.message}</p>
@@ -356,9 +356,9 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-muted-foreground border-b text-start">
-                          <th className="pb-2 pe-3 font-medium">{t('workspace.material')}</th>
-                          <th className="w-28 pb-2 pe-3 font-medium">{t('workspace.quantity')}</th>
-                          <th className="w-24 pb-2 pe-3 font-medium">{t('workspace.wastePercentage')}</th>
+                          <th className="pb-2 pe-3 font-medium">{t($ => $.workspace.material)}</th>
+                          <th className="w-28 pb-2 pe-3 font-medium">{t($ => $.workspace.quantity)}</th>
+                          <th className="w-24 pb-2 pe-3 font-medium">{t($ => $.workspace.wastePercentage)}</th>
                           <th className="w-10 pb-2" />
                         </tr>
                       </thead>
@@ -376,7 +376,7 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                                       options={rmOptions}
                                       value={f.value || null}
                                       onChange={f.onChange}
-                                      placeholder={t('workspace.selectMaterial')}
+                                      placeholder={t($ => $.workspace.selectMaterial)}
                                       loading={loadingRM}
                                     />
                                   )}
@@ -440,22 +440,22 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                     onClick={() => append({ raw_material_id: '', quantity: 1, waste_percentage: 0 })}
                   >
                     <Plus className="size-4" />
-                    {t('workspace.addLine')}
+                    {t($ => $.workspace.addLine)}
                   </Button>
                 </div>
               </WorkspaceCard>
             </div>
 
             <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-              <WorkspaceCard title={t('workspace.summary')}>
+              <WorkspaceCard title={t($ => $.workspace.summary)}>
                 <div className="flex flex-col gap-3">
                   {bom ? (
                     <LabelValue
-                      label={t('workspace.bomNumber')}
+                      label={t($ => $.workspace.bomNumber)}
                       value={<span className="font-mono">{bom.bom_number}</span>}
                     />
                   ) : null}
-                  <LabelValue label={t('workspace.totalMaterials')} value={fields.length} />
+                  <LabelValue label={t($ => $.workspace.totalMaterials)} value={fields.length} />
                 </div>
               </WorkspaceCard>
             </div>
@@ -478,7 +478,7 @@ export function BomWorkspacePage() {
   if (id && isLoading) {
     return (
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        {t('workspace.loading')}
+        {t($ => $.workspace.loading)}
       </div>
     );
   }
@@ -486,8 +486,8 @@ export function BomWorkspacePage() {
   if (id && (isError || (bom === undefined && !isLoading))) {
     return (
       <div className="flex h-48 flex-col items-center justify-center gap-1">
-        <p className="font-medium">{t('workspace.notFound')}</p>
-        <p className="text-muted-foreground text-sm">{t('workspace.notFoundMessage')}</p>
+        <p className="font-medium">{t($ => $.workspace.notFound)}</p>
+        <p className="text-muted-foreground text-sm">{t($ => $.workspace.notFoundMessage)}</p>
       </div>
     );
   }

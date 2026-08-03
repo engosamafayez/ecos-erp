@@ -27,7 +27,7 @@ function HealthBadge({ status }: { status: 'healthy' | 'warning' | 'error' }) {
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${variants[status]}`}>
       <StatusIndicator status={status} />
-      {t(`connections.health.${status}`)}
+      {t($ => $.connections.health[status])}
     </span>
   );
 }
@@ -48,21 +48,21 @@ export function ConnectorHealthCard({ connectionId }: Props) {
   if (!data) return null;
 
   const rows: Array<{ label: string; value: string | number | null }> = [
-    { label: t('connections.healthCard.authStatus'),     value: data.auth_status },
-    { label: t('connections.healthCard.apiAvailable'),   value: data.api_available ? t('common.yes') : t('common.no') },
-    { label: t('connections.healthCard.tokenExpires'),   value: data.token_expires_at ? new Date(data.token_expires_at).toLocaleDateString() : '—' },
-    { label: t('connections.healthCard.lastSuccess'),    value: data.last_successful_sync_at ? new Date(data.last_successful_sync_at).toLocaleString() : '—' },
-    { label: t('connections.healthCard.lastFailure'),    value: data.last_failed_sync_at ? new Date(data.last_failed_sync_at).toLocaleString() : '—' },
-    { label: t('connections.healthCard.errors7d'),       value: data.error_count },
-    { label: t('connections.healthCard.avgSync'),        value: data.avg_sync_duration_seconds ? `${data.avg_sync_duration_seconds}s` : '—' },
-    { label: t('connections.healthCard.rateLimitLeft'),  value: data.rate_limit_remaining ?? '—' },
+    { label: t($ => $.connections.healthCard.authStatus),     value: data.auth_status },
+    { label: t($ => $.connections.healthCard.apiAvailable),   value: data.api_available ? t($ => $.common.yes) : t($ => $.common.no) },
+    { label: t($ => $.connections.healthCard.tokenExpires),   value: data.token_expires_at ? new Date(data.token_expires_at).toLocaleDateString() : '—' },
+    { label: t($ => $.connections.healthCard.lastSuccess),    value: data.last_successful_sync_at ? new Date(data.last_successful_sync_at).toLocaleString() : '—' },
+    { label: t($ => $.connections.healthCard.lastFailure),    value: data.last_failed_sync_at ? new Date(data.last_failed_sync_at).toLocaleString() : '—' },
+    { label: t($ => $.connections.healthCard.errors7d),       value: data.error_count },
+    { label: t($ => $.connections.healthCard.avgSync),        value: data.avg_sync_duration_seconds ? `${data.avg_sync_duration_seconds}s` : '—' },
+    { label: t($ => $.connections.healthCard.rateLimitLeft),  value: data.rate_limit_remaining ?? '—' },
   ];
 
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t('connections.healthCard.title')}</span>
+          <span className="text-sm font-medium">{t($ => $.connections.healthCard.title)}</span>
           <HealthBadge status={data.overall_status} />
         </div>
         <Button

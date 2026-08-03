@@ -42,9 +42,9 @@ export function CategorySelect({
       value={value ?? ''}
       onChange={onChange}
       loading={isLoading}
-      placeholder={placeholder ?? t('selects.categoryPlaceholder')}
-      searchPlaceholder={t('selects.categorySearch')}
-      emptyText={t('selects.categoryEmpty')}
+      placeholder={placeholder ?? t($ => $.selects.categoryPlaceholder)}
+      searchPlaceholder={t($ => $.selects.categorySearch)}
+      emptyText={t($ => $.selects.categoryEmpty)}
       disabled={disabled}
       className={className}
     />

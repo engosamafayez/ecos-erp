@@ -132,7 +132,7 @@ function SmartInsights({ analytics, health }: { analytics: SupplierAnalytics | n
 
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">{t('drawer360.smartInsights')}</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">{t($ => $.drawer360.smartInsights)}</h3>
       <div className="flex flex-col gap-2">
         {alerts.map((a, i) => (
           <div
@@ -177,26 +177,26 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
       <SmartInsights analytics={analytics ?? null} health={health ?? null} />
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.supplierInfo')}</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.drawer360.overview.supplierInfo)}</h3>
         <Card>
           <CardContent className="p-4">
-            <InfoRow label={t('drawer360.overview.fields.supplierCode')} value={supplier.code} />
-            <InfoRow label={t('drawer360.overview.fields.name')} value={supplier.name} />
+            <InfoRow label={t($ => $.drawer360.overview.fields.supplierCode)} value={supplier.code} />
+            <InfoRow label={t($ => $.drawer360.overview.fields.name)} value={supplier.name} />
           </CardContent>
         </Card>
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.location')}</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.drawer360.overview.location)}</h3>
         <Card>
           <CardContent className="p-4">
-            <InfoRow label={t('form.country')} value={supplier.country} />
-            <InfoRow label={t('form.state')} value={supplier.state} />
-            <InfoRow label={t('form.city')} value={supplier.city} />
-            <InfoRow label={t('form.district')} value={supplier.district} />
-            <InfoRow label={t('form.address')} value={supplier.address} />
+            <InfoRow label={t($ => $.form.country)} value={supplier.country} />
+            <InfoRow label={t($ => $.form.state)} value={supplier.state} />
+            <InfoRow label={t($ => $.form.city)} value={supplier.city} />
+            <InfoRow label={t($ => $.form.district)} value={supplier.district} />
+            <InfoRow label={t($ => $.form.address)} value={supplier.address} />
             <div className="flex items-baseline justify-between gap-4 py-2 border-b last:border-0">
-              <span className="text-xs text-muted-foreground shrink-0">{t('form.googleMapsUrl')}</span>
+              <span className="text-xs text-muted-foreground shrink-0">{t($ => $.form.googleMapsUrl)}</span>
               {mapsHref ? (
                 <a
                   href={mapsHref}
@@ -204,7 +204,7 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
                   rel="noopener noreferrer"
                   className="text-sm text-end text-primary hover:underline truncate max-w-[60%]"
                 >
-                  {t('drawer360.overview.openInMaps')}
+                  {t($ => $.drawer360.overview.openInMaps)}
                 </a>
               ) : (
                 <span className="text-sm text-end">—</span>
@@ -215,29 +215,29 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.contactDetails')}</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.drawer360.overview.contactDetails)}</h3>
         <Card>
           <CardContent className="p-4">
-            <InfoRow label={t('drawer360.overview.fields.contactPerson')} value={supplier.contact_person} />
-            <InfoRow label={t('drawer360.overview.fields.phone')} value={supplier.phone} />
-            <InfoRow label={t('drawer360.overview.fields.mobile')} value={supplier.mobile} />
-            <InfoRow label={t('drawer360.overview.fields.email')} value={supplier.email} />
+            <InfoRow label={t($ => $.drawer360.overview.fields.contactPerson)} value={supplier.contact_person} />
+            <InfoRow label={t($ => $.drawer360.overview.fields.phone)} value={supplier.phone} />
+            <InfoRow label={t($ => $.drawer360.overview.fields.mobile)} value={supplier.mobile} />
+            <InfoRow label={t($ => $.drawer360.overview.fields.email)} value={supplier.email} />
           </CardContent>
         </Card>
       </div>
 
       {hasFinancialPosition && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.financialPosition')}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.drawer360.overview.financialPosition)}</h3>
           <Card>
             <CardContent className="p-4">
               <InfoRow
-                label={t('drawer360.overview.openingBalance')}
-                value={`${money(openingAmount)} · ${openingType === 'debit' ? t('form.openingBalanceDebit') : t('form.openingBalanceCredit')}`}
+                label={t($ => $.drawer360.overview.openingBalance)}
+                value={`${money(openingAmount)} · ${openingType === 'debit' ? t($ => $.form.openingBalanceDebit) : t($ => $.form.openingBalanceCredit)}`}
               />
-              <InfoRow label={t('drawer360.overview.previousBalance')} value={money(previousBalance)} />
+              <InfoRow label={t($ => $.drawer360.overview.previousBalance)} value={money(previousBalance)} />
               {currentBalance != null && (
-                <InfoRow label={t('drawer360.overview.currentBalance')} value={money(currentBalance)} />
+                <InfoRow label={t($ => $.drawer360.overview.currentBalance)} value={money(currentBalance)} />
               )}
             </CardContent>
           </Card>
@@ -245,20 +245,20 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
       )}
 
       {isLoading ? (
-        <LoadingState label={t('drawer360.overview.loadingAnalytics')} />
+        <LoadingState label={t($ => $.drawer360.overview.loadingAnalytics)} />
       ) : analytics ? (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.quickSummary')}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.drawer360.overview.quickSummary)}</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <KpiMini label={t('drawer360.overview.kpis.totalPurchases')} value={money(analytics.total_invoiced)} />
-            <KpiMini label={t('drawer360.overview.kpis.totalPaid')} value={money(analytics.total_paid)} />
+            <KpiMini label={t($ => $.drawer360.overview.kpis.totalPurchases)} value={money(analytics.total_invoiced)} />
+            <KpiMini label={t($ => $.drawer360.overview.kpis.totalPaid)} value={money(analytics.total_paid)} />
             <KpiMini
-              label={t('drawer360.overview.kpis.outstanding')}
+              label={t($ => $.drawer360.overview.kpis.outstanding)}
               value={money(analytics.outstanding_balance)}
               emphasis={analytics.outstanding_balance > 0 ? 'negative' : undefined}
             />
             <KpiMini
-              label={t('drawer360.overview.kpis.lastPurchase')}
+              label={t($ => $.drawer360.overview.kpis.lastPurchase)}
               value={analytics.last_purchase_date ? analytics.last_purchase_date.slice(0, 10) : '—'}
             />
           </div>
@@ -267,13 +267,13 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
 
       {health && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.procurementHealth')}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.drawer360.overview.procurementHealth)}</h3>
           <Card>
             <CardContent className="flex items-center gap-4 pt-4 pb-4">
               <div className="text-3xl font-bold tabular-nums">{health.score.toFixed(0)}</div>
               <div>
                 <ProcurementHealthBadge score={health.tier} />
-                <p className="text-xs text-muted-foreground mt-1">{t('drawer360.overview.outOf100')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t($ => $.drawer360.overview.outOf100)}</p>
               </div>
             </CardContent>
           </Card>
@@ -282,7 +282,7 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
 
       {supplier.notes && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.notes')}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.drawer360.overview.notes)}</h3>
           <Card><CardContent className="p-4 text-sm text-muted-foreground">{supplier.notes}</CardContent></Card>
         </div>
       )}
@@ -312,27 +312,27 @@ function ProductsTab({ supplierId }: { supplierId: string }) {
   }
 
   const columnHeaders = [
-    t('drawer360.products.columns.product'),
-    t('drawer360.products.columns.onHand'),
-    t('drawer360.products.columns.avgCost'),
-    t('drawer360.products.columns.salePrice', 'Sale Price'),
-    t('drawer360.products.columns.costValue'),
-    t('drawer360.products.columns.saleValue'),
-    t('drawer360.products.columns.grossProfit', 'Gross Profit'),
-    t('drawer360.products.columns.oldestReceipt', 'Oldest Receipt'),
-    t('drawer360.products.columns.lastReceipt'),
-    t('drawer360.products.columns.receipts'),
+    t($ => $.drawer360.products.columns.product),
+    t($ => $.drawer360.products.columns.onHand),
+    t($ => $.drawer360.products.columns.avgCost),
+    t($ => $.drawer360.products.columns.salePrice, 'Sale Price'),
+    t($ => $.drawer360.products.columns.costValue),
+    t($ => $.drawer360.products.columns.saleValue),
+    t($ => $.drawer360.products.columns.grossProfit, 'Gross Profit'),
+    t($ => $.drawer360.products.columns.oldestReceipt, 'Oldest Receipt'),
+    t($ => $.drawer360.products.columns.lastReceipt),
+    t($ => $.drawer360.products.columns.receipts),
   ];
 
   return (
     <div className="p-0">
       {items.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-16">{t('drawer360.products.empty')}</p>
+        <p className="text-muted-foreground text-sm text-center py-16">{t($ => $.drawer360.products.empty)}</p>
       ) : (
         <>
           <div className="flex items-center justify-end px-4 py-2 border-b">
             <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handleExport}>
-              <Download className="size-3.5" />{t('drawer360.products.export')}
+              <Download className="size-3.5" />{t($ => $.drawer360.products.export)}
             </Button>
           </div>
           <div className="overflow-x-auto">
@@ -384,17 +384,17 @@ function PurchaseOrdersTab({ supplierId }: { supplierId: string }) {
   const items = data?.items ?? [];
 
   const columnHeaders = [
-    t('drawer360.purchaseOrders.columns.poNo'),
-    t('drawer360.purchaseOrders.columns.date'),
-    t('drawer360.purchaseOrders.columns.expected'),
-    t('drawer360.purchaseOrders.columns.status'),
-    t('drawer360.purchaseOrders.columns.total'),
+    t($ => $.drawer360.purchaseOrders.columns.poNo),
+    t($ => $.drawer360.purchaseOrders.columns.date),
+    t($ => $.drawer360.purchaseOrders.columns.expected),
+    t($ => $.drawer360.purchaseOrders.columns.status),
+    t($ => $.drawer360.purchaseOrders.columns.total),
   ];
 
   return (
     <div className="p-0">
       {items.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-16">{t('drawer360.purchaseOrders.empty')}</p>
+        <p className="text-muted-foreground text-sm text-center py-16">{t($ => $.drawer360.purchaseOrders.empty)}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
@@ -436,18 +436,18 @@ function GoodsReceiptsTab({ supplierId }: { supplierId: string }) {
   const items = data?.items ?? [];
 
   const columnHeaders = [
-    t('drawer360.goodsReceipts.columns.receiptNo'),
-    t('drawer360.goodsReceipts.columns.date'),
-    t('drawer360.goodsReceipts.columns.poNo'),
-    t('drawer360.goodsReceipts.columns.status'),
-    t('drawer360.goodsReceipts.columns.invoiceTotal'),
-    t('drawer360.goodsReceipts.columns.outstanding'),
+    t($ => $.drawer360.goodsReceipts.columns.receiptNo),
+    t($ => $.drawer360.goodsReceipts.columns.date),
+    t($ => $.drawer360.goodsReceipts.columns.poNo),
+    t($ => $.drawer360.goodsReceipts.columns.status),
+    t($ => $.drawer360.goodsReceipts.columns.invoiceTotal),
+    t($ => $.drawer360.goodsReceipts.columns.outstanding),
   ];
 
   return (
     <div className="p-0">
       {items.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-16">{t('drawer360.goodsReceipts.empty')}</p>
+        <p className="text-muted-foreground text-sm text-center py-16">{t($ => $.drawer360.goodsReceipts.empty)}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
@@ -519,33 +519,33 @@ function FinancialTab({ supplierId }: { supplierId: string }) {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-end">
         <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handleExport}>
-          <Download className="size-3.5" />{t('drawer360.financial.export')}
+          <Download className="size-3.5" />{t($ => $.drawer360.financial.export)}
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <KpiMini label={t('drawer360.financial.kpis.totalPurchases')} value={String(data.total_purchases)} sub={t('drawer360.financial.kpis.totalPurchasesSub')} />
-        <KpiMini label={t('drawer360.financial.kpis.totalInvoiced')} value={money(data.total_invoiced)} />
-        <KpiMini label={t('drawer360.financial.kpis.totalPaid')} value={money(data.total_paid)} />
+        <KpiMini label={t($ => $.drawer360.financial.kpis.totalPurchases)} value={String(data.total_purchases)} sub={t($ => $.drawer360.financial.kpis.totalPurchasesSub)} />
+        <KpiMini label={t($ => $.drawer360.financial.kpis.totalInvoiced)} value={money(data.total_invoiced)} />
+        <KpiMini label={t($ => $.drawer360.financial.kpis.totalPaid)} value={money(data.total_paid)} />
         <KpiMini
-          label={t('drawer360.financial.kpis.outstandingBalance')}
+          label={t($ => $.drawer360.financial.kpis.outstandingBalance)}
           value={money(data.outstanding_balance)}
           emphasis={data.outstanding_balance > 0 ? 'negative' : undefined}
-          sub={data.outstanding_balance > 0 ? t('drawer360.financial.kpis.outstandingBalanceSub') : undefined}
+          sub={data.outstanding_balance > 0 ? t($ => $.drawer360.financial.kpis.outstandingBalanceSub) : undefined}
         />
         <KpiMini
-          label={t('drawer360.financial.kpis.paymentCompletion')}
+          label={t($ => $.drawer360.financial.kpis.paymentCompletion)}
           value={paymentPct !== null ? `${paymentPct}%` : '—'}
           emphasis={paymentPct !== null && parseFloat(paymentPct) >= 90 ? 'positive' : 'warning'}
         />
         <KpiMini
-          label={t('drawer360.financial.kpis.avgPoValue')}
+          label={t($ => $.drawer360.financial.kpis.avgPoValue)}
           value={avgPoValue !== null ? money(avgPoValue) : '—'}
         />
       </div>
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">{t('drawer360.financial.lastPurchase')}</CardTitle>
+          <CardTitle className="text-sm">{t($ => $.drawer360.financial.lastPurchase)}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-2xl font-semibold tabular-nums">
@@ -575,34 +575,34 @@ function InventoryTab({ supplierId }: { supplierId: string }) {
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <KpiMini label={t('drawer360.inventory.kpis.totalProducts')} value={String(items.length)} />
-        <KpiMini label={t('drawer360.inventory.kpis.inventoryValue')} value={analytics ? money(analytics.current_inventory_cost_value) : '—'} />
-        <KpiMini label={t('drawer360.inventory.kpis.totalQuantity')} value={analytics ? fmt(analytics.current_inventory_quantity, 0) : '—'} />
-        <KpiMini label={t('drawer360.inventory.kpis.lowStock')} value={String(lowStock)} sub={t('drawer360.inventory.kpis.lowStockSub')} emphasis={lowStock > 0 ? 'warning' : undefined} />
-        <KpiMini label={t('drawer360.inventory.kpis.outOfStock')} value={String(outOfStock)} emphasis={outOfStock > 0 ? 'negative' : undefined} />
-        <KpiMini label={t('drawer360.inventory.kpis.overstock')} value={String(overstock)} sub={t('drawer360.inventory.kpis.overstockSub')} />
+        <KpiMini label={t($ => $.drawer360.inventory.kpis.totalProducts)} value={String(items.length)} />
+        <KpiMini label={t($ => $.drawer360.inventory.kpis.inventoryValue)} value={analytics ? money(analytics.current_inventory_cost_value) : '—'} />
+        <KpiMini label={t($ => $.drawer360.inventory.kpis.totalQuantity)} value={analytics ? fmt(analytics.current_inventory_quantity, 0) : '—'} />
+        <KpiMini label={t($ => $.drawer360.inventory.kpis.lowStock)} value={String(lowStock)} sub={t($ => $.drawer360.inventory.kpis.lowStockSub)} emphasis={lowStock > 0 ? 'warning' : undefined} />
+        <KpiMini label={t($ => $.drawer360.inventory.kpis.outOfStock)} value={String(outOfStock)} emphasis={outOfStock > 0 ? 'negative' : undefined} />
+        <KpiMini label={t($ => $.drawer360.inventory.kpis.overstock)} value={String(overstock)} sub={t($ => $.drawer360.inventory.kpis.overstockSub)} />
       </div>
 
       {analytics && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{t('drawer360.inventory.valueBreakdown')}</CardTitle>
+            <CardTitle className="text-sm">{t($ => $.drawer360.inventory.valueBreakdown)}</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-3 gap-4">
             <div>
-              <p className="text-xs text-muted-foreground">{t('drawer360.inventory.costValue')}</p>
+              <p className="text-xs text-muted-foreground">{t($ => $.drawer360.inventory.costValue)}</p>
               <p className="text-lg font-semibold">{money(analytics.current_inventory_cost_value)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{t('drawer360.inventory.saleValue')}</p>
+              <p className="text-xs text-muted-foreground">{t($ => $.drawer360.inventory.saleValue)}</p>
               <p className="text-lg font-semibold">{money(analytics.current_inventory_sale_value)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{t('drawer360.inventory.potentialProfit')}</p>
+              <p className="text-xs text-muted-foreground">{t($ => $.drawer360.inventory.potentialProfit)}</p>
               <p className="text-lg font-semibold text-emerald-600">
                 {money(analytics.potential_gross_profit)}
               </p>
-              <p className="text-[10px] text-muted-foreground">{analytics.inventory_remaining_margin_percent.toFixed(1)}% {t('drawer360.inventory.margin')}</p>
+              <p className="text-[10px] text-muted-foreground">{analytics.inventory_remaining_margin_percent.toFixed(1)}% {t($ => $.drawer360.inventory.margin)}</p>
             </div>
           </CardContent>
         </Card>
@@ -634,15 +634,15 @@ function PriceHistoryTab({ supplierId }: { supplierId: string }) {
   }
 
   const columnHeaders = [
-    t('drawer360.priceHistory.columns.date'),
-    t('drawer360.priceHistory.columns.poNo'),
-    t('drawer360.priceHistory.columns.product'),
-    t('drawer360.priceHistory.columns.warehouse'),
-    t('drawer360.priceHistory.columns.qty'),
-    t('drawer360.priceHistory.columns.unitCost'),
-    t('drawer360.priceHistory.columns.landed'),
-    t('drawer360.priceHistory.columns.vsPrevious'),
-    t('drawer360.priceHistory.columns.pctChange'),
+    t($ => $.drawer360.priceHistory.columns.date),
+    t($ => $.drawer360.priceHistory.columns.poNo),
+    t($ => $.drawer360.priceHistory.columns.product),
+    t($ => $.drawer360.priceHistory.columns.warehouse),
+    t($ => $.drawer360.priceHistory.columns.qty),
+    t($ => $.drawer360.priceHistory.columns.unitCost),
+    t($ => $.drawer360.priceHistory.columns.landed),
+    t($ => $.drawer360.priceHistory.columns.vsPrevious),
+    t($ => $.drawer360.priceHistory.columns.pctChange),
   ];
 
   function PriceChange({ entry }: { entry: SupplierPriceHistoryEntry }) {
@@ -665,13 +665,13 @@ function PriceHistoryTab({ supplierId }: { supplierId: string }) {
   return (
     <div className="p-0">
       {items.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-16">{t('drawer360.priceHistory.empty')}</p>
+        <p className="text-muted-foreground text-sm text-center py-16">{t($ => $.drawer360.priceHistory.empty)}</p>
       ) : (
         <>
           <div className="flex items-center justify-between px-4 py-2 border-b">
             <p className="text-xs text-muted-foreground">{tAny('drawer360.priceHistory.records', { count: items.length })}</p>
             <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handleExport}>
-              <Download className="size-3.5" />{t('drawer360.priceHistory.export')}
+              <Download className="size-3.5" />{t($ => $.drawer360.priceHistory.export)}
             </Button>
           </div>
           <div className="overflow-x-auto">
@@ -766,17 +766,17 @@ function PerformanceTab({ supplierId }: { supplierId: string }) {
               </div>
               <div>
                 <ProcurementHealthBadge score={health.tier} />
-                <p className="text-xs text-muted-foreground mt-1">{t('drawer360.performance.overallHealth')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t($ => $.drawer360.performance.overallHealth)}</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handleExport}>
-              <Download className="size-3.5" />{t('drawer360.performance.export')}
+              <Download className="size-3.5" />{t($ => $.drawer360.performance.export)}
             </Button>
           </div>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">{t('drawer360.performance.scoreComponents')}</CardTitle>
+              <CardTitle className="text-sm">{t($ => $.drawer360.performance.scoreComponents)}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {Object.entries(health.components).map(([key, score]) => (
@@ -787,7 +787,7 @@ function PerformanceTab({ supplierId }: { supplierId: string }) {
                   <ScoreBar score={score} weight={health.weights[key] ?? 0} />
                 </div>
               ))}
-              <p className="text-[10px] text-muted-foreground mt-1">{t('drawer360.performance.scoreWeight')}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">{t($ => $.drawer360.performance.scoreWeight)}</p>
             </CardContent>
           </Card>
         </>
@@ -796,23 +796,23 @@ function PerformanceTab({ supplierId }: { supplierId: string }) {
       {analytics && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <KpiMini
-            label={t('drawer360.performance.kpis.onTimeDelivery')}
+            label={t($ => $.drawer360.performance.kpis.onTimeDelivery)}
             value={analytics.on_time_delivery_rate !== null ? `${analytics.on_time_delivery_rate.toFixed(0)}%` : '—'}
             emphasis={analytics.on_time_delivery_rate !== null ? (analytics.on_time_delivery_rate >= 80 ? 'positive' : 'warning') : undefined}
           />
           <KpiMini
-            label={t('drawer360.performance.kpis.fillRate')}
+            label={t($ => $.drawer360.performance.kpis.fillRate)}
             value={analytics.fill_rate !== null ? `${analytics.fill_rate.toFixed(0)}%` : '—'}
             emphasis={analytics.fill_rate !== null ? (analytics.fill_rate >= 90 ? 'positive' : 'warning') : undefined}
           />
           <KpiMini
-            label={t('drawer360.performance.kpis.avgLeadTime')}
-            value={analytics.avg_lead_time_days !== null ? `${analytics.avg_lead_time_days.toFixed(0)} ${t('drawer360.performance.kpis.avgLeadTimeSuffix')}` : '—'}
+            label={t($ => $.drawer360.performance.kpis.avgLeadTime)}
+            value={analytics.avg_lead_time_days !== null ? `${analytics.avg_lead_time_days.toFixed(0)} ${t($ => $.drawer360.performance.kpis.avgLeadTimeSuffix)}` : '—'}
             emphasis={analytics.avg_lead_time_days !== null ? (analytics.avg_lead_time_days <= 7 ? 'positive' : analytics.avg_lead_time_days > 14 ? 'warning' : undefined) : undefined}
           />
-          <KpiMini label={t('drawer360.performance.kpis.activePOs')} value={String(analytics.active_pos_count)} />
-          <KpiMini label={t('drawer360.performance.kpis.pendingGRs')} value={String(analytics.pending_grs_count)} />
-          <KpiMini label={t('drawer360.performance.kpis.productsSupplied')} value={String(analytics.total_products_supplied)} />
+          <KpiMini label={t($ => $.drawer360.performance.kpis.activePOs)} value={String(analytics.active_pos_count)} />
+          <KpiMini label={t($ => $.drawer360.performance.kpis.pendingGRs)} value={String(analytics.pending_grs_count)} />
+          <KpiMini label={t($ => $.drawer360.performance.kpis.productsSupplied)} value={String(analytics.total_products_supplied)} />
         </div>
       )}
     </div>
@@ -836,11 +836,11 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
   const [docType, setDocType] = useState<string>('attachment');
 
   const docTypeLabels: Record<string, string> = {
-    commercial_registration: t('drawer360.documents.docTypes.commercial_registration'),
-    tax_card:                t('drawer360.documents.docTypes.tax_card'),
-    contract:                t('drawer360.documents.docTypes.contract'),
-    certificate:             t('drawer360.documents.docTypes.certificate'),
-    attachment:              t('drawer360.documents.docTypes.attachment'),
+    commercial_registration: t($ => $.drawer360.documents.docTypes.commercial_registration),
+    tax_card:                t($ => $.drawer360.documents.docTypes.tax_card),
+    contract:                t($ => $.drawer360.documents.docTypes.contract),
+    certificate:             t($ => $.drawer360.documents.docTypes.certificate),
+    attachment:              t($ => $.drawer360.documents.docTypes.attachment),
   };
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -851,8 +851,8 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
     fd.append('document_type', docType);
     fd.append('name', file.name);
     upload.mutate(fd, {
-      onSuccess: () => toast.success(t('drawer360.documents.toast.uploaded')),
-      onError: () => toast.error(t('drawer360.documents.toast.uploadFailed')),
+      onSuccess: () => toast.success(t($ => $.drawer360.documents.toast.uploaded)),
+      onError: () => toast.error(t($ => $.drawer360.documents.toast.uploadFailed)),
     });
     e.target.value = '';
   }
@@ -868,14 +868,14 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error(t('drawer360.documents.toast.downloadFailed'));
+      toast.error(t($ => $.drawer360.documents.toast.downloadFailed));
     }
   }
 
   function handleDelete(doc: SupplierDocument) {
     remove.mutate(doc.id, {
-      onSuccess: () => toast.success(t('drawer360.documents.toast.deleted')),
-      onError: () => toast.error(t('drawer360.documents.toast.deleteFailed')),
+      onSuccess: () => toast.success(t($ => $.drawer360.documents.toast.deleted)),
+      onError: () => toast.error(t($ => $.drawer360.documents.toast.deleteFailed)),
     });
   }
 
@@ -891,7 +891,7 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
         <CardContent className="p-4">
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <Label className="text-xs">{t('drawer360.documents.uploadArea.documentType')}</Label>
+              <Label className="text-xs">{t($ => $.drawer360.documents.uploadArea.documentType)}</Label>
               <select
                 value={docType}
                 onChange={(e) => setDocType(e.target.value)}
@@ -909,7 +909,7 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
               onClick={() => fileRef.current?.click()}
             >
               <Upload className="size-3.5" />
-              {upload.isPending ? t('drawer360.documents.uploadArea.uploading') : t('drawer360.documents.uploadArea.uploadFile')}
+              {upload.isPending ? t($ => $.drawer360.documents.uploadArea.uploading) : t($ => $.drawer360.documents.uploadArea.uploadFile)}
             </Button>
             <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange} />
           </div>
@@ -918,7 +918,7 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
 
       {/* Document List */}
       {items.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground py-8">{t('drawer360.documents.empty')}</p>
+        <p className="text-center text-sm text-muted-foreground py-8">{t($ => $.drawer360.documents.empty)}</p>
       ) : (
         <div className="flex flex-col divide-y rounded-lg border">
           {items.map((doc) => (
@@ -976,7 +976,7 @@ function TimelineTab({ supplierId }: { supplierId: string }) {
   return (
     <div className="p-6">
       {events.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground py-8">{t('drawer360.timeline.empty')}</p>
+        <p className="text-center text-sm text-muted-foreground py-8">{t($ => $.drawer360.timeline.empty)}</p>
       ) : (
         <div className="relative">
           <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
@@ -1055,16 +1055,16 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
   }
 
   const TABS: { id: TabId; label: string; icon: typeof Building2 }[] = useMemo(() => [
-    { id: 'overview',        label: t('drawer360.tabs.overview'),        icon: Building2 },
-    { id: 'products',        label: t('drawer360.tabs.products'),        icon: Package },
-    { id: 'purchase-orders', label: t('drawer360.tabs.purchaseOrders'),  icon: ShoppingCart },
-    { id: 'goods-receipts',  label: t('drawer360.tabs.goodsReceipts'),   icon: Truck },
-    { id: 'financial',       label: t('drawer360.tabs.financial'),       icon: CreditCard },
-    { id: 'inventory',       label: t('drawer360.tabs.inventory'),       icon: Archive },
-    { id: 'price-history',   label: t('drawer360.tabs.priceHistory'),    icon: History },
-    { id: 'performance',     label: t('drawer360.tabs.performance'),     icon: BarChart3 },
-    { id: 'documents',       label: t('drawer360.tabs.documents'),       icon: FileText },
-    { id: 'timeline',        label: t('drawer360.tabs.timeline'),        icon: Clock },
+    { id: 'overview',        label: t($ => $.drawer360.tabs.overview),        icon: Building2 },
+    { id: 'products',        label: t($ => $.drawer360.tabs.products),        icon: Package },
+    { id: 'purchase-orders', label: t($ => $.drawer360.tabs.purchaseOrders),  icon: ShoppingCart },
+    { id: 'goods-receipts',  label: t($ => $.drawer360.tabs.goodsReceipts),   icon: Truck },
+    { id: 'financial',       label: t($ => $.drawer360.tabs.financial),       icon: CreditCard },
+    { id: 'inventory',       label: t($ => $.drawer360.tabs.inventory),       icon: Archive },
+    { id: 'price-history',   label: t($ => $.drawer360.tabs.priceHistory),    icon: History },
+    { id: 'performance',     label: t($ => $.drawer360.tabs.performance),     icon: BarChart3 },
+    { id: 'documents',       label: t($ => $.drawer360.tabs.documents),       icon: FileText },
+    { id: 'timeline',        label: t($ => $.drawer360.tabs.timeline),        icon: Clock },
   ], [t]);
 
   if (!supplier) return null;
@@ -1079,7 +1079,7 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
       footer={
         <Button variant="outline" size="sm" onClick={() => onEdit(supplier)} className="gap-1.5">
           <Pencil className="size-3.5" />
-          {t('drawer360.editSupplier')}
+          {t($ => $.drawer360.editSupplier)}
         </Button>
       }
     >

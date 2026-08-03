@@ -56,7 +56,7 @@ export function LeaveRequestsPage() {
     setError(null);
 
     if (!form.employee_id) {
-      setError(t('leave.errors.employeeRequired'));
+      setError(t($ => $.leave.errors.employeeRequired));
       return;
     }
 
@@ -65,7 +65,7 @@ export function LeaveRequestsPage() {
       setForm({ ...form, reason: '', employee_id: '' });
       setFormOpen(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('leave.errors.submitFailed'));
+      setError(e instanceof Error ? e.message : t($ => $.leave.errors.submitFailed));
     }
   };
 
@@ -78,12 +78,12 @@ export function LeaveRequestsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('leave.title')}
-        subtitle={t('leave.subtitle')}
+        title={t($ => $.leave.title)}
+        subtitle={t($ => $.leave.subtitle)}
         actions={
           <Button size="sm" onClick={() => setFormOpen(true)}>
             <Plus className="size-4" />
-            {t('leave.newRequest')}
+            {t($ => $.leave.newRequest)}
           </Button>
         }
       />
@@ -91,19 +91,19 @@ export function LeaveRequestsPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('leave.stats.showing')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.leave.stats.showing)}</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : rows.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('leave.stats.awaitingApproval')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.leave.stats.awaitingApproval)}</div>
             <div className="text-2xl font-bold text-amber-600">{isLoading ? '—' : pendingCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('leave.stats.daysRequested')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.leave.stats.daysRequested)}</div>
             <div className="text-2xl font-bold">
               {isLoading ? '—' : rows.reduce((sum, r) => sum + r.days_count, 0)}
             </div>
@@ -114,34 +114,34 @@ export function LeaveRequestsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{t('common.status')}</span>
+            <span className="text-sm font-medium">{t($ => $.common.status)}</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="">{t('leave.status.all')}</option>
-              <option value="pending">{t('leave.status.pending')}</option>
-              <option value="approved">{t('leave.status.approved')}</option>
-              <option value="rejected">{t('leave.status.rejected')}</option>
-              <option value="cancelled">{t('leave.status.cancelled')}</option>
+              <option value="">{t($ => $.leave.status.all)}</option>
+              <option value="pending">{t($ => $.leave.status.pending)}</option>
+              <option value="approved">{t($ => $.leave.status.approved)}</option>
+              <option value="rejected">{t($ => $.leave.status.rejected)}</option>
+              <option value="cancelled">{t($ => $.leave.status.cancelled)}</option>
             </select>
           </div>
 
           {rows.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">{t('leave.empty')}</p>
+            <p className="text-muted-foreground py-8 text-center text-sm">{t($ => $.leave.empty)}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-muted-foreground border-b text-start text-xs uppercase">
                   <tr>
-                    <th className="py-2 pe-4 font-medium">{t('leave.table.number')}</th>
-                    <th className="py-2 pe-4 font-medium">{t('leave.table.employee')}</th>
-                    <th className="py-2 pe-4 font-medium">{t('leave.table.dates')}</th>
-                    <th className="py-2 pe-4 text-end font-medium">{t('leave.table.days')}</th>
-                    <th className="py-2 pe-4 font-medium">{t('leave.table.payroll')}</th>
-                    <th className="py-2 pe-4 font-medium">{t('leave.table.status')}</th>
-                    <th className="py-2 pe-4 font-medium">{t('leave.table.decision')}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.leave.table.number)}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.leave.table.employee)}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.leave.table.dates)}</th>
+                    <th className="py-2 pe-4 text-end font-medium">{t($ => $.leave.table.days)}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.leave.table.payroll)}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.leave.table.status)}</th>
+                    <th className="py-2 pe-4 font-medium">{t($ => $.leave.table.decision)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -170,7 +170,7 @@ export function LeaveRequestsPage() {
                               onClick={() => setDeciding({ request, decision: 'approve' })}
                             >
                               <Check className="size-3.5" />
-                              {t('leave.approve')}
+                              {t($ => $.leave.approve)}
                             </Button>
                             <Button
                               size="sm"
@@ -178,7 +178,7 @@ export function LeaveRequestsPage() {
                               onClick={() => setDeciding({ request, decision: 'reject' })}
                             >
                               <X className="size-3.5" />
-                              {t('leave.reject')}
+                              {t($ => $.leave.reject)}
                             </Button>
                           </div>
                         ) : (
@@ -199,15 +199,15 @@ export function LeaveRequestsPage() {
       <EntityDrawer
         open={formOpen}
         onOpenChange={setFormOpen}
-        title={t('leave.form.title')}
-        description={t('leave.form.description')}
+        title={t($ => $.leave.form.title)}
+        description={t($ => $.leave.form.description)}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setFormOpen(false)}>
-              {t('common.cancel')}
+              {t($ => $.common.cancel)}
             </Button>
             <Button onClick={() => void submitRequest()} disabled={submit.isPending}>
-              {submit.isPending ? t('leave.form.submitting') : t('leave.form.submit')}
+              {submit.isPending ? t($ => $.leave.form.submitting) : t($ => $.leave.form.submit)}
             </Button>
           </div>
         }
@@ -216,14 +216,14 @@ export function LeaveRequestsPage() {
           {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="employee_id">{t('common.employee')}</Label>
+            <Label htmlFor="employee_id">{t($ => $.common.employee)}</Label>
             <select
               id="employee_id"
               value={form.employee_id}
               onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="">{t('leave.form.chooseEmployee')}</option>
+              <option value="">{t($ => $.leave.form.chooseEmployee)}</option>
               {(employees?.items ?? []).map((employee) => (
                 <option key={employee.id} value={employee.id}>
                   {employee.name} ({employee.employee_number})
@@ -234,7 +234,7 @@ export function LeaveRequestsPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="start_date">{t('leave.form.from')}</Label>
+              <Label htmlFor="start_date">{t($ => $.leave.form.from)}</Label>
               <Input
                 id="start_date"
                 type="date"
@@ -243,7 +243,7 @@ export function LeaveRequestsPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="end_date">{t('leave.form.to')}</Label>
+              <Label htmlFor="end_date">{t($ => $.leave.form.to)}</Label>
               <Input
                 id="end_date"
                 type="date"
@@ -254,26 +254,26 @@ export function LeaveRequestsPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="payroll_flag">{t('leave.form.payrollTreatment')}</Label>
+            <Label htmlFor="payroll_flag">{t($ => $.leave.form.payrollTreatment)}</Label>
             <select
               id="payroll_flag"
               value={form.payroll_flag}
               onChange={(e) => setForm({ ...form, payroll_flag: e.target.value as LeavePayrollFlag })}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="deduct_salary">{t('leave.form.deductSalary')}</option>
-              <option value="do_not_deduct_salary">{t('leave.form.doNotDeductSalary')}</option>
+              <option value="deduct_salary">{t($ => $.leave.form.deductSalary)}</option>
+              <option value="do_not_deduct_salary">{t($ => $.leave.form.doNotDeductSalary)}</option>
             </select>
-            <span className="text-muted-foreground text-xs">{t('leave.form.payrollHint')}</span>
+            <span className="text-muted-foreground text-xs">{t($ => $.leave.form.payrollHint)}</span>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="reason">{t('leave.form.reason')}</Label>
+            <Label htmlFor="reason">{t($ => $.leave.form.reason)}</Label>
             <Input
               id="reason"
               value={form.reason}
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
-              placeholder={t('leave.form.optional')}
+              placeholder={t($ => $.leave.form.optional)}
             />
           </div>
         </div>
@@ -284,18 +284,18 @@ export function LeaveRequestsPage() {
         onOpenChange={(open) => {
           if (!open) setDeciding(null);
         }}
-        title={deciding?.decision === 'approve' ? t('leave.decide.approveTitle') : t('leave.decide.rejectTitle')}
+        title={deciding?.decision === 'approve' ? t($ => $.leave.decide.approveTitle) : t($ => $.leave.decide.rejectTitle)}
         description={
           deciding?.decision === 'approve'
-            ? t('leave.decide.approveDescription', {
+            ? t($ => $.leave.decide.approveDescription, {
                 count: deciding.request.days_count,
-                name: deciding.request.employee?.name ?? t('leave.decide.thisEmployee'),
+                name: deciding.request.employee?.name ?? t($ => $.leave.decide.thisEmployee),
               })
-            : t('leave.decide.rejectDescription', {
-                name: deciding?.request.employee?.name ?? t('leave.decide.thisEmployee'),
+            : t($ => $.leave.decide.rejectDescription, {
+                name: deciding?.request.employee?.name ?? t($ => $.leave.decide.thisEmployee),
               })
         }
-        confirmLabel={deciding?.decision === 'approve' ? t('leave.approve') : t('leave.reject')}
+        confirmLabel={deciding?.decision === 'approve' ? t($ => $.leave.approve) : t($ => $.leave.reject)}
         variant={deciding?.decision === 'reject' ? 'destructive' : 'default'}
         loading={decide.isPending}
         onConfirm={confirmDecision}

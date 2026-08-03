@@ -136,10 +136,10 @@ function RecipeStats({ query }: { query: SharedFilter }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <QuickStatCard icon={BookOpen}   title={t('page.stats.total')}   value={total}                                      colorClassName="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" />
-      <QuickStatCard icon={BookMarked} title={t('page.stats.active')}  value={active}                                     colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30" />
-      <QuickStatCard icon={FileText}   title={t('page.stats.draft')}   value={draft}                                      colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30" />
-      <QuickStatCard icon={DollarSign} title={t('page.stats.avgCost')} value={fmtAbbrev(avgCost, currency, locale)}       colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30" />
+      <QuickStatCard icon={BookOpen}   title={t($ => $.page.stats.total)}   value={total}                                      colorClassName="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" />
+      <QuickStatCard icon={BookMarked} title={t($ => $.page.stats.active)}  value={active}                                     colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30" />
+      <QuickStatCard icon={FileText}   title={t($ => $.page.stats.draft)}   value={draft}                                      colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30" />
+      <QuickStatCard icon={DollarSign} title={t($ => $.page.stats.avgCost)} value={fmtAbbrev(avgCost, currency, locale)}       colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30" />
     </div>
   );
 }
@@ -158,14 +158,14 @@ function ColumnManagerPanel({ visibleColumns, onToggle, onRestoreDefaults, onSho
   return (
     <PopoverContent align="end" className="w-56 p-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium">{t('columnManager.title')}</p>
+        <p className="text-sm font-medium">{t($ => $.columnManager.title)}</p>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onShowAll}>
-            {t('columnManager.showAll')}
+            {t($ => $.columnManager.showAll)}
           </Button>
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={onRestoreDefaults}>
             <RotateCcw className="size-3 mr-1" />
-            {t('columnManager.reset')}
+            {t($ => $.columnManager.reset)}
           </Button>
         </div>
       </div>
@@ -183,7 +183,7 @@ function ColumnManagerPanel({ visibleColumns, onToggle, onRestoreDefaults, onSho
               aria-label={col.label}
             />
             <span>{col.label}</span>
-            {col.locked && <span className="ms-auto text-[10px] text-muted-foreground">{t('columnManager.locked')}</span>}
+            {col.locked && <span className="ms-auto text-[10px] text-muted-foreground">{t($ => $.columnManager.locked)}</span>}
           </label>
         ))}
       </div>
@@ -211,40 +211,40 @@ function FiltersPanel({ hasMfgCost, hasPkgMaterials, updatedFrom, updatedTo, onC
   return (
     <PopoverContent align="end" className="w-72 p-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-medium">{t('filtersPanel.title')}</p>
+        <p className="text-sm font-medium">{t($ => $.filtersPanel.title)}</p>
         {hasAny && (
           <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs text-muted-foreground" onClick={onClear}>
-            <X className="size-3 mr-1" />{t('filtersPanel.clearAll')}
+            <X className="size-3 mr-1" />{t($ => $.filtersPanel.clearAll)}
           </Button>
         )}
       </div>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm">{t('filtersPanel.hasMfgCost')}</label>
+          <label className="text-sm">{t($ => $.filtersPanel.hasMfgCost)}</label>
           <Switch checked={hasMfgCost} onCheckedChange={(v) => onChange({ hasMfgCost: v })} />
         </div>
         <div className="flex items-center justify-between">
-          <label className="text-sm">{t('filtersPanel.hasPkgMaterials')}</label>
+          <label className="text-sm">{t($ => $.filtersPanel.hasPkgMaterials)}</label>
           <Switch checked={hasPkgMaterials} onCheckedChange={(v) => onChange({ hasPkgMaterials: v })} />
         </div>
         <Separator />
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('filtersPanel.updatedDate')}</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t($ => $.filtersPanel.updatedDate)}</p>
           <div className="flex items-center gap-2">
             <Input
               type="date"
               value={updatedFrom}
               onChange={(e) => onChange({ updatedFrom: e.target.value })}
               className="h-8 text-sm"
-              placeholder={t('filtersPanel.from')}
+              placeholder={t($ => $.filtersPanel.from)}
             />
-            <span className="text-muted-foreground text-xs shrink-0">{t('filtersPanel.toConnector')}</span>
+            <span className="text-muted-foreground text-xs shrink-0">{t($ => $.filtersPanel.toConnector)}</span>
             <Input
               type="date"
               value={updatedTo}
               onChange={(e) => onChange({ updatedTo: e.target.value })}
               className="h-8 text-sm"
-              placeholder={t('filtersPanel.to')}
+              placeholder={t($ => $.filtersPanel.to)}
             />
           </div>
         </div>
@@ -295,7 +295,7 @@ function RecipeToolbar({
       {/* Search */}
       <div className="relative flex-1 min-w-52 max-w-80">
         <Input
-          placeholder={t('toolbar.searchPlaceholder')}
+          placeholder={t($ => $.toolbar.searchPlaceholder)}
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           className="h-9"
@@ -305,37 +305,37 @@ function RecipeToolbar({
       {/* Status */}
       <Select value={status} onValueChange={onStatus}>
         <SelectTrigger className="h-9 w-36">
-          <SelectValue placeholder={t('toolbar.allStatuses')} />
+          <SelectValue placeholder={t($ => $.toolbar.allStatuses)} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">{t('toolbar.allStatuses')}</SelectItem>
-          <SelectItem value="active">{t('status.active')}</SelectItem>
-          <SelectItem value="draft">{t('status.draft')}</SelectItem>
+          <SelectItem value="all">{t($ => $.toolbar.allStatuses)}</SelectItem>
+          <SelectItem value="active">{t($ => $.status.active)}</SelectItem>
+          <SelectItem value="draft">{t($ => $.status.draft)}</SelectItem>
         </SelectContent>
       </Select>
 
       {/* Company */}
       <div className="w-44">
-        <CompanySelect value={companyId} onChange={onCompany} placeholder={t('toolbar.allCompanies')} />
+        <CompanySelect value={companyId} onChange={onCompany} placeholder={t($ => $.toolbar.allCompanies)} />
       </div>
 
       {/* Channel */}
       <div className="w-44">
-        <ChannelSelect value={channelId} onChange={onChannel} placeholder={t('toolbar.allChannels')} />
+        <ChannelSelect value={channelId} onChange={onChannel} placeholder={t($ => $.toolbar.allChannels)} />
       </div>
 
       {/* Action buttons */}
       <div className="ms-auto flex items-center gap-2">
         <Button size="sm" onClick={onNew} className="gap-1.5">
           <Plus className="size-4" />
-          {t('toolbar.newRecipe')}
+          {t($ => $.toolbar.newRecipe)}
         </Button>
 
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
               <Columns3 className="size-4" />
-              {t('toolbar.columns')}
+              {t($ => $.toolbar.columns)}
             </Button>
           </PopoverTrigger>
           <ColumnManagerPanel
@@ -350,7 +350,7 @@ function RecipeToolbar({
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5 relative">
               <Filter className="size-4" />
-              {t('toolbar.filters')}
+              {t($ => $.toolbar.filters)}
               {activeFilterCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                   {activeFilterCount}
@@ -373,12 +373,12 @@ function RecipeToolbar({
           className="gap-1.5"
         >
           <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {t('toolbar.refresh')}
+          {t($ => $.toolbar.refresh)}
         </Button>
 
         <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5">
           <Download className="size-4" />
-          {t('toolbar.export')}
+          {t($ => $.toolbar.export)}
         </Button>
       </div>
     </div>
@@ -393,15 +393,15 @@ function BulkActionBar({
   const { t } = useTranslation('recipes');
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-2.5 shadow-sm">
-      <span className="text-sm font-medium shrink-0">{t('bulk.selected', { count })}</span>
+      <span className="text-sm font-medium shrink-0">{t($ => $.bulk.selected, { count })}</span>
       <div className="w-px h-5 bg-border mx-1" />
       <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5 h-8">
         <Download className="size-3.5" />
-        {t('bulk.exportSelected')}
+        {t($ => $.bulk.exportSelected)}
       </Button>
       <Button variant="ghost" size="sm" onClick={onClear} className="ms-auto h-8 gap-1.5 text-muted-foreground">
         <X className="size-3.5" />
-        {t('bulk.clearSelection')}
+        {t($ => $.bulk.clearSelection)}
       </Button>
     </div>
   );
@@ -492,20 +492,20 @@ function RecipeTable({
               <Checkbox
                 checked={someSelected ? 'indeterminate' : allSelected}
                 onCheckedChange={toggleAll}
-                aria-label={t('table.selectAll')}
+                aria-label={t($ => $.table.selectAll)}
               />
             </TableHead>
-            {vis('image')           && <TableHead className="w-14">{t('table.headers.image')}</TableHead>}
-            {vis('product')         && <SortableHead field="product_name"    label={t('table.headers.product')}        sort={sort} onSort={onSortChange} />}
-            {vis('category')        && <SortableHead field="category"        label={t('table.headers.category')}       sort={sort} onSort={onSortChange} />}
-            {vis('recipe_cost')     && <SortableHead field="recipe_cost"     label={t('table.headers.recipeCost')}     sort={sort} onSort={onSortChange} align="right" />}
-            {vis('waste_pct')       && <SortableHead field="total_waste_pct" label={t('table.headers.wastePct')}       sort={sort} onSort={onSortChange} />}
-            {vis('total_materials') && <SortableHead field="lines_count"     label={t('table.headers.totalMaterials')} sort={sort} onSort={onSortChange} align="right" />}
-            {vis('channel')         && <TableHead>{t('table.headers.channel')}</TableHead>}
-            {vis('company')         && <TableHead>{t('table.headers.company')}</TableHead>}
-            {vis('updated')         && <SortableHead field="updated_at"      label={t('table.headers.updatedAt')}      sort={sort} onSort={onSortChange} />}
-            {vis('status')          && <TableHead>{t('table.headers.status')}</TableHead>}
-            {vis('actions')         && <TableHead className="w-12 text-end">{t('table.headers.actions')}</TableHead>}
+            {vis('image')           && <TableHead className="w-14">{t($ => $.table.headers.image)}</TableHead>}
+            {vis('product')         && <SortableHead field="product_name"    label={t($ => $.table.headers.product)}        sort={sort} onSort={onSortChange} />}
+            {vis('category')        && <SortableHead field="category"        label={t($ => $.table.headers.category)}       sort={sort} onSort={onSortChange} />}
+            {vis('recipe_cost')     && <SortableHead field="recipe_cost"     label={t($ => $.table.headers.recipeCost)}     sort={sort} onSort={onSortChange} align="right" />}
+            {vis('waste_pct')       && <SortableHead field="total_waste_pct" label={t($ => $.table.headers.wastePct)}       sort={sort} onSort={onSortChange} />}
+            {vis('total_materials') && <SortableHead field="lines_count"     label={t($ => $.table.headers.totalMaterials)} sort={sort} onSort={onSortChange} align="right" />}
+            {vis('channel')         && <TableHead>{t($ => $.table.headers.channel)}</TableHead>}
+            {vis('company')         && <TableHead>{t($ => $.table.headers.company)}</TableHead>}
+            {vis('updated')         && <SortableHead field="updated_at"      label={t($ => $.table.headers.updatedAt)}      sort={sort} onSort={onSortChange} />}
+            {vis('status')          && <TableHead>{t($ => $.table.headers.status)}</TableHead>}
+            {vis('actions')         && <TableHead className="w-12 text-end">{t($ => $.table.headers.actions)}</TableHead>}
           </TableRow>
         </TableHeader>
 
@@ -521,7 +521,7 @@ function RecipeTable({
           ) : isError ? (
             <TableRow>
               <TableCell colSpan={colSpan} className="py-12 text-center text-muted-foreground">
-                {t('table.error')}
+                {t($ => $.table.error)}
               </TableCell>
             </TableRow>
           ) : data.length === 0 ? (
@@ -529,8 +529,8 @@ function RecipeTable({
               <TableCell colSpan={colSpan}>
                 <EmptyState
                   icon={BookOpen}
-                  title={t('table.empty.title')}
-                  description={t('table.empty.description')}
+                  title={t($ => $.table.empty.title)}
+                  description={t($ => $.table.empty.description)}
                 />
               </TableCell>
             </TableRow>
@@ -553,7 +553,7 @@ function RecipeTable({
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => toggleRow(r.id)}
-                      aria-label={t('table.selectRow', { name: r.product?.name ?? r.bom_number })}
+                      aria-label={t($ => $.table.selectRow, { name: r.product?.name ?? r.bom_number })}
                     />
                   </TableCell>
 
@@ -644,10 +644,10 @@ function RecipeTable({
                     <TableCell>
                       {r.is_active ? (
                         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 text-xs">
-                          {t('status.active')}
+                          {t($ => $.status.active)}
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-muted-foreground text-xs">{t('status.draft')}</Badge>
+                        <Badge variant="outline" className="text-muted-foreground text-xs">{t($ => $.status.draft)}</Badge>
                       )}
                     </TableCell>
                   )}
@@ -656,18 +656,18 @@ function RecipeTable({
                   {vis('actions') && (
                     <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu
-                        label={t('table.actionsFor', { name: r.product?.name ?? r.bom_number })}
+                        label={t($ => $.table.actionsFor, { name: r.product?.name ?? r.bom_number })}
                         items={[
-                          { key: 'view',        label: t('actions.view'),       icon: Eye,    onSelect: () => onRowClick(r) },
-                          { key: 'edit',        label: t('actions.edit'),       icon: Pencil, onSelect: () => onEdit(r) },
-                          { key: 'create-from', label: t('actions.createFrom'), icon: Copy,   onSelect: () => onCreateFrom(r) },
+                          { key: 'view',        label: t($ => $.actions.view),       icon: Eye,    onSelect: () => onRowClick(r) },
+                          { key: 'edit',        label: t($ => $.actions.edit),       icon: Pencil, onSelect: () => onEdit(r) },
+                          { key: 'create-from', label: t($ => $.actions.createFrom), icon: Copy,   onSelect: () => onCreateFrom(r) },
                           {
                             key: 'toggle',
-                            label: r.is_active ? t('actions.setDraft') : t('actions.setActive'),
+                            label: r.is_active ? t($ => $.actions.setDraft) : t($ => $.actions.setActive),
                             icon: Power,
                             onSelect: () => onToggle(r),
                           },
-                          { key: 'delete', label: t('actions.delete'), icon: Trash2, onSelect: () => onDelete(r), variant: 'destructive' },
+                          { key: 'delete', label: t($ => $.actions.delete), icon: Trash2, onSelect: () => onDelete(r), variant: 'destructive' },
                         ]}
                       />
                     </TableCell>
@@ -740,11 +740,11 @@ function MaterialPreviewRow({ line }: { line: PreviewLine }) {
                 : 'border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400'
             }`}
           >
-            {isPkg ? t('materialTypes.packaging') : t('materialTypes.raw')}
+            {isPkg ? t($ => $.materialTypes.packaging) : t($ => $.materialTypes.raw)}
           </Badge>
           {line.waste_percentage > 0 && (
             <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium">
-              {t('waste.wasteSuffix', { pct: line.waste_percentage.toFixed(0) })}
+              {t($ => $.waste.wasteSuffix, { pct: line.waste_percentage.toFixed(0) })}
             </span>
           )}
         </div>
@@ -755,7 +755,7 @@ function MaterialPreviewRow({ line }: { line: PreviewLine }) {
         <span className="text-xs tabular-nums font-medium">{line.quantity}</span>
         {!hasCost && (
           <span className="text-[9px] text-amber-500 flex items-center gap-0.5">
-            <TriangleAlert className="size-2.5" />{t('noCost')}
+            <TriangleAlert className="size-2.5" />{t($ => $.noCost)}
           </span>
         )}
       </div>
@@ -811,9 +811,9 @@ function MaterialsPreviewPopover({
           onMouseEnter={handleMouseEnterTrigger}
           onMouseLeave={handleMouseLeaveTrigger}
           onClick={() => setOpen((v) => !v)}
-          aria-label={t('preview.ariaLabel', { count: materialsCount, name: recipe.product?.name ?? recipe.bom_number })}
+          aria-label={t($ => $.preview.ariaLabel, { count: materialsCount, name: recipe.product?.name ?? recipe.bom_number })}
         >
-          {t('preview.materialsCount', { count: materialsCount })}
+          {t($ => $.preview.materialsCount, { count: materialsCount })}
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -828,9 +828,9 @@ function MaterialsPreviewPopover({
         <div className="px-3 py-2 border-b">
           <p className="text-xs font-semibold truncate">{recipe.product?.name ?? recipe.bom_number}</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            {rawCount > 0 && t('preview.rawCount', { count: rawCount })}
+            {rawCount > 0 && t($ => $.preview.rawCount, { count: rawCount })}
             {rawCount > 0 && pkgCount > 0 && ' · '}
-            {pkgCount > 0 && t('preview.pkgCount', { count: pkgCount })}
+            {pkgCount > 0 && t($ => $.preview.pkgCount, { count: pkgCount })}
           </p>
         </div>
 
@@ -839,7 +839,7 @@ function MaterialsPreviewPopover({
           {isFetching && lines.length === 0 ? (
             <SkeletonMaterialList />
           ) : lines.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-6">{t('preview.noMaterials')}</p>
+            <p className="text-xs text-muted-foreground text-center py-6">{t($ => $.preview.noMaterials)}</p>
           ) : (
             lines.map((line) => <MaterialPreviewRow key={line.id} line={line} />)
           )}
@@ -848,14 +848,14 @@ function MaterialsPreviewPopover({
         {/* Footer */}
         <div className="border-t px-3 py-2 flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground tabular-nums">
-            {t('preview.total', { count: materialsCount })}
+            {t($ => $.preview.total, { count: materialsCount })}
           </span>
           <button
             type="button"
             className="text-[10px] text-primary font-medium flex items-center gap-1 hover:underline"
             onClick={() => { setOpen(false); onViewMaterials(recipe); }}
           >
-            {t('actions.viewFullRecipe')}
+            {t($ => $.actions.viewFullRecipe)}
             <ArrowRight className="size-3" />
           </button>
         </div>
@@ -909,16 +909,16 @@ export function RecipesPage() {
   // ── CSV columns — depends on t(), must be inside component body ───────────
   type CsvCol = { key: RecipeColumnKey; header: string; value: (r: Recipe) => string };
   const csvColumns = useMemo<CsvCol[]>(() => [
-    { key: 'image',           header: t('csv.headers.image'),          value: (r) => r.product?.image_url ?? '' },
-    { key: 'product',         header: t('csv.headers.product'),        value: (r) => `${r.product?.name ?? ''} (${r.product?.sku ?? ''})` },
-    { key: 'category',        header: t('csv.headers.category'),       value: (r) => r.product?.category?.name ?? '' },
-    { key: 'recipe_cost',     header: t('csv.headers.recipeCost'),     value: (r) => computeRecipeCost(r).toFixed(2) },
-    { key: 'waste_pct',       header: t('csv.headers.wastePct'),       value: (r) => `${(r.total_waste_pct ?? 0).toFixed(2)}%` },
-    { key: 'total_materials', header: t('csv.headers.totalMaterials'), value: (r) => String(r.lines_count ?? r.lines?.length ?? 0) },
-    { key: 'channel',         header: t('csv.headers.channel'),        value: (r) => r.product?.channels?.map((c) => c.name).join(', ') ?? '' },
-    { key: 'company',         header: t('csv.headers.company'),        value: (r) => r.product?.channels?.[0]?.company_name ?? '' },
-    { key: 'updated',         header: t('csv.headers.updated'),        value: (r) => (r.updated_at ?? r.created_at ?? '').slice(0, 10) },
-    { key: 'status',          header: t('csv.headers.status'),         value: (r) => (r.is_active ? t('status.active') : t('status.draft')) },
+    { key: 'image',           header: t($ => $.csv.headers.image),          value: (r) => r.product?.image_url ?? '' },
+    { key: 'product',         header: t($ => $.csv.headers.product),        value: (r) => `${r.product?.name ?? ''} (${r.product?.sku ?? ''})` },
+    { key: 'category',        header: t($ => $.csv.headers.category),       value: (r) => r.product?.category?.name ?? '' },
+    { key: 'recipe_cost',     header: t($ => $.csv.headers.recipeCost),     value: (r) => computeRecipeCost(r).toFixed(2) },
+    { key: 'waste_pct',       header: t($ => $.csv.headers.wastePct),       value: (r) => `${(r.total_waste_pct ?? 0).toFixed(2)}%` },
+    { key: 'total_materials', header: t($ => $.csv.headers.totalMaterials), value: (r) => String(r.lines_count ?? r.lines?.length ?? 0) },
+    { key: 'channel',         header: t($ => $.csv.headers.channel),        value: (r) => r.product?.channels?.map((c) => c.name).join(', ') ?? '' },
+    { key: 'company',         header: t($ => $.csv.headers.company),        value: (r) => r.product?.channels?.[0]?.company_name ?? '' },
+    { key: 'updated',         header: t($ => $.csv.headers.updated),        value: (r) => (r.updated_at ?? r.created_at ?? '').slice(0, 10) },
+    { key: 'status',          header: t($ => $.csv.headers.status),         value: (r) => (r.is_active ? t($ => $.status.active) : t($ => $.status.draft)) },
   ], [t]);
 
   // ── Shared filter (one source of truth for stats + table + export) ────────
@@ -1017,12 +1017,12 @@ export function RecipesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('page.title')}
-        subtitle={t('page.subtitle')}
+        title={t($ => $.page.title)}
+        subtitle={t($ => $.page.subtitle)}
         breadcrumbs={[
-          { label: t('page.breadcrumbs.home'),      to: ROUTES.dashboard },
-          { label: t('page.breadcrumbs.inventory'), to: ROUTES.inventoryProducts },
-          { label: t('page.breadcrumbs.recipes') },
+          { label: t($ => $.page.breadcrumbs.home),      to: ROUTES.dashboard },
+          { label: t($ => $.page.breadcrumbs.inventory), to: ROUTES.inventoryProducts },
+          { label: t($ => $.page.breadcrumbs.recipes) },
         ]}
       />
 
@@ -1104,9 +1104,9 @@ export function RecipesPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('delete.title')}
-        description={t('delete.description', { name: deleting?.product?.name ?? deleting?.bom_number ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={t($ => $.delete.description, { name: deleting?.product?.name ?? deleting?.bom_number ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteRecipe.isPending}
         onConfirm={() => {

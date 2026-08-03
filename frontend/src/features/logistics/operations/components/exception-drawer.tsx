@@ -79,7 +79,7 @@ function Notes({ exceptionId }: { exceptionId: string }) {
         <Textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder={t('operations.exceptionDrawer.notes.placeholder')}
+          placeholder={t($ => $.operations.exceptionDrawer.notes.placeholder)}
           rows={3}
           className="text-sm"
         />
@@ -109,24 +109,24 @@ function Notes({ exceptionId }: { exceptionId: string }) {
                 { id: exceptionId, body: body.trim(), noteType },
                 {
                   onSuccess: () => {
-                    toast({ title: t('operations.exceptionDrawer.notes.toast.added') });
+                    toast({ title: t($ => $.operations.exceptionDrawer.notes.toast.added) });
                     setBody('');
                   },
                   onError: () =>
                     toast({
-                      title: t('operations.exceptionDrawer.notes.toast.addFailed'),
+                      title: t($ => $.operations.exceptionDrawer.notes.toast.addFailed),
                       variant: 'destructive',
                     }),
                 },
               )
             }
           >
-            {t('operations.exceptionDrawer.notes.add')}
+            {t($ => $.operations.exceptionDrawer.notes.add)}
           </Button>
           {noteType === 'handover' && (
             // A handover is what the next shift reads first, so it pins itself.
             <span className="text-[11px] text-muted-foreground">
-              {t('operations.exceptionDrawer.notes.pinsToTop')}
+              {t($ => $.operations.exceptionDrawer.notes.pinsToTop)}
             </span>
           )}
         </div>
@@ -138,7 +138,7 @@ function Notes({ exceptionId }: { exceptionId: string }) {
         <Skeleton className="h-32 w-full" />
       ) : !notes || notes.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          {t('operations.exceptionDrawer.notes.empty')}
+          {t($ => $.operations.exceptionDrawer.notes.empty)}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -149,10 +149,10 @@ function Notes({ exceptionId }: { exceptionId: string }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">{note.body}</p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {note.author_name ?? t('common.unknown')} ·{' '}
+                    {note.author_name ?? t($ => $.common.unknown)} ·{' '}
                     {note.written_at
                       ? new Date(note.written_at).toLocaleString()
-                      : t('common.na')}
+                      : t($ => $.common.na)}
                     {note.note_type !== 'note' ? ` · ${t(NOTE_TYPE_KEYS[note.note_type])}` : ''}
                   </p>
                 </div>
@@ -178,16 +178,16 @@ function Escalations({ exceptionId }: { exceptionId: string }) {
       <div className="space-y-2">
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1.5">
-            <Label className="text-xs">{t('common.reason')}</Label>
+            <Label className="text-xs">{t($ => $.common.reason)}</Label>
             <Input
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder={t('operations.exceptionDrawer.escalations.reasonPlaceholder')}
+              placeholder={t($ => $.operations.exceptionDrawer.escalations.reasonPlaceholder)}
               className="h-8 text-xs"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">{t('operations.exceptionDrawer.escalations.toRole')}</Label>
+            <Label className="text-xs">{t($ => $.operations.exceptionDrawer.escalations.toRole)}</Label>
             <Input
               value={role}
               onChange={(e) => setRole(e.target.value)}
@@ -206,12 +206,12 @@ function Escalations({ exceptionId }: { exceptionId: string }) {
               { id: exceptionId, reason: reason.trim(), toRole: role.trim() || undefined },
               {
                 onSuccess: () => {
-                  toast({ title: t('operations.exceptionDrawer.escalations.toast.escalated') });
+                  toast({ title: t($ => $.operations.exceptionDrawer.escalations.toast.escalated) });
                   setReason('');
                 },
                 onError: () =>
                   toast({
-                    title: t('operations.exceptionDrawer.escalations.toast.refused'),
+                    title: t($ => $.operations.exceptionDrawer.escalations.toast.refused),
                     variant: 'destructive',
                   }),
               },
@@ -219,7 +219,7 @@ function Escalations({ exceptionId }: { exceptionId: string }) {
           }
         >
           <ArrowUpCircle className="me-1 size-3.5" />
-          {t('operations.exceptionDrawer.escalations.escalate')}
+          {t($ => $.operations.exceptionDrawer.escalations.escalate)}
         </Button>
       </div>
 
@@ -227,7 +227,7 @@ function Escalations({ exceptionId }: { exceptionId: string }) {
 
       {!history || history.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          {t('operations.exceptionDrawer.escalations.empty')}
+          {t($ => $.operations.exceptionDrawer.escalations.empty)}
         </p>
       ) : (
         <ol className="space-y-2">
@@ -235,11 +235,11 @@ function Escalations({ exceptionId }: { exceptionId: string }) {
             <li key={step.id} className="rounded-md border p-2.5 text-xs">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-[10px]">
-                  {t('operations.exceptionDrawer.escalations.level', { level: step.level })}
+                  {t($ => $.operations.exceptionDrawer.escalations.level, { level: step.level })}
                 </Badge>
                 {step.was_automatic && (
                   <Badge variant="outline" className="text-[10px]">
-                    {t('operations.exceptionDrawer.escalations.automatic')}
+                    {t($ => $.operations.exceptionDrawer.escalations.automatic)}
                   </Badge>
                 )}
                 {step.escalated_to_role && (
@@ -250,7 +250,7 @@ function Escalations({ exceptionId }: { exceptionId: string }) {
               <p className="mt-0.5 text-[11px] text-muted-foreground">
                 {step.escalated_at
                   ? new Date(step.escalated_at).toLocaleString()
-                  : t('common.na')}
+                  : t($ => $.common.na)}
                 {step.escalated_by_name ? ` · ${step.escalated_by_name}` : ''}
               </p>
             </li>
@@ -295,7 +295,7 @@ export function ExceptionDrawer({
     <PageDrawer
       open={open}
       onOpenChange={onOpenChange}
-      title={exception?.title ?? t('operations.exceptionDrawer.title')}
+      title={exception?.title ?? t($ => $.operations.exceptionDrawer.title)}
       description={exception ? `${exception.source_label} · ${exception.category_label}` : ''}
       size="2xl"
     >
@@ -310,14 +310,14 @@ export function ExceptionDrawer({
             {exception.is_recurring && (
               <Badge variant="outline" className="gap-1 text-[10px]">
                 <Repeat2 className="size-2.5" />
-                {t('operations.exceptionDrawer.seenTimes', {
+                {t($ => $.operations.exceptionDrawer.seenTimes, {
                   count: exception.occurrence_count,
                 })}
               </Badge>
             )}
             {exception.is_overdue_for_escalation && (
               <Badge variant="destructive" className="text-[10px]">
-                {t('operations.exceptionDrawer.overdue')}
+                {t($ => $.operations.exceptionDrawer.overdue)}
               </Badge>
             )}
           </div>
@@ -325,7 +325,7 @@ export function ExceptionDrawer({
           {!exception.is_self_owned && (
             <Alert>
               <AlertDescription className="text-xs">
-                {t('operations.exceptionDrawer.ownedElsewhereNotice', {
+                {t($ => $.operations.exceptionDrawer.ownedElsewhereNotice, {
                   source: exception.source_label,
                 })}
               </AlertDescription>
@@ -338,37 +338,37 @@ export function ExceptionDrawer({
           )}
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label={t('common.type')}>{exception.exception_type}</Field>
-            <Field label={t('operations.exceptionDrawer.severity')}>
+            <Field label={t($ => $.common.type)}>{exception.exception_type}</Field>
+            <Field label={t($ => $.operations.exceptionDrawer.severity)}>
               {exception.severity_label}
             </Field>
-            <Field label={t('operations.exceptionDrawer.firstSeen')}>
+            <Field label={t($ => $.operations.exceptionDrawer.firstSeen)}>
               {exception.first_seen_at
                 ? new Date(exception.first_seen_at).toLocaleString()
-                : t('common.na')}
+                : t($ => $.common.na)}
             </Field>
-            <Field label={t('operations.exceptionDrawer.lastSeen')}>
+            <Field label={t($ => $.operations.exceptionDrawer.lastSeen)}>
               {exception.last_seen_at
                 ? new Date(exception.last_seen_at).toLocaleString()
-                : t('common.na')}
+                : t($ => $.common.na)}
             </Field>
-            <Field label={t('operations.exceptionDrawer.age')}>
-              {t('operations.exceptionDrawer.minutes', { minutes: exception.age_minutes })}
+            <Field label={t($ => $.operations.exceptionDrawer.age)}>
+              {t($ => $.operations.exceptionDrawer.minutes, { minutes: exception.age_minutes })}
             </Field>
-            <Field label={t('operations.exceptionDrawer.unacknowledged')}>
+            <Field label={t($ => $.operations.exceptionDrawer.unacknowledged)}>
               {exception.unacknowledged_minutes !== null
-                ? t('operations.exceptionDrawer.minutes', {
+                ? t($ => $.operations.exceptionDrawer.minutes, {
                     minutes: exception.unacknowledged_minutes,
                   })
-                : t('operations.exceptionDrawer.acknowledged')}
+                : t($ => $.operations.exceptionDrawer.acknowledged)}
             </Field>
-            <Field label={t('operations.exceptionDrawer.escalationLevel')}>
+            <Field label={t($ => $.operations.exceptionDrawer.escalationLevel)}>
               {exception.escalation_level}
             </Field>
-            <Field label={t('operations.exceptionDrawer.subject')}>
+            <Field label={t($ => $.operations.exceptionDrawer.subject)}>
               {exception.subject_type
                 ? `${exception.subject_type} ${exception.subject_id ?? ''}`
-                : t('common.na')}
+                : t($ => $.common.na)}
             </Field>
           </div>
 
@@ -376,10 +376,10 @@ export function ExceptionDrawer({
 
           <Tabs defaultValue="act" className="w-full">
             <TabsList>
-              <TabsTrigger value="act">{t('operations.exceptionDrawer.tabs.act')}</TabsTrigger>
-              <TabsTrigger value="notes">{t('common.notes')}</TabsTrigger>
+              <TabsTrigger value="act">{t($ => $.operations.exceptionDrawer.tabs.act)}</TabsTrigger>
+              <TabsTrigger value="notes">{t($ => $.common.notes)}</TabsTrigger>
               <TabsTrigger value="escalations">
-                {t('operations.exceptionDrawer.tabs.escalations')}
+                {t($ => $.operations.exceptionDrawer.tabs.escalations)}
               </TabsTrigger>
             </TabsList>
 
@@ -394,18 +394,18 @@ export function ExceptionDrawer({
                     onClick={() =>
                       acknowledge.mutate(exception.id, {
                         onSuccess: () =>
-                          toast({ title: t('operations.exceptionDrawer.toast.acknowledged') }),
+                          toast({ title: t($ => $.operations.exceptionDrawer.toast.acknowledged) }),
                         onError: () =>
                           toast({
-                            title: t('operations.exceptionDrawer.toast.acknowledgeFailed'),
+                            title: t($ => $.operations.exceptionDrawer.toast.acknowledgeFailed),
                             variant: 'destructive',
                           }),
                       })
                     }
                   >
                     {exception.acknowledged_at !== null
-                      ? t('operations.exceptionDrawer.alreadyAcknowledged')
-                      : t('operations.exceptionDrawer.acknowledge')}
+                      ? t($ => $.operations.exceptionDrawer.alreadyAcknowledged)
+                      : t($ => $.operations.exceptionDrawer.acknowledge)}
                   </Button>
 
                   <Separator />
@@ -413,7 +413,7 @@ export function ExceptionDrawer({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs">
-                        {t('operations.exceptionDrawer.resolution')}
+                        {t($ => $.operations.exceptionDrawer.resolution)}
                       </Label>
                       <Select
                         value={resolution}
@@ -445,12 +445,12 @@ export function ExceptionDrawer({
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">
-                        {t('operations.exceptionDrawer.whatWasDone')}
+                        {t($ => $.operations.exceptionDrawer.whatWasDone)}
                       </Label>
                       <Input
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
-                        placeholder={t('common.required')}
+                        placeholder={t($ => $.common.required)}
                         className="h-9 text-xs"
                       />
                     </div>
@@ -466,19 +466,19 @@ export function ExceptionDrawer({
                           { id: exception.id, resolution, reason: reason.trim() },
                           {
                             onSuccess: () => {
-                              toast({ title: t('operations.exceptionDrawer.toast.closed') });
+                              toast({ title: t($ => $.operations.exceptionDrawer.toast.closed) });
                               onOpenChange(false);
                             },
                             onError: () =>
                               toast({
-                                title: t('operations.exceptionDrawer.toast.closeFailed'),
+                                title: t($ => $.operations.exceptionDrawer.toast.closeFailed),
                                 variant: 'destructive',
                               }),
                           },
                         )
                       }
                     >
-                      {t('operations.exceptionDrawer.closeException')}
+                      {t($ => $.operations.exceptionDrawer.closeException)}
                     </Button>
 
                     <Button
@@ -492,18 +492,18 @@ export function ExceptionDrawer({
                           {
                             onSuccess: () =>
                               toast({
-                                title: t('operations.exceptionDrawer.toast.suppressed'),
+                                title: t($ => $.operations.exceptionDrawer.toast.suppressed),
                               }),
                             onError: () =>
                               toast({
-                                title: t('operations.exceptionDrawer.toast.suppressFailed'),
+                                title: t($ => $.operations.exceptionDrawer.toast.suppressFailed),
                                 variant: 'destructive',
                               }),
                           },
                         )
                       }
                     >
-                      {t('operations.exceptionDrawer.suppress')}
+                      {t($ => $.operations.exceptionDrawer.suppress)}
                     </Button>
                   </div>
                 </>
@@ -511,11 +511,11 @@ export function ExceptionDrawer({
                 <div className="space-y-1 text-sm">
                   <p className="text-muted-foreground">
                     {exception.resolved_by_name
-                      ? t('operations.exceptionDrawer.closedAsBy', {
+                      ? t($ => $.operations.exceptionDrawer.closedAsBy, {
                           resolution: t(resolutionKey(exception.resolution)),
                           name: exception.resolved_by_name,
                         })
-                      : t('operations.exceptionDrawer.closedAs', {
+                      : t($ => $.operations.exceptionDrawer.closedAs, {
                           resolution: t(resolutionKey(exception.resolution)),
                         })}
                   </p>

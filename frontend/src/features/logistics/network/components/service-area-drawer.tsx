@@ -33,17 +33,17 @@ function Overview({ areaId }: { areaId: string }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
-        <Field label={t('common.status')}>
+        <Field label={t($ => $.common.status)}>
           <AreaStatusBadge status={area.status} />
         </Field>
-        <Field label={t('common.code')}>{area.code}</Field>
-        <Field label={t('network.area.dispatchRegion')}>{area.dispatch_region?.name ?? '—'}</Field>
-        <Field label={t('network.area.leadTime')}>
-          {t('network.area.hoursValue', { count: area.default_lead_time_hours })}
+        <Field label={t($ => $.common.code)}>{area.code}</Field>
+        <Field label={t($ => $.network.area.dispatchRegion)}>{area.dispatch_region?.name ?? '—'}</Field>
+        <Field label={t($ => $.network.area.leadTime)}>
+          {t($ => $.network.area.hoursValue, { count: area.default_lead_time_hours })}
         </Field>
-        <Field label={t('common.priority')}>{area.priority}</Field>
-        <Field label={t('network.area.acceptsCommitments')}>
-          {area.accepts_commitments ? t('common.yes') : t('common.no')}
+        <Field label={t($ => $.common.priority)}>{area.priority}</Field>
+        <Field label={t($ => $.network.area.acceptsCommitments)}>
+          {area.accepts_commitments ? t($ => $.common.yes) : t($ => $.common.no)}
         </Field>
       </div>
 
@@ -57,7 +57,7 @@ function Overview({ areaId }: { areaId: string }) {
         <Alert>
           <AlertTriangle className="size-4" />
           <AlertDescription className="text-xs">
-            {t('network.area.noMembersWarning')}
+            {t($ => $.network.area.noMembersWarning)}
           </AlertDescription>
         </Alert>
       )}
@@ -65,8 +65,8 @@ function Overview({ areaId }: { areaId: string }) {
       <Separator />
 
       <div className="space-y-2">
-        <p className="text-sm font-medium">{t('network.area.coverage')}</p>
-        <p className="text-[11px] text-muted-foreground">{t('network.area.coverageHint')}</p>
+        <p className="text-sm font-medium">{t($ => $.network.area.coverage)}</p>
+        <p className="text-[11px] text-muted-foreground">{t($ => $.network.area.coverageHint)}</p>
 
         <div className="space-y-1.5 pt-1">
           {included.map((member: ServiceAreaMember) => (
@@ -82,7 +82,7 @@ function Overview({ areaId }: { areaId: string }) {
           {excluded.length > 0 && (
             <>
               <p className="pt-2 text-[11px] uppercase tracking-wide text-muted-foreground">
-                {t('network.area.carvedOut')}
+                {t($ => $.network.area.carvedOut)}
               </p>
               {excluded.map((member: ServiceAreaMember) => (
                 <div key={member.id} className="flex items-center gap-2 text-xs">
@@ -104,14 +104,14 @@ function Overview({ areaId }: { areaId: string }) {
         <>
           <Separator />
           <div className="space-y-2">
-            <p className="text-sm font-medium">{t('network.serviceLevels.title')}</p>
+            <p className="text-sm font-medium">{t($ => $.network.serviceLevels.title)}</p>
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="py-1 text-start font-normal">{t('network.serviceLevels.colLevel')}</th>
-                  <th className="py-1 text-start font-normal">{t('network.serviceLevels.colCutoff')}</th>
-                  <th className="py-1 text-end font-normal">{t('network.area.leadTime')}</th>
-                  <th className="py-1 text-end font-normal">{t('network.serviceLevels.colSurcharge')}</th>
+                  <th className="py-1 text-start font-normal">{t($ => $.network.serviceLevels.colLevel)}</th>
+                  <th className="py-1 text-start font-normal">{t($ => $.network.serviceLevels.colCutoff)}</th>
+                  <th className="py-1 text-end font-normal">{t($ => $.network.area.leadTime)}</th>
+                  <th className="py-1 text-end font-normal">{t($ => $.network.serviceLevels.colSurcharge)}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -120,7 +120,7 @@ function Overview({ areaId }: { areaId: string }) {
                     <td className="py-1">{rule.service_level ?? '—'}</td>
                     <td className="py-1 text-muted-foreground">{rule.cutoff_time ?? '—'}</td>
                     <td className="py-1 text-end tabular-nums">
-                      {t('network.hoursShort', { hours: rule.lead_time_hours })}
+                      {t($ => $.network.hoursShort, { hours: rule.lead_time_hours })}
                     </td>
                     <td className="py-1 text-end tabular-nums">
                       {rule.surcharge !== null ? `${rule.surcharge} ${rule.currency ?? ''}` : '—'}
@@ -151,7 +151,7 @@ function Capacity({ areaId }: { areaId: string }) {
   if (!plans || plans.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        {t('network.capacity.empty')}
+        {t($ => $.network.capacity.empty)}
       </p>
     );
   }
@@ -163,7 +163,7 @@ function Capacity({ areaId }: { areaId: string }) {
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">{plan.plan_date}</span>
             <Badge variant={plan.is_published ? 'default' : 'outline'} className="text-[10px]">
-              {plan.is_published ? t('network.capacity.published') : t('network.areaStatus.draft')}
+              {plan.is_published ? t($ => $.network.capacity.published) : t($ => $.network.areaStatus.draft)}
             </Badge>
           </div>
 
@@ -174,15 +174,15 @@ function Capacity({ areaId }: { areaId: string }) {
                   <span className="text-muted-foreground">
                     {slot.window_start && slot.window_end
                       ? `${slot.window_start}–${slot.window_end}`
-                      : t('network.capacity.allDay')}
+                      : t($ => $.network.capacity.allDay)}
                   </span>
                   {slot.is_exhausted ? (
                     <Badge variant="destructive" className="text-[10px]">
-                      {t('network.capacity.exhausted')}
+                      {t($ => $.network.capacity.exhausted)}
                     </Badge>
                   ) : slot.at_warn_threshold ? (
                     <Badge className="bg-amber-500 text-[10px] hover:bg-amber-500">
-                      {t('network.capacity.nearCapacity')}
+                      {t($ => $.network.capacity.nearCapacity)}
                     </Badge>
                   ) : null}
                 </div>
@@ -207,12 +207,12 @@ function Capacity({ areaId }: { areaId: string }) {
                     .filter(([, value]) => value !== 0)
                     .map(([unit, value]) => (
                       <span key={unit} className="tabular-nums">
-                        {t('network.capacity.remainingUnit', {
+                        {t($ => $.network.capacity.remainingUnit, {
                           value,
                           unit: t(UNIT_LABEL_KEYS[unit]),
                         })}
                         {/* The tightest dimension is what actually stops us. */}
-                        {slot.binding_unit === unit && ` · ${t('network.capacity.binding')}`}
+                        {slot.binding_unit === unit && ` · ${t($ => $.network.capacity.binding)}`}
                       </span>
                     ))}
                 </div>
@@ -244,16 +244,16 @@ export function ServiceAreaDrawer({
       size="2xl"
       title={
         area
-          ? t('network.drawer.titleWithName', { name: area.name })
-          : t('network.drawer.title')
+          ? t($ => $.network.drawer.titleWithName, { name: area.name })
+          : t($ => $.network.drawer.title)
       }
       description={area?.code}
     >
       {!areaId ? null : (
         <Tabs defaultValue="overview" className="w-full">
           <TabsList>
-            <TabsTrigger value="overview">{t('common.overview')}</TabsTrigger>
-            <TabsTrigger value="capacity">{t('network.drawer.tabCapacity')}</TabsTrigger>
+            <TabsTrigger value="overview">{t($ => $.common.overview)}</TabsTrigger>
+            <TabsTrigger value="capacity">{t($ => $.network.drawer.tabCapacity)}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="pt-4">

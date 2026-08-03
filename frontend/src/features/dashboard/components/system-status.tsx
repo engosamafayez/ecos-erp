@@ -16,8 +16,8 @@ export function SystemStatus() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('systemStatus.title')}</CardTitle>
-        <CardDescription>{t('systemStatus.subtitle')}</CardDescription>
+        <CardTitle>{t($ => $.systemStatus.title)}</CardTitle>
+        <CardDescription>{t($ => $.systemStatus.subtitle)}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {serviceKeys.map((key) => (
@@ -25,7 +25,7 @@ export function SystemStatus() {
             <span className="text-sm">{t(key)}</span>
             <Badge variant="secondary" className="gap-1.5">
               <span className="size-1.5 rounded-full bg-emerald-500" />
-              {t('systemStatus.operational')}
+              {t($ => $.systemStatus.operational)}
             </Badge>
           </div>
         ))}

@@ -45,8 +45,8 @@ export function DispatchQueuePanel({
     return (
       <div className="rounded-lg border bg-card py-16 text-center">
         <ListOrdered className="mx-auto mb-3 size-10 text-muted-foreground/20" />
-        <p className="text-sm font-medium">{t('dispatch.queue.pickBoardTitle')}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{t('dispatch.queue.pickBoardHint')}</p>
+        <p className="text-sm font-medium">{t($ => $.dispatch.queue.pickBoardTitle)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t($ => $.dispatch.queue.pickBoardHint)}</p>
       </div>
     );
   }
@@ -69,15 +69,15 @@ export function DispatchQueuePanel({
                 toast({
                   title:
                     r.added === 0
-                      ? t('dispatch.toast.queueNothingNew')
-                      : t('dispatch.toast.queueBuilt', { count: r.added }),
+                      ? t($ => $.dispatch.toast.queueNothingNew)
+                      : t($ => $.dispatch.toast.queueBuilt, { count: r.added }),
                 }),
               onError: () =>
-                toast({ title: t('dispatch.toast.queueBuildFailed'), variant: 'destructive' }),
+                toast({ title: t($ => $.dispatch.toast.queueBuildFailed), variant: 'destructive' }),
             })
           }
         >
-          {t('dispatch.queue.build')}
+          {t($ => $.dispatch.queue.build)}
         </Button>
 
         <Button
@@ -89,19 +89,19 @@ export function DispatchQueuePanel({
             sessionId &&
             claimNext.mutate(sessionId, {
               onSuccess: (item) =>
-                item === null ? toast({ title: t('dispatch.toast.queueEmpty') }) : onSelectItem(item),
+                item === null ? toast({ title: t($ => $.dispatch.toast.queueEmpty) }) : onSelectItem(item),
               onError: () =>
-                toast({ title: t('dispatch.toast.claimFailed'), variant: 'destructive' }),
+                toast({ title: t($ => $.dispatch.toast.claimFailed), variant: 'destructive' }),
             })
           }
         >
           <PlayCircle className="me-1 size-3.5" />
-          {t('dispatch.queue.claimNext')}
+          {t($ => $.dispatch.queue.claimNext)}
         </Button>
 
         {sessionId === null && (
           <span className="text-xs text-muted-foreground">
-            {t('dispatch.queue.openSessionHint')}
+            {t($ => $.dispatch.queue.openSessionHint)}
           </span>
         )}
       </div>
@@ -109,8 +109,8 @@ export function DispatchQueuePanel({
       {rows.length === 0 ? (
         <div className="rounded-lg border bg-card py-16 text-center">
           <ListOrdered className="mx-auto mb-3 size-10 text-muted-foreground/20" />
-          <p className="text-sm font-medium">{t('dispatch.queue.emptyTitle')}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t('dispatch.queue.emptyHint')}</p>
+          <p className="text-sm font-medium">{t($ => $.dispatch.queue.emptyTitle)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t($ => $.dispatch.queue.emptyHint)}</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-card">
@@ -118,12 +118,12 @@ export function DispatchQueuePanel({
             <thead>
               <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="h-10 w-12 px-3 text-end font-medium">#</th>
-                <th className="h-10 px-3 font-medium">{t('dispatch.queue.colTrip')}</th>
-                <th className="h-10 px-3 font-medium">{t('common.status')}</th>
-                <th className="h-10 px-3 font-medium">{t('common.priority')}</th>
-                <th className="h-10 px-3 text-end font-medium">{t('dispatch.queue.colWaiting')}</th>
-                <th className="h-10 px-3 text-end font-medium">{t('dispatch.queue.colAttempts')}</th>
-                <th className="h-10 px-3 font-medium">{t('dispatch.queue.colClaimedBy')}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.dispatch.queue.colTrip)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.common.status)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.common.priority)}</th>
+                <th className="h-10 px-3 text-end font-medium">{t($ => $.dispatch.queue.colWaiting)}</th>
+                <th className="h-10 px-3 text-end font-medium">{t($ => $.dispatch.queue.colAttempts)}</th>
+                <th className="h-10 px-3 font-medium">{t($ => $.dispatch.queue.colClaimedBy)}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -143,7 +143,7 @@ export function DispatchQueuePanel({
                       {item.is_stuck && (
                         <AlertTriangle
                           className="size-3.5 text-amber-600"
-                          aria-label={t('dispatch.queue.repeatedlyFailed')}
+                          aria-label={t($ => $.dispatch.queue.repeatedlyFailed)}
                         />
                       )}
                     </div>
@@ -165,7 +165,7 @@ export function DispatchQueuePanel({
                     )}
                   </td>
                   <td className="px-3 py-2.5 text-end tabular-nums">
-                    {t('dispatch.units.minutes', { value: item.waiting_minutes })}
+                    {t($ => $.dispatch.units.minutes, { value: item.waiting_minutes })}
                   </td>
                   <td className="px-3 py-2.5 text-end tabular-nums">{item.attempt_count}</td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">

@@ -18,7 +18,7 @@ export function BlockerList({ verdict, compact = false }: { verdict: FitnessVerd
     return (
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <CheckCircle2 className="size-3.5 text-emerald-600" />
-        {t('fleet.blockers.none')}
+        {t($ => $.fleet.blockers.none)}
       </p>
     );
   }

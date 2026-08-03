@@ -46,11 +46,11 @@ export function IntelligenceFilterBar({
         onValueChange={(v) => onFilterChange({ date_preset: v, date_start: undefined, date_stop: undefined })}
       >
         <SelectTrigger className="w-36 h-8 text-sm">
-          <SelectValue placeholder={t('intelligence.filters.dateRange')} />
+          <SelectValue placeholder={t($ => $.intelligence.filters.dateRange)} />
         </SelectTrigger>
         <SelectContent>
           {DATE_PRESETS.map((p) => (
-            <SelectItem key={p} value={p}>{t(`intelligence.datePreset.${p}`)}</SelectItem>
+            <SelectItem key={p} value={p}>{t($ => $.intelligence.datePreset[p])}</SelectItem>
           ))}
         </SelectContent>
       </Select>

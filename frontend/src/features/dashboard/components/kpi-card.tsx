@@ -73,7 +73,7 @@ export function KpiCard({
         {!xs && (
           <div className={cn('flex items-center gap-1 text-[11px]', trendCls)}>
             <TrendIcon className="h-3 w-3" />
-            <span>{delta ?? t('kpiCard.noData')}</span>
+            <span>{delta ?? t($ => $.kpiCard.noData)}</span>
           </div>
         )}
       </CardContent>

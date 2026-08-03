@@ -218,21 +218,21 @@ export function CustomerFormDrawer({
   };
 
   // ── Title ──────────────────────────────────────────────────────────────────
-  const title       = isEdit ? t('drawer.editTitle')   : t('drawer.createTitle');
-  const description = isEdit ? t('drawer.editSubtitle') : t('drawer.createSubtitle');
+  const title       = isEdit ? t($ => $.drawer.editTitle)   : t($ => $.drawer.createTitle);
+  const description = isEdit ? t($ => $.drawer.editSubtitle) : t($ => $.drawer.createSubtitle);
 
   // ── Phone step footer ──────────────────────────────────────────────────────
   const phoneFooter = (
     <>
       <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-        {tCommon('common.cancel')}
+        {tCommon($ => $.common.cancel)}
       </Button>
       <Button
         type="button"
         onClick={() => void handlePhoneContinue()}
         disabled={!phoneInput.trim() || isChecking}
       >
-        {isChecking ? t('drawer.phoneStep.checking') : t('drawer.phoneStep.continue')}
+        {isChecking ? t($ => $.drawer.phoneStep.checking) : t($ => $.drawer.phoneStep.continue)}
       </Button>
     </>
   );
@@ -247,18 +247,18 @@ export function CustomerFormDrawer({
           className="mr-auto text-xs"
           onClick={() => { setStep('phone'); setFoundCustomer(null); setSaveSuccess(false); }}
         >
-          ← {t('drawer.phoneStep.label')}
+          ← {t($ => $.drawer.phoneStep.label)}
         </Button>
       ) : null}
       <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-        {tCommon('common.cancel')}
+        {tCommon($ => $.common.cancel)}
       </Button>
       <Button type="submit" form={FORM_ID} disabled={isPending}>
         {isPending
-          ? t('drawer.saving')
+          ? t($ => $.drawer.saving)
           : isEdit
-            ? t('drawer.submitEdit')
-            : t('drawer.submitCreate')}
+            ? t($ => $.drawer.submitEdit)
+            : t($ => $.drawer.submitCreate)}
       </Button>
     </>
   );
@@ -276,7 +276,7 @@ export function CustomerFormDrawer({
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium" htmlFor="phone-step-input">
-              {t('drawer.phoneStep.label')}
+              {t($ => $.drawer.phoneStep.label)}
             </label>
             <Input
               id="phone-step-input"
@@ -286,24 +286,24 @@ export function CustomerFormDrawer({
                 setPhoneInput(e.target.value);
                 setFoundCustomer(null);
               }}
-              placeholder={t('drawer.phoneStep.placeholder')}
+              placeholder={t($ => $.drawer.phoneStep.placeholder)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void handlePhoneContinue();
               }}
               className="font-mono"
             />
             <p className="text-xs text-muted-foreground">
-              {t('drawer.phoneStep.description')}
+              {t($ => $.drawer.phoneStep.description)}
             </p>
           </div>
 
           {foundCustomer ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
               <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                {t('drawer.foundCustomer.title')}
+                {t($ => $.drawer.foundCustomer.title)}
               </p>
               <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
-                {t('drawer.foundCustomer.description')}
+                {t($ => $.drawer.foundCustomer.description)}
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <Button
@@ -313,14 +313,14 @@ export function CustomerFormDrawer({
                     handleOpenChange(false);
                   }}
                 >
-                  {t('drawer.foundCustomer.open')}
+                  {t($ => $.drawer.foundCustomer.open)}
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => setFoundCustomer(null)}
                 >
-                  {t('drawer.foundCustomer.cancel')}
+                  {t($ => $.drawer.foundCustomer.cancel)}
                 </Button>
               </div>
             </div>
@@ -334,14 +334,14 @@ export function CustomerFormDrawer({
           {saveSuccess ? (
             <Alert className="mb-4 border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30">
               <AlertTitle className="text-emerald-800 dark:text-emerald-300">
-                {t('drawer.savedMessage')}
+                {t($ => $.drawer.savedMessage)}
               </AlertTitle>
             </Alert>
           ) : null}
 
           {serverError ? (
             <Alert variant="destructive" className="mb-4">
-              <AlertTitle>{t('drawer.errorTitle')}</AlertTitle>
+              <AlertTitle>{t($ => $.drawer.errorTitle)}</AlertTitle>
               <AlertDescription>{serverError}</AlertDescription>
             </Alert>
           ) : null}
@@ -349,10 +349,10 @@ export function CustomerFormDrawer({
           {duplicateInfo ? (
             <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
               <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                {t('drawer.foundCustomer.title')}
+                {t($ => $.drawer.foundCustomer.title)}
               </p>
               <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
-                {t('drawer.foundCustomer.description')}
+                {t($ => $.drawer.foundCustomer.description)}
               </p>
               <p className="mt-1 text-xs font-mono text-amber-600 dark:text-amber-500">
                 {duplicateInfo.name} ({duplicateInfo.code})
@@ -367,10 +367,10 @@ export function CustomerFormDrawer({
                     handleOpenChange(false);
                   }}
                 >
-                  {t('drawer.foundCustomer.open')}
+                  {t($ => $.drawer.foundCustomer.open)}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setDuplicateInfo(null)}>
-                  {t('drawer.foundCustomer.cancel')}
+                  {t($ => $.drawer.foundCustomer.cancel)}
                 </Button>
               </div>
             </div>

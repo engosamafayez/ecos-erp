@@ -127,35 +127,35 @@ export function FulfillmentWaveWorkspacePage() {
       {!waveId ? (
         <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
           <Waves className="h-10 w-10 opacity-30" />
-          <p className="text-sm font-medium">{t('wave.noWaveSelected.title')}</p>
-          <p className="text-xs">{t('wave.noWaveSelected.hint')}</p>
+          <p className="text-sm font-medium">{t($ => $.wave.noWaveSelected.title)}</p>
+          <p className="text-xs">{t($ => $.wave.noWaveSelected.hint)}</p>
         </div>
       ) : waveLoading ? (
         <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">{t('wave.loadingWave')}</span>
+          <span className="text-sm">{t($ => $.wave.loadingWave)}</span>
         </div>
       ) : !wave ? (
         <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
           <AlertTriangle className="h-6 w-6" />
-          <p className="text-sm">{t('wave.waveNotFound')}</p>
+          <p className="text-sm">{t($ => $.wave.waveNotFound)}</p>
         </div>
       ) : (
         <div className="flex-1 overflow-auto p-5 space-y-6">
 
           {/* ── KPI Row ────────────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <KpiCard icon={<ShoppingCart className="h-4 w-4" />} label={t('wave.dashboard.kpis.orders')}           value={ordersCount} />
-            <KpiCard icon={<Package className="h-4 w-4" />}      label={t('wave.dashboard.kpis.products')}         value={productsCount} />
-            <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label={t('wave.dashboard.kpis.completion')}       value={`${completionPct.toFixed(1)}%`} accent={completionPct >= 100 ? 'success' : undefined} />
-            <KpiCard icon={<FlaskConical className="h-4 w-4" />} label={t('wave.dashboard.kpis.rawMaterials')}     value={materialsCount} />
-            <KpiCard icon={<PackageX className="h-4 w-4" />}     label={t('wave.dashboard.kpis.missingMaterials')} value={missingCount} accent={missingCount > 0 ? 'danger' : undefined} />
+            <KpiCard icon={<ShoppingCart className="h-4 w-4" />} label={t($ => $.wave.dashboard.kpis.orders)}           value={ordersCount} />
+            <KpiCard icon={<Package className="h-4 w-4" />}      label={t($ => $.wave.dashboard.kpis.products)}         value={productsCount} />
+            <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label={t($ => $.wave.dashboard.kpis.completion)}       value={`${completionPct.toFixed(1)}%`} accent={completionPct >= 100 ? 'success' : undefined} />
+            <KpiCard icon={<FlaskConical className="h-4 w-4" />} label={t($ => $.wave.dashboard.kpis.rawMaterials)}     value={materialsCount} />
+            <KpiCard icon={<PackageX className="h-4 w-4" />}     label={t($ => $.wave.dashboard.kpis.missingMaterials)} value={missingCount} accent={missingCount > 0 ? 'danger' : undefined} />
           </div>
 
           {/* ── Wave Completion progress ───────────────────────────────────── */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-muted-foreground">{t('wave.dashboard.waveCompletion')}</span>
+              <span className="text-xs font-medium text-muted-foreground">{t($ => $.wave.dashboard.waveCompletion)}</span>
               <span className="text-xs tabular-nums text-muted-foreground">{completionPct.toFixed(1)}%</span>
             </div>
             <Progress value={completionPct} className="h-2" />
@@ -165,17 +165,17 @@ export function FulfillmentWaveWorkspacePage() {
           <div className="rounded-lg border border-border/60 bg-card p-4">
             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <Factory className="h-4 w-4 text-muted-foreground" />
-              {t('wave.dashboard.mfgProgress.title')}
+              {t($ => $.wave.dashboard.mfgProgress.title)}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-              <KpiCard icon={<Package className="h-4 w-4" />}      label={t('wave.dashboard.kpis.productsRequired')} value={productsCount} />
-              <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label={t('wave.dashboard.kpis.completed')}        value={preparedCount} accent="success" />
-              <KpiCard icon={<Clock className="h-4 w-4" />}        label={t('wave.dashboard.kpis.activeMfg')}        value={activeCount} />
-              <KpiCard icon={<Loader2 className="h-4 w-4" />}      label={t('wave.dashboard.kpis.waiting')}          value={remainingCount} />
+              <KpiCard icon={<Package className="h-4 w-4" />}      label={t($ => $.wave.dashboard.kpis.productsRequired)} value={productsCount} />
+              <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label={t($ => $.wave.dashboard.kpis.completed)}        value={preparedCount} accent="success" />
+              <KpiCard icon={<Clock className="h-4 w-4" />}        label={t($ => $.wave.dashboard.kpis.activeMfg)}        value={activeCount} />
+              <KpiCard icon={<Loader2 className="h-4 w-4" />}      label={t($ => $.wave.dashboard.kpis.waiting)}          value={remainingCount} />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-muted-foreground">{t('wave.dashboard.mfgProgress.overallProgress')}</span>
+                <span className="text-xs text-muted-foreground">{t($ => $.wave.dashboard.mfgProgress.overallProgress)}</span>
                 <span className="text-xs tabular-nums text-muted-foreground">{completionPct.toFixed(1)}%</span>
               </div>
               <Progress value={completionPct} className="h-2" />
@@ -185,11 +185,11 @@ export function FulfillmentWaveWorkspacePage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border/60 bg-muted/40">
-                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('wave.dashboard.mfgTable.product', 'Product')}</th>
-                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.mfgTable.planned', 'Planned')}</th>
-                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.mfgTable.manufacturing', 'In Mfg')}</th>
-                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.mfgTable.completed', 'Completed')}</th>
-                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.mfgTable.remaining', 'Remaining')}</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.product, 'Product')}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.planned, 'Planned')}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.manufacturing, 'In Mfg')}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.completed, 'Completed')}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.remaining, 'Remaining')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -222,19 +222,19 @@ export function FulfillmentWaveWorkspacePage() {
 
             {/* Section A — Product Demand */}
             <section>
-              <SectionHeader icon={<Package className="h-4 w-4" />} title={t('wave.dashboard.sections.productDemand')} count={products.length} />
+              <SectionHeader icon={<Package className="h-4 w-4" />} title={t($ => $.wave.dashboard.sections.productDemand)} count={products.length} />
               {products.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-2">{t('wave.productDemand.emptyNoDemand')}</p>
+                <p className="text-xs text-muted-foreground py-2">{t($ => $.wave.productDemand.emptyNoDemand)}</p>
               ) : (
                 <div className="rounded-lg border border-border/60 overflow-hidden">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/40">
-                        <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('wave.dashboard.productTable.product')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.productTable.req')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.productTable.prep')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.productTable.rem')}</th>
-                        <th className="px-3 py-2 text-start font-medium text-muted-foreground w-28">{t('wave.dashboard.productTable.progress')}</th>
+                        <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.productTable.product)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.productTable.req)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.productTable.prep)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.productTable.rem)}</th>
+                        <th className="px-3 py-2 text-start font-medium text-muted-foreground w-28">{t($ => $.wave.dashboard.productTable.progress)}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -274,20 +274,20 @@ export function FulfillmentWaveWorkspacePage() {
 
             {/* Section B — Raw Material Demand */}
             <section>
-              <SectionHeader icon={<FlaskConical className="h-4 w-4" />} title={t('wave.dashboard.sections.rawMaterialDemand')} count={materials.length} />
+              <SectionHeader icon={<FlaskConical className="h-4 w-4" />} title={t($ => $.wave.dashboard.sections.rawMaterialDemand)} count={materials.length} />
               {materials.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-2">{t('wave.rawMaterials.emptyNoDemand')}</p>
+                <p className="text-xs text-muted-foreground py-2">{t($ => $.wave.rawMaterials.emptyNoDemand)}</p>
               ) : (
                 <div className="rounded-lg border border-border/60 overflow-hidden">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border/60 bg-muted/40">
-                        <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('wave.dashboard.materialTable.material')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.materialTable.required')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.materialTable.available')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.materialTable.reserved', 'Reserved')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.materialTable.missing')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t('wave.dashboard.materialTable.coverage', 'Coverage')}</th>
+                        <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.material)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.required)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.available)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.reserved, 'Reserved')}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.missing)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.coverage, 'Coverage')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -336,13 +336,13 @@ export function FulfillmentWaveWorkspacePage() {
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold flex items-center gap-2">
                     <span className="text-muted-foreground"><PackageX className="h-4 w-4" /></span>
-                    {t('wave.dashboard.sections.missingMaterials')}
+                    {t($ => $.wave.dashboard.sections.missingMaterials)}
                     <Badge variant="outline" className="text-xs">{missing.length}</Badge>
                   </h2>
                   <Link to={`${ROUTES.waveMissingMaterials}?wave_id=${waveId}`}>
                     <Button variant="outline" size="sm" className="h-6 text-[11px] gap-1">
                       <ExternalLink className="h-3 w-3" />
-                      {t('wave.dashboard.openProcurementQueue')}
+                      {t($ => $.wave.dashboard.openProcurementQueue)}
                     </Button>
                   </Link>
                 </div>
@@ -350,10 +350,10 @@ export function FulfillmentWaveWorkspacePage() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-red-200 bg-red-50/60">
-                        <th className="px-3 py-2 text-start font-medium text-red-700">{t('wave.dashboard.missingTable.material')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-red-700">{t('wave.dashboard.missingTable.missing')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-red-700">{t('wave.dashboard.missingTable.priority')}</th>
-                        <th className="px-3 py-2 text-end font-medium text-red-700">{t('wave.dashboard.missingTable.orders')}</th>
+                        <th className="px-3 py-2 text-start font-medium text-red-700">{t($ => $.wave.dashboard.missingTable.material)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-red-700">{t($ => $.wave.dashboard.missingTable.missing)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-red-700">{t($ => $.wave.dashboard.missingTable.priority)}</th>
+                        <th className="px-3 py-2 text-end font-medium text-red-700">{t($ => $.wave.dashboard.missingTable.orders)}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -383,9 +383,9 @@ export function FulfillmentWaveWorkspacePage() {
 
             {/* Section D — Orders by zone */}
             <section>
-              <SectionHeader icon={<ShoppingCart className="h-4 w-4" />} title={t('wave.dashboard.sections.ordersByZone')} count={orderList.length} />
+              <SectionHeader icon={<ShoppingCart className="h-4 w-4" />} title={t($ => $.wave.dashboard.sections.ordersByZone)} count={orderList.length} />
               <div className="rounded-lg border border-border/60 bg-card px-4 py-3">
-                <ZoneDistribution orders={orderList} noOrdersLabel={t('wave.dashboard.noOrdersInZone')} unzonedLabel={t('wave.unzoned')} />
+                <ZoneDistribution orders={orderList} noOrdersLabel={t($ => $.wave.dashboard.noOrdersInZone)} unzonedLabel={t($ => $.wave.unzoned)} />
               </div>
             </section>
 
@@ -394,15 +394,15 @@ export function FulfillmentWaveWorkspacePage() {
           {/* Section E — Recently Added Orders */}
           {recentOrders.length > 0 && (
             <section>
-              <SectionHeader icon={<Clock className="h-4 w-4" />} title={t('wave.dashboard.sections.recentOrders')} />
+              <SectionHeader icon={<Clock className="h-4 w-4" />} title={t($ => $.wave.dashboard.sections.recentOrders)} />
               <div className="rounded-lg border border-border/60 overflow-hidden">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border/60 bg-muted/40">
-                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('wave.dashboard.ordersTable.orderNo')}</th>
-                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('wave.dashboard.ordersTable.customer')}</th>
-                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('wave.dashboard.ordersTable.deliveryZone')}</th>
-                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t('wave.dashboard.ordersTable.added')}</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.ordersTable.orderNo)}</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.ordersTable.customer)}</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.ordersTable.deliveryZone)}</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.ordersTable.added)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -426,7 +426,7 @@ export function FulfillmentWaveWorkspacePage() {
           <div className="flex items-center gap-4 text-[10px] text-muted-foreground border-t border-border/40 pt-3 flex-wrap">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {t('wave.dashboard.statusBar.lastUpdated')} {fmtTime(wave.updated_at)}
+              {t($ => $.wave.dashboard.statusBar.lastUpdated)} {fmtTime(wave.updated_at)}
             </span>
             <span>{tAny('wave.dashboard.statusBar.ordersInWave', { count: orderList.length })}</span>
             {missingCount > 0 && (
@@ -436,11 +436,11 @@ export function FulfillmentWaveWorkspacePage() {
               </span>
             )}
             {wave.shortage_detected && (
-              <Badge className="text-[10px] h-4 px-1.5 bg-amber-100 text-amber-700">{t('wave.dashboard.statusBar.shortageDetected')}</Badge>
+              <Badge className="text-[10px] h-4 px-1.5 bg-amber-100 text-amber-700">{t($ => $.wave.dashboard.statusBar.shortageDetected)}</Badge>
             )}
             <span className={`ms-auto flex items-center gap-1 ${isFetching ? 'text-primary' : ''}`}>
               {isFetching && <RefreshCw className="h-3 w-3 animate-spin" />}
-              {isFetching ? t('wave.dashboard.statusBar.updating') : t('wave.dashboard.statusBar.live')}
+              {isFetching ? t($ => $.wave.dashboard.statusBar.updating) : t($ => $.wave.dashboard.statusBar.live)}
             </span>
           </div>
 

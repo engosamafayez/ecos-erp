@@ -84,7 +84,7 @@ const CountdownTimer = memo(function CountdownTimer({ wave }: { wave: Preparatio
       : `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
     return (
       <div className="flex flex-col items-end shrink-0">
-        <span className="text-[10px] text-muted-foreground leading-none">{t('wave.workspace.prepStartsIn')}</span>
+        <span className="text-[10px] text-muted-foreground leading-none">{t($ => $.wave.workspace.prepStartsIn)}</span>
         <span className="text-sm font-mono font-bold tabular-nums leading-tight">{formatted}</span>
       </div>
     );
@@ -211,13 +211,13 @@ export function WaveWorkspaceLayout() {
                     </Badge>
                     {wave.shortage_detected && (
                       <Badge className="text-[10px] h-4 px-1.5 bg-amber-100 text-amber-700">
-                        {t('wave.workspace.shortage')}
+                        {t($ => $.wave.workspace.shortage)}
                       </Badge>
                     )}
                     {isFetching && (
                       <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <RefreshCw className="h-2.5 w-2.5 animate-spin" />
-                        {t('wave.workspace.syncing')}
+                        {t($ => $.wave.workspace.syncing)}
                       </span>
                     )}
                   </div>
@@ -226,7 +226,7 @@ export function WaveWorkspaceLayout() {
                   </div>
                 </>
               ) : (
-                <span className="text-sm font-medium text-muted-foreground">{t('wave.workspace.title')}</span>
+                <span className="text-sm font-medium text-muted-foreground">{t($ => $.wave.workspace.title)}</span>
               )}
             </div>
           </div>
@@ -244,7 +244,7 @@ export function WaveWorkspaceLayout() {
                 {advance.isPending
                   ? <Loader2 className="h-3 w-3 animate-spin" />
                   : <Play className="h-3 w-3" />}
-                {t('wave.workspace.startPreparation')}
+                {t($ => $.wave.workspace.startPreparation)}
               </Button>
             )}
             <WavePicker />
@@ -256,28 +256,28 @@ export function WaveWorkspaceLayout() {
           <div className="flex items-center gap-2 px-4 pb-2 overflow-x-auto">
             <KpiChip
               icon={<ShoppingCart className="h-3 w-3" />}
-              label={t('wave.workspace.kpis.orders')}
+              label={t($ => $.wave.workspace.kpis.orders)}
               value={wave.orders_count}
             />
             <KpiChip
               icon={<Package className="h-3 w-3" />}
-              label={t('wave.workspace.kpis.products')}
+              label={t($ => $.wave.workspace.kpis.products)}
               value={wave.products_count}
             />
             <KpiChip
               icon={<CheckCircle2 className="h-3 w-3" />}
-              label={t('wave.workspace.kpis.required')}
+              label={t($ => $.wave.workspace.kpis.required)}
               value={fmtN(totalRequired)}
             />
             <KpiChip
               icon={<PackageX className="h-3 w-3" />}
-              label={t('wave.workspace.kpis.missing')}
+              label={t($ => $.wave.workspace.kpis.missing)}
               value={missing.length}
               accent={missing.length > 0 ? 'danger' : undefined}
             />
             <KpiChip
               icon={<TrendingUp className="h-3 w-3" />}
-              label={t('wave.workspace.kpis.complete')}
+              label={t($ => $.wave.workspace.kpis.complete)}
               value={`${wave.completion_pct.toFixed(0)}%`}
               accent={wave.completion_pct >= 100 ? 'success' : undefined}
             />
@@ -313,19 +313,19 @@ export function WaveWorkspaceLayout() {
       {/* ── Sticky Summary Bar ───────────────────────────────────────────────── */}
       {wave && (
         <div className="sticky top-0 z-10 flex items-center gap-2.5 px-4 py-1.5 border-b border-border/40 bg-muted/30 text-[11px] overflow-x-auto shrink-0">
-          <SummaryItem label={t('wave.workspace.summary.orders')}    value={wave.orders_count} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.orders)}    value={wave.orders_count} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label={t('wave.workspace.summary.products')}  value={wave.products_count} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.products)}  value={wave.products_count} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label={t('wave.workspace.summary.required')}  value={fmtN(totalRequired)} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.required)}  value={fmtN(totalRequired)} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label={t('wave.workspace.summary.prepared')}  value={fmtN(totalPrepared)} accent="success" />
+          <SummaryItem label={t($ => $.wave.workspace.summary.prepared)}  value={fmtN(totalPrepared)} accent="success" />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label={t('wave.workspace.summary.remaining')} value={fmtN(remaining)} accent={remaining > 0 ? 'warn' : undefined} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.remaining)} value={fmtN(remaining)} accent={remaining > 0 ? 'warn' : undefined} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label={t('wave.workspace.summary.missing')}   value={missing.length} accent={missing.length > 0 ? 'danger' : undefined} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.missing)}   value={missing.length} accent={missing.length > 0 ? 'danger' : undefined} />
           <span className="text-border shrink-0">·</span>
-          <SummaryItem label={t('wave.workspace.summary.stage')}     value={tAny(`wave.stageLabels.${wave.status}`)} />
+          <SummaryItem label={t($ => $.wave.workspace.summary.stage)}     value={tAny(`wave.stageLabels.${wave.status}`)} />
           <span className="ms-auto flex items-center gap-1 text-muted-foreground shrink-0">
             <Clock className="h-2.5 w-2.5" />
             {fmtTime(wave.updated_at)}

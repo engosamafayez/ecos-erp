@@ -39,7 +39,7 @@ export function ParentCategorySelect({
     staleTime: 60 * 1000,
   });
 
-  const noneOption = { value: '', label: t('form.noParent') };
+  const noneOption = { value: '', label: t($ => $.form.noParent) };
 
   const options = [
     noneOption,
@@ -57,9 +57,9 @@ export function ParentCategorySelect({
       value={value ?? ''}
       onChange={onChange}
       loading={isLoading}
-      placeholder={placeholder ?? t('form.selectParent')}
-      searchPlaceholder={t('form.searchCategories')}
-      emptyText={t('form.noResults')}
+      placeholder={placeholder ?? t($ => $.form.selectParent)}
+      searchPlaceholder={t($ => $.form.searchCategories)}
+      emptyText={t($ => $.form.noResults)}
       disabled={disabled}
       className={className}
     />

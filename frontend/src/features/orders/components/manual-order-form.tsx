@@ -263,18 +263,18 @@ function LiveFinancialSummary() {
     <Card className="sticky top-4">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          {t('workspace.summary')}
+          {t($ => $.workspace.summary)}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 text-sm">
         <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground">{t('workspace.productsTotal')}</span>
+          <span className="text-muted-foreground">{t($ => $.workspace.productsTotal)}</span>
           <span className="font-medium tabular-nums">{fmt(productsTotal)}</span>
         </div>
         {discountType ? (
           <div className="flex justify-between gap-3">
             <span className="text-muted-foreground">
-              {t('workspace.discountLabel')}{discountType === 'percentage' && discountRaw > 0 ? ` (${discountRaw}%)` : ''}
+              {t($ => $.workspace.discountLabel)}{discountType === 'percentage' && discountRaw > 0 ? ` (${discountRaw}%)` : ''}
             </span>
             <span className={cn('font-medium tabular-nums', discount > 0 ? 'text-emerald-600' : 'text-muted-foreground/60')}>
               {discount > 0 ? `−${fmt(discount)}` : fmt(0)}
@@ -283,29 +283,29 @@ function LiveFinancialSummary() {
         ) : null}
         {showShipping ? (
           <div className="flex justify-between gap-3">
-            <span className="text-muted-foreground">{t('workspace.shippingLabel')}</span>
+            <span className="text-muted-foreground">{t($ => $.workspace.shippingLabel)}</span>
             <span className="font-medium tabular-nums">{fmt(shipping)}</span>
           </div>
         ) : null}
         <div className="flex justify-between gap-3">
-          <span className="text-muted-foreground/60 text-xs">{t('workspace.tax')}</span>
-          <span className="tabular-nums text-muted-foreground/60 text-xs">{t('workspace.taxNotApplicable')}</span>
+          <span className="text-muted-foreground/60 text-xs">{t($ => $.workspace.tax)}</span>
+          <span className="tabular-nums text-muted-foreground/60 text-xs">{t($ => $.workspace.taxNotApplicable)}</span>
         </div>
         <div className="border-t pt-2">
           <div className="flex justify-between gap-3 text-base font-semibold">
-            <span>{t('workspace.grandTotal')}</span>
+            <span>{t($ => $.workspace.grandTotal)}</span>
             <span className="tabular-nums">{fmt(grandTotal)}</span>
           </div>
         </div>
         {deposit > 0 && (
           <>
             <div className="flex justify-between gap-3">
-              <span className="text-muted-foreground">{t('workspace.depositPaid')}</span>
+              <span className="text-muted-foreground">{t($ => $.workspace.depositPaid)}</span>
               <span className="font-medium tabular-nums text-emerald-600">−{fmt(deposit)}</span>
             </div>
             <div className="border-t pt-2">
               <div className="flex justify-between gap-3 font-semibold">
-                <span>{t('workspace.remainingBalance')}</span>
+                <span>{t($ => $.workspace.remainingBalance)}</span>
                 <span className={cn('tabular-nums', remaining > 0 ? 'text-amber-600' : 'text-emerald-600')}>
                   {fmt(remaining)}
                 </span>
@@ -317,16 +317,16 @@ function LiveFinancialSummary() {
           <div className="border-t pt-2 flex flex-col gap-1.5">
             {paymentMethod && (
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground text-xs">{t('workspace.paymentLabel')}</span>
+                <span className="text-muted-foreground text-xs">{t($ => $.workspace.paymentLabel)}</span>
                 <span className="text-xs font-medium">
-                  {t(`workspace.paymentMethodLabels.${paymentMethod}`, { defaultValue: PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod.replace(/_/g, ' ') })}
+                  {t($ => $.workspace.paymentMethodLabels[paymentMethod], { defaultValue: PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod.replace(/_/g, ' ') })}
                 </span>
               </div>
             )}
             {proofPath && (
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground text-xs">{t('workspace.proofLabel')}</span>
-                <span className="text-xs font-medium text-emerald-600">{t('workspace.uploaded')}</span>
+                <span className="text-muted-foreground text-xs">{t($ => $.workspace.proofLabel)}</span>
+                <span className="text-xs font-medium text-emerald-600">{t($ => $.workspace.uploaded)}</span>
               </div>
             )}
           </div>
@@ -414,7 +414,7 @@ function ManualLineRow({
             {pricing?.has_pending_review && (
               <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600">
                 <AlertTriangle className="size-2.5" />
-                {t('workspace.priceReviewPending')}
+                {t($ => $.workspace.priceReviewPending)}
               </span>
             )}
           </div>
@@ -507,7 +507,7 @@ function ManualOrderProductsSection({
   if (!channelSelected) {
     return (
       <div className="flex items-center justify-center rounded-lg border border-dashed py-8 text-sm text-muted-foreground">
-        {t('workspace.selectChannelFirst')}
+        {t($ => $.workspace.selectChannelFirst)}
       </div>
     );
   }
@@ -536,17 +536,17 @@ function ManualOrderProductsSection({
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/20 dark:text-amber-400">
           <Lock className="size-3.5 shrink-0" />
-          {t('workspace.productsLocked')}
+          {t($ => $.workspace.productsLocked)}
         </div>
         {allFilled.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-start text-xs text-muted-foreground">
-                  <th className="pb-1.5 pr-3 font-medium">{t('workspace.colProduct')}</th>
-                  <th className="w-24 pb-1.5 pr-3 font-medium text-end">{t('workspace.colQty')}</th>
-                  <th className="w-28 pb-1.5 pr-3 font-medium text-end">{t('workspace.colUnitPrice')}</th>
-                  <th className="w-24 pb-1.5 text-end font-medium">{t('workspace.colTotal')}</th>
+                  <th className="pb-1.5 pr-3 font-medium">{t($ => $.workspace.colProduct)}</th>
+                  <th className="w-24 pb-1.5 pr-3 font-medium text-end">{t($ => $.workspace.colQty)}</th>
+                  <th className="w-28 pb-1.5 pr-3 font-medium text-end">{t($ => $.workspace.colUnitPrice)}</th>
+                  <th className="w-24 pb-1.5 text-end font-medium">{t($ => $.workspace.colTotal)}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -585,7 +585,7 @@ function ManualOrderProductsSection({
           onClick={() => setShowBrowser((v) => !v)}
         >
           <span className="flex items-center gap-2">
-            {t('workspace.browseProducts')}
+            {t($ => $.workspace.browseProducts)}
             {finishedProducts.length > 0 && (
               <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
                 {finishedProducts.length}
@@ -610,16 +610,16 @@ function ManualOrderProductsSection({
       {filledFgIndices.length > 0 && (
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t('workspace.selectedProducts', { count: filledFgIndices.length })}
+            {t($ => $.workspace.selectedProducts, { count: filledFgIndices.length })}
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-start text-xs text-muted-foreground">
-                  <th className="pb-1.5 pr-3 font-medium">{t('workspace.colProduct')}</th>
-                  <th className="w-24 pb-1.5 pr-3 font-medium">{t('workspace.colQty')}</th>
-                  <th className="w-28 pb-1.5 pr-3 font-medium">{t('workspace.colPrice')}</th>
-                  <th className="w-24 pb-1.5 pr-3 text-end font-medium">{t('workspace.colTotal')}</th>
+                  <th className="pb-1.5 pr-3 font-medium">{t($ => $.workspace.colProduct)}</th>
+                  <th className="w-24 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colQty)}</th>
+                  <th className="w-28 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colPrice)}</th>
+                  <th className="w-24 pb-1.5 pr-3 text-end font-medium">{t($ => $.workspace.colTotal)}</th>
                   <th className="w-10 pb-1.5" />
                 </tr>
               </thead>
@@ -652,7 +652,7 @@ function ManualOrderProductsSection({
           onClick={() => setShowRm((v) => !v)}
         >
           <span>
-            {t('workspace.rawMaterials')}
+            {t($ => $.workspace.rawMaterials)}
             {filledRmIndices.length > 0 && (
               <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium">
                 {filledRmIndices.length}
@@ -670,10 +670,10 @@ function ManualOrderProductsSection({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-start text-xs text-muted-foreground">
-                      <th className="pb-1.5 pr-3 font-medium">{t('workspace.colMaterial')}</th>
-                      <th className="w-24 pb-1.5 pr-3 font-medium">{t('workspace.colQty')}</th>
-                      <th className="w-28 pb-1.5 pr-3 font-medium">{t('workspace.colPrice')}</th>
-                      <th className="w-24 pb-1.5 pr-3 text-end font-medium">{t('workspace.colTotal')}</th>
+                      <th className="pb-1.5 pr-3 font-medium">{t($ => $.workspace.colMaterial)}</th>
+                      <th className="w-24 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colQty)}</th>
+                      <th className="w-28 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colPrice)}</th>
+                      <th className="w-24 pb-1.5 pr-3 text-end font-medium">{t($ => $.workspace.colTotal)}</th>
                       <th className="w-10 pb-1.5" />
                     </tr>
                   </thead>
@@ -704,7 +704,7 @@ function ManualOrderProductsSection({
               onClick={() => append({ product_id: '', quantity: '1', unit_price: '' } as ManualOrderLineFormValues)}
             >
               <Plus className="size-3.5" />
-              {t('workspace.addRawMaterialLine')}
+              {t($ => $.workspace.addRawMaterialLine)}
             </Button>
           </div>
         )}
@@ -894,7 +894,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
       .filter((key) => key !== 'cash')
       .map((key) => ({
         value: key,
-        label: t(`workspace.paymentMethodLabels.${key}`, { defaultValue: PAYMENT_METHOD_LABELS[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }),
+        label: t($ => $.workspace.paymentMethodLabels[key], { defaultValue: PAYMENT_METHOD_LABELS[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }),
       }));
    
   }, [orderPolicy, t]);
@@ -1109,7 +1109,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
       if (import.meta.env.DEV) console.log('[SLOT-EFFECT] SETTING slotError — slot', currentSlotId, 'not in updated list');
       form.setValue('delivery_window_id', undefined);
       form.setValue('delivery_window', undefined);
-      setSlotError(t('workspace.slotUnavailable'));
+      setSlotError(t($ => $.workspace.slotUnavailable));
     }
   }, [activeTimeSlots]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1285,7 +1285,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     const url = watchedGoogleMapsUrl.trim();
     if (!url) return;
     if (!isGoogleMapsUrl(url)) {
-      setMapsUrlError(t('workspace.mapsLinkError'));
+      setMapsUrlError(t($ => $.workspace.mapsLinkError));
       return;
     }
     setMapsUrlError(null);
@@ -1312,7 +1312,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
         form.setValue('google_maps_url', result.resolved_url, { shouldValidate: false });
         setLocImported(true);
       } else {
-        setMapsUrlError(t('workspace.mapsCoordError'));
+        setMapsUrlError(t($ => $.workspace.mapsCoordError));
       }
     } catch {
       setMapsUrlError('Unable to determine customer coordinates from this link.');
@@ -1352,7 +1352,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
               form.setValue('delivery_window', undefined);
               void queryClient.invalidateQueries({ queryKey: ['brand-delivery-time-slots', brandId ?? ''] });
               void refetchTimeSlots();
-              setServerError(t('workspace.slotExpiredSave'));
+              setServerError(t($ => $.workspace.slotExpiredSave));
               return;
             }
           }
@@ -1380,7 +1380,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
      
     if (import.meta.env.DEV) console.log('[Submit][STEP 3] config check — is_ready:', configHealth?.is_ready);
     if (configHealth && !configHealth.is_ready) {
-      setServerError(t('workspace.brandConfigIncomplete'));
+      setServerError(t($ => $.workspace.brandConfigIncomplete));
       return;
     }
     // Financial consistency validation
@@ -1393,14 +1393,14 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
         0,
       );
       if (productsTotal === 0) {
-        setServerError(t('workspace.pricingZero'));
+        setServerError(t($ => $.workspace.pricingZero));
         return;
       }
       const hasZeroPrice = filledLines.some((l) => !l.unit_price || Number(l.unit_price) === 0);
       if (hasZeroPrice) {
          
         if (import.meta.env.DEV) console.log('[Submit][STEP 3] BLOCKED — zero-price line detected:', filledLines.filter((l) => !l.unit_price || Number(l.unit_price) === 0));
-        setServerError(t('workspace.pricingMissing'));
+        setServerError(t($ => $.workspace.pricingMissing));
         return;
       }
     }
@@ -1408,7 +1408,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     if (shippingCost > 0 && shippingQuote && shippingQuote.coverage_status !== 'covered') {
        
       if (import.meta.env.DEV) console.log('[Submit][STEP 3] BLOCKED — shipping cost conflict:', { shippingCost, coverage_status: shippingQuote.coverage_status });
-      setServerError(t('workspace.shippingNotCoveredSave'));
+      setServerError(t($ => $.workspace.shippingNotCoveredSave));
       return;
     }
      
@@ -1439,7 +1439,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
             void queryClient.invalidateQueries({ queryKey: ['brand-delivery-time-slots', brandId ?? ''] });
             void refetchTimeSlots();
             // Inline slot error (not the global banner) so it dismisses when user picks a new slot.
-            setSlotError(t('workspace.slotUnavailableRetry'));
+            setSlotError(t($ => $.workspace.slotUnavailableRetry));
             return;
           }
         }
@@ -1457,13 +1457,13 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   const companyLocked = hasProductLine;
 
   const progressSteps = [
-    { label: t('workspace.progress.context'),  done: Boolean(watchedCompanyId) && Boolean(brandId) && Boolean(watchedChannelId) },
-    { label: t('workspace.progress.customer'), done: customerResolved },
-    { label: t('workspace.progress.location'), done: Boolean(watchedGovernorate) && (shippingGovernorateId !== null || Boolean(watchedZoneId)) },
-    { label: t('workspace.progress.products'), done: hasProductLine },
-    { label: t('workspace.progress.payment'),  done: Boolean(watchedPayment) },
+    { label: t($ => $.workspace.progress.context),  done: Boolean(watchedCompanyId) && Boolean(brandId) && Boolean(watchedChannelId) },
+    { label: t($ => $.workspace.progress.customer), done: customerResolved },
+    { label: t($ => $.workspace.progress.location), done: Boolean(watchedGovernorate) && (shippingGovernorateId !== null || Boolean(watchedZoneId)) },
+    { label: t($ => $.workspace.progress.products), done: hasProductLine },
+    { label: t($ => $.workspace.progress.payment),  done: Boolean(watchedPayment) },
     {
-      label: t('workspace.progress.ready'),
+      label: t($ => $.workspace.progress.ready),
       done:
         Boolean(watchedCompanyId) &&
         Boolean(brandId) &&
@@ -1481,11 +1481,11 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     <FormProvider {...form}>
       <div className="flex flex-col gap-4">
         <PageHeader
-          title={isEdit ? t('workspace.editOrderTitle', { number: order?.order_number ?? '' }) : t('workspace.newTitle')}
+          title={isEdit ? t($ => $.workspace.editOrderTitle, { number: order?.order_number ?? '' }) : t($ => $.workspace.newTitle)}
           breadcrumbs={[
-            { label: t('workspace.home'), to: ROUTES.dashboard },
-            { label: t('workspace.orders'), to: ROUTES.orders },
-            { label: isEdit ? t('workspace.editBreadcrumb', { number: order?.order_number ?? '' }) : t('workspace.newTitle') },
+            { label: t($ => $.workspace.home), to: ROUTES.dashboard },
+            { label: t($ => $.workspace.orders), to: ROUTES.orders },
+            { label: isEdit ? t($ => $.workspace.editBreadcrumb, { number: order?.order_number ?? '' }) : t($ => $.workspace.newTitle) },
           ]}
           actions={
             <div className="flex items-center gap-2">
@@ -1495,7 +1495,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                 onClick={() => navigate(isEdit && order ? `${ROUTES.orders}/${order.id}` : ROUTES.orders)}
               >
                 <ArrowLeft className="size-4" />
-                {t('workspace.cancel')}
+                {t($ => $.workspace.cancel)}
               </Button>
               <Button
                 type="submit"
@@ -1503,8 +1503,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                 disabled={isPending || isTerminal || (!isEdit && configHealth !== undefined && !configHealth.is_ready)}
               >
                 {isEdit
-                  ? (isPending ? t('workspace.saving') : t('workspace.save'))
-                  : (isPending ? t('workspace.creating') : t('workspace.create'))}
+                  ? (isPending ? t($ => $.workspace.saving) : t($ => $.workspace.save))
+                  : (isPending ? t($ => $.workspace.creating) : t($ => $.workspace.create))}
               </Button>
             </div>
           }
@@ -1549,14 +1549,14 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                   .filter(Boolean)[0] as string | undefined;
                  
                 if (import.meta.env.DEV) console.log('[SERVER-ERROR] onInvalid (Zod) — errors:', errs, '→ message:', linesMsg ?? firstFieldMsg);
-                setServerError(linesMsg ?? firstFieldMsg ?? t('workspace.formError'));
+                setServerError(linesMsg ?? firstFieldMsg ?? t($ => $.workspace.formError));
               },
             )(e);
           }}
         >
           {serverError && (
             <Alert variant="destructive" className="mb-4">
-              <AlertTitle>{t('workspace.errorLabel')}</AlertTitle>
+              <AlertTitle>{t($ => $.workspace.errorLabel)}</AlertTitle>
               <AlertDescription>{serverError}</AlertDescription>
             </Alert>
           )}
@@ -1564,9 +1564,9 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
           {isTerminal && (
             <Alert className="mb-4 border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20">
               <Lock className="size-4 text-red-600 dark:text-red-400" />
-              <AlertTitle className="text-red-700 dark:text-red-400">{t('workspace.readOnlyAlert', { status: order?.status_label ?? order?.status })}</AlertTitle>
+              <AlertTitle className="text-red-700 dark:text-red-400">{t($ => $.workspace.readOnlyAlert, { status: order?.status_label ?? order?.status })}</AlertTitle>
               <AlertDescription className="text-red-600/80 dark:text-red-400/80">
-                {t('workspace.terminalMessage')}
+                {t($ => $.workspace.terminalMessage)}
               </AlertDescription>
             </Alert>
           )}
@@ -1580,16 +1580,16 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                   {isEdit ? (
                     /* Edit mode: channel | smart status selector | date */
                     <div className="grid gap-3 sm:grid-cols-3">
-                      <FormField name="channel_id_display" label={t('workspace.fields.salesChannel')}>
+                      <FormField name="channel_id_display" label={t($ => $.workspace.fields.salesChannel)}>
                         <div className="flex h-9 items-center gap-1.5 rounded-md border bg-muted/50 px-3 text-sm">
                           <span className="flex-1 truncate">
                             {order?.channel?.name ?? order?.channel_id ?? '—'}
                           </span>
-                          <Badge variant="secondary" className="shrink-0 text-[10px]">{t('workspace.locked')}</Badge>
+                          <Badge variant="secondary" className="shrink-0 text-[10px]">{t($ => $.workspace.locked)}</Badge>
                         </div>
                       </FormField>
 
-                      <FormField name="status" label={t('workspace.fields.orderStatus')}>
+                      <FormField name="status" label={t($ => $.workspace.fields.orderStatus)}>
                         {order ? (
                           <SmartStatusSelector order={order} />
                         ) : (
@@ -1597,7 +1597,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         )}
                       </FormField>
 
-                      <FormField name="order_date" label={t('workspace.fields.orderDate')}>
+                      <FormField name="order_date" label={t($ => $.workspace.fields.orderDate)}>
                         <Input type="date" {...form.register('order_date')} />
                       </FormField>
                     </div>
@@ -1606,14 +1606,14 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                     <div className="grid gap-3 sm:grid-cols-3">
 
                       {/* PART 1 — Company selector (locks when products added) */}
-                      <FormField name="company_id" label={t('workspace.fields.company')} required>
+                      <FormField name="company_id" label={t($ => $.workspace.fields.company)} required>
                         {companyLocked ? (
                           <div className="flex h-9 items-center gap-1.5 rounded-md border bg-muted/50 px-3 text-sm">
                             <Building2 className="size-3.5 shrink-0 text-muted-foreground" />
                             <span className="flex-1 truncate font-medium">
                               {companyOptions.find((c) => c.value === watchedCompanyId)?.label ?? watchedCompanyId}
                             </span>
-                            <Badge variant="secondary" className="shrink-0 text-[10px]">{t('workspace.locked')}</Badge>
+                            <Badge variant="secondary" className="shrink-0 text-[10px]">{t($ => $.workspace.locked)}</Badge>
                           </div>
                         ) : (
                           <Controller
@@ -1624,7 +1624,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                 options={companyOptions}
                                 value={field.value ?? null}
                                 onChange={handleCompanyChange}
-                                placeholder={t('workspace.selectCompany')}
+                                placeholder={t($ => $.workspace.selectCompany)}
                               />
                             )}
                           />
@@ -1637,10 +1637,10 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                       </FormField>
 
                       {/* Brand */}
-                      <FormField name="brand_id_display" label={t('workspace.fields.brand')} required>
+                      <FormField name="brand_id_display" label={t($ => $.workspace.fields.brand)} required>
                         {!watchedCompanyId ? (
                           <div className="flex h-9 items-center rounded-md border border-dashed px-3 text-sm text-muted-foreground">
-                            {t('workspace.selectACompanyFirst')}
+                            {t($ => $.workspace.selectACompanyFirst)}
                           </div>
                         ) : (
                           <div className="relative">
@@ -1648,7 +1648,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                               options={brandOptions}
                               value={brandId}
                               onChange={handleBrandChange}
-                              placeholder={t('workspace.selectBrand')}
+                              placeholder={t($ => $.workspace.selectBrand)}
                               loading={loadingBrands}
                             />
                           </div>
@@ -1656,13 +1656,13 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                       </FormField>
 
                       {/* Sales Channel */}
-                      <FormField name="channel_id" label={t('workspace.fields.salesChannel')} required>
+                      <FormField name="channel_id" label={t($ => $.workspace.fields.salesChannel)} required>
                         {!brandId ? (
                           <div className="flex h-9 items-center rounded-md border border-dashed px-3 text-sm text-muted-foreground">
-                            {t('workspace.selectABrandFirst')}
+                            {t($ => $.workspace.selectABrandFirst)}
                           </div>
                         ) : loadingChannels ? (
-                          <div className="flex h-9 items-center px-1"><InlineSpinner label={t('workspace.loadingChannels')} /></div>
+                          <div className="flex h-9 items-center px-1"><InlineSpinner label={t($ => $.workspace.loadingChannels)} /></div>
                         ) : (
                           <Controller
                             control={form.control}
@@ -1672,7 +1672,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                 options={channelOptions}
                                 value={field.value ?? null}
                                 onChange={handleChannelChange}
-                                placeholder={t('workspace.selectChannel_ph')}
+                                placeholder={t($ => $.workspace.selectChannel_ph)}
                               />
                             )}
                           />
@@ -1681,9 +1681,9 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
 
                       {/* Entry Status — always a Select, loaded from brand order policy */}
                       <div>
-                        <p className="mb-1 text-xs font-medium text-foreground/80">{t('workspace.fields.entryStatus')}</p>
+                        <p className="mb-1 text-xs font-medium text-foreground/80">{t($ => $.workspace.fields.entryStatus)}</p>
                         {!orderPolicy && brandId ? (
-                          <div className="flex h-9 items-center px-1"><InlineSpinner label={t('workspace.loadingPolicy')} /></div>
+                          <div className="flex h-9 items-center px-1"><InlineSpinner label={t($ => $.workspace.loadingPolicy)} /></div>
                         ) : orderPolicy ? (() => {
                           const mp = orderPolicy.source_entry_policies.manual;
                           const all = Array.isArray(mp) ? mp : [mp];
@@ -1695,12 +1695,12 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                               onValueChange={(v) => form.setValue('status', v, { shouldDirty: true })}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder={t('workspace.selectEntryStatus')} />
+                                <SelectValue placeholder={t($ => $.workspace.selectEntryStatus)} />
                               </SelectTrigger>
                               <SelectContent>
                                 {validChoices.map((s) => (
                                   <SelectItem key={s} value={s}>
-                                    {t(`status.${s}`, { defaultValue: STATUS_LABELS[s] ?? s })}
+                                    {t($ => $.status[s], { defaultValue: STATUS_LABELS[s] ?? s })}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1708,13 +1708,13 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                           );
                         })() : (
                           <div className="flex h-9 items-center rounded-md border border-dashed px-3 text-sm text-muted-foreground">
-                            {t('workspace.selectABrandFirst')}
+                            {t($ => $.workspace.selectABrandFirst)}
                           </div>
                         )}
                       </div>
 
                       {/* Part 1 — Delivery Date (defaults to today) */}
-                      <FormField name="requested_delivery_date" label={t('workspace.fields.deliveryDate')}>
+                      <FormField name="requested_delivery_date" label={t($ => $.workspace.fields.deliveryDate)}>
                         <Input type="date" {...form.register('requested_delivery_date')} />
                       </FormField>
 
@@ -1722,22 +1722,22 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                       {isDeliveryFuture && (
                         <div className="sm:col-span-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/20 dark:text-amber-400">
                           <CalendarDays className="size-3.5 shrink-0" />
-                          {t('workspace.futureDateNote', { status: t('workspace.rescheduledStatus') })}
+                          {t($ => $.workspace.futureDateNote, { status: t($ => $.workspace.rescheduledStatus) })}
                         </div>
                       )}
 
                       {/* Delivery Time Slot (from Brand Shipping & Delivery) */}
-                      <FormField name="delivery_window_id" label={t('workspace.fields.deliveryTimeSlot')}>
+                      <FormField name="delivery_window_id" label={t($ => $.workspace.fields.deliveryTimeSlot)}>
                         {!brandId ? (
                           <div className="flex h-9 items-center rounded-md border border-dashed px-3 text-sm text-muted-foreground">
-                            {t('workspace.selectABrandFirst')}
+                            {t($ => $.workspace.selectABrandFirst)}
                           </div>
                         ) : loadingWindows ? (
-                          <div className="flex h-9 items-center px-1"><InlineSpinner label={t('workspace.loadingTimeSlots')} /></div>
+                          <div className="flex h-9 items-center px-1"><InlineSpinner label={t($ => $.workspace.loadingTimeSlots)} /></div>
                         ) : !loadingWindows && activeTimeSlots.length === 0 ? (
                           <div className="rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/20 p-2.5 flex flex-col gap-1.5">
                             <p className="text-xs text-amber-700 dark:text-amber-400">
-                              {t('workspace.noTimeSlots')}
+                              {t($ => $.workspace.noTimeSlots)}
                             </p>
                             <button
                               type="button"
@@ -1745,7 +1745,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                               className="flex items-center gap-1 text-xs text-primary hover:underline w-fit"
                             >
                               <ExternalLink className="size-3" />
-                              {t('workspace.manageTimeSlots')}
+                              {t($ => $.workspace.manageTimeSlots)}
                             </button>
                           </div>
                         ) : (
@@ -1758,7 +1758,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                   options={windowOptions}
                                   value={field.value ?? null}
                                   onChange={handleWindowChange}
-                                  placeholder={t('workspace.selectTimeSlot')}
+                                  placeholder={t($ => $.workspace.selectTimeSlot)}
                                 />
                               )}
                             />
@@ -1780,7 +1780,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                       {loadingHealth ? (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Loader2 className="size-3 animate-spin" />
-                          {t('workspace.checkingBrandConfig')}
+                          {t($ => $.workspace.checkingBrandConfig)}
                         </div>
                       ) : configHealth && !configHealth.is_ready ? (
                         <BrandConfigHealthCard
@@ -1798,7 +1798,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
               {showContentSections && (
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base">{t('workspace.customerDelivery')}</CardTitle>
+                    <CardTitle className="text-base">{t($ => $.workspace.customerDelivery)}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-4">
                     {!isEdit && (
@@ -1822,8 +1822,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                           <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                             <Shield className="size-3.5 shrink-0 text-primary" />
                             <span>
-                              {t('workspace.policyPrefix')} <span className="font-medium text-foreground">
-                                {t(`workspace.matchingPolicies.${orderPolicy.customer_matching_policy}`, { defaultValue: MATCHING_POLICY_LABELS[orderPolicy.customer_matching_policy] ?? orderPolicy.customer_matching_policy })}
+                              {t($ => $.workspace.policyPrefix)} <span className="font-medium text-foreground">
+                                {t($ => $.workspace.matchingPolicies[orderPolicy.customer_matching_policy], { defaultValue: MATCHING_POLICY_LABELS[orderPolicy.customer_matching_policy] ?? orderPolicy.customer_matching_policy })}
                               </span>
                             </span>
                           </div>
@@ -1835,8 +1835,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                       <div className="grid gap-3 sm:grid-cols-2">
                         {isNewCustomer && (
                           <div className="sm:col-span-2">
-                            <FormField name="customer_name" label={t('workspace.fields.customerName')} required>
-                              <Input placeholder={t('workspace.fullNamePlaceholder')} {...form.register('customer_name')} />
+                            <FormField name="customer_name" label={t($ => $.workspace.fields.customerName)} required>
+                              <Input placeholder={t($ => $.workspace.fullNamePlaceholder)} {...form.register('customer_name')} />
                               {form.formState.errors.customer_name && (
                                 <p className="mt-1 text-xs text-destructive">
                                   {form.formState.errors.customer_name.message}
@@ -1847,19 +1847,19 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         )}
 
                         {isNewCustomer && (
-                          <FormField name="customer_phone" label={t('workspace.fields.primaryPhone')}>
-                            <Input placeholder={t('workspace.phonePlaceholder')} {...form.register('customer_phone')} />
+                          <FormField name="customer_phone" label={t($ => $.workspace.fields.primaryPhone)}>
+                            <Input placeholder={t($ => $.workspace.phonePlaceholder)} {...form.register('customer_phone')} />
                           </FormField>
                         )}
 
-                        <FormField name="customer_secondary_phone" label={t('workspace.fields.secondaryPhone')}>
-                          <Input placeholder={t('workspace.secondaryPhonePlaceholder')} {...form.register('customer_secondary_phone')} />
+                        <FormField name="customer_secondary_phone" label={t($ => $.workspace.fields.secondaryPhone)}>
+                          <Input placeholder={t($ => $.workspace.secondaryPhonePlaceholder)} {...form.register('customer_secondary_phone')} />
                         </FormField>
 
                         {/* Governorate */}
-                        <FormField name="governorate" label={t('workspace.fields.governorate')} required>
+                        <FormField name="governorate" label={t($ => $.workspace.fields.governorate)} required>
                           {loadingGeo ? (
-                            <div className="flex h-9 items-center px-1"><InlineSpinner label={t('workspace.loadingGeography')} /></div>
+                            <div className="flex h-9 items-center px-1"><InlineSpinner label={t($ => $.workspace.loadingGeography)} /></div>
                           ) : (
                             <Controller
                               control={form.control}
@@ -1869,7 +1869,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                   options={governorateOptions}
                                   value={govComboValue}
                                   onChange={handleGovernorateChange}
-                                  placeholder={governorateOptions.length ? t('workspace.selectGovernorate') : t('workspace.noGovernorates')}
+                                  placeholder={governorateOptions.length ? t($ => $.workspace.selectGovernorate) : t($ => $.workspace.noGovernorates)}
                                 />
                               )}
                             />
@@ -1878,19 +1878,19 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
 
                         {/* City — shipping engine combobox when new engine active */}
                         {shippingGovernorateId !== null && (
-                          <FormField name="city" label={t('workspace.fields.city')}>
+                          <FormField name="city" label={t($ => $.workspace.fields.city)}>
                             {loadingCities ? (
-                              <div className="flex h-9 items-center px-1"><InlineSpinner label={t('workspace.loadingCities')} /></div>
+                              <div className="flex h-9 items-center px-1"><InlineSpinner label={t($ => $.workspace.loadingCities)} /></div>
                             ) : cityOptions.length > 0 ? (
                               <Combobox
                                 options={cityOptions}
                                 value={shippingCityId ? String(shippingCityId) : null}
                                 onChange={handleCityChange}
-                                placeholder={t('workspace.selectCity')}
+                                placeholder={t($ => $.workspace.selectCity)}
                               />
                             ) : (
                               <div className="flex h-9 items-center rounded-md border border-dashed px-3 text-xs text-muted-foreground">
-                                {t('workspace.allCitiesCovered')}
+                                {t($ => $.workspace.allCitiesCovered)}
                               </div>
                             )}
                           </FormField>
@@ -1899,9 +1899,9 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         {/* City — free-text fallback when new shipping engine has no data for this governorate
                             Ensures city is always visible/editable in edit mode and legacy geography mode */}
                         {shippingGovernorateId === null && (isEdit || govComboValue !== null) && (
-                          <FormField name="city" label={t('workspace.fields.city')}>
+                          <FormField name="city" label={t($ => $.workspace.fields.city)}>
                             <Input
-                              placeholder={t('workspace.cityDistrictPlaceholder')}
+                              placeholder={t($ => $.workspace.cityDistrictPlaceholder)}
                               {...form.register('city')}
                             />
                           </FormField>
@@ -1909,7 +1909,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
 
                         {/* Delivery Zone (only shown when legacy geography available) */}
                         {zoneOptions.length > 0 && (
-                          <FormField name="delivery_zone_id" label={t('workspace.fields.deliveryZone')}>
+                          <FormField name="delivery_zone_id" label={t($ => $.workspace.fields.deliveryZone)}>
                             <Controller
                               control={form.control}
                               name="delivery_zone_id"
@@ -1918,7 +1918,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                   options={zoneOptions}
                                   value={field.value ?? null}
                                   onChange={handleZoneChange}
-                                  placeholder={watchedGovernorate ? t('workspace.selectZone') : t('workspace.selectGovFirst')}
+                                  placeholder={watchedGovernorate ? t($ => $.workspace.selectZone) : t($ => $.workspace.selectGovFirst)}
                                   disabled={!watchedGovernorate}
                                 />
                               )}
@@ -1932,7 +1932,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                             {quoteFetching ? (
                               <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                                 <Loader2 className="size-3 animate-spin" />
-                                {t('workspace.checkingShipping')}
+                                {t($ => $.workspace.checkingShipping)}
                               </div>
                             ) : shippingQuote ? (() => {
                               const cs = shippingQuote.coverage_status ?? (shippingQuote.available ? 'covered' : 'needs_review');
@@ -1948,7 +1948,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                 : isUnavailable
                                 ? 'text-red-700 dark:text-red-400'
                                 : 'text-amber-700 dark:text-amber-400';
-                              const coverageLabel = isCovered ? t('workspace.covered') : isUnavailable ? t('workspace.unavailable') : t('workspace.needsReview');
+                              const coverageLabel = isCovered ? t($ => $.workspace.covered) : isUnavailable ? t($ => $.workspace.unavailable) : t($ => $.workspace.needsReview);
                               return (
                                 <div className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${borderBg}`}>
                                   <Truck className={`size-3.5 shrink-0 mt-0.5 ${tc}`} />
@@ -1962,13 +1962,13 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                       )}
                                     </div>
                                     {shippingQuote.preferred_provider && (
-                                      <div className="text-muted-foreground">{t('workspace.viaProvider', { provider: shippingQuote.preferred_provider })}</div>
+                                      <div className="text-muted-foreground">{t($ => $.workspace.viaProvider, { provider: shippingQuote.preferred_provider })}</div>
                                     )}
                                     {shippingQuote.delivery_days != null && (
                                       <div className="text-muted-foreground">
                                         {shippingQuote.same_day
-                                          ? t('workspace.sameDayDelivery')
-                                          : t('workspace.estDays', { count: shippingQuote.delivery_days })}
+                                          ? t($ => $.workspace.sameDayDelivery)
+                                          : t($ => $.workspace.estDays, { count: shippingQuote.delivery_days })}
                                       </div>
                                     )}
                                     {shippingQuote.validation_message && (
@@ -1976,12 +1976,12 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                     )}
                                     {!isCovered && !isUnavailable && (
                                       <div className="text-amber-600 dark:text-amber-400">
-                                        {t('workspace.shippingFlaggedReview')}
+                                        {t($ => $.workspace.shippingFlaggedReview)}
                                       </div>
                                     )}
                                     {isUnavailable && (
                                       <div className="text-red-600 dark:text-red-400">
-                                        {t('workspace.shippingAreaNotCovered')}
+                                        {t($ => $.workspace.shippingAreaNotCovered)}
                                       </div>
                                     )}
                                   </div>
@@ -1995,31 +1995,31 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         <input type="hidden" {...form.register('location_source')} />
 
                         <div className="sm:col-span-2">
-                          <FormField name="shipping_address" label={t('workspace.fields.streetAddress')}>
-                            <Input placeholder={t('workspace.streetAddressPlaceholder')} {...form.register('shipping_address')} />
+                          <FormField name="shipping_address" label={t($ => $.workspace.fields.streetAddress)}>
+                            <Input placeholder={t($ => $.workspace.streetAddressPlaceholder)} {...form.register('shipping_address')} />
                           </FormField>
                         </div>
 
                         {/* Address details — Building / Floor / Apartment / Landmark */}
-                        <FormField name="building" label={t('workspace.fields.building')}>
-                          <Input placeholder={t('workspace.buildingPlaceholder')} {...form.register('building')} />
+                        <FormField name="building" label={t($ => $.workspace.fields.building)}>
+                          <Input placeholder={t($ => $.workspace.buildingPlaceholder)} {...form.register('building')} />
                         </FormField>
 
-                        <FormField name="floor" label={t('workspace.fields.floor')}>
-                          <Input placeholder={t('workspace.floorPlaceholder')} {...form.register('floor')} />
+                        <FormField name="floor" label={t($ => $.workspace.fields.floor)}>
+                          <Input placeholder={t($ => $.workspace.floorPlaceholder)} {...form.register('floor')} />
                         </FormField>
 
-                        <FormField name="apartment" label={t('workspace.fields.apartment')}>
-                          <Input placeholder={t('workspace.apartmentPlaceholder')} {...form.register('apartment')} />
+                        <FormField name="apartment" label={t($ => $.workspace.fields.apartment)}>
+                          <Input placeholder={t($ => $.workspace.apartmentPlaceholder)} {...form.register('apartment')} />
                         </FormField>
 
-                        <FormField name="landmark" label={t('workspace.fields.landmark')}>
-                          <Input placeholder={t('workspace.landmarkPlaceholder')} {...form.register('landmark')} />
+                        <FormField name="landmark" label={t($ => $.workspace.fields.landmark)}>
+                          <Input placeholder={t($ => $.workspace.landmarkPlaceholder)} {...form.register('landmark')} />
                         </FormField>
 
                         {/* Parts 1+2 — Google Maps URL import with short-URL resolution */}
                         <div className="sm:col-span-2">
-                          <FormField name="google_maps_url" label={t('workspace.fields.gpsLocation')}>
+                          <FormField name="google_maps_url" label={t($ => $.workspace.fields.gpsLocation)}>
                             {locImported && currentLat != null && currentLng != null ? (
                               /* GPS Location Card — location set */
                               <div className="rounded-md border border-emerald-200 bg-emerald-50 dark:border-emerald-800/50 dark:bg-emerald-950/20 p-3 flex flex-col gap-2">
@@ -2027,7 +2027,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                   <div className="flex items-center gap-1.5">
                                     <MapPin className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                                     <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
-                                      {t('workspace.gpsLocationTitle')}
+                                      {t($ => $.workspace.gpsLocationTitle)}
                                     </span>
                                   </div>
                                   <Button
@@ -2037,7 +2037,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                     className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
                                     onClick={handleClearLocation}
                                   >
-                                    {t('workspace.replaceLocation')}
+                                    {t($ => $.workspace.replaceLocation)}
                                   </Button>
                                 </div>
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -2052,7 +2052,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                       title="Copy coordinates"
                                     >
                                       <Copy className="size-3" />
-                                      {t('workspace.copyCoordinates')}
+                                      {t($ => $.workspace.copyCoordinates)}
                                     </button>
                                     <a
                                       href={`https://www.google.com/maps?q=${currentLat},${currentLng}`}
@@ -2061,7 +2061,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                       className="flex items-center gap-1 text-[11px] text-primary hover:underline"
                                     >
                                       <ExternalLink className="size-3" />
-                                      {t('workspace.openInMaps')}
+                                      {t($ => $.workspace.openInMaps)}
                                     </a>
                                   </div>
                                 </div>
@@ -2071,11 +2071,11 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                               <div className="rounded-md border border-dashed p-3 flex flex-col gap-2">
                                 <div className="flex items-center gap-1.5 text-muted-foreground">
                                   <MapPin className="size-3.5 shrink-0" />
-                                  <span className="text-xs font-medium">{t('workspace.noGpsLocation')}</span>
+                                  <span className="text-xs font-medium">{t($ => $.workspace.noGpsLocation)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Input
-                                    placeholder={t('workspace.mapsPlaceholder')}
+                                    placeholder={t($ => $.workspace.mapsPlaceholder)}
                                     {...form.register('google_maps_url')}
                                     className="flex-1 h-8 text-sm"
                                   />
@@ -2092,7 +2092,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                     ) : (
                                       <MapPin className="size-3.5 mr-1" />
                                     )}
-                                    {locResolving ? t('workspace.resolving') : t('workspace.importLocation')}
+                                    {locResolving ? t($ => $.workspace.resolving) : t($ => $.workspace.importLocation)}
                                   </Button>
                                   {watchedGoogleMapsUrl && (
                                     <Button
@@ -2115,10 +2115,10 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         </div>
 
                         <div className="sm:col-span-2">
-                          <FormField name="customer_notes" label={t('workspace.fields.customerNotes')}>
+                          <FormField name="customer_notes" label={t($ => $.workspace.fields.customerNotes)}>
                             <textarea
                               rows={2}
-                              placeholder={t('workspace.customerNotesPlaceholder')}
+                              placeholder={t($ => $.workspace.customerNotesPlaceholder)}
                               className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
                               {...form.register('customer_notes')}
                             />
@@ -2135,9 +2135,9 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                 <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between gap-3">
-                      <CardTitle className="text-base">{t('workspace.productsCard')}</CardTitle>
+                      <CardTitle className="text-base">{t($ => $.workspace.productsCard)}</CardTitle>
                       {watchedChannelId && loadingProducts && (
-                        <InlineSpinner label={t('workspace.loadingProducts')} />
+                        <InlineSpinner label={t($ => $.workspace.loadingProducts)} />
                       )}
                     </div>
                   </CardHeader>
@@ -2167,7 +2167,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
               {showContentSections && (
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base">{t('workspace.paymentShipping')}</CardTitle>
+                    <CardTitle className="text-base">{t($ => $.workspace.paymentShipping)}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-4">
                     <OrderPaymentSection
@@ -2177,7 +2177,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
 
                     {/* Shipping cost — read-only when structurally locked or auto-calculated */}
                     <div className="border-t pt-4">
-                      <FormField name="shipping_cost" label={t('workspace.fields.shippingCost')}>
+                      <FormField name="shipping_cost" label={t($ => $.workspace.fields.shippingCost)}>
                         {isStructurallyLocked ? (
                           <div className="flex h-9 items-center justify-between rounded-md border bg-muted/50 px-3 text-sm">
                             <span className="font-medium tabular-nums">
@@ -2185,7 +2185,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                             </span>
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Lock className="size-3" />
-                              {t('workspace.locked')}
+                              {t($ => $.workspace.locked)}
                             </span>
                           </div>
                         ) : (
@@ -2199,7 +2199,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                 </span>
                                 <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                                   <CheckCircle2 className="size-3" />
-                                  {t('workspace.calculatedAutomatically')}
+                                  {t($ => $.workspace.calculatedAutomatically)}
                                 </span>
                               </div>
                             ) : (
@@ -2226,9 +2226,9 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         {!isStructurallyLocked && watchedShipSrc === 'override' && (
                           <p className="mt-1 flex items-center gap-1.5 text-xs text-amber-600">
                             <Badge variant="outline" className="border-amber-300 px-1.5 py-0 text-[10px] text-amber-600">
-                              {t('workspace.manualOverride')}
+                              {t($ => $.workspace.manualOverride)}
                             </Badge>
-                            {t('workspace.willBeAudited')}
+                            {t($ => $.workspace.willBeAudited)}
                           </p>
                         )}
                       </FormField>
@@ -2237,52 +2237,52 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                     {/* Part 3 — Shipping Summary Card (shows whenever a quote is returned) */}
                     {shippingGovernorateId && shippingQuote && (
                       <div className="rounded-md border bg-muted/20 px-3 py-2.5 text-xs">
-                        <p className="mb-1.5 font-medium text-muted-foreground uppercase tracking-wider text-[10px]">{t('workspace.shippingDetails')}</p>
+                        <p className="mb-1.5 font-medium text-muted-foreground uppercase tracking-wider text-[10px]">{t($ => $.workspace.shippingDetails)}</p>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                           {/* Coverage — dynamic */}
                           <div className="flex items-center gap-1.5">
-                            <span className="text-muted-foreground">{t('workspace.coverageLabel')}</span>
+                            <span className="text-muted-foreground">{t($ => $.workspace.coverageLabel)}</span>
                             {(() => {
                               const cs = shippingQuote.coverage_status ?? (shippingQuote.available ? 'covered' : 'needs_review');
-                              if (cs === 'covered') return <span className="font-medium text-emerald-600 dark:text-emerald-400">{t('workspace.covered')}</span>;
-                              if (cs === 'unavailable') return <span className="font-medium text-red-600 dark:text-red-400">{t('workspace.unavailable')}</span>;
-                              return <span className="font-medium text-amber-600 dark:text-amber-400">{t('workspace.needsReview')}</span>;
+                              if (cs === 'covered') return <span className="font-medium text-emerald-600 dark:text-emerald-400">{t($ => $.workspace.covered)}</span>;
+                              if (cs === 'unavailable') return <span className="font-medium text-red-600 dark:text-red-400">{t($ => $.workspace.unavailable)}</span>;
+                              return <span className="font-medium text-amber-600 dark:text-amber-400">{t($ => $.workspace.needsReview)}</span>;
                             })()}
                           </div>
                           {/* Provider */}
                           {shippingQuote.preferred_provider && (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground">{t('workspace.providerLabel')}</span>
+                              <span className="text-muted-foreground">{t($ => $.workspace.providerLabel)}</span>
                               <span className="font-medium">{shippingQuote.preferred_provider}</span>
                             </div>
                           )}
                           {/* Delivery Days */}
                           {shippingQuote.delivery_days != null && (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground">{t('workspace.etaLabel')}</span>
+                              <span className="text-muted-foreground">{t($ => $.workspace.etaLabel)}</span>
                               <span className="font-medium">
-                                {shippingQuote.same_day ? t('workspace.sameDay') : t('workspace.days', { count: shippingQuote.delivery_days })}
+                                {shippingQuote.same_day ? t($ => $.workspace.sameDay) : t($ => $.workspace.days, { count: shippingQuote.delivery_days })}
                               </span>
                             </div>
                           )}
                           {/* COD Allowed */}
                           <div className="flex items-center gap-1.5">
-                            <span className="text-muted-foreground">{t('workspace.codLabel')}</span>
+                            <span className="text-muted-foreground">{t($ => $.workspace.codLabel)}</span>
                             <span className={cn('font-medium', shippingQuote.cod_allowed ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>
-                              {shippingQuote.cod_allowed ? t('workspace.codAllowed') : t('workspace.codNotAvailable')}
+                              {shippingQuote.cod_allowed ? t($ => $.workspace.codAllowed) : t($ => $.workspace.codNotAvailable)}
                             </span>
                           </div>
                           {/* Time Slot */}
                           {form.watch('delivery_window') && (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground">{t('workspace.timeSlotLabel')}</span>
+                              <span className="text-muted-foreground">{t($ => $.workspace.timeSlotLabel)}</span>
                               <span className="font-medium">{form.watch('delivery_window')}</span>
                             </div>
                           )}
                           {/* Requested Delivery Date */}
                           {watchedDeliveryDate && (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground">{t('workspace.deliveryLabel')}</span>
+                              <span className="text-muted-foreground">{t($ => $.workspace.deliveryLabel)}</span>
                               <span className="font-medium">{watchedDeliveryDate}</span>
                             </div>
                           )}
@@ -2297,7 +2297,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         {isStructurallyLocked ? (
                           /* Read-only discount display when order is structurally locked */
                           <div>
-                            <p className="mb-1.5 text-xs font-medium text-foreground/80">{t('workspace.fields.discount')}</p>
+                            <p className="mb-1.5 text-xs font-medium text-foreground/80">{t($ => $.workspace.fields.discount)}</p>
                             {watchedDiscountType ? (
                               <div className="flex h-9 items-center gap-2 rounded-md border bg-muted/50 px-3 text-sm">
                                 <span className="font-medium tabular-nums">
@@ -2309,7 +2309,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                               </div>
                             ) : (
                               <div className="flex h-9 items-center rounded-md border bg-muted/50 px-3 text-sm text-muted-foreground">
-                                {t('workspace.noDiscount')}
+                                {t($ => $.workspace.noDiscount)}
                                 <Lock className="ms-auto size-3 text-muted-foreground/60" />
                               </div>
                             )}
@@ -2331,7 +2331,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                 }}
                                 className="size-3.5 accent-primary"
                               />
-                              {t('workspace.applyDiscount')}
+                              {t($ => $.workspace.applyDiscount)}
                             </label>
                             {watchedDiscountType && (
                               <div className="flex flex-wrap items-center gap-3 pl-5">
@@ -2344,7 +2344,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                         {...form.register('discount_type')}
                                         className="size-3.5 accent-primary"
                                       />
-                                      {val === 'percentage' ? t('workspace.percentage') : t('workspace.fixedAmount')}
+                                      {val === 'percentage' ? t($ => $.workspace.percentage) : t($ => $.workspace.fixedAmount)}
                                     </label>
                                   ))}
                                 </div>
@@ -2378,7 +2378,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                             }}
                             className="size-3.5 accent-primary"
                           />
-                          {t('workspace.depositReceived')}
+                          {t($ => $.workspace.depositReceived)}
                         </label>
                         {depositEnabled && (
                           <div className="relative max-w-36">
@@ -2399,10 +2399,10 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                     </div>
 
                     <div className="border-t pt-4">
-                      <FormField name="notes" label={t('workspace.fields.orderNotes')}>
+                      <FormField name="notes" label={t($ => $.workspace.fields.orderNotes)}>
                         <textarea
                           rows={2}
-                          placeholder={t('workspace.orderNotesPlaceholder')}
+                          placeholder={t($ => $.workspace.orderNotesPlaceholder)}
                           className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
                           {...form.register('notes')}
                         />
@@ -2421,7 +2421,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                   >
                     <span className="flex items-center gap-2 text-muted-foreground">
                       <BookOpen className="size-3.5" />
-                      <span className="font-medium">{t('workspace.appliedPolicies')}</span>
+                      <span className="font-medium">{t($ => $.workspace.appliedPolicies)}</span>
                     </span>
                     {showPolicyPanel ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
                   </button>
@@ -2434,14 +2434,14 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         const mp = orderPolicy.source_entry_policies.manual;
                         const ss = Array.isArray(mp) ? mp : [mp];
                         const label = ss.length === 1
-                          ? t(`status.${ss[0]}`, { defaultValue: STATUS_LABELS[ss[0]] ?? ss[0] })
-                          : t('workspace.entryStatuses', { count: ss.length });
-                        return `${t('workspace.policy.entryStatus')}: ${label}`;
+                          ? t($ => $.status[ss[0]], { defaultValue: STATUS_LABELS[ss[0]] ?? ss[0] })
+                          : t($ => $.workspace.entryStatuses, { count: ss.length });
+                        return `${t($ => $.workspace.policy.entryStatus)}: ${label}`;
                       })()}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:ring-emerald-800">
                       <CheckCircle2 className="size-2.5" />
-                      {t('workspace.policy.customerMatching')}: {t(`workspace.matchingPolicies.${orderPolicy.customer_matching_policy}`, { defaultValue: MATCHING_POLICY_LABELS[orderPolicy.customer_matching_policy] ?? orderPolicy.customer_matching_policy })}
+                      {t($ => $.workspace.policy.customerMatching)}: {t($ => $.workspace.matchingPolicies[orderPolicy.customer_matching_policy], { defaultValue: MATCHING_POLICY_LABELS[orderPolicy.customer_matching_policy] ?? orderPolicy.customer_matching_policy })}
                     </span>
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
                       orderPolicy.auto_reserve_inventory
@@ -2449,11 +2449,11 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         : 'bg-muted text-muted-foreground ring-border'
                     }`}>
                       <CheckCircle2 className="size-2.5" />
-                      {orderPolicy.auto_reserve_inventory ? t('workspace.autoReserve') : t('workspace.manualReserve')}
+                      {orderPolicy.auto_reserve_inventory ? t($ => $.workspace.autoReserve) : t($ => $.workspace.manualReserve)}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:ring-emerald-800">
                       <CheckCircle2 className="size-2.5" />
-                      {t('workspace.paymentMethodsCount', { count: Object.keys(orderPolicy.payment_proof_policy).length })}
+                      {t($ => $.workspace.paymentMethodsCount, { count: Object.keys(orderPolicy.payment_proof_policy).length })}
                     </span>
                   </div>
 
@@ -2461,27 +2461,27 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                     <div className="border-t px-4 pb-4 pt-3">
                       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
                         <div>
-                          <dt className="font-medium text-muted-foreground">{t('workspace.policy.entryStatus')}</dt>
+                          <dt className="font-medium text-muted-foreground">{t($ => $.workspace.policy.entryStatus)}</dt>
                           <dd className="mt-0.5 font-medium">{(() => {
                             const mp = orderPolicy.source_entry_policies.manual;
                             const ss = Array.isArray(mp) ? mp : [mp];
-                            return ss.map((s) => t(`status.${s}`, { defaultValue: STATUS_LABELS[s] ?? s })).join(', ');
+                            return ss.map((s) => t($ => $.status[s], { defaultValue: STATUS_LABELS[s] ?? s })).join(', ');
                           })()}</dd>
                         </div>
                         <div>
-                          <dt className="font-medium text-muted-foreground">{t('workspace.policy.customerMatching')}</dt>
-                          <dd className="mt-0.5 font-medium">{t(`workspace.matchingPolicies.${orderPolicy.customer_matching_policy}`, { defaultValue: MATCHING_POLICY_LABELS[orderPolicy.customer_matching_policy] ?? orderPolicy.customer_matching_policy })}</dd>
+                          <dt className="font-medium text-muted-foreground">{t($ => $.workspace.policy.customerMatching)}</dt>
+                          <dd className="mt-0.5 font-medium">{t($ => $.workspace.matchingPolicies[orderPolicy.customer_matching_policy], { defaultValue: MATCHING_POLICY_LABELS[orderPolicy.customer_matching_policy] ?? orderPolicy.customer_matching_policy })}</dd>
                         </div>
                         <div>
-                          <dt className="font-medium text-muted-foreground">{t('workspace.policy.autoReserveInventory')}</dt>
-                          <dd className="mt-0.5 font-medium">{orderPolicy.auto_reserve_inventory ? t('workspace.policy.yes') : t('workspace.policy.no')}</dd>
+                          <dt className="font-medium text-muted-foreground">{t($ => $.workspace.policy.autoReserveInventory)}</dt>
+                          <dd className="mt-0.5 font-medium">{orderPolicy.auto_reserve_inventory ? t($ => $.workspace.policy.yes) : t($ => $.workspace.policy.no)}</dd>
                         </div>
                         <div>
-                          <dt className="font-medium text-muted-foreground">{t('workspace.policy.discountPolicy')}</dt>
+                          <dt className="font-medium text-muted-foreground">{t($ => $.workspace.policy.discountPolicy)}</dt>
                           <dd className="mt-0.5 font-medium capitalize">{orderPolicy.discount_policy.replace(/_/g, ' ')}</dd>
                         </div>
                         <div className="col-span-2">
-                          <dt className="font-medium text-muted-foreground mb-1.5">{t('workspace.policy.paymentProofRequirements')}</dt>
+                          <dt className="font-medium text-muted-foreground mb-1.5">{t($ => $.workspace.policy.paymentProofRequirements)}</dt>
                           <dd className="flex flex-wrap gap-1.5">
                             {Object.entries(orderPolicy.payment_proof_policy).map(([method, req]) => (
                               <span
@@ -2495,7 +2495,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                 }`}
                               >
                                 <Info className="size-2.5" />
-                                {t(`workspace.paymentMethodLabels.${method}`, { defaultValue: PAYMENT_METHOD_LABELS[method] ?? method.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) })}: {req}
+                                {t($ => $.workspace.paymentMethodLabels[method], { defaultValue: PAYMENT_METHOD_LABELS[method] ?? method.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) })}: {req}
                               </span>
                             ))}
                           </dd>

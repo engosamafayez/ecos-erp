@@ -102,7 +102,7 @@ export function SmartToolbar({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="sm" className="gap-1.5">
-                {bulkActionsLabel ?? t('toolbar.bulkActions')}
+                {bulkActionsLabel ?? t($ => $.toolbar.bulkActions)}
                 <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground/20 px-1 text-[10px] font-semibold tabular-nums">
                   {selectedCount}
                 </span>
@@ -142,7 +142,7 @@ export function SmartToolbar({
             className="size-8"
             onClick={onRefresh}
             disabled={isFetching}
-            aria-label={refreshLabel ?? t('toolbar.refresh')}
+            aria-label={refreshLabel ?? t($ => $.toolbar.refresh)}
           >
             <RefreshCw className={cn('size-3.5', isFetching && 'animate-spin')} />
           </Button>

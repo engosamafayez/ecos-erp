@@ -80,14 +80,14 @@ export function OrderReservationCell({ order }: { order: Order }) {
 
   const label =
     state.code === 'partial'
-      ? t('reservationCell.partial')
-      : t(`reservationCell.${state.code}`);
+      ? t($ => $.reservationCell.partial)
+      : t($ => $.reservationCell[state.code]);
 
   let qtyStr: string | undefined;
   if (state.code === 'partial' && state.reservedQty != null && state.totalQty != null) {
-    qtyStr = t('reservationCell.unitsPartialReserved', { reserved: state.reservedQty, total: state.totalQty });
+    qtyStr = t($ => $.reservationCell.unitsPartialReserved, { reserved: state.reservedQty, total: state.totalQty });
   } else if (state.code === 'reserved' && state.totalQty != null) {
-    qtyStr = t('reservationCell.unitsReserved', { count: state.totalQty });
+    qtyStr = t($ => $.reservationCell.unitsReserved, { count: state.totalQty });
   }
 
   const badge = (
@@ -110,7 +110,7 @@ export function OrderReservationCell({ order }: { order: Order }) {
           <span className="cursor-default">{badge}</span>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="text-xs space-y-0.5">
-          <p className="font-medium">{t('reservationCell.inventoryReserved')}</p>
+          <p className="font-medium">{t($ => $.reservationCell.inventoryReserved)}</p>
           {qtyStr ? <p className="text-muted-foreground">{qtyStr}</p> : null}
           <p className="text-muted-foreground">{state.detail}</p>
           {warehouseName ? (

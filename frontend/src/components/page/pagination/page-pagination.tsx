@@ -79,13 +79,13 @@ export function PagePagination({
       {/* Left: count summary (desktop) */}
       <p className="order-2 whitespace-nowrap text-xs text-muted-foreground sm:order-1">
         {total === 0
-          ? t('pagination.noResults')
-          : t('pagination.showing', {
+          ? t($ => $.pagination.noResults)
+          : t($ => $.pagination.showing, {
               from: from.toLocaleString(),
               to: to.toLocaleString(),
               total: total.toLocaleString(),
             })}
-        {isLoading ? ` · ${t('loading')}` : ''}
+        {isLoading ? ` · ${t($ => $.loading)}` : ''}
       </p>
 
       {/* Center: page buttons */}
@@ -96,7 +96,7 @@ export function PagePagination({
           className="size-8"
           onClick={() => onPageChange(page - 1)}
           disabled={!canPrev || isLoading}
-          aria-label={t('pagination.previousPage')}
+          aria-label={t($ => $.pagination.previousPage)}
         >
           <PrevIcon className="size-4" aria-hidden />
         </Button>
@@ -116,7 +116,7 @@ export function PagePagination({
                 className="size-8 text-xs"
                 onClick={() => onPageChange(p)}
                 disabled={isLoading}
-                aria-label={t('pagination.pageNumber', { page: p })}
+                aria-label={t($ => $.pagination.pageNumber, { page: p })}
                 aria-current={p === page ? 'page' : undefined}
               >
                 {p}
@@ -136,7 +136,7 @@ export function PagePagination({
           className="size-8"
           onClick={() => onPageChange(page + 1)}
           disabled={!canNext || isLoading}
-          aria-label={t('pagination.nextPage')}
+          aria-label={t($ => $.pagination.nextPage)}
         >
           <NextIcon className="size-4" aria-hidden />
         </Button>
@@ -147,13 +147,13 @@ export function PagePagination({
         {onPerPageChange ? (
           <>
             <span className="whitespace-nowrap text-xs text-muted-foreground">
-              {t('pagination.rows')}
+              {t($ => $.pagination.rows)}
             </span>
             <select
               value={perPage}
               onChange={(e) => onPerPageChange(Number(e.target.value))}
               className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              aria-label={t('pagination.rowsPerPage')}
+              aria-label={t($ => $.pagination.rowsPerPage)}
             >
               {perPageOptions.map((opt) => (
                 <option key={opt} value={opt}>

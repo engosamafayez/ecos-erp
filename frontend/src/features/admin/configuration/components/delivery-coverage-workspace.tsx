@@ -86,8 +86,8 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
     } catch {
       toast({
         title: enable
-          ? t('deliveryCoverage.toast.failEnable', { name: gov.name })
-          : t('deliveryCoverage.toast.failDisable', { name: gov.name }),
+          ? t($ => $.deliveryCoverage.toast.failEnable, { name: gov.name })
+          : t($ => $.deliveryCoverage.toast.failDisable, { name: gov.name }),
         type: 'error',
       });
     }
@@ -99,13 +99,13 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
     if (!gov.geo_id) return;
     const cost = parseFloat(costStr);
     if (isNaN(cost) || cost < 0) {
-      toast({ title: t('deliveryCoverage.toast.invalidCost'), type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.invalidCost), type: 'error' });
       return;
     }
     try {
       await updateGeo.mutateAsync({ id: gov.geo_id, payload: { default_shipping_cost: cost } });
     } catch {
-      toast({ title: t('deliveryCoverage.toast.failUpdateCost'), type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.failUpdateCost), type: 'error' });
     }
   }
 
@@ -122,8 +122,8 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
     } catch {
       toast({
         title: enable
-          ? t('deliveryCoverage.toast.failEnable', { name: zone.name })
-          : t('deliveryCoverage.toast.failDisable', { name: zone.name }),
+          ? t($ => $.deliveryCoverage.toast.failEnable, { name: zone.name })
+          : t($ => $.deliveryCoverage.toast.failDisable, { name: zone.name }),
         type: 'error',
       });
     }
@@ -136,7 +136,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
     const trimmed = costStr.trim();
     const cost = trimmed === '' ? null : parseFloat(trimmed);
     if (cost !== null && (isNaN(cost) || cost < 0)) {
-      toast({ title: t('deliveryCoverage.toast.invalidZoneCost'), type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.invalidZoneCost), type: 'error' });
       return;
     }
     try {
@@ -146,7 +146,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         payload: { custom_shipping_cost: cost },
       });
     } catch {
-      toast({ title: t('deliveryCoverage.toast.failZoneCost'), type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.failZoneCost), type: 'error' });
     }
   }
 
@@ -189,7 +189,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         }
       } catch { /* skip individual failures */ }
     }
-    toast({ title: t('deliveryCoverage.toast.allEnabled'), type: 'success' });
+    toast({ title: t($ => $.deliveryCoverage.toast.allEnabled), type: 'success' });
   }
 
   async function handleDisableAll() {
@@ -198,13 +198,13 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         await updateGeo.mutateAsync({ id: gov.geo_id!, payload: { is_active: false } });
       } catch { /* skip */ }
     }
-    toast({ title: t('deliveryCoverage.toast.allDisabled'), type: 'success' });
+    toast({ title: t($ => $.deliveryCoverage.toast.allDisabled), type: 'success' });
   }
 
   async function handleApplyCost() {
     const cost = parseFloat(bulkPrice);
     if (isNaN(cost) || cost < 0) {
-      toast({ title: t('deliveryCoverage.toast.invalidCost'), type: 'error' });
+      toast({ title: t($ => $.deliveryCoverage.toast.invalidCost), type: 'error' });
       return;
     }
     for (const gov of coverage.filter((g) => g.is_enabled && g.geo_id)) {
@@ -213,7 +213,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
       } catch { /* skip */ }
     }
     setBulkPrice('');
-    toast({ title: t('deliveryCoverage.toast.costApplied', { cost: money(cost) }), type: 'success' });
+    toast({ title: t($ => $.deliveryCoverage.toast.costApplied, { cost: money(cost) }), type: 'success' });
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -232,7 +232,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder={t('deliveryCoverage.search')}
+            placeholder={t($ => $.deliveryCoverage.search)}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 pl-8 text-xs"
@@ -252,7 +252,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
             type="number"
             min="0"
             step="0.01"
-            placeholder={t('deliveryCoverage.defaultCost')}
+            placeholder={t($ => $.deliveryCoverage.defaultCost)}
             value={bulkPrice}
             onChange={(e) => setBulkPrice(e.target.value)}
             className="h-8 w-28 text-xs"
@@ -264,7 +264,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
             disabled={isBulkPending}
             className="text-xs h-8"
           >
-            {t('deliveryCoverage.applyToAll')}
+            {t($ => $.deliveryCoverage.applyToAll)}
           </Button>
         </div>
 
@@ -276,7 +276,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
           className="text-xs gap-1.5 h-8"
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
-          {t('deliveryCoverage.enableAll')}
+          {t($ => $.deliveryCoverage.enableAll)}
         </Button>
         <Button
           size="sm"
@@ -286,7 +286,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
           className="text-xs gap-1.5 h-8"
         >
           <XCircle className="h-3.5 w-3.5" />
-          {t('deliveryCoverage.disableAll')}
+          {t($ => $.deliveryCoverage.disableAll)}
         </Button>
         <Button
           size="sm"
@@ -298,7 +298,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
             ? <ChevronUp   className="h-3.5 w-3.5" />
             : <ChevronDown className="h-3.5 w-3.5" />
           }
-          {allExpanded ? t('deliveryCoverage.collapseAll') : t('deliveryCoverage.expandAll')}
+          {allExpanded ? t($ => $.deliveryCoverage.collapseAll) : t($ => $.deliveryCoverage.expandAll)}
         </Button>
       </div>
 
@@ -321,7 +321,7 @@ export function DeliveryCoverageWorkspace({ brandId }: { brandId: string }) {
             />
           ))}
           {filtered.length === 0 && (
-            <EmptyBlock message={t('deliveryCoverage.emptyGovs')} />
+            <EmptyBlock message={t($ => $.deliveryCoverage.emptyGovs)} />
           )}
         </div>
       )}
@@ -403,7 +403,7 @@ function GovernorateRow({
           <Badge variant="outline" className="text-[10px] py-0 h-4">{gov.code}</Badge>
           {isEnabled && (
             <Badge className="text-[10px] py-0 h-4 bg-muted text-muted-foreground border-0">
-              {t('deliveryCoverage.zonesCount', { enabled: enabledZoneCount, total: gov.total_zones })}
+              {t($ => $.deliveryCoverage.zonesCount, { enabled: enabledZoneCount, total: gov.total_zones })}
             </Badge>
           )}
         </div>
@@ -430,7 +430,7 @@ function GovernorateRow({
                   className="h-7 w-24 text-xs"
                   placeholder="0.00"
                 />
-                <Button type="submit" size="sm" className="h-7 px-2 text-xs">{t('deliveryCoverage.save')}</Button>
+                <Button type="submit" size="sm" className="h-7 px-2 text-xs">{t($ => $.deliveryCoverage.save)}</Button>
                 <Button
                   type="button"
                   size="sm"
@@ -452,7 +452,7 @@ function GovernorateRow({
                 {gov.default_shipping_cost != null ? (
                   <span className="font-mono font-medium">{money(Number(gov.default_shipping_cost) || 0)}</span>
                 ) : (
-                  <span className="italic">{t('deliveryCoverage.setDefaultCost')}</span>
+                  <span className="italic">{t($ => $.deliveryCoverage.setDefaultCost)}</span>
                 )}
                 <Pencil className="h-2.5 w-2.5 ml-0.5" />
               </button>
@@ -463,7 +463,7 @@ function GovernorateRow({
         {/* Enable / disable toggle */}
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-[10px] text-muted-foreground">
-            {isEnabled ? t('deliveryCoverage.enabled') : t('deliveryCoverage.disabled')}
+            {isEnabled ? t($ => $.deliveryCoverage.enabled) : t($ => $.deliveryCoverage.disabled)}
           </span>
           <Switch
             checked={isEnabled}
@@ -479,8 +479,8 @@ function GovernorateRow({
           {gov.total_zones > 0 && (
             <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-4 px-6 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/30">
               <span className="w-8" />
-              <span>{t('deliveryCoverage.zone')}</span>
-              <span className="text-end w-32">{t('deliveryCoverage.shippingCost')}</span>
+              <span>{t($ => $.deliveryCoverage.zone)}</span>
+              <span className="text-end w-32">{t($ => $.deliveryCoverage.shippingCost)}</span>
               <span className="w-8" />
             </div>
           )}
@@ -497,7 +497,7 @@ function GovernorateRow({
             ))}
             {visibleZones.length === 0 && (
               <p className="px-6 py-3 text-xs text-muted-foreground">
-                {t('deliveryCoverage.emptyZones')}
+                {t($ => $.deliveryCoverage.emptyZones)}
               </p>
             )}
           </div>
@@ -571,7 +571,7 @@ function ZoneRow({
               value={costInput}
               onChange={(e) => setCostInput(e.target.value)}
               className="h-6 w-20 text-xs"
-              placeholder={t('deliveryCoverage.emptyInherit')}
+              placeholder={t($ => $.deliveryCoverage.emptyInherit)}
             />
             <Button type="submit" size="sm" className="h-6 px-1.5 text-[10px]">✓</Button>
             <button
@@ -599,7 +599,7 @@ function ZoneRow({
               </Badge>
             ) : (
               <Badge className="text-[10px] py-0 h-4 bg-muted text-muted-foreground border-0 gap-0.5 cursor-pointer">
-                {effectiveCost != null ? money(Number(effectiveCost)) : t('deliveryCoverage.inherited')}
+                {effectiveCost != null ? money(Number(effectiveCost)) : t($ => $.deliveryCoverage.inherited)}
                 {canInteract && <Pencil className="h-2 w-2" />}
               </Badge>
             )}
@@ -611,7 +611,7 @@ function ZoneRow({
       <div className="w-8 flex items-center justify-end">
         {!zone.is_enabled && (
           <Badge className="text-[10px] py-0 h-4 bg-amber-50 text-amber-700 border-0 shrink-0">
-            {t('deliveryCoverage.off')}
+            {t($ => $.deliveryCoverage.off)}
           </Badge>
         )}
       </div>
@@ -644,10 +644,10 @@ function CoverageDashboard({
   if (!stats) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard icon={<MapPin className="h-4 w-4" />}  label={t('deliveryCoverage.kpi.coveredGovs')} value="—" />
-        <KpiCard icon={<Truck  className="h-4 w-4" />}  label={t('deliveryCoverage.kpi.activeZones')} value="—" />
-        <KpiCard icon={<span className="text-xs font-bold">%</span>}   label={t('deliveryCoverage.kpi.coverage')}     value="—" />
-        <KpiCard icon={<span className="text-xs font-bold">{currency}</span>} label={t('deliveryCoverage.kpi.avgShipping')} value="—" />
+        <KpiCard icon={<MapPin className="h-4 w-4" />}  label={t($ => $.deliveryCoverage.kpi.coveredGovs)} value="—" />
+        <KpiCard icon={<Truck  className="h-4 w-4" />}  label={t($ => $.deliveryCoverage.kpi.activeZones)} value="—" />
+        <KpiCard icon={<span className="text-xs font-bold">%</span>}   label={t($ => $.deliveryCoverage.kpi.coverage)}     value="—" />
+        <KpiCard icon={<span className="text-xs font-bold">{currency}</span>} label={t($ => $.deliveryCoverage.kpi.avgShipping)} value="—" />
       </div>
     );
   }
@@ -663,12 +663,12 @@ function CoverageDashboard({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiCard
           icon={<MapPin className="h-4 w-4" />}
-          label={t('deliveryCoverage.kpi.coveredGovs')}
+          label={t($ => $.deliveryCoverage.kpi.coveredGovs)}
           value={`${stats.enabled_governorates} / ${stats.total_governorates}`}
         />
         <KpiCard
           icon={<Truck className="h-4 w-4" />}
-          label={t('deliveryCoverage.kpi.activeZones')}
+          label={t($ => $.deliveryCoverage.kpi.activeZones)}
           value={stats.total_zones > 0
             ? `${stats.active_zones} / ${stats.total_zones}`
             : String(stats.active_zones)
@@ -676,19 +676,19 @@ function CoverageDashboard({
         />
         <KpiCard
           icon={<span className={`text-sm font-bold ${pctColor}`}>%</span>}
-          label={t('deliveryCoverage.kpi.coverage')}
+          label={t($ => $.deliveryCoverage.kpi.coverage)}
           value={`${pct}%`}
         />
         <KpiCard
           icon={<span className="text-xs font-bold">{currency}</span>}
-          label={t('deliveryCoverage.kpi.avgShipping')}
+          label={t($ => $.deliveryCoverage.kpi.avgShipping)}
           value={stats.avg_effective_shipping != null ? money(Number(stats.avg_effective_shipping)) : '—'}
         />
       </div>
 
       <div className="rounded-lg border border-border/60 bg-card px-4 py-3 space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground font-medium">{t('deliveryCoverage.coverageProgress')}</span>
+          <span className="text-muted-foreground font-medium">{t($ => $.deliveryCoverage.coverageProgress)}</span>
           <span className={`font-semibold ${pctColor}`}>{pct}%</span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -716,11 +716,11 @@ function ConfigHealthBar({
     : health.score >= 50 ? 'text-amber-700 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
 
   const checkLabels: Record<string, string> = {
-    channels:          t('deliveryCoverage.healthBar.channels'),
-    delivery_coverage: t('deliveryCoverage.healthBar.deliveryCoverage'),
-    delivery_zones:    t('deliveryCoverage.healthBar.deliveryZones'),
-    delivery_windows:  t('deliveryCoverage.healthBar.deliveryWindows'),
-    shipping_prices:   t('deliveryCoverage.healthBar.shippingPrices'),
+    channels:          t($ => $.deliveryCoverage.healthBar.channels),
+    delivery_coverage: t($ => $.deliveryCoverage.healthBar.deliveryCoverage),
+    delivery_zones:    t($ => $.deliveryCoverage.healthBar.deliveryZones),
+    delivery_windows:  t($ => $.deliveryCoverage.healthBar.deliveryWindows),
+    shipping_prices:   t($ => $.deliveryCoverage.healthBar.shippingPrices),
   };
 
   return (
@@ -728,7 +728,7 @@ function ConfigHealthBar({
       <div className="flex items-center justify-between gap-4 mb-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            {t('deliveryCoverage.healthBar.title')}
+            {t($ => $.deliveryCoverage.healthBar.title)}
           </span>
           <span className={`text-base font-bold ${textColor}`}>{health.score}%</span>
         </div>
@@ -772,7 +772,7 @@ function LoadingBlock() {
   return (
     <div className="flex items-center justify-center py-16 gap-2 text-muted-foreground">
       <Loader2 className="h-4 w-4 animate-spin" />
-      <span className="text-sm">{t('deliveryCoverage.loading')}</span>
+      <span className="text-sm">{t($ => $.deliveryCoverage.loading)}</span>
     </div>
   );
 }

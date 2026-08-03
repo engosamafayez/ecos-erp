@@ -39,17 +39,17 @@ export function WaveMissingMaterialsPage() {
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
 
   const PRIORITY_TABS: Array<{ value: PriorityFilter; label: string }> = [
-    { value: 'all',      label: t('wave.missingMaterials.filters.all') },
-    { value: 'critical', label: t('wave.missingMaterials.filters.critical') },
-    { value: 'high',     label: t('wave.missingMaterials.filters.high') },
-    { value: 'medium',   label: t('wave.missingMaterials.filters.medium') },
-    { value: 'low',      label: t('wave.missingMaterials.filters.low') },
+    { value: 'all',      label: t($ => $.wave.missingMaterials.filters.all) },
+    { value: 'critical', label: t($ => $.wave.missingMaterials.filters.critical) },
+    { value: 'high',     label: t($ => $.wave.missingMaterials.filters.high) },
+    { value: 'medium',   label: t($ => $.wave.missingMaterials.filters.medium) },
+    { value: 'low',      label: t($ => $.wave.missingMaterials.filters.low) },
   ];
 
   const columns: DataGridColumnDef<WaveMissingMaterialItem>[] = useMemo(() => [
     {
       key: 'material',
-      label: t('wave.missingMaterials.columns.material'),
+      label: t($ => $.wave.missingMaterials.columns.material),
       alwaysVisible: true,
       cell: (m) => (
         <div className="text-sm font-medium text-red-900">{m.material_name}</div>
@@ -57,7 +57,7 @@ export function WaveMissingMaterialsPage() {
     },
     {
       key: 'priority',
-      label: t('wave.missingMaterials.columns.priority'),
+      label: t($ => $.wave.missingMaterials.columns.priority),
       alwaysVisible: true,
       cell: (m) => (
         <Badge className={`text-xs ${PRIORITY_COLORS[m.priority]}`}>
@@ -67,7 +67,7 @@ export function WaveMissingMaterialsPage() {
     },
     {
       key: 'missing_qty',
-      label: t('wave.missingMaterials.columns.missingQty'),
+      label: t($ => $.wave.missingMaterials.columns.missingQty),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -76,7 +76,7 @@ export function WaveMissingMaterialsPage() {
     },
     {
       key: 'affected_orders_count',
-      label: t('wave.missingMaterials.columns.affectedOrders'),
+      label: t($ => $.wave.missingMaterials.columns.affectedOrders),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -85,7 +85,7 @@ export function WaveMissingMaterialsPage() {
     },
     {
       key: 'procurement_status',
-      label: t('wave.missingMaterials.columns.procurement'),
+      label: t($ => $.wave.missingMaterials.columns.procurement),
       defaultVisible: true,
       cell: (m) => (
         m.procurement_status ? (
@@ -97,7 +97,7 @@ export function WaveMissingMaterialsPage() {
     },
     {
       key: 'action',
-      label: t('wave.missingMaterials.columns.action'),
+      label: t($ => $.wave.missingMaterials.columns.action),
       alwaysVisible: true,
       align: 'end',
       cell: () => (
@@ -108,7 +108,7 @@ export function WaveMissingMaterialsPage() {
           onClick={(e) => { e.stopPropagation(); void navigate(ROUTES.procurementHub); }}
         >
           <ExternalLink className="h-3 w-3 mr-1" />
-          {t('wave.missingMaterials.openProcurementQueue')}
+          {t($ => $.wave.missingMaterials.openProcurementQueue)}
         </Button>
       ),
     },
@@ -165,12 +165,12 @@ export function WaveMissingMaterialsPage() {
         {!waveId ? (
           <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
             <Waves className="h-8 w-8 opacity-30" />
-            <p className="text-sm">{t('wave.missingMaterials.noWave')}</p>
+            <p className="text-sm">{t($ => $.wave.missingMaterials.noWave)}</p>
           </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">{t('wave.loading')}</span>
+            <span className="text-sm">{t($ => $.wave.loading)}</span>
           </div>
         ) : (
           <UniversalDataGrid<WaveMissingMaterialItem>
@@ -183,13 +183,13 @@ export function WaveMissingMaterialsPage() {
                 <PackageX className="w-8 h-8" />
                 <p className="text-sm font-medium">
                   {allMissing.length === 0
-                    ? t('wave.missingMaterials.emptyAllMet')
-                    : t('wave.missingMaterials.emptyPriorityFilter')}
+                    ? t($ => $.wave.missingMaterials.emptyAllMet)
+                    : t($ => $.wave.missingMaterials.emptyPriorityFilter)}
                 </p>
                 {allMissing.length === 0 && (
                   <p className="text-xs flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3 text-amber-500" />
-                    {t('wave.missingMaterials.shortagesNote')}
+                    {t($ => $.wave.missingMaterials.shortagesNote)}
                   </p>
                 )}
               </div>

@@ -22,7 +22,7 @@ export function LoadingState({ label, className }: LoadingStateProps) {
       )}
     >
       <Loader2 className="size-6 animate-spin" />
-      <span className="text-sm">{label ?? t('loading')}</span>
+      <span className="text-sm">{label ?? t($ => $.loading)}</span>
     </div>
   );
 }

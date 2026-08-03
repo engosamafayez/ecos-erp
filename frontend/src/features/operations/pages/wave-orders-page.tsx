@@ -92,7 +92,7 @@ export function WaveOrdersPage() {
   const columns: DataGridColumnDef<WaveOrderEntry>[] = useMemo(() => [
     {
       key: 'order_number',
-      label: t('wave.orders.columns.orderNo'),
+      label: t($ => $.wave.orders.columns.orderNo),
       alwaysVisible: true,
       cell: (o) => (
         <span className="font-mono text-sm font-medium">{o.order_number}</span>
@@ -100,7 +100,7 @@ export function WaveOrdersPage() {
     },
     {
       key: 'customer',
-      label: t('wave.orders.columns.customer'),
+      label: t($ => $.wave.orders.columns.customer),
       defaultVisible: true,
       cell: (o) => (
         <span className="text-sm">
@@ -110,7 +110,7 @@ export function WaveOrdersPage() {
     },
     {
       key: 'delivery_zone',
-      label: t('wave.orders.columns.deliveryZone'),
+      label: t($ => $.wave.orders.columns.deliveryZone),
       defaultVisible: true,
       cell: (o) => (
         <span className="text-sm text-muted-foreground">{o.delivery_zone_snapshot ?? '—'}</span>
@@ -118,7 +118,7 @@ export function WaveOrdersPage() {
     },
     {
       key: 'governorate',
-      label: t('wave.orders.columns.governorate'),
+      label: t($ => $.wave.orders.columns.governorate),
       defaultVisible: true,
       cell: (o) => (
         <span className="text-sm text-muted-foreground">{o.governorate_snapshot ?? '—'}</span>
@@ -126,17 +126,17 @@ export function WaveOrdersPage() {
     },
     {
       key: 'is_paid',
-      label: t('wave.orders.columns.payment'),
+      label: t($ => $.wave.orders.columns.payment),
       defaultVisible: true,
       cell: (o) => (
         o.is_paid
-          ? <Badge className="text-xs bg-emerald-100 text-emerald-700">{t('wave.orders.payment.paid')}</Badge>
-          : <Badge className="text-xs bg-gray-100 text-gray-600">{t('wave.orders.payment.unpaid')}</Badge>
+          ? <Badge className="text-xs bg-emerald-100 text-emerald-700">{t($ => $.wave.orders.payment.paid)}</Badge>
+          : <Badge className="text-xs bg-gray-100 text-gray-600">{t($ => $.wave.orders.payment.unpaid)}</Badge>
       ),
     },
     {
       key: 'priority',
-      label: t('wave.orders.columns.priority'),
+      label: t($ => $.wave.orders.columns.priority),
       defaultVisible: false,
       align: 'end',
       cell: (o) => (
@@ -145,7 +145,7 @@ export function WaveOrdersPage() {
     },
     {
       key: 'added_at',
-      label: t('wave.orders.columns.addedAt'),
+      label: t($ => $.wave.orders.columns.addedAt),
       defaultVisible: true,
       cell: (o) => (
         <span className="text-xs text-muted-foreground">
@@ -172,7 +172,7 @@ export function WaveOrdersPage() {
 
   const allOrders = orders ?? [];
 
-  const unzonedLabel = t('wave.unzoned');
+  const unzonedLabel = t($ => $.wave.unzoned);
 
   const filtered = allOrders.filter((o) => {
     if (zoneFilter !== null) {
@@ -216,11 +216,11 @@ export function WaveOrdersPage() {
       {allOrders.length > 0 && (
         <div className="flex items-center gap-2 px-4 py-2 border-b bg-background overflow-x-auto shrink-0">
           {[
-            { label: t('wave.orders.kpis.totalOrders'),      value: ordersCount,                  cls: '' },
-            { label: t('wave.orders.kpis.deliveryZones'),    value: uniqueZones,                  cls: '' },
-            { label: t('wave.orders.kpis.paid'),             value: paidCount,                    cls: paidCount > 0 ? 'text-emerald-700' : '' },
-            { label: t('wave.orders.kpis.completion'),       value: `${preparedPct.toFixed(1)}%`, cls: preparedPct >= 100 ? 'text-emerald-700' : '' },
-            { label: t('wave.orders.kpis.missingMaterials'), value: missingCount,                 cls: missingCount > 0 ? 'text-red-700' : '' },
+            { label: t($ => $.wave.orders.kpis.totalOrders),      value: ordersCount,                  cls: '' },
+            { label: t($ => $.wave.orders.kpis.deliveryZones),    value: uniqueZones,                  cls: '' },
+            { label: t($ => $.wave.orders.kpis.paid),             value: paidCount,                    cls: paidCount > 0 ? 'text-emerald-700' : '' },
+            { label: t($ => $.wave.orders.kpis.completion),       value: `${preparedPct.toFixed(1)}%`, cls: preparedPct >= 100 ? 'text-emerald-700' : '' },
+            { label: t($ => $.wave.orders.kpis.missingMaterials), value: missingCount,                 cls: missingCount > 0 ? 'text-red-700' : '' },
           ].map((kpi) => (
             <div
               key={kpi.label}
@@ -238,7 +238,7 @@ export function WaveOrdersPage() {
           orders={allOrders}
           zone={zoneFilter}
           onZone={setZoneFilter}
-          allZonesLabel={t('wave.orders.allZones')}
+          allZonesLabel={t($ => $.wave.orders.allZones)}
           unzonedLabel={unzonedLabel}
         />
         <div className="flex items-center gap-2 shrink-0">
@@ -255,12 +255,12 @@ export function WaveOrdersPage() {
         {!waveId ? (
           <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
             <Waves className="h-8 w-8 opacity-30" />
-            <p className="text-sm">{t('wave.orders.noWave')}</p>
+            <p className="text-sm">{t($ => $.wave.orders.noWave)}</p>
           </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">{t('wave.loading')}</span>
+            <span className="text-sm">{t($ => $.wave.loading)}</span>
           </div>
         ) : (
           <UniversalDataGrid<WaveOrderEntry>
@@ -274,8 +274,8 @@ export function WaveOrdersPage() {
                 <ShoppingCart className="w-8 h-8" />
                 <p className="text-sm">
                   {allOrders.length === 0
-                    ? t('wave.orders.emptyNoOrders')
-                    : t('wave.orders.emptyNoMatch')}
+                    ? t($ => $.wave.orders.emptyNoOrders)
+                    : t($ => $.wave.orders.emptyNoMatch)}
                 </p>
               </div>
             }

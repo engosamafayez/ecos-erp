@@ -9,6 +9,7 @@ import {
 import type { KeyboardEvent } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Search, Sparkles, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,7 @@ type CommandItemProps = {
 };
 
 function CommandItem({ command, isActive, 'data-index': dataIndex, onSelect, onHover }: CommandItemProps) {
+  const { t } = useTranslation('command-palette');
   const Icon = command.icon;
 
   return (
@@ -63,7 +65,7 @@ function CommandItem({ command, isActive, 'data-index': dataIndex, onSelect, onH
           <span className="text-sm font-medium truncate">{command.title}</span>
           {command.soon && (
             <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-primary uppercase">
-              Soon
+              {t($ => $.palette.soon)}
             </span>
           )}
         </div>
@@ -100,6 +102,7 @@ function CommandGroupSection({
   onSelect: (cmd: Command) => void;
   onHover: (index: number) => void;
 }) {
+  const { t } = useTranslation('command-palette');
   const meta = COMMAND_GROUP_META[group];
   const GroupIcon = meta.icon;
 
@@ -111,7 +114,7 @@ function CommandGroupSection({
         className="flex items-center gap-1.5 px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70"
       >
         <GroupIcon className="size-3" />
-        {meta.label}
+        {t(meta.labelKey)}
       </div>
 
       {commands.map((cmd, i) => {
@@ -132,11 +135,12 @@ function CommandGroupSection({
 }
 
 function EmptyResults({ query }: { query: string }) {
+  const { t } = useTranslation('command-palette');
   return (
     <div className="flex flex-col items-center justify-center py-14 text-center">
       <Search className="mb-3 size-8 text-muted-foreground/30" aria-hidden />
-      <p className="text-sm font-medium text-foreground">No results for &ldquo;{query}&rdquo;</p>
-      <p className="mt-1 text-xs text-muted-foreground">Try a different keyword or navigate directly.</p>
+      <p className="text-sm font-medium text-foreground">{t($ => $.palette.noResults, { query })}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{t($ => $.palette.noResultsHint)}</p>
     </div>
   );
 }
@@ -164,6 +168,7 @@ export type GlobalCommandPaletteProps = {
  *   Desktop — centered dialog (sm:max-w-2xl, top-[20%], rounded-xl)
  */
 export function GlobalCommandPalette({ open, onClose }: GlobalCommandPaletteProps) {
+  const { t } = useTranslation('command-palette');
   const { commands } = useCommandCenter();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -277,7 +282,7 @@ export function GlobalCommandPalette({ open, onClose }: GlobalCommandPaletteProp
 
         {/* Panel */}
         <DialogPrimitive.Content
-          aria-label="Command Center"
+          aria-label={t($ => $.palette.title)}
           onKeyDown={handleKeyDown}
           className={cn(
             // Base — mobile fullscreen
@@ -305,13 +310,13 @@ export function GlobalCommandPalette({ open, onClose }: GlobalCommandPaletteProp
               aria-expanded={open}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search commands, pages, or records…"
+              placeholder={t($ => $.palette.searchPlaceholder)}
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
             {query ? (
               <button
                 type="button"
-                aria-label="Clear search"
+                aria-label={t($ => $.palette.clearSearch)}
                 onClick={() => setQuery('')}
                 className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
@@ -332,7 +337,7 @@ export function GlobalCommandPalette({ open, onClose }: GlobalCommandPaletteProp
             id="command-listbox"
             ref={listRef}
             role="listbox"
-            aria-label="Commands"
+            aria-label={t($ => $.palette.commandsAria)}
             className="flex-1 overflow-y-auto overscroll-contain pb-2"
           >
             {flatItems.length === 0 && query.trim() ? (
@@ -359,26 +364,26 @@ export function GlobalCommandPalette({ open, onClose }: GlobalCommandPaletteProp
           >
             <span className="flex items-center gap-1">
               <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">↑↓</kbd>
-              Navigate
+              {t($ => $.palette.navigate)}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">↵</kbd>
-              Select
+              {t($ => $.palette.select)}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">ESC</kbd>
-              Close
+              {t($ => $.palette.close)}
             </span>
             <span className="ms-auto flex items-center gap-1 text-primary/70">
               <Sparkles className="size-3" aria-hidden />
-              AI coming soon
+              {t($ => $.palette.aiComingSoon)}
             </span>
           </div>
 
           {/* Hidden dialog title for screen readers */}
-          <DialogPrimitive.Title className="sr-only">Command Center</DialogPrimitive.Title>
+          <DialogPrimitive.Title className="sr-only">{t($ => $.palette.title)}</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
-            Search and execute commands across the ECOS ERP system.
+            {t($ => $.palette.srDescription)}
           </DialogPrimitive.Description>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

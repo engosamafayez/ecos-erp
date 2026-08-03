@@ -60,7 +60,7 @@ export function WidgetFrame({
         <Icon className={cn('h-3 w-3', color)} />
         <span>{title}</span>
         <Eye className="ml-1 h-3 w-3" />
-        <span className="opacity-50">{t('widgetFrame.restore')}</span>
+        <span className="opacity-50">{t($ => $.widgetFrame.restore)}</span>
       </button>
     );
   }
@@ -90,7 +90,7 @@ export function WidgetFrame({
               onDragStart();
             }}
             className="flex cursor-grab items-center text-muted-foreground/30 opacity-0 transition-opacity hover:text-muted-foreground/60 group-hover:opacity-100 active:cursor-grabbing"
-            title={t('widgetFrame.dragToReorder')}
+            title={t($ => $.widgetFrame.dragToReorder)}
           >
             <GripVertical className="h-4 w-4" />
           </div>

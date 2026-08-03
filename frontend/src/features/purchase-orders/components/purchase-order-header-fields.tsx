@@ -15,7 +15,7 @@ export function PurchaseOrderHeaderFields({ readOnly = false }: { readOnly?: boo
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
-        <FormField name="supplier_id" label={t('form.supplier.label')} required>
+        <FormField name="supplier_id" label={t($ => $.form.supplier.label)} required>
           <Controller
             control={control}
             name="supplier_id"
@@ -24,7 +24,7 @@ export function PurchaseOrderHeaderFields({ readOnly = false }: { readOnly?: boo
                 options={supplierOptions}
                 value={field.value || null}
                 onChange={field.onChange}
-                placeholder={t('form.supplier.placeholder')}
+                placeholder={t($ => $.form.supplier.placeholder)}
                 loading={loadingSuppliers}
                 disabled={readOnly}
               />
@@ -33,19 +33,19 @@ export function PurchaseOrderHeaderFields({ readOnly = false }: { readOnly?: boo
         </FormField>
       </div>
 
-      <FormField name="order_date" label={t('form.orderDate')} required>
+      <FormField name="order_date" label={t($ => $.form.orderDate)} required>
         <Input type="date" disabled={readOnly} {...register('order_date')} />
       </FormField>
 
-      <FormField name="expected_date" label={t('form.expectedDate')}>
+      <FormField name="expected_date" label={t($ => $.form.expectedDate)}>
         <Input type="date" disabled={readOnly} {...register('expected_date')} />
       </FormField>
 
       <div className="sm:col-span-2">
-        <FormField name="notes" label={t('form.notes.label')}>
+        <FormField name="notes" label={t($ => $.form.notes.label)}>
           <textarea
             rows={3}
-            placeholder={t('form.notes.placeholder')}
+            placeholder={t($ => $.form.notes.placeholder)}
             disabled={readOnly}
             className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
             {...register('notes')}

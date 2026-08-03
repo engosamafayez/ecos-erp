@@ -86,24 +86,24 @@ export function WorkflowDrawer({ open, onClose, workflow }: Props) {
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
       <SheetContent className="w-[420px]">
         <SheetHeader>
-          <SheetTitle>{isEditing ? t('automation.workflows.drawer.editTitle') : t('automation.workflows.drawer.newTitle')}</SheetTitle>
+          <SheetTitle>{isEditing ? t($ => $.automation.workflows.drawer.editTitle) : t($ => $.automation.workflows.drawer.newTitle)}</SheetTitle>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-6">
           <div className="space-y-1.5">
-            <Label>{t('automation.workflows.drawer.nameLabel')}</Label>
-            <Input {...register('name', { required: true })} placeholder={t('automation.workflows.drawer.namePlaceholder')} />
+            <Label>{t($ => $.automation.workflows.drawer.nameLabel)}</Label>
+            <Input {...register('name', { required: true })} placeholder={t($ => $.automation.workflows.drawer.namePlaceholder)} />
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t('common.description')}</Label>
-            <Textarea {...register('description')} placeholder={t('automation.workflows.drawer.descriptionPlaceholder')} rows={2} />
+            <Label>{t($ => $.common.description)}</Label>
+            <Textarea {...register('description')} placeholder={t($ => $.automation.workflows.drawer.descriptionPlaceholder)} rows={2} />
           </div>
 
           {!isEditing && (
             <>
               <div className="space-y-1.5">
-                <Label>{t('automation.workflows.drawer.triggerTypeLabel')}</Label>
+                <Label>{t($ => $.automation.workflows.drawer.triggerTypeLabel)}</Label>
                 <Select
                   value={triggerType}
                   onValueChange={v => setValue('trigger_type', v as WorkflowTriggerType)}
@@ -113,7 +113,7 @@ export function WorkflowDrawer({ open, onClose, workflow }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     {TRIGGER_TYPES.map(tt => (
-                      <SelectItem key={tt} value={tt}>{t(`automation.triggerType.${tt}`)}</SelectItem>
+                      <SelectItem key={tt} value={tt}>{t($ => $.automation.triggerType[tt])}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -121,10 +121,10 @@ export function WorkflowDrawer({ open, onClose, workflow }: Props) {
 
               {triggerType === 'business_event' && (
                 <div className="space-y-1.5">
-                  <Label>{t('automation.workflows.drawer.eventTypeLabel')}</Label>
-                  <Input {...register('event_type')} placeholder={t('automation.workflows.drawer.eventTypePlaceholder')} />
+                  <Label>{t($ => $.automation.workflows.drawer.eventTypeLabel)}</Label>
+                  <Input {...register('event_type')} placeholder={t($ => $.automation.workflows.drawer.eventTypePlaceholder)} />
                   <p className="text-xs text-muted-foreground">
-                    {t('automation.workflows.drawer.eventTypeHint')}
+                    {t($ => $.automation.workflows.drawer.eventTypeHint)}
                   </p>
                 </div>
               )}
@@ -132,16 +132,16 @@ export function WorkflowDrawer({ open, onClose, workflow }: Props) {
           )}
 
           <div className="space-y-1.5">
-            <Label>{t('common.tags')}</Label>
-            <Input {...register('tags')} placeholder={t('automation.workflows.drawer.tagsPlaceholder')} />
+            <Label>{t($ => $.common.tags)}</Label>
+            <Input {...register('tags')} placeholder={t($ => $.automation.workflows.drawer.tagsPlaceholder)} />
           </div>
 
           <div className="flex gap-2 pt-2">
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? t('common.saving') : isEditing ? t('common.saveChanges') : t('automation.workflows.drawer.create')}
+              {isSubmitting ? t($ => $.common.saving) : isEditing ? t($ => $.common.saveChanges) : t($ => $.automation.workflows.drawer.create)}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>
-              {t('common.cancel')}
+              {t($ => $.common.cancel)}
             </Button>
           </div>
         </form>

@@ -71,10 +71,10 @@ function OverviewTab({
           default_shipping_price: parseFloat(price) || 0,
         },
       });
-      toast({ title: t('govDrawer.toast.saved') });
+      toast({ title: t($ => $.govDrawer.toast.saved) });
       setDirty(false);
     } catch {
-      toast({ title: t('govDrawer.toast.saveFail'), variant: 'destructive' });
+      toast({ title: t($ => $.govDrawer.toast.saveFail), variant: 'destructive' });
     }
   };
 
@@ -83,24 +83,24 @@ function OverviewTab({
       {/* Status badges */}
       <div className="flex items-center gap-2 flex-wrap">
         <Badge variant={gov.is_active ? 'default' : 'secondary'}>
-          {gov.is_active ? t('govDrawer.statusBadge.active') : t('govDrawer.statusBadge.inactive')}
+          {gov.is_active ? t($ => $.govDrawer.statusBadge.active) : t($ => $.govDrawer.statusBadge.inactive)}
         </Badge>
         {gov.is_system && (
-          <Badge variant="outline" className="text-xs">{t('govDrawer.statusBadge.system')}</Badge>
+          <Badge variant="outline" className="text-xs">{t($ => $.govDrawer.statusBadge.system)}</Badge>
         )}
       </div>
 
       {/* Edit fields */}
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label>{t('govDrawer.overview.form.nameEn')}</Label>
+          <Label>{t($ => $.govDrawer.overview.form.nameEn)}</Label>
           <Input
             value={nameEn}
             onChange={(e) => { setNameEn(e.target.value); markDirty(); }}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>{t('govDrawer.overview.form.nameAr')}</Label>
+          <Label>{t($ => $.govDrawer.overview.form.nameAr)}</Label>
           <Input
             value={nameAr}
             onChange={(e) => { setNameAr(e.target.value); markDirty(); }}
@@ -108,7 +108,7 @@ function OverviewTab({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>{t('govDrawer.overview.form.defaultShipping')}</Label>
+          <Label>{t($ => $.govDrawer.overview.form.defaultShipping)}</Label>
           <Input
             type="number"
             min={0}
@@ -117,13 +117,13 @@ function OverviewTab({
             onChange={(e) => { setPrice(e.target.value); markDirty(); }}
           />
           <p className="text-xs text-muted-foreground">
-            {t('govDrawer.overview.form.shippingHint')}
+            {t($ => $.govDrawer.overview.form.shippingHint)}
           </p>
         </div>
 
         {dirty && (
           <Button onClick={handleSave} disabled={update.isPending} className="w-full">
-            {update.isPending ? t('govDrawer.saving') : t('govDrawer.save')}
+            {update.isPending ? t($ => $.govDrawer.saving) : t($ => $.govDrawer.save)}
           </Button>
         )}
       </div>
@@ -131,11 +131,11 @@ function OverviewTab({
       {/* KPI summary */}
       <div className="grid grid-cols-2 gap-3">
         <div className="border rounded-lg p-3">
-          <p className="text-xs text-muted-foreground">{t('govDrawer.overview.kpi.cities')}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.govDrawer.overview.kpi.cities)}</p>
           <p className="text-2xl font-semibold mt-0.5 tabular-nums">{gov.cities_count ?? 0}</p>
         </div>
         <div className="border rounded-lg p-3">
-          <p className="text-xs text-muted-foreground">{t('govDrawer.overview.kpi.defaultShipping')}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.govDrawer.overview.kpi.defaultShipping)}</p>
           <p className="text-2xl font-semibold mt-0.5 tabular-nums">
             {money(Number(gov.default_shipping_price) || 0)}
           </p>
@@ -145,7 +145,7 @@ function OverviewTab({
       {/* Danger zone — only for non-system records */}
       {!gov.is_system && (
         <div className="border border-destructive/30 rounded-lg p-4 space-y-2">
-          <p className="text-sm font-medium text-destructive">{t('govDrawer.overview.danger.title')}</p>
+          <p className="text-sm font-medium text-destructive">{t($ => $.govDrawer.overview.danger.title)}</p>
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -154,11 +154,11 @@ function OverviewTab({
               className="gap-1.5"
             >
               {gov.is_active
-                ? <><XCircle className="h-3.5 w-3.5" />{t('govDrawer.overview.danger.deactivate')}</>
-                : <><CheckCircle className="h-3.5 w-3.5" />{t('govDrawer.overview.danger.activate')}</>}
+                ? <><XCircle className="h-3.5 w-3.5" />{t($ => $.govDrawer.overview.danger.deactivate)}</>
+                : <><CheckCircle className="h-3.5 w-3.5" />{t($ => $.govDrawer.overview.danger.activate)}</>}
             </Button>
             <Button size="sm" variant="destructive" onClick={onDelete}>
-              {t('govDrawer.overview.danger.deleteButton')}
+              {t($ => $.govDrawer.overview.danger.deleteButton)}
             </Button>
           </div>
         </div>
@@ -197,13 +197,13 @@ function CitiesTab({ gov }: { gov: Governorate }) {
           shipping_price: newPrice ? parseFloat(newPrice) : null,
         },
       });
-      toast({ title: t('govDrawer.toast.cityAdded') });
+      toast({ title: t($ => $.govDrawer.toast.cityAdded) });
       setShowNewCity(false);
       setNewNameEn('');
       setNewNameAr('');
       setNewPrice('');
     } catch {
-      toast({ title: t('govDrawer.toast.cityAddFail'), variant: 'destructive' });
+      toast({ title: t($ => $.govDrawer.toast.cityAddFail), variant: 'destructive' });
     }
   };
 
@@ -213,28 +213,28 @@ function CitiesTab({ gov }: { gov: Governorate }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Input
-          placeholder={t('govDrawer.cities.search')}
+          placeholder={t($ => $.govDrawer.cities.search)}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-8 text-sm"
         />
         <Button size="sm" onClick={() => setShowNewCity(true)} className="shrink-0">
-          {t('govDrawer.cities.addTitle')}
+          {t($ => $.govDrawer.cities.addTitle)}
         </Button>
       </div>
 
       {showNewCity && (
         <div className="border rounded-lg p-3 space-y-2 bg-muted/30">
-          <p className="text-xs font-medium">{t('govDrawer.cities.newTitle')}</p>
+          <p className="text-xs font-medium">{t($ => $.govDrawer.cities.newTitle)}</p>
           <div className="grid grid-cols-2 gap-2">
             <Input
-              placeholder={t('govDrawer.cities.form.nameEn')}
+              placeholder={t($ => $.govDrawer.cities.form.nameEn)}
               value={newNameEn}
               onChange={(e) => setNewNameEn(e.target.value)}
               className="h-8 text-sm"
             />
             <Input
-              placeholder={t('govDrawer.cities.form.nameAr')}
+              placeholder={t($ => $.govDrawer.cities.form.nameAr)}
               value={newNameAr}
               onChange={(e) => setNewNameAr(e.target.value)}
               className="h-8 text-sm"
@@ -243,7 +243,7 @@ function CitiesTab({ gov }: { gov: Governorate }) {
           </div>
           <Input
             type="number"
-            placeholder={t('govDrawer.cities.form.shipping')}
+            placeholder={t($ => $.govDrawer.cities.form.shipping)}
             value={newPrice}
             onChange={(e) => setNewPrice(e.target.value)}
             className="h-8 text-sm"
@@ -254,19 +254,19 @@ function CitiesTab({ gov }: { gov: Governorate }) {
               onClick={handleCreate}
               disabled={createCity.isPending || !newNameEn.trim()}
             >
-              {createCity.isPending ? t('govDrawer.cities.adding') : t('govDrawer.cities.addButton')}
+              {createCity.isPending ? t($ => $.govDrawer.cities.adding) : t($ => $.govDrawer.cities.addButton)}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setShowNewCity(false)}>
-              {t('govDrawer.cities.cancel')}
+              {t($ => $.govDrawer.cities.cancel)}
             </Button>
           </div>
         </div>
       )}
 
       {isFetching && cities.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">{t('govDrawer.cities.loading')}</p>
+        <p className="text-sm text-muted-foreground py-8 text-center">{t($ => $.govDrawer.cities.loading)}</p>
       ) : cities.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">{t('govDrawer.cities.empty')}</p>
+        <p className="text-sm text-muted-foreground py-8 text-center">{t($ => $.govDrawer.cities.empty)}</p>
       ) : (
         <div className="border rounded-lg divide-y">
           {cities.map((city) => (
@@ -278,19 +278,19 @@ function CitiesTab({ gov }: { gov: Governorate }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium">{city.name_en}</span>
                   {!city.is_active && (
-                    <Badge variant="secondary" className="text-xs shrink-0">{t('govDrawer.cities.inactive')}</Badge>
+                    <Badge variant="secondary" className="text-xs shrink-0">{t($ => $.govDrawer.cities.inactive)}</Badge>
                   )}
                   {city.is_remote_area && (
-                    <Badge variant="outline" className="text-xs shrink-0">{t('govDrawer.cities.remote')}</Badge>
+                    <Badge variant="outline" className="text-xs shrink-0">{t($ => $.govDrawer.cities.remote)}</Badge>
                   )}
                   {city.uses_governorate_price && (
-                    <span className="text-xs text-muted-foreground shrink-0">{t('govDrawer.cities.govPrice')}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{t($ => $.govDrawer.cities.govPrice)}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                   <span dir="rtl">{city.name_ar}</span>
                   <span className="tabular-nums">{money(Number(city.effective_shipping_price) || 0)}</span>
-                  {city.aliases_count > 0 && <span>{t('govDrawer.cities.aliasCount', { count: city.aliases_count })}</span>}
+                  {city.aliases_count > 0 && <span>{t($ => $.govDrawer.cities.aliasCount, { count: city.aliases_count })}</span>}
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
@@ -300,7 +300,7 @@ function CitiesTab({ gov }: { gov: Governorate }) {
                   className="h-7 px-2 text-xs"
                   onClick={() => setSelectedCityId(city.id)}
                 >
-                  {t('govDrawer.cities.edit')}
+                  {t($ => $.govDrawer.cities.edit)}
                 </Button>
                 {city.is_system ? (
                   <TooltipProvider>
@@ -313,12 +313,12 @@ function CitiesTab({ gov }: { gov: Governorate }) {
                             className="h-7 px-2 text-xs text-muted-foreground cursor-not-allowed"
                             disabled
                           >
-                            {city.is_active ? t('govDrawer.cities.deactivate') : t('govDrawer.cities.activate')}
+                            {city.is_active ? t($ => $.govDrawer.cities.deactivate) : t($ => $.govDrawer.cities.activate)}
                           </Button>
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {t('govDrawer.cities.systemTooltip')}
+                        {t($ => $.govDrawer.cities.systemTooltip)}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -331,11 +331,11 @@ function CitiesTab({ gov }: { gov: Governorate }) {
                       try {
                         await toggleCity.mutateAsync({ governorateId: gov.id, cityId: city.id });
                       } catch {
-                        toast({ title: t('govDrawer.toast.failed'), variant: 'destructive' });
+                        toast({ title: t($ => $.govDrawer.toast.failed), variant: 'destructive' });
                       }
                     }}
                   >
-                    {city.is_active ? t('govDrawer.cities.deactivate') : t('govDrawer.cities.activate')}
+                    {city.is_active ? t($ => $.govDrawer.cities.deactivate) : t($ => $.govDrawer.cities.activate)}
                   </Button>
                 )}
               </div>
@@ -382,9 +382,9 @@ function ProvidersTab({ gov }: { gov: Governorate }) {
           <Link2 className="h-6 w-6 text-muted-foreground" />
         </span>
         <div>
-          <p className="font-medium">{t('govDrawer.providers.empty')}</p>
+          <p className="font-medium">{t($ => $.govDrawer.providers.empty)}</p>
           <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-            {t('govDrawer.providers.desc')}
+            {t($ => $.govDrawer.providers.desc)}
           </p>
         </div>
         <TooltipProvider>
@@ -393,12 +393,12 @@ function ProvidersTab({ gov }: { gov: Governorate }) {
               <span className="inline-flex">
                 <Button size="sm" disabled className="gap-1.5">
                   <Link2 className="h-3.5 w-3.5" />
-                  {t('govDrawer.providers.linkButton')}
+                  {t($ => $.govDrawer.providers.linkButton)}
                 </Button>
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              {t('govDrawer.providers.comingSoon')}
+              {t($ => $.govDrawer.providers.comingSoon)}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -409,7 +409,7 @@ function ProvidersTab({ gov }: { gov: Governorate }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {t('govDrawer.providers.aliasDesc')}
+        {t($ => $.govDrawer.providers.aliasDesc)}
       </p>
       <div className="grid grid-cols-2 gap-3">
         {providerCounts.map((p) => (
@@ -419,7 +419,7 @@ function ProvidersTab({ gov }: { gov: Governorate }) {
               <span className="font-medium text-sm">{p.label}</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              {p.count > 0 ? t('govDrawer.providers.aliasCount', { count: p.count }) : t('govDrawer.providers.noAliases')}
+              {p.count > 0 ? t($ => $.govDrawer.providers.aliasCount, { count: p.count }) : t($ => $.govDrawer.providers.noAliases)}
             </p>
           </div>
         ))}
@@ -446,7 +446,7 @@ function ActivityTab({ gov }: { gov: Governorate }) {
     {
       id:    'created',
       icon:  Tag,
-      label: t('govDrawer.activity.seeded'),
+      label: t($ => $.govDrawer.activity.seeded),
       meta:  gov.name_en,
       time:  gov.created_at,
       color: 'text-blue-500',
@@ -461,13 +461,13 @@ function ActivityTab({ gov }: { gov: Governorate }) {
   return (
     <div className="space-y-1">
       <p className="text-xs text-muted-foreground mb-4">
-        {t('govDrawer.activity.intro')}
+        {t($ => $.govDrawer.activity.intro)}
       </p>
 
       {events.length === 0 ? (
         <div className="py-10 text-center">
           <Activity className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">{t('govDrawer.activity.empty')}</p>
+          <p className="text-sm text-muted-foreground">{t($ => $.govDrawer.activity.empty)}</p>
         </div>
       ) : (
         <div className="relative ps-5 space-y-4">
@@ -495,13 +495,13 @@ function ActivityTab({ gov }: { gov: Governorate }) {
 
       {/* Upcoming event types legend */}
       <div className="mt-6 border rounded-lg p-3 space-y-1.5">
-        <p className="text-xs font-medium text-muted-foreground">{t('govDrawer.activity.legend.title')}</p>
+        <p className="text-xs font-medium text-muted-foreground">{t($ => $.govDrawer.activity.legend.title)}</p>
         {[
-          { icon: DollarSign, label: t('govDrawer.activity.legend.priceChanged') },
-          { icon: CheckCircle, label: t('govDrawer.activity.legend.statusChanged') },
-          { icon: Tag, label: t('govDrawer.activity.legend.aliasChanged') },
-          { icon: MapPin, label: t('govDrawer.activity.legend.cityOrderChanged') },
-          { icon: Activity, label: t('govDrawer.activity.legend.cityStatusChanged') },
+          { icon: DollarSign, label: t($ => $.govDrawer.activity.legend.priceChanged) },
+          { icon: CheckCircle, label: t($ => $.govDrawer.activity.legend.statusChanged) },
+          { icon: Tag, label: t($ => $.govDrawer.activity.legend.aliasChanged) },
+          { icon: MapPin, label: t($ => $.govDrawer.activity.legend.cityOrderChanged) },
+          { icon: Activity, label: t($ => $.govDrawer.activity.legend.cityStatusChanged) },
         ].map((item) => {
           const Icon = item.icon;
           return (
@@ -536,11 +536,11 @@ export function GovernorateDrawer({ governorate, onClose }: Props) {
       await toggleStatus.mutateAsync(governorate.id);
       const wasActive = governorate.is_active;
       toast({
-        title: wasActive ? t('govDrawer.toast.deactivated') : t('govDrawer.toast.activated'),
-        description: wasActive ? t('govDrawer.toast.deactivatedDesc') : undefined,
+        title: wasActive ? t($ => $.govDrawer.toast.deactivated) : t($ => $.govDrawer.toast.activated),
+        description: wasActive ? t($ => $.govDrawer.toast.deactivatedDesc) : undefined,
       });
     } catch {
-      toast({ title: t('govDrawer.toast.failed'), variant: 'destructive' });
+      toast({ title: t($ => $.govDrawer.toast.failed), variant: 'destructive' });
     }
   };
 
@@ -548,11 +548,11 @@ export function GovernorateDrawer({ governorate, onClose }: Props) {
     if (!governorate) return;
     try {
       await deleteGov.mutateAsync(governorate.id);
-      toast({ title: t('govDrawer.toast.deleted') });
+      toast({ title: t($ => $.govDrawer.toast.deleted) });
       onClose();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('govDrawer.toast.deleteFail');
-      toast({ title: t('govDrawer.toast.error'), description: msg, variant: 'destructive' });
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t($ => $.govDrawer.toast.deleteFail);
+      toast({ title: t($ => $.govDrawer.toast.error), description: msg, variant: 'destructive' });
     }
   };
 
@@ -561,23 +561,23 @@ export function GovernorateDrawer({ governorate, onClose }: Props) {
       open={Boolean(governorate)}
       onOpenChange={(o) => !o && onClose()}
       title={governorate ? `${governorate.name_en} — ${governorate.name_ar}` : ''}
-      description={governorate ? t('govDrawer.drawerDesc', { count: governorate.cities_count ?? 0, price: money(governorate.default_shipping_price) }) : ''}
+      description={governorate ? t($ => $.govDrawer.drawerDesc, { count: governorate.cities_count ?? 0, price: money(governorate.default_shipping_price) }) : ''}
       size="xl"
     >
       {governorate && (
         <Tabs defaultValue="overview">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="overview"  className="flex-1">
-              <Building2 className="h-3.5 w-3.5 me-1.5" />{t('govDrawer.tabs.overview')}
+              <Building2 className="h-3.5 w-3.5 me-1.5" />{t($ => $.govDrawer.tabs.overview)}
             </TabsTrigger>
             <TabsTrigger value="cities"    className="flex-1">
-              <MapPin className="h-3.5 w-3.5 me-1.5" />{t('govDrawer.tabs.cities')}
+              <MapPin className="h-3.5 w-3.5 me-1.5" />{t($ => $.govDrawer.tabs.cities)}
             </TabsTrigger>
             <TabsTrigger value="providers" className="flex-1">
-              <Truck className="h-3.5 w-3.5 me-1.5" />{t('govDrawer.tabs.providers')}
+              <Truck className="h-3.5 w-3.5 me-1.5" />{t($ => $.govDrawer.tabs.providers)}
             </TabsTrigger>
             <TabsTrigger value="activity"  className="flex-1">
-              <Activity className="h-3.5 w-3.5 me-1.5" />{t('govDrawer.tabs.activity')}
+              <Activity className="h-3.5 w-3.5 me-1.5" />{t($ => $.govDrawer.tabs.activity)}
             </TabsTrigger>
           </TabsList>
 

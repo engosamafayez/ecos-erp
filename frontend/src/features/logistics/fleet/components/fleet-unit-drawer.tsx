@@ -54,20 +54,20 @@ function Overview({ unitId }: { unitId: string }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
-        <Field label={t('fleet.table.fitness')}>
+        <Field label={t($ => $.fleet.table.fitness)}>
           <FitnessBadge level={unit.fitness.level} />
         </Field>
-        <Field label={t('fleet.table.lifecycle')}>
+        <Field label={t($ => $.fleet.table.lifecycle)}>
           <LifecycleBadge state={unit.lifecycle_state} />
         </Field>
-        <Field label={t('fleet.unit.plate')}>{unit.vehicle?.plate_number ?? '—'}</Field>
-        <Field label={t('fleet.unit.vehicleCode')}>{unit.vehicle?.vehicle_code ?? '—'}</Field>
-        <Field label={t('fleet.table.odometer')}>
+        <Field label={t($ => $.fleet.unit.plate)}>{unit.vehicle?.plate_number ?? '—'}</Field>
+        <Field label={t($ => $.fleet.unit.vehicleCode)}>{unit.vehicle?.vehicle_code ?? '—'}</Field>
+        <Field label={t($ => $.fleet.table.odometer)}>
           {unit.current_odometer_km !== null
-            ? t('fleet.kmValue', { value: unit.current_odometer_km.toLocaleString() })
+            ? t($ => $.fleet.kmValue, { value: unit.current_odometer_km.toLocaleString() })
             : '—'}
         </Field>
-        <Field label={t('fleet.unit.commissioned')}>{formatDate(unit.commissioned_at)}</Field>
+        <Field label={t($ => $.fleet.unit.commissioned)}>{formatDate(unit.commissioned_at)}</Field>
       </div>
 
       {unit.lifecycle_reason && (
@@ -79,7 +79,7 @@ function Overview({ unitId }: { unitId: string }) {
       <Separator />
 
       <div className="space-y-2">
-        <p className="text-sm font-medium">{t('fleet.unit.readiness')}</p>
+        <p className="text-sm font-medium">{t($ => $.fleet.unit.readiness)}</p>
         <BlockerList verdict={unit.fitness} />
       </div>
 
@@ -88,9 +88,9 @@ function Overview({ unitId }: { unitId: string }) {
           <Separator />
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">{t('fleet.health.title')}</p>
+              <p className="text-sm font-medium">{t($ => $.fleet.health.title)}</p>
               <Badge variant="outline" className="text-xs">
-                {health.value}/100 · {t(`fleet.health.band.${health.band}`)}
+                {health.value}/100 · {t($ => $.fleet.health.band[health.band])}
               </Badge>
             </div>
             <div className="space-y-1.5">
@@ -144,13 +144,13 @@ function Odometer({ unitId }: { unitId: string }) {
       setReading('');
       toast({
         title: result.is_accepted
-          ? t('fleet.odometer.toastRecorded')
-          : t('fleet.odometer.toastNotAccepted'),
+          ? t($ => $.fleet.odometer.toastRecorded)
+          : t($ => $.fleet.odometer.toastNotAccepted),
         description: result.rejection_reason ?? undefined,
         variant: result.is_accepted ? undefined : 'destructive',
       });
     } catch {
-      toast({ title: t('fleet.odometer.toastFailed'), variant: 'destructive' });
+      toast({ title: t($ => $.fleet.odometer.toastFailed), variant: 'destructive' });
     }
   }
 
@@ -159,7 +159,7 @@ function Odometer({ unitId }: { unitId: string }) {
       <div className="flex items-end gap-2">
         <div className="flex-1 space-y-1">
           <Label htmlFor="odometer" className="text-xs">
-            {t('fleet.odometer.newReading')}
+            {t($ => $.fleet.odometer.newReading)}
           </Label>
           <Input
             id="odometer"
@@ -172,14 +172,14 @@ function Odometer({ unitId }: { unitId: string }) {
         </div>
         <Button size="sm" className="gap-1.5" disabled={!reading || record.isPending} onClick={submit}>
           {record.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Gauge className="size-3.5" />}
-          {t('fleet.odometer.record')}
+          {t($ => $.fleet.odometer.record)}
         </Button>
       </div>
 
       {data?.meta.is_stale && (
         <Alert>
           <AlertDescription className="text-xs">
-            {t('fleet.odometer.staleWarning')}
+            {t($ => $.fleet.odometer.staleWarning)}
           </AlertDescription>
         </Alert>
       )}
@@ -187,26 +187,26 @@ function Odometer({ unitId }: { unitId: string }) {
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b text-muted-foreground">
-            <th className="py-1 text-start font-normal">{t('fleet.odometer.colReading')}</th>
-            <th className="py-1 text-start font-normal">{t('fleet.odometer.colSource')}</th>
-            <th className="py-1 text-start font-normal">{t('fleet.odometer.colWhen')}</th>
-            <th className="py-1 text-start font-normal">{t('fleet.odometer.colAccepted')}</th>
+            <th className="py-1 text-start font-normal">{t($ => $.fleet.odometer.colReading)}</th>
+            <th className="py-1 text-start font-normal">{t($ => $.fleet.odometer.colSource)}</th>
+            <th className="py-1 text-start font-normal">{t($ => $.fleet.odometer.colWhen)}</th>
+            <th className="py-1 text-start font-normal">{t($ => $.fleet.odometer.colAccepted)}</th>
           </tr>
         </thead>
         <tbody className="divide-y">
           {(data?.data ?? []).map((row) => (
             <tr key={row.id}>
               <td className="py-1 tabular-nums">
-                {t('fleet.kmValue', { value: row.reading_km.toLocaleString() })}
+                {t($ => $.fleet.kmValue, { value: row.reading_km.toLocaleString() })}
               </td>
               <td className="py-1 text-muted-foreground">{row.source_label}</td>
               <td className="py-1 text-muted-foreground">{formatDate(row.recorded_at)}</td>
               <td className="py-1">
                 {row.is_accepted ? (
-                  <span className="text-emerald-600">{t('common.yes')}</span>
+                  <span className="text-emerald-600">{t($ => $.common.yes)}</span>
                 ) : (
                   <span className="text-destructive" title={row.rejection_reason ?? undefined}>
-                    {t('fleet.odometer.rejected')}
+                    {t($ => $.fleet.odometer.rejected)}
                   </span>
                 )}
               </td>
@@ -228,7 +228,7 @@ function Maintenance({ unitId }: { unitId: string }) {
   if (!plans || plans.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        {t('fleet.maintenance.empty')}
+        {t($ => $.fleet.maintenance.empty)}
       </p>
     );
   }
@@ -244,31 +244,31 @@ function Maintenance({ unitId }: { unitId: string }) {
             </div>
             {plan.is_overdue ? (
               <Badge variant="destructive" className="text-[10px]">
-                {t('fleet.maintenance.overdue')}
+                {t($ => $.fleet.maintenance.overdue)}
               </Badge>
             ) : plan.is_due ? (
               <Badge className="bg-amber-500 text-[10px] hover:bg-amber-500">
-                {t('fleet.maintenance.due')}
+                {t($ => $.fleet.maintenance.due)}
               </Badge>
             ) : (
               <Badge variant="outline" className="text-[10px]">
-                {t('common.scheduled')}
+                {t($ => $.common.scheduled)}
               </Badge>
             )}
           </div>
 
           <div className="mt-2 grid grid-cols-3 gap-3">
-            <Field label={t('fleet.maintenance.nextDueDate')}>{plan.next_due_date ?? '—'}</Field>
-            <Field label={t('fleet.maintenance.nextDueKm')}>
+            <Field label={t($ => $.fleet.maintenance.nextDueDate)}>{plan.next_due_date ?? '—'}</Field>
+            <Field label={t($ => $.fleet.maintenance.nextDueKm)}>
               {plan.next_due_km !== null
-                ? t('fleet.kmValue', { value: plan.next_due_km.toLocaleString() })
+                ? t($ => $.fleet.kmValue, { value: plan.next_due_km.toLocaleString() })
                 : '—'}
             </Field>
-            <Field label={t('fleet.maintenance.remaining')}>
+            <Field label={t($ => $.fleet.maintenance.remaining)}>
               {plan.km_until_due !== null
-                ? t('fleet.kmValue', { value: plan.km_until_due.toLocaleString() })
+                ? t($ => $.fleet.kmValue, { value: plan.km_until_due.toLocaleString() })
                 : plan.days_until_due !== null
-                  ? t('fleet.daysShort', { days: plan.days_until_due })
+                  ? t($ => $.fleet.daysShort, { days: plan.days_until_due })
                   : '—'}
             </Field>
           </div>
@@ -277,7 +277,7 @@ function Maintenance({ unitId }: { unitId: string }) {
             <div className="mt-2 flex flex-wrap gap-1">
               {plan.rules.map((rule) => (
                 <Badge key={rule.id} variant="secondary" className="text-[10px]">
-                  {t('fleet.maintenance.everyInterval', {
+                  {t($ => $.fleet.maintenance.everyInterval, {
                     value: rule.interval_value.toLocaleString(),
                     unit: rule.unit,
                   })}
@@ -303,20 +303,20 @@ function Cost({ unitId }: { unitId: string }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <Field label={t('common.total')}>
+        <Field label={t($ => $.common.total)}>
           {costs.total.toLocaleString()} {costs.currency}
         </Field>
-        <Field label={t('fleet.cost.distance')}>
+        <Field label={t($ => $.fleet.cost.distance)}>
           {costs.distance_km !== null
-            ? t('fleet.kmValue', { value: costs.distance_km.toLocaleString() })
+            ? t($ => $.fleet.kmValue, { value: costs.distance_km.toLocaleString() })
             : '—'}
         </Field>
-        <Field label={t('fleet.cost.costPerKm')}>
+        <Field label={t($ => $.fleet.cost.costPerKm)}>
           {costs.cost_per_km !== null ? (
             `${costs.cost_per_km} ${costs.currency}`
           ) : (
             // Null, never zero — a silent zero reads as "free to run".
-            <span className="text-muted-foreground">{t('fleet.cost.notEnoughOdometer')}</span>
+            <span className="text-muted-foreground">{t($ => $.fleet.cost.notEnoughOdometer)}</span>
           )}
         </Field>
       </div>
@@ -328,7 +328,7 @@ function Cost({ unitId }: { unitId: string }) {
           .filter(([, amount]) => amount !== 0)
           .map(([type, amount]) => (
             <div key={type} className="flex items-center justify-between text-xs">
-              <span className="capitalize text-muted-foreground">{t(`fleet.costType.${type}`)}</span>
+              <span className="capitalize text-muted-foreground">{t($ => $.fleet.costType[type])}</span>
               <span className="tabular-nums">
                 {amount.toLocaleString()} {costs.currency}
               </span>
@@ -336,7 +336,7 @@ function Cost({ unitId }: { unitId: string }) {
           ))}
       </div>
 
-      <p className="text-[11px] text-muted-foreground">{t('fleet.cost.authorityNote')}</p>
+      <p className="text-[11px] text-muted-foreground">{t($ => $.fleet.cost.authorityNote)}</p>
     </div>
   );
 }
@@ -362,22 +362,22 @@ export function FleetUnitDrawer({
       size="2xl"
       title={
         unit
-          ? t('fleet.drawer.titleWithPlate', {
+          ? t($ => $.fleet.drawer.titleWithPlate, {
               plate: unit.vehicle?.plate_number ?? unit.vehicle_id,
             })
-          : t('fleet.drawer.title')
+          : t($ => $.fleet.drawer.title)
       }
       description={unit?.vehicle?.name ?? undefined}
     >
       {!unitId ? null : (
         <Tabs defaultValue="overview" className="w-full">
           <TabsList>
-            <TabsTrigger value="overview">{t('common.overview')}</TabsTrigger>
-            <TabsTrigger value="maintenance">{t('fleet.drawer.tabMaintenance')}</TabsTrigger>
-            <TabsTrigger value="odometer">{t('fleet.drawer.tabOdometer')}</TabsTrigger>
+            <TabsTrigger value="overview">{t($ => $.common.overview)}</TabsTrigger>
+            <TabsTrigger value="maintenance">{t($ => $.fleet.drawer.tabMaintenance)}</TabsTrigger>
+            <TabsTrigger value="odometer">{t($ => $.fleet.drawer.tabOdometer)}</TabsTrigger>
             <TabsTrigger value="cost">
               <Wallet className="me-1 size-3.5" />
-              {t('fleet.drawer.tabCost')}
+              {t($ => $.fleet.drawer.tabCost)}
             </TabsTrigger>
           </TabsList>
 

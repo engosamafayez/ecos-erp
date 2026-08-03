@@ -130,17 +130,17 @@ export function SuppliersPage() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   const columnMeta = useMemo(() => [
-    { key: 'name',                     label: t('columnsExtra.name'),                  alwaysVisible: true },
-    { key: 'phone',                    label: t('columns.phone'),                      defaultVisible: true },
-    { key: 'opening_balance',          label: t('columnsExtra.openingBalance'),        defaultVisible: true },
-    { key: 'purchase_balance',         label: t('columnsExtra.purchaseBalance'),       defaultVisible: true },
-    { key: 'current_supplier_balance', label: t('columnsExtra.currentSupplierBalance'), defaultVisible: true },
-    { key: 'total_paid',               label: t('columnsExtra.totalPaid'),             defaultVisible: true },
-    { key: 'total_outstanding',        label: t('columnsExtra.totalOutstanding'),      defaultVisible: true },
-    { key: 'total_purchased_value',    label: t('columnsExtra.totalPurchasedValue'),   defaultVisible: true },
-    { key: 'status',                   label: t('columns.status'),                     alwaysVisible: true },
-    { key: 'last_purchase',            label: t('columnsExtra.lastPurchase'),          defaultVisible: true },
-    { key: 'actions',                  label: t('columnsExtra.actions'),               alwaysVisible: true },
+    { key: 'name',                     label: t($ => $.columnsExtra.name),                  alwaysVisible: true },
+    { key: 'phone',                    label: t($ => $.columns.phone),                      defaultVisible: true },
+    { key: 'opening_balance',          label: t($ => $.columnsExtra.openingBalance),        defaultVisible: true },
+    { key: 'purchase_balance',         label: t($ => $.columnsExtra.purchaseBalance),       defaultVisible: true },
+    { key: 'current_supplier_balance', label: t($ => $.columnsExtra.currentSupplierBalance), defaultVisible: true },
+    { key: 'total_paid',               label: t($ => $.columnsExtra.totalPaid),             defaultVisible: true },
+    { key: 'total_outstanding',        label: t($ => $.columnsExtra.totalOutstanding),      defaultVisible: true },
+    { key: 'total_purchased_value',    label: t($ => $.columnsExtra.totalPurchasedValue),   defaultVisible: true },
+    { key: 'status',                   label: t($ => $.columns.status),                     alwaysVisible: true },
+    { key: 'last_purchase',            label: t($ => $.columnsExtra.lastPurchase),          defaultVisible: true },
+    { key: 'actions',                  label: t($ => $.columnsExtra.actions),               alwaysVisible: true },
   ], [t]);
 
   const { visibility, toggle, reset } = useColumnVisibility(COL_STORAGE_KEY, columnMeta);
@@ -173,7 +173,7 @@ export function SuppliersPage() {
     {
       id: 'total',
       icon: Building2,
-      label: t('kpis.totalSuppliers'),
+      label: t($ => $.kpis.totalSuppliers),
       value: stats?.total_suppliers ?? '—',
       colorClass: 'bg-primary/10 text-primary',
       isLoading: statsLoading,
@@ -183,7 +183,7 @@ export function SuppliersPage() {
     {
       id: 'active',
       icon: CheckCircle,
-      label: t('kpis.active'),
+      label: t($ => $.kpis.active),
       value: stats?.active_suppliers ?? '—',
       colorClass: 'bg-emerald-500/10 text-emerald-600',
       isLoading: statsLoading,
@@ -193,7 +193,7 @@ export function SuppliersPage() {
     {
       id: 'new',
       icon: Users,
-      label: t('kpis.newThisMonth'),
+      label: t($ => $.kpis.newThisMonth),
       value: stats?.new_this_month ?? '—',
       colorClass: 'bg-blue-500/10 text-blue-600',
       isLoading: statsLoading,
@@ -201,7 +201,7 @@ export function SuppliersPage() {
     {
       id: 'open_pos',
       icon: ShoppingCart,
-      label: t('kpis.openPOs'),
+      label: t($ => $.kpis.openPOs),
       value: stats?.open_pos_total ?? '—',
       colorClass: 'bg-amber-500/10 text-amber-600',
       isLoading: statsLoading,
@@ -209,7 +209,7 @@ export function SuppliersPage() {
     {
       id: 'outstanding',
       icon: CreditCard,
-      label: t('kpis.outstandingBalance'),
+      label: t($ => $.kpis.outstandingBalance),
       value: stats ? money(stats.total_outstanding) : '—',
       colorClass: 'bg-red-500/10 text-red-600',
       isLoading: statsLoading,
@@ -217,7 +217,7 @@ export function SuppliersPage() {
     {
       id: 'inventory_value',
       icon: Package,
-      label: t('kpis.inventoryValue'),
+      label: t($ => $.kpis.inventoryValue),
       value: stats ? money(stats.total_inventory_value) : '—',
       colorClass: 'bg-purple-500/10 text-purple-600',
       isLoading: statsLoading,
@@ -225,7 +225,7 @@ export function SuppliersPage() {
     {
       id: 'delayed',
       icon: Clock,
-      label: t('kpis.delayedOrders'),
+      label: t($ => $.kpis.delayedOrders),
       value: stats?.delayed_pos ?? '—',
       colorClass: 'bg-orange-500/10 text-orange-600',
       isLoading: statsLoading,
@@ -233,7 +233,7 @@ export function SuppliersPage() {
     {
       id: 'review',
       icon: AlertCircle,
-      label: t('kpis.needsReview'),
+      label: t($ => $.kpis.needsReview),
       value: stats?.needs_review_count ?? '—',
       colorClass: 'bg-rose-500/10 text-rose-600',
       isLoading: statsLoading,
@@ -246,7 +246,7 @@ export function SuppliersPage() {
       // 1 — Supplier Name (code folded in as subtitle so the spec's 11-column set stays exact)
       {
         key: 'name',
-        label: t('columnsExtra.name'),
+        label: t($ => $.columnsExtra.name),
         alwaysVisible: true,
         pin: 'left',
         width: 220,
@@ -265,14 +265,14 @@ export function SuppliersPage() {
       // 2 — Phone
       {
         key: 'phone',
-        label: t('columns.phone'),
+        label: t($ => $.columns.phone),
         skeletonClassName: 'w-28 h-4',
         cell: (s) => <span className="text-sm text-muted-foreground tabular-nums">{s.phone ?? '—'}</span>,
       },
       // 3 — Opening Balance (onboarding balance)
       {
         key: 'opening_balance',
-        label: t('columnsExtra.openingBalance'),
+        label: t($ => $.columnsExtra.openingBalance),
         align: 'end',
         skeletonClassName: 'w-20 h-4 ms-auto',
         cell: (s) => (
@@ -284,7 +284,7 @@ export function SuppliersPage() {
       // 4 — Purchase Balance (accumulated purchases)
       {
         key: 'purchase_balance',
-        label: t('columnsExtra.purchaseBalance'),
+        label: t($ => $.columnsExtra.purchaseBalance),
         align: 'end',
         skeletonClassName: 'w-20 h-4 ms-auto',
         cell: (s) => (
@@ -296,7 +296,7 @@ export function SuppliersPage() {
       // 5 — Current Supplier Balance (payable incl. opening balance)
       {
         key: 'current_supplier_balance',
-        label: t('columnsExtra.currentSupplierBalance'),
+        label: t($ => $.columnsExtra.currentSupplierBalance),
         align: 'end',
         skeletonClassName: 'w-20 h-4 ms-auto',
         cell: (s) => (
@@ -310,7 +310,7 @@ export function SuppliersPage() {
       // 6 — Total Paid
       {
         key: 'total_paid',
-        label: t('columnsExtra.totalPaid'),
+        label: t($ => $.columnsExtra.totalPaid),
         align: 'end',
         skeletonClassName: 'w-20 h-4 ms-auto',
         cell: (s) => (
@@ -322,7 +322,7 @@ export function SuppliersPage() {
       // 7 — Total Outstanding
       {
         key: 'total_outstanding',
-        label: t('columnsExtra.totalOutstanding'),
+        label: t($ => $.columnsExtra.totalOutstanding),
         align: 'end',
         skeletonClassName: 'w-20 h-4 ms-auto',
         cell: (s) => (
@@ -336,7 +336,7 @@ export function SuppliersPage() {
       // 8 — Total Purchased Value
       {
         key: 'total_purchased_value',
-        label: t('columnsExtra.totalPurchasedValue'),
+        label: t($ => $.columnsExtra.totalPurchasedValue),
         align: 'end',
         skeletonClassName: 'w-20 h-4 ms-auto',
         cell: (s) => (
@@ -348,7 +348,7 @@ export function SuppliersPage() {
       // 9 — Status
       {
         key: 'status',
-        label: t('columns.status'),
+        label: t($ => $.columns.status),
         alwaysVisible: true,
         sortable: true,
         skeletonClassName: 'w-14 h-5 rounded-full',
@@ -357,7 +357,7 @@ export function SuppliersPage() {
       // 10 — Last Purchase Date
       {
         key: 'last_purchase',
-        label: t('columnsExtra.lastPurchase'),
+        label: t($ => $.columnsExtra.lastPurchase),
         skeletonClassName: 'w-24 h-4',
         cell: (s) => (
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -368,21 +368,21 @@ export function SuppliersPage() {
       // 11 — Actions (standard Enterprise Action Menu — Part 5)
       {
         key: 'actions',
-        label: t('columnsExtra.actions'),
+        label: t($ => $.columnsExtra.actions),
         alwaysVisible: true,
         pin: 'right',
         width: 64,
         align: 'end',
         cell: (s) => (
           <ActionMenu
-            label={t('columnsExtra.actions')}
+            label={t($ => $.columnsExtra.actions)}
             items={[
-              { key: 'view',     label: t('actionMenu.view'),     icon: Eye,      onSelect: () => openView(s) },
-              { key: 'edit',     label: t('actionMenu.edit'),     icon: Pencil,   onSelect: () => openEdit(s) },
-              { key: 'activity', label: t('actionMenu.activity'), icon: Activity, onSelect: () => openActivity(s) },
-              { key: 'notes',    label: t('actionMenu.notes'),    icon: FileText, onSelect: () => openView(s) },
-              { key: 'archive',  label: t('actionMenu.archive'),  icon: Archive,  onSelect: () => handleArchive(s), disabled: !s.is_active },
-              { key: 'delete',   label: t('actionMenu.delete'),   icon: Trash2,   onSelect: () => setDeleting(s), variant: 'destructive' },
+              { key: 'view',     label: t($ => $.actionMenu.view),     icon: Eye,      onSelect: () => openView(s) },
+              { key: 'edit',     label: t($ => $.actionMenu.edit),     icon: Pencil,   onSelect: () => openEdit(s) },
+              { key: 'activity', label: t($ => $.actionMenu.activity), icon: Activity, onSelect: () => openActivity(s) },
+              { key: 'notes',    label: t($ => $.actionMenu.notes),    icon: FileText, onSelect: () => openView(s) },
+              { key: 'archive',  label: t($ => $.actionMenu.archive),  icon: Archive,  onSelect: () => handleArchive(s), disabled: !s.is_active },
+              { key: 'delete',   label: t($ => $.actionMenu.delete),   icon: Trash2,   onSelect: () => setDeleting(s), variant: 'destructive' },
             ]}
           />
         ),
@@ -414,8 +414,8 @@ export function SuppliersPage() {
     updateSupplier.mutate(
       { id: supplier.id, payload: supplierToPayload(supplier, { is_active: false }) },
       {
-        onSuccess: () => toast.success(t('toast.archived')),
-        onError: () => toast.error(t('toast.archiveFailed')),
+        onSuccess: () => toast.success(t($ => $.toast.archived)),
+        onError: () => toast.error(t($ => $.toast.archiveFailed)),
       },
     );
   }
@@ -425,31 +425,31 @@ export function SuppliersPage() {
     deleteSupplier.mutate(deleting.id, {
       onSuccess: () => {
         setDeleting(null);
-        toast.success(t('toast.deleted'));
+        toast.success(t($ => $.toast.deleted));
         selection.clearSelection();
       },
     });
   }
 
   const statusChips = [
-    { key: 'all',      label: t('filters.all'),      active: statusFilter === 'all',      onClick: () => { setStatusFilter('all');      setPage(1); } },
-    { key: 'active',   label: t('filters.active'),   active: statusFilter === 'active',   onClick: () => { setStatusFilter('active');   setPage(1); } },
-    { key: 'inactive', label: t('filters.inactive'), active: statusFilter === 'inactive', onClick: () => { setStatusFilter('inactive'); setPage(1); } },
+    { key: 'all',      label: t($ => $.filters.all),      active: statusFilter === 'all',      onClick: () => { setStatusFilter('all');      setPage(1); } },
+    { key: 'active',   label: t($ => $.filters.active),   active: statusFilter === 'active',   onClick: () => { setStatusFilter('active');   setPage(1); } },
+    { key: 'inactive', label: t($ => $.filters.inactive), active: statusFilter === 'inactive', onClick: () => { setStatusFilter('inactive'); setPage(1); } },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: t('page.breadcrumbs.procurement') }, { label: t('page.breadcrumbs.suppliers') }]}
-        title={t('title')}
-        description={t('page.description')}
-        primaryAction={{ key: 'new', label: t('actions.new'), icon: Plus, onClick: () => setWizardOpen(true) }}
+        breadcrumbs={[{ label: t($ => $.page.breadcrumbs.procurement) }, { label: t($ => $.page.breadcrumbs.suppliers) }]}
+        title={t($ => $.title)}
+        description={t($ => $.page.description)}
+        primaryAction={{ key: 'new', label: t($ => $.actions.new), icon: Plus, onClick: () => setWizardOpen(true) }}
         metrics={metrics}
         savedViews={{
           views: [
-            { id: 'default',   label: t('page.savedViews.all'), isDefault: true },
-            { id: 'active',    label: t('page.savedViews.active') },
-            { id: 'preferred', label: t('page.savedViews.preferred') },
+            { id: 'default',   label: t($ => $.page.savedViews.all), isDefault: true },
+            { id: 'active',    label: t($ => $.page.savedViews.active) },
+            { id: 'preferred', label: t($ => $.page.savedViews.preferred) },
           ],
           activeId: statusFilter === 'active' ? 'active' : 'default',
           onViewChange: (id) => {
@@ -462,9 +462,9 @@ export function SuppliersPage() {
       <WorkspacePage
         toolbar={
           <SmartToolbar
-            primaryAction={{ label: t('actions.new'), icon: Plus, onClick: () => setWizardOpen(true) }}
+            primaryAction={{ label: t($ => $.actions.new), icon: Plus, onClick: () => setWizardOpen(true) }}
             secondaryActions={[
-              { key: 'export', label: t('exportCsv'), icon: Download, onClick: () => exportCsv(items), hideOnMobile: true },
+              { key: 'export', label: t($ => $.exportCsv), icon: Download, onClick: () => exportCsv(items), hideOnMobile: true },
             ]}
             bulkActions={
               selection.selectedCount > 0
@@ -480,7 +480,7 @@ export function SuppliersPage() {
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     ref={searchRef}
-                    placeholder={t('search')}
+                    placeholder={t($ => $.search)}
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                     className="h-8 w-[200px] pl-8 sm:w-[240px] text-sm"
@@ -502,12 +502,12 @@ export function SuppliersPage() {
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="h-7 px-2 text-xs"
                   disabled={meta.current_page <= 1 || isFetching} onClick={() => setPage((p) => p - 1)}>
-                  {t('pagination.previous')}
+                  {t($ => $.pagination.previous)}
                 </Button>
                 <span>{tAny('pagination.page', { current: meta.current_page, last: meta.last_page })}</span>
                 <Button variant="ghost" size="sm" className="h-7 px-2 text-xs"
                   disabled={meta.current_page >= meta.last_page || isFetching} onClick={() => setPage((p) => p + 1)}>
-                  {t('pagination.next')}
+                  {t($ => $.pagination.next)}
                 </Button>
               </div>
             </div>
@@ -519,9 +519,9 @@ export function SuppliersPage() {
         ) : items.length === 0 && !isLoading && !isError ? (
           <PageEmptyState
             icon={Building2}
-            title={t('emptyState.title')}
-            description={t('emptyState.description')}
-            action={{ label: t('actions.new'), icon: Plus, onClick: () => setWizardOpen(true) }}
+            title={t($ => $.emptyState.title)}
+            description={t($ => $.emptyState.description)}
+            action={{ label: t($ => $.actions.new), icon: Plus, onClick: () => setWizardOpen(true) }}
           />
         ) : (
           <UniversalDataGrid
@@ -568,9 +568,9 @@ export function SuppliersPage() {
       <PageConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t('confirmDelete.title')}
+        title={t($ => $.confirmDelete.title)}
         description={tAny('confirmDelete.description', { name: deleting?.name ?? '' })}
-        confirmLabel={t('confirmDelete.confirm')}
+        confirmLabel={t($ => $.confirmDelete.confirm)}
         variant="destructive"
         loading={deleteSupplier.isPending}
         onConfirm={confirmDelete}

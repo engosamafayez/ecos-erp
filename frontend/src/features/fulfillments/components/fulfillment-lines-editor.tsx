@@ -40,7 +40,7 @@ export function FulfillmentLinesEditor({ readOnly }: Props) {
     <div className="flex flex-col gap-3">
       {!readOnly && (
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">{t('create.lineItems')}</span>
+          <span className="text-sm font-medium">{t($ => $.create.lineItems)}</span>
           <Button
             type="button"
             size="sm"
@@ -48,7 +48,7 @@ export function FulfillmentLinesEditor({ readOnly }: Props) {
             onClick={() => append({ product_id: '', quantity: '' })}
           >
             <Plus className="size-3.5" />
-            {t('create.addLine')}
+            {t($ => $.create.addLine)}
           </Button>
         </div>
       )}
@@ -61,8 +61,8 @@ export function FulfillmentLinesEditor({ readOnly }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-start">
-              <th className="pb-2 pr-3 font-medium">{t('detail.product')}</th>
-              <th className="w-32 pb-2 pr-3 font-medium">{t('detail.quantity')}</th>
+              <th className="pb-2 pr-3 font-medium">{t($ => $.detail.product)}</th>
+              <th className="w-32 pb-2 pr-3 font-medium">{t($ => $.detail.quantity)}</th>
               {!readOnly && <th className="w-10 pb-2" />}
             </tr>
           </thead>
@@ -85,7 +85,7 @@ export function FulfillmentLinesEditor({ readOnly }: Props) {
                           onChange={(v) =>
                             setValue(`lines.${index}.product_id`, v, { shouldValidate: true })
                           }
-                          placeholder={t('create.selectProduct')}
+                          placeholder={t($ => $.create.selectProduct)}
                           loading={loadingProducts}
                         />
                         {fieldError(errs, 'product_id') && (

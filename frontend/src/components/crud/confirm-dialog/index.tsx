@@ -53,10 +53,10 @@ export function ConfirmDialog({
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
-            {cancelLabel ?? t('common.cancel')}
+            {cancelLabel ?? t($ => $.common.cancel)}
           </Button>
           <Button type="button" variant={variant} onClick={onConfirm} disabled={loading}>
-            {loading ? t('actions.working') : (confirmLabel ?? t('common.confirm'))}
+            {loading ? t($ => $.actions.working) : (confirmLabel ?? t($ => $.common.confirm))}
           </Button>
         </DialogFooter>
       </DialogContent>

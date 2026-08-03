@@ -47,19 +47,19 @@ export function WarehouseLiabilityPage() {
 
   function statusBadge(status: string) {
     if (status === 'approved') {
-      return <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 text-xs"><CheckCircle className="size-3 mr-1" />{t('liability.status.approved')}</Badge>;
+      return <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 text-xs"><CheckCircle className="size-3 mr-1" />{t($ => $.liability.status.approved)}</Badge>;
     }
     if (status === 'rejected') {
-      return <Badge variant="outline" className="text-muted-foreground text-xs"><XCircle className="size-3 mr-1" />{t('liability.status.rejected')}</Badge>;
+      return <Badge variant="outline" className="text-muted-foreground text-xs"><XCircle className="size-3 mr-1" />{t($ => $.liability.status.rejected)}</Badge>;
     }
-    return <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-xs"><Clock className="size-3 mr-1" />{t('liability.status.pending')}</Badge>;
+    return <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-xs"><Clock className="size-3 mr-1" />{t($ => $.liability.status.pending)}</Badge>;
   }
 
   function liabilityTypeBadge(type: string) {
     if (type === 'waste_transferred') {
-      return <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300 rounded px-1.5 py-0.5">{t('liability.types.waste_transferred')}</span>;
+      return <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300 rounded px-1.5 py-0.5">{t($ => $.liability.types.waste_transferred)}</span>;
     }
-    return <span className="text-xs bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-300 rounded px-1.5 py-0.5">{t('liability.types.shortage')}</span>;
+    return <span className="text-xs bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-300 rounded px-1.5 py-0.5">{t($ => $.liability.types.shortage)}</span>;
   }
 
   async function handleConfirm() {
@@ -71,44 +71,44 @@ export function WarehouseLiabilityPage() {
           approved_by: actionState.actorName.trim(),
           notes: actionState.notes || null,
         });
-        toast.success(t('liability.toast.approved'));
+        toast.success(t($ => $.liability.toast.approved));
       } else {
         await rejectMutation.mutateAsync({
           id: actionState.liability.id,
           rejected_by: actionState.actorName.trim(),
           reason: actionState.notes || null,
         });
-        toast.success(t('liability.toast.rejected'));
+        toast.success(t($ => $.liability.toast.rejected));
       }
       setActionState(null);
     } catch {
-      toast.error(t('liability.toast.failed'));
+      toast.error(t($ => $.liability.toast.failed));
     }
   }
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
-        title={t('liability.pageTitle')}
-        subtitle={t('liability.subtitle')}
+        title={t($ => $.liability.pageTitle)}
+        subtitle={t($ => $.liability.subtitle)}
       />
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-6">
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">{t('liability.kpis.pending')}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.liability.kpis.pending)}</p>
           <p className="text-2xl font-semibold mt-1 text-amber-600">{summary?.pending ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">{t('liability.kpis.approved')}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.liability.kpis.approved)}</p>
           <p className="text-2xl font-semibold mt-1 text-emerald-600">{summary?.approved ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">{t('liability.kpis.rejected')}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.liability.kpis.rejected)}</p>
           <p className="text-2xl font-semibold mt-1 text-muted-foreground">{summary?.rejected ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">{t('liability.kpis.pendingValue')}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.liability.kpis.pendingValue)}</p>
           <p className="text-base font-semibold mt-1 tabular-nums">
             {summary?.total_pending_value != null
               ? Number(summary.total_pending_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -116,7 +116,7 @@ export function WarehouseLiabilityPage() {
           </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">{t('liability.kpis.approvedFifo')}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.liability.kpis.approvedFifo)}</p>
           <p className="text-base font-semibold mt-1 tabular-nums text-emerald-600">
             {summary?.total_approved_value != null
               ? Number(summary.total_approved_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -124,7 +124,7 @@ export function WarehouseLiabilityPage() {
           </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">{t('liability.kpis.month')}</p>
+          <p className="text-xs text-muted-foreground">{t($ => $.liability.kpis.month)}</p>
           <input
             type="month"
             value={month}
@@ -146,7 +146,7 @@ export function WarehouseLiabilityPage() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {t(`liability.filters.${s}`)}
+            {t($ => $.liability.filters[s])}
           </button>
         ))}
       </div>
@@ -160,20 +160,20 @@ export function WarehouseLiabilityPage() {
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <Shield className="size-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">{t('liability.empty')}</p>
+            <p className="text-sm text-muted-foreground">{t($ => $.liability.empty)}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.product')}</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.type')}</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('liability.table.quantity')}</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('liability.table.totalCost')}</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.warehouse')}</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.manager')}</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.status')}</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('liability.table.actions')}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.liability.table.product)}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.liability.table.type)}</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t($ => $.liability.table.quantity)}</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t($ => $.liability.table.totalCost)}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.liability.table.warehouse)}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.liability.table.manager)}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t($ => $.liability.table.status)}</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t($ => $.liability.table.actions)}</th>
               </tr>
             </thead>
             <tbody>
@@ -193,7 +193,7 @@ export function WarehouseLiabilityPage() {
                       })}
                     </div>
                     {lib.cost_snapshot_total_value != null && (
-                      <div className="text-[10px] text-emerald-600">{t('liability.fifoSnapshot')}</div>
+                      <div className="text-[10px] text-emerald-600">{t($ => $.liability.fifoSnapshot)}</div>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">{(lib.warehouse as { id: string; name: string } | null)?.name ?? '—'}</td>
@@ -208,7 +208,7 @@ export function WarehouseLiabilityPage() {
                           className="h-7 text-xs"
                           onClick={() => setActionState({ liability: lib, action: 'approve', actorName: '', notes: '' })}
                         >
-                          {t('liability.actions.approve')}
+                          {t($ => $.liability.actions.approve)}
                         </Button>
                         <Button
                           size="sm"
@@ -216,7 +216,7 @@ export function WarehouseLiabilityPage() {
                           className="h-7 text-xs text-destructive hover:text-destructive"
                           onClick={() => setActionState({ liability: lib, action: 'reject', actorName: '', notes: '' })}
                         >
-                          {t('liability.actions.reject')}
+                          {t($ => $.liability.actions.reject)}
                         </Button>
                       </div>
                     )}
@@ -233,7 +233,7 @@ export function WarehouseLiabilityPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {actionState?.action === 'approve' ? t('liability.dialog.approveTitle') : t('liability.dialog.rejectTitle')}
+              {actionState?.action === 'approve' ? t($ => $.liability.dialog.approveTitle) : t($ => $.liability.dialog.rejectTitle)}
             </DialogTitle>
           </DialogHeader>
           {actionState && (
@@ -241,8 +241,8 @@ export function WarehouseLiabilityPage() {
               <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
                 <p className="font-medium">{actionState.liability.product?.name}</p>
                 <p className="text-muted-foreground text-xs mt-0.5">
-                  {t('liability.dialog.quantity')} {Number(actionState.liability.quantity).toFixed(2)} ·
-                  {' '}{t('liability.dialog.cost')} {Number(actionState.liability.total_cost).toLocaleString()} ·
+                  {t($ => $.liability.dialog.quantity)} {Number(actionState.liability.quantity).toFixed(2)} ·
+                  {' '}{t($ => $.liability.dialog.cost)} {Number(actionState.liability.total_cost).toLocaleString()} ·
                   {liabilityTypeBadge(actionState.liability.liability_type)}
                 </p>
                 {actionState.action === 'approve' && (
@@ -254,7 +254,7 @@ export function WarehouseLiabilityPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">
-                  {actionState.action === 'approve' ? t('liability.dialog.approvedBy') : t('liability.dialog.rejectedBy')}
+                  {actionState.action === 'approve' ? t($ => $.liability.dialog.approvedBy) : t($ => $.liability.dialog.rejectedBy)}
                 </Label>
                 <input
                   value={actionState.actorName}
@@ -266,7 +266,7 @@ export function WarehouseLiabilityPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">
-                  {actionState.action === 'approve' ? t('liability.dialog.notesOptional') : t('liability.dialog.rejectionReason')}
+                  {actionState.action === 'approve' ? t($ => $.liability.dialog.notesOptional) : t($ => $.liability.dialog.rejectionReason)}
                 </Label>
                 <Textarea
                   value={actionState.notes}
@@ -279,14 +279,14 @@ export function WarehouseLiabilityPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setActionState(null)}>{t('liability.dialog.cancel')}</Button>
+            <Button variant="outline" onClick={() => setActionState(null)}>{t($ => $.liability.dialog.cancel)}</Button>
             <Button
               variant={actionState?.action === 'approve' ? 'default' : 'destructive'}
               onClick={handleConfirm}
               disabled={!actionState?.actorName.trim() || isSaving}
             >
               {isSaving && <Loader2 className="size-3.5 mr-1.5 animate-spin" />}
-              {actionState?.action === 'approve' ? t('liability.dialog.approveConfirm') : t('liability.dialog.rejectConfirm')}
+              {actionState?.action === 'approve' ? t($ => $.liability.dialog.approveConfirm) : t($ => $.liability.dialog.rejectConfirm)}
             </Button>
           </DialogFooter>
         </DialogContent>

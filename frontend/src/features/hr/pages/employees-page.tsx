@@ -66,37 +66,37 @@ export function EmployeesPage() {
   const columns: ColumnDef<Employee>[] = [
     {
       key: 'employee_number',
-      header: t('employees.table.number'),
+      header: t($ => $.employees.table.number),
       cell: (e) => <span className="font-mono text-xs font-medium">{e.employee_number}</span>,
     },
     {
       key: 'name',
-      header: t('employees.table.name'),
+      header: t($ => $.employees.table.name),
       cell: (e) => <span className="font-medium">{e.name}</span>,
     },
     {
       key: 'department',
-      header: t('employees.table.department'),
+      header: t($ => $.employees.table.department),
       cell: (e) => <span className="text-muted-foreground">{e.department?.name ?? '—'}</span>,
     },
     {
       key: 'position',
-      header: t('employees.table.position'),
+      header: t($ => $.employees.table.position),
       cell: (e) => <span className="text-muted-foreground">{e.position?.title ?? '—'}</span>,
     },
     {
       key: 'work_email',
-      header: t('employees.table.workEmail'),
+      header: t($ => $.employees.table.workEmail),
       cell: (e) => <span className="text-muted-foreground">{e.work_email ?? '—'}</span>,
     },
     {
       key: 'hire_date',
-      header: t('employees.table.hired'),
+      header: t($ => $.employees.table.hired),
       cell: (e) => <span className="tabular-nums">{e.hire_date ?? '—'}</span>,
     },
     {
       key: 'status',
-      header: t('employees.table.status'),
+      header: t($ => $.employees.table.status),
       cell: (e) => <StatusBadge status={STATUS_TONE[e.status]} label={e.status_label} />,
     },
   ];
@@ -110,12 +110,12 @@ export function EmployeesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('employees.title')}
-        subtitle={t('employees.subtitle')}
+        title={t($ => $.employees.title)}
+        subtitle={t($ => $.employees.subtitle)}
         actions={
           <Button size="sm" onClick={() => setFormOpen(true)}>
             <Plus className="size-4" />
-            {t('employees.newEmployee')}
+            {t($ => $.employees.newEmployee)}
           </Button>
         }
       />
@@ -123,19 +123,19 @@ export function EmployeesPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('employees.stats.total')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employees.stats.total)}</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : (meta?.total ?? 0)}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('employees.stats.activeOnPage')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employees.stats.activeOnPage)}</div>
             <div className="text-2xl font-bold text-emerald-600">{isLoading ? '—' : activeCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('employees.stats.onLeaveOnPage')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.employees.stats.onLeaveOnPage)}</div>
             <div className="text-2xl font-bold text-amber-600">{isLoading ? '—' : onLeaveCount}</div>
           </CardContent>
         </Card>
@@ -144,7 +144,7 @@ export function EmployeesPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('employees.searchPlaceholder')}
+            searchPlaceholder={t($ => $.employees.searchPlaceholder)}
             onSearchChange={(value) => {
               setSearch(value);
               setPage(1);
@@ -159,7 +159,7 @@ export function EmployeesPage() {
             filterPanel={
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('employees.filters.department')}</span>
+                  <span className="text-sm font-medium">{t($ => $.employees.filters.department)}</span>
                   <select
                     value={departmentFilter}
                     onChange={(e) => {
@@ -168,7 +168,7 @@ export function EmployeesPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">{t('employees.filters.allDepartments')}</option>
+                    <option value="">{t($ => $.employees.filters.allDepartments)}</option>
                     {(departments ?? []).map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name}
@@ -177,7 +177,7 @@ export function EmployeesPage() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium">{t('employees.filters.status')}</span>
+                  <span className="text-sm font-medium">{t($ => $.employees.filters.status)}</span>
                   <select
                     value={statusFilter}
                     onChange={(e) => {
@@ -186,13 +186,13 @@ export function EmployeesPage() {
                     }}
                     className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                   >
-                    <option value="">{t('employees.filters.allStatuses')}</option>
-                    <option value="active">{t('employees.status.active')}</option>
-                    <option value="probation">{t('employees.status.probation')}</option>
-                    <option value="on_leave">{t('employees.status.onLeave')}</option>
-                    <option value="suspended">{t('employees.status.suspended')}</option>
-                    <option value="resigned">{t('employees.status.resigned')}</option>
-                    <option value="terminated">{t('employees.status.terminated')}</option>
+                    <option value="">{t($ => $.employees.filters.allStatuses)}</option>
+                    <option value="active">{t($ => $.employees.status.active)}</option>
+                    <option value="probation">{t($ => $.employees.status.probation)}</option>
+                    <option value="on_leave">{t($ => $.employees.status.onLeave)}</option>
+                    <option value="suspended">{t($ => $.employees.status.suspended)}</option>
+                    <option value="resigned">{t($ => $.employees.status.resigned)}</option>
+                    <option value="terminated">{t($ => $.employees.status.terminated)}</option>
                   </select>
                 </div>
               </>
@@ -207,17 +207,17 @@ export function EmployeesPage() {
             isError={isError}
             rowActions={(employee) => (
               <ActionMenu
-                label={t('employees.actions.menuLabel', { name: employee.name })}
+                label={t($ => $.employees.actions.menuLabel, { name: employee.name })}
                 items={[
                   {
                     key: 'view',
-                    label: t('employees.actions.view360'),
+                    label: t($ => $.employees.actions.view360),
                     icon: Eye,
                     onSelect: () => navigate(`/hr/employees/${employee.id}`),
                   },
                   {
                     key: 'terminate',
-                    label: t('employees.actions.endEmployment'),
+                    label: t($ => $.employees.actions.endEmployment),
                     icon: UserMinus,
                     variant: 'destructive',
                     onSelect: () => setTerminating(employee),
@@ -248,9 +248,9 @@ export function EmployeesPage() {
         onOpenChange={(open) => {
           if (!open) setTerminating(null);
         }}
-        title={t('employees.terminate.title')}
-        description={t('employees.terminate.description', { name: terminating?.name ?? '' })}
-        confirmLabel={t('employees.terminate.confirm')}
+        title={t($ => $.employees.terminate.title)}
+        description={t($ => $.employees.terminate.description, { name: terminating?.name ?? '' })}
+        confirmLabel={t($ => $.employees.terminate.confirm)}
         variant="destructive"
         loading={terminate.isPending}
         onConfirm={confirmTerminate}

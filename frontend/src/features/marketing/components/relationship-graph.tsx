@@ -141,7 +141,7 @@ export function RelationshipGraph({ assetId }: Props) {
     return (
       <div className="flex items-center justify-center h-48 text-muted-foreground gap-2">
         <Loader2 className="w-4 h-4 animate-spin" />
-        <span className="text-sm">{t('assets.graph.loading')}</span>
+        <span className="text-sm">{t($ => $.assets.graph.loading)}</span>
       </div>
     );
   }
@@ -150,7 +150,7 @@ export function RelationshipGraph({ assetId }: Props) {
     return (
       <div className="flex items-center justify-center h-48 text-muted-foreground gap-2">
         <AlertCircle className="w-4 h-4" />
-        <span className="text-sm">{t('assets.graph.loadError')}</span>
+        <span className="text-sm">{t($ => $.assets.graph.loadError)}</span>
       </div>
     );
   }
@@ -158,7 +158,7 @@ export function RelationshipGraph({ assetId }: Props) {
   if (data.nodes.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8">
-        {t('assets.graph.empty')}
+        {t($ => $.assets.graph.empty)}
       </p>
     );
   }
@@ -173,7 +173,7 @@ export function RelationshipGraph({ assetId }: Props) {
         height={svgH}
         viewBox={`0 0 520 ${svgH}`}
         xmlns="http://www.w3.org/2000/svg"
-        aria-label={t('assets.graph.aria')}
+        aria-label={t($ => $.assets.graph.aria)}
       >
         <defs>
           <marker
@@ -206,11 +206,11 @@ export function RelationshipGraph({ assetId }: Props) {
       <div className="flex items-center gap-4 mt-2 px-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="inline-block w-6 border-t-2 border-green-500" />
-          {t('assets.graph.legendAccepted')}
+          {t($ => $.assets.graph.legendAccepted)}
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block w-6 border-t-2 border-dashed border-orange-400" />
-          {t('assets.graph.legendSuggested')}
+          {t($ => $.assets.graph.legendSuggested)}
         </span>
       </div>
     </div>

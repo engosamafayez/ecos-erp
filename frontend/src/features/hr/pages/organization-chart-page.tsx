@@ -21,7 +21,7 @@ function ChartNode({ node, depth }: { node: OrgChartNode; depth: number }) {
             {node.name}
           </Link>
           <span className="text-muted-foreground text-xs">
-            {node.position ?? t('orgChart.noPosition')}
+            {node.position ?? t($ => $.orgChart.noPosition)}
             {node.department ? ` · ${node.department}` : ''}
           </span>
         </div>
@@ -62,26 +62,26 @@ export function OrganizationChartPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('orgChart.title')}
-        subtitle={t('orgChart.subtitle')}
+        title={t($ => $.orgChart.title)}
+        subtitle={t($ => $.orgChart.subtitle)}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('orgChart.stats.employees')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.orgChart.stats.employees)}</div>
             <div className="text-2xl font-bold">{data.employees}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('orgChart.stats.topLevel')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.orgChart.stats.topLevel)}</div>
             <div className="text-2xl font-bold">{data.roots.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t('orgChart.stats.outsideChart')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.orgChart.stats.outsideChart)}</div>
             <div className="text-2xl font-bold text-amber-600">{data.unassigned}</div>
           </CardContent>
         </Card>
@@ -90,7 +90,7 @@ export function OrganizationChartPage() {
       <Card>
         <CardContent className="pt-6">
           {data.roots.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">{t('orgChart.empty')}</p>
+            <p className="text-muted-foreground py-8 text-center text-sm">{t($ => $.orgChart.empty)}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {data.roots.map((root) => (

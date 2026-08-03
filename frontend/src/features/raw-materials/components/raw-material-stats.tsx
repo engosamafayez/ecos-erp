@@ -23,10 +23,10 @@ export function RawMaterialStats({ query = {} }: { query?: StatsQuery }) {
 
   const materialType = query.material_type as MaterialType | undefined;
   const label = materialType === 'raw_material'
-    ? t('stats.labelRaw')
+    ? t($ => $.stats.labelRaw)
     : materialType === 'packaging_material'
-      ? t('stats.labelPackaging')
-      : t('stats.labelAll');
+      ? t($ => $.stats.labelPackaging)
+      : t($ => $.stats.labelAll);
 
   if (isLoading) {
     return (
@@ -48,25 +48,25 @@ export function RawMaterialStats({ query = {} }: { query?: StatsQuery }) {
       />
       <QuickStatCard
         icon={Warehouse}
-        title={t('stats.totalOnHand')}
+        title={t($ => $.stats.totalOnHand)}
         value={fmtQty(data?.total_on_hand ?? 0)}
         colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30"
       />
       <QuickStatCard
         icon={PackageMinus}
-        title={t('stats.totalReserved')}
+        title={t($ => $.stats.totalReserved)}
         value={fmtQty(data?.total_reserved ?? 0)}
         colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30"
       />
       <QuickStatCard
         icon={PackagePlus}
-        title={t('stats.totalAvailable')}
+        title={t($ => $.stats.totalAvailable)}
         value={fmtQty(data?.total_available ?? 0)}
         colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30"
       />
       <QuickStatCard
         icon={DollarSign}
-        title={t('stats.totalInventoryValue')}
+        title={t($ => $.stats.totalInventoryValue)}
         value={formatMoneyCompact(data?.total_inventory_value ?? 0, currency, locale)}
         colorClassName="text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-900/30"
       />

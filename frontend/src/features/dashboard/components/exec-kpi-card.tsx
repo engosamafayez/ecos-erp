@@ -96,7 +96,7 @@ export function ExecKpiCard({
 
   if (loading) return <Skeleton compact={compact} hero={hero} />;
 
-  const displayTrendLabel = trendLabel ?? t('execKpi.vsYesterday');
+  const displayTrendLabel = trendLabel ?? t($ => $.execKpi.vsYesterday);
   const c = COLOR[color];
 
   return (

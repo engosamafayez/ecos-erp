@@ -61,7 +61,7 @@ export function OrderItemsPreview({ lines }: Props) {
         className="tabular-nums font-medium text-xs hover:text-primary transition-colors"
         aria-expanded={open}
         aria-haspopup="true"
-        aria-label={t('itemsPreview.title', { count })}
+        aria-label={t($ => $.itemsPreview.title, { count })}
       >
         {count}
       </button>
@@ -71,21 +71,21 @@ export function OrderItemsPreview({ lines }: Props) {
             <div
               ref={panelRef}
               role="dialog"
-              aria-label={t('itemsPreview.title', { count })}
+              aria-label={t($ => $.itemsPreview.title, { count })}
               style={{ position: 'absolute', top: pos.top, left: pos.left, zIndex: 9999, width: 340 }}
               className="rounded-lg border bg-popover text-popover-foreground shadow-lg"
             >
               {/* Header */}
               <div className="border-b px-3 py-2">
-                <p className="text-xs font-semibold">{t('itemsPreview.title', { count })}</p>
+                <p className="text-xs font-semibold">{t($ => $.itemsPreview.title, { count })}</p>
               </div>
 
               {/* Column headers */}
               <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b bg-muted/40 px-3 py-1.5 text-[10px] font-medium text-muted-foreground">
                 <span className="w-7" />
-                <span>{t('itemsPreview.colProduct')}</span>
-                <span className="text-end">{t('itemsPreview.colQtyPrice')}</span>
-                <span className="w-16 text-end">{t('itemsPreview.colTotal')}</span>
+                <span>{t($ => $.itemsPreview.colProduct)}</span>
+                <span className="text-end">{t($ => $.itemsPreview.colQtyPrice)}</span>
+                <span className="w-16 text-end">{t($ => $.itemsPreview.colTotal)}</span>
               </div>
 
               {/* Lines */}
@@ -104,7 +104,7 @@ export function OrderItemsPreview({ lines }: Props) {
                       {/* Name + SKU */}
                       <div className="min-w-0">
                         <p className="truncate text-xs font-medium leading-tight">
-                          {line.product?.name ?? t('itemsPreview.unknownProduct')}
+                          {line.product?.name ?? t($ => $.itemsPreview.unknownProduct)}
                         </p>
                         {line.product?.sku ? (
                           <p className="font-mono text-[9px] text-muted-foreground leading-tight">
@@ -133,7 +133,7 @@ export function OrderItemsPreview({ lines }: Props) {
               {/* Products Total footer */}
               <div className="flex items-center justify-between border-t bg-muted/20 px-3 py-2">
                 <span className="text-xs font-medium text-muted-foreground">
-                  {t('itemsPreview.productsTotal')}
+                  {t($ => $.itemsPreview.productsTotal)}
                 </span>
                 <span className="text-sm font-bold tabular-nums">{fmt(grandTotal)}</span>
               </div>

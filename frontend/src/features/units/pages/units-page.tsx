@@ -79,25 +79,25 @@ export function UnitsPage() {
   const columns: ColumnDef<Unit>[] = [
     {
       key: 'code',
-      header: t('columns.code'),
+      header: t($ => $.columns.code),
       sortable: true,
       cell: (u) => <span className="font-medium">{u.code}</span>,
     },
-    { key: 'name', header: t('columns.name'), sortable: true, cell: (u) => u.name },
+    { key: 'name', header: t($ => $.columns.name), sortable: true, cell: (u) => u.name },
     {
       key: 'symbol',
-      header: t('columns.symbol'),
+      header: t($ => $.columns.symbol),
       sortable: true,
       cell: (u) => <span className="text-muted-foreground">{u.symbol ?? '—'}</span>,
     },
     {
       key: 'description',
-      header: t('columns.description'),
+      header: t($ => $.columns.description),
       cell: (u) => <span className="text-muted-foreground">{u.description ?? '—'}</span>,
     },
     {
       key: 'is_active',
-      header: t('columns.status'),
+      header: t($ => $.columns.status),
       sortable: true,
       cell: (u) => <StatusBadge status={u.is_active ? 'active' : 'inactive'} />,
     },
@@ -111,17 +111,17 @@ export function UnitsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={t('title')}
-        subtitle={t('subtitle')}
+        title={t($ => $.title)}
+        subtitle={t($ => $.subtitle)}
         breadcrumbs={[
-          { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: t('breadcrumb.inventory'), to: ROUTES.products },
-          { label: t('title') },
+          { label: tCommon($ => $.home), to: ROUTES.dashboard },
+          { label: t($ => $.breadcrumb.inventory), to: ROUTES.products },
+          { label: t($ => $.title) },
         ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            {t('actions.new')}
+            {t($ => $.actions.new)}
           </Button>
         }
       />
@@ -129,7 +129,7 @@ export function UnitsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder={t('search')}
+            searchPlaceholder={t($ => $.search)}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}
@@ -146,13 +146,13 @@ export function UnitsPage() {
             onSortChange={handleSort}
             rowActions={(unit) => (
               <ActionMenu
-                label={t('actions.ariaLabel', { name: unit.name })}
+                label={t($ => $.actions.ariaLabel, { name: unit.name })}
                 items={[
-                  { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(unit) },
-                  { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(unit) },
+                  { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => openEdit(unit) },
+                  { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(unit) },
                   {
                     key: 'delete',
-                    label: tCommon('common.delete'),
+                    label: tCommon($ => $.common.delete),
                     icon: Trash2,
                     variant: 'destructive',
                     onSelect: () => setDeleting(unit),
@@ -190,9 +190,9 @@ export function UnitsPage() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title={t('delete.title')}
-        description={tCommon('dialogs.softDeleteMessage', { name: deleting?.name ?? '' })}
-        confirmLabel={t('delete.confirm')}
+        title={t($ => $.delete.title)}
+        description={tCommon($ => $.dialogs.softDeleteMessage, { name: deleting?.name ?? '' })}
+        confirmLabel={t($ => $.delete.confirm)}
         variant="destructive"
         loading={deleteUnit.isPending}
         onConfirm={confirmDelete}

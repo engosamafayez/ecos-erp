@@ -210,15 +210,15 @@ function AttachmentSection({
 
   // Arrays with translated labels must live inside the component body
   const ATTACH_TYPES = [
-    { type: 'technical_sheet' as const, label: t('formDrawer.attachments.typeTechnicalSheet'), accept: '.pdf',    multiple: false },
-    { type: 'safety_sheet'    as const, label: t('formDrawer.attachments.typeSafetySheet'),    accept: '.pdf',    multiple: false },
-    { type: 'image'           as const, label: t('formDrawer.attachments.typeImage'),           accept: 'image/*', multiple: true  },
+    { type: 'technical_sheet' as const, label: t($ => $.formDrawer.attachments.typeTechnicalSheet), accept: '.pdf',    multiple: false },
+    { type: 'safety_sheet'    as const, label: t($ => $.formDrawer.attachments.typeSafetySheet),    accept: '.pdf',    multiple: false },
+    { type: 'image'           as const, label: t($ => $.formDrawer.attachments.typeImage),           accept: 'image/*', multiple: true  },
   ];
 
   const TYPE_LABEL: Record<AttachmentEntry['type'], string> = {
-    technical_sheet: t('formDrawer.attachments.typeTechnicalSheet'),
-    safety_sheet:    t('formDrawer.attachments.typeSafetySheet'),
-    image:           t('formDrawer.attachments.typeImage'),
+    technical_sheet: t($ => $.formDrawer.attachments.typeTechnicalSheet),
+    safety_sheet:    t($ => $.formDrawer.attachments.typeSafetySheet),
+    image:           t($ => $.formDrawer.attachments.typeImage),
   };
 
   function addFiles(type: AttachmentEntry['type'], files: FileList | null) {
@@ -245,7 +245,7 @@ function AttachmentSection({
               onClick={() => refs.current[type]?.click()}
             >
               <FileText className="size-3.5" />
-              {t('formDrawer.attachments.addLabel', { type: label })}
+              {t($ => $.formDrawer.attachments.addLabel, { type: label })}
             </Button>
             <input
               ref={(el) => { refs.current[type] = el; }}
@@ -277,7 +277,7 @@ function AttachmentSection({
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">{t('formDrawer.attachments.noAttachments')}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.formDrawer.attachments.noAttachments)}</p>
       )}
     </div>
   );
@@ -318,7 +318,7 @@ function CreateCategoryDialog({
 
   async function handleCreate() {
     if (!name.trim() || !code.trim()) {
-      setErr(t('formDrawer.createCategory.errorRequired'));
+      setErr(t($ => $.formDrawer.createCategory.errorRequired));
       return;
     }
     try {
@@ -333,7 +333,7 @@ function CreateCategoryDialog({
       onCreated(cat.id);
       onOpenChange(false);
     } catch (e) {
-      setErr(extractError(e, t('formDrawer.errorOccurred')));
+      setErr(extractError(e, t($ => $.formDrawer.errorOccurred)));
     }
   }
 
@@ -341,7 +341,7 @@ function CreateCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t('formDrawer.createCategory.title')}</DialogTitle>
+          <DialogTitle>{t($ => $.formDrawer.createCategory.title)}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
@@ -351,7 +351,7 @@ function CreateCategoryDialog({
             </Alert>
           )}
           <div className="space-y-1.5">
-            <Label>{t('formDrawer.createCategory.nameLabel')}</Label>
+            <Label>{t($ => $.formDrawer.createCategory.nameLabel)}</Label>
             <Input
               placeholder="e.g. Wheat Flour & Starch"
               value={name}
@@ -360,7 +360,7 @@ function CreateCategoryDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>{t('formDrawer.createCategory.codeLabel')}</Label>
+            <Label>{t($ => $.formDrawer.createCategory.codeLabel)}</Label>
             <Input
               placeholder="FLOUR-STARCHES"
               value={code}
@@ -372,12 +372,12 @@ function CreateCategoryDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('formDrawer.createCategory.cancel')}
+            {t($ => $.formDrawer.createCategory.cancel)}
           </Button>
           <Button onClick={handleCreate} disabled={createCategory.isPending}>
             {createCategory.isPending
-              ? t('formDrawer.createCategory.creating')
-              : t('formDrawer.createCategory.create')}
+              ? t($ => $.formDrawer.createCategory.creating)
+              : t($ => $.formDrawer.createCategory.create)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -423,26 +423,26 @@ function SupplierTableSection({
   return (
     <div className="space-y-3">
       {fields.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('formDrawer.supplierTable.empty')}</p>
+        <p className="text-sm text-muted-foreground">{t($ => $.formDrawer.supplierTable.empty)}</p>
       ) : (
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full text-sm min-w-[460px]">
             <thead className="bg-muted/50 border-b">
               <tr>
                 <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide w-14">
-                  {t('formDrawer.supplierTable.colDefault')}
+                  {t($ => $.formDrawer.supplierTable.colDefault)}
                 </th>
                 <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {t('formDrawer.supplierTable.colSupplier')}
+                  {t($ => $.formDrawer.supplierTable.colSupplier)}
                 </th>
                 <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide w-24">
-                  {t('formDrawer.supplierTable.colMinQty')}
+                  {t($ => $.formDrawer.supplierTable.colMinQty)}
                 </th>
                 <th className="px-3 py-2 text-start text-xs font-medium text-muted-foreground uppercase tracking-wide w-28">
-                  {t('formDrawer.supplierTable.colLastCost')}
+                  {t($ => $.formDrawer.supplierTable.colLastCost)}
                 </th>
                 <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-16">
-                  {t('formDrawer.supplierTable.colActive')}
+                  {t($ => $.formDrawer.supplierTable.colActive)}
                 </th>
                 <th className="w-9 px-2 py-2" />
               </tr>
@@ -457,7 +457,7 @@ function SupplierTableSection({
                     <td className="px-3 py-2 text-center">
                       <button
                         type="button"
-                        title={t('formDrawer.supplierTable.setDefault')}
+                        title={t($ => $.formDrawer.supplierTable.setDefault)}
                         onClick={() => setDefault(i)}
                         className={cn(
                           'inline-flex items-center justify-center size-7 rounded-md transition-colors',
@@ -478,7 +478,7 @@ function SupplierTableSection({
                               options={supplierOptions}
                               value={f.value || null}
                               onChange={f.onChange}
-                              placeholder={t('formDrawer.supplierTable.selectPlaceholder')}
+                              placeholder={t($ => $.formDrawer.supplierTable.selectPlaceholder)}
                             />
                             {fieldState.error?.message && (
                               <p className="text-destructive text-xs mt-0.5">{fieldState.error.message}</p>
@@ -517,7 +517,7 @@ function SupplierTableSection({
                         type="button"
                         onClick={() => remove(i)}
                         className="text-muted-foreground hover:text-destructive transition-colors"
-                        title={t('formDrawer.supplierTable.delete')}
+                        title={t($ => $.formDrawer.supplierTable.delete)}
                       >
                         <Trash2 className="size-4" />
                       </button>
@@ -534,7 +534,7 @@ function SupplierTableSection({
 
       <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addRow}>
         <Plus className="size-4" />
-        {t('formDrawer.supplierTable.addSupplier')}
+        {t($ => $.formDrawer.supplierTable.addSupplier)}
       </Button>
     </div>
   );
@@ -589,8 +589,8 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
   function validateSuppliers(suppliers: SupplierRow[]): string | null {
     if (suppliers.length === 0) return null;
     const n = suppliers.filter((s) => s.is_default).length;
-    if (n === 0) return t('formDrawer.validationSupplierDefault');
-    if (n > 1)   return t('formDrawer.validationOneDefault');
+    if (n === 0) return t($ => $.formDrawer.validationSupplierDefault);
+    if (n > 1)   return t($ => $.formDrawer.validationOneDefault);
     return null;
   }
 
@@ -606,7 +606,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
         const uploaded = await uploadMaterialImage(imageFile, context);
         imageUrl = uploaded.path;
       } catch {
-        setErr(t('formDrawer.imageUploadFailed'));
+        setErr(t($ => $.formDrawer.imageUploadFailed));
         return;
       }
     }
@@ -654,7 +654,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
       }
       onOpenChange(false);
     } catch (e) {
-      setErr(extractError(e, t('formDrawer.errorOccurred')));
+      setErr(extractError(e, t($ => $.formDrawer.errorOccurred)));
     }
   }
 
@@ -662,8 +662,8 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
 
   // Cost source label helper
   function costSourceLabel(source: string | null | undefined): string {
-    if (source === 'manual')   return t('formDrawer.fields.costSourceManual');
-    if (source === 'purchase') return t('formDrawer.fields.costSourcePurchase');
+    if (source === 'manual')   return t($ => $.formDrawer.fields.costSourceManual);
+    if (source === 'purchase') return t($ => $.formDrawer.fields.costSourcePurchase);
     return '—';
   }
 
@@ -672,22 +672,22 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
       <EntityDrawer
         open={open}
         onOpenChange={onOpenChange}
-        title={isEdit ? t('formDrawer.titleEdit') : t('formDrawer.titleNew')}
+        title={isEdit ? t($ => $.formDrawer.titleEdit) : t($ => $.formDrawer.titleNew)}
         description={
           isEdit
-            ? t('formDrawer.descEdit')
-            : t('formDrawer.descNew')
+            ? t($ => $.formDrawer.descEdit)
+            : t($ => $.formDrawer.descNew)
         }
         className="sm:max-w-2xl"
         footer={
           <>
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-              {t('formDrawer.cancel')}
+              {t($ => $.formDrawer.cancel)}
             </Button>
             <Button type="submit" form={FORM_ID} disabled={isPending}>
               {isPending
-                ? (isEdit ? t('formDrawer.saving') : t('formDrawer.creating'))
-                : (isEdit ? t('formDrawer.saveChanges') : t('formDrawer.createLabel'))}
+                ? (isEdit ? t($ => $.formDrawer.saving) : t($ => $.formDrawer.creating))
+                : (isEdit ? t($ => $.formDrawer.saveChanges) : t($ => $.formDrawer.createLabel))}
             </Button>
           </>
         }
@@ -701,20 +701,20 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           )}
 
           {/* ── Section 1: Basic Information ─────────────────────────────────── */}
-          <SectionBlock title={t('formDrawer.sections.basicInfo')} defaultOpen>
+          <SectionBlock title={t($ => $.formDrawer.sections.basicInfo)} defaultOpen>
             <ImageUploadField existingUrl={material?.image_url} onChange={setImageFile} />
 
             <Separator />
 
-            <FormField name="material_type" label={t('formDrawer.fields.materialType')} required>
+            <FormField name="material_type" label={t($ => $.formDrawer.fields.materialType)} required>
               <Controller
                 control={form.control}
                 name="material_type"
                 render={({ field }) => (
                   <div className="flex gap-4">
                     {([
-                      { value: 'raw_material'       as const, label: t('formDrawer.fields.typeRaw') },
-                      { value: 'packaging_material' as const, label: t('formDrawer.fields.typePackaging') },
+                      { value: 'raw_material'       as const, label: t($ => $.formDrawer.fields.typeRaw) },
+                      { value: 'packaging_material' as const, label: t($ => $.formDrawer.fields.typePackaging) },
                     ]).map(({ value, label }) => (
                       <label key={value} className="flex items-center gap-2 cursor-pointer select-none">
                         <input
@@ -734,16 +734,16 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <FormField name="name" label={t('formDrawer.fields.materialName')} required>
-                  <Input placeholder={t('formDrawer.fields.materialNamePlaceholder')} {...form.register('name')} />
+                <FormField name="name" label={t($ => $.formDrawer.fields.materialName)} required>
+                  <Input placeholder={t($ => $.formDrawer.fields.materialNamePlaceholder)} {...form.register('name')} />
                 </FormField>
               </div>
 
-              <FormField name="sku" label={t('formDrawer.fields.skuCode')} required>
-                <Input placeholder={t('formDrawer.fields.skuPlaceholder')} {...form.register('sku')} />
+              <FormField name="sku" label={t($ => $.formDrawer.fields.skuCode)} required>
+                <Input placeholder={t($ => $.formDrawer.fields.skuPlaceholder)} {...form.register('sku')} />
               </FormField>
 
-              <FormField name="category_id" label={t('formDrawer.fields.category')} required>
+              <FormField name="category_id" label={t($ => $.formDrawer.fields.category)} required>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 min-w-0">
                     <Controller
@@ -762,7 +762,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
                     variant="outline"
                     size="sm"
                     className="shrink-0 h-9 w-9 p-0"
-                    title={t('formDrawer.fields.createNewCategory')}
+                    title={t($ => $.formDrawer.fields.createNewCategory)}
                     onClick={() => setCreateCategoryOpen(true)}
                   >
                     <Plus className="size-4" />
@@ -770,7 +770,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
                 </div>
               </FormField>
 
-              <FormField name="unit_id" label={t('formDrawer.fields.unitOfMeasure')} required>
+              <FormField name="unit_id" label={t($ => $.formDrawer.fields.unitOfMeasure)} required>
                 <Controller
                   control={form.control}
                   name="unit_id"
@@ -781,10 +781,10 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
               </FormField>
 
               <div className="sm:col-span-2">
-                <FormField name="description" label={t('formDrawer.fields.description')}>
+                <FormField name="description" label={t($ => $.formDrawer.fields.description)}>
                   <Textarea
                     rows={3}
-                    placeholder={t('formDrawer.fields.descriptionPlaceholder')}
+                    placeholder={t($ => $.formDrawer.fields.descriptionPlaceholder)}
                     {...form.register('description')}
                   />
                 </FormField>
@@ -793,12 +793,12 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           </SectionBlock>
 
           {/* ── Section 2: Inventory ──────────────────────────────────────────── */}
-          <SectionBlock title={t('formDrawer.sections.inventory')}>
+          <SectionBlock title={t($ => $.formDrawer.sections.inventory)}>
             <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
               <div>
-                <p className="text-sm font-medium">{t('formDrawer.fields.allowNegativeStock')}</p>
+                <p className="text-sm font-medium">{t($ => $.formDrawer.fields.allowNegativeStock)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {t('formDrawer.fields.allowNegativeDesc')}
+                  {t($ => $.formDrawer.fields.allowNegativeDesc)}
                 </p>
               </div>
               <Controller
@@ -811,7 +811,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField name="minimum_stock" label={t('formDrawer.fields.minimumStock')}>
+              <FormField name="minimum_stock" label={t($ => $.formDrawer.fields.minimumStock)}>
                 <Input
                   type="number" min="0" step="0.01" placeholder="0"
                   {...form.register('minimum_stock', { setValueAs: numVal })}
@@ -820,8 +820,8 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
 
               <FormField
                 name="reorder_point"
-                label={t('formDrawer.fields.reorderPoint')}
-                description={t('formDrawer.fields.reorderPointDesc')}
+                label={t($ => $.formDrawer.fields.reorderPoint)}
+                description={t($ => $.formDrawer.fields.reorderPointDesc)}
               >
                 <Input
                   type="number" min="0" step="0.01" placeholder="0"
@@ -830,7 +830,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
               </FormField>
 
               <div className="sm:col-span-2">
-                <FormField name="preferred_warehouse_id" label={t('formDrawer.fields.preferredWarehouse')}>
+                <FormField name="preferred_warehouse_id" label={t($ => $.formDrawer.fields.preferredWarehouse)}>
                   <Controller
                     control={form.control}
                     name="preferred_warehouse_id"
@@ -839,7 +839,7 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
                         options={warehouseOptions}
                         value={field.value || null}
                         onChange={field.onChange}
-                        placeholder={t('formDrawer.fields.warehousePlaceholder')}
+                        placeholder={t($ => $.formDrawer.fields.warehousePlaceholder)}
                       />
                     )}
                   />
@@ -849,21 +849,21 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           </SectionBlock>
 
           {/* ── Section 3: Suppliers ──────────────────────────────────────────── */}
-          <SectionBlock title={t('formDrawer.sections.suppliers')} count={supplierCount}>
+          <SectionBlock title={t($ => $.formDrawer.sections.suppliers)} count={supplierCount}>
             <SupplierTableSection form={form} supplierOptions={supplierOptions} />
           </SectionBlock>
 
           {/* ── Section 4: Material Cost ──────────────────────────────────────── */}
-          <SectionBlock title={t('formDrawer.sections.materialCost')}>
+          <SectionBlock title={t($ => $.formDrawer.sections.materialCost)}>
             <div className="rounded-md border bg-muted/30 px-3 py-3">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {t('formDrawer.fields.currentCostLabel')}
+                {t($ => $.formDrawer.fields.currentCostLabel)}
               </p>
               <p className="mt-1 text-lg font-semibold">{fmtPrice(material?.material_cost, currency, locale)}</p>
               <div className="flex flex-wrap items-center gap-x-2 mt-1 text-xs text-muted-foreground">
-                <span>{t('formDrawer.fields.lastUpdated', { date: fmtDate(material?.updated_at) })}</span>
+                <span>{t($ => $.formDrawer.fields.lastUpdated, { date: fmtDate(material?.updated_at) })}</span>
                 <span aria-hidden>·</span>
-                <span>{t('formDrawer.fields.source', { source: costSourceLabel(material?.cost_source) })}</span>
+                <span>{t($ => $.formDrawer.fields.source, { source: costSourceLabel(material?.cost_source) })}</span>
               </div>
             </div>
 
@@ -871,8 +871,8 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
 
             <FormField
               name="manual_cost"
-              label={t('formDrawer.fields.manualCostOverride')}
-              description={t('formDrawer.fields.manualCostDesc')}
+              label={t($ => $.formDrawer.fields.manualCostOverride)}
+              description={t($ => $.formDrawer.fields.manualCostDesc)}
             >
               <div className="relative max-w-48">
                 <Input
@@ -885,10 +885,10 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           </SectionBlock>
 
           {/* ── Section 5: Purchasing ─────────────────────────────────────────── */}
-          <SectionBlock title={t('formDrawer.sections.purchasing')}>
+          <SectionBlock title={t($ => $.formDrawer.sections.purchasing)}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <FormField name="purchasing_supplier_id" label={t('formDrawer.fields.preferredSupplier')}>
+                <FormField name="purchasing_supplier_id" label={t($ => $.formDrawer.fields.preferredSupplier)}>
                   <Controller
                     control={form.control}
                     name="purchasing_supplier_id"
@@ -897,21 +897,21 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
                         options={supplierOptions}
                         value={field.value || null}
                         onChange={field.onChange}
-                        placeholder={t('formDrawer.fields.preferredSupplierPlaceholder')}
+                        placeholder={t($ => $.formDrawer.fields.preferredSupplierPlaceholder)}
                       />
                     )}
                   />
                 </FormField>
               </div>
 
-              <FormField name="purchasing_lead_time_days" label={t('formDrawer.fields.leadTimeDays')}>
+              <FormField name="purchasing_lead_time_days" label={t($ => $.formDrawer.fields.leadTimeDays)}>
                 <Input
                   type="number" min="0" placeholder="0"
                   {...form.register('purchasing_lead_time_days', { setValueAs: numVal })}
                 />
               </FormField>
 
-              <FormField name="purchasing_minimum_order_qty" label={t('formDrawer.fields.minOrderQty')}>
+              <FormField name="purchasing_minimum_order_qty" label={t($ => $.formDrawer.fields.minOrderQty)}>
                 <Input
                   type="number" min="0" step="0.01" placeholder="0"
                   {...form.register('purchasing_minimum_order_qty', { setValueAs: numVal })}
@@ -922,20 +922,20 @@ export function RawMaterialFormDrawer({ open, onOpenChange, material }: Props) {
           </SectionBlock>
 
           {/* ── Section 6: Attachments ────────────────────────────────────────── */}
-          <SectionBlock title={t('formDrawer.sections.attachments')} count={attachments.length || undefined}>
+          <SectionBlock title={t($ => $.formDrawer.sections.attachments)} count={attachments.length || undefined}>
             <AttachmentSection entries={attachments} onChange={setAttachments} />
           </SectionBlock>
 
           {/* ── Section 7: Notes ──────────────────────────────────────────────── */}
-          <SectionBlock title={t('formDrawer.sections.notes')}>
+          <SectionBlock title={t($ => $.formDrawer.sections.notes)}>
             <FormField
               name="internal_notes"
-              label={t('formDrawer.fields.internalNotes')}
-              description={t('formDrawer.fields.internalNotesDesc')}
+              label={t($ => $.formDrawer.fields.internalNotes)}
+              description={t($ => $.formDrawer.fields.internalNotesDesc)}
             >
               <Textarea
                 rows={4}
-                placeholder={t('formDrawer.fields.internalNotesPlaceholder')}
+                placeholder={t($ => $.formDrawer.fields.internalNotesPlaceholder)}
                 {...form.register('internal_notes')}
               />
             </FormField>
